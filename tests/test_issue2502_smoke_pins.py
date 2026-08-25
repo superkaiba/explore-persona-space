@@ -87,6 +87,32 @@ Round-8 pins (decide-force-stale-sentinel-window residual closure):
       raises on sentinel/decision disagreement instead of logging the
       mutated value, and the healthy-path skip log reports the verdict read
       from decision.json (the authoritative artifact).
+
+Round-9 pins (source-registry split-spec class; the live P0 crash
+``ValueError: Bad split: train`` on jbb_behaviors, whose `behaviors` config
+offers ['harmful','benign'] only):
+
+  (l) split-absent LOUD handler: a bad-split ValueError escaping
+      load_dataset is re-raised as a RuntimeError NAMING source_tag +
+      declared split + dataset id (registry-defect signal), chained from the
+      original — never a silent skip/remap, and never routed into the
+      round-5 gated-skip;
+  (m) registry-wide preflight (verify_declared_splits): ALL declared
+      (config, split) defects aggregate into ONE raise (anti-whack-a-mole:
+      a relaunch surfaces every registry defect at once); gated sources are
+      unverifiable-not-fatal; transient HF errors propagate; data_files
+      sources are 'train'-fixed by construction;
+  (n) registry shape: the corrected specs (jbb both-splits, MASK 6 configs @
+      test, xstest test, beavertails default-config 30k_train,
+      model_written_evals data_dir=sycophancy, pippa data_files off the dead
+      script, riddle_sense parquet-branch revision_ref, legalbench
+      train+test) are pinned so a refactor cannot silently regress them;
+  (o) multi-split staging through the REAL chain: two splits of one config
+      stage to DISTINCT checkpoint files/fingerprints with the keep-cap
+      CUMULATIVE across attempts and @split-suffixed counter keys;
+  (p) preflight wiring: run_pipeline invokes verify_declared_splits before
+      any staging, and --skip-split-preflight (offline-smoke escape) skips
+      it.
 """
 
 from __future__ import annotations
@@ -183,14 +209,14 @@ def _install_hf_seams(
     The real production chain (stage_source -> _stage_one_config ->
     CS._stream_stage incl. its kept==0 raise, keep_fn, fingerprints,
     checkpoint writes) executes unmodified. Both fakes mirror the real
-    call shapes (`_resolve_dataset_revision(dataset_id)`;
+    call shapes (`_resolve_dataset_revision(dataset_id, revision_ref=None)`;
     `CS._hf_stream(dataset_id, config, split, revision=..., **kw)`).
     ``raise_by_dataset`` injects an arbitrary exception at the revision
     seam (round-6 transient-vs-permanent discrimination pins).
     """
     from datasets.exceptions import DatasetNotFoundError
 
-    def fake_resolve(dataset_id: str) -> str:
+    def fake_resolve(dataset_id: str, revision_ref: str | None = None) -> str:
         if raise_by_dataset and dataset_id in raise_by_dataset:
             raise raise_by_dataset[dataset_id]
         if dataset_id in gated:
@@ -208,8 +234,20 @@ def _install_hf_seams(
 
 
 def _probe_args(tmp_path, budget=10):
+    # --skip-split-preflight: these pins fake the network at the revision /
+    # row-stream seams only; the round-9 split preflight would call the REAL
+    # datasets.get_dataset_split_names (network) — it has its own injected-fn
+    # pins below (l/m/p) and stays out of the round-5/6 skip-semantics pins.
     return CP.build_argparser().parse_args(
-        ["--probe", "--no-token-filter", "--out-dir", str(tmp_path), "--budget", str(budget)]
+        [
+            "--probe",
+            "--no-token-filter",
+            "--skip-split-preflight",
+            "--out-dir",
+            str(tmp_path),
+            "--budget",
+            str(budget),
+        ]
     )
 
 
@@ -670,3 +708,257 @@ def test_publish_sentinel_routes_selected_backends(monkeypatch, tmp_path):
     assert len(calls["git"]) == 2 and len(calls["hf"]) == 2
     FT._publish_sentinel(sentinel, "none", "pfx")
     assert len(calls["git"]) == 2 and len(calls["hf"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# Round-9 pins (l)-(p): source-registry split-spec class (the live P0 crash).
+# ---------------------------------------------------------------------------
+
+
+def _registry(tag: str):
+    (spec,) = [s for s in CP.SOURCES if s.source_tag == tag]
+    return spec
+
+
+def test_l_split_absent_raises_loud_naming_source_and_split(monkeypatch, tmp_path):
+    """Pin (l): a bad-split ValueError from the stream becomes a RuntimeError
+    naming source_tag + declared split + dataset id, chained from the
+    original — through the REAL stage_source -> _stage_one_config chain, and
+    NEVER the round-5 gated-skip route."""
+    spec = CP.SourceSpec(
+        source_tag="badsplit_src",
+        dataset_id="org/jbb-like",
+        regime_class="weird",
+        realism_tier=2,
+        pre_dedup_cap=10,
+        splits=("harmful",),
+        text_fields=("text",),
+    )
+    monkeypatch.setattr(
+        CP, "_resolve_dataset_revision", lambda dataset_id, revision_ref=None: "0" * 40
+    )
+
+    def raising_stream(dataset_id, config, split, **kwargs):
+        raise ValueError(f"Bad split: {split}. Available splits: ['train']")
+
+    monkeypatch.setattr(CP.CS, "_hf_stream", raising_stream)
+    with pytest.raises(RuntimeError) as ei:
+        CP.stage_source(spec, tmp_path, None, stream_cap=None, filter_language=False, seed=0)
+    msg = str(ei.value)
+    assert "badsplit_src" in msg and "'harmful'" in msg and "org/jbb-like" in msg, msg
+    assert "registry" in msg and "Bad split" in msg, msg
+    assert isinstance(ei.value.__cause__, ValueError)
+
+
+def test_l2_non_split_valueerror_propagates_unenriched(monkeypatch, tmp_path):
+    """Pin (l residual): a ValueError that is NOT the bad-split shape (e.g. a
+    keep_fn bug) propagates verbatim — the enrich handler must not absorb
+    unrelated ValueErrors into the registry-defect message."""
+    spec = CP.SourceSpec(
+        source_tag="valerr_src",
+        dataset_id="org/plain",
+        regime_class="weird",
+        realism_tier=2,
+        pre_dedup_cap=10,
+        text_fields=("text",),
+    )
+    monkeypatch.setattr(
+        CP, "_resolve_dataset_revision", lambda dataset_id, revision_ref=None: "0" * 40
+    )
+
+    def raising_stream(dataset_id, config, split, **kwargs):
+        raise ValueError("some unrelated data-plane failure")
+
+    monkeypatch.setattr(CP.CS, "_hf_stream", raising_stream)
+    with pytest.raises(ValueError, match="unrelated data-plane failure"):
+        CP.stage_source(spec, tmp_path, None, stream_cap=None, filter_language=False, seed=0)
+
+
+def _preflight_fakes():
+    from huggingface_hub.utils import GatedRepoError
+
+    def fake_rev(dataset_id: str, revision_ref: str | None = None) -> str:
+        if dataset_id == "org/gated":
+            raise GatedRepoError("gated fixture")
+        return "0" * 40
+
+    def fake_split_names(dataset_id, config=None, *, revision=None, **kw):
+        assert revision == "0" * 40
+        if config == "badcfg":
+            raise ValueError("BuilderConfig 'badcfg' not found. Available: ['default']")
+        if dataset_id == "org/deadscript":
+            raise RuntimeError("Dataset scripts are no longer supported, but found x.py")
+        if dataset_id == "org/jbb-like":
+            return ["harmful", "benign"]
+        return ["train"]
+
+    return fake_rev, fake_split_names
+
+
+def test_m_preflight_aggregates_all_defects_into_one_raise(tmp_path):
+    """Pin (m): one preflight pass enumerates EVERY registry defect (bad
+    split, bad config, dead script) in ONE RuntimeError; healthy + gated
+    sources stay out of the defect list."""
+    fake_rev, fake_split_names = _preflight_fakes()
+    ok = _spec("ok_src", "org/plain", "weird")
+    bad_split = _spec("badsplit_src", "org/jbb-like", "weird")  # default 'train'
+    gated = _spec("gated_src", "org/gated", "weird")
+    bad_cfg = CP.SourceSpec(
+        source_tag="badcfg_src",
+        dataset_id="org/plain",
+        regime_class="weird",
+        realism_tier=2,
+        pre_dedup_cap=10,
+        configs=("badcfg",),
+        text_fields=("text",),
+    )
+    dead = _spec("deadscript_src", "org/deadscript", "weird")
+    with pytest.raises(RuntimeError) as ei:
+        CP.verify_declared_splits(
+            (ok, bad_split, gated, bad_cfg, dead),
+            split_names_fn=fake_split_names,
+            revision_fn=fake_rev,
+        )
+    msg = str(ei.value)
+    assert "3 defect(s)" in msg, msg
+    assert "badsplit_src" in msg and "badcfg_src" in msg and "deadscript_src" in msg, msg
+    assert "ok_src" not in msg and "gated_src" not in msg, msg
+
+
+def test_m2_preflight_gated_unverifiable_and_transient_propagates():
+    """Pin (m residual): gated -> recorded unverifiable (no raise); a
+    transient 503 at the revision seam PROPAGATES (never swallowed)."""
+    from huggingface_hub.utils import HfHubHTTPError
+
+    fake_rev, fake_split_names = _preflight_fakes()
+    ok = _spec("ok_src", "org/plain", "weird")
+    gated = _spec("gated_src", "org/gated", "weird")
+    res = CP.verify_declared_splits(
+        (ok, gated), split_names_fn=fake_split_names, revision_fn=fake_rev
+    )
+    assert res["n_verified"] == 1 and len(res["unverifiable"]) == 1, res
+    assert "gated_src" in res["unverifiable"][0]
+
+    class _Resp:
+        status_code = 503
+
+    def transient_rev(dataset_id: str, revision_ref: str | None = None) -> str:
+        exc = HfHubHTTPError("503 fixture")
+        exc.response = _Resp()
+        raise exc
+
+    with pytest.raises(HfHubHTTPError):
+        CP.verify_declared_splits((ok,), split_names_fn=fake_split_names, revision_fn=transient_rev)
+
+
+def test_m3_preflight_data_files_sources_train_fixed():
+    """Pin (m residual): data_files sources verify by construction on
+    splits=('train',) and are a DEFECT on any other declared split."""
+    fake_rev, fake_split_names = _preflight_fakes()
+    good = CP.SourceSpec(
+        source_tag="df_src",
+        dataset_id="org/script-dead",
+        regime_class="idiosyncratic",
+        realism_tier=1,
+        pre_dedup_cap=10,
+        data_files_template="hf://datasets/org/script-dead@{revision}/rows.jsonl",
+        text_fields=("text",),
+    )
+    res = CP.verify_declared_splits((good,), split_names_fn=fake_split_names, revision_fn=fake_rev)
+    assert res["n_verified"] == 1, res
+    import dataclasses
+
+    bad = dataclasses.replace(good, splits=("test",))
+    with pytest.raises(RuntimeError, match="data_files sources serve"):
+        CP.verify_declared_splits((bad,), split_names_fn=fake_split_names, revision_fn=fake_rev)
+
+
+def test_n_registry_corrected_specs_pinned():
+    """Pin (n): the round-9 audit's corrected registry entries (a refactor
+    reverting any of these re-arms a production crash or a silent
+    composition change)."""
+    jbb = _registry("jbb_behaviors")
+    assert jbb.configs == ("behaviors",) and jbb.splits == ("harmful", "benign")
+    mask = _registry("mask")
+    assert mask.splits == ("test",) and len(mask.configs) == 6 and None not in mask.configs
+    assert _registry("xstest").splits == ("test",)
+    bt = _registry("beavertails")
+    assert bt.configs == (None,) and bt.splits == ("30k_train",)
+    mwe = _registry("model_written_evals")
+    assert mwe.configs == (None,) and mwe.data_dir == "sycophancy"
+    pippa = _registry("pippa")
+    assert pippa.data_files_template is not None
+    assert "pippa_deduped.jsonl" in pippa.data_files_template
+    assert "{revision}" in pippa.data_files_template
+    assert pippa.splits == ("train",)
+    rs = _registry("riddle_sense")
+    assert rs.revision_ref == "refs/convert/parquet" and rs.splits == ("train",)
+    assert _registry("legalbench").splits == ("train", "test")
+    for spec in CP.SOURCES:
+        assert isinstance(spec.splits, tuple) and spec.splits, spec.source_tag
+        assert all(isinstance(s, str) and s for s in spec.splits), spec.source_tag
+
+
+def test_o_multi_split_staging_distinct_files_cumulative_cap(monkeypatch, tmp_path):
+    """Pin (o): two splits of one config stage through the REAL chain to
+    DISTINCT checkpoint files, with the keep-cap CUMULATIVE across attempts
+    and @split-suffixed counter keys."""
+    spec = CP.SourceSpec(
+        source_tag="twosplit_src",
+        dataset_id="org/twosplit",
+        regime_class="weird",
+        realism_tier=2,
+        pre_dedup_cap=15,
+        splits=("harmful", "benign"),
+        text_fields=("text",),
+    )
+    rows_by_split = {
+        "harmful": _raw_rows("twosplit-h", 10),
+        "benign": _raw_rows("twosplit-b", 10),
+    }
+    monkeypatch.setattr(
+        CP, "_resolve_dataset_revision", lambda dataset_id, revision_ref=None: "0" * 40
+    )
+
+    def split_stream(dataset_id, config, split, **kwargs):
+        assert kwargs.get("revision") == "0" * 40
+        return iter(rows_by_split[split])
+
+    monkeypatch.setattr(CP.CS, "_hf_stream", split_stream)
+    rows, ctr = CP.stage_source(
+        spec, tmp_path, None, stream_cap=None, filter_language=False, seed=0
+    )
+    # cumulative cap: 10 from harmful + only 5 of benign (15 total)
+    assert len(rows) == 15
+    assert set(ctr) == {"default@harmful", "default@benign"}
+    staged = tmp_path / "staged"
+    h_file = staged / "twosplit_src__default__harmful.jsonl"
+    b_file = staged / "twosplit_src__default__benign.jsonl"
+    assert h_file.exists() and b_file.exists()
+    assert len(CP.CS.read_jsonl(h_file)) == 10
+    assert len(CP.CS.read_jsonl(b_file)) == 5
+
+
+def test_p_preflight_wired_before_staging_and_skip_flag(monkeypatch, tmp_path):
+    """Pin (p): run_pipeline calls verify_declared_splits BEFORE any staging;
+    --skip-split-preflight skips it (offline-smoke escape hatch)."""
+
+    class _PreflightRan(Exception):
+        pass
+
+    class _StagingReached(Exception):
+        pass
+
+    def sentinel_preflight(sources, **kw):
+        raise _PreflightRan()
+
+    def sentinel_stage(spec, *a, **kw):
+        raise _StagingReached()
+
+    monkeypatch.setattr(CP, "verify_declared_splits", sentinel_preflight)
+    monkeypatch.setattr(CP, "stage_source", sentinel_stage)
+    base = ["--probe", "--no-token-filter", "--out-dir", str(tmp_path), "--budget", "5"]
+    with pytest.raises(_PreflightRan):
+        CP.run_pipeline(CP.build_argparser().parse_args(base))
+    with pytest.raises(_StagingReached):
+        CP.run_pipeline(CP.build_argparser().parse_args([*base, "--skip-split-preflight"]))

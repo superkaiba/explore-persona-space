@@ -67,7 +67,10 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
 # every regime / completeness gate clean while staying confined to smoke_u4/
 # (hygiene rule).
 SMOKE_PREFIX = "issue2502_ctxmap_xgen/smoke_u4/r3"
-SMOKE_SOURCES = ("lmsys_chat_1m", "itw_jailbreak", "writingprompts")
+# jbb_behaviors added round 9: the multi-split staging class (configs x
+# splits attempts; the live crash's own source) must be smoke-covered per
+# arm class, not left to production (#1090 fu5).
+SMOKE_SOURCES = ("lmsys_chat_1m", "itw_jailbreak", "writingprompts", "jbb_behaviors")
 FIXTURE_SEED = 20260823
 GEN_SEED_MAIN = 42
 CHUNK_SIZE = 100
@@ -156,11 +159,19 @@ def build_fixtures() -> tuple[dict, dict]:
 
     wp = [{"prompt": _sentence(rng, rng.randint(12, 30), f"wp-{i:03d}")} for i in range(30)]
 
+    # jbb multi-split fixtures (round 9): the SAME (dataset, config) staged
+    # from TWO splits — keyed with an explicit split element so each split
+    # serves distinct rows (field 'Goal', the real behaviors-config field).
+    jbb_h = [{"Goal": _sentence(rng, rng.randint(12, 30), f"jbb-h-{i:03d}")} for i in range(12)]
+    jbb_b = [{"Goal": _sentence(rng, rng.randint(12, 30), f"jbb-b-{i:03d}")} for i in range(12)]
+
     fixtures = {
         ("lmsys/lmsys-chat-1m", None): lmsys,
         ("TrustAIRLab/in-the-wild-jailbreak-prompts", "jailbreak_2023_12_25"): itw_1,
         ("TrustAIRLab/in-the-wild-jailbreak-prompts", "jailbreak_2023_05_07"): itw_2,
         ("euclaise/writingprompts", None): wp,
+        ("JailbreakBench/JBB-Behaviors", "behaviors", "harmful"): jbb_h,
+        ("JailbreakBench/JBB-Behaviors", "behaviors", "benign"): jbb_b,
     }
     expect = {
         "confirmed_dropped": 2,  # within-lmsys near-dup + cross-source near-dup
@@ -192,15 +203,22 @@ def leg_corpus(args) -> None:
     fixtures, expect = build_fixtures()
 
     def fake_hf_stream(dataset_id, config=None, split="train", **kw):
+        # Split-keyed fixtures first (multi-split sources, round 9), then the
+        # split-agnostic (dataset, config) key for single-split sources.
+        key3 = (dataset_id, config, split)
+        if key3 in fixtures:
+            yield from fixtures[key3]
+            return
         key = (dataset_id, config)
         if key not in fixtures:
-            raise RuntimeError(f"smoke fixture has no rows for {key}")
+            raise RuntimeError(f"smoke fixture has no rows for {key3}")
         yield from fixtures[key]
 
     CS._hf_stream = fake_hf_stream  # network/gated-read boundary (mock 1)
     # u1's HfApi().dataset_info revision-pin seam (same network boundary as
     # mock 1; corpus.py resolves the module global at both call sites).
-    CP._resolve_dataset_revision = lambda dataset_id: "smokerev"
+    # Signature mirrors the round-9 (dataset_id, revision_ref) shape.
+    CP._resolve_dataset_revision = lambda dataset_id, revision_ref=None: "smokerev"
 
     out_dir = Path(args.work) / "corpus"
     common = [
@@ -212,6 +230,12 @@ def leg_corpus(args) -> None:
         "400",
         "--seed",
         "42",
+        # The registry-wide split preflight calls the REAL
+        # datasets.get_dataset_split_names (a network metadata read) — the
+        # offline smoke skips it; the preflight itself is pytest-pinned with
+        # injected seams (tests/test_issue2502_smoke_pins.py round 9) and
+        # network-verified against the real registry pre-relaunch.
+        "--skip-split-preflight",
     ]
     rc = CP.main([*common, "--probe"])
     assert rc == 0, f"probe rc={rc}"
@@ -254,6 +278,16 @@ def leg_corpus(args) -> None:
         by_src[r["source_tag"]][r["split"]] += 1
     for tag, splits in by_src.items():
         assert set(splits) == {"train", "val", "test"}, (tag, splits)
+    # Round-9 multi-split staging class: BOTH jbb splits staged to DISTINCT
+    # checkpoint files (the non-'train' split lands in a __<split>-suffixed
+    # file) and both fixture sets survive into the corpus (24 distinct rows).
+    n_jbb = sum(v for v in by_src.get("jbb_behaviors", {}).values())
+    assert n_jbb == 24, f"jbb_behaviors multi-split rows: {n_jbb} != 24"
+    for split_file in (
+        "jbb_behaviors__behaviors__harmful.jsonl",
+        "jbb_behaviors__behaviors__benign.jsonl",
+    ):
+        assert (out_dir / "staged" / split_file).exists(), split_file
     classes = {r["regime_class"] for r in corpus}
     assert classes == {"ordinary", "weird", "near-distribution", "idiosyncratic"}, classes
     n_ord_test = sum(1 for r in corpus if r["regime_class"] == "ordinary" and r["split"] == "test")

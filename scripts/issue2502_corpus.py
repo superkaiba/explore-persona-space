@@ -136,8 +136,26 @@ class SourceSpec:
     realism_tier: int
     pre_dedup_cap: int
     configs: tuple[str | None, ...] = (None,)
-    split: str = "train"
+    # Split(s) to stage PER CONFIG (attempts = configs x splits; the keep-cap
+    # stays cumulative across attempts). Round-9 crash class: the registry
+    # default 'train' is NOT universal — JBB-Behaviors' `behaviors` config
+    # offers ['harmful','benign'] only, and inheriting 'train' crashed the
+    # live P0 build (ValueError: Bad split). verify_declared_splits() checks
+    # every declared (config, split) against the dataset BEFORE staging.
+    splits: tuple[str, ...] = ("train",)
     data_dir: str | None = None
+    # Pin + load from this repo ref instead of the default branch (e.g.
+    # 'refs/convert/parquet' for legacy script datasets — datasets>=3 refuses
+    # loading scripts, and the auto-converted parquet branch is the only
+    # loadable form). The ref's resolved sha enters the fingerprint + stream
+    # exactly like a main-branch sha.
+    revision_ref: str | None = None
+    # Stream raw repo FILES through the packaged `json` builder instead of a
+    # (dead) dataset script: an hf:// data_files template whose '{revision}'
+    # is substituted with the pinned sha (PIPPA-class repos that still carry
+    # raw jsonl beside the unsupported script). Split-fixed by construction:
+    # a str data_files serves exactly the single 'train' split.
+    data_files_template: str | None = None
     # Ordered candidate SCALAR text fields (first present usable one wins).
     text_fields: tuple[str, ...] = ()
     # Ordered candidate CONVERSATION fields (message lists -> first user turn).
@@ -251,6 +269,14 @@ SOURCES: tuple[SourceSpec, ...] = (
         realism_tier=2,
         pre_dedup_cap=3_000,
         configs=("behaviors",),
+        # The `behaviors` config offers NO 'train' split — its splits are
+        # ['harmful','benign'] (probe-verified 2026-08-24; the round-9 live
+        # crash). BOTH are staged under this one weird substratum: the plan
+        # §4 item-5 family IS "adversarial + matched-benign twins" (the
+        # wildjailbreak adversarial+vanilla pattern), and JBB's benign split
+        # is the paired benign twin of each harmful behavior — with gated
+        # wildjailbreak skipped it is the family's only realized twin set.
+        splits=("harmful", "benign"),
         text_fields=("Goal", "goal", "prompt"),
     ),
     SourceSpec(
@@ -277,7 +303,12 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_NEAR,
         realism_tier=2,
         pre_dedup_cap=4_000,
-        configs=("sycophancy",),
+        # No 'sycophancy' BuilderConfig exists (only 'default';
+        # probe-verified 2026-08-24) — the sycophancy scoping lives in the
+        # repo DIRECTORY layout, so it routes via data_dir (the hh_redteam
+        # pattern). data_dir='sycophancy' -> splits=['train'], field
+        # 'question' (probe-verified).
+        data_dir="sycophancy",
         text_fields=("question", "statement", "prompt"),
     ),
     SourceSpec(
@@ -294,6 +325,19 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_NEAR,
         realism_tier=2,
         pre_dedup_cap=3_000,
+        # cais/MASK REQUIRES a config ("Config name is missing" with None)
+        # and every config offers only a 'test' split (probe-verified
+        # 2026-08-24, all six). All six scenario configs staged for
+        # deception-scenario diversity (plan §4 family 6).
+        configs=(
+            "continuations",
+            "disinformation",
+            "doubling_down_known_facts",
+            "known_facts",
+            "provided_facts",
+            "statistics",
+        ),
+        splits=("test",),
         text_fields=("user_prompt", "prompt", "question"),
     ),
     # 7. over-refusal boundary (near-distribution).
@@ -321,6 +365,9 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_NEAR,
         realism_tier=2,
         pre_dedup_cap=1_500,
+        # walledai/XSTest offers ONLY a 'test' split (probe-verified
+        # 2026-08-24) — the registry-default 'train' would crash.
+        splits=("test",),
         text_fields=("prompt",),
     ),
     SourceSpec(
@@ -338,6 +385,15 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_IDIO,
         realism_tier=1,
         pre_dedup_cap=5_000,
+        # PIPPA is a legacy SCRIPT dataset ("Dataset scripts are no longer
+        # supported, but found PIPPA.py" under datasets>=3; no
+        # refs/convert/parquet branch exists — probe-verified 2026-08-24).
+        # The repo still carries the raw jsonl, so rows stream through the
+        # packaged json builder off the pinned revision. pippa_deduped.jsonl
+        # is the repo's filtered/deduped variant — the plan §4 item-8
+        # "PIPPA (filtered)" pin. Conversation turns use the
+        # {'message','is_human'} shape, which first_user_content handles.
+        data_files_template=("hf://datasets/PygmalionAI/PIPPA@{revision}/pippa_deduped.jsonl"),
         conv_fields=("conversation",),
     ),
     SourceSpec(
@@ -381,6 +437,11 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_IDIO,
         realism_tier=3,  # plan §4 names it in the tier-3/tier-4 minority (g1 m4)
         pre_dedup_cap=1_500,
+        # Legacy SCRIPT dataset (unloadable under datasets>=3); its
+        # auto-converted parquet branch IS loadable — splits
+        # ['train','validation','test'], plain-string 'question' field
+        # (probe-verified 2026-08-24, streamed row 1 field names).
+        revision_ref="refs/convert/parquet",
         text_fields=("question",),
     ),
     SourceSpec(
@@ -398,7 +459,10 @@ SOURCES: tuple[SourceSpec, ...] = (
         regime_class=REGIME_WEIRD,
         realism_tier=2,
         pre_dedup_cap=4_000,
-        configs=("30k_train",),
+        # BeaverTails has NO '30k_train' BuilderConfig — only 'default'
+        # (probe-verified 2026-08-24); the 30k/330k families are SPLITS
+        # ['330k_train','330k_test','30k_train','30k_test'], field 'prompt'.
+        splits=("30k_train",),
         text_fields=("prompt",),
     ),
     SourceSpec(
@@ -512,6 +576,11 @@ SOURCES: tuple[SourceSpec, ...] = (
         realism_tier=2,
         pre_dedup_cap=2_000,
         configs=("hearsay",),
+        # hearsay splits are train=5 (few-shot exemplars) + test=94
+        # (probe-verified 2026-08-24); 'train' alone would stage ~5 rows vs
+        # the plan's "~95". Both splits staged — same distribution, and the
+        # source is yield-bound (plan §4 item 12).
+        splits=("train", "test"),
         text_fields=("text", "question"),
         topup=True,
     ),
@@ -661,19 +730,22 @@ def token_budget(max_model_len: int, gen_headroom: int, margin: int) -> int:
 
 
 @functools.cache
-def _resolve_dataset_revision(dataset_id: str) -> str:
-    """Pin the upstream HF dataset revision ONCE per (process, dataset).
+def _resolve_dataset_revision(dataset_id: str, revision_ref: str | None = None) -> str:
+    """Pin the upstream HF dataset revision ONCE per (process, dataset, ref).
 
     The sha enters BOTH the resume fingerprint (a revision bump between crash
     and resume ⇒ fingerprint mismatch ⇒ restage — never a silent stale reuse
     and never a misaligned ``skip_scanned`` fast-forward) AND the
     ``_hf_stream`` call (a resumed stream reads the SAME bytes the checkpoint
     scanned). Fail loud — no fallback to un-pinned 'main' (g1 M2(a)).
+    ``revision_ref`` pins a NON-default branch (round 9:
+    ``refs/convert/parquet`` for legacy script datasets).
     """
     from huggingface_hub import HfApi
 
     info = hub.retry_transient(
-        lambda: HfApi().dataset_info(dataset_id), what=f"dataset_info:{dataset_id}"
+        lambda: HfApi().dataset_info(dataset_id, revision=revision_ref),
+        what=f"dataset_info:{dataset_id}@{revision_ref or 'default'}",
     )
     sha = getattr(info, "sha", None)
     if not isinstance(sha, str) or not sha:
@@ -686,6 +758,7 @@ def _stage_fingerprint(
     *,
     dataset_id: str,
     config: str | None,
+    split: str,
     revision: str,
     fallback: bool,
     keep_cap: int,
@@ -708,8 +781,9 @@ def _stage_fingerprint(
         ds=dataset_id,
         revision=revision,
         config=config,
-        split=spec.split,
+        split=split,
         data_dir=spec.data_dir,
+        data_files=spec.data_files_template,
         filters=KEEP_FILTERS_VERSION,
         token_budget=(token_filter.budget_tokens if token_filter else None),
         tokenizers=(list(token_filter.tokenizer_ids) if token_filter else None),
@@ -788,6 +862,93 @@ def _is_permanent_access_error(exc: BaseException) -> bool:
     return False
 
 
+def verify_declared_splits(
+    sources: tuple[SourceSpec, ...],
+    *,
+    split_names_fn: Callable[..., list[str]] | None = None,
+    revision_fn: Callable[[str, str | None], str] | None = None,
+) -> dict:
+    """Registry-wide (config, split)-existence preflight (round 9).
+
+    ONE metadata pass over every selected spec BEFORE any staging: resolve
+    each declared config's OFFERED splits on the pinned revision and check
+    every declared split is offered. ALL defects aggregate into ONE
+    RuntimeError — the anti-whack-a-mole property (a relaunch surfaces every
+    registry defect at once, never one crash per family; round-9 live crash:
+    jbb_behaviors inherited the registry-default 'train' against offered
+    ['harmful','benign'] and killed the build mid-staging).
+
+    Policy per error class (mirrors the round-5/6 staging semantics):
+    - PERMANENT access errors (gated/not-found) -> recorded UNVERIFIABLE and
+      left to the runtime gated-skip/fallback — never a preflight crash.
+    - TRANSIENT HF errors (408/429/5xx/status-less) -> RE-RAISE (the crash IS
+      the signal; staging is fingerprint-checkpointed, resume is cheap).
+    - ValueError/RuntimeError from split resolution (bad config name, dead
+      dataset script) -> a DEFECT record (same class as a bad split).
+    - ``data_files_template`` sources are split-fixed by construction (the
+      packaged json builder serves exactly 'train' for a str data_files);
+      any other declared split on them is a defect.
+    """
+    if split_names_fn is None:
+        from datasets import get_dataset_split_names as split_names_fn  # type: ignore[no-redef]
+    if revision_fn is None:
+        revision_fn = _resolve_dataset_revision
+    problems: list[str] = []
+    unverifiable: list[str] = []
+    n_verified = 0
+    for spec in sources:
+        if spec.data_files_template is not None:
+            if spec.splits != ("train",):
+                problems.append(
+                    f"{spec.source_tag} ({spec.dataset_id}): data_files sources serve "
+                    f"exactly the 'train' split; declared splits={list(spec.splits)}"
+                )
+            else:
+                n_verified += 1
+            continue
+        for config in spec.configs:
+            attempt = f"{spec.source_tag}:{config or 'default'} ({spec.dataset_id})"
+            kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
+            try:
+                revision = revision_fn(spec.dataset_id, spec.revision_ref)
+                offered = list(split_names_fn(spec.dataset_id, config, revision=revision, **kw))
+            except _access_error_types() as exc:
+                if _is_permanent_access_error(exc):
+                    unverifiable.append(
+                        f"{attempt}: gated/inaccessible ({type(exc).__name__}) — the "
+                        "runtime gated-skip/fallback owns it"
+                    )
+                    continue
+                raise
+            except (ValueError, RuntimeError) as exc:
+                problems.append(
+                    f"{attempt}: config/split resolution failed — "
+                    f"{type(exc).__name__}: {str(exc)[:200]}"
+                )
+                continue
+            missing = [s for s in spec.splits if s not in offered]
+            if missing:
+                problems.append(
+                    f"{attempt}: declared split(s) {missing} not offered; offered={offered}"
+                )
+            else:
+                n_verified += 1
+    if problems:
+        raise RuntimeError(
+            "[preflight] SOURCES registry declares (config, split) pairs the datasets do "
+            f"not offer — {len(problems)} defect(s), ALL enumerated below (fix the "
+            "registry; never silently remap or skip):\n  - " + "\n  - ".join(problems)
+        )
+    logger.info(
+        "[preflight] declared (config, split) verified for %d source-config attempt(s); "
+        "%d unverifiable (gated/inaccessible — runtime skip/fallback owns): %s",
+        n_verified,
+        len(unverifiable),
+        "; ".join(unverifiable) or "none",
+    )
+    return {"n_verified": n_verified, "unverifiable": unverifiable}
+
+
 def _make_keep_fn(
     spec: SourceSpec,
     config: str | None,
@@ -841,6 +1002,7 @@ def _stage_one_config(
     token_filter: TokenLengthFilter | None,
     *,
     config: str | None,
+    split: str,
     dataset_id: str,
     fallback: bool,
     keep_cap: int,
@@ -848,19 +1010,21 @@ def _stage_one_config(
     filter_language: bool,
     seen_committed: set[str],
 ) -> tuple[list[dict], dict]:
-    """Stage ONE (source, config, dataset) attempt through ``CS._stream_stage``.
+    """Stage ONE (source, config, split, dataset) attempt through
+    ``CS._stream_stage``.
 
     Resolves + pins the dataset revision (threaded into BOTH the fingerprint
     and the stream), builds the shared fingerprint, and seeds the
-    within-source dedup set from COMPLETED configs' pools plus any matching
+    within-source dedup set from COMPLETED attempts' pools plus any matching
     partial checkpoint — never from a failed prior attempt's in-memory state
     (each attempt copies ``seen_committed``; g1 m1 fallback sibling).
     """
-    revision = _resolve_dataset_revision(dataset_id)
+    revision = _resolve_dataset_revision(dataset_id, spec.revision_ref)
     fp = _stage_fingerprint(
         spec,
         dataset_id=dataset_id,
         config=config,
+        split=split,
         revision=revision,
         fallback=fallback,
         keep_cap=keep_cap,
@@ -869,32 +1033,68 @@ def _stage_one_config(
         stream_cap=stream_cap,
     )
     suffix = "__fb" if fallback else ""
-    out_path = out_dir / "staged" / f"{spec.source_tag}__{config or 'default'}{suffix}.jsonl"
+    split_part = "" if split == "train" else f"__{split}"
+    out_path = (
+        out_dir / "staged" / f"{spec.source_tag}__{config or 'default'}{split_part}{suffix}.jsonl"
+    )
     seen = set(seen_committed)
     n_seeded = _seed_seen_from_partial(out_path, fp, seen)
     if n_seeded:
         logger.info(
             "[stage] %s:%s: seeded %d dedup keys from partial checkpoint",
             spec.source_tag,
-            config or "default",
+            _attempt_key(config, split),
             n_seeded,
         )
     keep = _make_keep_fn(spec, config, dataset_id, token_filter, filter_language, seen)
 
     def row_iter(cfg: str | None = config, dsid: str = dataset_id, rev: str = revision):
+        if spec.data_files_template is not None:
+            # PIPPA-class: raw repo files via the packaged json builder,
+            # revision pinned inside the hf:// path (no `revision=` kwarg —
+            # packaged builders take none). Still routed through
+            # CS._hf_stream so smoke/test network fakes stay binding.
+            files = spec.data_files_template.format(revision=rev)
+            return CS._hf_stream("json", None, split, data_files=files)
         kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
-        return CS._hf_stream(dsid, cfg, spec.split, revision=rev, **kw)
+        return CS._hf_stream(dsid, cfg, split, revision=rev, **kw)
 
-    label = f"{spec.source_tag}:{config or 'default'}" + (":fallback" if fallback else "")
-    return CS._stream_stage(
-        out_path=out_path,
-        fingerprint=fp,
-        row_iter_factory=row_iter,
-        keep_fn=keep,
-        keep_cap=keep_cap,
-        stream_cap=stream_cap,
-        log_label=label,
-    )
+    label = f"{spec.source_tag}:{_attempt_key(config, split)}" + (":fallback" if fallback else "")
+    try:
+        return CS._stream_stage(
+            out_path=out_path,
+            fingerprint=fp,
+            row_iter_factory=row_iter,
+            keep_fn=keep,
+            keep_cap=keep_cap,
+            stream_cap=stream_cap,
+            log_label=label,
+        )
+    except ValueError as exc:
+        # Round-9 split-absent LOUD handler (the round-5 gated-skip analogue,
+        # for splits): `datasets` raises a bare "Bad split:" / "Unknown
+        # split" ValueError naming only the split — re-raise NAMING the
+        # source + dataset + config so the SOURCES registry is corrected.
+        # NEVER silently skip or remap (a skip changes corpus composition;
+        # the crash IS the signal). verify_declared_splits() catches this
+        # class registry-wide BEFORE staging; this is defense in depth.
+        msg = str(exc)
+        if "Bad split" in msg or "Unknown split" in msg:
+            raise RuntimeError(
+                f"[stage] {label}: declared split {split!r} is not offered by "
+                f"{dataset_id!r} (config={config or 'default'}) — a SOURCES "
+                f"registry defect; fix the SourceSpec (splits=...), never "
+                f"silently skip/remap. Upstream: {msg}"
+            ) from exc
+        raise
+
+
+def _attempt_key(config: str | None, split: str) -> str:
+    """Counter/label key for one (config, split) staging attempt — the bare
+    config label for the common 'train' split (backward-compatible with every
+    pre-round-9 report consumer), config@split otherwise."""
+    base = config or "default"
+    return base if split == "train" else f"{base}@{split}"
 
 
 def stage_source(
@@ -931,12 +1131,16 @@ def stage_source(
         return _stage_crossed_source(spec, out_dir, token_filter, stream_cap=stream_cap, seed=seed)
     all_rows: list[dict] = []
     counters: dict[str, dict] = {}
-    seen_committed: set[str] = set()  # dedup keys from COMPLETED configs' kept rows
+    seen_committed: set[str] = set()  # dedup keys from COMPLETED attempts' kept rows
     use_fallback = False
-    for config in spec.configs:
+    # Attempts = configs x splits (round 9: a config's data can live in
+    # non-'train' splits — jbb harmful/benign, MASK test, BeaverTails
+    # 30k_train). The keep-cap stays CUMULATIVE across ALL attempts.
+    for config, split in ((c, s) for c in spec.configs for s in spec.splits):
+        attempt_key = _attempt_key(config, split)
         remaining_cap = spec.pre_dedup_cap - len(all_rows)
         if remaining_cap <= 0:
-            counters[config or "default"] = {"skipped_keep_cap_exhausted": 1}
+            counters[attempt_key] = {"skipped_keep_cap_exhausted": 1}
             continue
         rows: list[dict] = []
         ctr: dict = {}
@@ -947,6 +1151,7 @@ def stage_source(
                     out_dir,
                     token_filter,
                     config=config,
+                    split=split,
                     dataset_id=spec.dataset_id,
                     fallback=False,
                     keep_cap=remaining_cap,
@@ -969,11 +1174,11 @@ def stage_source(
                         "[stage] %s:%s: %s gated/inaccessible, no fallback — SKIPPING "
                         "this config (later configs of the source may still stage) (%s)",
                         spec.source_tag,
-                        config or "default",
+                        attempt_key,
                         spec.dataset_id,
                         repr(exc)[:300],
                     )
-                    counters[config or "default"] = {
+                    counters[attempt_key] = {
                         "skipped_gated_no_access": 1,
                         "dataset_id": spec.dataset_id,
                         "reason": repr(exc)[:300],
@@ -982,7 +1187,7 @@ def stage_source(
                 logger.warning(
                     "[stage] %s:%s: primary access failed (%s); falling back to %s",
                     spec.source_tag,
-                    config or "default",
+                    attempt_key,
                     repr(exc)[:300],
                     spec.fallback_dataset_id,
                 )
@@ -993,6 +1198,7 @@ def stage_source(
                 out_dir,
                 token_filter,
                 config=config,
+                split=split,
                 dataset_id=spec.fallback_dataset_id,
                 fallback=True,
                 keep_cap=remaining_cap,
@@ -1001,7 +1207,7 @@ def stage_source(
                 seen_committed=seen_committed,
             )
         seen_committed.update(CS.norm_text(r["text"]) for r in rows)
-        counters[config or "default"] = ctr
+        counters[attempt_key] = ctr
         all_rows.extend(rows)
     return all_rows, counters
 
@@ -1070,15 +1276,18 @@ def _stage_crossed_source(
     """
     from explore_persona_space.artifacts import banks
 
-    if spec.cross_query_bank is None or len(spec.configs) != 1:
-        raise ValueError(f"{spec.source_tag}: crossed sources take a bank + exactly one config")
+    if spec.cross_query_bank is None or len(spec.configs) != 1 or len(spec.splits) != 1:
+        raise ValueError(
+            f"{spec.source_tag}: crossed sources take a bank + exactly one config + one split"
+        )
     config = spec.configs[0]
-    revision = _resolve_dataset_revision(spec.dataset_id)
+    split = spec.splits[0]
+    revision = _resolve_dataset_revision(spec.dataset_id, spec.revision_ref)
     fp = CS._fingerprint(
         ds=spec.dataset_id,
         revision=revision,
         config=config,
-        split=spec.split,
+        split=split,
         data_dir=spec.data_dir,
         filters=PREFIX_FILTERS_VERSION,
         keep_cap=spec.pre_dedup_cap,
@@ -1090,7 +1299,7 @@ def _stage_crossed_source(
 
     def row_iter(cfg: str | None = config, dsid: str = spec.dataset_id, rev: str = revision):
         kw = {} if spec.data_dir is None else {"data_dir": spec.data_dir}
-        return CS._hf_stream(dsid, cfg, spec.split, revision=rev, **kw)
+        return CS._hf_stream(dsid, cfg, split, revision=rev, **kw)
 
     prefix_rows, prefix_ctr = CS._stream_stage(
         out_path=out_path,
@@ -1588,6 +1797,13 @@ def run_pipeline(args: argparse.Namespace) -> dict:
     sources = _selected_sources(args.sources)
     regime_table = build_source_regime_table(sources)
 
+    # Round-9 registry-wide preflight: every declared (config, split) must be
+    # offered BEFORE any staging spend — one pass, ALL defects enumerated.
+    if args.skip_split_preflight:
+        logger.warning("[preflight] --skip-split-preflight: declared (config, split) NOT verified")
+    else:
+        verify_declared_splits(sources)
+
     token_filter = None
     if not args.no_token_filter:
         budget_tokens = token_budget(args.max_model_len, args.gen_headroom, args.token_margin)
@@ -1903,6 +2119,7 @@ def run_selfcheck() -> None:
     kw: dict = dict(
         dataset_id="d",
         config=None,
+        split="train",
         revision="r1",
         fallback=False,
         keep_cap=10,
@@ -1913,6 +2130,7 @@ def run_selfcheck() -> None:
     fp0 = _stage_fingerprint(base_spec, **kw)
     for delta in (
         {"revision": "r2"},
+        {"split": "harmful"},  # round 9: split is a first-class regime key
         {"keep_cap": 11},
         {"fallback": True},
         {"token_filter": TokenLengthFilter(("only/one",), budget_tokens=100)},
@@ -1944,9 +2162,59 @@ def run_selfcheck() -> None:
     kept, rep = dedup_contexts(d_rows)
     assert rep["n_kept"] == 2 and rep["n_confirmed_dropped"] == 1, rep
 
+    # 9. round-9 split preflight: ALL declared-(config,split) defects
+    # aggregate into ONE raise (anti-whack-a-mole); gated sources are
+    # unverifiable-not-fatal; injected fns only — no network.
+    def _fake_rev(dataset_id: str, revision_ref: str | None = None) -> str:
+        from huggingface_hub.utils import GatedRepoError
+
+        if dataset_id == "sc/gated":
+            raise GatedRepoError("gated fixture")
+        return "0" * 40
+
+    def _fake_split_names(dataset_id, config=None, *, revision=None, **kw):
+        if config == "badcfg":
+            raise ValueError(f"BuilderConfig 'badcfg' not found. Available: ['default']")
+        return ["harmful", "benign"] if dataset_id == "sc/jbb-like" else ["train"]
+
+    def _sc_spec(tag, ds, **kws):
+        return SourceSpec(
+            source_tag=tag,
+            dataset_id=ds,
+            regime_class=REGIME_WEIRD,
+            realism_tier=2,
+            pre_dedup_cap=10,
+            text_fields=("text",),
+            **kws,
+        )
+
+    ok = _sc_spec("sc_ok", "sc/plain")
+    bad_split = _sc_spec("sc_badsplit", "sc/jbb-like")  # default 'train' vs harmful/benign
+    bad_cfg = _sc_spec("sc_badcfg", "sc/plain", configs=("badcfg",))
+    gated = _sc_spec("sc_gated", "sc/gated")
+    try:
+        verify_declared_splits(
+            (ok, bad_split, bad_cfg, gated),
+            split_names_fn=_fake_split_names,
+            revision_fn=_fake_rev,
+        )
+        raise AssertionError("expected aggregated preflight raise")
+    except RuntimeError as exc:
+        msg = str(exc)
+        assert "sc_badsplit" in msg and "sc_badcfg" in msg, msg  # BOTH enumerated
+        assert "sc_gated" not in msg and "sc_ok" not in msg, msg
+    res = verify_declared_splits(
+        (ok, gated), split_names_fn=_fake_split_names, revision_fn=_fake_rev
+    )
+    assert res["n_verified"] == 1 and len(res["unverifiable"]) == 1, res
+    fixed = _sc_spec("sc_fixed", "sc/jbb-like", splits=("harmful", "benign"))
+    res2 = verify_declared_splits((fixed,), split_names_fn=_fake_split_names, revision_fn=_fake_rev)
+    assert res2["n_verified"] == 1, res2
+
     print(
         "issue2502_corpus: selfcheck OK (allocation, topup, dual-tokenizer, "
-        "moderation-flag, crossing, fingerprint-keys, split, dedup)"
+        "moderation-flag, crossing, fingerprint-keys, split, dedup, "
+        "split-preflight)"
     )
 
 
@@ -2013,6 +2281,13 @@ def build_argparser() -> argparse.ArgumentParser:
         "--upload-prefix",
         default="issue2502_ctxmap_xgen/context_corpus",
         help="HF path_in_repo prefix for the corpus + reports.",
+    )
+    p.add_argument(
+        "--skip-split-preflight",
+        action="store_true",
+        help="Skip the registry-wide declared-(config,split) existence preflight "
+        "(offline fixture runs only; a falsely-failing preflight can be bypassed "
+        "after manual verification — gotchas.md preflight-gate escape hatch).",
     )
     p.add_argument(
         "--import-check",
