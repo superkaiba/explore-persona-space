@@ -61,6 +61,8 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # credentials + thread caps BEFORE any torch/vllm import
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 logger = logging.getLogger("issue1739_sycoood_regen")
 
 BEHAVIOR = "sycophancy"
@@ -84,10 +86,8 @@ def _read_jsonl(path: Path) -> list[dict]:
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2))
 
 
 def _rollout_files(tree: Path) -> list[Path]:

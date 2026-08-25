@@ -32,6 +32,7 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.experiments.issue_1739.constants import (
     K_ROLLOUTS,
     MODEL_NAME,
@@ -163,10 +164,8 @@ def _gen_fingerprint(**kwargs: object) -> str:
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1))
 
 
 def _git_commit() -> str:
