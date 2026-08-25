@@ -75,6 +75,12 @@ class TinyTok:
         assert add_special_tokens is False
         return {"input_ids": list(range(len(text.split())))}
 
+    def encode(self, text: str, add_special_tokens: bool = True) -> list[int]:
+        """Pinned think-delimiter encodings (arm-1 P0 pins) so the REAL
+        assert_think_pins runs against this boundary fake unmodified."""
+        assert add_special_tokens is False
+        return {G.THINK_OPEN: [13708, 766, 29], G.THINK_CLOSE: [522, 26865, 29]}[text]
+
 
 def _gsm_row(i: int, k_bin: str) -> dict:
     """Staged-bundle-shaped gsm8k_train row (row-0 keys per epm:progress v39:
@@ -265,3 +271,75 @@ class TestStrippedRowsFailLoud:
         }
         with pytest.raises(KeyError, match=r"ch_type.*compose_prompts"):
             G.reliability_row_ids(stripped, 4)
+
+
+class TestRunGenerationEmitsDrawRecord:
+    def test_rel_draw_record_persisted_and_signal_printed(self, tmp_path, monkeypatch, capsys):
+        """Executes the REAL run_generation body through the r8 fix-engaged
+        block — compose -> reliability_row_ids (the formerly crashing call)
+        -> _reliability_draw.json persist -> the ``[rel-draw]`` signal line ->
+        rel_row_ids landing in the worker contract — faking ONLY the external
+        boundaries (HF revision resolution, generation-config stop ids, the
+        network tokenizer, the GPU worker fan-out), each with a def mirroring
+        the real signature (code-style.md: never a bare Mock). The probe stops
+        AT spawn_workers; everything before it is the production body."""
+        import argparse
+        import json
+
+        import transformers
+
+        side = POST_A1
+        out_root = tmp_path / "out"
+
+        def fake_resolve_revision(model: str, out_root: Path) -> str:
+            return "test-revision"
+
+        def fake_resolve_stop_ids(model: str, revision: str | None) -> list[int]:
+            return [151645]
+
+        def fake_from_pretrained(model, *, revision=None, **kwargs):
+            return TinyTok()
+
+        class _StopAtWorkers(RuntimeError):
+            pass
+
+        def fake_spawn_workers(
+            script_args: list, work_files: list, out_root_: Path, tag: str
+        ) -> None:
+            raise _StopAtWorkers(tag)
+
+        monkeypatch.setattr(G, "resolve_revision", fake_resolve_revision)
+        monkeypatch.setattr(G, "resolve_stop_ids", fake_resolve_stop_ids)
+        monkeypatch.setattr(G, "spawn_workers", fake_spawn_workers)
+        monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", fake_from_pretrained)
+
+        args = argparse.Namespace(
+            smoke=True, decode_fallback=False, prefill_fallback=False, phase="p1_smoke"
+        )
+        rows = {
+            "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(8)],
+            "contexthub": [_ch_row(i, *CH_CELLS[i % 8]) for i in range(8)],
+        }
+        with pytest.raises(_StopAtWorkers):
+            G.run_generation(args, G.ARMS[1], side, rows, out_root, rel_total=8, num_workers=1)
+
+        # The fix-engaged signal line (crash-fix-rounds.md element 1), printed
+        # by the block immediately downstream of the formerly-crashing call.
+        printed = capsys.readouterr().out
+        assert f"[rel-draw] {side.stage}: picked 8/8" in printed
+
+        # The durable per-stratum draw record (plan §4.2 quota accounting).
+        rec_p = out_root / "rollouts" / G.stage_dirname(side.stage, True) / "_reliability_draw.json"
+        rec = json.loads(rec_p.read_text())
+        assert rec["n_picked"] == 8
+        assert rec["shortfall"] == 0
+        assert rec["side"] == "post"
+        assert rec["corpora_drawn_over"] == ["contexthub", "gsm8k_train"]
+        assert rec["repro"]["task"] == 2546
+
+        # The drawn ids reach the worker contract (rel_row_ids in the work file).
+        wf = json.loads((out_root / "work" / "p1_smoke_post" / "slot0.json").read_text())
+        assert len(wf["rel_row_ids"]) == 8
+        assert wf["rel_draws"] == G.REL_DRAWS
+        composed_ids = {r["row_id"] for r in wf["rows"]}
+        assert set(wf["rel_row_ids"]) <= composed_ids
