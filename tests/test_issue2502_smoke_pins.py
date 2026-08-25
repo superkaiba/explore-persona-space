@@ -113,6 +113,24 @@ offers ['harmful','benign'] only):
   (p) preflight wiring: run_pipeline invokes verify_declared_splits before
       any staging, and --skip-split-preflight (offline-smoke escape) skips
       it.
+
+Round-11 pins (proactive secret scrub; the live P0 upload refusal —
+secret_scrub.assert_upload_clean found real-secret-grade strings in the
+assembled corpus.jsonl and refused the upload):
+
+  (q1) scrub_corpus_secrets (the builder's scrub step, reusing
+      secret_scrub.scrub_file — shared detection with the upload gate)
+      redacts a planted synthetic secret-grade string to a SAME-LENGTH
+      placeholder (file byte-length unchanged, JSONL still parses, sibling
+      fields intact), records count + per-pattern counts, and preserves
+      dummy-filtered benign placeholders (X-run / YOUR_API_KEY) unredacted;
+  (q2) the BUILD path (run_pipeline, no --probe) scrubs the PERSISTED
+      corpus.jsonl before the upload step and records ``secrets_scrubbed``
+      durably in dedup_report.json; the scrubbed row's stored context_sha is
+      NOT recomputed (it documents the pre-scrub source-text identity that
+      downstream fingerprints read), while clean rows' shas still match
+      their text. Synthetic planted strings only — never a real secret,
+      never real corpus text.
 """
 
 from __future__ import annotations
@@ -967,3 +985,124 @@ def test_p_preflight_wired_before_staging_and_skip_flag(monkeypatch, tmp_path):
         CP.run_pipeline(CP.build_argparser().parse_args(base))
     with pytest.raises(_StagingReached):
         CP.run_pipeline(CP.build_argparser().parse_args([*base, "--skip-split-preflight"]))
+
+
+# ---------------------------------------------------------------------------
+# Round-11 pins (q1, q2): proactive secret scrub of the assembled corpus.
+# All planted strings are SYNTHETIC (fake-but-secret-SHAPED); never a real
+# secret, never real corpus text.
+# ---------------------------------------------------------------------------
+
+# Fake hf-token-SHAPED string (matches secret_scrub's `hf-token` pattern,
+# survives its DUMMY_RX placeholder filter). Built by concatenation so the
+# test file itself never contains a contiguous secret-shaped literal.
+_PLANTED = "hf" + "_" + "Ab3dKq9RtY7uPw2sXeNvB5mZcJ6hLgF4"
+# Secret-SHAPED but dummy-filtered (X-run) — must survive the scrub verbatim.
+_BENIGN_SHAPED = "hf" + "_" + "X" * 34
+_BENIGN_DOC = "YOUR_API_KEY"
+
+
+def _corpus_row(i: int, text: str) -> dict:
+    """Minimal corpus-schema row (the persisted key set of step 6)."""
+    sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return {
+        "context_id": sha[:16],
+        "context_sha": sha,
+        "text": text,
+        "source_tag": f"src{i}",
+        "dataset_id": f"org/ds{i}",
+        "config": "default",
+        "regime_class": "ordinary",
+        "realism_tier": 1,
+        "split": "train",
+        "lodo_group": f"src{i}",
+    }
+
+
+def test_r11_scrub_redacts_secret_grade_and_preserves_benign(tmp_path):
+    """Pin (q1): same-length redaction + count recording + dummy-filter
+    preservation, through the builder's own scrub step (real bodies, real
+    file — no mocks)."""
+    rows = [
+        _corpus_row(0, f"user pasted a credential {_PLANTED} into the chat"),
+        _corpus_row(1, f"docs say set {_BENIGN_DOC} or use {_BENIGN_SHAPED} as a stub"),
+        _corpus_row(2, "an ordinary clean context with no flagged content"),
+    ]
+    path = tmp_path / "corpus.jsonl"
+    CP.CS._write_jsonl_atomic(path, rows)
+    before = path.read_bytes()
+    assert _PLANTED.encode() in before  # fixture sanity
+
+    stats = CP.scrub_corpus_secrets(path)
+
+    after = path.read_bytes()
+    assert stats["n"] == 1
+    assert stats["by_pattern"] == {"hf-token": 1}
+    assert _PLANTED.encode() not in after  # secret-grade string gone
+    assert ("X" * len(_PLANTED)).encode() in after  # same-length placeholder
+    assert len(after) == len(before)  # byte-length preserved
+    # benign placeholders survive verbatim (DUMMY_RX filter not defeated)
+    assert _BENIGN_SHAPED.encode() in after
+    assert _BENIGN_DOC.encode() in after
+    # still-valid JSONL; sibling fields of the scrubbed row intact
+    out = [json.loads(ln) for ln in after.decode("utf-8").split("\n") if ln.strip()]
+    assert len(out) == 3
+    scrubbed = [r for r in out if "X" * len(_PLANTED) in r["text"]]
+    assert len(scrubbed) == 1
+    assert scrubbed[0]["context_sha"] == rows[0]["context_sha"]
+    assert scrubbed[0]["source_tag"] == "src0"
+    # re-running on the now-clean file is a no-op (rebuild reproducibility)
+    assert CP.scrub_corpus_secrets(path) == {"n": 0, "by_pattern": {}}
+    assert path.read_bytes() == after
+
+
+def test_r11_build_path_scrubs_persisted_corpus_and_records_count(monkeypatch, tmp_path):
+    """Pin (q2): the BUILD path (run_pipeline, no --probe) persists a CLEAN
+    corpus.jsonl (scrub wired between the corpus write and the upload step)
+    and records the count durably in dedup_report.json. Fakes ONLY the HF
+    network boundary (round-5 harness); the real chain — staging, dedup,
+    subsample, splits, corpus write, scrub, report — executes unmodified."""
+    weird_rows = _raw_rows("weird_ok", 6)
+    ord_rows = _raw_rows("ord_ok", 6)
+    ord_rows[0]["text"] += f" pasted credential {_PLANTED} mid-conversation"
+    specs = (
+        _spec("weird_ok", "org/open-weird", "weird"),
+        _spec("ord_ok", "org/open-ord", "ordinary"),
+    )
+    _install_hf_seams(
+        monkeypatch,
+        gated=set(),
+        raw_by_dataset={"org/open-weird": weird_rows, "org/open-ord": ord_rows},
+    )
+    monkeypatch.setattr(CP, "SOURCES", specs)
+    args = CP.build_argparser().parse_args(
+        [
+            "--no-token-filter",
+            "--skip-split-preflight",
+            "--skip-schema-gate",
+            "--out-dir",
+            str(tmp_path),
+            "--budget",
+            "12",
+        ]
+    )
+    report = CP.run_pipeline(args)
+
+    data = (tmp_path / "corpus.jsonl").read_bytes()
+    assert _PLANTED.encode() not in data  # persisted corpus is clean
+    assert ("X" * len(_PLANTED)).encode() in data  # same-length placeholder
+    assert report["secrets_scrubbed"] == 1
+    assert report["secrets_scrubbed_by_pattern"] == {"hf-token": 1}
+    dedup = json.loads((tmp_path / "dedup_report.json").read_text())
+    assert dedup["secrets_scrubbed"] == 1  # durable in the uploaded report
+    rows = [json.loads(ln) for ln in data.decode("utf-8").split("\n") if ln.strip()]
+    scrubbed = [r for r in rows if "X" * len(_PLANTED) in r["text"]]
+    assert len(scrubbed) == 1
+    # stored context_sha is NOT recomputed post-scrub: it documents the
+    # pre-scrub source-text identity every downstream fingerprint reads
+    # (gen_capture.corpus_content_sha16 fingerprints the STORED pairs) …
+    assert scrubbed[0]["context_sha"] != CP._context_sha(scrubbed[0]["text"])
+    # … while every clean row's sha still matches its text.
+    for r in rows:
+        if r is not scrubbed[0]:
+            assert r["context_sha"] == CP._context_sha(r["text"])

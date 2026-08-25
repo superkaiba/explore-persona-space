@@ -88,7 +88,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from explore_persona_space.experiments.issue_1739 import corpus_staging as CS
-from explore_persona_space.orchestrate import hub
+from explore_persona_space.orchestrate import hub, secret_scrub
 from explore_persona_space.orchestrate.env import load_dotenv
 
 logger = logging.getLogger("issue2502.corpus")
@@ -2356,6 +2356,37 @@ def _log_roster(report: dict) -> None:
     )
 
 
+def scrub_corpus_secrets(corpus_path: Path) -> dict:
+    """Proactive secret scrub of the assembled corpus (r11; the r10 upload
+    refusal: ``assert_upload_clean`` found real-secret-grade strings mirrored
+    verbatim from real user text — wildchat/lmsys/jailbreak prompts).
+
+    Reuses ``secret_scrub.scrub_file`` — the exact detection set behind the
+    ``hub._upload`` gate — so after this pass the gate's re-scan passes by
+    construction (no gate-vs-scrub divergence; the gate stays the fail-loud
+    backstop, never bypassed). In-place same-length ``X`` placeholders keep
+    the JSONL structurally valid and every byte offset stable. Only flagged
+    rows' ``text`` BYTES change: the stored ``context_sha`` fields (the row
+    identity every downstream consumer fingerprints —
+    ``gen_capture.corpus_content_sha16`` reads the STORED pairs, never a
+    re-hash of text) are untouched and document the PRE-scrub source text; a
+    rebuild re-derives identical rows from the staged pools and scrubs them
+    to identical clean bytes. Count-only disclosure: the flagged strings are
+    NEVER logged or persisted. Returns ``{"n": int, "by_pattern": dict}``
+    (pattern NAMES only, e.g. ``hf-token`` — detector labels, not content).
+    """
+    findings = secret_scrub.scrub_file(corpus_path)
+    by_pattern: dict[str, int] = defaultdict(int)
+    for f in findings:
+        by_pattern[f.pattern] += 1
+    logger.info(
+        "[corpus] secret-scrub: redacted %d real-secret-grade string(s) "
+        "(same-length placeholders) before upload",
+        len(findings),
+    )
+    return {"n": len(findings), "by_pattern": dict(by_pattern)}
+
+
 def run_pipeline(args: argparse.Namespace) -> dict:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -2569,6 +2600,13 @@ def run_pipeline(args: argparse.Namespace) -> dict:
             for r in final_rows
         ],
     )
+    # r11: proactive secret scrub of the PERSISTED corpus, unconditionally at
+    # the assembly/write point — before any upload — so a fresh build and a
+    # resume-from-staged-pools rebuild both persist a clean file. No
+    # file-byte hash/manifest of corpus.jsonl exists to recompute post-scrub
+    # (downstream fingerprints read the stored context_sha fields, which the
+    # scrub never touches).
+    scrub_stats = scrub_corpus_secrets(corpus_path)
     _write_json(out_dir / "source_regime_table.json", regime_table)
     report = build_report(
         pre_dedup_per_source=dict(pre_dedup_per_source),
@@ -2585,6 +2623,10 @@ def run_pipeline(args: argparse.Namespace) -> dict:
     _log_roster(report)
     report["mode"] = "build"
     report["corpus_path"] = str(corpus_path)
+    # Durable count-only disclosure (surfaces in the clean-result as a scope
+    # caveat); pattern names are detector labels, never flagged content.
+    report["secrets_scrubbed"] = scrub_stats["n"]
+    report["secrets_scrubbed_by_pattern"] = scrub_stats["by_pattern"]
     _write_json(out_dir / "dedup_report.json", report)
     logger.info("[corpus] BUILD complete: %d rows -> %s", len(final_rows), corpus_path)
 
