@@ -80,6 +80,7 @@
 ## Codex code-review overreach (PASS-leaning calibration)
 
 - [Codex FAILs pre-existing resume metadata clobber](feedback_codex_fails_preexisting_resume_metadata_clobber.md) — zero round-introduced
+- [Round-added duties on verbatim-adoption commits](feedback_codex_binds_round_added_duties_on_verbatim_adoption_commits.md) — `A`-status ≠ round-authored; live-list count premises (#2584)
 - [Codex validation-after-engine-init ordering blocker](feedback_codex_validation_after_engine_init_ordering.md) — gate topology decides
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — check reachability yourself
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — execution-test it
@@ -112,6 +113,7 @@
 
 ## Clean-result-critic + interp-critic calibration
 
+- [Lens 10 capsule cap not binding; Lens 11 same-H3 + Lens 2 generator-naming ARE](feedback_lens10_capsule_cap_not_binding_lens11_same_h3_binding.md) — #2564 crc r2; SPEC wins both directions
 - [Superlative rank claims + closure location requirements](feedback_superlative_rank_claims_and_closure_location_requirements.md) — compute both headroom definitions; uphold disposition-claims-not-landed, reject invented location demands (#2564 r2)
 - [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidates
 - [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses
