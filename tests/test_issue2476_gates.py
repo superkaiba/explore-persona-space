@@ -79,6 +79,7 @@ def _args(tmp_path: Path, **over) -> SimpleNamespace:
         fit_n=0,
         import_check=False,
         sae_dict=0,
+        sae_k=0,
         g2a_probe_rows=0,
         resume_across_code_sha=False,
     )
@@ -558,8 +559,17 @@ def test_g1_pass_within_tolerance(tmp_path, monkeypatch, quiet_sentinels):
 # ── G4: production FVE-floor miss -> rc=25, persist-before-halt, no upload ──────
 
 
-def test_g4_production_fail_exits_rc25_upload_unreached(tmp_path, monkeypatch, quiet_sentinels):
-    args = _args(tmp_path, sae_dict=64, sae_steps=1, skip_upload=False)
+@pytest.mark.parametrize(
+    ("sae_k", "leaf"),
+    [
+        (0, "sae_c"),  # production default (k=100)
+        (200, "sae_c_k200"),  # r8 U5: the k200 round's failure semantics AT sae_k=200
+    ],
+)
+def test_g4_production_fail_exits_rc25_upload_unreached(
+    tmp_path, monkeypatch, quiet_sentinels, sae_k, leaf
+):
+    args = _args(tmp_path, sae_dict=64, sae_steps=1, skip_upload=False, sae_k=sae_k)
     a_dir = D._assemble_dir(args)
     a_dir.mkdir(parents=True, exist_ok=True)
     (a_dir / "split_meta.json").write_text("{}")
@@ -595,12 +605,15 @@ def test_g4_production_fail_exits_rc25_upload_unreached(tmp_path, monkeypatch, q
         D.phase_sae_train(args)
     assert ei.value.code == D.RC_G4 == 25
     out = D._sae_out_dir(args)
+    assert out.name == leaf  # r8 U5: record-first artifacts land in the k-aware leaf
     # persist-before-halt: weights + cfg + log + gates all exist
     for name in ("sae_weights.safetensors", "cfg.json", "train_log.json", "gates_p4.json"):
         assert (out / name).exists(), f"{name} must persist BEFORE the G4 halt"
     gates = json.loads((out / "gates_p4.json").read_text())["g4"]
     assert gates["verdict"] == "FAIL"
     assert gates["val_var_fve"] == pytest.approx(0.10)
+    if sae_k == 200:
+        assert int(json.loads((out / "cfg.json").read_text())["k"]) == 200
     # the halt sentinel carries the designed rc; upload never ran (raiser above)
     assert quiet_sentinels.call_args.kwargs.get("extra", {}).get("rc") == 25
 
@@ -1256,7 +1269,10 @@ def test_p1_stream_interrupted_two_chunk_restart(tmp_path, monkeypatch):
     calls: list[str] = []
     state = {"boom_on": names[1]}
 
-    def fake_dl(repo, path_in_repo, cache):
+    def fake_dl(repo, path_in_repo, cache, revision=None):
+        # signature mirrors N1M._download_chunk_with_retry (B1: optional
+        # revision kwarg); the production stream threads the lineage pin
+        assert revision == D.DATA_REPO_REVISION
         name = path_in_repo.rsplit("/", 1)[1]
         calls.append(name)
         if name == state["boom_on"]:
