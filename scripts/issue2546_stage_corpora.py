@@ -63,6 +63,7 @@ from datasets import get_dataset_config_names, load_dataset
 from huggingface_hub import HfApi, hf_hub_download
 from transformers import AutoConfig, AutoTokenizer
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.experiments.issue_1739.corpus_staging import minhash_signatures
 from explore_persona_space.orchestrate import hub
 
@@ -1268,9 +1269,8 @@ def main(argv: list[str] | None = None) -> int:
         "files": file_records,
     }
     man_path = out_dir / "corpora_manifest.json"
-    tmp = man_path.with_name(man_path.name + ".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    os.replace(tmp, man_path)  # atomic: no half-written manifest on crash
+    with atomic_replace(man_path) as tmp:  # atomic: no half-written manifest on crash
+        tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
     _log(f"manifest written: {man_path}")
 
     if args.smoke or args.skip_upload:
