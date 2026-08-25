@@ -18372,6 +18372,68 @@ def test_footer_code_sha_blockquote_exempt():
     assert "github-pinned" in res.detail, res.render()
 
 
+def test_footer_fenced_hf_pin_does_not_rescue_code_sha():
+    """Skip (ii) pool exclusion, fence arm (#2340 r2,
+    `excluded-footer-hf-pin-rescue`): a pinned huggingface.co URL inside
+    a FENCED block (illustrative skeleton — `_footer_units` drops it)
+    must NOT rescue a live unpinned code sha whose hex prefix-matches
+    the fenced revision — the live sha still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n```\nhttps://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+        "tree/0ca8b47888ffffffffffffffffffffffffffffff/issue999_demo\n```\n"
+        "\n- Fit code commit @ `0ca8b47888` — driver rerun for the record.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0ca8b47888" in res.detail, res.render()
+
+
+def test_footer_blockquoted_hf_pin_does_not_rescue_code_sha():
+    """Skip (ii) pool exclusion, blockquote arm (#2340 r2,
+    `excluded-footer-hf-pin-rescue`): a pinned huggingface.co URL on a
+    `> `-quoted line (the #959 verbatim-prompt exemption drops it) must
+    NOT rescue a live unpinned code sha — the live sha still WARNs."""
+    body = _V4_GOOD_BODY + (
+        "\n> Verbatim prompt: see https://huggingface.co/datasets/superkaiba1/"
+        "explore-persona-space-data/tree/0ca8b47888ffffffffffffffffffffffffffffff/"
+        "issue999_demo for the bank.\n"
+        "\n- Fit code commit @ `0ca8b47888` — driver rerun for the record.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0ca8b47888" in res.detail, res.render()
+
+
+def test_footer_hf_token_intervening_code_prose_warns():
+    """Skip (i) adjacency pin (#2340 r2, `class-a-hf-skip-overreach` —
+    the reconciler's mixed-unit probe): an HF-identity backtick token
+    EARLIER in the unit must not govern a later `@ <hex>` across
+    intervening code-provenance prose — the code sha still WARNs (and
+    the adjacent true-positive shapes above stay skipped)."""
+    body = _V4_GOOD_BODY + (
+        "\n- Reused `issue2330_matched/raw_completions/` bucket unchanged; "
+        "analysis code commit @ `deadbeef99` — rerun of the fit driver.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "deadbeef99" in res.detail, res.render()
+
+
+def test_footer_code_sha_casefold_dedup():
+    """Class-A dedup casefold (#2340 r2, `class-a-casefold-dedup`): the
+    same hex spelled in two cases counts ONCE (hex is case-insensitive);
+    the offender list shows the first-seen spelling only."""
+    body = _V4_GOOD_BODY + (
+        "\n- Round code commit @ `DEADBEE12` re-tagged later as commit "
+        "@ `deadbee12` for the record.\n"
+    )
+    res = verify_task_body.check_footer_code_artifacts_github_pinned(body)
+    assert res.passed and res.is_warn, res.render()
+    assert res.detail.startswith("1 footer"), res.render()
+    assert "DEADBEE12" in res.detail, res.render()
+    assert "@ deadbee12" not in res.detail, res.render()
+
+
 # ─── Check 15 clause-scoping (#893, incident #841) ─────────────────────────
 #
 # `check_repro_committed_claims_exist` must never pair a "committed" token
