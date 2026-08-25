@@ -1,14 +1,30 @@
 {
-  "commit": "26d1f31a+dirty",
-  "render_id": "3d6f4cb3f37a43fc",
-  "git_commit": "26d1f31a",
+  "commit": "ee7f55ab+dirty",
+  "render_id": "4c7e37a51e6d4cdf",
+  "git_commit": "ee7f55ab",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2378_analyzer_figs.py"
+    "figures/issue_2378/hero_ladder_recovery.meta.json",
+    "figures/issue_2378/hero_ladder_recovery.pdf",
+    "figures/issue_2378/hero_ladder_recovery.png",
+    "figures/issue_2378/ladder_r2_points.meta.json",
+    "figures/issue_2378/ladder_r2_points.pdf",
+    "figures/issue_2378/ladder_r2_points.png",
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "figures/issue_2378/pooled_tiers.meta.json",
+    "figures/issue_2378/pooled_tiers.pdf",
+    "figures/issue_2378/pooled_tiers.png",
+    "figures/issue_2378/user_turn_panel.meta.json",
+    "figures/issue_2378/user_turn_panel.pdf",
+    "figures/issue_2378/user_turn_panel.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
-  "created": "2026-08-24T23:16:02Z",
+  "created": "2026-08-25T06:33:31Z",
   "figsize": [
     8.0,
     4.2
@@ -16,31 +32,31 @@
   "points": [
     {
       "x": -0.12,
-      "held-out R\u00b2 (per fold)": 0.5743191147324684,
+      "held-out R\u00b2 (per fold)": 0.5741723217166309,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": -0.12,
-      "held-out R\u00b2 (per fold)": 0.5805668442311842,
+      "held-out R\u00b2 (per fold)": 0.580425192692817,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": -0.12,
-      "held-out R\u00b2 (per fold)": 0.5835317419298417,
+      "held-out R\u00b2 (per fold)": 0.5838604317465297,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": -0.12,
-      "held-out R\u00b2 (per fold)": 0.5846696532709271,
+      "held-out R\u00b2 (per fold)": 0.5847061268358087,
       "_kind": "line",
       "_group": 0
     },
     {
       "x": -0.12,
-      "held-out R\u00b2 (per fold)": 0.5758962419050577,
+      "held-out R\u00b2 (per fold)": 0.5758643409815634,
       "_kind": "line",
       "_group": 0
     },
@@ -76,31 +92,31 @@
     },
     {
       "x": 0.88,
-      "held-out R\u00b2 (per fold)": 0.2816232551571345,
+      "held-out R\u00b2 (per fold)": 0.28173148944509896,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.88,
-      "held-out R\u00b2 (per fold)": 0.29095395354061526,
+      "held-out R\u00b2 (per fold)": 0.29080224082161443,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.88,
-      "held-out R\u00b2 (per fold)": 0.30404665091358374,
+      "held-out R\u00b2 (per fold)": 0.3041454236709783,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.88,
-      "held-out R\u00b2 (per fold)": 0.2959188161297419,
+      "held-out R\u00b2 (per fold)": 0.29579184368188727,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.88,
-      "held-out R\u00b2 (per fold)": 0.2881847905202862,
+      "held-out R\u00b2 (per fold)": 0.2885191286878873,
       "_kind": "line",
       "_group": 2
     },
@@ -136,331 +152,331 @@
     },
     {
       "x": 1.88,
-      "held-out R\u00b2 (per fold)": 0.2869267658813246,
+      "held-out R\u00b2 (per fold)": 0.2794949238612847,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.88,
-      "held-out R\u00b2 (per fold)": 0.3340822892518528,
+      "held-out R\u00b2 (per fold)": 0.27018433623196414,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.88,
-      "held-out R\u00b2 (per fold)": 0.27394153418020994,
+      "held-out R\u00b2 (per fold)": 0.2649652964970327,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.88,
-      "held-out R\u00b2 (per fold)": 0.3117971431628519,
+      "held-out R\u00b2 (per fold)": 0.2789071669691495,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 1.88,
-      "held-out R\u00b2 (per fold)": 0.29398526135392045,
+      "held-out R\u00b2 (per fold)": 0.30201945122378104,
       "_kind": "line",
       "_group": 4
     },
     {
       "x": 2.12,
-      "held-out R\u00b2 (per fold)": 0.2525004906012773,
+      "held-out R\u00b2 (per fold)": 0.2532584122805188,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.12,
-      "held-out R\u00b2 (per fold)": 0.29990012929984444,
+      "held-out R\u00b2 (per fold)": 0.24904190817033212,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.12,
-      "held-out R\u00b2 (per fold)": 0.22356783437638084,
+      "held-out R\u00b2 (per fold)": 0.2394297156201013,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.12,
-      "held-out R\u00b2 (per fold)": 0.26659844200454064,
+      "held-out R\u00b2 (per fold)": 0.24766768606204348,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.12,
-      "held-out R\u00b2 (per fold)": 0.2592608016272847,
+      "held-out R\u00b2 (per fold)": 0.27714033119622694,
       "_kind": "line",
       "_group": 5
     },
     {
       "x": 2.88,
-      "held-out R\u00b2 (per fold)": 0.3266959959291904,
+      "held-out R\u00b2 (per fold)": 0.2803673453152733,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.88,
-      "held-out R\u00b2 (per fold)": 0.2929370954781032,
+      "held-out R\u00b2 (per fold)": 0.3001378767290701,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.88,
-      "held-out R\u00b2 (per fold)": 0.3163169864151356,
+      "held-out R\u00b2 (per fold)": 0.28355230320746305,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.88,
-      "held-out R\u00b2 (per fold)": 0.33188185065875964,
+      "held-out R\u00b2 (per fold)": 0.28206417393491967,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.88,
-      "held-out R\u00b2 (per fold)": 0.2848365378465215,
+      "held-out R\u00b2 (per fold)": 0.31553278350361624,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 3.12,
-      "held-out R\u00b2 (per fold)": 0.28988844595245,
+      "held-out R\u00b2 (per fold)": 0.25779236092806934,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.12,
-      "held-out R\u00b2 (per fold)": 0.2597983381712001,
+      "held-out R\u00b2 (per fold)": 0.2756776546106785,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.12,
-      "held-out R\u00b2 (per fold)": 0.2732728631974626,
+      "held-out R\u00b2 (per fold)": 0.26122342892392614,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.12,
-      "held-out R\u00b2 (per fold)": 0.2861025040467131,
+      "held-out R\u00b2 (per fold)": 0.25038576561348,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.12,
-      "held-out R\u00b2 (per fold)": 0.24558893916927638,
+      "held-out R\u00b2 (per fold)": 0.2948499493320188,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.88,
-      "held-out R\u00b2 (per fold)": 0.3014223833544891,
+      "held-out R\u00b2 (per fold)": 0.28527457976442483,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.88,
-      "held-out R\u00b2 (per fold)": 0.3006335034201959,
+      "held-out R\u00b2 (per fold)": 0.2922281509189164,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.88,
-      "held-out R\u00b2 (per fold)": 0.27862298814524833,
+      "held-out R\u00b2 (per fold)": 0.26045532303769037,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.88,
-      "held-out R\u00b2 (per fold)": 0.2683241480894466,
+      "held-out R\u00b2 (per fold)": 0.24998247965861609,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 3.88,
-      "held-out R\u00b2 (per fold)": 0.27752812362457846,
+      "held-out R\u00b2 (per fold)": 0.2763494283394058,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 4.12,
-      "held-out R\u00b2 (per fold)": 0.26456420099485645,
+      "held-out R\u00b2 (per fold)": 0.25906133609775694,
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 4.12,
-      "held-out R\u00b2 (per fold)": 0.23915186716311554,
+      "held-out R\u00b2 (per fold)": 0.26128171965210356,
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 4.12,
-      "held-out R\u00b2 (per fold)": 0.2471134897707178,
+      "held-out R\u00b2 (per fold)": 0.23047810394820123,
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 4.12,
-      "held-out R\u00b2 (per fold)": 0.21806646151493925,
+      "held-out R\u00b2 (per fold)": 0.22174348144836076,
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 4.12,
-      "held-out R\u00b2 (per fold)": 0.24090237229326195,
+      "held-out R\u00b2 (per fold)": 0.25025839194942756,
       "_kind": "line",
       "_group": 9
     },
     {
       "x": 4.88,
-      "held-out R\u00b2 (per fold)": 0.26318614700063625,
+      "held-out R\u00b2 (per fold)": 0.24849209242381975,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 4.88,
-      "held-out R\u00b2 (per fold)": 0.26170365039956944,
+      "held-out R\u00b2 (per fold)": 0.25120670071540774,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 4.88,
-      "held-out R\u00b2 (per fold)": 0.2729538631483637,
+      "held-out R\u00b2 (per fold)": 0.24834036765267598,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 4.88,
-      "held-out R\u00b2 (per fold)": 0.2592378019015089,
+      "held-out R\u00b2 (per fold)": 0.241884157649929,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 4.88,
-      "held-out R\u00b2 (per fold)": 0.27170851984371014,
+      "held-out R\u00b2 (per fold)": 0.26851063653069496,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 5.12,
-      "held-out R\u00b2 (per fold)": 0.22294185798991506,
+      "held-out R\u00b2 (per fold)": 0.22019891812471448,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 5.12,
-      "held-out R\u00b2 (per fold)": 0.23481293735922826,
+      "held-out R\u00b2 (per fold)": 0.2238011571692322,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 5.12,
-      "held-out R\u00b2 (per fold)": 0.2308896605265096,
+      "held-out R\u00b2 (per fold)": 0.23635386454135787,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 5.12,
-      "held-out R\u00b2 (per fold)": 0.22557547152176316,
+      "held-out R\u00b2 (per fold)": 0.2183378242767987,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 5.12,
-      "held-out R\u00b2 (per fold)": 0.24361478814848292,
+      "held-out R\u00b2 (per fold)": 0.24721733072890728,
       "_kind": "line",
       "_group": 11
     },
     {
       "x": 5.88,
-      "held-out R\u00b2 (per fold)": 0.2808134724852741,
+      "held-out R\u00b2 (per fold)": 0.2625015998401903,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 5.88,
-      "held-out R\u00b2 (per fold)": 0.2543987745317594,
+      "held-out R\u00b2 (per fold)": 0.2334098810001627,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 5.88,
-      "held-out R\u00b2 (per fold)": 0.22739427749910757,
+      "held-out R\u00b2 (per fold)": 0.23339627021596532,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 5.88,
-      "held-out R\u00b2 (per fold)": 0.2573406140252861,
+      "held-out R\u00b2 (per fold)": 0.22093791500315263,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 5.88,
-      "held-out R\u00b2 (per fold)": 0.24187048958954926,
+      "held-out R\u00b2 (per fold)": 0.2533926936950964,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 6.12,
-      "held-out R\u00b2 (per fold)": 0.24881796786166965,
+      "held-out R\u00b2 (per fold)": 0.24221181467282116,
       "_kind": "line",
       "_group": 13
     },
     {
       "x": 6.12,
-      "held-out R\u00b2 (per fold)": 0.22131279476851207,
+      "held-out R\u00b2 (per fold)": 0.21208316053079923,
       "_kind": "line",
       "_group": 13
     },
     {
       "x": 6.12,
-      "held-out R\u00b2 (per fold)": 0.19914402897591277,
+      "held-out R\u00b2 (per fold)": 0.2150899671311377,
       "_kind": "line",
       "_group": 13
     },
     {
       "x": 6.12,
-      "held-out R\u00b2 (per fold)": 0.22832359967582427,
+      "held-out R\u00b2 (per fold)": 0.19289990463840734,
       "_kind": "line",
       "_group": 13
     },
     {
       "x": 6.12,
-      "held-out R\u00b2 (per fold)": 0.20548730017362538,
+      "held-out R\u00b2 (per fold)": 0.23199583901862586,
       "_kind": "line",
       "_group": 13
     },
     {
       "x": 6.88,
-      "held-out R\u00b2 (per fold)": 0.20705258739138888,
+      "held-out R\u00b2 (per fold)": 0.2071373568189273,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 6.88,
-      "held-out R\u00b2 (per fold)": 0.19346131420919477,
+      "held-out R\u00b2 (per fold)": 0.19350687464649674,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 6.88,
-      "held-out R\u00b2 (per fold)": 0.19939236870364452,
+      "held-out R\u00b2 (per fold)": 0.1992529984285779,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 6.88,
-      "held-out R\u00b2 (per fold)": 0.2048276176574514,
+      "held-out R\u00b2 (per fold)": 0.20484512997939752,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 6.88,
-      "held-out R\u00b2 (per fold)": 0.20008783844045164,
+      "held-out R\u00b2 (per fold)": 0.19998909847223167,
       "_kind": "line",
       "_group": 14
     },
@@ -505,7 +521,7 @@
         "title_left": "Per-fold R\u00b2: shared pooled map (filled) vs own map (open)",
         "ylabel": "held-out R\u00b2 (per fold)",
         "annotations": [
-          "5 folds per framing; the shared map matches or beats the own map in every story framing"
+          "5 global-family folds; the shared map modestly beats the own map in every story framing"
         ],
         "xticklabels": [
           "Chat (train)",

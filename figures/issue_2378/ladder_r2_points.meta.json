@@ -1,14 +1,21 @@
 {
-  "commit": "26d1f31a+dirty",
-  "render_id": "5e3dedc496e24106",
-  "git_commit": "26d1f31a",
+  "commit": "ee7f55ab+dirty",
+  "render_id": "6be8c8c0e37347ff",
+  "git_commit": "ee7f55ab",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2378_analyzer_figs.py"
+    "figures/issue_2378/hero_ladder_recovery.meta.json",
+    "figures/issue_2378/hero_ladder_recovery.pdf",
+    "figures/issue_2378/hero_ladder_recovery.png",
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
-  "created": "2026-08-24T23:15:48Z",
+  "created": "2026-08-25T06:33:20Z",
   "figsize": [
     12.5,
     6.0

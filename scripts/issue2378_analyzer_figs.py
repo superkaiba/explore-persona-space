@@ -31,7 +31,10 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 ER = ROOT / "eval_results" / "issue_2378"
+POOL_GF = ER / "pool_gf"  # corrected pooled arm: global family folds (r2 corrective run)
 OUT = "issue_2378"
+
+STORY_CELLS = ("storyq_astra", "storyq_helios", "storyq_wren", "storyq_dana", "storyq_vex")
 
 CELLS = [
     "chat",
@@ -96,6 +99,17 @@ def load_fits() -> dict:
     return fits
 
 
+def load_own_ceiling(c: str) -> dict:
+    """Own-ceiling fit for cell c: gf refit for story cells (global family folds), else fits/.
+
+    The story own-ceiling refits under global family folds live in pool_gf/own_ceilings/;
+    chat/plain_text/chat_user_real keep their conversation-grouped fits (already clean).
+    """
+    if c in STORY_CELLS:
+        return _load(POOL_GF / "own_ceilings" / f"{c}__context.json")
+    return _load(ER / "fits" / f"{c}__context.json")
+
+
 def load_ladder() -> dict:
     lad = {}
     for t in TARGETS:
@@ -107,9 +121,10 @@ def fig_own_ceilings(fits: dict) -> None:
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     x = np.arange(len(CELLS))
     w = 0.38
-    ctx = [fits[c]["context"]["pooled_r2"] for c in CELLS]
+    own = {c: load_own_ceiling(c) for c in CELLS}
+    ctx = [own[c]["pooled_r2"] for c in CELLS]
     pre = [fits[c]["prefix"]["pooled_r2"] for c in CELLS]
-    null95 = [fits[c]["context"]["null"]["pooled_p95"] for c in CELLS]
+    null95 = [own[c]["null"]["pooled_p95"] for c in CELLS]
     ax.bar(x - w / 2, ctx, w, color=[COLOR[c] for c in CELLS], label="context (full prompt)")
     ax.bar(
         x + w / 2,
@@ -117,11 +132,11 @@ def fig_own_ceilings(fits: dict) -> None:
         w,
         color=[COLOR[c] for c in CELLS],
         alpha=0.35,
-        label="prefix (before the question)",
+        label="prefix (state before the addressed utterance)",
     )
     # per-fold points on the context bars
     for i, c in enumerate(CELLS):
-        folds = [f["r2"] for f in fits[c]["context"]["per_fold"]]
+        folds = [f["r2"] for f in own[c]["per_fold"]]
         ax.plot(
             np.full(len(folds), x[i] - w / 2),
             folds,
@@ -145,13 +160,16 @@ def fig_own_ceilings(fits: dict) -> None:
             markeredgewidth=0.8,
             zorder=5,
         )
+    # visible null markers: explicit markeredgewidth (rcParams zero it out for line markers)
     ax.plot(
         x - w / 2,
         null95,
         marker="_",
-        ms=14,
+        ms=16,
         ls="none",
         color="black",
+        mec="black",
+        markeredgewidth=2.2,
         label="shuffled-answer null (95th pct)",
     )
     ax.set_xticks(x)
@@ -161,7 +179,8 @@ def fig_own_ceilings(fits: dict) -> None:
     set_title_subtitle(
         ax,
         "Every surviving framing is linearly mappable",
-        "own context→answer GCV-ridge map per framing, 5 grouped folds, n=6,601 rows each",
+        "own context→answer GCV-ridge map per framing, n=6,601 rows each; "
+        "story bars = global-family-fold refits",
     )
     savefig_paper(fig, f"{OUT}/own_ceilings", dir="figures/")
     plt.close(fig)
@@ -315,7 +334,7 @@ def fig_pooled_tiers(fits: dict) -> None:
     w = 0.38
     m0, m0lo, m0hi, k128 = [], [], [], []
     for c in CELLS:
-        d = _load(ER / "pool" / f"{c}__context.json")
+        d = _load(POOL_GF / f"{c}__context.json")
         rec0 = d["recovery"]["m0"]
         m0.append(rec0["point_pooled"])
         m0lo.append(rec0.get("ci_lo", np.nan))
@@ -348,8 +367,9 @@ def fig_pooled_tiers(fits: dict) -> None:
     ax.legend(loc="upper left", ncols=2)
     set_title_subtitle(
         ax,
-        "One shared map serves every framing at or above its ceiling",
-        "map fit jointly on all 8 framings, scored per framing; dashed = ceiling, dotted = the 90% bar",
+        "One jointly fit map matches every framing's own ceiling",
+        "fit on all 8 framings under global family folds, scored per framing; "
+        "dashed = ceiling, dotted = the 90% bar",
     )
     savefig_paper(fig, f"{OUT}/pooled_tiers", dir="figures/")
     plt.close(fig)
@@ -359,11 +379,11 @@ def fig_pooled_points(fits: dict) -> None:
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     x = np.arange(len(CELLS))
     for i, c in enumerate(CELLS):
-        d = _load(ER / "pool" / f"{c}__context.json")
+        d = _load(POOL_GF / f"{c}__context.json")
         pf = d["per_fold"]
         vals = [f["r2"]["m0"] for f in pf]
         ax.plot(np.full(len(vals), x[i] - 0.12), vals, marker="o", ls="none", ms=4, color=COLOR[c])
-        ceil_f = [f["r2"] for f in fits[c]["context"]["per_fold"]]
+        ceil_f = [f["r2"] for f in load_own_ceiling(c)["per_fold"]]
         ax.plot(
             np.full(len(ceil_f), x[i] + 0.12),
             ceil_f,
@@ -380,9 +400,61 @@ def fig_pooled_points(fits: dict) -> None:
     set_title_subtitle(
         ax,
         "Per-fold R²: shared pooled map (filled) vs own map (open)",
-        "5 folds per framing; the shared map matches or beats the own map in every story framing",
+        "5 global-family folds; the shared map modestly beats the own map in every story framing",
     )
     savefig_paper(fig, f"{OUT}/pooled_tiers_points", dir="figures/")
+    plt.close(fig)
+
+
+def fig_lofo(fits: dict) -> None:
+    """Leave-one-framing-out: pooled map fit WITHOUT the target framing, scored on it."""
+    fig, ax = plt.subplots(figsize=(8.0, 4.6))
+    x = np.arange(len(CELLS))
+    w = 0.38
+    full_m1, lofo_m0, lo, hi = [], [], [], []
+    for c in CELLS:
+        d_full = _load(POOL_GF / f"{c}__context.json")
+        full_m1.append(d_full["recovery"]["m1"]["point_pooled"])
+        d = _load(POOL_GF / "lofo" / f"{c}__context.json")
+        rec = d["recovery"]["m0"]
+        lofo_m0.append(rec["point_pooled"])
+        lo.append(rec["ci_lo"])
+        hi.append(rec["ci_hi"])
+    yerr = np.vstack(
+        [
+            np.clip(np.array(lofo_m0) - np.array(lo), 0, None),
+            np.clip(np.array(hi) - np.array(lofo_m0), 0, None),
+        ]
+    )
+    ax.bar(
+        x - w / 2,
+        full_m1,
+        w,
+        color=[COLOR[c] for c in CELLS],
+        alpha=0.4,
+        label="pooled map, all 8 framings (bias tier)",
+    )
+    ax.bar(
+        x + w / 2,
+        lofo_m0,
+        w,
+        color=[COLOR[c] for c in CELLS],
+        yerr=yerr,
+        capsize=2,
+        label="target framing left out of training",
+    )
+    ax.axhline(1.0, color="black", lw=0.8, ls="--")
+    ax.axhline(0.0, color="grey", lw=0.6)
+    ax.set_xticks(x)
+    ax.set_xticklabels([SHORT[c] for c in CELLS])
+    ax.set_ylabel("recovery: pooled-map R² / own-ceiling R²")
+    ax.legend(loc="lower left")
+    set_title_subtitle(
+        ax,
+        "Left-out story framings stay at ceiling; chat, plain text, user do not",
+        "leave-one-framing-out pooled maps under global family folds; dashed = own ceiling",
+    )
+    savefig_paper(fig, f"{OUT}/lofo_recovery", dir="figures/")
     plt.close(fig)
 
 
@@ -445,6 +517,7 @@ def main() -> None:
     fig_user_turn_panel(fits)
     fig_pooled_tiers(fits)
     fig_pooled_points(fits)
+    fig_lofo(fits)
     fig_r2_vs_retrieval(fits, lad)
     print("all figures written to figures/issue_2378/")
 

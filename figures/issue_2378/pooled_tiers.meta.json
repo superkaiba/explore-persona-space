@@ -1,14 +1,27 @@
 {
-  "commit": "26d1f31a+dirty",
-  "render_id": "40919ad1c4f74fdf",
-  "git_commit": "26d1f31a",
+  "commit": "ee7f55ab+dirty",
+  "render_id": "4c268c5b0dab4df8",
+  "git_commit": "ee7f55ab",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2378_analyzer_figs.py"
+    "figures/issue_2378/hero_ladder_recovery.meta.json",
+    "figures/issue_2378/hero_ladder_recovery.pdf",
+    "figures/issue_2378/hero_ladder_recovery.png",
+    "figures/issue_2378/ladder_r2_points.meta.json",
+    "figures/issue_2378/ladder_r2_points.pdf",
+    "figures/issue_2378/ladder_r2_points.png",
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "figures/issue_2378/user_turn_panel.meta.json",
+    "figures/issue_2378/user_turn_panel.pdf",
+    "figures/issue_2378/user_turn_panel.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
-  "created": "2026-08-24T23:15:55Z",
+  "created": "2026-08-25T06:33:27Z",
   "figsize": [
     8.0,
     4.2
@@ -16,201 +29,201 @@
   "points": [
     {
       "x": -0.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9542423951637161,
-      "error": 0.0021403846527794923,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.954254654553937,
+      "error": 0.002131855347164202,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9747042088041304,
-      "error": 0.005110942903279625,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9748819131943587,
+      "error": 0.005214100451710335,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1455819774951017,
-      "error": 0.006741715990348229,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0937469827166069,
+      "error": 0.0052246507430536715,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1374602511814809,
-      "error": 0.006639008364261345,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0844380414780026,
+      "error": 0.005311994791755925,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1615157761418717,
-      "error": 0.007111104123242562,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1050825349114344,
+      "error": 0.004930594874703376,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1367515750262758,
-      "error": 0.007087097269624754,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0889846197075799,
+      "error": 0.005173466686260175,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1350985427634175,
-      "error": 0.009246558749416711,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0929050319494225,
+      "error": 0.006074920000803785,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 6.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.97477898662215,
-      "error": 0.006064696006950587,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9746916888368549,
+      "error": 0.0057448036807132286,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.962326236534995,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9623263830051895,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 1.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9881610503848285,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9883094588851418,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 2.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1465149094168028,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0983938172929786,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 3.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1388369631399293,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.089088241405435,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 4.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1633742535861515,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1090820816907199,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 5.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1411539183135346,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.095589082471969,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 6.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1389690041428184,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0988140793538015,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 7.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9912126614272682,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9911192782391166,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": -0.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9521853228312449,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9521909163958454,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9700308303091599,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9698638561516785,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1400411177373875,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0892153011235526,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1312322647018083,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0794484189609637,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1554255631758656,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1002125900903639,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 4.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1296646685423135,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.084539830073963,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 5.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1255202859953124,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0867312721877642,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 6.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.968845921984594,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9690931021358495,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": -0.19,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9564660921368039,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9564546270901738,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 0.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9802527161157192,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9802920570550991,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 1.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.153524549718084,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.09966460260966,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 2.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.144510281430331,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0900724085444755,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 3.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1696477714223508,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1100737798397706,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 4.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.143838863081563,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0948867634464834,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 5.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1440134034941458,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0988811121893718,
       "_kind": "line",
       "_group": 3
     },
     {
       "x": 6.81,
-      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9809753139984951,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.980582709497276,
       "_kind": "line",
       "_group": 3
     }
@@ -222,14 +235,14 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "One shared map serves every framing at or above its ceiling",
+        "title_left": "One jointly fit map matches every framing's own ceiling",
         "ylabel": "pooled-map R\u00b2 / own-ceiling R\u00b2",
         "legend_labels": [
           "one shared map, no per-cell term",
           "shared map + rank-128 per-cell residual"
         ],
         "annotations": [
-          "map fit jointly on all 8 framings, scored per framing; dashed = ceiling, dotted = the 90% bar"
+          "fit on all 8 framings under global family folds, scored per framing; dashed = ceiling, dotted = the 90% bar"
         ],
         "xticklabels": [
           "Chat (train)",

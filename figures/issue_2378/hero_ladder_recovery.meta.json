@@ -1,14 +1,18 @@
 {
-  "commit": "26d1f31a+dirty",
-  "render_id": "8290ac3605844ce1",
-  "git_commit": "26d1f31a",
+  "commit": "ee7f55ab+dirty",
+  "render_id": "6e8801bd430242d3",
+  "git_commit": "ee7f55ab",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2378_analyzer_figs.py"
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
-  "created": "2026-08-24T23:15:41Z",
+  "created": "2026-08-25T06:33:09Z",
   "figsize": [
     8.0,
     4.6

@@ -1,14 +1,15 @@
 {
-  "commit": "26d1f31a+dirty",
-  "render_id": "b6ca4bd7d0484d3c",
-  "git_commit": "26d1f31a",
+  "commit": "ee7f55ab+dirty",
+  "render_id": "f91c52d52a74405c",
+  "git_commit": "ee7f55ab",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2378_analyzer_figs.py"
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
-  "created": "2026-08-24T23:15:38Z",
+  "created": "2026-08-25T06:33:01Z",
   "figsize": [
     8.0,
     4.2
@@ -28,31 +29,31 @@
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": 0.26969426724265455,
+      "held-out R\u00b2 of the framing's own map": 0.2696215938872124,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": 0.28352527079679746,
+      "held-out R\u00b2 of the framing's own map": 0.2833562682551888,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": 0.2617317993461209,
+      "held-out R\u00b2 of the framing's own map": 0.26216915398170637,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": 0.24592982118891527,
+      "held-out R\u00b2 of the framing's own map": 0.24491979819896548,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": 0.23103022193086475,
+      "held-out R\u00b2 of the framing's own map": 0.23115985681606654,
       "_kind": "bar",
       "_group": 0
     },
@@ -232,31 +233,31 @@
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": 0.2525004906012773,
+      "held-out R\u00b2 of the framing's own map": 0.2532584122805188,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": 0.29990012929984444,
+      "held-out R\u00b2 of the framing's own map": 0.24904190817033212,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": 0.22356783437638084,
+      "held-out R\u00b2 of the framing's own map": 0.2394297156201013,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": 0.26659844200454064,
+      "held-out R\u00b2 of the framing's own map": 0.24766768606204348,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": 0.2592608016272847,
+      "held-out R\u00b2 of the framing's own map": 0.27714033119622694,
       "_kind": "line",
       "_group": 6
     },
@@ -292,31 +293,31 @@
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": 0.28988844595245,
+      "held-out R\u00b2 of the framing's own map": 0.25779236092806934,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": 0.2597983381712001,
+      "held-out R\u00b2 of the framing's own map": 0.2756776546106785,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": 0.2732728631974626,
+      "held-out R\u00b2 of the framing's own map": 0.26122342892392614,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": 0.2861025040467131,
+      "held-out R\u00b2 of the framing's own map": 0.25038576561348,
       "_kind": "line",
       "_group": 8
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": 0.24558893916927638,
+      "held-out R\u00b2 of the framing's own map": 0.2948499493320188,
       "_kind": "line",
       "_group": 8
     },
@@ -352,31 +353,31 @@
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": 0.26456420099485645,
+      "held-out R\u00b2 of the framing's own map": 0.25906133609775694,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": 0.23915186716311554,
+      "held-out R\u00b2 of the framing's own map": 0.26128171965210356,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": 0.2471134897707178,
+      "held-out R\u00b2 of the framing's own map": 0.23047810394820123,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": 0.21806646151493925,
+      "held-out R\u00b2 of the framing's own map": 0.22174348144836076,
       "_kind": "line",
       "_group": 10
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": 0.24090237229326195,
+      "held-out R\u00b2 of the framing's own map": 0.25025839194942756,
       "_kind": "line",
       "_group": 10
     },
@@ -412,31 +413,31 @@
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": 0.22294185798991506,
+      "held-out R\u00b2 of the framing's own map": 0.22019891812471448,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": 0.23481293735922826,
+      "held-out R\u00b2 of the framing's own map": 0.2238011571692322,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": 0.2308896605265096,
+      "held-out R\u00b2 of the framing's own map": 0.23635386454135787,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": 0.22557547152176316,
+      "held-out R\u00b2 of the framing's own map": 0.2183378242767987,
       "_kind": "line",
       "_group": 12
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": 0.24361478814848292,
+      "held-out R\u00b2 of the framing's own map": 0.24721733072890728,
       "_kind": "line",
       "_group": 12
     },
@@ -472,31 +473,31 @@
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": 0.24881796786166965,
+      "held-out R\u00b2 of the framing's own map": 0.24221181467282116,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": 0.22131279476851207,
+      "held-out R\u00b2 of the framing's own map": 0.21208316053079923,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": 0.19914402897591277,
+      "held-out R\u00b2 of the framing's own map": 0.2150899671311377,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": 0.22832359967582427,
+      "held-out R\u00b2 of the framing's own map": 0.19289990463840734,
       "_kind": "line",
       "_group": 14
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": 0.20548730017362538,
+      "held-out R\u00b2 of the framing's own map": 0.23199583901862586,
       "_kind": "line",
       "_group": 14
     },
@@ -606,35 +607,35 @@
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 of the framing's own map": -0.04760627280619917,
+      "held-out R\u00b2 of the framing's own map": -0.0508347612579868,
       "series": "shuffled-answer null (95th pct)",
       "_kind": "line",
       "_group": 18
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 of the framing's own map": -0.050337220687465774,
+      "held-out R\u00b2 of the framing's own map": -0.05516583355364898,
       "series": "shuffled-answer null (95th pct)",
       "_kind": "line",
       "_group": 18
     },
     {
       "x": 3.81,
-      "held-out R\u00b2 of the framing's own map": -0.06430974059171568,
+      "held-out R\u00b2 of the framing's own map": -0.05947445035576911,
       "series": "shuffled-answer null (95th pct)",
       "_kind": "line",
       "_group": 18
     },
     {
       "x": 4.81,
-      "held-out R\u00b2 of the framing's own map": -0.05179546186934687,
+      "held-out R\u00b2 of the framing's own map": -0.048022082048619213,
       "series": "shuffled-answer null (95th pct)",
       "_kind": "line",
       "_group": 18
     },
     {
       "x": 5.81,
-      "held-out R\u00b2 of the framing's own map": -0.051341734663709254,
+      "held-out R\u00b2 of the framing's own map": -0.051594459764567786,
       "series": "shuffled-answer null (95th pct)",
       "_kind": "line",
       "_group": 18
@@ -659,10 +660,10 @@
         "legend_labels": [
           "shuffled-answer null (95th pct)",
           "context (full prompt)",
-          "prefix (before the question)"
+          "prefix (state before the addressed utterance)"
         ],
         "annotations": [
-          "own context\u2192answer GCV-ridge map per framing, 5 grouped folds, n=6,601 rows each"
+          "own context\u2192answer GCV-ridge map per framing, n=6,601 rows each; story bars = global-family-fold refits"
         ],
         "xticklabels": [
           "Chat (train)",
@@ -690,7 +691,7 @@
     "series": [
       "shuffled-answer null (95th pct)",
       "context (full prompt)",
-      "prefix (before the question)"
+      "prefix (state before the addressed utterance)"
     ]
   },
   "formats_written": [
