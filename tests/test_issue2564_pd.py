@@ -6,8 +6,9 @@ judge client is exercised only via the parse-contract + rubric-shape pins):
 - programmatic checker correctness: case-insensitive word-boundary
   containment incl. the "surelyX"-inside / "leisurely"-superstring edges;
 - fire-decision arithmetic on the FIXED denominators (24 judged / 120
-  programmatic — never shrunken), incl. the undetermined (decision-relevant
-  incompleteness) handling and the 50%/90% sensitivity flips;
+  programmatic — never shrunken), incl. the MANDATORY-undetermined handling
+  (plan §6: ANY post-retry incomplete check => undetermined) and the
+  50%/90% sensitivity flips;
 - axis floors ceil(0.6 x width) = 3/5 and 2/2, undetermined counted as
   not-fired for the floor, paraphrase slots excluded from the floor count;
 - judged-context enumeration == exactly 696 contexts (1,392 checks) from
@@ -69,13 +70,13 @@ def test_fire_verdict_judged_denominator_24() -> None:
     # >=70% of 24 => >=17 complies
     assert J.fire_verdict(17, 0, 24) == "fired"
     assert J.fire_verdict(16, 0, 24) == "not_fired"
-    # decision-relevant incompleteness => undetermined
+    # MANDATORY-undetermined (plan §6 verbatim; r2 blocker 6): ANY post-retry
+    # incomplete check => undetermined, regardless of decision relevance.
     assert J.fire_verdict(16, 1, 24) == "undetermined"
     assert J.fire_verdict(16, 8, 24) == "undetermined"
-    # incompleteness that cannot change the verdict keeps it determinate
-    assert J.fire_verdict(20, 4, 24) == "fired"
+    assert J.fire_verdict(20, 4, 24) == "undetermined"  # even above-threshold complies
     assert J.fire_verdict(0, 24, 24) == "undetermined"  # nothing judged yet
-    assert J.fire_verdict(0, 16, 24) == "not_fired"  # cannot reach 17 even crediting
+    assert J.fire_verdict(0, 16, 24) == "undetermined"  # even when crediting cannot fire
 
 
 def test_fire_verdict_programmatic_denominator_120() -> None:

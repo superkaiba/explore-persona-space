@@ -193,11 +193,111 @@ def test_build_config_smoke_rebinds_out_root_and_slices():
 
 
 def test_filter_bank_empty_selection_raises():
+    # producer-shaped fixture (dict contexts — r2 blocker 1): the empty-selection
+    # raise must fire AFTER the dict normalization, not TypeError before it.
     bank = {
-        "contexts": [{"id": "a", "cell": "register", "carrier": "c01"}],
+        "contexts": {"a": {"id": "a", "cell": "register", "carrier": "c01"}},
         "pairs": [],
         "n_contexts": 1,
         "n_pairs": 0,
     }
     with pytest.raises(RuntimeError, match="empty context selection"):
         D._filter_bank(bank, ("no_such_cell",), None)
+
+
+def test_filter_bank_consumes_real_producer_bank_shape():
+    """r2 blocker 1 integration pin: ``BK.build_contexts`` returns a DICT
+    (id -> ctx) — the r1 driver iterated it as a list and crashed on every
+    run. ``_filter_bank`` must consume the REAL producer shape and normalize
+    to the list every phase iterates."""
+    from explore_persona_space.experiments.issue2564 import bank2564 as BK
+
+    values = BK.load_values()
+    contexts = BK.build_contexts(values)
+    assert isinstance(contexts, dict)  # the producer shape that crashed r1
+    bank = {
+        "contexts": contexts,
+        "pairs": BK.build_pairs(values, contexts),
+        "n_contexts": len(contexts),
+        "n_pairs": 0,
+    }
+    out = D._filter_bank(bank, D.SMOKE_CELLS, ("c01", "c02", "c03"))
+    assert isinstance(out["contexts"], list)
+    assert out["n_contexts"] > 0 and out["n_pairs"] > 0
+    assert {c["cell"] for c in out["contexts"]} <= set(D.SMOKE_CELLS)
+    assert {c["carrier"] for c in out["contexts"]} == {"c01", "c02", "c03"}
+    kept = {c["id"] for c in out["contexts"]}
+    assert all(p["a"] in kept and p["b"] in kept for p in out["pairs"])
+
+
+# ── PC (embed) phase-registry + dispatch pins (r2 blocker 5) ────────────
+
+
+def test_phase_registry_dispatches_pc():
+    """Plan §9 puts PC (pc_embed) on-pod: ``--phase all`` must run A, B AND C."""
+    assert D.PHASES == ("A", "B", "C")
+    args = D.parse_args(["--phase", "C", "--out-root", "/tmp/eps2564c", "--upload", "none"])
+    assert args.phase == "C"
+
+
+def test_phase_embed_tiny_semantics():
+    """Under --tiny PC is skipped with a warning on --phase all, but an
+    EXPLICIT --phase C under --tiny raises (never a silent no-op success)."""
+    args = D.parse_args(
+        ["--phase", "all", "--out-root", "/tmp/eps2564t", "--tiny", "--upload", "none"]
+    )
+    cfg = D.build_config(args)
+    assert D.phase_embed(cfg, {"contexts": [], "pairs": []}) == D.RC_OK
+    args_c = D.parse_args(
+        ["--phase", "C", "--out-root", "/tmp/eps2564t", "--tiny", "--upload", "none"]
+    )
+    cfg_c = D.build_config(args_c)
+    with pytest.raises(RuntimeError, match="--tiny"):
+        D.phase_embed(cfg_c, {"contexts": [], "pairs": []})
+
+
+def test_phase_embed_argv_env_and_sentinel_verification(monkeypatch, tmp_path):
+    """phase_embed composes the embed subprocess argv (out-root = PRE-rebind
+    CLI root + /embed; anchors-root = the REBOUND root PA wrote), passes the
+    env through, propagates rc=7, and VERIFIES the sentinel before RC_OK."""
+    args = D.parse_args(
+        ["--phase", "C", "--out-root", str(tmp_path / "root"), "--smoke", "--upload", "none"]
+    )
+    cfg = D.build_config(args)
+    bank = {"contexts": [{"id": "x", "cell": "register", "carrier": "c01"}], "pairs": []}
+    monkeypatch.setattr(D, "_anchor_cell_complete", lambda cfg, cell: True)
+    captured: dict = {}
+
+    def fake_run(cmd, env):  # signature mirror of the subprocess.run call site
+        captured["cmd"] = [str(c) for c in cmd]
+        captured["env_has_path"] = "PATH" in env
+        out = D._embed_out_root(cfg)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "embed_done.local.json").write_text("{}")
+        return SimpleNamespace(returncode=captured.get("rc", 0))
+
+    monkeypatch.setattr(D.subprocess, "run", fake_run)
+    assert D.phase_embed(cfg, bank) == D.RC_OK
+    cmd = captured["cmd"]
+    assert cmd[1].endswith("issue2564_embed.py")
+    assert "--smoke" in cmd and "--skip-upload" in cmd
+    assert cmd[cmd.index("--anchors-root") + 1] == str(cfg.out_root)
+    assert cmd[cmd.index("--out-root") + 1] == str((cfg.raw_out_root or cfg.out_root) / "embed")
+    assert captured["env_has_path"]
+    # rc=7 (pilot-gate refusal) propagates verbatim
+    captured["rc"] = D.RC_PILOT_GATE
+    assert D.phase_embed(cfg, bank) == D.RC_PILOT_GATE
+
+
+def test_phase_embed_missing_sentinel_raises(monkeypatch, tmp_path):
+    """rc=0 with NO sentinel on disk is a FAIL (out-root derivation drift),
+    never terminal success (r2 blocker 5)."""
+    args = D.parse_args(
+        ["--phase", "C", "--out-root", str(tmp_path / "root2"), "--smoke", "--upload", "none"]
+    )
+    cfg = D.build_config(args)
+    bank = {"contexts": [{"id": "x", "cell": "register", "carrier": "c01"}], "pairs": []}
+    monkeypatch.setattr(D, "_anchor_cell_complete", lambda cfg, cell: True)
+    monkeypatch.setattr(D.subprocess, "run", lambda cmd, env: SimpleNamespace(returncode=0))
+    with pytest.raises(RuntimeError, match="sentinel is missing"):
+        D.phase_embed(cfg, bank)

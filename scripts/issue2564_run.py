@@ -1,4 +1,4 @@
-"""Issue #2564 pod driver — minimal-pair anchor generation (PA) + teacher-forced capture (PB).
+"""Issue #2564 pod driver — anchor generation (PA) + teacher-forced capture (PB) + embed (PC).
 
 Port of the #2215 dbe driver (``40cc2bb752:scripts/issue2215_dbe_run.py``) adapted to the
 frozen #2564 minimal-pair bank (``src/explore_persona_space/experiments/issue2564/bank2564.py``),
@@ -21,10 +21,20 @@ Phases (plan §3.8):
       context-end capture (fp32) for all bank contexts; gate-4 3-way record parity +
       bf16 two-bar cosine parity (refusal rc=8, demoted under smoke/tiny). Sentinel:
       ``<out-root>/va2564_uploaded.json``. HF: ``issue2564_minpair/analysis_tensors/``.
+  C (``pc_embed``)     — Qwen3-Embedding-8B text-space embedding of all 9,840 anchor
+      rollouts (plan §9: on-pod 1×H100), run as a SUBPROCESS of
+      ``scripts/issue2564_embed.py`` (vLLM pooling engine — own process so PB's HF
+      teardown and vLLM's spawn env stay isolated; ``env={**os.environ}``). Sentinel:
+      ``<embed-out-root>/embed_uploaded.json`` (``embed_done.local.json`` under
+      ``--upload none``), VERIFIED by this driver before terminal success. Its rc=7
+      pilot-gate refusal propagates as this driver's rc=7. Skipped with a loud
+      warning under ``--tiny`` (no CPU vLLM engine); explicit ``--phase C --tiny``
+      raises.
 
-Pod-side contracts: single process per phase; ``sys.exit(rc)`` after explicit flushes
-(no vLLM in this driver); ``[phase=...]`` breadcrumbs + per-unit progress lines; NO
-``task.py`` shellouts; sentinels are plain JSON files the VM poller reads.
+Pod-side contracts: single process per phase (PC in its own subprocess);
+``sys.exit(rc)`` after explicit flushes (no vLLM in THIS process); ``[phase=...]``
+breadcrumbs + per-unit progress lines; NO ``task.py`` shellouts; sentinels are
+plain JSON files the VM poller reads.
 
 Workload command (plan §9): ``uv run python scripts/issue2564_run.py --phase all
 --out-root /workspace/eps2564 --upload hf``.
@@ -39,6 +49,7 @@ import json
 import logging
 import os
 import random
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
@@ -59,6 +70,11 @@ import issue2162_run as R  # noqa: E402  (MF-A host: capture_answer_states + io 
 
 from explore_persona_space.analysis.extraction import (  # noqa: E402
     extract_layer_activations,
+)
+from explore_persona_space.atomic_io import (  # noqa: E402  (#2336 process-unique temps)
+    save_pt_atomic,
+    write_json_atomic,
+    write_jsonl_atomic,
 )
 from explore_persona_space.experiments.issue1415.steering import generate_batch  # noqa: E402
 from explore_persona_space.experiments.issue2564 import bank2564 as BK  # noqa: E402
@@ -109,11 +125,15 @@ SMOKE_CELLS = ("register", "query")  # plan §8 (bank realizes the query cell as
 SMOKE_CARRIERS = ("c01", "c02", "c03")
 SMOKE_DRAWS = 2
 
-PHASES = ("A", "B")
+PHASES = ("A", "B", "C")
 
 _PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
     "A": ("anchors_done.json", "manifests/pilot_gate_report.json"),
     "B": ("va2564_uploaded.json", "manifests/parity_gate_report.json"),
+    # C: the embed subprocess owns its records under ITS out-root (fingerprint-gated
+    # chunk resume + sentinel); --force does not reach it — rerun with a fresh
+    # embed out-root to force.
+    "C": (),
 }
 
 CAP_HIT_BASIS = "retokenized_completion_len >= max_new_tokens"
@@ -148,6 +168,10 @@ class Cfg2564:
     layers: tuple[int, ...] = MAP_LAYERS
     capture_batch: int = 8
     device: str = "cuda"
+    # PRE-rebind out-root (the CLI value): PC derives the embed subprocess's own
+    # out-root from it so the embed script's OWN smoke rebind is the single
+    # authority for smoke isolation (no double rebind).
+    raw_out_root: Path | None = None
     _values_sha_cache: str | None = field(default=None, repr=False)
 
     @property
@@ -178,7 +202,7 @@ class Cfg2564:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """CLI for the pod driver (per-issue phase-dispatch driver — argparse by convention)."""
     ap = argparse.ArgumentParser(description="issue2564 minimal-pair pod driver")
-    ap.add_argument("--phase", choices=("all", "A", "B"), default="all")
+    ap.add_argument("--phase", choices=("all", "A", "B", "C"), default="all")
     ap.add_argument("--out-root", default="/workspace/eps2564")
     ap.add_argument("--log-dir", default="/workspace/logs")
     ap.add_argument("--values", default=None, help="override bank2564_values.json path")
@@ -231,6 +255,7 @@ def build_config(args: argparse.Namespace) -> Cfg2564:
         upload=args.upload,
         force=bool(args.force),
         capture_batch=int(args.capture_batch),
+        raw_out_root=Path(args.out_root),
     )
     if tiny:
         cfg.hidden = 64
@@ -387,8 +412,15 @@ def _filter_bank(
     bank: dict, cells: tuple[str, ...] | None, carriers: tuple[str, ...] | None
 ) -> dict:
     """Subset the bank's contexts (and pairs whose BOTH endpoints survive). Empty
-    selection over the committed bank raises (gotchas.md empty-selection rule)."""
+    selection over the committed bank raises (gotchas.md empty-selection rule).
+
+    Producer seam (r2 blocker 1): ``BK.build_bank`` returns ``contexts`` as a
+    ``dict[str, dict]`` (id -> context) — this driver consumes the LIST shape
+    everywhere downstream, so the dict is normalized to ``list(values())`` HERE,
+    at the single driver-side seam. The returned bank's ``contexts`` is a list."""
     contexts = bank["contexts"]
+    if isinstance(contexts, dict):
+        contexts = list(contexts.values())
     if cells:
         contexts = [c for c in contexts if c["cell"] in cells]
     if carriers:
@@ -462,7 +494,7 @@ def _pilot_eval(cfg: Cfg2564, pilot: dict) -> None:
         "demoted": demoted,
         "repro": _repro(cfg, "pa-pilot"),
     }
-    R._write_json_atomic(_pilot_path(cfg), report)
+    write_json_atomic(_pilot_path(cfg), report)
     pilot["evaluated"] = True
     logger.info(
         "[pilot] per_row_s=%.3f projected=%.2fh ceiling=%.1fh verdict=%s demoted=%s",
@@ -543,18 +575,52 @@ def _generate_cell(
     sidecar (excluded from the ``*.jsonl`` upload glob) with chunk-grain resume.
     Per-batch reseeding (generate_batch does torch.manual_seed(seed_base+i) per draw
     per call) makes chunk resume seed-consistent with a fresh run given identical
-    gen_batch (gen_batch is in the regime fp)."""
+    gen_batch (gen_batch is in the regime fp).
+
+    Resume keying (r2 blocker 2): the partial's FIRST line is a header carrying
+    the cell regime fp (seed_base / cells / carriers / gen_batch / values sha /
+    this call's max_new — the code-style resume-keying rule, #722 r3); a partial
+    with a missing header or a mismatched fp is quarantined, never adopted. Each
+    adopted chunk's context_id COMPOSITION is additionally verified against the
+    current chunk split, so a re-scoped run can never adopt wrong-context rows."""
     part = cfg.anchors_dir / f"anchors_{cell}.max{max_new}.partial"
+    part_fp = _regime_fp(cfg, {"phase": "A", "cell": cell, "max_new_call": max_new})
     cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
     chunks = [ctxs[i : i + cfg.gen_batch] for i in range(0, len(ctxs), cfg.gen_batch)]
-    prior = _read_jsonl(part, tolerate_torn_tail=True) if part.is_file() else []
+    prior: list[dict] = []
+    if part.is_file():
+        raw = _read_jsonl(part, tolerate_torn_tail=True)
+        header = raw[0] if raw else None
+        if (
+            header is not None
+            and header.get("partial_header")
+            and header.get("regime_fp") == part_fp
+        ):
+            prior = raw[1:]
+        else:
+            cfg.quarantine_dir.mkdir(parents=True, exist_ok=True)
+            dest = cfg.quarantine_dir / f"{time.time_ns()}.{part.name}"
+            os.replace(part, dest)
+            logger.warning(
+                "[anchors:%s] quarantined stale .partial (missing header or regime-fp "
+                "mismatch) -> %s",
+                cell,
+                dest,
+            )
+    if not part.is_file():
+        with part.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps({"partial_header": 1, "regime_fp": part_fp}) + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
     by_chunk: dict[int, list[dict]] = {}
     for r in prior:
         by_chunk.setdefault(int(r["chunk"]), []).append(r)
     complete = {
         ci
         for ci, rs in by_chunk.items()
-        if ci < len(chunks) and len(rs) == len(chunks[ci]) * cfg.draws
+        if ci < len(chunks)
+        and len(rs) == len(chunks[ci]) * cfg.draws
+        and {r["context_id"] for r in rs} == {c["id"] for c in chunks[ci]}
     }
     rows: list[dict] = [r for ci in sorted(complete) for r in by_chunk[ci]]
     if complete:
@@ -631,13 +697,13 @@ def _anchor_cell(
             CAP_HIT_REGEN_FRAC,
             REGEN_MAX_NEW,
         )
-        R._write_jsonl_atomic(
+        write_jsonl_atomic(
             cfg.anchors_dir / f"anchors_{cell}.capped{cfg.max_new_tokens}.jsonl", rows
         )
         rows = _generate_cell(cfg, model, tok, eot_ids, cell, ctxs, pilot, REGEN_MAX_NEW)
         regen_frac = sum(1 for r in rows if r["cap_hit"]) / max(1, len(rows))
         max_new_final = REGEN_MAX_NEW
-    R._write_jsonl_atomic(out_path, rows)
+    write_jsonl_atomic(out_path, rows)
     for max_new in (cfg.max_new_tokens, REGEN_MAX_NEW):
         p = cfg.anchors_dir / f"anchors_{cell}.max{max_new}.partial"
         if p.is_file():
@@ -652,7 +718,7 @@ def _anchor_cell(
         "max_new_tokens_final": max_new_final,
         "repro": _repro(cfg, "pa-anchors"),
     }
-    R._write_json_atomic(cfg.manifest_dir / f"anchors_{cell}.done.json", manifest)
+    write_json_atomic(cfg.manifest_dir / f"anchors_{cell}.done.json", manifest)
 
 
 def _upload_summary(res) -> dict:
@@ -690,7 +756,8 @@ def phase_anchors(cfg: Cfg2564, bank: dict) -> int:
                 f"[anchors] cell {k + 1}/{len(pending)} {cell} elapsed={time.time() - t0:.1f}s",
                 flush=True,
             )
-        _pilot_eval(cfg, pilot) if not pilot["evaluated"] else None
+        if not pilot["evaluated"]:
+            _pilot_eval(cfg, pilot)
         del model
         gc.collect()
         if torch.cuda.is_available():
@@ -707,7 +774,7 @@ def phase_anchors(cfg: Cfg2564, bank: dict) -> int:
         )
         upload["anchors"] = _upload_summary(res)
     manifests = {cell: _read_json(cfg.manifest_dir / f"anchors_{cell}.done.json") for cell in cells}
-    R._write_json_atomic(
+    write_json_atomic(
         sentinel,
         {
             "phase": "A",
@@ -799,8 +866,8 @@ def _capture_vc(cfg: Cfg2564, model, tok, contexts: list[dict]) -> None:
         "position": "context_end_last_token",
         "repro": _repro(cfg, "pb-capture"),
     }
-    R._save_pt_atomic(cfg.vc_dir / "vc2564_bank.pt", store)
-    R._write_json_atomic(
+    save_pt_atomic(cfg.vc_dir / "vc2564_bank.pt", store)
+    write_json_atomic(
         cfg.manifest_dir / "vc2564.done.json",
         {
             "regime_fp": _regime_fp(cfg, {"phase": "B", "leg": "vc"}),
@@ -863,8 +930,8 @@ def _capture_cell_va(
         "max_new_tokens": rows[0]["max_new_tokens"] if rows else None,
         "repro": _repro(cfg, "pb-capture"),
     }
-    R._save_pt_atomic(cfg.va_dir / f"va2564_{cell}.pt", store)
-    R._write_json_atomic(
+    save_pt_atomic(cfg.va_dir / f"va2564_{cell}.pt", store)
+    write_json_atomic(
         cfg.manifest_dir / f"va2564_{cell}.done.json",
         {
             "cell": cell,
@@ -992,7 +1059,7 @@ def _gate4_parity(
         "demoted": demoted,
         "repro": _repro(cfg, "pb-parity"),
     }
-    R._write_json_atomic(_parity_path(cfg), report)
+    write_json_atomic(_parity_path(cfg), report)
     logger.info(
         "[parity] verdict=%s demoted=%s answer=%d/%d context=%d/%d",
         verdict,
@@ -1046,8 +1113,13 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
     upload: dict = {"mode": cfg.upload}
     if cfg.upload == "hf":
         for name, local, prefix, resume_skip in (
-            ("va2564", cfg.va_dir, f"{cfg.hf_prefix}/analysis_tensors/va2564", True),
-            ("vc2564", cfg.vc_dir, f"{cfg.hf_prefix}/analysis_tensors/vc2564", True),
+            # resume_skip=False on the .pt stores too (r2 blocker 3): a recomputed
+            # same-shape store is size-IDENTICAL but content-different, and the
+            # size-match presence probe would silently retain STALE HF tensors for
+            # the off-pod PE phase (#2552 class). Mutable-across-recompute, like
+            # the anchors jsonls.
+            ("va2564", cfg.va_dir, f"{cfg.hf_prefix}/analysis_tensors/va2564", False),
+            ("vc2564", cfg.vc_dir, f"{cfg.hf_prefix}/analysis_tensors/vc2564", False),
             ("manifests", cfg.manifest_dir, f"{cfg.hf_prefix}/manifests", False),
         ):
             glob = "*.pt" if name != "manifests" else "*.json"
@@ -1060,7 +1132,7 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
                 delete_local=False,
             )
             upload[name] = _upload_summary(res)
-    R._write_json_atomic(
+    write_json_atomic(
         sentinel,
         {
             "phase": "B",
@@ -1076,17 +1148,87 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
     return RC_OK
 
 
+# ── PC: text-space embedding (subprocess: scripts/issue2564_embed.py) ─────
+
+
+def _embed_out_root(cfg: Cfg2564) -> Path:
+    """The embed subprocess's REALIZED out-root (replicates its own smoke rebind:
+    ``<raw>/embed`` -> ``<raw>/smoke_embed`` under --smoke), so this driver can
+    locate + verify the sentinel the subprocess writes."""
+    base = (cfg.raw_out_root or cfg.out_root) / "embed"
+    if cfg.smoke and not cfg.tiny:
+        return base.parent / f"smoke_{base.name}"
+    return base
+
+
+def phase_embed(cfg: Cfg2564, bank: dict) -> int:
+    """PC: Qwen3-Embedding-8B embedding of all anchor texts (plan §9 pc_embed,
+    on-pod 1×H100) via a ``scripts/issue2564_embed.py`` subprocess — vLLM pooling
+    engine in its OWN process (spawn-env + teardown isolation from this driver's
+    HF model), ``env={**os.environ}`` passthrough. The subprocess owns chunk-grain
+    fingerprint resume + the pilot gate (rc=7 propagates verbatim); this driver
+    VERIFIES the sentinel landed before terminal success (r2 blocker 5)."""
+    _invalidate_phase_records(cfg, "C")
+    if cfg.tiny:
+        if cfg.phase == "C":
+            raise RuntimeError(
+                "phase C (vLLM pooling embed) cannot run under --tiny — no CPU engine; "
+                "use --smoke on a GPU host"
+            )
+        logger.warning("[embed] SKIPPED under --tiny (vLLM pooling engine needs a GPU)")
+        return RC_OK
+    contexts = bank["contexts"]
+    cells = sorted({c["cell"] for c in contexts})
+    _require_anchor_shards(cfg, cells)  # PC consumes PA's anchors (local root)
+    embed_out = _embed_out_root(cfg)
+    sentinel = embed_out / (
+        "embed_done.local.json" if cfg.upload == "none" else "embed_uploaded.json"
+    )
+    cmd = [
+        sys.executable,
+        str(_SCRIPTS_DIR / "issue2564_embed.py"),
+        "--out-root",
+        str((cfg.raw_out_root or cfg.out_root) / "embed"),
+        "--anchors-root",
+        str(cfg.out_root),
+        "--cells",
+        ",".join(cells),
+    ]
+    if cfg.smoke:
+        cmd.append("--smoke")
+    if cfg.upload == "none":
+        cmd.append("--skip-upload")
+    print(f"[embed] launching subprocess: {' '.join(cmd)}", flush=True)
+    proc = subprocess.run(cmd, env={**os.environ})
+    if proc.returncode == RC_PILOT_GATE:
+        logger.error("[embed] pilot gate refusal (rc=7) — propagating")
+        return RC_PILOT_GATE
+    if proc.returncode != 0:
+        raise RuntimeError(f"embed subprocess failed rc={proc.returncode} (cmd: {' '.join(cmd)})")
+    if not sentinel.is_file():
+        raise RuntimeError(
+            f"embed subprocess exited 0 but its sentinel is missing: {sentinel} "
+            "(out-root derivation drift between driver and embed script?)"
+        )
+    print("[phase=pc_embed] sentinel verified", flush=True)
+    return RC_OK
+
+
 # ── main ──────────────────────────────────────────────────────────────────
 
 
 def _load_tokenizer(cfg: Cfg2564):
-    """Real tokenizer (bank gates need the pinned Qwen BPE even under --tiny)."""
+    """Real tokenizer (bank gates need the pinned Qwen BPE even under --tiny).
+
+    Revision-pinned when resolved (r2 blocker 8); the ``unresolved*`` tiny
+    sentinel degrades to None (default tip)."""
     from transformers import AutoTokenizer
 
+    rev = None if cfg.model_revision.startswith("unresolved") else cfg.model_revision
     try:
-        return AutoTokenizer.from_pretrained(cfg.model_id, local_files_only=True)
+        return AutoTokenizer.from_pretrained(cfg.model_id, revision=rev, local_files_only=True)
     except OSError:
-        return AutoTokenizer.from_pretrained(cfg.model_id)
+        return AutoTokenizer.from_pretrained(cfg.model_id, revision=rev)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1134,7 +1276,11 @@ def main(argv: list[str] | None = None) -> int:
     BK.write_bank_manifest(bank, cfg.manifest_dir / "bank2564_manifest.json")
     bank = _filter_bank(bank, cfg.cells, cfg.carriers)
     logger.info("bank: %d contexts / %d pairs after filter", bank["n_contexts"], bank["n_pairs"])
-    phase_fns = {"A": ("pa_generate", phase_anchors), "B": ("pb_capture", phase_capture)}
+    phase_fns = {
+        "A": ("pa_generate", phase_anchors),
+        "B": ("pb_capture", phase_capture),
+        "C": ("pc_embed", phase_embed),
+    }
     run_phases = list(PHASES) if cfg.phase == "all" else [cfg.phase]
     for ph in run_phases:
         name, fn = phase_fns[ph]
