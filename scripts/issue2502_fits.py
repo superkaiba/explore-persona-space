@@ -57,7 +57,11 @@ Key conventions (read before consuming outputs):
   committed JSON artifacts are mirrored to the HF data repo (verified per
   file) and git-committed + pushed on the issue branch (LOUD degrade on
   git-less SLURM lanes; the HF leg is mandatory). ``decide`` writes the
-  ``fits/.p4_done`` sentinel LAST, after publish verifies. Smokes pass
+  ``fits/.p4_done`` sentinel LAST, after publish verifies; the sentinel is
+  CONTENT-BOUND (per-file sha256 of the decision + its decide inputs,
+  verified at skip time), ``--force`` atomically invalidates it BEFORE any
+  recompute, and the skip path re-invokes the idempotent sentinel publish
+  (round-7 decide-force-stale-sentinel-window). Smokes pass
   ``--publish none`` with a scratch ``--out-root``.
 - Resume grain (#14): every resumable unit is its OWN ledger cell keyed by its
   generating parameters — per-layer ``L{k:02d}``, per-fold ``lodo_{group}``,
@@ -2109,6 +2113,29 @@ def _refuse_publish_none_on_canonical(args) -> None:
         )
 
 
+def _decision_fingerprint(out_root: Path) -> dict:
+    """Per-file sha256 content binding for the ``fits/.p4_done`` sentinel
+    (round-7 concern decide-force-stale-sentinel-window): the decision it
+    certifies PLUS the exact decide inputs it was composed from (the
+    ``_load_model_artifacts`` file set for both models). Computed at
+    sentinel-write time and re-verified at sentinel-skip time; a missing file
+    hashes as the literal ``"missing"`` so drift surfaces as a loud mismatch,
+    never a FileNotFoundError. File BYTES are hashed as read from disk — never
+    a recomputed float structure — so the binding is machine-stable (#1336)."""
+    fits = Path(out_root) / "fits"
+    fp: dict[str, str] = {}
+    for rel in (
+        "decision.json",
+        "modelA/fits_summary.json",
+        "modelA/percontext_recon.json",
+        "modelB/fits_summary.json",
+        "modelB/percontext_recon.json",
+    ):
+        p = fits / rel
+        fp[rel] = hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else "missing"
+    return fp
+
+
 def run_decide(args) -> dict:
     """Compose the registered decision from both models' assembled artifacts.
 
@@ -2118,11 +2145,18 @@ def run_decide(args) -> dict:
     normal exit path and the fits/.p4_done sentinel is written LAST.
     IDEMPOTENT (round-6 concern decide-phase-idempotency): a matching
     ``fits/.p4_done`` sentinel SKIPS the re-decide loud and returns the
-    persisted decision; ``--force`` re-runs."""
+    persisted decision; ``--force`` re-runs. CONTENT-BOUND (round-7 concern
+    decide-force-stale-sentinel-window): the sentinel carries a per-file
+    sha256 fingerprint of the decision + its decide inputs, verified at skip
+    time (mismatch fails loud, never a stale-done skip); a forced re-decide
+    atomically INVALIDATES the sentinel before any recompute, so a mid-crash
+    resume reads not-done; the skip path re-invokes the idempotent sentinel
+    publish (crash-window publish retry)."""
     out_root = Path(args.out_root)
     sentinel = out_root / "fits" / ".p4_done"
     decision_path = out_root / "fits" / "decision.json"
-    if sentinel.exists() and not getattr(args, "force", False):
+    force = bool(getattr(args, "force", False))
+    if sentinel.exists() and not force:
         if not decision_path.is_file():
             raise RuntimeError(
                 f"decide: sentinel {sentinel} present but {decision_path} is missing — "
@@ -2130,13 +2164,36 @@ def run_decide(args) -> dict:
                 "or re-run with --force"
             )
         doc = json.loads(sentinel.read_text())
+        want = doc.get("content_sha256")
+        have = _decision_fingerprint(out_root)
+        if want != have:
+            drifted = sorted(
+                k for k in have if not isinstance(want, dict) or want.get(k) != have[k]
+            )
+            raise RuntimeError(
+                f"decide: sentinel {sentinel} is not content-bound to the on-disk "
+                f"artifacts (drifted: {drifted}) — stale phase state (a crashed forced "
+                "re-decide, post-decide artifact drift, or a pre-binding sentinel); "
+                "re-run with --force to re-decide"
+            )
         print(
-            f"[decide] fits/.p4_done present (verdict={doc.get('verdict')!r}) — "
-            "SKIPPING re-decide (idempotent resume); pass --force to re-run",
+            f"[decide] fits/.p4_done present (verdict={doc.get('verdict')!r}, "
+            "content-binding verified) — SKIPPING re-decide (idempotent resume); "
+            "pass --force to re-run",
             flush=True,
         )
         decision = json.loads(decision_path.read_text())
         decision["resumed_from_sentinel"] = True
+        # Skip-path publish RETRY (round-7): a crash in the sentinel-write ->
+        # sentinel-publish window otherwise leaves the REMOTE sentinel copy
+        # missing forever (the local skip would never re-publish). Both legs
+        # are idempotent: HF upload overwrites; _git_publish no-ops on an
+        # already-committed sentinel. publish='none' is a no-op.
+        _publish_sentinel(
+            sentinel,
+            getattr(args, "publish", None) or "none",
+            getattr(args, "publish_prefix", None) or PUBLISH_EVAL_MIRROR,
+        )
         return decision
     import numpy as np
 
@@ -2156,6 +2213,21 @@ def run_decide(args) -> dict:
                 "is stated relative to the per-model reliability ceilings); "
                 "--allow-missing-reliability is a selfcheck/smoke-only escape"
             )
+    if force and sentinel.exists():
+        # round-7 decide-force-stale-sentinel-window: invalidate the sentinel
+        # BEFORE the re-decide touches any artifact — a crash anywhere in the
+        # recompute -> write -> publish window then reads NOT-done on resume
+        # (full re-decide), never a stale-done sentinel certifying the OLD
+        # decision. Atomic same-dir os.replace (kept as .stale for forensics);
+        # placed AFTER the cheap arg validation above so a mis-flagged --force
+        # invocation cannot destroy consistent resume state.
+        stale = sentinel.with_name(".p4_done.stale")
+        os.replace(sentinel, stale)
+        print(
+            f"[decide] --force: sentinel invalidated ({sentinel} -> {stale}) "
+            "BEFORE re-decide (crash-window hygiene)",
+            flush=True,
+        )
     sum_a, rec_a = _load_model_artifacts(out_root / "fits" / "modelA")
     sum_b, rec_b = _load_model_artifacts(out_root / "fits" / "modelB")
 
@@ -2273,6 +2345,9 @@ def run_decide(args) -> dict:
             "verdict": verdict,
             "decision": str(decision_path.relative_to(out_root)),
             "publish": publish,
+            # round-7: content-bind the sentinel to the decision it certifies
+            # + the decide inputs it was composed from (verified at skip time).
+            "content_sha256": _decision_fingerprint(out_root),
             "meta": GC.run_metadata({"artifact": "p4_done"}),
         },
     )
@@ -2782,9 +2857,26 @@ def _selfcheck_pipeline(args, tmp: Path) -> None:
     d4 = run_decide(a_skip)
     assert d4.get("resumed_from_sentinel") is True, "sentinel skip path not taken"
     assert d4["verdict"] == d3["verdict"], (d4["verdict"], d3["verdict"])
+    # round-7 decide-force-stale-sentinel-window: (1) a post-decide artifact
+    # mutation makes the no-force skip FAIL LOUD (content-binding mismatch)
+    # instead of returning a stale decision; (2) --force invalidates the
+    # sentinel BEFORE recompute and re-decides clean; (3) the fresh sentinel
+    # is re-bound and the no-force skip resumes again.
+    dec_path = Path(a.out_root) / "fits" / "decision.json"
+    tampered = json.loads(dec_path.read_text())
+    tampered["verdict"] = "Tampered"
+    _gc().atomic_write_json(dec_path, tampered)
+    _expect_raise(lambda: run_decide(a_skip), "not content-bound")
+    d5 = run_decide(a)  # --force: invalidate-then-re-decide heals the binding
+    assert (Path(a.out_root) / "fits" / ".p4_done.stale").exists(), (
+        "forced re-decide must quarantine the stale sentinel"
+    )
+    assert d5["verdict"] == d3["verdict"], (d5["verdict"], d3["verdict"])
+    d6 = run_decide(a_skip)
+    assert d6.get("resumed_from_sentinel") is True, "re-bound sentinel skip not taken"
     print(
         "[selfcheck] pipeline verdicts: base + Fails + REACHABLE Inconclusive "
-        "+ sentinel-skip resume: OK",
+        "+ sentinel-skip resume + content-binding mismatch/force-heal: OK",
         flush=True,
     )
 

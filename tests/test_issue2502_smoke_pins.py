@@ -55,6 +55,24 @@ Round-6 pins (concern-closure round):
       and the .p4_done sentinel publishes through the SELECTED backend(s) —
       git modes commit it, hf modes upload it (_publish_sentinel routing;
       fakes only at the git/HF boundary, signature-mirroring).
+
+Round-7 pins (concern-closure round):
+
+  (j3-j5) decide-force-stale-sentinel-window: the .p4_done sentinel is
+      CONTENT-BOUND — per-file sha256 over decision.json + both models'
+      fits_summary/percontext_recon (the _load_model_artifacts input set) —
+      and a mismatched or digest-less sentinel fails loud at skip time (j3);
+      --force atomically invalidates the sentinel BEFORE any recompute
+      (quarantined as .p4_done.stale), so a mid-recompute/mid-publish crash
+      resumes into a REAL re-decide, never a stale-done skip (j4); the
+      no-force skip re-invokes the REAL _publish_sentinel body as an
+      idempotent publish retry (j5).
+  (k1, rewritten) publish-none-main-path-hollow-pin: the fit/decide
+      '--publish none' + canonical-out-root refusal is EXECUTED through the
+      real main() argv path with tripwired phase bodies, and
+      --allow-local-only escapes into the phase body for real — replacing
+      the former inspect.getsource call-count, which never executed the
+      refusal.
 """
 
 from __future__ import annotations
@@ -410,19 +428,43 @@ def _decide_args(tmp_path, *extra):
     return FT.build_parser().parse_args(["--phase", "decide", "--out-root", str(tmp_path), *extra])
 
 
-def test_decide_sentinel_skip_and_force(tmp_path):
-    """Pin (j1): a matching fits/.p4_done SKIPs the re-decide (persisted
-    decision returned, resumed_from_sentinel marker set); --force bypasses
-    the skip (proof: the run proceeds to the #13 reliability refusal)."""
+def _bound_decide_fixture(tmp_path, verdict="Replicates"):
+    """Write the full content-bound decide artifact set: both models'
+    _load_model_artifacts file set + decision.json + a .p4_done sentinel
+    carrying the matching per-file sha256 fingerprint (round-7 binding)."""
     fits = tmp_path / "fits"
-    fits.mkdir(parents=True)
-    (fits / "decision.json").write_text(json.dumps({"verdict": "Replicates", "a_pass": True}))
-    (fits / ".p4_done").write_text(json.dumps({"done": True, "verdict": "Replicates"}))
+    for mk in ("modelA", "modelB"):
+        d = fits / mk
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "fits_summary.json").write_text(json.dumps({"model": mk}))
+        (d / "percontext_recon.json").write_text(json.dumps({"model": mk}))
+    (fits / "decision.json").write_text(json.dumps({"verdict": verdict, "a_pass": True}))
+    (fits / ".p4_done").write_text(
+        json.dumps(
+            {
+                "done": True,
+                "verdict": verdict,
+                "content_sha256": FT._decision_fingerprint(tmp_path),
+            }
+        )
+    )
+    return fits
+
+
+def test_decide_sentinel_skip_and_force(tmp_path):
+    """Pin (j1): a matching CONTENT-BOUND fits/.p4_done SKIPs the re-decide
+    (persisted decision returned, resumed_from_sentinel set); --force bypasses
+    the skip (proof: the run proceeds to the #13 reliability refusal), and a
+    pre-recompute arg-validation failure does NOT invalidate the sentinel —
+    the still-consistent pair keeps skipping on a no-force resume."""
+    fits = _bound_decide_fixture(tmp_path)
     res = FT.run_decide(_decide_args(tmp_path))
     assert res.get("resumed_from_sentinel") is True
     assert res["verdict"] == "Replicates"
     with pytest.raises(SystemExit, match="--reliability-a"):
         FT.run_decide(_decide_args(tmp_path, "--force"))
+    assert (fits / ".p4_done").exists(), "arg-validation failure must not invalidate"
+    assert FT.run_decide(_decide_args(tmp_path)).get("resumed_from_sentinel") is True
 
 
 def test_decide_sentinel_without_decision_fails_loud(tmp_path):
@@ -435,29 +477,108 @@ def test_decide_sentinel_without_decision_fails_loud(tmp_path):
         FT.run_decide(_decide_args(tmp_path))
 
 
-def test_publish_none_on_canonical_out_root_refused():
-    """Pin (k1): '--publish none' against the canonical production out-root
-    (or any path under it) is REFUSED absent --allow-local-only; scratch
-    out-roots + durable modes pass; main() wires the guard on BOTH
-    publish-bearing phases (publish-none-hardening)."""
-    import inspect
+def test_decide_sentinel_content_binding_mismatch_fails_loud(tmp_path):
+    """Pin (j3): a sentinel whose fingerprint no longer matches the on-disk
+    artifacts (tampered decision / drifted decide inputs / a digest-less
+    pre-binding sentinel) FAILS LOUD at skip time, naming the drifted keys —
+    never a stale-done skip (round-7 decide-force-stale-sentinel-window)."""
+    fits = _bound_decide_fixture(tmp_path)
+    (fits / "decision.json").write_text(json.dumps({"verdict": "Tampered"}))
+    with pytest.raises(RuntimeError, match=r"not content-bound.*decision\.json"):
+        FT.run_decide(_decide_args(tmp_path))
+    # drifted decide INPUT (a model summary), decision restored: same refusal.
+    fits2 = _bound_decide_fixture(tmp_path)
+    (fits2 / "modelB" / "fits_summary.json").write_text(json.dumps({"model": "drifted"}))
+    with pytest.raises(RuntimeError, match=r"not content-bound.*modelB/fits_summary\.json"):
+        FT.run_decide(_decide_args(tmp_path))
+    # legacy digest-less sentinel: loud refusal too (never a trust-on-existence skip).
+    _bound_decide_fixture(tmp_path)
+    (fits / ".p4_done").write_text(json.dumps({"done": True, "verdict": "Replicates"}))
+    with pytest.raises(RuntimeError, match="not content-bound"):
+        FT.run_decide(_decide_args(tmp_path))
 
-    ap = FT.build_parser()
-    with pytest.raises(SystemExit, match="loss path"):
-        FT._refuse_publish_none_on_canonical(ap.parse_args(["--phase", "fit", "--publish", "none"]))
+
+def test_decide_force_invalidates_sentinel_before_recompute(tmp_path):
+    """Pin (j4): the crash window — a forced re-decide that dies MID-RECOMPUTE
+    (after arg validation, before a fresh sentinel lands) leaves the sentinel
+    INVALIDATED (atomically quarantined to .p4_done.stale), so a no-force
+    resume RE-RUNS the decide instead of skipping on a stale-done sentinel
+    certifying the OLD decision."""
+    fits = _bound_decide_fixture(tmp_path)
+    # the {} model summaries crash the recompute at candidate_sets (KeyError),
+    # strictly after the invalidation point and before any decision write.
+    with pytest.raises(KeyError):
+        FT.run_decide(_decide_args(tmp_path, "--force", "--allow-missing-reliability"))
+    assert not (fits / ".p4_done").exists(), "stale-done sentinel survived the crash window"
+    assert (fits / ".p4_done.stale").exists(), "invalidated sentinel quarantined, not lost"
+    # resume WITHOUT --force: no skip — the re-decide is attempted for real
+    # (and crashes on the same degenerate fixture), never a stale-done skip.
+    with pytest.raises(KeyError):
+        FT.run_decide(_decide_args(tmp_path, "--allow-missing-reliability"))
+
+
+def test_decide_skip_path_republishes_sentinel(tmp_path, monkeypatch):
+    """Pin (j5): the no-force skip re-invokes the REAL _publish_sentinel body
+    (crash-window publish retry — a crash between the local sentinel write and
+    its publish otherwise leaves the remote copy missing forever; both legs
+    idempotent). Fake only at the HF boundary, signature-mirroring."""
+    fits = _bound_decide_fixture(tmp_path)
+    calls: list = []
+
+    def fake_upload_single_file(local: Path, dest: str) -> None:
+        calls.append((local, dest))
+
+    monkeypatch.setattr(GC, "upload_single_file", fake_upload_single_file)
+    res = FT.run_decide(_decide_args(tmp_path, "--publish", "hf"))
+    assert res.get("resumed_from_sentinel") is True
+    assert calls == [(fits / ".p4_done", f"{FT.PUBLISH_EVAL_MIRROR}/fits/.p4_done")]
+
+
+def test_publish_none_on_canonical_out_root_refused(monkeypatch):
+    """Pin (k1): '--publish none' against the canonical production out-root
+    (or any path under it) is REFUSED absent --allow-local-only — EXECUTED
+    through the real main() entrypoint (production argv parse) for BOTH
+    publish-bearing phases, with the phase bodies tripwired so a dead or
+    misordered guard call cannot stay green; --allow-local-only ESCAPES for
+    real (the phase body is reached); scratch out-roots + durable modes pass
+    the guard (round-7 publish-none-main-path-hollow-pin: replaces the former
+    inspect.getsource count, which never executed the refusal)."""
+
+    def _main(*argv):
+        monkeypatch.setattr(sys, "argv", ["issue2502_fits.py", *argv])
+        return FT.main()
+
+    def _must_not_run(args, **kw):
+        raise AssertionError("phase body reached despite --publish none on canonical out-root")
+
+    monkeypatch.setattr(FT, "run_fit", _must_not_run)
+    monkeypatch.setattr(FT, "run_decide", _must_not_run)
+    canon = str(FT.CANONICAL_OUT_ROOT)
     sub = str(FT.CANONICAL_OUT_ROOT / "sub")
+    # REFUSAL EXECUTES on both phases through main() (fit leg: the parser's
+    # DEFAULT out-root IS the canonical tree; decide leg: a path under it).
     with pytest.raises(SystemExit, match="loss path"):
-        FT._refuse_publish_none_on_canonical(
-            ap.parse_args(["--phase", "decide", "--publish", "none", "--out-root", sub])
-        )
-    FT._refuse_publish_none_on_canonical(
-        ap.parse_args(["--phase", "fit", "--publish", "none", "--allow-local-only"])
+        _main("--phase", "fit", "--publish", "none")
+    with pytest.raises(SystemExit, match="loss path"):
+        _main("--phase", "decide", "--publish", "none", "--out-root", sub)
+    # --allow-local-only ESCAPES for real: main() proceeds into the phase body.
+    reached: list[str] = []
+    monkeypatch.setattr(FT, "run_fit", lambda args, **kw: reached.append("fit") or {})
+    monkeypatch.setattr(FT, "run_decide", lambda args, **kw: reached.append("decide") or {})
+    assert (
+        _main("--phase", "fit", "--publish", "none", "--out-root", canon, "--allow-local-only") == 0
     )
+    assert (
+        _main("--phase", "decide", "--publish", "none", "--out-root", canon, "--allow-local-only")
+        == 0
+    )
+    assert reached == ["fit", "decide"]
+    # Scratch out-roots + durable modes pass the direct guard (unit legs kept).
+    ap = FT.build_parser()
     FT._refuse_publish_none_on_canonical(
         ap.parse_args(["--phase", "fit", "--publish", "none", "--out-root", "/tmp/i2502-scratch"])
     )
     FT._refuse_publish_none_on_canonical(ap.parse_args(["--phase", "fit", "--publish", "hf+git"]))
-    assert inspect.getsource(FT.main).count("_refuse_publish_none_on_canonical(args)") == 2
 
 
 def test_publish_sentinel_routes_selected_backends(monkeypatch, tmp_path):
