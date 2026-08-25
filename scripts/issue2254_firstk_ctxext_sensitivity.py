@@ -30,11 +30,7 @@ import re
 import sys
 from pathlib import Path
 
-from explore_persona_space.orchestrate.env import load_dotenv
-
-load_dotenv()  # BEFORE numpy: shared-VM thread caps bind at import (#847)
-
-import numpy as np  # noqa: E402
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUND = ROOT / "eval_results/issue_2254/first-k-answer-token-steering"
