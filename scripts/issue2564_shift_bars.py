@@ -111,6 +111,7 @@ def main() -> None:
     ap.add_argument("--perpair", default=str(DEFAULT_PERPAIR))
     ap.add_argument("--extra-perpair", default=None, help="pilot perpair.jsonl to append")
     ap.add_argument("--out-stem", default="shift_vs_ratio_bars")
+    ap.add_argument("--exclude", default="", help="comma-separated tick labels to drop")
     args = ap.parse_args()
 
     rows = [json.loads(line) for line in open(args.perpair, encoding="utf-8")]
@@ -118,6 +119,11 @@ def main() -> None:
     if args.extra_perpair:
         extra_rows = [json.loads(line) for line in open(args.extra_perpair, encoding="utf-8")]
         cts.extend(_extra_change_types(extra_rows))
+    excl = {s.strip() for s in args.exclude.split(",") if s.strip()}
+    if excl:
+        unknown = excl - {label for label, _ in cts}
+        assert not unknown, f"--exclude labels not in figure: {sorted(unknown)}"
+        cts = [(label, rr) for label, rr in cts if label not in excl]
 
     rng = np.random.default_rng(SEED)
     recs = []
