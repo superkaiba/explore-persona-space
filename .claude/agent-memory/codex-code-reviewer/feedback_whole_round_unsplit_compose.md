@@ -22,6 +22,13 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    BODY forms entirely; verify `merge-base(origin/main, HEAD) == <parent>`
    still holds and name the excluded sync SHAs in the compose-time facts so
    Codex never flags their spec churn.
+   **HEAD-side variant (#2184 r1):** when out-of-scope commits sit ON TOP of
+   the feature commits (spec-freshness syncs from origin/main after the
+   round's last feature commit), HEAD itself is out of scope — pin
+   `git diff <parent>..<last-feature-sha>` and ban `..HEAD` / `...HEAD`
+   BODY forms entirely; verify `merge-base(origin/main, HEAD) == <parent>`
+   still holds and name the excluded sync SHAs in the compose-time facts so
+   Codex never flags their spec churn.
 1b. **origin-main variant (#2478 r1):** a ROUND-1 whole-round brief may
    legitimately pin `base: origin/main` with NO `round_parent=` when the
    branch IS the round (freshly cut, all commits are round commits) AND
@@ -46,6 +53,12 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    structurally cannot see (constant defined in one commit / consumed at a
    different grain in another; waivers detached by later refactors;
    committed-artifact grain vs consumer assumptions).
+6b. **Pre-split single-marker variant (#2379 r1):** a head reading
+   "round 1 (pre-split build, units 1-4 of 4)" with a body stating "covers
+   the WHOLE round" is NOT the item-6 thin-final-unit shape — probe
+   events.jsonl for `note.startswith('[unit ')` rows (0 hits ⇒ skip the
+   progress-notes envelope) and tell Codex the marker IS the full-round
+   report so "units 1-4 of 4" is never misread as partial coverage.
 6b. **Pre-split single-marker variant (#2379 r1):** a head reading
    "round 1 (pre-split build, units 1-4 of 4)" with a body stating "covers
    the WHOLE round" is NOT the item-6 thin-final-unit shape — probe

@@ -1,0 +1,1829 @@
+{
+  "commit": "ee7f55ab+dirty",
+  "render_id": "6e8801bd430242d3",
+  "git_commit": "ee7f55ab",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-25T06:33:09Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.3054953710285467,
+      "error": 0.0,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.028985481881886006,
+      "error": 0.0,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.31590206435043755,
+      "error": 0.0,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.25861916716653477,
+      "error": 0.014428518916623237,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.44809745447459376,
+      "error": 0.005068624940906416,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.42182711196962,
+      "error": 0.011095154054325568,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9172544231084898,
+      "error": 0.007702968071085142,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9364367945168832,
+      "error": 0.004541513469772829,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "Plain text",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.16834918539695337,
+      "error": 0.014428518916623237,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.27291927937719707,
+      "error": 0.005068624940906416,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6942472275196327,
+      "error": 0.011095154054325568,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5448815377966681,
+      "error": 0.007702968071085142,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9664198848622402,
+      "error": 0.004541513469772829,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "Astra",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.1256174696822381,
+      "error": 0.014428518916623237,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.23322010539706187,
+      "error": 0.005068624940906416,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6746130668143377,
+      "error": 0.011095154054325568,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5033401104491415,
+      "error": 0.007702968071085142,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.959256971713926,
+      "error": 0.004541513469772829,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "HELIOS",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14978400270393963,
+      "error": 0.014428518916623237,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.2691674300505255,
+      "error": 0.005068624940906416,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6799274665897319,
+      "error": 0.011095154054325568,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5418335100359873,
+      "error": 0.007702968071085142,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9618328684954888,
+      "error": 0.004541513469772829,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "Wren",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.011700525226835979,
+      "error": 0.014428518916623237,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14972689255687155,
+      "error": 0.005068624940906416,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6348374988391586,
+      "error": 0.011095154054325568,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.41206630094705116,
+      "error": 0.007702968071085142,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9502823379541533,
+      "error": 0.004541513469772829,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "Dana",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.07692441482405095,
+      "error": 0.014428518916623237,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14198390005859868,
+      "error": 0.005068624940906416,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6177107928744783,
+      "error": 0.011095154054325568,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.4004275684068079,
+      "error": 0.007702968071085142,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9498156710752981,
+      "error": 0.004541513469772829,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "Vex",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "error": 0.0,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.19766169484701218,
+      "error": 0.014428518916623237,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.1872185200940309,
+      "error": 0.005068624940906416,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5103289787525247,
+      "error": 0.011095154054325568,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5027077879490942,
+      "error": 0.007702968071085142,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9627709438587512,
+      "error": 0.004541513469772829,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "error": 0.0,
+      "series": "User (real)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.3054953710285467,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.028985481881886006,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.31590206435043755,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.25861916716653477,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.44809745447459376,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.42182711196962,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9172544231084898,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9364367945168832,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.33498455640325214,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.004894689845901225,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.34733675533065317,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.2429565647584738,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.44053253730619824,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.41002846917691144,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9111068861313182,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9316582455664507,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.27663635786775914,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.04920949006378776,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.29005396310116605,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.274745979526966,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.45616530938517746,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.4351229239802476,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9228730776647049,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9407142724433968,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.16834918539695337,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.27291927937719707,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6942472275196327,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5448815377966681,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9664198848622402,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.15976338365989362,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.26426125824716273,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6866964202703073,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5322679909260357,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9638842533640234,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.1805387072545406,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.28089816402420925,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.7031821638256778,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5575096158454637,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9685548420974701,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.1256174696822381,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.23322010539706187,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6746130668143377,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5033401104491415,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.959256971713926,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.11520877813227762,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.22492114449663522,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6663664733629302,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.49217598069850277,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9570243275190934,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.1362918514052366,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.24154541519525644,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6836569628292842,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5136951745250439,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9613669850720787,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14978400270393963,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.2691674300505255,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6799274665897319,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5418335100359873,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9618328684954888,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.13996757763694753,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.25992204553931814,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6718256750055587,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5311086373148379,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.958884374848818,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.16053504588400175,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.2774686271877219,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6874626004081404,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5514337226872535,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9644683287703422,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.011700525226835979,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14972689255687155,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6348374988391586,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.41206630094705116,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9502823379541533,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.019790552422710817,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14511479649618747,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6276612903317622,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.40277166299703,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9471937545233464,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.004112251152504944,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.15519949547517564,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6430284598142241,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.422457609375773,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9531881364865555,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.07692441482405095,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14198390005859868,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6177107928744783,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.4004275684068079,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9498156710752981,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.08546514029802278,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.13484860716982683,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.6102876438388346,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.3886923707943564,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9467218990614601,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.0684114369420544,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.14991249722385944,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.625657069738472,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.4125387653829559,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9529044988820502,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.19766169484701218,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.1872185200940309,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5103289787525247,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5027077879490942,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9627709438587512,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.21315613304696143,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.18252152897062524,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.49961536277432633,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.49525748126361085,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9583350048004692,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -0.18429909521371496,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 5.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.19265877885243807,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5218056708829775,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 7.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.5106634174057811,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 8.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 0.9674180317400148,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 9.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": 1.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "recovery: transfer R\u00b2 / own ceiling R\u00b2": -1.0,
+      "_kind": "line",
+      "_group": 33
+    }
+  ],
+  "n_series": 34,
+  "total_points": 270,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The chat-trained map transfers to no framing unchanged",
+        "ylabel": "recovery: transfer R\u00b2 / own ceiling R\u00b2",
+        "legend_labels": [
+          "Plain text",
+          "Astra",
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "User (real)"
+        ],
+        "annotations": [
+          "chat\u2192target transfer, 9 adaptation rungs; triangles mark points below the axis (down to \u22124.7)"
+        ],
+        "xticklabels": [
+          "frozen map",
+          "input mean shift",
+          "output mean shift",
+          "bias refit",
+          "global scale",
+          "output rotation",
+          "input linear re-map",
+          "output linear re-map",
+          "full refit"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "Plain text",
+      "Astra",
+      "HELIOS",
+      "Wren",
+      "Dana",
+      "Vex",
+      "User (real)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

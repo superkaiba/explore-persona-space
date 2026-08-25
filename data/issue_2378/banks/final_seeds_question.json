@@ -1,0 +1,55 @@
+{
+  "items": [
+    "The detective leaned forward across the metal table, his eyes fixed on {name} with an intensity that suggested he already knew the answer.",
+    "When the principal cleared her throat and adjusted her glasses, {name} knew the questions were about to begin.",
+    "The customs officer studied {name}'s passport for what felt like an eternity before looking up with evident suspicion.",
+    "Three colleagues stood blocking the conference room exit while the department head turned to {name}, demanding an explanation.",
+    "The child tugged insistently on {name}'s sleeve, her wide eyes brimming with the kind of innocence that demanded honesty.",
+    "After reviewing the x-rays in uncomfortable silence, the doctor swiveled her chair toward {name}, needing several answers before she could proceed.",
+    "The lawyer set down his pen, closed the folder, and fixed {name} with the calculating stare of someone about to spring a trap.",
+    "As the interview panel exchanged knowing glances, the woman in the center leaned forward and addressed {name} by name.",
+    "The priest's expression shifted from welcoming to grave as he gestured for {name} to sit in the confessional's dim light.",
+    "When her mother appeared in the doorway holding the opened letter, {name} understood that explanations would now be required.",
+    "The mechanic wiped his hands on a greasy rag and approached {name}, wanting to know a few things before touching the engine.",
+    "Standing at the altar with everyone watching, the officiant paused dramatically before turning an expectant gaze toward {name}.",
+    "The journalist's recorder was already running when she looked up from her notes with a pointed question for {name}.",
+    "After the third time the toddler pointed at the stranger, her father crouched down beside {name} with an embarrassed smile.",
+    "The border guard made a subtle gesture, and two more officers appeared at the booth, full of questions for {name}.",
+    "When the teacher finished reading the essay aloud, she removed her reading glasses, her question for {name} already taking shape.",
+    "The senior partner closed the office door with unusual care before returning to his desk, the inevitable question for {name} hanging in the silence.",
+    "Standing in the rubble of what had been the garage, {name}'s spouse turned around, plainly demanding to know how this had happened.",
+    "The flight attendant's professional smile vanished as she leaned down, needing to ask {name} something urgent.",
+    "After scrolling through the phone for several long minutes, the teenager looked up at {name} with tears forming.",
+    "The fortune teller's playful demeanor disappeared entirely as she pushed the tarot cards aside, one question for {name} rising to her lips.",
+    "When the executor of the will asked everyone else to leave the room, {name} understood there would be questions to answer.",
+    "The coach blew the whistle to stop practice and walked purposefully toward {name}, wanting an answer in front of the whole team.",
+    "Standing beside the empty hospital bed, the nurse turned to {name}, clearly needing to ask what had happened in the night.",
+    "The stranger at the funeral reception approached with recognition flickering across his face, his attention fixed solely on {name}."
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T00:45:38-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks",
+      "--banks-dir",
+      "data/issue_2378/banks"
+    ],
+    "git_commit": "98565a9d",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "data/issue_2378/banks/prime_bank_dialogue.json",
+      "data/issue_2378/banks/prime_bank_question.json",
+      "data/issue_2378/banks/registers.json",
+      "data/issue_2378/banks/settings.json",
+      "data/issue_2378/banks/situations.json",
+      "scripts/issue2378_banks.py",
+      "scripts/issue2378_common.py",
+      "scripts/issue2378_gen.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

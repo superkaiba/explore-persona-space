@@ -1341,6 +1341,301 @@ directions), #2348(e) no re-emission of the persisted id (assert exactly one
 line-start grammar row), and a `## Round-1 closure ledger` schema section
 with a pseudo-ID for the un-persisted r1 Minor 2.
 
+**Dual-crash cap round + SHA-correction supersession (#2378 r5, 2026-08-19):**
+two composable deltas on the crash-fix shape. (a) TWO crashes of DIFFERENT
+diagnosis kinds in one review round — a P1 `epm:failure` (the marker-v5 fix)
+plus a P0 `epm:progress` hot-fix record (orchestrator-inline fix that shipped
+unreviewed straight to relaunch): inline BOTH in separate CRASH-DIAGNOSIS
+envelopes, put the unreviewed hot-fix commit explicitly IN SCOPE ("gets its
+first review here"), and give the data-only sibling commit (banks) digest-only
+instructions after a compose-time `--numstat` proof it carries zero code.
+(b) A same-round `epm:progress` CORRECTION note superseding a fix-engaged
+element's SHA (pre-amend SHA in element 4, unreachable by design): inline it
+in its own `---BEGIN SHA-CORRECTION NOTE---` envelope, pre-adjudicate the
+element as CORRECTED (never marker-shape, never a probe target — "do not
+probe for the stale SHA"), and count-assert BOTH SHAs per part (impl 2+1,
+correction 2+1, own prose 1+1). Also: deferred-concern rounds want a
+`DEFERRED-BINDING-UNDISTURBED | REGRESSED-BY-ROUND` status vocabulary (the
+regression arm = fresh finding at own severity under a NEW id), and a
+`## Crash-fix verification` REQUIRED schema section (per-crash
+root-cause-addressed / fix-engaged-creditable / no-silent-fallback /
+residuals lines) inserted before the ledger-status heading.
+
+**User-greenlit CAP-RAISE fix round on an upheld-own-FAIL (#2378 r6,
+2026-08-20):** when the user reopens a cap-5 park with "more rounds" (cap
+raised to 10), this is NOT the #2333-r6 one-scoped-round shape — frame it as
+an ordinary fix round of the resumed loop ("round 6 of 10, user-extended
+cap"; no out-of-scope-hunk=FAIL clause, standard severity-precision line)
+and inline the greenlight `epm:progress` note in its own envelope: its
+numbered items double as the round contract (the named minimal fix + a
+carry-forward duty), with an explicit split of which items are REVIEWABLE
+in code vs orchestrator-owned (pod reuse, relaunch pacing). Composable with
+#2371 (addressed-not-open ledger) + #2329-rclose (author-neutrality on the
+upheld own FAIL; ruling inlined FIRST as binding, own verdict SECOND
+tag-stripped + rows blockquoted). Also: (a) verify the brief's NEW-file
+labels with `git show <sha> --diff-filter=A --name-only` — the #2378 r6
+brief labeled an r5-created/r6-extended test file NEW; (b) a marker
+diff-stat like "+140/−15" can be a churn-SUM (125+15) — pre-adjudicate as a
+Style note so the twin doesn't flag a phantom falsity; (c) rubric-currency
+hit live AGAIN via the round-parent spec-sync commit itself (`git show
+<sync-sha> -- code-reviewer.md` shows exactly what to patch — here the
+#2201 divergence block, inserted before the "Size the diff" anchor, plus a
+compose-facts line recording the brief's `diverged_on_main: none` probe
+result as do-not-re-derive).
+
+**Ensemble-PASS crash-fix round — crash-fix 2 (#2378 r7, 2026-08-20):** deltas vs
+the #2329-r6 crash-fix-with-impl-marker shape when the PRIOR round closed
+Claude-PASS + own-twin-CONCERNS (no reconciler, `CONCERN:: none`): (a) the twin's
+own UNPERSISTED prior Minors get a dedicated fence section — compose-grep
+attestation that the new hunks touch neither surface, no re-raise / no row
+re-emission, a fresh-finding-on-material-interaction escape, author-neutrality
+both directions; (b) with zero addressed rows this round, the ledger section is
+open+deferred STATUS lines PLUS R-rows: REGRESSION duties for prior-round-CLOSED
+ids whose surfaces the crash-fix touches (the pins-record 5-key change was the
+closed r6 blocker's exact surface — the crash-fix duty F2 doubles as that row's
+decision), vocabulary NOT-REGRESSED / TOUCHED-VERIFIED / REGRESSED-BY-ROUND;
+(c) envelope-embedded SHA arithmetic: when HEAD is built by concatenating the
+envelopes, count-asserts must target PROMPT TOTALS with authored+embedded
+breakdowns in the label — per-part asserts double-count (hit live 3× this
+compose); grep the embedded bodies' short-form counts, never predict them;
+(d) an impl marker EMBEDDING an `epm:failure-lesson` block (own head/close tags
+before the impl close) needs a shape attestation + ==1 tag asserts, and a
+failure marker whose body sentinel says v1 while posted top-level version is 3
+gets the standard do-not-be-confused note; (e) a marker-quoted fix-engaged log
+line that greps ZERO in the diff may be an f-string SPLIT across source lines —
+probe the post-image for a fragment before treating it as the #2329-r11
+zero-hit composer observation, then tell Codex to grep by fragments.
+
+**Consecutive crash-fix rounds — tail reuse + rubric-native round tokens
+(#2378 r8, 2026-08-20):** on the SECOND consecutive crash-fix round the r7
+shape reuses almost verbatim; three mechanical deltas: (a) extract the
+output-contract TAIL from the COMPOSED prior prompt via
+`prior_prompt.split(RUBRIC)` (assert exactly 2 parts) — it already carries the
+prior round's patches, so only v<n-1>→v<n> + the new F-duty schema remain
+(blanket `Round-7`→`Round-8` replace is safe on the small authored tail;
+count-assert capitalized and lowercase forms separately first); (b) round-token
+residue asserts on the RUBRIC must COUNT-PIN, not assert absence — "round 7"
+(#779 descope) and "round 8" (#653 r8) each appear once RUBRIC-NATIVELY in
+incident text; (c) cross-part token totals (e.g. `PASS_UNIFIED`) must sum
+EVERY part including the rubric's own Step 0.55 gate text (smokearch 2 + impl
+1 + rubric 2 + authored 1 — hit live). Content-side: when the prior twin
+verdict was a zero-findings PASS there is NOTHING to fence from r<n-1> — say
+so explicitly and keep the OLDER round's Minors fence verbatim; a brief
+phrase like "un-droppable by later env merges" that the realized code only
+approximates (env_extra merges last, implementer-declared deliberate) is the
+#2332-r2 named-tension pattern — attest the call-site inventory at compose
+time, hand the sufficiency ruling to Codex.
+
+**Duty-DISCHARGE cap round after the deferral trigger fires (#2378 r10,
+2026-08-20):** when the prior round's sharpened carry-forward contract fires
+its trigger ((a): first non-emergency dispatcher round) AND the round
+implements the dictated duties, the r9 D-section flips from
+BINDING-DUTY-UNMET adjudication to DISCHARGE closure: vocabulary
+DISCHARGED-BY-ROUND / PARTIALLY-DISCHARGED / NOT-DISCHARGED (NOT-DISCHARGED
+= substantive FAIL — the round's own contract includes the duty), the
+SHARPENED `deferral_rationale` is the acceptance contract, and each dictated
+ELEMENT the realized fix exceeds/moots becomes a NAMED TENSION (here: a
+"runbook interpreter note" mooted by self-correcting main() routing; the
+dictated "guarded shutdown" omitted on an os._exit(1) failure path that the
+same rationale's finalization-deadlock cite arguably justifies;
+recursion-termination of a self-re-dispatching entry — the child must
+satisfy the interpreter discriminator or re-dispatch loops; subprocess.run
+timeout killing the direct child but not vLLM EngineCore grandchildren).
+Composable deltas: (a) a DESIGNED-gate-trip fix round has NO epm:failure —
+ground truth = the orchestrator's diagnosis progress note + the RAW pod-side
+JSON gate record (posted by the dispatch script, top-level v1); inline both,
+pre-adjudicate their shapes, and state the expected RE-TRIP at TRUE rates IS
+the fix-engaged signal, never a failure; (b) a reconciler standing rec whose
+fire-clause triggered but was NOT taken (the env_extra merge-order companion
+edit; the touched merge line re-indented ORDER-UNCHANGED — attest it) gets
+the #2333-r4(a) neutral note on its L-row with a Minor/CONCERNS ceiling;
+(c) blockquote the inlined prior verdict's `CONCERN:: none` too, not only
+real rows (it is still a line-start forwarder hit); (d) for an ACCOUNTING
+fix, frame F-duties on writer↔aggregator coherence: enumerate every summary
+writer and classify payload-keyed + filename-parseable / stage-level-by-
+design / neither, and adjudicate the still-silent membership-drop residual
+(#906 class residue) at Codex's severity; (e) assert trap: the diff-
+acquisition record instruction carries the short payload SHA TWICE (range +
+payload parenthetical) — count 2, not 1.
+
+**Reconciler-deferred binding-point round (#2378 r9, 2026-08-20):** when the
+prior round's reconciler deferred the twin's own BLOCKERs with an explicit
+`Binds at the next <X>-touching round: <dictated duty>` clause and THIS round
+touches X but implements neither duty (the orchestrator's punch list omitted
+them), compose a dedicated REQUIRED D-section: three-way vocabulary
+DISCHARGED-BY-ROUND / CARRY-JUSTIFIED / BINDING-DUTY-UNMET with severity
+explicitly Codex's to rate; the ledger slice must carry ALL THREE events per
+id (twin BLOCKER raise, reconciler CONCERN re-raise, reconciler deferral —
+the `deferral_rationale` IS the acceptance contract); surface the
+two-contract conflict (reconciler clause vs punch-list scope) NEUTRALLY
+("do not assume either document wins by default"); attest partial-narrowing
+nuances (here: the new engine-KWARG pin reaches the standalone arm where the
+r8 ENV pin did not — a narrowing, not the dictated fix) and any in-log
+empirical datum touching a deferred duty (the gate self-terminated at 100 s
+— evidence about the class, not a discharge). D-ids get D-lines only, never
+CONCERN:: rows. Mechanical deltas hit live: (a) a posted epm:failure body
+can carry NO closing tag where the prior version had one — probe tags per
+marker, never assume the sibling's shape; (b) the impl marker may omit the
+assert_tag literal — key the presence assert on `epm:failure v<n>` instead;
+(c) CAPS envelope titles ("ROUND-8 RECONCILER RULING") do not count toward
+"Round-8" token asserts — count the cases separately; (d) the inlined prior
+twin verdict ECHOES output-schema headings ("## Crash-fix verification
+(REQUIRED") — assert tail+embedded totals; (e) a partial-sentence rep1 on a
+tail note leaves trailing round tokens alive — count-pin the lowercase
+residue then blanket-replace.
+
+**Fresh-cycle plan-authorized recalibration round after a CLOSED loop (#2378
+r11, 2026-08-21):** when the implement-review loop closed at a reconciled
+binding PASS and the plan pre-authorizes a ONE-SHOT recalibration round, the
+compose is a fresh cycle, not a fix round: (a) the ACCEPTANCE CONTRACT is the
+orchestrator's lever-decision `epm:progress` note — inline it as a
+`RECALIBRATION DECISION` envelope and turn each numbered lever into a V-duty
+(the F-duty slot of gate-trip rounds); the plan's authorization line
+(here v6:473 "Allowed without asking") goes in the round-semantics bullet;
+(b) inline the TRUE-rates gate record + the guard-verification note as
+separate envelopes; established facts = the MEASURED causes, with the
+projection numbers explicitly carved out as NOT-reviewable (mechanism only);
+(c) the closing reconciler ruling inlines as "closure record — context";
+the twin's own OVERTURNED verdict is NOT re-inlined when the ruling's
+findings table carries every disposition (cleaner tag arithmetic:
+own-head==1/close==1, prior tags==0); (d) a reconciler REQUIRED guard
+already executed+verified (progress note) whose ledger row still reads
+latest=raised gets a GUARD-DISCHARGED-PENDING-LEDGER-ACTION status
+vocabulary + a return-flag for the orchestrator to run `address-concern` —
+the pendency is never a round finding; (e) assert trap hit live: the r10+
+rubric span carries TWO rubric-native `**Prior-concerns ledger:**` tokens
+(Step 0.8 record-the-ledger-state sentence) — assert per-part (rubric 2 /
+tail 1 / authored 0), never total==1; (f) a one-shot stake round wants the
+severity-precision framing of a cap round ("PLAN-AUTHORIZED ONE-SHOT ROUND"
+in the Blocker-tags bracket) even though it is round 1 of a fresh cycle.
+
+**User-authorized plan-amendment round after a terminal gate-FAIL park (#2378
+r12 = impl v12, 2026-08-23):** when a designed gate FAIL parks the task
+(`epm:failure` triage menu), the user picks an option, and the round implements
+the resulting plan amendment: (a) the ACCEPTANCE CONTRACT is a four-envelope
+CHAIN — the failure park (defect + options), the user decision `epm:progress`
+note (option pick + any MANDATORY-FIRST-FIX clause), and the `epm:plan`
+amendment-record markers — each pre-adjudicated shape-wise (a failure body
+sentinel v1 vs posted top-level v6 gets the do-not-be-confused note; no fresh
+`epm:failure` this round — a park-follow-up is not a crash-fix). (b) STALE
+worktree plan at scale: worktree frozen at v6, canonical v8 = 141 KB — inline
+only the AMENDED SECTIONS (extract by heading; ~34 KB: Amendment record +
+each brief-named §) and keep the frozen v6 PATH as auxiliary reference for
+unchanged conventions, with explicit "inlined v8 wins on conflict" + "every
+<dropped-thing> statement in v6 is SUPERSEDED" — a middle path between
+full-inline (#1090 r5) and by-path (#1090 fu1). (c) Plan version posted AFTER
+the impl marker (v8 = prose correction ratifying the implementer's named (d)
+assumption, +3 min): inline the correction marker, pre-adjudicate the marker's
+"plan_version=v<n-1>" line as true-when-posted, and instruct scoring against
+the corrected reading — never silent drift, never marker-shape. (d) An
+ADDRESSED ledger row whose recorded companion duty ("if any further X is ever
+planned") has its fire clause TRIGGERED by the round gets included in the
+slice with a dedicated V-duty (the in-code re-implementation of the hand
+guard) + a TOUCHED-VERIFIED / REGRESSED-BY-ROUND status line — the closed-row
+sibling of the deferred-row D-duty. (e) DESCOPE rounds instruct BOTH
+directions: inertness (kept-defined archival constants / banks / tombstoned
+phase bodies are never dead-code findings) AND a completeness sweep (any
+remaining ACTIVE-path reference to the dropped family — gates, sizing, shard
+maps, floors — is the substantive direction). (f) Assert traps hit live: in a
+plain-string part, count {SHA} placeholders BEFORE replacing; a doubled-brace
+literal contains its single form as a substring (assert `{{rnd}}`==1 FIRST,
+replace, then count `{rnd}`); when envelopes embed via f-string into ONE part,
+token totals sum the four PARTS only (parts_total helper, embedded counts as
+diagnostic labels only) — summing parts AND their embeddings double-counts.
+
+**FAIL+FAIL-union fix round with a PARTIALLY-persisted union + addressed-not-open
+ledger (#2378 r14, 2026-08-24):** composes #2332 (both verdicts inlined
+tag-stripped as acceptance contracts; no reconciler, no r13 fence) + #2371
+(implementer ran address-concern 30-45 s AFTER its marker: pin the ledger
+snapshot to the BATCH end, not the impl ts, and swap the parallel-twin guard to
+"assert zero REVIEWER-actor rows postdate the impl ts") + #1092-r4 pseudo-IDs.
+Novel deltas: (a) check each prior verdict's `CONCERN::` row FORM at compose
+time — the Claude r13 rows used the non-grammar `CONCERN:: id=<x> severity=<y>`
+shape, so the forwarder persisted NONE of them; the two ids the orchestrator's
+brief also omitted became pseudo-IDs (`r13-claude-<id>`) with the inlined
+verdict text as contract (the #2155 parse-failure shape observed on the OTHER
+twin's marker — flag to orchestrator, never fix the ledger yourself). (b) A
+fix-engaged figure that MATCHES the prior round's own claim (kept=10,000/10,000
+appeared in BOTH r13 and r14 verifications) is a non-discriminator — say so in
+the creditability duty and name the round-only observables instead. (c)
+Marker-prose accuracy nits found at compose time (caller line 825 vs post-image
+828; probe legs attributed to fits-probe but living in ladder.py:832/851) are
+attested NEUTRALLY as prose nits with the substance-claim verified separately.
+(d) Accounting structure: totals sum TOP-LEVEL parts {substituted head, rubric,
+tail} only; `head_authored(tok) = head.count - sum(embedded.count)` gives the
+assertable authored counts (asserting on the UNsubstituted template undercounts
+everything substituted in — hit live). (e) A posted twin verdict can carry the
+"Codex session ID" footer INSIDE the events.jsonl note — strip after the FIRST
+closing tag before inlining (re-confirmed #2147-cr4).
+
+**Multi-cause gate-trip fix round with an implementer SELF-RAISED concern
+(#2378 r13, 2026-08-24):** three deltas on the r10 designed-gate-trip shape.
+(a) When the diagnosis decomposes into NUMBERED causes and the impl marker's
+"Brief adherence" maps fixes 1-N onto them, the V-duty section keys one duty
+per cause-fix AND pre-adjudicates the causes that are NOT code duties (an
+orchestrator pod-ops crash in the preamble; a plan-§10 command-list omission
+whose recorded remedy is a header note) — otherwise the twin FAILs the round
+for the plan's own gap. (b) An implementer-raised CONCERN row (here the
+render-asymmetry disclosure) is BOTH a V-duty (adjudicate the disclosed
+tradeoff against the plan's by-construction contract) and a ledger status
+line with ADEQUATE-AS-PERSISTED / UNDERSTATES vocabulary — UNDERSTATES routes
+to a FRESH id, never a re-emission; pin the ledger snapshot to the impl ts as
+usual (the self-raise predates the marker, so it IS in the snapshot). (c)
+Compose-time mechanism attestation beats claim-echo for a fix whose invariant
+is EMERGENT: the impl claimed the wave-2 kept-ledger rewrite "EXTENDS, never
+clobbers"; a 3-line read showed the mechanism is full-set-recompute + shared
+cache (superset-ness contingent on cache survival + judge determinism, not an
+explicit union) — attest the located mechanism neutrally and make the
+STRUCTURAL / CONTINGENT / DEFECTIVE ruling a V-duty vocabulary. Assert traps
+hit live (all label-caught): the diff-acq block carries the parent SHA 3×
+(log + pre-image show + per-file diff); an addressed-rows pair carries the
+hot-fix SHA 2× in the slice JSON; a duties-section header that names its tail
+heading adds a 4th `## Round-N ledger status` mention.
+
+**Fresh-cycle interp-REVISE corrective round (#2378 r15 = impl v15, 2026-08-24):**
+when an interpretation-critique REVISE (post-loop-close, task at `interpreting`)
+spawns a corrective implementation round, the compose is a fresh cycle whose
+ACCEPTANCE CONTRACT is the orchestrator's corrective BRIEF (inline verbatim) +
+the interp-outcome `epm:progress` note (short; inline) — do NOT inline the full
+interp-critique verdicts (~12 KB each; the brief distills them), and
+pre-adjudicate that the OTHER twin's interp blockers (clean-result-body fixes)
+are the analyzer-r2 round's property, never this code round's. Three deltas:
+(a) PLAN-REGISTERED-DEFECT pre-adjudication — the plan itself registered the
+defective behavior (§4.4 "Fold ids aligned by index for the pooled arm"), so
+the fix arm deviates from the PLAN by REVISE mandate: quote the plan line, say
+"do not flag as silent drift", and keep default-OFF byte-identity as a V-duty;
+(b) code-only payload vs run deliverables — brief deliverables naming POD-SIDE
+re-run outputs get an explicit "absence of eval_results/<new-dir>/ is NOT a
+finding; review whether the code would produce them" line; (c) when the marker's
+checked fact CONTRADICTS the brief's stated premise (brief: "row-id spaces are
+per-framing, pair from metadata"; marker: row_id IS a content key minted once
+per source conversation), make it the round's TOP duty with a three-way
+MARKER-RIGHT / BRIEF-RIGHT / UNRESOLVED ruling + the exact reading anchors
+(gen-script function, id-minting site) — the #2332-r2 named-tension rule,
+escalated because the contradiction decides whether the round's whole
+non-story disposition rests on a false premise.
+
+**Fresh-cycle rubric reuse: the adaptations block carries FOUR round-specific
+spans (#2378 r15):** the A→B rubric span extracted from a prior FIX-round
+prompt embeds that round's Codex-runtime adaptations — patch (count-assert ==1
+each): (1) the BLOCKED paragraph's inlined-document LIST (bounce brief /
+prior-verdict entries → this round's envelope names); (2) the item-2
+`## Round-<n-1> ledger status` heading ref; (3) the item-5 pinned ROUND-PARENT
+SHA for Step 0.9 probes; (4) the item-7 substantive-finding EXAMPLES (rewrite
+to this round's failure shapes). Post-patch residue asserts: `r13`/`bounce
+brief`/`Round-<n-1>`/old-parent-SHA all == 0. Round-token count-pins:
+"round 15" appears once RUBRIC-NATIVELY (incident #518 citation).
+
+**f-string placeholder brace-halving is SILENT (#2378 r15, hit live):** writing
+`{{IMPL}}`-style placeholders inside an f-string head renders them SINGLE-braced,
+so the later `.replace("{{IMPL}}", ...)` no-ops silently AND the standard
+`assert '{{' not in prompt` cannot see them (they are already single-braced).
+The miss only surfaced because an unrelated authored doubled-brace literal
+tripped the assert first. Rule: build the head as a PLAIN string with
+placeholder tokens, or use brace-free tokens (`@@IMPL@@`) in f-string heads;
+after substitution assert each envelope's BEGIN/END tag ==1 (which is what
+actually caught the no-op here — the impl head-sentinel count came back wrong).
+
 **Sibling-rubric spans embed the sibling's BASE SHA — sweep hex SHAs, not
 just the issue number (#1739 claim4-controls r1, 2026-08-19):** the 2379-r1
 template's rubric span carried its base SHA (`2f52e456…`) in FOUR probe
