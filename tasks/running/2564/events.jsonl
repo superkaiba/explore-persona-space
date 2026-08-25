@@ -64,3 +64,4 @@
 {"ts": "2026-08-25T08:46:39Z", "kind": "epm:concern-addressed", "version": 1, "by": "experiment-implementer", "concern_id": "exploratory-figure-pair-filters", "note": "concern_id: exploratory-figure-pair-filters\nseverity: NIT\nsummary: flip/para buckets keyed on primary_class; carrier-transfer restricted to single "}
 {"ts": "2026-08-25T08:48:32Z", "kind": "epm:progress", "version": 17, "by": "unknown", "note": "[divergence-probe] r2 count=0 main=f3cfdc233cec4cc0eefeaa76400f11a9be2047bf files="}
 {"ts": "2026-08-25T09:07:25Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mt8fys91-wx4pd4 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s probe_retries=0"}
+{"ts": "2026-08-25T09:17:16Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mt8fys91-wx4pd4 phase=done after 580s fetch_retries=0."}
