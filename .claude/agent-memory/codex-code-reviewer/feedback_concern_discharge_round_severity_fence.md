@@ -158,6 +158,20 @@ adjudication line (comment-accuracy post-fix, at most Minor). Also attest
 stale BLOCKER severities on older rows of a since-downgraded id (the latest
 verified-open CONCERN rows + the binding reconcile govern).
 
+**Own-CONCERNS-verdict discharge — no reconciler exists (#2552 r5, 2026-08-25):**
+the fence applies identically when the persisted loci come from the twin's OWN
+`CONCERN::` rows on a CONCERNS verdict that agreed-PASSed with the Claude PASS
+(no reconcile record, nothing downgraded). Compose deltas vs the
+reconciler-downgrade shape: state "the grades are YOUR OWN — no superseded
+severity, no reconcile envelope"; author-neutrality binds in both directions;
+acceptance contract = the `raised` rows + the twin's own r(n-1) Evidence/Impact/
+Fix + Mechanizable sketches (verdict inlined tags-stripped, its `CONCERN::` rows
+blockquoted per #2329 rclose — asserts: line-start rows==1 template-only,
+blockquoted==2). Per-locus severities incl. a NIT id re-raising at NIT (#2479
+r6). The Mechanizable sketches double as closure-duty decompositions (the
+rollback variant, the preseed-legacy-fixture variant) — restate them as explicit
+S/F items rather than trusting Codex to re-read its own sketch.
+
 **Default fence on a silent brief + out-of-round diverged_on_main (#2564 r3,
 2026-08-25):** a brief framing the round as "the concern-closure round …
 the review verifies the closures + any new defects" WITHOUT a
