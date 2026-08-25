@@ -1,3 +1,4 @@
 # MEMORY — codex-clean-result-critic
 
-- [Delta rounds beyond r3](feedback_delta_rounds_beyond_r3.md) — r4/r5 delta briefs: compose delta-scoped when the brief says so; spec accepts rounds 1-5 as of #1017 (malformed <=0/>5/non-integer refused).
+- [Delta rounds + round cap](feedback_delta_rounds_beyond_r3.md) — cap is 10 (was 5 under #1017); delta-scope when the brief says so; malformed <=0/>10/non-integer refused.
+- [Lens-ref inline replacements](feedback_compose_recipe_lens_ref_replacements.md) — THREE run-it-yourself spans to replace (Lens 14 ×2 + Lens 13 plan-fetch); SPEC.md is clean; assert-before-replace.
