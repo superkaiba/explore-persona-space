@@ -43,6 +43,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 logger = logging.getLogger(__name__)
 
 # < 9 MB per shard: stays on the non-LFS Hub path (the Hub force-routes any
@@ -301,9 +303,8 @@ def pack_raw_tree(
         "repacked_groups": repacked,
         "groups": out_groups,
     }
-    tmp = pack_root / (MANIFEST_NAME + ".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    os.replace(tmp, pack_root / MANIFEST_NAME)
+    with atomic_replace(pack_root / MANIFEST_NAME) as tmp:
+        tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     expected = {MANIFEST_NAME} | {s["name"] for g in out_groups.values() for s in g["shards"]}
     actual = {p.name for p in pack_root.iterdir() if p.is_file()}

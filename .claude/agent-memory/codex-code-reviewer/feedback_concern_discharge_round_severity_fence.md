@@ -1,82 +1,6 @@
 ---
 name: concern-discharge-round-severity-fence
-description: "5c-ter CONCERN-discharge rounds (prior round: twin FAIL, reconciler BINDING PASS with the twin's loci persisted at CONCERN): the severity fence differs from the upheld-bounce shape — NOT-ADDRESSED re-raises at CONCERN, never substantive-FAIL; only FALSE closure claims and NEW round defects stay at the ordinary bar (#2479 r4)"
-metadata:
-  type: feedback
----
-
-When the round exists to discharge concerns the reconciler DOWNGRADED from the
-twin's own FAIL (5c-ter: prior round Claude-PASS / Codex-FAIL / reconciler
-BINDING PASS, loci persisted at severity CONCERN; first hit #2479 r4,
-2026-08-23), the closure-duty severity fence is NOT the #1094 upheld-bounce
-form ("NOT-ADDRESSED = substantive FAIL since the fix IS the round"). Compose:
-
-1. Acceptance contract = the r(n-1) `raised` rows' `summary` + `evidence`
-   (the evidence fields carry the reconciler's per-locus downgrade records,
-   e.g. "Reconcile v3 locus 1-4") — the twin's own prior verdict is inlined
-   tags-stripped as Evidence/Fix DETAIL only, read THROUGH the downgrade
-   records; its verdict line + BLOCKER severities are declared SUPERSEDED.
-2. Severity fence, both directions: an honestly-incomplete closure =
-   NOT-ADDRESSED status line + same-id `CONCERN:: ` row at CONCERN severity —
-   never a fresh Critical, never a FAIL ground by itself (the reconciler
-   already ruled the loci non-blocking). Two things stay at the ordinary
-   Steps 1-7 bar: a FALSE closure claim (marker/ledger asserts a mechanism
-   the diff lacks = misreporting) and any NEW defect the fix code introduces.
-3. Disclosed-deviation adjudication rows: when the closure evidence is an
-   EXECUTION (a real smoke) with disclosed deviations (sync-route swap,
-   synthesized pilot, scratch redirects), give the ledger template a
-   per-deviation SUPPORTS-CERTIFICATION / UNDERMINES-CERTIFICATION line and
-   route an undermining deviation to the CONCERN re-raise, not FAIL.
-4. A smoke DRIVER as the deliverable gets a production-poisoning hazard
-   triple in the new-code focus: (a) scratch/prefix containment structurally
-   guaranteed (not merely observed), (b) the synthesized/fixture artifact
-   cannot license PRODUCTION spend (trace the structural defense — identity
-   mismatch vs an explicit flag check), (c) new fingerprints must not
-   OVER-invalidate legitimate production resume (volatile compared fields,
-   env-default resolution, pre-round reports lacking the new fields:
-   refuse-cleanly vs KeyError).
-
-**Why:** pre-resolving NOT-ADDRESSED as FAIL either re-litigates a binding
-downgrade (the twin authored the FAIL — author-neutrality) or, fenced too
-loosely, lets a false "addressed" row ship unverified.
-
-**How to apply:** any brief citing a reconciler sentinel + residuals
-"persisted at CONCERN" that the round now implements. Related:
-[[revision-round-compose-recipe]] (upheld-bounce = the BLOCKER-severity
-sibling), [[close-condition-on-next-touch-arming]] (the severity-fence
-origin), [[whole-round-unsplit-compose]].
-
-**MIXED punch list (#823 ext-ladder r3, 2026-08-23):** a reconcile can
-UPHOLD one blocker and DOWNGRADE the rest in the same FAIL — apply the
-fences PER ITEM in one closure ledger (item 1: NOT-ADDRESSED = substantive
-FAIL, the upheld-bounce form; downgraded items: NOT-ADDRESSED = CONCERN-
-grade status line). And when the brief bars re-emission of ALL persisted
-ids as `CONCERN:: ` rows (the #2326 blind-forwarder duplication), the
-discharge fence's "same-id CONCERN:: row" re-raise route is OVERRIDDEN:
-the NOT-ADDRESSED status line alone carries the re-raise (say so in the
-prompt — "a NOT-ADDRESSED downgraded item is re-raised BY its status
-line, not by a row"). Also watch for stale ledger severities: rows
-forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
-attest the stale fields at compose time or the twin re-escalates them.
-
-**Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
-2026-08-23):** when the downgrade came from a rich reconcile marker, inline
-its body IN FULL as its own BINDING envelope (the per-locus rationale carries
-the fix prescriptions and any REFUTED clause with the refutation trace) —
-richer than the ledger evidence digests alone. For a REFUTED escalation
-clause, grep the ROUND DIFF for the refutation-premise symbols at compose
-time (e.g. `DEFAULT_ITEMS_DIR_REL` / `expected_data_identity` untouched),
-attest the result, and fence the re-raise CONDITIONALLY: re-raising requires
-showing THIS diff changed the premise — a blind re-raise is barred, a
-premise-recheck is legitimate. A lint-gate-remedy commit riding a concern
-round (unguarded-call error pre-existing but push-blocked by the
-round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
-the twin adjudicates the fix instead of flagging scope drift. Reconcile
-`Standing recommendations on PASS` are declared non-gating (note only on
-regression).
----
-name: concern-discharge-round-severity-fence
-description: "5c-ter CONCERN-discharge rounds (prior round: twin FAIL, reconciler BINDING PASS with the twin's loci persisted at CONCERN): the severity fence differs from the upheld-bounce shape — NOT-ADDRESSED re-raises at CONCERN, never substantive-FAIL; only FALSE closure claims and NEW round defects stay at the ordinary bar (#2479 r4)"
+description: "5c-ter CONCERN-discharge rounds (prior round: twin FAIL, reconciler BINDING PASS with the twin's loci persisted at CONCERN): the severity fence differs from the upheld-bounce shape — NOT-ADDRESSED re-raises at CONCERN, never substantive-FAIL; only FALSE closure claims and NEW round defects stay at the ordinary bar (#2479 r4). Default fence confirmed on a silent brief + out-of-round diverged_on_main adaptation (#2564 r3)"
 metadata:
   type: feedback
 ---
@@ -154,6 +78,20 @@ lengths), which the marker DECLINES with an argument, gets a
 within-contract adjudication instruction — adopted scope governs, the
 decline is judged on merits, and it must NOT drive NOT-ADDRESSED.
 
+**Rider-MUST-address escalation basis + twice-raised-id severity attestation
+(#2336 r2, 2026-08-24):** the #823-r4 brief-severity override does not need
+the brief to state "NOT-ADDRESSED = substantive FAIL" verbatim — a reconcile
+whose Disposition riders say "Batch 1 MUST address (open CONCERNs)" and a
+brief framing the round as "closes three concerns" together justify the
+upheld-bounce fence, WITH a PARTIALLY-ADDRESSED carve-out (core mechanism
+landed + effective on the reconciler's named probes, honest disclosed
+residual ⇒ CONCERNS + same-id row, never FAIL). Separately: when a twin's
+BLOCKER forwards AND the reconciler's CONCERN re-raises both sit in the
+ledger as `raised` rows for the SAME id, attest "the LATEST raised row
+governs; the earlier BLOCKER severities are SUPERSEDED, not stale
+bookkeeping" — else the twin flags the double-raise as ledger inconsistency
+or re-escalates from its own old rows.
+
 **Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
 2026-08-23):** when the downgrade came from a rich reconcile marker, inline
 its body IN FULL as its own BINDING envelope (the per-locus rationale carries
@@ -169,20 +107,6 @@ round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
 the twin adjudicates the fix instead of flagging scope drift. Reconcile
 `Standing recommendations on PASS` are declared non-gating (note only on
 regression).
-
-**Rider-MUST-address escalation basis + twice-raised-id severity attestation
-(#2336 r2, 2026-08-24):** the #823-r4 brief-severity override does not need
-the brief to state "NOT-ADDRESSED = substantive FAIL" verbatim — a reconcile
-whose Disposition riders say "Batch 1 MUST address (open CONCERNs)" and a
-brief framing the round as "closes three concerns" together justify the
-upheld-bounce fence, WITH a PARTIALLY-ADDRESSED carve-out (core mechanism
-landed + effective on the reconciler's named probes, honest disclosed
-residual ⇒ CONCERNS + same-id row, never FAIL). Separately: when a twin's
-BLOCKER forwards AND the reconciler's CONCERN re-raises both sit in the
-ledger as `raised` rows for the SAME id, attest "the LATEST raised row
-governs; the earlier BLOCKER severities are SUPERSEDED, not stale
-bookkeeping" — else the twin flags the double-raise as ledger inconsistency
-or re-escalates from its own old rows.
 
 **Consecutive discharge rounds + the Standing-recommendations flip (#2479 r6,
 2026-08-23):** when round n+1 discharges round n's reconciler downgrades, the
@@ -217,193 +141,52 @@ mechanically drive KEEP-OPEN, and an honest KEEP-OPEN is a fully valid
 answer. Also: a superseding `epm:plan-verify` v2 (fresh PASS at the current
 plan version) RESOLVES a prior round's version-gap attestation — attest the
 v2 and bar re-raising the gap, rather than repeating the r1 caveat.
----
-name: concern-discharge-round-severity-fence
-description: "5c-ter CONCERN-discharge rounds (prior round: twin FAIL, reconciler BINDING PASS with the twin's loci persisted at CONCERN): the severity fence differs from the upheld-bounce shape — NOT-ADDRESSED re-raises at CONCERN, never substantive-FAIL; only FALSE closure claims and NEW round defects stay at the ordinary bar (#2479 r4)"
-metadata:
-  type: feedback
----
 
-When the round exists to discharge concerns the reconciler DOWNGRADED from the
-twin's own FAIL (5c-ter: prior round Claude-PASS / Codex-FAIL / reconciler
-BINDING PASS, loci persisted at severity CONCERN; first hit #2479 r4,
-2026-08-23), the closure-duty severity fence is NOT the #1094 upheld-bounce
-form ("NOT-ADDRESSED = substantive FAIL since the fix IS the round"). Compose:
+**Re-emission bar splits by ledger state (#2552 r4, 2026-08-25):** the #2564
+"ALL persisted ids barred from `CONCERN:: ` re-emission" wording holds only
+for ids whose latest event is `raised` (still open — a row would duplicate).
+When the implementer posted `addressed` rows for the target ids (the closure
+claims under verification), a NOT-ADDRESSED/PARTIALLY-ADDRESSED re-raise
+REQUIRES the same-id row — it is the re-open mechanism. Compose both rules
+explicitly: target ids (latest=addressed) get rows on failed closure at the
+fence severity; open-by-design ids (latest=raised) get status lines only.
+Same round: reconcile "Standing recommendations on PASS" items become the
+round contract when the round is dispatched to implement exactly them
+(attest the flip); a reconcile "Observed but not raised" fold-into-next-touch
+item is ARMED when the round touches that code — give it a small
+adjudication line (comment-accuracy post-fix, at most Minor). Also attest
+stale BLOCKER severities on older rows of a since-downgraded id (the latest
+verified-open CONCERN rows + the binding reconcile govern).
 
-1. Acceptance contract = the r(n-1) `raised` rows' `summary` + `evidence`
-   (the evidence fields carry the reconciler's per-locus downgrade records,
-   e.g. "Reconcile v3 locus 1-4") — the twin's own prior verdict is inlined
-   tags-stripped as Evidence/Fix DETAIL only, read THROUGH the downgrade
-   records; its verdict line + BLOCKER severities are declared SUPERSEDED.
-2. Severity fence, both directions: an honestly-incomplete closure =
-   NOT-ADDRESSED status line + same-id `CONCERN:: ` row at CONCERN severity —
-   never a fresh Critical, never a FAIL ground by itself (the reconciler
-   already ruled the loci non-blocking). Two things stay at the ordinary
-   Steps 1-7 bar: a FALSE closure claim (marker/ledger asserts a mechanism
-   the diff lacks = misreporting) and any NEW defect the fix code introduces.
-3. Disclosed-deviation adjudication rows: when the closure evidence is an
-   EXECUTION (a real smoke) with disclosed deviations (sync-route swap,
-   synthesized pilot, scratch redirects), give the ledger template a
-   per-deviation SUPPORTS-CERTIFICATION / UNDERMINES-CERTIFICATION line and
-   route an undermining deviation to the CONCERN re-raise, not FAIL.
-4. A smoke DRIVER as the deliverable gets a production-poisoning hazard
-   triple in the new-code focus: (a) scratch/prefix containment structurally
-   guaranteed (not merely observed), (b) the synthesized/fixture artifact
-   cannot license PRODUCTION spend (trace the structural defense — identity
-   mismatch vs an explicit flag check), (c) new fingerprints must not
-   OVER-invalidate legitimate production resume (volatile compared fields,
-   env-default resolution, pre-round reports lacking the new fields:
-   refuse-cleanly vs KeyError).
+**Own-CONCERNS-verdict discharge — no reconciler exists (#2552 r5, 2026-08-25):**
+the fence applies identically when the persisted loci come from the twin's OWN
+`CONCERN::` rows on a CONCERNS verdict that agreed-PASSed with the Claude PASS
+(no reconcile record, nothing downgraded). Compose deltas vs the
+reconciler-downgrade shape: state "the grades are YOUR OWN — no superseded
+severity, no reconcile envelope"; author-neutrality binds in both directions;
+acceptance contract = the `raised` rows + the twin's own r(n-1) Evidence/Impact/
+Fix + Mechanizable sketches (verdict inlined tags-stripped, its `CONCERN::` rows
+blockquoted per #2329 rclose — asserts: line-start rows==1 template-only,
+blockquoted==2). Per-locus severities incl. a NIT id re-raising at NIT (#2479
+r6). The Mechanizable sketches double as closure-duty decompositions (the
+rollback variant, the preseed-legacy-fixture variant) — restate them as explicit
+S/F items rather than trusting Codex to re-read its own sketch.
 
-**Why:** pre-resolving NOT-ADDRESSED as FAIL either re-litigates a binding
-downgrade (the twin authored the FAIL — author-neutrality) or, fenced too
-loosely, lets a false "addressed" row ship unverified.
-
-**How to apply:** any brief citing a reconciler sentinel + residuals
-"persisted at CONCERN" that the round now implements. Related:
-[[revision-round-compose-recipe]] (upheld-bounce = the BLOCKER-severity
-sibling), [[close-condition-on-next-touch-arming]] (the severity-fence
-origin), [[whole-round-unsplit-compose]].
-
-**MIXED punch list (#823 ext-ladder r3, 2026-08-23):** a reconcile can
-UPHOLD one blocker and DOWNGRADE the rest in the same FAIL — apply the
-fences PER ITEM in one closure ledger (item 1: NOT-ADDRESSED = substantive
-FAIL, the upheld-bounce form; downgraded items: NOT-ADDRESSED = CONCERN-
-grade status line). And when the brief bars re-emission of ALL persisted
-ids as `CONCERN:: ` rows (the #2326 blind-forwarder duplication), the
-discharge fence's "same-id CONCERN:: row" re-raise route is OVERRIDDEN:
-the NOT-ADDRESSED status line alone carries the re-raise (say so in the
-prompt — "a NOT-ADDRESSED downgraded item is re-raised BY its status
-line, not by a row"). Also watch for stale ledger severities: rows
-forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
-attest the stale fields at compose time or the twin re-escalates them.
-
-**Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
-2026-08-23):** when the downgrade came from a rich reconcile marker, inline
-its body IN FULL as its own BINDING envelope (the per-locus rationale carries
-the fix prescriptions and any REFUTED clause with the refutation trace) —
-richer than the ledger evidence digests alone. For a REFUTED escalation
-clause, grep the ROUND DIFF for the refutation-premise symbols at compose
-time (e.g. `DEFAULT_ITEMS_DIR_REL` / `expected_data_identity` untouched),
-attest the result, and fence the re-raise CONDITIONALLY: re-raising requires
-showing THIS diff changed the premise — a blind re-raise is barred, a
-premise-recheck is legitimate. A lint-gate-remedy commit riding a concern
-round (unguarded-call error pre-existing but push-blocked by the
-round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
-the twin adjudicates the fix instead of flagging scope drift. Reconcile
-`Standing recommendations on PASS` are declared non-gating (note only on
-regression).
----
-name: concern-discharge-round-severity-fence
-description: "5c-ter CONCERN-discharge rounds (prior round: twin FAIL, reconciler BINDING PASS with the twin's loci persisted at CONCERN): the severity fence differs from the upheld-bounce shape — NOT-ADDRESSED re-raises at CONCERN, never substantive-FAIL; only FALSE closure claims and NEW round defects stay at the ordinary bar (#2479 r4)"
-metadata:
-  type: feedback
----
-
-When the round exists to discharge concerns the reconciler DOWNGRADED from the
-twin's own FAIL (5c-ter: prior round Claude-PASS / Codex-FAIL / reconciler
-BINDING PASS, loci persisted at severity CONCERN; first hit #2479 r4,
-2026-08-23), the closure-duty severity fence is NOT the #1094 upheld-bounce
-form ("NOT-ADDRESSED = substantive FAIL since the fix IS the round"). Compose:
-
-1. Acceptance contract = the r(n-1) `raised` rows' `summary` + `evidence`
-   (the evidence fields carry the reconciler's per-locus downgrade records,
-   e.g. "Reconcile v3 locus 1-4") — the twin's own prior verdict is inlined
-   tags-stripped as Evidence/Fix DETAIL only, read THROUGH the downgrade
-   records; its verdict line + BLOCKER severities are declared SUPERSEDED.
-2. Severity fence, both directions: an honestly-incomplete closure =
-   NOT-ADDRESSED status line + same-id `CONCERN:: ` row at CONCERN severity —
-   never a fresh Critical, never a FAIL ground by itself (the reconciler
-   already ruled the loci non-blocking). Two things stay at the ordinary
-   Steps 1-7 bar: a FALSE closure claim (marker/ledger asserts a mechanism
-   the diff lacks = misreporting) and any NEW defect the fix code introduces.
-3. Disclosed-deviation adjudication rows: when the closure evidence is an
-   EXECUTION (a real smoke) with disclosed deviations (sync-route swap,
-   synthesized pilot, scratch redirects), give the ledger template a
-   per-deviation SUPPORTS-CERTIFICATION / UNDERMINES-CERTIFICATION line and
-   route an undermining deviation to the CONCERN re-raise, not FAIL.
-4. A smoke DRIVER as the deliverable gets a production-poisoning hazard
-   triple in the new-code focus: (a) scratch/prefix containment structurally
-   guaranteed (not merely observed), (b) the synthesized/fixture artifact
-   cannot license PRODUCTION spend (trace the structural defense — identity
-   mismatch vs an explicit flag check), (c) new fingerprints must not
-   OVER-invalidate legitimate production resume (volatile compared fields,
-   env-default resolution, pre-round reports lacking the new fields:
-   refuse-cleanly vs KeyError).
-
-**Why:** pre-resolving NOT-ADDRESSED as FAIL either re-litigates a binding
-downgrade (the twin authored the FAIL — author-neutrality) or, fenced too
-loosely, lets a false "addressed" row ship unverified.
-
-**How to apply:** any brief citing a reconciler sentinel + residuals
-"persisted at CONCERN" that the round now implements. Related:
-[[revision-round-compose-recipe]] (upheld-bounce = the BLOCKER-severity
-sibling), [[close-condition-on-next-touch-arming]] (the severity-fence
-origin), [[whole-round-unsplit-compose]].
-
-**MIXED punch list (#823 ext-ladder r3, 2026-08-23):** a reconcile can
-UPHOLD one blocker and DOWNGRADE the rest in the same FAIL — apply the
-fences PER ITEM in one closure ledger (item 1: NOT-ADDRESSED = substantive
-FAIL, the upheld-bounce form; downgraded items: NOT-ADDRESSED = CONCERN-
-grade status line). And when the brief bars re-emission of ALL persisted
-ids as `CONCERN:: ` rows (the #2326 blind-forwarder duplication), the
-discharge fence's "same-id CONCERN:: row" re-raise route is OVERRIDDEN:
-the NOT-ADDRESSED status line alone carries the re-raise (say so in the
-prompt — "a NOT-ADDRESSED downgraded item is re-raised BY its status
-line, not by a row"). Also watch for stale ledger severities: rows
-forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
-attest the stale fields at compose time or the twin re-escalates them.
-
-**Brief-severity override on a dedicated closure round (#823 ext-ladder r4,
-2026-08-23):** the CONCERN fence above is the DEFAULT, not a ceiling. When
-the orchestrator's brief dispatches a round SPECIFICALLY to close the
-kept-open rows and names `NOT-ADDRESSED on any = substantive FAIL`, follow
-the brief — it is the dispatch contract, and the shape reverts to the
-#1094 upheld-bounce form ("the fix IS the round") even though the rows sit
-at severity CONCERN. Compose the escalation EXPLICITLY ("this round's bar
-DIFFERS from round n−1's fence: the reconciler's non-blocking ruling
-governed THAT round; this round was dispatched to close the rows") — else
-the twin, having seen the prior round's CONCERN-grade fence text, may
-under-grade a NOT-ADDRESSED. Two companions: (a) when the row severities
-MATCH the adjudication (fresh reconciler-raised rows, not stale forwards),
-attest that positively ("no stale-severity caveat this round") so the twin
-doesn't hunt for staleness; (b) a sub-item the twin's own prior Fix line
-asked for but the reconcile's ADOPTED scope omitted (here: per-cell list
-lengths), which the marker DECLINES with an argument, gets a
-within-contract adjudication instruction — adopted scope governs, the
-decline is judged on merits, and it must NOT drive NOT-ADDRESSED.
-
-**Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
-2026-08-23):** when the downgrade came from a rich reconcile marker, inline
-its body IN FULL as its own BINDING envelope (the per-locus rationale carries
-the fix prescriptions and any REFUTED clause with the refutation trace) —
-richer than the ledger evidence digests alone. For a REFUTED escalation
-clause, grep the ROUND DIFF for the refutation-premise symbols at compose
-time (e.g. `DEFAULT_ITEMS_DIR_REL` / `expected_data_identity` untouched),
-attest the result, and fence the re-raise CONDITIONALLY: re-raising requires
-showing THIS diff changed the premise — a blind re-raise is barred, a
-premise-recheck is legitimate. A lint-gate-remedy commit riding a concern
-round (unguarded-call error pre-existing but push-blocked by the
-round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
-the twin adjudicates the fix instead of flagging scope drift. Reconcile
-`Standing recommendations on PASS` are declared non-gating (note only on
-regression).
-
-**Consecutive discharge rounds + the Standing-recommendations flip (#2479 r6,
-2026-08-23):** when round n+1 discharges round n's reconciler downgrades, the
-round-n prompt is a SAME-SHAPE donor — extract the rubric between the
-`"\nFollow this protocol:\n"` / `"\n\nYou MUST emit your verdict"` anchors and
-regex-lift the verdict template's full `**Blocker tags:** [...]` bracket line
-for verbatim reuse (it already carries the task's 4.6-N/A-by-kind note);
-rewrite every round section fresh. Two adjudication deltas: (1) the same
-reconcile section flips meaning across rounds — r5 declared `Standing
-recommendations on PASS` NON-gating, while the r5 reconcile's recommendations
-RESTATE the persisted fix prescriptions, so in the r6 compose they ARE the
-round contract; attest the flip explicitly or the twin (trained by the prior
-round's non-gating text) under-reads them. (2) The per-locus severity fence
-includes NIT loci: a NOT-ADDRESSED NIT re-raises the same id at NIT, never
-auto-promoted to CONCERN — state the per-locus severities in both the fence
-paragraph and the Concerns-to-persist bracket. Also carry the reconcile's
-trigger-likelihood rationale with a BOTH-directions moot note ("moot once the
-check exists": no discounting a closure gap on unlikely-trigger grounds, no
-escalating a closed item on consequence grounds).
+**Default fence on a silent brief + out-of-round diverged_on_main (#2564 r3,
+2026-08-25):** a brief framing the round as "the concern-closure round …
+the review verifies the closures + any new defects" WITHOUT a
+NOT-ADDRESSED=FAIL clause and WITHOUT MUST-address riders takes the DEFAULT
+CONCERN fence (status-line-only re-raise; ALL persisted ids barred from
+`CONCERN:: ` re-emission). Twice-raised attestation composes for BOTH
+directions of reconciler re-grade (BLOCKER→CONCERN downgrade AND
+NIT→CONCERN upgrades in one ledger). Separately, the brief's
+`diverged_on_main` can name a file the ROUND's commit never touched: the
+branch-side edits under the rubric's #2201 duty are then the branch's
+CUMULATIVE carries (r1 hunk-carry + r2 threading commits), not round hunks
+— adapt the duty text explicitly, probe anchors at compose time
+(`git diff <main-pin>:<file> HEAD:<file>` hunk count + symbol occurrence
+counts on both sides, e.g. return_boundaries 0→3 / revision 0→7, plus the
+main-side lines the branch lacks), pin every read to the brief's
+`main=<sha>`, and fence both directions: the branch merely LACKING main's
+unrelated migration (cut before it landed) is NOT a finding; only a
+semantic contradiction / silent revert is Major.

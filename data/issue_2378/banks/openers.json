@@ -1,0 +1,26 @@
+{
+  "items": [
+    "{name} replied: \"",
+    "{name} answered quietly: \"",
+    "{name} said: \"",
+    "After a moment, {name} replied: \"",
+    "{name} answered: \"",
+    "{name} responded: \"",
+    "Finally, {name} said: \"",
+    "{name} replied simply: \""
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-19T10:19:02-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks"
+    ],
+    "git_commit": "43cf955d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

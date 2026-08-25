@@ -24,11 +24,11 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import time
 from collections.abc import Callable
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.experiments.issue_1739.constants import (
     K_ROLLOUTS,
     N_JUDGE_DRAWS,
@@ -167,9 +167,8 @@ def write_dv_dataset(
         "git_commit": git_commit,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     logger.info(
         "[dv] %s: wrote %d context rows (%d with DV) -> %s", behavior, len(rows), n_kept, path
     )
@@ -266,10 +265,8 @@ def build_tf_pools(
         pool[side] = cand
     pool["n_fixed_contexts"] = len(fixed_contexts)
     pool["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    pool_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = pool_path.with_name(pool_path.name + ".tmp")
-    tmp.write_text(json.dumps(pool, ensure_ascii=False, indent=1))
-    os.replace(tmp, pool_path)
+    with atomic_replace(pool_path) as tmp:
+        tmp.write_text(json.dumps(pool, ensure_ascii=False, indent=1))
     logger.info(
         "[tf-pool] %s: froze pool (%d pos / %d neg) -> %s",
         behavior,

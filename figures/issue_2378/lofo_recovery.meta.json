@@ -1,0 +1,285 @@
+{
+  "commit": "ee7f55ab+dirty",
+  "render_id": "2b62010093724cac",
+  "git_commit": "ee7f55ab",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2378/hero_ladder_recovery.meta.json",
+    "figures/issue_2378/hero_ladder_recovery.pdf",
+    "figures/issue_2378/hero_ladder_recovery.png",
+    "figures/issue_2378/ladder_r2_points.meta.json",
+    "figures/issue_2378/ladder_r2_points.pdf",
+    "figures/issue_2378/ladder_r2_points.png",
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "figures/issue_2378/pooled_tiers.meta.json",
+    "figures/issue_2378/pooled_tiers.pdf",
+    "figures/issue_2378/pooled_tiers.png",
+    "figures/issue_2378/pooled_tiers_points.meta.json",
+    "figures/issue_2378/pooled_tiers_points.pdf",
+    "figures/issue_2378/pooled_tiers_points.png",
+    "figures/issue_2378/user_turn_panel.meta.json",
+    "figures/issue_2378/user_turn_panel.pdf",
+    "figures/issue_2378/user_turn_panel.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-25T06:33:35Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9542621417019291,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.975088676416604,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0938639354487916,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0843895877459384,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1051820044609963,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0891676627150841,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0931791549089742,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9750201179223906,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.3461887915930048,
+      "error": 0.009809892058557534,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": -0.5015355353268279,
+      "error": 0.034943983956846586,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0467339507219529,
+      "error": 0.005487747576295776,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0344340863751547,
+      "error": 0.005548370620471865,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0453610597777165,
+      "error": 0.005734902818522625,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9769594014760301,
+      "error": 0.00592740860183677,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9309605140688237,
+      "error": 0.008106169988358891,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": -1.888976743505055,
+      "error": 0.06290669136742011,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.33647724578496313,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": -0.5349132935023614,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.041091650194551,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0292386510479885,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0395985431258432,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9708812039711542,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9234718769873113,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": -1.9517879860415472,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.3560970299020782,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": -0.4650253255886682,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0520671453471426,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0403353922889322,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0510683487628885,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9827360211748277,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": 0.939684216964029,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.19,
+      "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2": -1.825974603306707,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Left-out story framings stay at ceiling; chat, plain text, user do not",
+        "ylabel": "recovery: pooled-map R\u00b2 / own-ceiling R\u00b2",
+        "legend_labels": [
+          "pooled map, all 8 framings (bias tier)",
+          "target framing left out of training"
+        ],
+        "annotations": [
+          "leave-one-framing-out pooled maps under global family folds; dashed = own ceiling"
+        ],
+        "xticklabels": [
+          "Chat (train)",
+          "Plain text",
+          "Astra",
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "User (real)"
+        ],
+        "yticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "pooled map, all 8 framings (bias tier)",
+      "target framing left out of training"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

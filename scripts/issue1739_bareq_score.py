@@ -87,11 +87,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+from explore_persona_space.atomic_io import atomic_replace
 
 
 def _ensure_repo_root_on_syspath() -> Path:
@@ -731,13 +732,10 @@ def write_preds_jsonl(path: Path, rows: list[dict]) -> Path:
     already-written unit's file untouched.
     """
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row, sort_keys=True) + "\n")
         fh.flush()
-    os.replace(tmp, path)
     return path
 
 

@@ -46,13 +46,13 @@ import dataclasses
 import gc
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.experiments.issue_1739.constants import (
     AUROC_POS_THRESHOLD,
     MLP_HIDDEN,
@@ -1992,10 +1992,8 @@ def _save_cell_preds(
         sc = scores.get(slug)
         if sc is not None:
             payload[f"pred__{slug}"] = np.asarray(sc[min(fl, sc.shape[0] - 1)], dtype=np.float32)
-    tmp = preds_dir / (name + ".tmp.npz")  # np.savez appends .npz to non-.npz names (#1092)
-    with tmp.open("wb") as fh:
+    with atomic_replace(preds_dir / name) as tmp, tmp.open("wb") as fh:
         np.savez(fh, **payload)
-    os.replace(tmp, preds_dir / name)
     return name
 
 
@@ -2063,13 +2061,10 @@ def write_preds_jsonl(path: Path | str, rows: list[dict]) -> Path:
     already-written unit's file untouched.
     """
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for row in rows:
             fh.write(json.dumps(row, sort_keys=True) + "\n")
         fh.flush()
-    os.replace(tmp, path)
     return path
 
 
@@ -2096,8 +2091,7 @@ def write_summary(
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         **(extra or {}),
     }
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     logger.info("[arms] summary -> %s (%d cells, %d arm rows)", out_path, len(records), len(rows))
     return out_path

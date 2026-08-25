@@ -96,6 +96,8 @@ import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 
@@ -1039,9 +1041,8 @@ def main() -> int:
 
 
 def _atomic_write(path: Path, payload: dict[str, Any]) -> None:
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1, default=str))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1, default=str))
 
 
 if __name__ == "__main__":

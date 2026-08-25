@@ -1,24 +1,23 @@
 {
-  "commit": "22d92210+dirty",
-  "render_id": "315fb0bd446d4076",
-  "git_commit": "22d9221057ad597327cc4bfefa07f782f4dc1b40",
+  "commit": "3c971217+dirty",
+  "render_id": "f06dbcd2a8e94702",
+  "git_commit": "3c9712174dc7769bd25f4ad49eccd29197b822e2",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
-    "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
     "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
-    "figures/paper/c3_failure_attribution.meta.json",
-    "figures/paper/c3_failure_attribution.pdf",
-    "figures/paper/c3_failure_attribution.png",
-    "figures/paper/c3_sae_tier_gradient.meta.json",
-    "figures/paper/c3_sae_tier_gradient.pdf",
-    "figures/paper/c3_sae_tier_gradient.png",
-    "scripts/issue1482_plot4_redesign.py",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "scripts/issue1901_avgtarget_plots.py",
     "scripts/issue1902_figures.py",
     "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -34,149 +33,197 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1902_figures.py",
-  "created": "2026-08-25T07:00:53Z",
+  "created": "2026-08-25T12:48:11Z",
   "figsize": [
     5.5,
-    1.98
+    2.09
   ],
   "points": [
     {
-      "x": -0.26,
-      "held-out $R^2$": 0.3285527356235166,
+      "x": -0.3,
+      "held-out $R^2$": 0.3285527102956418,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.74,
-      "held-out $R^2$": 0.36614485215737846,
+      "x": 0.7,
+      "held-out $R^2$": 0.36614482589979225,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.74,
-      "held-out $R^2$": 0.37953080378148185,
+      "x": 1.7,
+      "held-out $R^2$": 0.3795308248774142,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 2.74,
-      "held-out $R^2$": 0.37507118398242656,
+      "x": 2.7,
+      "held-out $R^2$": 0.3750710168788075,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "SFT",
-      "held-out $R^2$": -0.13071640079644364,
+      "x": 0.9,
+      "held-out $R^2$": -0.13071644763661583,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "DPO",
-      "held-out $R^2$": 0.22866688173775762,
+      "x": 1.9,
+      "held-out $R^2$": 0.22866690796305822,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "RLVR",
-      "held-out $R^2$": 0.3685876388856769,
+      "x": 2.9,
+      "held-out $R^2$": 0.3685874700483821,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 1.26,
-      "held-out $R^2$": 0.3766574505599912,
+      "x": 1.1,
+      "held-out $R^2$": 0.37665742831927607,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "x": 2.26,
-      "held-out $R^2$": 0.39745158906522404,
+      "x": 2.1,
+      "held-out $R^2$": 0.39745142660158195,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "x": 3.26,
-      "held-out $R^2$": 0.3752228748234484,
+      "x": 3.1,
+      "held-out $R^2$": 0.3752229631747279,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "x": -0.26,
-      "retrieval acc@1": 0.2514330157176598,
+      "x": 0.3,
+      "held-out $R^2$": 0.0414645874874261,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "x": 0.74,
-      "retrieval acc@1": 0.44144290151240967,
+      "x": 1.3,
+      "held-out $R^2$": 0.005575975849533288,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "x": 1.74,
-      "retrieval acc@1": 0.4742764725455209,
+      "x": 2.3,
+      "held-out $R^2$": -0.11977930782098012,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "x": 2.74,
-      "retrieval acc@1": 0.44346411005748204,
+      "x": 3.3,
+      "held-out $R^2$": -0.1170101291815917,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "SFT",
-      "retrieval acc@1": 0.14484328750968173,
+      "x": -0.3,
+      "retrieval acc@1": 0.8213685420507456,
       "_kind": "bar",
       "_group": 4
     },
     {
-      "category": "DPO",
-      "retrieval acc@1": 0.4934835295125155,
+      "x": 0.7,
+      "retrieval acc@1": 0.8574944786614623,
       "_kind": "bar",
       "_group": 4
     },
     {
-      "category": "RLVR",
-      "retrieval acc@1": 0.47313720285857325,
+      "x": 1.7,
+      "retrieval acc@1": 0.8459654845427531,
       "_kind": "bar",
       "_group": 4
     },
     {
-      "x": 1.26,
-      "retrieval acc@1": 0.3643986326766708,
+      "x": 2.7,
+      "retrieval acc@1": 0.8431171483527365,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.9,
+      "retrieval acc@1": 0.6991829493962615,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "x": 2.26,
-      "retrieval acc@1": 0.5084882738096489,
+      "x": 1.9,
+      "retrieval acc@1": 0.8078660639449705,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "x": 3.26,
-      "retrieval acc@1": 0.4402951744232702,
+      "x": 2.9,
+      "retrieval acc@1": 0.8386497349724813,
       "_kind": "bar",
       "_group": 5
+    },
+    {
+      "x": 1.1,
+      "retrieval acc@1": 0.8461154477146872,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.1,
+      "retrieval acc@1": 0.8603499818626742,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.1,
+      "retrieval acc@1": 0.8452062974323217,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.3,
+      "retrieval acc@1": 0.7330843776993973,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.3,
+      "retrieval acc@1": 0.790717985162387,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.3,
+      "retrieval acc@1": 0.7700856370889643,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.3,
+      "retrieval acc@1": 0.7636070263690833,
+      "_kind": "bar",
+      "_group": 7
     },
     {
       "x": 0.0,
-      "retrieval acc@1": 0.00036886757654002215,
-      "series": "chance (pool $n$=2711)",
+      "retrieval acc@1": 0.00036603221083455345,
+      "series": "chance (pool $n$=2732)",
       "_kind": "line",
-      "_group": 6
+      "_group": 8
     },
     {
       "x": 1.0,
-      "retrieval acc@1": 0.00036886757654002215,
-      "series": "chance (pool $n$=2711)",
+      "retrieval acc@1": 0.00036603221083455345,
+      "series": "chance (pool $n$=2732)",
       "_kind": "line",
-      "_group": 6
+      "_group": 8
     }
   ],
-  "n_series": 7,
-  "total_points": 22,
+  "n_series": 9,
+  "total_points": 30,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -210,20 +257,20 @@
         ],
         "yticklabels": [
           "0.0",
-          "0.1",
           "0.2",
-          "0.3",
           "0.4",
-          "0.5",
-          "0.6"
+          "0.6",
+          "0.8",
+          "1.0"
         ]
       }
     ],
     "series": [
       "own map at this stage",
       "previous stage's map, applied as-is",
-      "map refit: previous contexts $\\to$ this stage's answers",
-      "chance (pool $n$=2711)"
+      "previous contexts $\\to$ this stage's answers",
+      "identity + learned bias",
+      "chance (pool $n$=2732)"
     ]
   },
   "formats_written": [

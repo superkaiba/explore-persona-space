@@ -19573,44 +19573,11 @@ _SHARED_TMP_DIR_IDIOM_REASON = (
     " lines); waiver-or-defer disposition in batch 2, never recipe-migration"
 )
 SHARED_TMP_LEGACY_ALLOWLIST: tuple[tuple[str, str], ...] = (
-    ("scripts/issue1739_bareq_score.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_compliance_full.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_compliance_pilot.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_fits.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_holdout_rung.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_judge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_k1_floor.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_natpv.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_newarm_box.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_newarm_collect.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_pack.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_pilot_judge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_reconstruct_contexts.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_rejudge.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_rescore_ood.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_rescore_ood_armfill.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_pod.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_regen.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_rescore.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_rescore_stage.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_sycoood_stage.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue1739_trait_rejudge.py", _SHARED_TMP_SEED_REASON),
+    # Batch-5 (#2336) migrated every other seed entry; the #1901 pair stays
+    # deferred while its owning session is LIVE (close-out gate A11 blocks on
+    # emptying these too — deferred entries are never a terminal state).
     ("scripts/issue1901_boundary_token_control.py", _SHARED_TMP_SEED_REASON),
     ("scripts/issue1901_paper_densify_fits.py", _SHARED_TMP_SEED_REASON),
-    ("scripts/issue2476_turnavg_sae.py", _SHARED_TMP_SEED_REASON),
-    (
-        "scripts/issue823_ladder_ext_gen.py",
-        "post-seed drift (batch 2): landed 2026-08-23 on a tree the batch-0 seed scan predated;"
-        " deferred — live owner #823; batch-5 sweep",
-    ),
-    ("scripts/issue823_ladder_fits.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/arms.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/capture.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/corpus_staging.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/dv_build.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/generation.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/mem_guard.py", _SHARED_TMP_SEED_REASON),
-    ("src/explore_persona_space/experiments/issue_1739/sentinels.py", _SHARED_TMP_SEED_REASON),
 )
 
 
