@@ -12,96 +12,184 @@ goal: 'On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal
 title: 'Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE
   in answer vectors, per instruction axis?'
 ---
-# Controlled minimal-pair battery: does the context→answer map predict the DIFFERENCE in answer vectors, per instruction axis?
+# The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)
+<!-- clean-result-v4 -->
 
-## Provenance
+## Takeaways
 
-Originating design (interactive session with Thomas, 2026-08-24), decision record — every choice below is `user-answer`, `inherited from #2215/#2162`, or `default-confirmed` via the /clarify gate:
-
-- **Motivation.** Grew out of #2215's separation-comparison round, which found the map REDISTRIBUTES answer-vector separation (exaggerates instructed-policy aspects, compresses restated-content aspects) but measured it with a yardstick-normalized MAGNITUDE ratio on banks that entangle the manipulated aspect with its textual realization (e.g. prior_topic swapped ~760 chars; birthday-vs-hiking co-varied topic with register). Thomas wanted (a) a maximally-controlled battery where the only difference between two contexts is one aspect, and (b) a measure that compares the observed vs predicted answer-vector DIFFERENCE directly rather than two separately-normalized magnitudes.
-- **Routing:** child of #2215 (`user-answer`). Own Goal (below); reuses the #2162/#2215 rig + the frozen #779 map read-only.
-- **Model:** Qwen/Qwen2.5-7B-Instruct, bf16, frozen (`inherited #2215/#2162` — the maps are fit for this model).
-- **Data:** hand-authored controlled minimal-pair bank, agent-generated queries (`user-answer`: "it's fine for you to generate them"). Deliberately tier-4 constructed — the control requirement IS the justification (flagged as a data-realism deviation in the plan; the whole point is token-matched minimal pairs, which real corpora cannot supply).
-- **Judge manipulation check:** included, light Sonnet Batch-API check that each instruction actually fired in the rollouts (`user-answer`).
-- **Text-embedding third space:** included, Qwen3-Embedding-8B (`user-answer`; extends #2215's sepcmp round).
-- **Scope OUT:** refusal (can't be made a minimal pair — harmfulness is inseparable from the swapped token), topic-of-prior-conversation, user-goal, task-identity, register/tone/affect as separate cells (register kept as one axis; tone/affect collapse into it), axis crossing, nonlinear maps/probes.
-- **Timing:** filed `proposed` only; not spawned. Executes via `/issue <N>` when Thomas dispatches.
+- On the 6 of 9 instruction axes that passed the on-policy compliance gate, plus both query axes, the frozen single-turn map's predicted answer-shift direction beats chance and the identity baseline everywhere: per-axis mean cosine between predicted and observed answer-state differences runs 0.17 to 0.90 against shuffled-pair nulls whose 97.5th percentiles sit at 0.04 to 0.45, and the paired map-minus-identity gap is +0.03 to +0.41 with every bootstrap interval excluding zero (12 to 120 pairs per axis).
+- The tone instruction (very formal vs very casual) is carried almost perfectly: direction cosine 0.90 against a split-half ceiling of 0.99, within-axis consistency 0.93 vs 0.76 for identity pass-through, and a magnitude slope at the map's global calibration (ratio 1.03, interval spanning 1).
+- The injected-name axis is data-limited rather than map-limited: direction cosine 0.17 with a split-half ceiling of 0.13 (every other tested axis is at or above 0.60), even though the name appears in 589 of 600 base-value rollouts. One expressed token barely moves the 10-draw-mean answer state at layer 19 relative to sampling noise.
+- 3 of 9 instruction axes failed the compliance floor and are not tested: hedging (1 of 2 values fired), persona (2 of 5), stance (1 of 5). Qwen-2.5-7B-Instruct would not reliably argue one-sided stances, play most personas, or answer in strong-confidence mode on these debatable advice questions, so cross-axis claims use the 6-axis denominator and those rows appear as null bands only, never zero bars.
+- The predicted difference finds its true pair at 23.7% top-1 among 2,778 candidates (chance 0.04%) under cosine, ahead of identity at top-1 and top-5, but under euclidean distance identity wins at every depth (17.1% vs 15.3% top-1): the map's retrieval margin is metric-dependent, so the direction claims rest on the paired cosine gaps. The single-turn and multi-turn frozen maps agree on every tested axis (largest direction-cosine difference 0.047).
+- 357 of 9,840 rollouts (3.6%) contain CJK-script text (worst axis: persona at 8.4%). Every compliance verdict survives both intrusion recounts except the user-description axis, whose pass is convention-dependent (2 of 5 values fired under zeroing vs 3 of 5 as scored and under exclusion); its direction read on the two intrusion-robust values keeps the same ordering (map 0.49 vs identity 0.36).
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations — per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability — against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.
+Decompose, by kind of context information, what the frozen context-to-answer map actually carries: build a token-matched minimal-pair battery over 9 instruction axes and 2 query axes on Qwen-2.5-7B-Instruct, verify per value that each instruction changed behavior on policy, and test whether the map's predicted answer-state difference matches the observed one in direction and magnitude, against an identity pass-through baseline and shuffled-pair nulls.
 
-## Design
+**This experiment in context:** this is the designed follow-through of [#2215](https://eps.superkaiba.com/tasks/2215), which found that banked context-to-answer maps discriminate minimal-pair contexts but that an identity-plus-bias baseline captures most of that discrimination at context-end. #2215 scored retrieval-style discrimination over a smaller pair set under a different read protocol, so its numbers are not directly comparable; this battery instead scores the predicted-vs-observed answer-shift *difference* per axis, where any constant bias cancels exactly and the map-vs-identity question becomes a paired directional test. The single-turn map under test comes from [#779](https://eps.superkaiba.com/tasks/779), its multi-turn twin from [#1738](https://eps.superkaiba.com/tasks/1738), and the rollout/capture rig from [#2162](https://eps.superkaiba.com/tasks/2162).
 
-**Single-turn skeleton, one manipulation per pair (no crossing):**
-```
-[system]  〈one special instruction, OR empty〉
-[user]    〈query〉
-```
-Every minimal pair is byte-identical except one slot; the non-varied slots hold a fixed neutral default (empty system; a fixed default query when a system axis varies), identical on both sides. Value phrases are token-matched within and across axes (verified against the Qwen tokenizer during design). The default system carries NO "assistant" wording — that word appears only inside an actual assistant persona.
+**Broader narrative:** the context-to-answer line of the project asks whether a single linear map from context-end hidden states predicts the answer representation a context will produce. Aggregate held-out fit says yes on pooled corpora; this battery says *which kinds* of context information survive the map (tone, query topic, audience description, content constraints) and which reads are limited by sampling noise or by the model's own unwillingness to comply, anchoring every representational claim to a behavioral manipulation check.
 
-**Instruction axes (system slot), each with an EMPTY level → install (empty→value) AND swap (value↔value) pairs:**
+Conciseness acknowledgment: this single-round body deliberately ships three check-20 WARN classes (Takeaways bullet length over the 30-word guidance, per-result prose over the 120-word band on all seven results, and total prose over the 800-word budget) because the battery reports 11 axes with per-axis nulls, ceilings, baselines, and intrusion recounts that lose meaning when split.
 
-| Axis | n values | example values (final set fixed at implementation) |
+## Methodology
+
+**Design:** 984 single-turn contexts: 12 everyday advice questions (carriers) crossed with 39 instruction values spanning 9 axes (tone, output format, hedging level, marker-word insertion, assumed persona, stance, content constraint, injected user name, user description), each with one wording paraphrase, plus an empty-system anchor and query-content/query-form variants. From these, 2,778 pairs in 7 classes: value swap (864), install vs empty system (468), instruction-wording paraphrase (468), family swap across wording families (864), query content (66), query form (36), query paraphrase (12). Each context gets K=10 sampled responses; the observed shift for a pair is the difference of the two contexts' 10-draw-mean answer representations at layer 19. Three predictors score identical rows: the frozen single-turn ridge map under test (primary), its frozen multi-turn twin, and identity pass-through (the map's learned bias cancels exactly in differences; verified numerically to 3.6e-15 over 32 pairs). Headline per-axis reads use only values that passed the compliance gate; gate-failing axes are reported not tested.
+
+**Training:** **N/A — no model training.**
+
+| Parameter | Value | Source |
 |---|---|---|
-| persona | 5 | gruff pirate captain · prim Victorian butler · wise zen meditation teacher · hyper-energetic startup founder · hardboiled noir detective |
-| format | 5 | bullet points · numbered steps · single JSON object · rhyming poem · one flowing paragraph |
-| lexical marker | 5 | include the word "moreover" · end with a party emoji · begin with "Well," · include the word "actually" · end with a question |
-| stance | 5 | argue in favor · argue against · stay strictly neutral · steelman both sides · play devil's advocate |
-| content-constraint | 5 | give exactly three reasons · never mention numbers · never use the word "I" · mention a real example · answer in under 20 words |
-| register | 2 | very formal & professional · very casual & conversational |
-| hedging | 2 | answer with strong confidence · answer with heavy caveats & hedging |
-| user-fact-express | 5 | a SINGLE-TOKEN user fact + instruction to EXPRESS it: `The user's name is 〈Marcus〉. Always address them by name.` — swap the single-token value only (implementer verifies each value is exactly one Qwen token — e.g. names like Marcus, Diego, Sarah, or place words like Boston, Denver; two-token names such as Priya or Kenji are excluded). Local, marker-like content — does the map carry a single injected user token into the answer? |
-| user-profile-aware | 5 | DIFFUSE user info + instruction to BE AWARE of it (not restate): `The user is 〈a busy single parent on a tight budget who wants quick practical help〉. Keep this in mind when answering.` — swap the ~15-18-token profile, token-matched. Diffuse content — does the map carry diffuse user conditioning the model is told to be aware of but not echo? |
+| Model | `Qwen/Qwen2.5-7B-Instruct`, revision `a09a35458c702b33eeacc393d103063234e8bc28`, bf16, frozen | plan §3, inherited from #2162/#2215 |
+| Rollouts | K=10 per context, temperature 1.0, seed 42, `max_new_tokens` 2048 (realized cap-hit 0.0% on all cells) | plan §0/§7; run sentinel |
+| Capture layer | 19 primary; twin reads at 14 and 26 | #779 fit convention (plan §3) |
+| Answer summary | tail-inclusive answer mean; span-mean pooling twin | #2215 parity-gated convention (plan §3) |
+| Context vector | context-end last-token hidden state | #779 fit convention |
+| Scored arms | frozen #779 single-turn ridge; frozen #1738 multi-turn ridge; identity pass-through | plan §5 |
+| Bootstrap | carrier-clustered, B=10,000, seed 2215 | plan §6 |
+| Null | per-axis value-pair derangement, B=10,000, seed 21620; 2-value axes use a named sign-randomization null | plan §6 |
+| Split-half reliability | 20 seeded 5-vs-5 rollout splits, stepped up to the 10-draw mean | plan §6 |
+| Judge | `claude-sonnet-4-5-20250929`, Batch API, `max_tokens` 1024, temperature at the API default | plan §6; project judge pin |
+| Fire rule | a value fires at >= 70% of its 24 checks complying (judge score >= 50); any incomplete check makes the value undetermined (counted not fired); axis floor = ceil(0.6 x width) | plan §6 |
+| Text space | `Qwen3-Embedding-8B` mean answer embeddings (third-space control) | plan §6 |
+| Generation / capture batch | 16 / 8 | plan §9; run marker |
 
-**Query axes (user slot):**
-- **query-content** — swap WHAT is asked across the 12 carrier items (system empty). The reference-ceiling content axis.
-- **query-form** (`user-answer` addition) — same content, swap the FORM: question / imperative / declarative statement. 3 values. Tests whether the answer representation cares about interrogative surface form independent of content.
+**Evaluation:** the primary DV per pair is the cosine between the predicted and observed answer-state differences, averaged per axis over swap pairs of fired values, with a carrier-clustered bootstrap interval, a per-axis shuffled-pair null, and a paired map-minus-identity gap under the shared bootstrap. Companions per axis: magnitude calibration (regression slope of predicted on observed shift norms as a ratio to the map's global slope 1.014 over all 2,778 pairs), within-axis consistency (median cosine among the axis's per-carrier observed directions as reproduced by each arm), cross-wording-family consistency, split-half reliability of the observed shift, and a text-embedding third space. Global retrieval asks whether each predicted difference finds its own pair among all 2,778 under cosine and euclidean distance (identity baseline and kNN reads reported per the project's representation-mapping rule). The manipulation check judges 2 draws per (value, carrier) for the 7 judged axes (1,392 draws, completeness 0.981, 16 API refusal draws + 11 dropped) and checks all 10 draws programmatically for the marker-word and injected-name axes (word/name containment, denominator 120). A language-intrusion audit scans every rollout and the judged pool for CJK script and recomputes all fire verdicts with intruded draws zeroed and excluded.
 
-**Carrier set — 12 debatable, advice-type items** (agent-generated), each chosen so EVERY instruction applies to EVERY carrier (admits a stance, answers with reasons, needs no numbers). Rendered in question form by default; each also has imperative + statement forms for the query-form axis. Draft set (finalized at implementation):
+**Data extraction:** bank build and gate battery (7 gates, all PASS) on the VM; generation plus teacher-forced capture pod-side (capture wall 3,352 s); per-cell answer summaries, context states, text embeddings, and predictions uploaded to the HF data repo before pod release; judging via the Batch API and all statistics off-pod from the committed artifacts. The identity-cancellation assert and the fixed-answer equivalence gates ran in production, not only under smoke.
 
-1. Should I adopt a dog or a cat?
-2. Is it better to rent or to buy a home?
-3. How should someone spend a free weekend?
-4. Should students be required to learn coding?
-5. Is remote work better than working in an office?
-6. What's the best way to make new friends?
-7. Should I read more fiction or nonfiction?
-8. Is it worth traveling somewhere alone?
-9. How should a person choose a career?
-10. Is it better to save money or to spend it?
-11. Should someone follow a passion or a stable job?
-12. Is it better to exercise in the morning or evening?
+**Sample training/evaluation data + completions:**
 
-Non-question forms (query-form axis), worked examples:
-- dog/cat → imperative "Help me decide between a dog and a cat." · statement "I'm torn between adopting a dog and a cat."
-- rent/buy → imperative "Help me choose between renting and buying." · statement "I can't decide whether to rent or buy."
+<details>
+<summary>Tone instruction (headline axis): 3 complying rollouts; all 48 judged tone checks complied, so no non-complying rows exist for this axis</summary>
 
-The two user-information axes form a matched contrast — LOCAL+EXPRESS (single token, told to surface it) vs DIFFUSE+AWARE (profile, told to condition on it without restating) — a granularity × instruction-strength diagonal that directly probes whether the map carries a surgically-injected token differently from diffuse conditioning (the marker-leakage vs persona-propagation distinction, on the user side).
+Random sample (seed 42): 3 of 48 complying tone base-value checks; all rows: [rollout shards on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/raw_completions/anchors).
 
-**Scale:** ~480 contexts (12 empty + 39 instruction values × 12 carriers) + the query-form contexts; ~4,800 on-policy rollouts (K=10, temp 1.0, seed 42; `inherited #2162/dbe`) + teacher-forced captures. ~⅓ larger than the #2215 dbe round; still cheap band.
+1. **System:** Use a very casual and conversational tone throughout. **User:** How should a person choose a career? **Completion (comply, score 82; truncated):** "Hey there! Picking a career is like choosing the perfect pair of sneakers—the fit matters a ton! Here's how you can make a decision that feels right for you: 1. **Figure Out What You Love**: Think about what you genuinely enjoy doing..."
+2. **System:** Use a very formal and highly professional tone throughout. **User:** Should students be required to learn coding? **Completion (comply, score 100; truncated):** "The integration of coding education into the curriculum of academic institutions is a topic of considerable importance and merit in contemporary educational discourse..."
+3. **System:** Use a very formal and highly professional tone throughout. **User:** Should I adopt a dog or a cat? **Completion (comply, score 100; truncated):** "When considering the adoption of a pet, whether to opt for a canine or feline companion, it is crucial to evaluate several variables that resonate with your lifestyle..."
 
-## Measure
+</details>
 
-Per minimal pair (A,B), compute the two DIFFERENCE vectors and compare them to each other — this replaces #2215's yardstick-normalized magnitude ratio:
-- **observed** Δ = v_A(A) − v_A(B) (realized answer means, teacher-forced, tail-inclusive pooling, layer 19)
-- **predicted** Δ̂ = f(v_C(A)) − f(v_C(B)) (frozen #779 single-turn context-end ridge map, applied read-only; planner decides whether the #1738 context-end companion also applies under the single-turn skeleton)
+<details>
+<summary>Stance instruction (compliance-floor FAIL): 3 non-complying and 3 complying checks</summary>
 
-Reads per axis (carrier-clustered bootstrap, B=10,000, seed 2215 — `inherited` conventions):
-1. **Direction** — cos(Δ̂, Δ) per pair. Continuous; distinguishes "map knows the axis direction but under/over-scales it" (the #2215 magnitude ratio could not).
-2. **Calibration** — regression slope of ‖Δ̂‖ on ‖Δ‖, compared against the map's GLOBAL shrinkage slope (so "compresses X" = "more than it compresses everything").
-3. **Axis identity** — cosine between the real per-axis mean-delta axis and the predicted per-axis mean-delta axis.
-4. **Reliability ceiling** — split-half over the 10 draws: noise magnitude on Δ AND cos(Δ_half1, Δ_half2), so a low alignment on a noisy cell is not misread as map failure.
-5. **Text-embedding third space** (`user-answer`) — the same Δ reads in Qwen3-Embedding-8B space on the answer TEXT, giving the "how much does the answer text change" reference per axis (form axes: text changes, representation may not — the dissociation read).
+Random sample (seed 42): 3 of 69 non-complying and 3 of 51 complying stance base-value checks; all rows: [judge outputs on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/raw_completions/judge).
 
-**Controls:** identity / identity+bias delta baseline (does the map beat trivial context-delta pass-through?); paraphrase null per axis (same value, different wording → predict ≈0 Δ; the value-flip-minus-paraphrase gap is the aspect signal purged of surface-text sensitivity); install-vs-swap contrast (empty→value vs value↔value perturbation size). Judge manipulation check (light Sonnet Batch-API, `claude-sonnet-4-5-20250929`, drop-never-coerce) confirms each instruction fired in the rollouts before any null is read as "map failure."
+1. **System:** Argue against every option in your answer. **User:** Is it better to exercise in the morning or evening? **Completion (noncomply, score 40; truncated):** "Let's evaluate both options: Morning Exercise: 1. Morning exercise can boost your metabolism for the entire day..." (lists benefits before any counterargument).
+2. **System:** Argue against every option in your answer. **User:** Is it worth traveling somewhere alone? **Completion (noncomply, score 0; truncated):** "Traveling alone may not be the best option for everyone, but let's consider why it might not be worthwhile: 1. **Safety Concerns**..." (argues against one option only).
+3. **System:** Argue against every option in your answer. **User:** Is remote work better than working in an office? **Completion (noncomply, score 35; truncated):** "Remote work is not universally better than working in an office for everyone or in all situations..."
+4. **System:** Argue against every option in your answer. **User:** How should a person choose a career? **Completion (comply, score 70; truncated):** "Choosing a career is a complex decision with many important factors to consider, and here are arguments against some common approaches people might take: 1. **"Just Follow Your Passion":** This can be limiting..."
+5. **System:** Play devil's advocate constantly in your answer. **User:** What's the best way to make new friends? **Completion (comply, score 65; truncated):** "Making new friends can be approached from various angles, and while many methods are effective, let's explore a Devil's Advocate perspective..."
+6. **System:** Argue against every option in your answer. **User:** Should I read more fiction or nonfiction? **Completion (comply, score 65; truncated):** "Reading more fiction can have its drawbacks, as it might limit your exposure to real-world issues..."
 
-## Success criteria
+</details>
 
-Descriptive/exploratory (no pass/fail gate). The result is the per-axis profile of (direction, calibration, axis-identity, text-vs-representation) that says, for each kind of context information, whether the map carries the answer-vector difference faithfully, under- or over-scales it, or loses its direction — on stimuli where the aspect is the ONLY thing that differs.
+<details>
+<summary>Injected-name instruction (programmatic check): 3 firing and 3 non-firing rollouts</summary>
 
-## Compute
+Random sample (seed 42): 3 of 589 firing and 3 of 11 non-firing injected-name base-value rollouts (600 total); all rows: [rollout shards on HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair/raw_completions/anchors).
 
-~4 GPU-h (generation + teacher-forced capture, ~4,800 rollouts) + ~1 GPU-h (embedding) on 1× H100, RunPod `eval` intent (`inherited` lane); difference-vector analysis is 0-GPU CPU. Cheap band (< 20 GPU-h). Judge check ~$3-6 Batch API.
+1. **System:** The user's name is Diego. Always address them by name. **User:** Is it better to exercise in the morning or evening? **Completion (firing; truncated):** "That depends on your personal schedule and preferences, Diego. Many people find that exercising in the morning can help boost their energy levels..."
+2. **System:** The user's name is Marcus. Always address them by name. **User:** How should someone spend a free weekend? **Completion (firing; truncated):** "Hello Marcus! A free weekend can be a great opportunity to recharge and do some activities you enjoy..."
+3. **System:** The user's name is Sarah. Always address them by name. **User:** How should a person choose a career? **Completion (firing; truncated):** "Choosing a career is a big decision, Sarah! Here are some steps you might find helpful..."
+4. **System:** The user's name is Diego. Always address them by name. **User:** Should students be required to learn coding? **Completion (non-firing; truncated):** "Absolutely, I think students should be required to learn coding. In today's digital age, basic programming skills are becoming increasingly important..." (never uses the name).
+5. **System:** The user's name is Sarah. Always address them by name. **User:** How should a person choose a career? **Completion (non-firing; truncated):** "Choosing a career is an important decision that can have a significant impact on your life, so it's great to approach it thoughtfully!..." (never uses the name).
+6. **System:** The user's name is Marcus. Always address them by name. **User:** Should I read more fiction or nonfiction? **Completion (non-firing; truncated):** "That depends on what you enjoy and what you hope to gain from your reading!..." (never uses the name).
 
-**Repro:** design session 2026-08-24; parent #2215 (separation-comparison round: `eval_results/issue_2215/separation_comparison/`). Executes via `/issue <N>` → adversarial-planner (which fixes the final value strings, map-arm decision, and per-axis null construction).
+</details>
+
+## Results
+
+### Wherever the instruction fired, the map recovers the answer-shift direction and beats identity pass-through
+
+Plotted: for each axis, the mean cosine between the predicted and observed answer-state differences over token-matched value-swap pairs of fired values (panel 1, with the shuffled-pair null band in grey and the split-half ceiling as a diamond), the magnitude slope ratio to the map's global calibration (panel 2), within-axis consistency (panel 3), and the text-vs-representation flip-to-paraphrase ratio (panel 4); blue = single-turn map, orange = multi-turn twin, green = identity baseline.
+
+![Per-axis profile of the frozen maps: direction recovery, calibration, within-axis consistency, and text-vs-representation panels](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_hero_axis_profile.png)
+
+> **Figure.** *Direction recovery clears the null on all 8 tested axes and the map sits above identity on every one.* Whiskers are carrier-clustered bootstrap intervals; grey bands are shuffled-pair null 97.5% ranges; diamonds mark the split-half ceiling; hedging, persona, and stance show only their null bands (compliance floor failed).
+
+| Axis | Pairs | Map cosine [95%] | Null 97.5% | Identity cosine | Map minus identity [95%] |
+|---|---|---|---|---|---|
+| tone | 12 | 0.899 [0.894, 0.904] | 0.452 | 0.728 | +0.171 [0.163, 0.178] |
+| query content | 66 | 0.715 [0.675, 0.751] | 0.096 | 0.304 | +0.410 [0.387, 0.433] |
+| user description | 120 | 0.596 [0.568, 0.627] | 0.047 | 0.427 | +0.169 [0.144, 0.197] |
+| content constraint | 120 | 0.497 [0.479, 0.516] | 0.155 | 0.314 | +0.184 [0.169, 0.199] |
+| marker word | 120 | 0.416 [0.401, 0.429] | 0.071 | 0.273 | +0.143 [0.124, 0.159] |
+| output format | 120 | 0.362 [0.340, 0.379] | 0.042 | 0.229 | +0.133 [0.110, 0.152] |
+| query form | 36 | 0.304 [0.269, 0.335] | 0.077 | 0.221 | +0.083 [0.058, 0.114] |
+| injected name | 120 | 0.172 [0.152, 0.193] | 0.036 | 0.138 | +0.034 [0.018, 0.049] |
+
+Every tested axis clears its null and every paired gap excludes zero, so the map carries per-kind information beyond raw context-state geometry. The two frozen maps agree throughout (largest difference 0.047, on query content), and cross-wording-family medians of 0.72 to 0.97 show the recovered directions are not template artifacts. One caveat on tone: the manipulation also lengthens answers (mean +108 tokens, formal minus casual), though the span-mean pooling twin reproduces the read (0.898), so pooling choice is not driving it.
+
+### Per-pair spread behind the axis means: paraphrase pairs read lowest, swap and install pairs agree
+
+Plotted: the full per-pair direction-cosine distributions for the single-turn map, one violin per axis and pair class (value swap, family swap, install vs empty system, instruction-wording paraphrase), fire mask not applied, so the three floor-failing axes appear here as raw views.
+
+![Per-pair direction cosine distributions by axis and pair class for the single-turn frozen map](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_expl_install_vs_swap_violin.png)
+
+> **Figure.** *The per-pair clouds behind the headline means.* Violins show all 2,778 pairs (medians and quartiles marked); value-swap and family-swap distributions coincide on every axis, wording-paraphrase pairs sit lowest on the content-bearing axes, and the not-tested axes (hedging, persona, stance) are shown raw.
+
+Value swaps and family swaps give the same read on every axis, and instruction-wording paraphrases sit well below matched swaps on content-bearing axes (output format 0.19 vs 0.59 on the same all-values basis; tone 0.42 vs 0.90), confirming the pairs measure the manipulated variable rather than surface wording. Install pairs (instruction vs empty system) sit near swaps on most axes and above them for the injected name (0.39 vs 0.17): adding a name to an empty system prompt is a larger, more predictable move than exchanging one name for another, consistent with the noise-limited swap read below.
+
+### Six of nine instruction axes passed the compliance gate; stance, persona, and hedging did not
+
+Plotted: per-base-value compliance fraction from the manipulation check (judge-scored for 7 axes, programmatic containment for the marker-word and injected-name axes), one bar per value with its plain-English instruction, colored by verdict, with the 70% fire threshold dashed.
+
+![Per-value compliance fractions against the 70 percent fire threshold, colored by fired, not fired, or undetermined verdict](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_expl_manip_fire_rates.png)
+
+> **Figure.** *Where the behavioral gate passed and failed.* Green bars fired (at least 70% of checks complied), red did not, orange are undetermined (incomplete judge checks count as not fired). Stance, persona, and hedging miss their axis floors; the six other axes pass.
+
+The gate is conservative and did real work: the model complied near-ceiling with tone, marker-word, name, format, and content-constraint instructions, but would not argue one-sided stances (back one option 2/24, devil's advocate 5/24, strictly neutral 23/24), played only 2 of 5 personas at the bar, and would not drop hedging (strong confidence 11/24 vs heavy hedging 23/24). Intrusion recounts sit next to these verdicts: zeroing CJK-intruded draws flips only the user-description axis (rural-nurse value 18/24 to 16/24, floor 2 of 5), while excluding them restores 3 of 5, so that single pass is convention-dependent; all other verdicts, including the programmatic axes at worst-case zeroing (minimum 0.950), are intrusion-robust.
+
+### Direction recovery tracks the reliability of the observed shift; the injected-name axis is noise-limited
+
+Plotted: each tested axis's direction cosine (single-turn map) against the split-half reliability ceiling of its observed 10-draw-mean shift, one labeled point per axis.
+
+![Direction cosine per axis plotted against the split-half reliability ceiling of the observed shift](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_expl_ceiling_vs_cos.png)
+
+> **Figure.** *Low recovery co-occurs with a low reliability ceiling rather than with map failure.* Tone and query content pair high ceilings (0.99, 0.98) with high recovery; the injected-name axis sits at ceiling 0.13 with cosine 0.17, above its own reliability ceiling.
+
+Recovery orders with the ceiling: axes whose observed shifts replicate across rollout halves are the axes the map predicts well. The injected name is the diagnostic case: its cosine (0.17) exceeds its ceiling (0.13), meaning the map recovers about as much direction signal as the observed shift contains, and what limits the read is the shift itself, which barely rises above sampling noise even though the name is expressed in 589 of 600 rollouts. This licenses a data-limited reading for that axis rather than a map-direction loss; query form (ceiling 0.60, cosine 0.30) is the one axis with clear headroom left.
+
+### Magnitude calibration is heterogeneous: content axes compressed, query form over-scaled, tone at the global slope
+
+Plotted: per-pair predicted vs observed shift norms for the single-turn map, one panel per axis, filled points for headline (fired) pairs and open points otherwise, with the map's global slope line (1.014) in every panel.
+
+![Per-pair predicted versus observed answer-shift magnitudes by axis with the global calibration line](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_expl_norm_scatter.png)
+
+> **Figure.** *One global gain does not fit all axes.* Tone and marker-word clouds ride the global line; content constraint and query content fall below it (compressed); hedging and query form sit above it (over-scaled). Filled points are fired-value pairs.
+
+Axis slopes relative to the global calibration: tone 1.03 (interval spans 1) and marker word 1.03 are at the global gain; content constraint 0.84, query content 0.80, user description 0.93, and injected name 0.87 are mildly compressed; query form is over-scaled at 1.43. The compressed axes carry reliability ceilings of 0.93 to 0.98, so attenuation from a noisy target cannot explain the compression: the map genuinely under-drives content-bearing shifts and over-drives the query-form shift. This is directionally consistent with the magnitude redistribution the parent issue suggested under its different protocol, and it motivates the per-kind gain follow-up rather than any global rescaling.
+
+### The pair is identifiable among 2,778 candidates, but the map's margin over identity is metric-dependent
+
+Plotted: retrieval accuracy at k = 1, 5, 10 for finding each pair's observed difference from its predicted difference among all 2,778 candidates, under cosine (left) and euclidean (right) distance, for both frozen maps and the identity baseline, with chance dashed.
+
+![Retrieval accuracy at one, five, and ten candidates under cosine and euclidean distance for both maps and the identity baseline](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_expl_retrieval_acc.png)
+
+> **Figure.** *Strong retrieval, metric-dependent ranking.* Under cosine the single-turn map leads (23.7% top-1, median rank 6, chance 0.04%); under euclidean the identity baseline leads at every depth.
+
+The maps and the identity baseline all identify pairs far above chance, so answer-shift geometry is pair-specific. But the ordering flips with the metric: cosine favors the map (23.7% vs 21.8% top-1), euclidean favors identity (17.1% vs 15.3% top-1), because the map's magnitude miscalibrations (previous section) cost it under a norm-sensitive distance while direction-only comparison rewards it. The honest summary is that retrieval alone cannot arbitrate map vs identity here; the paired per-axis direction gaps, which control the pairing and the metric, are the arbitrating read, and they favor the map on all 8 tested axes.
+
+### A query wording change moves the answer state at paraphrase scale while changing the answer text less than a paraphrase
+
+Plotted: the ratio of flip-induced change to paraphrase-induced change for the two query axes, measured in three spaces: answer text embeddings, observed answer states, and map-predicted answer states.
+
+![Flip to paraphrase change ratios for query content and query form in text space, observed state space, and predicted state space](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a33f7e2e63c0877699e01b06b1d08e4efa81890d/figures/issue_2564/fig_expl_query_dissociation.png)
+
+> **Figure.** *Query form dissociates text from state.* A query-content flip exceeds the paraphrase yardstick in every space (text 2.9, observed 4.2, predicted 2.6); a query-form flip changes answer text less than a paraphrase (0.66) while the state moves at paraphrase scale (observed 0.97, predicted 1.13).
+
+Changing what the question asks moves everything, as expected. Changing only how it is phrased produces answers that read like paraphrases in text space, yet the answer state shifts as much as a real paraphrase, in a direction the map partially predicts (cosine 0.30 vs null 0.08).
+
+The map therefore carries some purely formal query information that barely surfaces in the emitted text. The read is preliminary: 36 pairs, a 0.60 reliability ceiling, and the battery's largest over-scaling (1.43).
+
+---
+
+**Repro:** 2.2 GPU-h realized of 6 budgeted (generation + teacher-forced capture on 1x H100, RunPod `pod-2564`, backend runpod; judging via the Anthropic Batch API, 1,392 calls; bank build and statistics off-pod). Code at commit `09750cbbab8918d6767bdd8f8d65028355811b93` on branch `issue-2564` (`scripts/issue2564_run.py`, `scripts/issue2564_judge.py`, `scripts/issue2564_analysis.py`, figures via `scripts/issue2564_figures.py`); figures pinned at `a33f7e2e63c0877699e01b06b1d08e4efa81890d`. Eval artifacts: `eval_results/issue_2564/` (`minpair_delta.json`, `manipulation_check.json`, `perpair.jsonl`, `bank_manifest.json`, `predictions/`); instruction-values file sha256 `29e6bebc52b91af5e92474d829ab7ee252f6c8b5f067696f3444d41f2454119d`. HF data: [issue2564 minpair tree](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/issue2564_minpair) (raw completions: 10 rollout shards + judge outputs; analysis tensors: per-cell answer summaries `va2564`, context states `vc2564`, text embeddings, predictions; manifests). Model `Qwen/Qwen2.5-7B-Instruct` revision `a09a35458c702b33eeacc393d103063234e8bc28`; seeds: rollouts 42, bootstrap 2215, nulls 21620. Judge `claude-sonnet-4-5-20250929`.
+- Reused map from [#779](https://eps.superkaiba.com/tasks/779): `issue779_monitoring/n1m_readout/weights/L19/ridge.pt` @ 62b1e8889e1a262501937b0ec6f6022e28b4a7e6 (sha256 `188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909`) — fit: the frozen single-turn context-to-answer ridge at layer 19, the exact production map under test; listing verified live at write time.
+- Reused map from [#1738](https://eps.superkaiba.com/tasks/1738): `issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt` @ 62b1e8889e1a262501937b0ec6f6022e28b4a7e6 (sha256 `1916bed192f36dfe9dc57a3c712d3ea56d3767199504693c0c0f33bcde27bda4`) — fit: the multi-turn twin at the same layer, used as the map-agreement control; listing verified live at write time.
+
+**Context:** created 2026-08-24 from an interactive design session with the user as a child of [#2215](https://eps.superkaiba.com/tasks/2215); the session's decision record rides the pre-promotion body (snapshotted to `original-body.md`), and `origin prompt not recorded` (the frontmatter carries no origin-prompt field). Plan v6 approved 2026-08-24; run, judging, and analysis 2026-08-25; interpretation round 1 folded 2026-08-25.
