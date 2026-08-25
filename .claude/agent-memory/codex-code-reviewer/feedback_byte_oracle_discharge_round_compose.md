@@ -134,3 +134,40 @@ clause + the .pt oracle it waived):
     round (full duties) / VERIFIED-ADDRESSED-at-prior-round (one
     undisturbed-check status line, never re-adjudicated) / open
     (status lines). torch is named NOT-stdlib for the probe carve-out.
+
+**Third-generation addendum (#2336 r8, 2026-08-25)** — the ORDINARY batch
+round after the PASS+PASS fix chain (26-script migration + allowlist shrink
++ a NEW first-instance oracle riding the batch payload):
+
+11. **PASS+PASS prior ⇒ NO verdict envelopes.** The concerns ledger + a
+    brief-named lesson paragraph ("the r6 lesson binds: ground-truth A5
+    scoping against the diff") carry the history; envelopes are for
+    FAIL-contract rounds only. A settled id whose acceptance row RE-FIRES on
+    a new shape (A5 first-instance raw-bytes) is adjudicated as a fresh
+    DUTY, never a re-open of the settled concern — say so in the ledger
+    section explicitly.
+12. **Two-part marker:** concatenate parts IN PART ORDER into one envelope,
+    attest both parts' top-level version fields + timestamps, pre-attest the
+    missing head sentinel as present-but-imperfect (CONCERNS ceiling), and
+    state the split is itself the completeness evidence (part 2 = the
+    verbatim 97-file list) — never a shape finding.
+13. **Composer runs the armed pin-sweep's OWN enumeration at compose time:**
+    roster-stem grep over tests/ + set-diff vs (mapped universe ∪ named
+    beyond-universe dispositions). Empty residual ⇒ attest "failure shape
+    does not reproduce"; a count-rule difference (marker said 28, composer
+    found 32-inside) is pre-triaged report-accuracy, not discharge failure.
+    Beware short stems: including `workflow_lint` in the stem set exploded
+    35 hits to 124 — grep the 26 script stems only.
+14. **`+`-line census battery = mechanical-migration anchors:** count of
+    added `with atomic_replace(` == marker's migrated-line disposition (47);
+    added imports == roster size (26); added waivers == 0; fsync == 0 (an
+    edge declared vacuous is attested by one grep); per-shape write-call
+    counts (torch.save/np.savez/pickle-csv-yaml-np.save) anchor the A5
+    ground-truthing duty. AST-count the allowlist at BOTH trees (it is an
+    AnnAssign — plain Assign walkers find nothing) + set-diff deleted
+    entries vs roster.
+15. **Anchor-uniqueness closes block-presence-vs-block-IS-the-write:** for a
+    reproduce-verbatim oracle anchored on a live-source substring, composer
+    greps the anchored block's occurrence count in the live file (must be 1)
+    + reads context to confirm the site IS the migrated write — attest it,
+    leaving verbatim-reproduction + tautology checks to the twin.

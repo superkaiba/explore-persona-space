@@ -34,6 +34,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -372,9 +373,8 @@ def dispatch_items(args) -> int:
             results = dispatch_judge_items(jitems, **kwargs)
         if not args.dry_run:
             path = out_dir / f"val_results_{battery}.json"
-            tmp = path.parent / f".tmp_{path.name}"
-            tmp.write_text(json.dumps(results))
-            tmp.replace(path)
+            with atomic_replace(path) as tmp:
+                tmp.write_text(json.dumps(results))
     return 0
 
 

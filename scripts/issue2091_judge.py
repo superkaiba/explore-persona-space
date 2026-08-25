@@ -74,6 +74,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue2091_judge")
 
@@ -219,13 +221,9 @@ def _git_commit() -> str:
 
 
 def _write_json_atomic(path: Path, payload: dict) -> None:
-    """Atomic JSON write (tmp + os.replace, same dir => same filesystem)."""
-    import os
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
 
 
 # ── rubric resolution (NEVER the Sonnet-regen fallback; plan §4.2 P3 W1) ─────
