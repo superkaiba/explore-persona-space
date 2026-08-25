@@ -599,6 +599,24 @@ def _stage_job_c(args, smoke: bool):
                 "expected a 40-hex Hub commit sha) — delete it and fully restage to re-pin"
             )
     else:
+        # r3 (stage-revision-unpinned residual): never MINT a fresh pin over a
+        # stage_root that already holds staged targets — those files landed under
+        # a DIFFERENT (or unknown/unpinned) revision, and stage_prefix's
+        # size-match resume would silently adopt them under the new pin, mixing
+        # file generations across Hub commits. Refuse with the restage recipe.
+        preexisting = [
+            prefix
+            for prefix in (N1M_CAPTURE_PREFIX, PASS_B_STAGE_PREFIX, WEIGHTS_L19_PREFIX)
+            if (stage_root / prefix).exists()
+            and any(p.is_file() for p in (stage_root / prefix).rglob("*"))
+        ]
+        if preexisting:
+            raise RuntimeError(
+                f"stage_root {stage_root} holds staged files under {preexisting} but no "
+                f"{rev_file.name} — their download revision is unknown, and minting a fresh "
+                "pin would let the size-match resume mix file generations. Use a fresh "
+                "--stage-root (or delete the staged prefixes) to force a fully pinned restage."
+            )
         info = hub.retry_transient(
             lambda: HfApi().repo_info(C.HF_DATA_REPO, repo_type="dataset"),
             what="data-repo revision probe",
