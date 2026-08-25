@@ -12,6 +12,7 @@ goal: 'On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal
 title: The frozen context-to-answer map recovers the direction of instruction-driven
   answer shifts on every minimal-pair axis that passed its compliance check, beating
   identity pass-through throughout (MODERATE confidence)
+has_clean_result: true
 ---
 # The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)
 <!-- clean-result-v4 -->
