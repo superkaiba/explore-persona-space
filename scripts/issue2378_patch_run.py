@@ -284,6 +284,9 @@ def _bank_contexts(tok, qrows: dict[str, list[dict]]) -> list[dict]:
                 ctxs.append(
                     {
                         "ctx_id": pc.ctx_id(framing, row["qid"]),
+                        # row_id aliases ctx_id: the reused _pack_batches
+                        # sort key reads recs[i]["row_id"].
+                        "row_id": pc.ctx_id(framing, row["qid"]),
                         "framing": framing,
                         "qid": row["qid"],
                         "char": char,
@@ -309,10 +312,14 @@ def _capture_vc_bank(args, mctx: dict, ctxs: list[dict]) -> dict[str, np.ndarray
     model, dev = mctx["model"], mctx["device"]
     n_layers = _n_layers(args)
     out: dict[str, np.ndarray] = {}
-    order = sorted(range(len(ctxs)), key=lambda i: -ctxs[i]["n_tokens"])
+    # Token-budgeted packing (the production capture kernel's discipline):
+    # output_hidden_states materializes (n_layers+1) x B x T x H — an
+    # unbounded row-count batch of long rows OOMs (65 levels x 64k tokens x
+    # 5120 bf16 ~ 43 GB); args.batch_tokens bounds B x T instead.
+    batches = cap._pack_batches(ctxs, args.batch_tokens, args.max_batch_rows)
     t0 = time.time()
-    for start in range(0, len(order), CAPTURE_MAX_ROWS):
-        batch = order[start : start + CAPTURE_MAX_ROWS]
+    done_rows = 0
+    for batch in batches:
         t_max = max(ctxs[i]["n_tokens"] for i in batch)
         ids = torch.full((len(batch), t_max), mctx["pad_id"], dtype=torch.long)
         mask = torch.zeros((len(batch), t_max), dtype=torch.long)
@@ -334,7 +341,8 @@ def _capture_vc_bank(args, mctx: dict, ctxs: list[dict]) -> dict[str, np.ndarray
             vec = torch.stack([hs[layer][j, pos] for layer in range(1, n_layers + 1)])
             out[ctxs[i]["ctx_id"]] = cap._encode_bf16(torch, vec)
         del res, hs
-        cm.progress("bank.vc", start + len(batch), len(order), f"b{start}", t0)
+        done_rows += len(batch)
+        cm.progress("bank.vc", done_rows, len(ctxs), f"b{done_rows}", t0)
     return out
 
 
