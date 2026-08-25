@@ -2584,6 +2584,12 @@ _AGENTS_PROSE_EXEMPT_GENUINE: dict[str, str] = {
         "exempt so guard (20) is coherent; any future promotion is #2420's "
         "call. Deliberately EXCLUDED from the #2454 relocation filing."
     ),
+    "tests/test_audit_artifact_supersession.py": (
+        "behavioral: imports scripts/audit_artifact_supersession.py "
+        "(unsynced) via sys.path. GENUINE analyzer.md fold-in-duty prose "
+        "assert (test_analyzer_fold_in_duty_pins_audit_tool) accepted as "
+        "residual; relocation rides #2454 (#2568 added the file)."
+    ),
 }
 
 # Files whose reader-pattern match is INCIDENTAL (docstring / fixture-string
