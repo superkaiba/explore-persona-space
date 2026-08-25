@@ -15,9 +15,12 @@ Builds the 8-corpus staging bundle consumed by every arm's pod:
    ``rescue_rate`` (fraction of joined models with cot_correct AND NOT direct_correct;
    join by normalized question text; unjoined rows keep rescue_rate = null, never
    imputed; coverage reported per corpus).
-4. Near-dup dedup WITHIN + ACROSS corpora BEFORE any draw/split via the reused
-   #1739 MinHash helpers (char-5 shingles, 64 perms; LSH bands=8 => flags Jaccard
-   ~>=0.77-0.8, the plan's "5-gram Jaccard >= 0.8" operating point).
+4. Near-dup dedup WITHIN + ACROSS corpora BEFORE any draw/split: the reused #1739
+   MinHash signatures (char-5 shingles, 64 perms) generate CANDIDATE pairs via LSH
+   (16 bands x 4 rows => candidates from Jaccard ~>=0.5), each candidate then
+   VERIFIED by exact char-5-shingle Jaccard >= 0.8 before dropping — the plan's
+   registered "5-gram Jaccard >= 0.8" operating point is enforced exactly, never
+   approximated by a probabilistic band collision alone.
 5. CPU model asserts (AutoConfig x5; arm-1 full-render token-id identity; arm-2
    content-token identity + verbatim render recording; arm-3 cross-mode render probe;
    per-arm think-delimiter encodings asserted against the plan's pins).
@@ -110,16 +113,26 @@ CORPUS_ORDER = [
     "piqa",
 ]
 
-# LSH banding: 64 perms / 8 bands x 8 rows => flags Jaccard ~>= (1/8)^(1/8) ~ 0.77
-# (the plan's "5-gram Jaccard >= 0.8" operating point on the reused #1739 signatures).
-LSH_BANDS = 8
+# LSH banding: 64 perms / 16 bands x 4 rows => CANDIDATE net ~ Jaccard >= (1/16)^(1/4) ~ 0.5;
+# every candidate is then verified by EXACT char-5-shingle Jaccard against the plan's
+# registered >= 0.8 operating point (a band collision alone is probabilistic and would
+# both mis-drop below 0.8 and mis-keep above it).
+LSH_BANDS = 16
+JACCARD_VERIFY_THRESHOLD = 0.8
 
 TAUR_REPO_MARKER = "Taur_CoT_Analysis_Project"
-TAUR_EXPECTED_REPOS = 16
+# The plan (section 4.2) named 16 per-model repos; the live 2026-08-24 listing carries
+# MORE (22 per-model incl. the double-underscore Llama variant) plus the gated parent
+# and 2 experiment repos. Discovery therefore prefix-includes every per-model repo,
+# excludes the parent + experiment repos, and enforces a FLOOR (the realized set +
+# the plan discrepancy are recorded in the manifest).
+TAUR_EXPECTED_REPOS_FLOOR = 16
+TAUR_PARENT_REPO = "TAUR-Lab/Taur_CoT_Analysis_Project"  # gated collection parent (excluded)
+TAUR_EXCLUDE_SUFFIXES = ("__Paraphrase_Exp", "__Symbolic_Solver_Experiment")
 # Registered config-name patterns per corpus family (realized matches recorded in manifest).
 TAUR_PATTERNS: dict[str, str] = {
     "gsm8k_test": r"^gsm8k$",
-    "math": r"^math\w*$",
+    "math": r"^math$",  # anchored: \w* also matched 'math__round_2_fixes' (double-count)
     "mmlu": r"^mmlu$",
     "arc_challenge": r"^arc_challenge$",
     "csqa": r"^(csqa|commonsense_?qa)$",
@@ -186,10 +199,12 @@ def stage_1336_corpora(dl_dir: Path) -> dict[str, list[dict]]:
         "gsm8k_test": ["gsm8k_test1319.jsonl", "gsm8k_test1319_meta.json"],
         "gsm8k_train": ["gsm8k_train_full.jsonl", "gsm8k_train_full_meta.json"],
         "math": [
+            # math7500_meta.json deliberately NOT pulled: the manifest carries the
+            # per-shard sha256s + line counts this stage verifies against (a meta
+            # download nothing reads is dead weight).
             "math7500.manifest.json",
             "math7500.shard00.jsonl",
             "math7500.shard01.jsonl",
-            "math7500_meta.json",
         ],
     }
     local: dict[str, list[Path]] = {}
@@ -437,9 +452,19 @@ def load_mcq_corpora(smoke: bool) -> dict[str, list[dict]]:
 # ---------------------------------------------------------------------------
 
 
-def discover_taur_repos(smoke: bool) -> list[str]:
+def discover_taur_repos(smoke: bool) -> tuple[list[str], dict]:
+    """Enumerate the TAUR-Lab per-model CoT-analysis repos.
+
+    Include: every repo under the ``Taur_CoT_Analysis_Project__`` prefix (covers
+    the triple-underscore per-model ids AND the double-underscore Llama variant).
+    Exclude: the gated collection parent (exact id, no per-model suffix) and the
+    two experiment repos (paraphrase / symbolic-solver — different question sets).
+    Floor >= TAUR_EXPECTED_REPOS_FLOOR (the plan named 16; live count is larger —
+    the discrepancy is recorded, never silently truncated). Smoke slices the
+    FILTERED set, so the 2 smoke repos are always per-model repos.
+    """
     api = HfApi()
-    repos = sorted(
+    all_matching = sorted(
         d.id
         for d in hub.retry_transient(
             lambda: list(api.list_datasets(author="TAUR-Lab", limit=500)),
@@ -447,14 +472,33 @@ def discover_taur_repos(smoke: bool) -> list[str]:
         )
         if TAUR_REPO_MARKER in d.id
     )
+    repos = [
+        rid
+        for rid in all_matching
+        if rid.startswith(TAUR_PARENT_REPO + "__") and not rid.endswith(TAUR_EXCLUDE_SUFFIXES)
+    ]
+    excluded = sorted(set(all_matching) - set(repos))
+    report = {
+        "n_marker_matching": len(all_matching),
+        "n_per_model_included": len(repos),
+        "excluded": excluded,
+        "expected_floor": TAUR_EXPECTED_REPOS_FLOOR,
+        "plan_named_count": 16,
+        "plan_count_discrepancy_note": (
+            "plan section 4.2 named 16 per-model repos; the live listing carries "
+            f"{len(repos)} — all included (rescue_rate denominators are per-question "
+            "n_models, so extra models only tighten the estimate)"
+        ),
+    }
     if smoke:
         repos = repos[:2]
-    elif len(repos) != TAUR_EXPECTED_REPOS:
+    elif len(repos) < TAUR_EXPECTED_REPOS_FLOOR:
         raise RuntimeError(
-            f"TAUR-Lab discovery: {len(repos)} repos != expected {TAUR_EXPECTED_REPOS}: {repos}"
+            f"TAUR-Lab discovery: {len(repos)} per-model repos < floor "
+            f"{TAUR_EXPECTED_REPOS_FLOOR}: {repos} (excluded: {excluded})"
         )
-    _log(f"TAUR-Lab repos ({len(repos)}): {repos}")
-    return repos
+    _log(f"TAUR-Lab per-model repos ({len(repos)}): {repos}; excluded {excluded}")
+    return repos, report
 
 
 def _pick_split(repo: str, config: str) -> str:
@@ -513,6 +557,15 @@ def load_taur(
                 if re.search(pat, cfg, flags=re.IGNORECASE):
                     matched[family].append(cfg)
                     report["configs_matched"][family].add(cfg)
+        for family, cfgs in matched.items():
+            # One config per (repo, family) — a second match would double-count the
+            # repo's model in that family's rescue_rate denominators (contexthub is
+            # legitimately multi-config: 8 (type x level) cells per repo).
+            if family != "contexthub" and len(cfgs) > 1:
+                raise RuntimeError(
+                    f"{repo}: family {family!r} matched {len(cfgs)} configs {sorted(cfgs)} — "
+                    "per-(repo,family) single-config expected (pattern too loose?)"
+                )
         repo_stats: dict[str, int] = {}
         for family, cfgs in sorted(matched.items()):
             for cfg in sorted(cfgs):
@@ -605,40 +658,83 @@ def _parse_contexthub_config(cfg: str) -> tuple[str, int]:
 # ---------------------------------------------------------------------------
 
 
+def _shingle_hashes(text: str, n: int = 5) -> np.ndarray:
+    """Sorted unique uint64 hashes of the char-n shingles (memory-bounded exact-Jaccard rep)."""
+    grams = [text] if len(text) < n else [text[i : i + n] for i in range(len(text) - n + 1)]
+    h = np.fromiter(
+        (
+            int.from_bytes(hashlib.blake2b(g.encode("utf-8"), digest_size=8).digest(), "big")
+            for g in grams
+        ),
+        dtype=np.uint64,
+        count=len(grams),
+    )
+    return np.unique(h)
+
+
+def _jaccard_hashes(a: np.ndarray, b: np.ndarray) -> float:
+    """Exact Jaccard over unique-shingle hash sets (both inputs sorted unique)."""
+    if a.size == 0 and b.size == 0:
+        return 1.0
+    inter = np.intersect1d(a, b, assume_unique=True).size
+    return inter / float(a.size + b.size - inter)
+
+
 def lsh_keep_first(
     texts_by_corpus: dict[str, list[str]], bands: int = LSH_BANDS
 ) -> tuple[dict[str, np.ndarray], dict]:
-    """Keep-first LSH dedup over CORPUS_ORDER using the reused #1739 MinHash signatures."""
+    """Keep-first near-dup dedup over CORPUS_ORDER (candidate LSH + exact verify).
+
+    The reused #1739 MinHash signatures (char-5 shingles, 64 perms) generate
+    CANDIDATE owners via 16-band LSH (candidates from Jaccard ~>=0.5); each
+    candidate pair is then VERIFIED by exact char-5-shingle Jaccard against the
+    plan's registered >= 0.8 operating point before the row is dropped. Rows
+    survive when every candidate owner verifies < 0.8 (counted in the report).
+    """
     keep: dict[str, np.ndarray] = {}
-    seen_bands: set[tuple[int, bytes]] = set()
+    band_owner: dict[tuple[int, bytes], tuple[str, int]] = {}
+    owner_shingles: dict[tuple[str, int], np.ndarray] = {}
     report: dict = {}
     for corpus in CORPUS_ORDER:
         texts = texts_by_corpus[corpus]
         sigs = minhash_signatures(texts)
         n_perm = sigs.shape[1]
+        if n_perm % bands:
+            raise RuntimeError(f"{n_perm} MinHash perms not divisible by {bands} LSH bands")
         rows_per_band = n_perm // bands
         mask = np.ones(len(texts), dtype=bool)
-        n_within = n_across = 0
-        corpus_bands: set[tuple[int, bytes]] = set()
+        n_within = n_across = n_rejected = 0
         for i in range(sigs.shape[0]):
             row_bands = [
                 (bi, sigs[i, bi * rows_per_band : (bi + 1) * rows_per_band].tobytes())
                 for bi in range(bands)
             ]
-            hit_across = any(b in seen_bands for b in row_bands)
-            hit_within = any(b in corpus_bands for b in row_bands)
-            if hit_across or hit_within:
+            owners = {band_owner[b] for b in row_bands if b in band_owner}
+            sh_i = _shingle_hashes(texts[i])
+            drop_owner: tuple[str, int] | None = None
+            for ok in sorted(owners):
+                if _jaccard_hashes(sh_i, owner_shingles[ok]) >= JACCARD_VERIFY_THRESHOLD:
+                    drop_owner = ok
+                    break
+            if owners and drop_owner is None:
+                n_rejected += 1  # candidate verified BELOW 0.8 — kept (never band-dropped)
+            if drop_owner is not None:
                 mask[i] = False
-                n_across += int(hit_across)
-                n_within += int(hit_within and not hit_across)
+                if drop_owner[0] == corpus:
+                    n_within += 1
+                else:
+                    n_across += 1
             else:
-                corpus_bands.update(row_bands)
-        seen_bands.update(corpus_bands)
+                key = (corpus, i)
+                owner_shingles[key] = sh_i
+                for b in row_bands:
+                    band_owner.setdefault(b, key)
         keep[corpus] = mask
         report[corpus] = {
             "n_before": len(texts),
             "n_dropped_across": int(n_across),
             "n_dropped_within": int(n_within),
+            "n_lsh_candidates_rejected_by_exact_jaccard": int(n_rejected),
             "n_after": int(mask.sum()),
         }
         _log(f"dedup {corpus}: {report[corpus]}")
@@ -688,7 +784,33 @@ def stratified_nested_draw(
         return base.tolist()
 
     n3_alloc = alloc(n3_target)
+    if sum(n3_alloc) != n3_target:
+        raise RuntimeError(f"arm-3 allocation sums to {sum(n3_alloc)} != target {n3_target}")
     n12_alloc = [min(a, b) for a, b in zip(alloc(n12_target), n3_alloc, strict=True)]
+    # The elementwise nesting cap (arm-1/2 subset of the arm-3 draw) can UNDER-fill
+    # the arm-1/2 target; redistribute the deficit to strata with arm-3 headroom
+    # (deterministic largest-headroom-first order), then assert the sums exactly.
+    deficit = n12_target - sum(n12_alloc)
+    if deficit < 0:
+        raise RuntimeError(f"arm-1/2 allocation over-filled by {-deficit} (nesting bug)")
+    while deficit > 0:
+        headroom = [n3 - n12 for n3, n12 in zip(n3_alloc, n12_alloc, strict=True)]
+        order = sorted(range(len(strata)), key=lambda j: (-headroom[j], strata[j]))
+        progressed = False
+        for j in order:
+            if deficit <= 0:
+                break
+            if n12_alloc[j] < n3_alloc[j]:
+                n12_alloc[j] += 1
+                deficit -= 1
+                progressed = True
+        if not progressed:
+            raise RuntimeError(
+                f"cannot nest arm-1/2 draw of {n12_target} inside the arm-3 allocation "
+                f"(residual deficit {deficit})"
+            )
+    if sum(n12_alloc) != n12_target:
+        raise RuntimeError(f"arm-1/2 allocation sums to {sum(n12_alloc)} != target {n12_target}")
     for s, n3_s, n12_s in zip(strata, n3_alloc, n12_alloc, strict=True):
         idx = np.array(by_stratum[s])
         perm = idx[rng.permutation(len(idx))]
@@ -939,7 +1061,13 @@ def build_argparser() -> argparse.ArgumentParser:
             f"default, #1005 clobber shape; canonical for this issue: {HF_DEST_DEFAULT})"
         ),
     )
-    ap.add_argument("--seed", type=int, default=0, help="draw/dedup seed (registered)")
+    ap.add_argument(
+        "--seed",
+        type=int,
+        default=2546,
+        help="corpus-sample draw seed (registered: plan section 10 'fold/corpus-sample "
+        "seed 0/2546' — folds are seed 0 fit-side; the STAGING draw seed is 2546)",
+    )
     ap.add_argument(
         "--smoke",
         action="store_true",
@@ -951,12 +1079,21 @@ def build_argparser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     t0 = time.time()
-    args = build_argparser().parse_args(argv)
+    ap = build_argparser()
+    args = ap.parse_args(argv)
+    if not args.smoke and not args.skip_upload and not args.hf_dest:
+        # Fail at parse time, BEFORE hours of pulls/joins (the late check stays as backstop).
+        ap.error(
+            "--hf-dest is REQUIRED when uploading (no implicit issue-prefix default — the "
+            f"#1005 clobber shape; canonical for this issue: {HF_DEST_DEFAULT}); or pass "
+            "--smoke/--skip-upload to build without upload"
+        )
     out_dir = Path(args.out_dir + ("_smoke" if args.smoke else ""))
     out_dir.mkdir(parents=True, exist_ok=True)
     dl_dir = Path(args.dl_dir)
     dl_dir.mkdir(parents=True, exist_ok=True)
     _assert_staging_headroom(out_dir)
+    _assert_staging_headroom(dl_dir)  # dl mirror may sit on a different filesystem
     rng = np.random.default_rng(args.seed)
 
     # -- steps 1-3: pulls + joins ------------------------------------------------
@@ -975,11 +1112,23 @@ def main(argv: list[str] | None = None) -> int:
     corpora["math"] = math_rows[:20] if args.smoke else math_rows
     corpora.update(load_mcq_corpora(args.smoke))
 
-    taur_repos = discover_taur_repos(args.smoke)
+    taur_repos, taur_discovery = discover_taur_repos(args.smoke)
     rescue_acc, ch_cells, taur_report = load_taur(taur_repos)
     expected_cells = {(t, level) for t in ("deductive", "abductive") for level in (1, 2, 3, 4)}
     if not args.smoke and set(ch_cells) != expected_cells:
         raise RuntimeError(f"contexthub cells missing: {sorted(expected_cells - set(ch_cells))}")
+    ch_gold_missing: dict[str, dict] = {}
+    for (ch_type, level), rows in sorted(ch_cells.items()):
+        n_missing = sum(1 for r in rows if r["gold_answer"] is None)
+        ch_gold_missing[f"{ch_type}_L{level}"] = {"n_rows": len(rows), "n_gold_missing": n_missing}
+        if rows and n_missing == len(rows) and not args.smoke:
+            # A cell with ZERO golds silently voids the correctness covariate for the
+            # whole (type x level) cell — a rig defect, never a data property to absorb.
+            raise RuntimeError(
+                f"contexthub cell ({ch_type}, L{level}): ALL {len(rows)} rows lack a gold "
+                f"answer (keys probed: {_GOLD_KEYS}) — refusing to stage a gold-less cell"
+            )
+    _log(f"contexthub gold coverage: {ch_gold_missing}")
     ch_rows: list[dict] = []
     for (ch_type, level), rows in sorted(ch_cells.items()):
         ch_rows.extend(rows if not args.smoke else rows[:20])
@@ -1087,16 +1236,26 @@ def main(argv: list[str] | None = None) -> int:
         "math_scaffold_extraction": math_report,
         "contexthub_cell_counts": {f"{t}_L{level}": n for (t, level), n in ch_level_counts.items()},
         "dedup": {
-            "method": "reused issue_1739.corpus_staging MinHash (char-5 shingles, 64 perms)",
+            "method": (
+                "reused issue_1739.corpus_staging MinHash (char-5 shingles, 64 perms) as "
+                "CANDIDATE net; drops verified by exact char-5-shingle Jaccard"
+            ),
             "lsh_bands": LSH_BANDS,
-            # (1/b)^(1/r) with b=8 bands, r=8 rows/band over 64 perms ~= 0.77
-            "approx_jaccard_threshold": 0.77,
+            # candidate net: (1/b)^(1/r) with b=16 bands, r=4 rows/band over 64 perms ~= 0.5
+            "candidate_jaccard_threshold": 0.5,
+            "verified_jaccard_threshold": JACCARD_VERIFY_THRESHOLD,
             "order": CORPUS_ORDER,
             "per_corpus": dedup_report,
         },
+        "contexthub_gold_missing": ch_gold_missing,
+        "math_gold_note": (
+            "staged math rows carry gold_answer=None BY DESIGN: MATH golds are joined "
+            "pod-side at parse time by issue2546_gen_capture.stage_math_golds"
+        ),
         "rescue_rate": {
             "definition": "fraction of joined TAUR models with cot_correct AND NOT direct_correct",
             "repos": taur_repos,
+            "discovery": taur_discovery,
             "coverage": rescue_coverage,
             "taur_report": taur_report,
         },
@@ -1109,7 +1268,9 @@ def main(argv: list[str] | None = None) -> int:
         "files": file_records,
     }
     man_path = out_dir / "corpora_manifest.json"
-    man_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+    tmp = man_path.with_name(man_path.name + ".tmp")
+    tmp.write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
+    os.replace(tmp, man_path)  # atomic: no half-written manifest on crash
     _log(f"manifest written: {man_path}")
 
     if args.smoke or args.skip_upload:

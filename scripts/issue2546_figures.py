@@ -71,6 +71,13 @@ ARM_TITLE = {
 STRATA = ("does", "doesnt")
 STRATUM_LABEL = {"does": "needs CoT", "doesnt": "no CoT needed"}
 STRATUM_HATCH = {"does": "", "doesnt": "//"}
+# Dedicated stratum hues (raw hexes: paper_palette_role names carry OTHER meanings
+# elsewhere in this figure set — one color = one meaning).
+STRATUM_COLOR = {"does": "#7b3294", "doesnt": "#008837"}
+# Dedicated n1m read-pair hues (post/pre ctx-state reads); distinct from the
+# ood identity-acc hue below and from every palette role used in sibling figures.
+N1M_READ_COLOR = {"post_vc": "#2166ac", "pre_vc": "#d6604d"}
+OOD_IDENTITY_ACC_COLOR = "#b35806"
 CORPORA = ("gsm8k_train", "math", "contexthub", "mmlu")
 CORPUS_LABEL = {
     "gsm8k_train": "GSM8K",
@@ -218,10 +225,34 @@ def _identity_tick(ax, x: float, y: float | None, w: float = 0.32) -> None:
 
 
 def _assert_nonempty(fig) -> None:
-    ok = any(
-        len(a.lines) + len(a.patches) + len(a.collections) + len(a.images) > 0 for a in fig.axes
+    """Refuse to save a figure with no artists OR no finite plotted datum.
+
+    Artist presence alone passes an all-NaN render (a bar of NaN height still
+    creates a Rectangle patch) — require >=1 FINITE value across lines,
+    patches, collections, or images (#1112: an empty figure was presented 3x).
+    """
+
+    def _finite(a) -> bool:
+        for ln in a.lines:
+            if np.isfinite(np.asarray(ln.get_ydata(), dtype=float)).any():
+                return True
+        for p in a.patches:
+            h = getattr(p, "get_height", None)
+            if h is not None and np.isfinite(float(h())):
+                return True
+        for c in a.collections:
+            off = np.asarray(c.get_offsets(), dtype=float)
+            if off.size and np.isfinite(off).any():
+                return True
+        return len(a.images) > 0
+
+    n_artists = sum(
+        len(a.lines) + len(a.patches) + len(a.collections) + len(a.images) for a in fig.axes
     )
-    assert ok, "figure rendered with no artists on any axes — refusing to save an empty figure"
+    assert n_artists > 0, "figure rendered with no artists on any axes — refusing to save"
+    assert any(_finite(a) for a in fig.axes), (
+        "figure has artists but ZERO finite plotted data (all-NaN render) — refusing to save"
+    )
 
 
 def _save(fig, stem: str, out_dir: Path) -> None:
@@ -414,42 +445,49 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
         ax2.set_yticks(range(9))
         ax2.set_yticklabels(LADDER_TIER_LABELS, fontsize=7)
         ax2.grid(axis="y", lw=0.3, alpha=0.5)
-        # row 3: operator comparison
+        # row 3: operator comparison (status-guarded: a non-ok unit is a GAP, not a crash)
         ax3 = axes[3][ci]
         op = _load(root / "ladder" / f"operator_comparison__a{a}.json")
-        raw = op["direction_aware"]["raw_cosine_with_rotation_null"]
-        null = raw["rotation_null"]
-        ax3.bar(0, float(raw["raw_cosine"]), width=0.5, color=paper_palette_role("primary"))
-        nm = float(null["null_mean"])
-        ax3.errorbar(
-            0.45,
-            nm,
-            yerr=_yerr(nm, nm - 2 * float(null["null_std"]), float(null["null_p975"])),
-            marker="_",
-            ms=14,
-            color="0.35",
-            ls="none",
-            capsize=3,
-        )
-        ax3.bar(
-            1.2,
-            float(op["rotation_invariant_only"]["spectrum_cosine"]),
-            width=0.5,
-            color=paper_palette_role("neutral"),
-            hatch="..",
-            edgecolor="white",
-        )
-        ax3.set_xticks([0, 0.45, 1.2])
-        ax3.set_xticklabels(
-            [
-                "raw cosine\n(direction-aware)",
-                "rotation null\n(mean, p97.5)",
-                "spectrum cosine\n(rotation-invariant only;\ncannot support same-operator)",
-            ],
-            fontsize=7,
-        )
-        if ci == 0:
-            ax3.set_ylabel("operator similarity\n(pre-map vs post-map)", fontsize=8)
+        if op.get("status") != "ok":
+            _DROPPED.append(f"operator_comparison__a{a}: status={op.get('status')}")
+            ax3.set_axis_off()
+        else:
+            raw = op["direction_aware"]["raw_cosine_with_rotation_null"]
+            null = raw["rotation_null"]
+            ax3.bar(0, float(raw["raw_cosine"]), width=0.5, color=paper_palette_role("primary"))
+            nm, ns = float(null["null_mean"]), float(null["null_std"])
+            # symmetric +-2*sigma band: the helper emits null_mean/std/p975 only (no
+            # p025), so a p97.5 upper + 2-sigma lower would mix two interval
+            # definitions in one bar — draw one coherent symmetric interval.
+            ax3.errorbar(
+                0.45,
+                nm,
+                yerr=_yerr(nm, nm - 2 * ns, nm + 2 * ns),
+                marker="_",
+                ms=14,
+                color="0.35",
+                ls="none",
+                capsize=3,
+            )
+            ax3.bar(
+                1.2,
+                float(op["rotation_invariant_only"]["spectrum_cosine"]),
+                width=0.5,
+                color=paper_palette_role("neutral"),
+                hatch="..",
+                edgecolor="white",
+            )
+            ax3.set_xticks([0, 0.45, 1.2])
+            ax3.set_xticklabels(
+                [
+                    "raw cosine\n(direction-aware)",
+                    "rotation null\n(mean ± 2σ)",
+                    "spectrum cosine\n(rotation-invariant only;\ncannot support same-operator)",
+                ],
+                fontsize=7,
+            )
+            if ci == 0:
+                ax3.set_ylabel("operator similarity\n(pre-map vs post-map)", fontsize=8)
     _save(fig, "hero2_p8_ladder", out_dir)
 
 
@@ -510,7 +548,7 @@ def _traj_series(root: Path, arm: int, stratum: str) -> dict | None:
 def fig_hero3(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
     arms = tuple(a for a in ARMS_ALL if a in arms)
     fig, axes = plt.subplots(2, len(arms), figsize=(4.6 * len(arms), 7.2), squeeze=False)
-    scol = {"does": paper_palette_role("primary"), "doesnt": paper_palette_role("accent")}
+    scol = STRATUM_COLOR
     for ci, a in enumerate(arms):
         ceil = read_reliability(root, a)
         ax_r2, ax_acc = axes[0][ci], axes[1][ci]
@@ -759,10 +797,17 @@ def fig_exp_p8e_baselines(root: Path, out_dir: Path, arms: tuple[int, ...]) -> N
                 d.get("mean_baseline_r2", {}).get(hl, np.nan),
                 d.get("random_projection_r2", {}).get(hl, np.nan),
             ]
-            roles = ["primary", "baseline", "neutral", "control"]
-            for i, (v, r) in enumerate(zip(vals, roles)):
+            # identity+bias renders BLACK to match the black identity ticks every
+            # sibling figure draws (_identity_tick) — one visual identity per baseline.
+            colors = [
+                paper_palette_role("primary"),
+                "black",
+                paper_palette_role("neutral"),
+                paper_palette_role("control"),
+            ]
+            for i, (v, col) in enumerate(zip(vals, colors)):
                 if v is not None and np.isfinite(v):
-                    ax.bar(i, v, width=0.6, color=paper_palette_role(r))
+                    ax.bar(i, v, width=0.6, color=col)
         ax.set_xticks(range(4))
         ax.set_xticklabels(names, rotation=25, ha="right", fontsize=7)
         ax.axhline(0.0, color="0.7", lw=0.8)
@@ -780,15 +825,15 @@ def fig_exp_n1m_read(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
     layers = sorted(reads["post_vc"].keys(), key=lambda k: int(k[1:]))
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(9.6, 3.6))
     w = 0.35
-    for j, (name, label, role) in enumerate(
+    for j, (name, label) in enumerate(
         (
-            ("post_vc", "post-model ctx state (read A)", "primary"),
-            ("pre_vc", "pre-model ctx state (read B)", "accent"),
+            ("post_vc", "post-model ctx state (read A)"),
+            ("pre_vc", "pre-model ctx state (read B)"),
         )
     ):
         xs = np.arange(len(layers)) + (j - 0.5) * w
         r2s = [reads[name][layer]["r2_agreement"] for layer in layers]
-        ax0.bar(xs, r2s, width=w, color=paper_palette_role(role), label=label)
+        ax0.bar(xs, r2s, width=w, color=N1M_READ_COLOR[name], label=label)
         for x, layer in zip(xs, layers):
             _identity_tick(ax0, x, reads[name][layer].get("identity_r2_agreement"), w=0.25)
     ax0.set_xticks(range(len(layers)))
@@ -835,7 +880,7 @@ def fig_exp_ood(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             knn = d.get("knn_identity", {}).get("euclidean", {})
             acc = knn.get("acc_at_k", {}).get("1")
             if acc is not None:
-                ax.bar(i + 0.19, float(acc), width=0.36, color=paper_palette_role("accent"))
+                ax.bar(i + 0.19, float(acc), width=0.36, color=OOD_IDENTITY_ACC_COLOR)
                 ch = knn.get("chance_at_k", {}).get("1")
                 if ch is not None:
                     _identity_tick(ax, i + 0.19, float(ch), w=0.3)

@@ -307,6 +307,12 @@ def main(argv: list[str] | None = None) -> int:
     pre, pre_meta = load_side_vectors(out_root, "pre", ("cx_last",))
     post_by_id = {m["row_id"]: i for i, m in enumerate(post_meta)}
     pre_by_id = {m["row_id"]: i for i, m in enumerate(pre_meta)}
+    # A duplicated row_id would silently LAST-WIN the dict and misalign the
+    # post/pre join — fail loud instead of joining on a corrupted key space.
+    if len(post_by_id) != len(post_meta):
+        raise RuntimeError(f"duplicate row_ids in POST capture: {len(post_meta) - len(post_by_id)}")
+    if len(pre_by_id) != len(pre_meta):
+        raise RuntimeError(f"duplicate row_ids in PRE capture: {len(pre_meta) - len(pre_by_id)}")
     shared = sorted(set(post_by_id) & set(pre_by_id))
     assert shared, "post/pre pilot captures share ZERO row_ids — upstream capture broke"
     if args.smoke:

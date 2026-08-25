@@ -248,7 +248,7 @@ def enumerate_stems(out_root: Path, arm: int, smoke: bool, *, offline: bool = Fa
     """
     from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
 
-    local = out_root / "store" / f"arm{arm}"
+    local = out_root / "store" / g25.arm_dirname(arm, smoke)
     stems = set()
     if local.is_dir():
         stems.update(p.name for p in local.iterdir() if p.is_dir() and "__" in p.name)
@@ -277,7 +277,7 @@ def _stage_stem(
     Returns (shard_dir, staged) — staged=True means the dir is a temporary HF
     mirror the caller frees after the reduce (never the local store originals).
     """
-    local = out_root / "store" / f"arm{arm}" / stem
+    local = out_root / "store" / g25.arm_dirname(arm, smoke) / stem
     if _shard_files(local):
         return local, False
     if offline:
@@ -308,16 +308,34 @@ def build_fitcache(
     (N, L, H)), tk.pt (bf16 (N, 9, 3, H), post-like), rows.json (row_ids +
     meta + kinds + shapes), _cache_complete.json (fingerprint).
     """
-    cache_root = out_root / "fitcache" / f"arm{prof.arm}"
+    cache_root = out_root / "fitcache" / g25.arm_dirname(prof.arm, smoke)
     stems = enumerate_stems(out_root, prof.arm, smoke, offline=offline)
     done: dict[str, Path] = {}
     for stem in stems:
         cdir = cache_root / stem
         marker = cdir / "_cache_complete.json"
         if marker.is_file():
-            done[stem] = cdir
-            print(f"[p5-cache] {stem}: resume-skip", flush=True)
-            continue
+            # Store-content resume check (g3 concern 1): when local shards are
+            # still present, a shard-name mismatch vs the marker fingerprint
+            # means the store was re-captured after this cache was built —
+            # rebuild instead of resume-skipping onto stale reduced tensors.
+            # (Local shards absent = freed post-upload; the marker is accepted.)
+            local_store = out_root / "store" / g25.arm_dirname(prof.arm, smoke) / stem
+            local_shards = sorted(f.name for f in _shard_files(local_store))
+            marker_shards = sorted(
+                json.loads(marker.read_text()).get("fingerprint", {}).get("shards", [])
+            )
+            if local_shards and local_shards != marker_shards:
+                print(
+                    f"[p5-cache] {stem}: STALE cache (store shards {len(local_shards)} != "
+                    f"marker {len(marker_shards)}) — rebuilding",
+                    flush=True,
+                )
+                shutil.rmtree(cdir)
+            else:
+                done[stem] = cdir
+                print(f"[p5-cache] {stem}: resume-skip", flush=True)
+                continue
         t0 = time.time()
         shard_dir, staged = _stage_stem(out_root, prof.arm, stem, smoke, offline=offline)
         files = _shard_files(shard_dir)
@@ -413,9 +431,9 @@ class StemCache:
 # ---------------------------------------------------------------------------
 
 
-def load_caches(out_root: Path, prof: LayerProfile) -> dict[str, dict[str, StemCache]]:
+def load_caches(out_root: Path, prof: LayerProfile, smoke: bool) -> dict[str, dict[str, StemCache]]:
     """side -> corpus -> StemCache from a COMPLETE fitcache (fail-loud)."""
-    cache_root = out_root / "fitcache" / f"arm{prof.arm}"
+    cache_root = out_root / "fitcache" / g25.arm_dirname(prof.arm, smoke)
     out: dict[str, dict[str, StemCache]] = {}
     if not cache_root.is_dir():
         raise FileNotFoundError(f"fitcache missing at {cache_root} — parent phase must run first")
@@ -833,6 +851,27 @@ def _fingerprint(unit: Unit, params: dict) -> str:
     return hashlib.sha1(body.encode()).hexdigest()[:16]
 
 
+def _store_content_key(out_root: Path, prof: LayerProfile, smoke: bool) -> str:
+    """sha1 over each cached stem's shard fingerprint (names + row counts).
+
+    A re-captured store rebuilds the fitcache under a different shard set, so
+    folding this key into every unit fingerprint makes completed-unit
+    resume-skips store-generation-scoped (g2/g3 resume-contamination class).
+    Keys on the marker's RECORDED shard names — never recomputed floats
+    (machine-stable resume-key rule, #1336).
+    """
+    cache_root = out_root / "fitcache" / g25.arm_dirname(prof.arm, smoke)
+    assert cache_root.is_dir(), f"fitcache missing at {cache_root} — parent must run first"
+    pairs: list[tuple[str, str]] = []
+    for cdir in sorted(p for p in cache_root.iterdir() if p.is_dir()):
+        marker = cdir / "_cache_complete.json"
+        if marker.is_file():
+            fp = json.loads(marker.read_text()).get("fingerprint", {})
+            pairs.append((cdir.name, json.dumps(fp, sort_keys=True)))
+    assert pairs, f"no complete fitcache stems under {cache_root}"
+    return hashlib.sha1(json.dumps(pairs, sort_keys=True).encode()).hexdigest()[:16]
+
+
 def _subset_seed(arm: int, subset: str, matched_n: int | None) -> int:
     return zlib.crc32(f"{arm}:{subset}:{matched_n}".encode()) % (2**31)
 
@@ -985,8 +1024,11 @@ def run_sweep_unit(
     folds, fitted = sweep["folds"], sweep["fitted_mask"]
     n_train_min = sweep["n_train_min"]
     if not smoke:
-        # Fit-eligibility: n_train >= 1.2d asserted (plan MF-2; int() matches the
-        # plan's 4,301 / 4,915 floors at d=3584 / 4096).
+        # Fit-eligibility: n_train >= 1.2d asserted (plan MF-2). Rounding pinned
+        # DOWN — int(1.2*3584)=4300 / int(1.2*4096)=4915: at FLOOR_ROWS the
+        # realized worst-fold n_train is exactly 4300/4915, and the plan's own
+        # arm-3 figure (4,915) uses down-rounding (its 4,301 is internally
+        # inconsistent; ceil would refuse the plan's own at-floor configs).
         assert n_train_min is not None and n_train_min >= int(1.2 * d), (
             unit.unit_id,
             n_train_min,
@@ -1148,25 +1190,43 @@ def run_traj_unit(
             for rid in rows:
                 if rid in cache.pos and cache.has_tk:
                     corpus_of[rid] = corpus
+        n_pre_filter = len(rows)
         rows = [r for r in rows if r in corpus_of]
         n = len(rows)
+        n_dropped_no_tk = n_pre_filter - n
+        # Post-has_tk-filter floor RE-check (g3 concern 5): attrition below the
+        # registered floor after the tk filter is a REPORTED drop, never silent.
+        if n < (SMOKE_MIN_ROWS if smoke else floor):
+            strata_out[stratum] = {
+                "status": "dropped_below_floor",
+                "n_rows": n,
+                "n_dropped_no_tk": n_dropped_no_tk,
+                "floor": floor,
+            }
+            continue
+        # Scatter-fill keyed on the CANONICAL row order (the `_load_xy` pattern):
+        # X27/Y27 row i is rows[i], so conv_ids / fitted_mask zips / persisted
+        # preds all share ONE order (round-1 Codex blocker: the grouped-cursor
+        # fill misaligned data rows against original-order conv_ids).
+        pos_of = {r: i for i, r in enumerate(rows)}
         X27 = np.empty((n, n_t * n_f, prof.hidden), dtype=np.float32)
         Y27 = np.empty_like(X27)
         short_think = np.zeros(n, dtype=bool)
-        pos = 0
+        filled = 0
         for corpus in sorted(set(corpus_of.values())):
             crows = [r for r in rows if corpus_of[r] == corpus]
             cache = post[corpus]
             tk = cache.kind_rows("tk", crows)  # (nc, 9, 3, H)
             ans = cache.kind_rows("ans_mean", crows)  # (nc, L, H)
+            dest = np.asarray([pos_of[r] for r in crows], dtype=np.int64)
             for ti in range(n_t):
                 for fi, layer in enumerate(prof.frozen):
-                    X27[pos : pos + len(crows), ti * n_f + fi] = tk[:, ti, fi]
-                    Y27[pos : pos + len(crows), ti * n_f + fi] = ans[:, layer]
+                    X27[dest, ti * n_f + fi] = tk[:, ti, fi]
+                    Y27[dest, ti * n_f + fi] = ans[:, layer]
             for j, rid in enumerate(crows):
-                short_think[pos + j] = bool(cache.meta[cache.pos[rid]].get("short_think", False))
-            pos += len(crows)
-        assert pos == n
+                short_think[dest[j]] = bool(cache.meta[cache.pos[rid]].get("short_think", False))
+            filled += len(crows)
+        assert filled == n
         headline_idx = tuple(ti * n_f + hl_fi for ti in range(n_t))
         sweep = fc.heldout_r2_sweep(
             X27,
@@ -1180,6 +1240,12 @@ def run_traj_unit(
             frozen_layers=headline_idx,
             lambdas=LAMBDAS_N1M,
         )
+        if not smoke:
+            # Traj twin of the sweep-unit MF-2 fit-eligibility assert (g3 concern 5):
+            # n_train >= 1.2 d with d = hidden width (X27's feature dim).
+            assert sweep["n_train_min"] is not None and sweep["n_train_min"] >= int(
+                1.2 * prof.hidden
+            ), (unit.unit_id, stratum, sweep["n_train_min"], prof.hidden)
         fitted = sweep["fitted_mask"]
         n_fit = int(fitted.sum())
         sseed = _subset_seed(prof.arm, stratum, None)
@@ -1236,6 +1302,7 @@ def run_traj_unit(
         strata_out[stratum] = {
             "status": "ok",
             "n_rows": n,
+            "n_dropped_no_tk": n_dropped_no_tk,
             "n_fitted": n_fit,
             "n_train_min": sweep["n_train_min"],
             "short_think_frac": float(short_think.mean()),
@@ -1294,7 +1361,11 @@ def run_ladder_unit(
         return {"status": "dropped_below_floor", "n_rows": len(rows), "floor": floor}
     hl = prof.headline
     Xb_a, Yb_a, _ = _load_xy(caches, prof, "p8_G", rows)  # pre cx -> pre ans
-    Xi_a, Yi_a, _ = _load_xy(caches, prof, "p8_F", rows)  # post cx -> post ans
+    Xi_a, Yi_a, corp_f = _load_xy(caches, prof, "p8_F", rows)  # post cx -> post ans
+    # MF-5 (non-tautological form, g3 concern 4): the band's R2_F comes from the
+    # battery over THESE rows — derive the band-source corpora from the rows
+    # that actually fed the p8_F load and assert they equal the ladder corpus.
+    band_source_corpora = sorted(set(corp_f))
     dev = fc._fit_device()
     dt = torch.float64
     Xb = torch.as_tensor(Xb_a[:, hl, :], dtype=dt).to(dev)
@@ -1369,9 +1440,12 @@ def run_ladder_unit(
     }
     rate = float(r2_f) / COMMITTED_ANCHOR_R2
     band_value = DELTA_ELICIT_BAND * rate
-    band_source_corpus = unit.subset.replace("corpus:", "")
     ladder_corpus = unit.subset.replace("corpus:", "")
-    assert band_source_corpus == ladder_corpus, (band_source_corpus, ladder_corpus)  # MF-5
+    if unit.subset.startswith("corpus:"):
+        # MF-5: the realized R2_F input corpora must BE the ladder corpus
+        # (pooled ladder units legitimately span corpora and are exempt).
+        assert band_source_corpora == [ladder_corpus], (band_source_corpora, ladder_corpus)
+    band_source_corpus = ladder_corpus
     sufficient = next(
         (i for i, t in enumerate(LADDER_TIER_NAMES) if tiers[t] >= float(r2_f) - band_value),
         None,
@@ -1400,6 +1474,7 @@ def run_ladder_unit(
         "sufficient_tier": sufficient,
         "band_value": band_value,
         "band_source_corpus": band_source_corpus,
+        "band_source_corpora_realized": band_source_corpora,
         "band_rule": "DELTA_ELICIT_BAND(0.02) x rate; rate = R2_F(subset)/0.6731 (#1336 anchor)",
         "exchange_rate": rate,
         "committed_anchor_r2": COMMITTED_ANCHOR_R2,
@@ -1424,7 +1499,12 @@ def run_operator_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smo
     beta_pre_t = beta_pre.detach().to("cpu", torch.float64)
     beta_post_t = beta_post.detach().to("cpu", torch.float64)
     n_draws = 5 if smoke else N_ROT_DRAWS
+    # Measured rotation-null wall (operator-null-production-cost concern): the
+    # per-draw basis is serialized so the production N_ROT_DRAWS projection is
+    # grounded in a MEASURED figure, never an asserted one.
+    t_null0 = time.time()
     raw = oc.raw_cosine_with_rotation_null(beta_pre_t, beta_post_t, n_draws=n_draws, seed=TASK)
+    null_wall_s = time.time() - t_null0
     spec = oc.spectrum_cosine(beta_pre_t, beta_post_t)
     dev = fc._fit_device()
     cap = oc.alignment_capacity(
@@ -1447,6 +1527,9 @@ def run_operator_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smo
             "label": "can never support 'same operator up to rotation' (plan MF-5)",
         },
         "ctx_alignment_capacity": cap,
+        "n_rot_draws": int(n_draws),
+        "rotation_null_wall_s": float(null_wall_s),
+        "rotation_null_per_draw_s": float(null_wall_s / max(1, n_draws)),
     }
 
 
@@ -1506,7 +1589,7 @@ def run_reliability_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict) 
             "status": "missing_reliability_capture",
             "unit_id": unit.unit_id,
             "arm": prof.arm,
-            "expected_stems": f"store/arm{prof.arm}/rel_{prof.post_side}__{{corpus}}",
+            "expected_stems": f"store/[smoke_]arm{prof.arm}/rel_{prof.post_side}__{{corpus}}",
             "note": (
                 "reliability T=0.6 draws are persisted as rollout TEXT only "
                 f"(rollouts/reliability_a{prof.arm}); run issue2546_gen_capture.py "
@@ -1588,7 +1671,11 @@ def run_units(args, prof: LayerProfile, units: list[Unit]) -> int:
     )
     n_boot = args.n_boot if args.n_boot is not None else (SMOKE_N_BOOT if smoke else N_BOOT)
     params = _fit_params(smoke, null_draws, n_boot)
-    caches = load_caches(out_root, prof)
+    # Store CONTENT identity folded into every unit fingerprint (g2/g3 resume
+    # class): a re-captured store rebuilds the fitcache with new shard names,
+    # so completed-unit resume-skips can never bless fits from a prior store.
+    params["store_key"] = _store_content_key(out_root, prof, smoke)
+    caches = load_caches(out_root, prof, smoke)
     rowsets_path = out_root / "out" / "rowsets" / f"arm{prof.arm}.json"
     assert rowsets_path.is_file(), f"rowsets missing at {rowsets_path} — parent must run first"
     rowsets = build_rowsets(out_root, prof, caches, smoke)  # deterministic re-derive
@@ -1684,7 +1771,7 @@ def run_parent(args, prof: LayerProfile) -> int:
     print(f"[p5] parent arm={prof.arm} smoke={smoke} out_root={out_root}", flush=True)
     # Fan-out shared inputs pre-staged ONCE in the parent (#1315).
     build_fitcache(out_root, prof, smoke)
-    caches = load_caches(out_root, prof)
+    caches = load_caches(out_root, prof, smoke)
     build_rowsets(out_root, prof, caches, smoke)
     units = build_registry(prof)
     assert registry_stat_totals() == 222, registry_stat_totals()  # plan §9
@@ -1717,7 +1804,13 @@ def run_parent(args, prof: LayerProfile) -> int:
             cmd += ["--n-boot", str(args.n_boot)]
         env = {**os.environ}  # explicit env passthrough (subprocess-env contract)
         if ngpu > 0:
-            env["CUDA_VISIBLE_DEVICES"] = str(slot)  # launcher-env CVD pin (#543/#545)
+            # Launcher-env CVD pin (#543/#545). Allocation-first: pin the
+            # slot-th INHERITED CVD entry, never the bare ordinal — under an
+            # inherited CVD=4,5 the ordinal would retarget unallocated GPUs
+            # (#1336 precheck gotcha).
+            inherited = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+            entries = [c.strip() for c in inherited.split(",") if c.strip() != ""]
+            env["CUDA_VISIBLE_DEVICES"] = entries[slot] if entries else str(slot)
         log = (work_dir / f"slot{slot}.log").open("w")
         procs.append(
             (slot, subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT), log)
@@ -1755,6 +1848,82 @@ def run_parent(args, prof: LayerProfile) -> int:
     return 0
 
 
+PREDS_PREFIX = "issue2546_cotmap/analysis_tensors/preds"
+MIRROR_PREFIX = "issue2546_cotmap/eval_results_mirror"
+
+
+def run_publish(args, prof: LayerProfile) -> int:
+    """P6 results handoff (plan §10): persist the P5 out tree to the HF data repo.
+
+    Two verified bulk uploads, ONE ``upload_folder`` commit each with an
+    EXACT-set post-verify (``hub._upload_folder_filtered``; #664/#727/#997 —
+    never a per-file loop):
+
+      1. preds npz  -> ``{PREDS_PREFIX}/{smoke_}arm{K}/`` (this arm's files only)
+      2. out/ JSONs -> ``{MIRROR_PREFIX}/{smoke_,}out/...`` (full current tree;
+         later arms' publishes re-verify earlier arms' files — idempotent)
+
+    The git commit+push of ``eval_results/issue_2546/`` (plan §10 destination
+    1) is the DISPATCHER's production-only leg — ``issue2546_dispatch.sh``
+    ``phase_p6_publish`` — because the repo clone/branch live at pod level.
+    """
+    out_root = Path(args.out_root)
+    smoke = bool(args.smoke)
+    out_dir = out_root / "out"
+    assert out_dir.is_dir(), f"out tree missing at {out_dir} — run P5 first"
+
+    # (1) preds npz — this arm only (unit ids end __a{K} so filenames end a{K}.npz).
+    preds_dir = out_dir / "preds"
+    npz = sorted(p.name for p in preds_dir.glob(f"*a{prof.arm}.npz")) if preds_dir.is_dir() else []
+    if not npz:
+        # Empty selection over a local committed artifact fails LOUD (#1739 class);
+        # P5 writes sweep+traj preds in both smoke and production.
+        raise RuntimeError(f"no preds npz for arm {prof.arm} under {preds_dir} — run P5 first")
+    preds_dest = f"{PREDS_PREFIX}/{g25.arm_dirname(prof.arm, smoke)}"
+    url = hub._upload_folder_filtered(
+        preds_dir,
+        hub.DEFAULT_DATASET_REPO,
+        "dataset",
+        preds_dest,
+        allow_patterns=[f"*a{prof.arm}.npz"],
+        expected_repo_paths=[f"{preds_dest}/{n}" for n in npz],
+    )
+    if not url:
+        raise RuntimeError(f"preds upload verify FAILED for {preds_dest} ({len(npz)} files)")
+    print(f"[p6] preds: {len(npz)} npz -> {preds_dest}", flush=True)
+
+    # (2) full out/ JSON tree mirror (cells, ladder, reliability, necessity,
+    # n1m_read, rowsets, reports — everything a downstream reader consumes).
+    rels = sorted(str(p.relative_to(out_dir)) for p in out_dir.rglob("*.json"))
+    if not rels:
+        raise RuntimeError(f"no JSON artifacts under {out_dir} — run P5 first")
+    mirror_dest = f"{MIRROR_PREFIX}/{g25.stage_dirname('out', smoke)}"
+    url = hub._upload_folder_filtered(
+        out_dir,
+        hub.DEFAULT_DATASET_REPO,
+        "dataset",
+        mirror_dest,
+        allow_patterns=["*.json"],  # fnmatch: '*' crosses '/' in HF filter_repo_objects
+        expected_repo_paths=[f"{mirror_dest}/{r}" for r in rels],
+    )
+    if not url:
+        raise RuntimeError(f"out-mirror upload verify FAILED for {mirror_dest} ({len(rels)} files)")
+    print(f"[p6] out mirror: {len(rels)} JSONs -> {mirror_dest}", flush=True)
+    _atomic_json(
+        out_dir / "reports" / f"p6_publish_a{prof.arm}.json",
+        {
+            "arm": prof.arm,
+            "smoke": smoke,
+            "n_preds_npz": len(npz),
+            "preds_dest": preds_dest,
+            "n_out_json": len(rels),
+            "mirror_dest": mirror_dest,
+            "repro": _repro("p6-publish"),
+        },
+    )
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # Selftest: synthetic-store CPU smoke (loader, set-check, one full-sweep unit,
 # one trajectory unit, content-identity hit rule, per-corpus band assert)
@@ -1770,7 +1939,7 @@ def _selftest_write_stem(
     prof: LayerProfile,
     post_like: bool,
 ) -> None:
-    stem_dir = root / "store" / f"arm{arm}" / f"{side}__{corpus}"
+    stem_dir = root / "store" / g25.arm_dirname(arm, True) / f"{side}__{corpus}"
     stem_dir.mkdir(parents=True, exist_ok=True)
     B = len(rows)
     kinds = list(g25.KINDS_POST if post_like else g25.KINDS_SHORT)
@@ -1811,7 +1980,7 @@ def _selftest_write_rel_stem(
     root: Path, arm: int, side: str, corpus: str, base_ids: list[str], prof: LayerProfile
 ) -> None:
     """Frozen-layer per-draw reliability shard (the P4b producer's exact schema)."""
-    stem_dir = root / "store" / f"arm{arm}" / f"rel_{side}__{corpus}"
+    stem_dir = root / "store" / g25.arm_dirname(arm, True) / f"rel_{side}__{corpus}"
     stem_dir.mkdir(parents=True, exist_ok=True)
     kinds = list(g25.REL_KINDS_POST)
     n_f = len(prof.frozen)
@@ -1896,7 +2065,7 @@ def run_selftest() -> int:
                     for rec in recs:
                         fh.write(json.dumps(rec) + "\n")
         build_fitcache(root, prof, smoke=True, offline=True)
-        caches = load_caches(root, prof)
+        caches = load_caches(root, prof, smoke=True)
         rowsets = build_rowsets(root, prof, caches, smoke=True)
         assert rowsets["strata"]["does"] and rowsets["strata"]["doesnt"]
         # Content-identity hit rule: identical class -> hit even on a different row.
@@ -1946,7 +2115,11 @@ def run_selftest() -> int:
         assert 0.0 <= op["rotation_invariant_only"]["spectrum_cosine"] <= 1.0 + 1e-9
         ood = json.loads((root / "out" / "cells" / "ood_does2doesnt__a1.json").read_text())
         assert ood["status"] == "ok", ood
-        assert np.isfinite(ood["transfer_r2"]) and ood["knn_identity"]["euclidean"]["acc_at_k"]
+        # acc@1 == 0.0 is a VALID smoke value — assert key presence + range,
+        # never truthiness (g5 C1: `and {...}["acc_at_k"]` passes on any
+        # non-empty dict and would also reject a legitimate all-miss 0.0).
+        assert np.isfinite(ood["transfer_r2"])
+        assert 0.0 <= float(ood["knn_identity"]["euclidean"]["acc_at_k"]["1"]) <= 1.0, ood
         a_json = json.loads((root / "out" / "cells" / "p7_A__does__a1.json").read_text())
         assert a_json["status"] == "ok" and a_json["floor_check"] == "smoke-demoted"
         assert a_json["knn_content"] is not None
@@ -1968,7 +2141,7 @@ def run_selftest() -> int:
         for corpus, bases in sorted(rel_bases.items()):
             _selftest_write_rel_stem(root, 1, "post", corpus, bases, prof)
         build_fitcache(root, prof, smoke=True, offline=True)  # builds only the new rel stems
-        caches2 = load_caches(root, prof)
+        caches2 = load_caches(root, prof, smoke=True)
         rel_unit = next(u for u in units if u.kind == "reliability")
         rel2 = run_reliability_unit(rel_unit, prof, caches2, rowsets)
         assert rel2["status"] == "ok", rel2
@@ -2017,8 +2190,9 @@ def run_selftest() -> int:
         st3 = rel3["per_stratum"]["does"]
         assert st3["status"] == "ok" and st3["split_half_r2"] > 0.8, st3
         print(
-            "[selftest] PASS: loader, set-check, sweep unit, traj unit, content hits, "
-            "band, reliability ceiling (frozen-subset index mapping)"
+            "[selftest] PASS: loader, set-check, sweep unit, traj unit, ladder band, "
+            "operator (rotation null), ood transfer, content hits, "
+            "reliability ceiling (frozen-subset index mapping)"
         )
     return 0
 
@@ -2043,6 +2217,9 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--null-draws", type=int, default=None)
     ap.add_argument("--n-boot", type=int, default=None)
     ap.add_argument("--prefill-fallback", action="store_true", help="match P4's parse-mode rung")
+    ap.add_argument(
+        "--publish", action="store_true", help="P6: HF preds + out-JSON mirror (plan §10)"
+    )
     ap.add_argument("--selftest", action="store_true", help="synthetic-store CPU smoke")
     ap.add_argument("--import-check", action="store_true")
     return ap
@@ -2079,6 +2256,8 @@ def main(argv: list[str] | None = None) -> int:
         return int(f36.run_g0(ns))
     assert args.arm is not None, "--arm is required"
     prof = profile_for_arm(args.arm)
+    if args.publish:
+        return run_publish(args, prof)
     if args.shard:
         i_s, n_s = args.shard.split("/")
         i, nsh = int(i_s), int(n_s)

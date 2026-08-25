@@ -127,6 +127,7 @@ GATE_GA_FLOOR = 0.99  # think-emission well-formed floor (per post-like side)
 GATE_GA_PREFILL_BAND = 0.90  # 90-99% -> declared prefill-fallback rung
 GATE_GB_USABLE_FLOOR = 0.90  # usable floor on the GSM8K slice
 GATE_GB_OFFENDER_MAX = 0.10  # repetition offenders at > 0.50 repeated-4-gram
+GATE_GA3_OFF_FLOOR = 0.99  # arm-3 think-OFF side usable floor (template-guaranteed extraction)
 REPEAT_4GRAM_MAX_FRAC = 0.50
 CAPHIT_TRIGGER = 0.02  # production per-cell trigger (post re-gen residual -> drop-and-count)
 SMOKE_CAPHIT_GB3 = 0.05  # arm-3 smoke cap-hit band for the declared T=0.6 fallback (G-B3)
@@ -139,6 +140,20 @@ GF_FLAT_BAR = 0.9999
 # Designed artifact-routed halts (never a bare rc=1; gotchas.md pilot-gate entry)
 RC_GATE_FAIL = 3
 RC_FALLBACK_BAND = 4
+
+
+def stage_dirname(stage: str, smoke: bool) -> str:
+    """Local rollout-stage dir name, smoke-namespaced (g2 Critical: a smoke
+    rehearsal must never share artifact paths with production — resume markers
+    and rollout files would otherwise cross-bless; #545 incident class)."""
+    return f"smoke_{stage}" if smoke else stage
+
+
+def arm_dirname(arm: int, smoke: bool) -> str:
+    """Local store dir name for one arm, smoke-namespaced (matches the HF
+    ``smoke_arm{K}`` destination convention so local and remote layouts agree)."""
+    return f"smoke_arm{arm}" if smoke else f"arm{arm}"
+
 
 CAPTURE_BATCH_ROWS = int(os.environ.get("EPM_I2546_BATCH_ROWS", "64"))
 CAPTURE_TOKEN_BUDGET = int(os.environ.get("EPM_I2546_TOKEN_BUDGET", "16384"))
@@ -699,6 +714,12 @@ def parse_generation(row: dict, mode: str) -> dict:
 
 _BOXED_RE = re.compile(r"\\boxed\s*\{")
 _LETTER_RE = re.compile(r"\b([A-J])\b")
+# Anchored MCQ forms (g5: a FIRST-match bare \b[A-J]\b grabs the article 'A' /
+# a mid-reasoning option mention and mislabels the correctness covariate).
+_MCQ_ANCHOR_RE = re.compile(
+    r"(?:answer|option|choice)\s*(?:is|:)?\s*\**\(?([A-J])\)?", re.IGNORECASE
+)
+_MCQ_BARE_LINE_RE = re.compile(r"^\**\(?([A-J])\)?[\s.):*]*$")
 
 
 def extract_boxed(text: str) -> str | None:
@@ -729,6 +750,36 @@ def _norm_free(text: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9\s]", " ", text.lower()).split())
 
 
+def extract_mcq_letter(ans_text: str) -> str | None:
+    """Anchored MCQ letter extraction — never a first-match bare letter.
+
+    Priority: last ``\\boxed{X}`` -> last "answer is X"-style anchor -> last
+    bare-letter LINE -> last standalone letter in the FINAL non-empty line.
+    ``None`` when no anchored form matches (scored incorrect, never a guess).
+    """
+    boxed = extract_boxed(ans_text)
+    if boxed is not None:
+        b = boxed.strip().strip("()*. ").upper()
+        if len(b) == 1 and "A" <= b <= "J":
+            return b
+    anchors = _MCQ_ANCHOR_RE.findall(ans_text)
+    if anchors:
+        return anchors[-1].upper()
+    lines = [ln.strip() for ln in ans_text.strip().splitlines() if ln.strip()]
+    for ln in reversed(lines):
+        m = _MCQ_BARE_LINE_RE.match(ln)
+        if m:
+            return m.group(1)
+    if lines:
+        tail = _LETTER_RE.findall(lines[-1])
+        if tail:
+            return tail[-1]
+    return None
+
+
+_CH_NEGATORS = frozenset({"not", "never", "no", "isnt", "arent", "cannot", "cant"})
+
+
 def exact_match_correct(corpus: str, ans_text: str, gold: str | None) -> bool | None:
     """Deterministic exact-match correctness per corpus family (plan §6 MF-4 classes)."""
     if gold is None:
@@ -737,13 +788,26 @@ def exact_match_correct(corpus: str, ans_text: str, gold: str | None) -> bool | 
         boxed = extract_boxed(ans_text)
         return _norm_math(boxed) == _norm_math(gold) if boxed is not None else False
     if corpus in ("mmlu", "arc_challenge", "csqa", "piqa"):
-        m = _LETTER_RE.search(ans_text)
-        return (m.group(1) == gold.strip().upper()) if m else False
+        letter = extract_mcq_letter(ans_text)
+        return letter == gold.strip().upper() if letter is not None else False
     if corpus == "contexthub":
         lines = [ln for ln in ans_text.strip().splitlines() if ln.strip()]
         last = _norm_free(lines[-1]) if lines else ""
         g = _norm_free(gold)
-        return bool(g) and (last == g or g in last.split() or f" {g} " in f" {last} ")
+        if not g:
+            return False
+        if last == g:
+            return True
+        # Membership is polarity-guarded (g5: "not true" must never score
+        # correct against gold "true"; both polarity words present -> only
+        # the exact-equality read above counts).
+        toks = last.split()
+        if g not in toks:
+            return False
+        opposite = {"true": "false", "false": "true"}.get(g)
+        if opposite is not None and opposite in toks:
+            return False
+        return any(i == 0 or toks[i - 1] not in _CH_NEGATORS for i, t in enumerate(toks) if t == g)
     raise ValueError(f"unknown corpus {corpus!r}")
 
 
@@ -854,78 +918,122 @@ def generate_chunked(llm, prompts: list[str], sp, tag: str) -> list[tuple[str, s
     return out
 
 
+def _gen_stage_path(out_file: Path, name: str) -> Path:
+    """Per-stage checkpoint beside the slot out-file (atomic; resume unit)."""
+    return out_file.with_name(out_file.name + f".stage_{name}.jsonl")
+
+
+def _load_stage(out_file: Path, name: str, expected_ids: set[str]) -> list[dict] | None:
+    """Load a completed generation stage iff its row-id set matches THIS work
+    file's (a mismatched stage is stale — a prior regime's residue — and is
+    regenerated with a logged warning, never silently reused)."""
+    sp = _gen_stage_path(out_file, name)
+    if not sp.is_file():
+        return None
+    recs = _read_jsonl(sp)
+    if {r["row_id"] for r in recs} == expected_ids:
+        logger.info("[gen-worker] stage %s: resume (%d rows)", name, len(recs))
+        return recs
+    logger.warning("[gen-worker] stage %s: STALE row-id set — regenerating", name)
+    sp.unlink()
+    return None
+
+
 def run_gen_worker(args) -> None:
-    """One GPU's generation slot: primary -> forced re-gen -> reliability draws."""
+    """One GPU's generation slot: primary -> forced re-gen -> reliability draws.
+
+    Each stage (primary+regen; each reliability draw) is persisted ATOMICALLY
+    the moment it completes and resume-skipped on relaunch (checkpoint-per-
+    phase intra-phase grain — a crash in draw 3 must not forfeit hours of
+    already-generated text; code-style.md).
+    """
     work = json.loads(Path(args.work_file).read_text())
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(work["model"], revision=work["revision"])
     side = SideSpec(**work["side_spec"])
     assert_think_pins(tok, side)
-    llm = build_engine(work["model"], work["revision"])
     rows = work["rows"]
     prompts = [r["prompt"] for r in rows]
     stop_ids = work["stop_ids"]
     greedy = not work["decode_fallback"]
-    sp = sampling_params(work["cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED)
-    prim = generate_chunked(llm, prompts, sp, f"primary-{side.side}")
-    out_rows = []
-    regen_idx = [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length"]
-    regen_out: dict[int, tuple[str, str, int]] = {}
-    if regen_idx:
-        logger.info(
-            "[regen] %d/%d rows hit cap %d -> forced %d",
-            len(regen_idx),
-            len(rows),
-            work["cap"],
-            work["regen_cap"],
-        )
-        sp2 = sampling_params(
-            work["regen_cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
-        )
-        regen_texts = generate_chunked(llm, [prompts[i] for i in regen_idx], sp2, "regen")
-        regen_out = dict(zip(regen_idx, regen_texts, strict=True))
-    for i, r in enumerate(rows):
-        text, fr, ntok = prim[i]
-        rec = {
-            "row_id": r["row_id"],
-            "corpus": r["corpus"],
-            "kind": "primary",
-            "text": text,
-            "finish_reason": fr,
-            "n_gen_tokens": ntok,
-            "regen": False,
-            "n_prompt_tokens": r["n_prompt_tokens"],
-            "read_idx": r["read_idx"],
-        }
-        if i in regen_out:
-            # Persist the superseded truncated primary too (persist-by-default).
-            out_rows.append({**rec, "kind": "superseded_primary"})
-            t2, fr2, n2 = regen_out[i]
-            rec = {**rec, "text": t2, "finish_reason": fr2, "n_gen_tokens": n2, "regen": True}
-        out_rows.append(rec)
+    out_file = Path(work["out_file"])
+    llm = None  # lazy: a fully-resumed slot never builds the engine
+
+    def _llm():
+        nonlocal llm
+        if llm is None:
+            llm = build_engine(work["model"], work["revision"])
+        return llm
+
+    row_ids = {r["row_id"] for r in rows}
+    out_rows = _load_stage(out_file, "primary", row_ids)
+    if out_rows is None:
+        sp = sampling_params(work["cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED)
+        prim = generate_chunked(_llm(), prompts, sp, f"primary-{side.side}")
+        out_rows = []
+        regen_idx = [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length"]
+        regen_out: dict[int, tuple[str, str, int]] = {}
+        if regen_idx:
+            logger.info(
+                "[regen] %d/%d rows hit cap %d -> forced %d",
+                len(regen_idx),
+                len(rows),
+                work["cap"],
+                work["regen_cap"],
+            )
+            sp2 = sampling_params(
+                work["regen_cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
+            )
+            regen_texts = generate_chunked(_llm(), [prompts[i] for i in regen_idx], sp2, "regen")
+            regen_out = dict(zip(regen_idx, regen_texts, strict=True))
+        for i, r in enumerate(rows):
+            text, fr, ntok = prim[i]
+            rec = {
+                "row_id": r["row_id"],
+                "corpus": r["corpus"],
+                "kind": "primary",
+                "text": text,
+                "finish_reason": fr,
+                "n_gen_tokens": ntok,
+                "regen": False,
+                "n_prompt_tokens": r["n_prompt_tokens"],
+                "read_idx": r["read_idx"],
+            }
+            if i in regen_out:
+                # Persist the superseded truncated primary too (persist-by-default).
+                out_rows.append({**rec, "kind": "superseded_primary"})
+                t2, fr2, n2 = regen_out[i]
+                rec = {**rec, "text": t2, "finish_reason": fr2, "n_gen_tokens": n2, "regen": True}
+            out_rows.append(rec)
+        _write_jsonl(_gen_stage_path(out_file, "primary"), out_rows)
     rel_ids = set(work["rel_row_ids"])
     rel_rows = [(i, r) for i, r in enumerate(rows) if r["row_id"] in rel_ids]
     for draw in range(work["rel_draws"]):
         if not rel_rows:
             break
-        spd = sampling_params(work["cap"], stop_ids, greedy=False, seed=SEED * 100 + draw)
-        outs = generate_chunked(llm, [prompts[i] for i, _ in rel_rows], spd, f"rel-d{draw}")
-        for (_, r), (text, fr, ntok) in zip(rel_rows, outs, strict=True):
-            out_rows.append(
-                {
-                    "row_id": r["row_id"],
-                    "corpus": r["corpus"],
-                    "kind": "reliability",
-                    "draw": draw,
-                    "text": text,
-                    "finish_reason": fr,
-                    "n_gen_tokens": ntok,
-                    "regen": False,
-                    "n_prompt_tokens": r["n_prompt_tokens"],
-                    "read_idx": r["read_idx"],
-                }
-            )
+        draw_rows = _load_stage(out_file, f"rel_d{draw}", {r["row_id"] for _, r in rel_rows})
+        if draw_rows is None:
+            spd = sampling_params(work["cap"], stop_ids, greedy=False, seed=SEED * 100 + draw)
+            outs = generate_chunked(_llm(), [prompts[i] for i, _ in rel_rows], spd, f"rel-d{draw}")
+            draw_rows = []
+            for (_, r), (text, fr, ntok) in zip(rel_rows, outs, strict=True):
+                draw_rows.append(
+                    {
+                        "row_id": r["row_id"],
+                        "corpus": r["corpus"],
+                        "kind": "reliability",
+                        "draw": draw,
+                        "text": text,
+                        "finish_reason": fr,
+                        "n_gen_tokens": ntok,
+                        "regen": False,
+                        "n_prompt_tokens": r["n_prompt_tokens"],
+                        "read_idx": r["read_idx"],
+                    }
+                )
+            _write_jsonl(_gen_stage_path(out_file, f"rel_d{draw}"), draw_rows)
+        out_rows.extend(draw_rows)
     _write_jsonl(Path(work["out_file"]), out_rows)
     logger.info(
         "[gen-worker] slot %s wrote %d rows -> %s",
@@ -1439,12 +1547,25 @@ def run_capture_rel_worker(args) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _inherited_cvd_entries() -> list[str]:
+    """Entries of an inherited CUDA_VISIBLE_DEVICES ('' / unset -> [])."""
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES", "")
+    return [c.strip() for c in cvd.split(",") if c.strip() != ""]
+
+
 def gpu_count() -> int:
     # nvidia-smi subprocess, never torch (the CVD-clobber family; gotchas.md).
+    # Allocation-first: nvidia-smi enumerates NODE width and ignores CVD, so an
+    # inherited CVD clamps the count (#1902/#1336 — never fan out past the
+    # allocation on a shared or narrower-than-node host).
     p = subprocess.run(["nvidia-smi", "--list-gpus"], capture_output=True, text=True, check=False)
     if p.returncode != 0:
         return 0
-    return len([ln for ln in p.stdout.split("\n") if ln.strip()])
+    n = len([ln for ln in p.stdout.split("\n") if ln.strip()])
+    entries = _inherited_cvd_entries()
+    if entries:
+        n = min(n, len(entries))
+    return n
 
 
 def spawn_workers(script_args: list[str], work_files: list[Path], out_root: Path, tag: str) -> None:
@@ -1452,8 +1573,13 @@ def spawn_workers(script_args: list[str], work_files: list[Path], out_root: Path
     procs = []
     log_dir = out_root / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
+    cvd_entries = _inherited_cvd_entries()
     for slot, wf in enumerate(work_files):
-        env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(slot)}
+        # Launcher-env CVD pin (#543/#545); pin the slot-th INHERITED entry —
+        # a bare ordinal would retarget unallocated GPUs under CVD=4,5
+        # (#1336 precheck gotcha).
+        pin = cvd_entries[slot] if slot < len(cvd_entries) else str(slot)
+        env = {**os.environ, "CUDA_VISIBLE_DEVICES": pin}
         log_path = log_dir / f"{tag}.slot{slot}.log"
         cmd = [
             sys.executable,
@@ -1464,7 +1590,7 @@ def spawn_workers(script_args: list[str], work_files: list[Path], out_root: Path
             "--work-file",
             str(wf),
         ]
-        logger.info("[spawn] slot %d (CVD=%d) -> %s (log %s)", slot, slot, wf.name, log_path)
+        logger.info("[spawn] slot %d (CVD=%s) -> %s (log %s)", slot, pin, wf.name, log_path)
         with log_path.open("w") as lf:
             procs.append(
                 (
@@ -1563,7 +1689,10 @@ def compose_prompts(
     }
 
 
-def gen_fingerprint(arm: ArmSpec, side: SideSpec, revision: str, flags: dict) -> dict:
+def gen_fingerprint(arm: ArmSpec, side: SideSpec, revision: str, flags: dict, smoke: bool) -> dict:
+    """Regime fingerprint for resume markers. The ``smoke`` dial is IN the
+    fingerprint (g2 Critical): a smoke rehearsal's meta can then never
+    resume-bless a production run even if the artifact paths collide."""
     return {
         "recipe_version": RECIPE_VERSION,
         "arm": arm.arm,
@@ -1573,8 +1702,16 @@ def gen_fingerprint(arm: ArmSpec, side: SideSpec, revision: str, flags: dict) ->
         "cap": side.cap,
         "regen_cap": side.regen_cap,
         "parse_mode": side.parse_mode,
+        "smoke": bool(smoke),
         **flags,
     }
+
+
+def _row_sig(rows: list[dict]) -> str:
+    """sha1 over the sorted row-id set — the row-set dial of the fingerprint
+    (a smoke slice or re-drawn corpus changes the ids, never silently reuses)."""
+    body = "\n".join(sorted(r["row_id"] for r in rows))
+    return hashlib.sha1(body.encode()).hexdigest()[:16]
 
 
 def run_generation(
@@ -1597,9 +1734,14 @@ def run_generation(
         "decode_fallback": bool(args.decode_fallback and side.post_like),
         "prefill_fallback": bool(args.prefill_fallback),
     }
-    fp = gen_fingerprint(arm, side, revision, flags)
-    stage_dir = out_root / "rollouts" / side.stage
-    rel_dir = out_root / "rollouts" / f"reliability_a{arm.arm}"
+    smoke = bool(args.smoke)
+    fp = gen_fingerprint(arm, side, revision, flags, smoke)
+    # Smoke-namespaced ARTIFACT PATHS (g2 Critical: fingerprint AND paths —
+    # a production `all` chain runs a smoke rehearsal first, so smoke rollouts
+    # must never share files with production even inside one out-root).
+    stage_dir = out_root / "rollouts" / stage_dirname(side.stage, smoke)
+    rel_dir = out_root / "rollouts" / stage_dirname(f"reliability_a{arm.arm}", smoke)
+    fp_by_corpus = {c: {**fp, "row_sig": _row_sig(rows)} for c, rows in rows_by_corpus.items()}
     merged: dict[str, Path] = {}
     pending = {}
     for c, rows in rows_by_corpus.items():
@@ -1607,13 +1749,14 @@ def run_generation(
         meta_p = stage_dir / f"{c}.meta.json"
         if dest.is_file() and meta_p.is_file():
             old = json.loads(meta_p.read_text())
-            if old.get("fingerprint") == fp:
+            if old.get("fingerprint") == fp_by_corpus[c]:
                 logger.info("[gen] %s/%s: resume-skip (fingerprint match)", side.stage, c)
                 merged[c] = dest
                 continue
             raise RuntimeError(
                 f"{dest}: existing rollouts carry a DIFFERENT regime fingerprint "
-                f"({old.get('fingerprint')} != {fp}) — refusing to mix; use a fresh out-root"
+                f"({old.get('fingerprint')} != {fp_by_corpus[c]}) — refusing to mix; "
+                f"use a fresh out-root"
             )
         pending[c] = rows
     if not pending:
@@ -1671,6 +1814,14 @@ def run_generation(
         recs = by_corpus.get(c, {})
         primaries = recs.get("primary", [])
         expect = len(composed[c])
+        if expect == 0:
+            # Empty selection over a staged corpus fails LOUD (#1739 class):
+            # a vacuous coverage assert would write an empty rollout file that
+            # reads downstream as a completed corpus.
+            raise RuntimeError(
+                f"{side.stage}/{c}: composed 0 rows ({len(pending[c])} staged; "
+                f"all dropped overlong?) — refusing to write an empty rollout file"
+            )
         assert len(primaries) == expect, (
             f"{side.stage}/{c}: primary coverage {len(primaries)} != composed {expect}"
         )
@@ -1680,7 +1831,10 @@ def run_generation(
         sup = recs.get("superseded_primary", [])
         if sup:
             _write_jsonl(
-                out_root / "rollouts" / f"regen16k_a{arm.arm}" / f"{side.side}__{c}.jsonl",
+                out_root
+                / "rollouts"
+                / stage_dirname(f"regen16k_a{arm.arm}", smoke)
+                / f"{side.side}__{c}.jsonl",
                 sorted(sup, key=lambda r: r["row_id"]),
             )
         rel = recs.get("reliability", [])
@@ -1692,7 +1846,7 @@ def run_generation(
         _atomic_write_json(
             stage_dir / f"{c}.meta.json",
             {
-                "fingerprint": fp,
+                "fingerprint": fp_by_corpus[c],
                 "n_rows": expect,
                 "caphit_residual_rate": caphit,
                 "caphit_trigger": CAPHIT_TRIGGER,
@@ -1715,20 +1869,20 @@ def run_generation(
 
 def upload_stage(out_root: Path, rel_stage: str, skip: bool, smoke: bool) -> None:
     """Upload one local rollout stage dir to the HF data repo (fail loud)."""
-    local = out_root / "rollouts" / rel_stage
+    # Local AND remote namespaced under smoke (they share stage_dirname).
+    local = out_root / "rollouts" / stage_dirname(rel_stage, smoke)
     if skip or not local.is_dir():
         if skip:
             logger.info("[upload] SKIPPED (--skip-upload): %s", rel_stage)
         return
-    dest_stage = f"smoke_{rel_stage}" if smoke else rel_stage
-    dest = f"{RAW_PREFIX}/{dest_stage}"
+    dest = f"{RAW_PREFIX}/{stage_dirname(rel_stage, smoke)}"
     res = _upload(local, DEFAULT_DATASET_REPO, "dataset", dest, raise_on_error=True)
     assert res, f"rollout upload returned empty result for {dest} (HF_TOKEN missing?)"
     logger.info("[upload] rollouts %s -> %s", rel_stage, res)
 
 
-def load_rollouts(out_root: Path, side: SideSpec, corpus: str) -> list[dict]:
-    p = out_root / "rollouts" / side.stage / f"{corpus}.jsonl"
+def load_rollouts(out_root: Path, side: SideSpec, corpus: str, smoke: bool) -> list[dict]:
+    p = out_root / "rollouts" / stage_dirname(side.stage, smoke) / f"{corpus}.jsonl"
     if not p.is_file():
         raise FileNotFoundError(
             f"rollouts missing for {side.stage}/{corpus}: {p} — run the generation phase first"
@@ -1764,17 +1918,36 @@ def run_capture(
         corpora = corpora_filter or [c for c in CORPUS_ORDER if c in rows_by_corpus]
         for ci, c in enumerate(corpora):
             stem = f"{side.side}__{c}"
-            stem_dir = out_root / "store" / f"arm{arm.arm}" / stem
+            stem_dir = out_root / "store" / arm_dirname(arm.arm, bool(args.smoke)) / stem
             done_p = stem_dir / "_complete.json"
-            fp = gen_fingerprint(arm, side, revision, {"stage": "capture"})
+            # Capture fp carries the smoke + row-set + parse-affecting flag
+            # dials (g2 Critical): a smoke/fallback capture can never
+            # resume-bless a production one.
+            fp = gen_fingerprint(
+                arm,
+                side,
+                revision,
+                {
+                    "stage": "capture",
+                    "prefill_fallback": bool(args.prefill_fallback),
+                    "decode_fallback": bool(args.decode_fallback and side.post_like),
+                    "row_sig": _row_sig(rows_by_corpus[c]),
+                },
+                bool(args.smoke),
+            )
             if done_p.is_file() and json.loads(done_p.read_text()).get("fingerprint") == fp:
                 logger.info("[capture] %s: resume-skip", stem)
                 prior = json.loads(done_p.read_text())
                 for rid, corr in prior.get("correctness", {}).items():
                     correctness[side.side][rid] = corr
                 reports[stem] = prior["report"]
+                if prior.get("gf") is not None:
+                    # G-F is persisted with its producing stem (ci==0) so a
+                    # resumed capture re-reads the gate verdict instead of
+                    # re-reporting an empty gf (g3: resume dropped gf).
+                    gf_results[side.side] = prior["gf"]
                 continue
-            rollouts = load_rollouts(out_root, side, c)
+            rollouts = load_rollouts(out_root, side, c, bool(args.smoke))
             wrows = []
             parse_counts: Counter[str] = Counter()
             corr_this: dict[str, bool | None] = {}
@@ -1817,6 +1990,14 @@ def run_capture(
                     }
                 )
             usable_rate = parse_counts["usable"] / max(1, len(rollouts))
+            if parse_counts["usable"] == 0:
+                # Zero usable rows is a structural parse/render defect at ANY
+                # n — an empty stem would only crash later at build_fitcache
+                # (empty-selection class, #1739): fail loud at the source.
+                raise RuntimeError(
+                    f"{stem}: 0 usable rows of {len(rollouts)} rollouts "
+                    f"(reasons: {dict(parse_counts)}) — parse mode {mode!r} broken?"
+                )
             if usable_rate < GATE_GB_USABLE_FLOOR:
                 # Per-corpus usable floor FLAGS, never silently drops (plan §4.3).
                 logger.warning(
@@ -1903,9 +2084,7 @@ def run_capture(
             correctness[side.side].update(corr_this)
             # Per-corpus upload-then-free (bounds arm-3 peak disk; plan §4.2 P4).
             if not args.skip_upload:
-                dest = f"{STORE_PREFIX}/arm{arm.arm}/{stem}"
-                if args.smoke:
-                    dest = f"{STORE_PREFIX}/smoke_arm{arm.arm}/{stem}"
+                dest = f"{STORE_PREFIX}/{arm_dirname(arm.arm, bool(args.smoke))}/{stem}"
                 t_up = time.time()
                 res = _upload(stem_dir, DEFAULT_DATASET_REPO, "dataset", dest, raise_on_error=True)
                 assert res, f"store upload returned empty result for {dest}"
@@ -1923,6 +2102,8 @@ def run_capture(
                     "fingerprint": fp,
                     "report": report,
                     "correctness": corr_this,
+                    # G-F persisted with its producing stem so resume restores it.
+                    "gf": gf_results.get(side.side) if ci == 0 else None,
                     "repro": repro_meta(args.phase),
                 },
             )
@@ -1992,7 +2173,7 @@ def run_capture_reliability(
     from transformers import AutoTokenizer
 
     row_index = {r["row_id"]: r for rows in rows_by_corpus.values() for r in rows}
-    rel_dir = out_root / "rollouts" / f"reliability_a{arm.arm}"
+    rel_dir = out_root / "rollouts" / stage_dirname(f"reliability_a{arm.arm}", bool(args.smoke))
     if not rel_dir.is_dir():
         raise FileNotFoundError(
             f"reliability rollouts missing at {rel_dir} — run gen-post/gen-short first"
@@ -2011,9 +2192,19 @@ def run_capture_reliability(
         for p in rel_files:
             c = p.name[len(side.side) + 2 : -len(".jsonl")]
             stem = f"rel_{side.side}__{c}"
-            stem_dir = out_root / "store" / f"arm{arm.arm}" / stem
+            stem_dir = out_root / "store" / arm_dirname(arm.arm, bool(args.smoke)) / stem
             done_p = stem_dir / "_complete.json"
-            fp = gen_fingerprint(arm, side, revision, {"stage": "capture-reliability"})
+            fp = gen_fingerprint(
+                arm,
+                side,
+                revision,
+                {
+                    "stage": "capture-reliability",
+                    "prefill_fallback": bool(args.prefill_fallback),
+                    "rel_sig": hashlib.sha1(p.read_bytes()).hexdigest()[:16],
+                },
+                bool(args.smoke),
+            )
             if done_p.is_file() and json.loads(done_p.read_text()).get("fingerprint") == fp:
                 logger.info("[capture-rel] %s: resume-skip", stem)
                 reports[stem] = json.loads(done_p.read_text())["report"]
@@ -2159,9 +2350,7 @@ def run_capture_reliability(
             reports[stem] = report
             # Per-stem upload-then-free (mirrors run_capture; plan §4.2 P4).
             if not args.skip_upload:
-                dest = f"{STORE_PREFIX}/arm{arm.arm}/{stem}"
-                if args.smoke:
-                    dest = f"{STORE_PREFIX}/smoke_arm{arm.arm}/{stem}"
+                dest = f"{STORE_PREFIX}/{arm_dirname(arm.arm, bool(args.smoke))}/{stem}"
                 t_up = time.time()
                 res = _upload(stem_dir, DEFAULT_DATASET_REPO, "dataset", dest, raise_on_error=True)
                 assert res, f"rel store upload returned empty result for {dest}"
@@ -2264,9 +2453,19 @@ def gd_render_asserts(
     return report
 
 
+def _esc_rc(rc: int, new: int) -> int:
+    """Escalate a smoke rc: GATE_FAIL is TERMINAL — a later fallback-band
+    finding must never upgrade it (g2: max() alone reads 4 > 3 and masks a
+    hard gate failure behind a relaunchable fallback verdict)."""
+    if RC_GATE_FAIL in (rc, new):
+        return RC_GATE_FAIL
+    return max(rc, new)
+
+
 def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Path) -> int:
     """P1 rig smoke: gates G-A..G-D + G-F on the production entrypoint."""
     phase_line("p1_smoke_rig")
+    assert args.smoke, "phase smoke requires --smoke (namespacing + fingerprints key on it)"
     rows = smoke_slice(arm_rows(corpora, arm.arm), arm.arm)
     gd = gd_render_asserts(arm, rows, out_root, n_sample=5)
     sides = list(arm.sides) if arm.arm == 3 else [post_side(arm), short_side(arm)]
@@ -2277,7 +2476,7 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         mode = effective_parse_mode(side, args.prefill_fallback)
         parses = []
         for c in rows:
-            for rec in load_rollouts(out_root, side, c):
+            for rec in load_rollouts(out_root, side, c, smoke=True):
                 p = parse_generation(rec, mode)
                 p["corpus"] = c
                 parses.append(p)
@@ -2293,14 +2492,15 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
 
     verdicts: dict[str, dict] = {}
     rc = 0
-    fallback = None
+    fallbacks: list[str] = []  # ALL available fallback rungs (g2: single slot overwrote)
     post = post_side(arm)
     g = gen_reports[post.side]
     emission = g["emission_rate"]
     if post.parse_mode == "emergent" and not args.prefill_fallback:
         ga_pass = emission >= GATE_GA_FLOOR
         if not ga_pass and emission >= GATE_GA_PREFILL_BAND:
-            fallback, rc = "prefill", RC_FALLBACK_BAND
+            fallbacks.append("prefill")
+            rc = _esc_rc(rc, RC_FALLBACK_BAND)
         elif not ga_pass:
             rc = RC_GATE_FAIL
         verdicts["G-A"] = {
@@ -2314,12 +2514,26 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         if not ga_pass:
             rc = RC_GATE_FAIL
         verdicts["G-A"] = {"emission_rate": emission, "floor": GATE_GA_FLOOR, "pass": ga_pass}
+    if arm.arm == 3:
+        # G-A3 (plan §7): the think-OFF side must parse near-perfectly — its
+        # extraction is template-guaranteed, so a miss is a rig defect, never
+        # a fallback-relaunchable band.
+        g_off = gen_reports[short_side(arm).side]
+        ga3_pass = g_off["usable_rate"] >= GATE_GA3_OFF_FLOOR
+        if not ga3_pass:
+            rc = RC_GATE_FAIL
+        verdicts["G-A3"] = {
+            "off_usable_rate": g_off["usable_rate"],
+            "floor": GATE_GA3_OFF_FLOOR,
+            "pass": ga3_pass,
+        }
     gb_pass = (
         g["usable_rate"] >= GATE_GB_USABLE_FLOOR and g["offender_rate"] <= GATE_GB_OFFENDER_MAX
     )
     if not gb_pass:
         if arm.arm == 3 and not args.decode_fallback:
-            fallback, rc = "decode", max(rc, RC_FALLBACK_BAND)
+            fallbacks.append("decode")
+            rc = _esc_rc(rc, RC_FALLBACK_BAND)
         else:
             rc = RC_GATE_FAIL
     verdicts["G-B"] = {
@@ -2335,7 +2549,9 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         "informational_at_smoke": True,
     }
     if arm.arm == 3 and not args.decode_fallback and g["caphit_rate"] > SMOKE_CAPHIT_GB3:
-        fallback, rc = "decode", max(rc, RC_FALLBACK_BAND)
+        if "decode" not in fallbacks:
+            fallbacks.append("decode")
+        rc = _esc_rc(rc, RC_FALLBACK_BAND)
         verdicts["G-B3"] = {
             "caphit_rate": g["caphit_rate"],
             "band": SMOKE_CAPHIT_GB3,
@@ -2354,13 +2570,14 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         "gen": gen_reports,
         "capture": cap_res["reports"],
         "capture_rel": rel_cap["reports"],
-        "fallback_available": fallback,
+        "fallbacks_available": fallbacks,
+        "fallback_available": fallbacks[0] if fallbacks else None,  # legacy single-slot key
         "rc": rc,
         "repro": repro_meta("p1_smoke"),
     }
     _atomic_write_json(out_root / "out" / "reports" / f"smoke_a{arm.arm}.json", report)
     print(
-        f"[smoke] arm {arm.arm} rc={rc} fallback={fallback} gates="
+        f"[smoke] arm {arm.arm} rc={rc} fallbacks={fallbacks} gates="
         f"{ {k: v.get('pass', 'info') for k, v in verdicts.items()} }",
         flush=True,
     )
@@ -2382,7 +2599,9 @@ def phase_pilot(
         t0 = time.time()
         run_generation(args, arm, side, pilot_rows, out_root, rel_total=0, num_workers=num_workers)
         wall = time.time() - t0
-        toks = sum(r["n_gen_tokens"] for r in load_rollouts(out_root, side, "gsm8k_test"))
+        toks = sum(
+            r["n_gen_tokens"] for r in load_rollouts(out_root, side, "gsm8k_test", bool(args.smoke))
+        )
         walls[f"gen_{side.side}"] = {
             "wall_s": wall,
             "gen_tokens": toks,
@@ -2575,6 +2794,23 @@ def run_parser_selftest() -> None:
     assert exact_match_correct("mmlu", "The answer is B.", "C") is False
     assert exact_match_correct("contexthub", "Therefore:\nTrue", "true") is True
     assert exact_match_correct("math", "x", None) is None
+    # Anchored MCQ extraction (g5 fixtures — each fails pre-fix):
+    # (1) leading article 'A' must not shadow the anchored answer;
+    assert exact_match_correct("arc_challenge", "A common view holds X. The answer is C.", "C")
+    assert exact_match_correct("arc_challenge", "A common view holds X. The answer is C.", "A") is (
+        False
+    )
+    # (2) mid-reasoning option mention loses to the LAST anchor;
+    assert exact_match_correct("csqa", "Option B seems close, but the answer is D.", "D") is True
+    # (3) bare-letter final line; (4) boxed letter; (5) no anchored form -> None -> False.
+    assert exact_match_correct("mmlu", "Reasoning about B here.\n(C)", "C") is True
+    assert exact_match_correct("piqa", "thus \\boxed{A}", "A") is True
+    assert extract_mcq_letter("no letters at all") is None
+    # ContextHub polarity guard (g5 fixtures — each fails pre-fix):
+    assert exact_match_correct("contexthub", "Conclusion:\nnot true", "true") is False
+    assert exact_match_correct("contexthub", "Conclusion:\nnot true", "false") is False
+    assert exact_match_correct("contexthub", "So it is true and false", "true") is False
+    assert exact_match_correct("contexthub", "the statement is true", "true") is True
     # quota arithmetic: arm-1 base realizes the plan totals at 4 k-bins + 8 cells
     sizes = {f"gsm8k_train:k{i}": 10_000 for i in range(4)}
     sizes.update({f"contexthub:c{i}": 10_000 for i in range(8)})
