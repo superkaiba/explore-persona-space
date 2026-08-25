@@ -236,6 +236,12 @@ def leg_corpus(args) -> None:
         # injected seams (tests/test_issue2502_smoke_pins.py round 9) and
         # network-verified against the real registry pre-relaunch.
         "--skip-split-preflight",
+        # Round 10: same offline-escape contract for the per-source streaming
+        # schema gate (its default data-file enumeration is a REAL builder
+        # metadata read) — the gate is pytest-pinned with injected seams
+        # (tests/test_issue2502_schema_gate.py) and run REAL against the full
+        # registry pre-relaunch (--schema-gate-only).
+        "--skip-schema-gate",
     ]
     rc = CP.main([*common, "--probe"])
     assert rc == 0, f"probe rc={rc}"
