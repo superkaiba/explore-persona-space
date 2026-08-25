@@ -59,10 +59,41 @@ prior-round SHAs / marker versions / 'This round' contexts until
 clean) was what caught the last stale spans (Step 3.6 trigger note,
 Step 2 fit-loop note, Step 6 plan surface).
 
+5. **Row-DROP variant (#2502 r12, 2026-08-25 — gen-side whole-row drop
+   instead of in-place redaction).** The four duties above adapt:
+   placeholder-retrigger is N/A (nothing inserted), and the parity
+   frame changes — per-LINE `scan_bytes` vs the gate's whole-FILE
+   `scan_file` needs a BOTH-directions superset adjudication (narrower
+   = the crash repeats at upload; wider = over-drops real completions)
+   plus the JSONL single-physical-line argument. NEW duty set the drop
+   shape adds: (a) the token-ID leak channel (text-only scrub passes
+   the gate while `completion_token_ids` decode back — the drop must
+   take the WHOLE line; hand the no-scrub-text-keep-ids sweep); (b)
+   the downstream COUNT-RECONCILIATION trace (recount-from-rewritten-
+   file ordering, absent-key `.get(...,0)` honesty for cross-pod
+   recounts, and the gen→capture→fits completeness chain — verify
+   every fail-closed gate compares POST-drop declarations, never a
+   corpus-derived expectation; composer pre-traces the exact
+   consumers: require_gen_complete asserts presence-only,
+   capture_meta.per_chunk derives from captured rows, fits reconciles
+   vs capture_meta); (c) all-dropped fail-loud + atomic tmp+replace +
+   the `.redact.tmp` residue and secret-bearing-file-left-on-disk
+   adjudications; (d) persist-by-default TENSION as a both-routes
+   adjudication (dropped rollout text persisted NOWHERE is a disclosed
+   secret-hygiene exception to "generations are never a genuine
+   discard" — hand both routings, cap the challenge at CONCERN with a
+   NEW id, never a FAIL lever for a disclosed election).
+
 **How to apply:** any round adding redaction/scrubbing before an
 upload/publish gate, and any compose reusing a rubric from a round
 with a large woven duty set — re-align the D-numbering references
 inside the rubric (D1 item N cites) with the NEW round's duty list.
+The r12 reuse of the r11 rubric-patched file worked via the same
+two-pass strategy (~30 anchor-pair/exact replacements, each
+count-asserted, then the token audit with a CASE-SENSITIVE ALLOWED
+dict for deliberate history references — "ROUND-11" uppercase does not
+match a lowercase audit token, and substring hits like "corpus
+builder" need explicit allowance).
 Related: [[revision-round compose recipe (round 2+)]],
 [[data-hardening round compose]],
 [[marker-quoted-flags-verified-against-parser]].
