@@ -29,6 +29,20 @@ at r4+ gets the normal full-prior-history re-review. Still refuse genuinely
 malformed rounds (0, negative, >10, non-integer). See also
 [[compose-recipe-lens-ref-replacements]].
 
+**Delta-artifact pinned-blob extraction (confirmed #2378 r4, 2026-08-25):**
+a fold's NEW artifacts (figure PNG, eval JSONs) usually exist only at
+issue-branch pinned SHAs — NOT on main's working tree — so the sandboxed
+read-only Codex may have no path to them (network denied; `git show` may be
+denied; /tmp may not be writable from its side). At compose time, extract
+the body-pinned blobs YOURSELF to /tmp (`git show <sha>:<path> > /tmp/...`
+from the canonical main odb — worktrees share it, so issue-branch objects
+resolve) and hand Codex the /tmp paths as "DELTA ARTIFACTS (compose-time
+pinned-blob extractions)", stating the pin SHA + byte count. Keep read-only
+git permitted as the spot-check fallback (per-leg JSONs), with the
+sandbox-unverifiable (advisory) downgrade if git is denied. Also verify the
+pinned refs exist in the odb at compose time (`git cat-file -e`) and say so
+in the prompt — that grounds the network-advisory clause for github links.
+
 **Verification-round-after-binding-reconcile shape (confirmed #2378 r3,
 2026-08-25):** these can arrive at ANY round >= 3, not just r4+. Compose
 the FULL fifteen-lens prompt (not a bare delta) PLUS: (1) the reconciler
