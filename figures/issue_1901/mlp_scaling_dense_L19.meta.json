@@ -1,0 +1,1532 @@
+{
+  "commit": "5a3df5a5+dirty",
+  "render_id": "ff3f2c5d95304d80",
+  "git_commit": "5a3df5a5783ac1ebcbf53562b66ccbc155d6e315",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1901_mlpdense_fold_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1901_mlpdense_fold_figures.py",
+  "created": "2026-08-25T09:20:55Z",
+  "figsize": [
+    11.5,
+    4.8
+  ],
+  "points": [
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6689916243555649,
+      "error": 0.01098317494016865,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7037299864312212,
+      "error": 0.010239675505398116,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7366136853610794,
+      "error": 0.01038166092147852,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7614778723963205,
+      "error": 0.010293049870624627,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7794437884551897,
+      "error": 0.010284894051680094,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.788371781068092,
+      "error": 0.010059232016965514,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7971746648959167,
+      "error": 0.01028602200936607,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.8072743338219446,
+      "error": 0.010064267850598496,
+      "series": "neural map (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6885164632128806,
+      "error": 0.01098317494016865,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7117863084877637,
+      "error": 0.010239675505398116,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7316152908670704,
+      "error": 0.01038166092147852,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7444357070147647,
+      "error": 0.010293049870624627,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7523311674126191,
+      "error": 0.010284894051680094,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7555159142185076,
+      "error": 0.010059232016965514,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7586190178667699,
+      "error": 0.01028602200936607,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7609049151916742,
+      "error": 0.010064267850598496,
+      "series": "linear ridge (fresh, within-store)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 963444.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.810358327392884,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 963444.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7541708418307154,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6661844181705912,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6945270264582182,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6813526733515054,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7048843804909557,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 15000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7165079370002496,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 20000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7209572011247484,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7250873308449972,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6689916243555649,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7037299864312212,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7366136853610794,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7614778723963205,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7794437884551897,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.788371781068092,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7971746648959167,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.8072743338219446,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6552270846344087,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6918463182416725,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7244947823807107,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7500035477311809,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7684066533335637,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.777400764959378,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7861788061294704,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7972258050262349,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6808167864874589,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7146515444259897,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.748163261860776,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7721317208996081,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7897161727669065,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7979801901800069,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.807155178990578,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.8172818683672245,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6885164632128806,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7117863084877637,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7316152908670704,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7444357070147647,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7523311674126191,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7555159142185076,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7586190178667699,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7609049151916742,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6765489489473923,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7013875131303686,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7209095899804473,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7336858120629285,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.741801258780717,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7448591921363662,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7483369524456492,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7512221839887299,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.6985152988277296,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 10000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7218668641411649,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 25000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7416729118234043,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 50000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7542719118041777,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 100000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7623710468840772,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 150000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7649776561702972,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 250000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7689089964643814,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 500000.0,
+      "held-out R\u00b2 (1,000 pinned contexts)": 0.7713507196899269,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "training rows (log scale)": 963444.0,
+      "baselines": -0.9195990105469014,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "baselines": -0.8963398728304388,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "baselines": -0.8962622726752285,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "baselines": -0.8965141389919955,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "baselines": -0.8960288658044842,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "baselines": -0.8956751495418591,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "baselines": -0.8963282847438272,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "baselines": -0.896288664727017,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "baselines": -0.8962630398928697,
+      "series": "identity plus learned bias",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "training rows (log scale)": 0.0,
+      "baselines": -0.044533745181768225,
+      "series": "constant train mean (banked floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training rows (log scale)": 1.0,
+      "baselines": -0.044533745181768225,
+      "series": "constant train mean (banked floor)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.782,
+      "error": 0.028815599775121825,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.829,
+      "error": 0.027548913851547785,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.859,
+      "error": 0.026003520253996326,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.877,
+      "error": 0.024698799841287866,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.892,
+      "error": 0.024508935970376178,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9,
+      "error": 0.024460847115339246,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.898,
+      "error": 0.02426595570753398,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.898,
+      "error": 0.02426595570753398,
+      "series": "neural map, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.722,
+      "error": 0.028815599775121825,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.751,
+      "error": 0.027548913851547785,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.798,
+      "error": 0.026003520253996326,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.821,
+      "error": 0.024698799841287866,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.821,
+      "error": 0.024508935970376178,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.834,
+      "error": 0.024460847115339246,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.844,
+      "error": 0.02426595570753398,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.844,
+      "error": 0.02426595570753398,
+      "series": "neural map, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.828,
+      "error": 0.028815599775121825,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.851,
+      "error": 0.027548913851547785,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.878,
+      "error": 0.026003520253996326,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.889,
+      "error": 0.024698799841287866,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.889,
+      "error": 0.024508935970376178,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.894,
+      "error": 0.024460847115339246,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.896,
+      "error": 0.02426595570753398,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.896,
+      "error": 0.02426595570753398,
+      "series": "linear ridge, whitened cosine + CSLS",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.684,
+      "error": 0.028815599775121825,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.729,
+      "error": 0.027548913851547785,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.772,
+      "error": 0.026003520253996326,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.802,
+      "error": 0.024698799841287866,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.806,
+      "error": 0.024508935970376178,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.807,
+      "error": 0.024460847115339246,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.811,
+      "error": 0.02426595570753398,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.811,
+      "error": 0.02426595570753398,
+      "series": "linear ridge, raw euclidean",
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "training rows (log scale)": 963444.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.896,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "training rows (log scale)": 963444.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.841,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "training rows (log scale)": 963444.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.898,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "training rows (log scale)": 963444.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.805,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.782,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.829,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.859,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.877,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.892,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.898,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.898,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7564089741979733,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8056637326378017,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8374294007871825,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8566432509078684,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8727624227720848,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.88140580735821,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.879241663357323,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.879241663357323,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8075910258020268,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8523362673621983,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8805705992128174,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8973567490921316,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9112375772279152,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9185941926417901,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.916758336642677,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.916758336642677,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.722,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.751,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.798,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.821,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.821,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.834,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.844,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.844,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.6942318422361151,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7241974747756857,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7731152546004586,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7972395771418099,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7972395771418099,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8109382032269816,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.821509992832371,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.821509992832371,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7497681577638848,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7778025252243143,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8228847453995415,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.84476042285819,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.84476042285819,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8570617967730183,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8664900071676289,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8664900071676289,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.828,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.851,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.878,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.889,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.889,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.894,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.896,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.896,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8046097177101258,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8289294078375772,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8577146154682738,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8695298883824463,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8695298883824463,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8749200266666853,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8770797554349845,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8770797554349845,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8513902822898741,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8730705921624228,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8982853845317262,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9084701116175538,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9084701116175538,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9130799733333147,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9149202445650155,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.9149202445650155,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.684,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.729,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.772,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.802,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.806,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.807,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.811,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.811,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.6551844002248782,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7014510861484522,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7459964797460037,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7773012001587122,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7814910640296239,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7825391528846608,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7867340442924661,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7867340442924661,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "training rows (log scale)": 5000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7128155997751219,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 10000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7565489138515478,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 25000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.7980035202539963,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 50000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8266987998412879,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 100000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8305089359703762,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 150000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.8314608471153393,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 250000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.835265955707534,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 500000.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.835265955707534,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "training rows (log scale)": 0.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.94,
+      "series": "duplicate-vector ceiling",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "training rows (log scale)": 1.0,
+      "retrieval accuracy at rank 1 (pool of 1,000)": 0.94,
+      "series": "duplicate-vector ceiling",
+      "_kind": "line",
+      "_group": 33
+    }
+  ],
+  "n_series": 34,
+  "total_points": 218,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Held-out R\u00b2 vs training-set size",
+        "ylabel": "held-out R\u00b2 (1,000 pinned contexts)",
+        "legend_labels": [
+          "neural map (fresh, within-store)",
+          "linear ridge (fresh, within-store)",
+          "banked points, other store (scored on different held-out rows)",
+          "963k banked weights (mixed-corpus pool)"
+        ],
+        "yticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ]
+      },
+      {
+        "xlabel": "training rows (log scale)",
+        "ylabel": "baselines",
+        "legend_labels": [
+          "identity plus learned bias",
+          "constant train mean (banked floor)"
+        ],
+        "xticklabels": [
+          "5k",
+          "10k",
+          "25k",
+          "50k",
+          "100k",
+          "150k",
+          "250k",
+          "500k",
+          "963k"
+        ],
+        "yticklabels": [
+          "\u22120.9",
+          "0.0"
+        ]
+      },
+      {
+        "title_left": "Retrieval accuracy vs training-set size",
+        "xlabel": "training rows (log scale)",
+        "ylabel": "retrieval accuracy at rank 1 (pool of 1,000)",
+        "legend_labels": [
+          "duplicate-vector ceiling",
+          "neural map, whitened cosine + CSLS",
+          "neural map, raw euclidean",
+          "linear ridge, whitened cosine + CSLS",
+          "linear ridge, raw euclidean"
+        ],
+        "xticklabels": [
+          "5k",
+          "10k",
+          "25k",
+          "50k",
+          "100k",
+          "150k",
+          "250k",
+          "500k",
+          "963k"
+        ],
+        "yticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ]
+      }
+    ],
+    "series": [
+      "neural map (fresh, within-store)",
+      "linear ridge (fresh, within-store)",
+      "identity plus learned bias",
+      "constant train mean (banked floor)",
+      "duplicate-vector ceiling",
+      "neural map, whitened cosine + CSLS",
+      "neural map, raw euclidean",
+      "linear ridge, whitened cosine + CSLS",
+      "linear ridge, raw euclidean"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
