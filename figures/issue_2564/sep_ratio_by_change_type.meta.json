@@ -1,11 +1,14 @@
 {
-  "commit": "c4d3d441+dirty",
-  "render_id": "9855630c3bb34444",
-  "git_commit": "c4d3d4417ae57c14b085eca235d07386b081577a",
+  "commit": "5fb05b71+dirty",
+  "render_id": "5ad3ea7c469a475f",
+  "git_commit": "5fb05b7190e4490f5ee1f277925bfa8e130d5e05",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2564_sep_ratio_plot.py",
     "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2564/sep_ratio_by_change_type.meta.json",
+    "figures/issue_2564/sep_ratio_by_change_type.pdf",
+    "figures/issue_2564/sep_ratio_by_change_type.png",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
     "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
@@ -33,172 +36,100 @@
   ],
   "git_argv0_state": "untracked",
   "git_argv0_path": "scripts/issue2564_sep_ratio_plot.py",
-  "created": "2026-08-25T16:06:37Z",
+  "created": "2026-08-25T16:12:08Z",
   "figsize": [
     7.4,
-    5.800000000000001
+    4.96
   ],
   "points": [
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 0.8094788920457068,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 0.8094788920457068,
       "y": 0.0,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.5384856226596977,
-      "y": 0.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 0.9065243848018155,
+      "y": 1.0,
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 0.9065243848018155,
-      "y": 1.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 0.938568584083826,
+      "y": 2.0,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 2.230518868198164,
-      "y": 1.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.0231378271222564,
+      "y": 3.0,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 0.938568584083826,
-      "y": 2.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.0362050410874497,
+      "y": 4.0,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.9099522952772912,
-      "y": 2.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.0498867020649567,
+      "y": 5.0,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.0231378271222564,
-      "y": 3.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.1634059424943233,
+      "y": 6.0,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 2.1203619624258883,
-      "y": 3.0,
+      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)": 1.2741877206891514,
+      "y": 7.0,
       "_kind": "scatter",
       "_group": 7
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.0362050410874497,
-      "y": 4.0,
-      "_kind": "scatter",
-      "_group": 8
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.8233991156763836,
-      "y": 4.0,
-      "_kind": "scatter",
-      "_group": 9
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.0498867020649567,
-      "y": 5.0,
-      "_kind": "scatter",
-      "_group": 10
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 2.389198510606171,
-      "y": 5.0,
-      "_kind": "scatter",
-      "_group": 11
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.1614839841949431,
-      "y": 6.0,
-      "_kind": "scatter",
-      "_group": 12
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 2.900840017427263,
-      "y": 6.0,
-      "_kind": "scatter",
-      "_group": 13
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.1634059424943233,
-      "y": 7.0,
-      "_kind": "scatter",
-      "_group": 14
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.8724374642264303,
-      "y": 7.0,
-      "_kind": "scatter",
-      "_group": 15
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.2741877206891514,
-      "y": 8.0,
-      "_kind": "scatter",
-      "_group": 16
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 3.751209137103922,
-      "y": 8.0,
-      "_kind": "scatter",
-      "_group": 17
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 1.6431352247661848,
-      "y": 9.0,
-      "_kind": "scatter",
-      "_group": 18
-    },
-    {
-      "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)": 4.819077212529843,
-      "y": 9.0,
-      "_kind": "scatter",
-      "_group": 19
     }
   ],
-  "n_series": 20,
-  "total_points": 20,
+  "n_series": 8,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
         "title_left": "Does the map inflate or suppress the separation between two similar contexts? (#2564)",
-        "xlabel": "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (log; 1 = matches real answer separation)",
+        "xlabel": "separation ratio  \u2016predicted \u0394\u2016 / \u2016observed \u0394\u2016   (1 = matches real answer separation)",
         "legend_labels": [
           "map inflates (>1)",
-          "map suppresses (<1)",
-          "identity pass-through"
+          "map suppresses (<1)"
         ],
         "xticklabels": [
-          "$\\mathdefault{10^{-2}}$",
-          "$\\mathdefault{10^{-1}}$",
-          "$\\mathdefault{10^{0}}$",
-          "$\\mathdefault{10^{1}}$",
-          "$\\mathdefault{10^{2}}$"
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2",
+          "1.3",
+          "1.4",
+          "1.5"
         ],
         "yticklabels": [
-          "query content (n=66)",
-          "content constraint (n=120)",
-          "user fact (n=120)",
-          "user profile (n=36)",
-          "register (n=12)",
-          "lexical marker (n=120)",
-          "query paraphrase (n=12)",
-          "persona (n=12)",
-          "format (n=36)",
-          "query form (n=36)"
+          "query content",
+          "content constraint",
+          "user fact",
+          "user profile",
+          "register",
+          "lexical marker",
+          "persona",
+          "format"
         ]
       }
     ],
     "series": [
       "map inflates (>1)",
-      "map suppresses (<1)",
-      "identity pass-through"
+      "map suppresses (<1)"
     ]
   },
   "formats_written": [
