@@ -22,11 +22,13 @@ import json
 import logging
 import os
 import re
+from pathlib import Path
 from typing import ClassVar
 
 import wandb
 from transformers import TrainerCallback
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -1181,11 +1183,8 @@ class MarkerBandStopCallback(TrainerCallback):
             "records": recs,
         }
         out_path = str(self.trajectory_out_path)
-        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-        tmp_path = out_path + ".tmp"
-        with open(tmp_path, "w") as f:
+        with atomic_replace(Path(out_path)) as tmp_path, open(tmp_path, "w") as f:
             json.dump(payload, f, ensure_ascii=False)
-        os.replace(tmp_path, out_path)
 
     def _read_logp_trained(self, model):
         """Read mean log P(marker) at the marker slot under the trained adapter."""
