@@ -2345,10 +2345,15 @@ def _smoke_stream_ckpt(ckpt_root: Path) -> tuple[int, int]:
             self.path, self.size = path, 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3: the C1
+        # revision threading passes revision= unconditionally, so a fake
+        # without it TypeErrors the self-smoke).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
 
-    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         dl_calls["n"] += 1
         base = filename.rsplit("/", 1)[-1]
         idx = remote[base]
@@ -2404,7 +2409,7 @@ def _smoke_download_retry(cache: Path) -> int:
 
     calls = {"n": 0}
 
-    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _flaky(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         if calls["n"] == 1:
             raise requests.exceptions.ReadTimeout("synthetic read timeout")
@@ -2425,7 +2430,7 @@ def _smoke_download_retry(cache: Path) -> int:
 
     calls["n"] = 0
 
-    def _hard(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _hard(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         calls["n"] += 1
         raise ValueError("non-transient")
 
@@ -2490,10 +2495,14 @@ def _smoke_multilayer_stream(root: Path) -> dict:
             self.path, self.size = path, 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3, see the
+        # sibling fake in _smoke_stream_ckpt).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeEntry(f"{path_in_repo}/{n}") for n in remote]
 
-    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_dl(repo_id, filename=None, repo_type=None, local_dir=None, revision=None):
         base = filename.rsplit("/", 1)[-1]
         idx = remote[base]
         if crash_at["i"] is not None and idx >= crash_at["i"]:
