@@ -71,7 +71,8 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    costume).
 
 7. **Brief's stale-plan premise can be FALSE (#823 ext-ladder r1,
-   2026-08-23):** a whole-round brief may order plan INLINING "because the
+   2026-08-23; again #2564 r1, 2026-08-24 — worktree copy byte-identical
+   to canonical v6):** a whole-round brief may order plan INLINING "because the
    worktree tasks/ tree is frozen at base" while the compose-time identity
    diff shows the worktree copy IDENTICAL to canonical (the plan version
    predated the branch cut). Follow the inline order (also the race-free

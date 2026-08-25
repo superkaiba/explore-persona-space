@@ -24,3 +24,16 @@ interpolant: process-varying (pid/uuid/rank) = safe; loop/config variable =
 lint-invisible residual — note it with cross-commit attribution and suggest
 migration. Also verify waiver placement one-per-hit-line at i-1 (stacked
 waivers go inert at i-2, #2330).
+
+Third evasion channel (#2564 r1 g7): a round-authored driver DELEGATES its
+JSON writes to a reused parent module's fixed-name writer
+(`import issue2162_run as R; R._write_json_atomic(...)`) whose FILE sits on
+`SHARED_TMP_LEGACY_ALLOWLIST` — the class-sweep fixed every round-authored
+writer BODY and the lint passed clean, yet 7 new destinations write through
+the grandfathered `.name + ".tmp"` shape. Sweep round files for `R.<writer>`
+/ cross-module write-helper CALLS too, then check the callee's file against
+the allowlist (workflow_lint.py `SHARED_TMP_LEGACY_ALLOWLIST`). Single-process
+caller = Minor (duplicate-launch-only hazard) with the cheap fix "rebind to
+atomic_io.write_json_atomic"; a fan-out caller = the
+[[fixed-name-tmp-atomic-write-fanout-race]] FAIL class. Related:
+[[reused-module-internal-consumer-sweep]].
