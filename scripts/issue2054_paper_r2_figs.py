@@ -29,23 +29,27 @@ chat template. The ordering is intuitive, not fitted:
 Plot 1 (``c4_speaker_ladder``): the map's own-cell ceiling per speaker, base vs
 instruct, with the identity-plus-bias baseline and the shuffled-answer null.
 
-Plot 2 (``c4_universal_vs_specialized``): the same x-axis, one panel per model,
+Plot 2 (``c4_universal_vs_specialized``): the same x-axis, instruct only,
 comparing a map trained on everything against a map trained on this speaker
-alone, with the same identity-plus-bias baseline.
+alone, with the same identity-plus-bias baseline. Its y-axis is broken: the
+baseline runs down to -1.51 while every bar sits between 0.09 and 0.58, so one
+linear axis would spend three quarters of its height on the empty space between
+them.
 
 The shuffled-answer null (mean of the six cells' banked 97.5th percentiles) is
 drawn as a dotted line: the floor a map with no real context-answer pairing
 reaches.
 
-The assistant plain-text instruct bar is plotted at its cap-excluded refit
-rather than its raw value. The plain-text render carries no end-of-turn token,
-so 42.5% of that cell's own generations ran to the 4,096-token cap; #2054
-banked the exclusion refit at 0.390 against the raw 0.209, with a
-random-removal control at matched n moving it the other way (0.195). A
-regeneration at a 16,384-token cap is in flight and will replace the
-substituted value. The substitution is disclosed in the figure's caption, per
-Thomas's call (2026-08-25) to draw it as a plain bar rather than mark it on
-the canvas.
+The assistant plain-text instruct bars are plotted at their cap-excluded refits
+rather than their raw values, in BOTH plots and on BOTH of Plot 2's arms. The
+plain-text render carries no end-of-turn token, so 42.5% of that cell's own
+generations ran to the 4,096-token cap; #2054 banked the own-map exclusion
+refit at 0.390 against the raw 0.209, with a random-removal control at matched
+n moving it the other way (0.195), and the pooled companion refit is 0.258
+against the raw 0.091. A regeneration at the full context window is in flight
+and will replace both substituted values. The substitution is disclosed in the
+figures' captions, per Thomas's call (2026-08-25) to draw it as a plain bar
+rather than mark it on the canvas.
 
 Usage::
 
@@ -68,6 +72,7 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.ticker import MaxNLocator  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     figsize_iclr_full,
@@ -99,10 +104,14 @@ MODEL_KEY = {"qwen2.5-7b": "base", "qwen2.5-7b-instruct": "instruct"}
 
 IDENTITY_LABEL = "identity + bias baseline"
 
-# Banked cap-excluded refit of the one truncation-contaminated cell
-# (figures/issue_2054/caphit_censoring_refits.meta.json, bare text / capped
-# removed), keyed by (character, framing, model).
+# Cap-excluded refits of the one truncation-contaminated cell, keyed by
+# (character, framing, model). Own-map value: the banked within-cell exclusion
+# refit (figures/issue_2054/caphit_censoring_refits.meta.json, bare text /
+# capped removed). Pooled value: the companion refit, read from its artifact
+# rather than pasted in, so the number in the figure is the number whose
+# validation gate passed.
 CAP_EXCLUDED = {("assistant", "bare_text", "instruct"): 0.38985271917718867}
+CAP_POOLED_ARTIFACT = REPO / "eval_results/issue_2054/caphit_pooled_refit/caphit_pooled_refit.json"
 
 
 def load_cells() -> dict[tuple[str, str, str], dict]:
@@ -161,12 +170,35 @@ def _substituted_indices() -> list[int]:
     ]
 
 
-def _apply_cap_excluded(values: list[float], indices: list[int]) -> list[float]:
+def load_cap_pooled() -> dict[tuple[str, str, str], float]:
+    """The pooled cap-excluded read, refused unless its validation gate passed.
+
+    The gate recomputes the ALL-rows pooled read through the same code path and
+    checks it against the banked ladder value. If that does not reproduce, the
+    restricted-row number from the same fit is not trustworthy either, so this
+    raises rather than plotting it.
+    """
+    payload = json.loads(CAP_POOLED_ARTIFACT.read_text())
+    result = payload["result"]
+    validation = result["validation"]
+    if not validation["passed"]:
+        raise RuntimeError(
+            f"{CAP_POOLED_ARTIFACT}: validation gate did not pass "
+            f"(abs_delta {validation['abs_delta']:.3e} against tol {validation['tol']}) — "
+            "the refit does not reproduce the banked all-rows read, so its "
+            "cap-excluded value is not plottable"
+        )
+    return {("assistant", "bare_text", "instruct"): float(result["r2_kept_mean"])}
+
+
+def _apply_cap_excluded(
+    values: list[float], indices: list[int], table: dict[tuple[str, str, str], float]
+) -> list[float]:
     """Swap in the cap-excluded refit at the substituted positions."""
     out = list(values)
     for idx in indices:
         character, framing, _ = POSITIONS[idx]
-        out[idx] = CAP_EXCLUDED[(character, framing, "instruct")]
+        out[idx] = table[(character, framing, "instruct")]
     return out
 
 
@@ -202,7 +234,7 @@ def figure_ladder(series: dict, out_dir: Path) -> None:
     for model, offset in zip(MODELS, (-width / 2, width / 2), strict=True):
         values = series[model]["ceiling"]
         if model == "instruct":
-            values = _apply_cap_excluded(values, substituted)
+            values = _apply_cap_excluded(values, substituted, CAP_EXCLUDED)
         ax.bar(x + offset, values, width, color=paper_color(model), label=model)
 
     for model, offset in zip(MODELS, (-width / 2, width / 2), strict=True):
@@ -245,41 +277,87 @@ def figure_ladder(series: dict, out_dir: Path) -> None:
 
 
 def figure_universal(series: dict, out_dir: Path) -> None:
-    """Plot 2: a map trained on everything against a map trained on this speaker alone."""
+    """Plot 2: a map trained on everything against a map trained on this speaker alone.
+
+    Instruct only (Thomas, 2026-08-25). The y-axis is BROKEN rather than
+    continuous: the identity-plus-bias baseline runs from -0.52 to -1.51 while
+    every bar sits between 0.09 and 0.58, so a single linear axis spends three
+    quarters of its height on empty space between the two and squashes the bars
+    it exists to show. The break gives the bars a full-height panel and keeps
+    the baseline at its true value in a short strip below.
+    """
     x = np.arange(len(series["labels"]), dtype=float)
     width = 0.38
-    # Stacked, not side-by-side: two panels across 5.5in leaves no room for six
-    # two-line speaker labels, and they collide.
-    fig, axes = plt.subplots(
-        2, 1, figsize=figsize_iclr_full(1.15), sharex=True, sharey=True, constrained_layout=True
-    )
+    model = "instruct"
     substituted = _substituted_indices()
+    cap_pooled = load_cap_pooled()
 
     arms = [
-        ("ceiling", "trained on this speaker alone", paper_color("instruct")),
-        ("pooled", "trained on everything", paper_color("oracle_answer")),
+        ("ceiling", "trained on this speaker alone", CAP_EXCLUDED, paper_color("instruct")),
+        ("pooled", "trained on everything", cap_pooled, paper_color("oracle_answer")),
     ]
 
-    # Both arms are plotted RAW here, cap-excluded substitution deliberately NOT
-    # applied. Only the own-map refit was banked cap-excluded; substituting it
-    # while the pooled bar stays raw would compare two different row sets in the
-    # same speaker group. Plot 1 has no such pairing and does substitute.
-    for ax, model in zip(axes, MODELS, strict=True):
-        for (key, label, color), offset in zip(arms, (-width / 2, width / 2), strict=True):
-            ax.bar(x + offset, series[model][key], width, color=color, label=label)
-        _identity_ticks(ax, x, series[model]["identity"], width * 2, IDENTITY_LABEL)
-        ax.axhline(0.0, color=paper_color("reference"), linewidth=0.6)
-        ax.set_ylabel(f"{model}\n" + r"held-out $R^2$")
+    fig, (ax_bar, ax_id) = plt.subplots(
+        2,
+        1,
+        figsize=figsize_iclr_full(0.80),
+        sharex=True,
+        gridspec_kw={"height_ratios": [3.4, 1.0]},
+        constrained_layout=True,
+    )
+    fig.get_layout_engine().set(hspace=0.0, h_pad=0.01)
 
-    axes[-1].set_xticks(x)
-    axes[-1].set_xticklabels(series["labels"])
-    floor = min(min(series[m]["identity"]) for m in MODELS)
-    axes[0].set_ylim(floor - 0.12, None)
+    # BOTH arms carry the cap-excluded substitution. Substituting one while the
+    # other stayed raw would put two different row sets in the same speaker
+    # group, which is not a comparison.
+    for (key, label, table, color), offset in zip(arms, (-width / 2, width / 2), strict=True):
+        values = _apply_cap_excluded(series[model][key], substituted, table)
+        ax_bar.bar(x + offset, values, width, color=color, label=label)
+    ax_bar.axhline(0.0, color=paper_color("reference"), linewidth=0.6)
+
+    _identity_ticks(ax_id, x, series[model]["identity"], width * 2, None)
+    # The ticks are drawn on the lower panel but the legend sits on the upper
+    # one, so give the upper panel an empty handle carrying the label.
+    ax_bar.plot(
+        [],
+        [],
+        linestyle="none",
+        marker="_",
+        markersize=width * 52,
+        markeredgewidth=1.6,
+        color=paper_color("identity_bias"),
+        label=IDENTITY_LABEL,
+    )
+
+    ax_bar.set_ylim(-0.03, None)
+    identity = series[model]["identity"]
+    pad = 0.09
+    ax_id.set_ylim(min(identity) - pad, max(identity) + pad)
+    ax_id.yaxis.set_major_locator(MaxNLocator(3, steps=[1, 5, 10]))
+
+    # The break itself: drop the facing spines and mark the cut on both panels.
+    ax_bar.spines["bottom"].set_visible(False)
+    ax_id.spines["top"].set_visible(False)
+    ax_bar.tick_params(axis="x", bottom=False, labelbottom=False)
+    cut = dict(
+        marker=[(-1.0, -0.5), (1.0, 0.5)],
+        markersize=6,
+        linestyle="none",
+        color=paper_color("reference"),
+        markeredgewidth=0.9,
+        clip_on=False,
+    )
+    ax_bar.plot([0, 1], [0, 0], transform=ax_bar.transAxes, **cut)
+    ax_id.plot([0, 1], [1, 1], transform=ax_id.transAxes, **cut)
+
+    ax_id.set_xticks(x)
+    ax_id.set_xticklabels(series["labels"])
+    fig.supylabel(f"{model}\n" + r"held-out $R^2$")
     _ordered_legend(
-        axes[0],
-        [label for _, label, _ in arms] + [IDENTITY_LABEL],
-        loc="lower left",
-        ncol=2,
+        ax_bar,
+        [label for _, label, _, _ in arms] + [IDENTITY_LABEL],
+        loc="upper right",
+        ncol=1,
     )
     savefig_paper(fig, "c4_universal_vs_specialized", dir=out_dir)
     plt.close(fig)
