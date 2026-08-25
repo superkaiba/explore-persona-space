@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2568,
+  "highest_id": 2569,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12087,6 +12087,13 @@
       "path": "tasks/running/2568",
       "status": "running",
       "title": "workflow-fix: consumer-supersession audit \u2014 enumerate committed consumers of refuted evidence artifacts and require supersession labels"
+    },
+    "2569": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2569",
+      "status": "proposed",
+      "title": "Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and a cross-model operator atlas"
     },
     "257": {
       "has_clean_result": false,
