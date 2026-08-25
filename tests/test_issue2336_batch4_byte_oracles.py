@@ -13,7 +13,7 @@ npz: batch 2 r6; pt: batch 2 r7 — both in
 has no landed oracle:
 
 - **npy via ``np.lib.format.open_memmap`` chunked copy** — the
-  ``scripts/issue779_ffc_n1m_fits.py`` ``_ml_truncate_rows`` chunked-copy
+  ``scripts/issue779_ffc_n1m_fits.py`` ``_truncate_npy_rows`` chunked-copy
   branch (header length changed): a memmap workspace is created ON the temp
   path, filled chunk-by-chunk, flushed, released, then published. The write is
   inline in a GPU-pipeline helper (not executable at test time without the
