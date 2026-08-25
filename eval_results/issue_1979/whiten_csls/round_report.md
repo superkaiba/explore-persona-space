@@ -206,6 +206,149 @@ row pools, at 320 members, do not have this problem).
 
 ---
 
+## Item 3 — why sycophancy fails everywhere (revises Item 1)
+
+Item 1 concluded "eval-surface mismatch, not an induction failure." The
+induction half stands and is now measured; the mechanism is deeper than the
+eval surface, and it sits in the checkpoint SELECTION rule.
+
+### The behavior installed. That is not in question.
+
+From #1481's verdict manifest (`eval_results/issue_1481/analysis/verdict_manifest.json`),
+sycophancy is the best-installing of the three content behaviors: 39 of 48
+sycophancy arms landed in-band versus 21 of 48 casual and 31 of 48
+impoliteness, with install rates reaching 0.96–1.00 at higher steps in every
+one of the four training contexts. No sycophancy arm failed to train.
+
+### Base propensity is high and context-dependent — and the band does not correct for it
+
+The in-band criterion is an ABSOLUTE judged install rate in [0.60, 0.85]
+(`band` in the manifest), with no base-rate subtraction. Base rates on
+#1481's own panel, same rubric across all rows (`registered_graded_r23` for
+sycophancy and impoliteness):
+
+| context condition | cas rate / graded | imp rate / graded | syc rate / graded |
+|---|---|---|---|
+| default | 0.00 / 16.6 | 0.00 / 0.05 | 0.24 / 37.4 |
+| persona (software engineer) | 0.00 / 16.7 | 0.00 / 0.15 | 0.19 / 37.6 |
+| WildChat conversation prefix | 0.00 / 19.3 | 0.00 / 0.03 | **0.71 / 71.2** |
+| ICL prefix | 0.00 / 21.4 | 0.00 / 0.02 | 0.47 / 53.3 |
+| negative persona (police) | 0.00 / 17.5 | 0.00 / 0.30 | 0.18 / 33.4 |
+| negative persona (ph4) | 0.00 / 15.5 | 0.00 / 0.39 | 0.10 / 32.3 |
+
+Casual and impoliteness are at a hard 0.00 floor under every context, so
+reaching 0.60 requires training to supply the entire 0.60. Sycophancy is not:
+under a real WildChat conversation prefix the UNTRAINED base model already
+scores 0.71 — inside the band, above its lower edge, with no training at all.
+
+### Consequence: the band selects the least-trained sycophancy checkpoints
+
+| behavior | base rate (default) | median selected step | median induced delta at selection |
+|---|---|---|---|
+| casual writing | 0.00 | 15 | **+0.835** |
+| impoliteness | 0.00 | 20 | **+0.720** |
+| sycophancy | 0.24 | 10 | **+0.492** |
+
+At the earliest checkpoint recorded (step 5) the median install rate is 0.220
+for casual, 0.005 for impoliteness, and **0.639 for sycophancy** — already
+inside the band. Every conversation-context sycophancy arm was therefore
+selected at step 5, the first checkpoint, and its selected rate (0.64–0.87)
+brackets the 0.71 the base model reaches under that same prefix unaided. Those
+arms carry an induced dose of approximately zero by construction.
+
+So the sycophancy fleet is dose-minimal because the selection criterion is an
+absolute rate applied to a behavior with high, context-dependent base
+propensity. Nothing detected this at selection time because the band never
+subtracts the base.
+
+### The eval surface compounds it, with a rubric caveat
+
+#1979's DV is the 60-query LMSYS first-turn set, on which sycophancy's base
+level is 8.6 of 100. #1481's selection panel reads 37.4 under `default`. The
+two are NOT directly comparable: sycophancy's rubric changed between the tasks
+(`registered_graded_r23` at #1481, the persona-vectors trait description at
+#1979), so part of that gap is instrument, not surface. What is rubric-clean is
+the within-#1481 spread above — base sycophancy runs 0.10 to 0.71 depending on
+context — which establishes that sycophancy elicitation is strongly
+context-dependent in a way casual and impoliteness are not.
+
+### Reading the #1979 null correctly
+
+Per-prefix change on the four sycophancy arms is +0.10, +0.00, −0.27 and +0.78
+points of 100, with per-prefix SD 2.1–2.3 and the sign split near even (23–33
+of 50 prefixes positive). That is symmetric noise about zero, not a censored
+floor: base ceiling share is 0.000, and impoliteness starts LOWER (base 0.94 of
+100) yet still moves +3.4 with 49 of 50 prefixes positive. A floor account is
+therefore ruled out directly.
+
+Three mechanisms, in order of size:
+
+1. **Dose.** The selected sycophancy checkpoints carry the smallest induced
+   dose of the three behaviors (+0.49 median), and the conversation-context
+   arms carry essentially none. Root cause: an absolute selection band applied
+   to a high-base-propensity behavior.
+2. **Surface.** The LMSYS first-turn queries contain almost no user claim to
+   agree with, which is what the trained behavior needs; sycophancy's own base
+   spread (0.10 → 0.71 by context) shows how surface-sensitive its elicitation
+   is. Partly rubric-confounded across tasks, as above.
+3. **Instrument.** Sycophancy has the weakest judge reliability of the four
+   families — even/odd split-half 0.59–0.77 against 0.86–0.97 for the marker
+   and 0.88–0.93 for casual — which attenuates the race but cannot produce a
+   zero mean change on its own.
+
+The four sycophancy rows are uninformative for the predictor race. They are
+not evidence that a behavior resisted training, and they are not evidence
+against the predictors.
+
+**Not established here.** What the sycophancy arms would show on a
+stance-bearing eval surface at a matched induced dose. That needs a new eval
+set and probably later checkpoints, not re-analysis.
+
+## Item 4 — why the other contexts were dropped
+
+Two separate mechanisms, one mechanical and one budgetary.
+
+**Mechanical: the band excluded ICL for the content behaviors.** ICL training
+drives install straight past the 0.85 ceiling — max rate 1.00 in every ICL
+cell, with nearly all selections falling back to `closest_approach` at
+0.88–0.99. In-band counts by context:
+
+| behavior | persona | bare | conversation | ICL |
+|---|---|---|---|---|
+| casual writing | 6 / 12 | 12 / 12 | 3 / 12 | **0 / 12** |
+| impoliteness | 10 / 12 | 9 / 12 | 11 / 12 | **1 / 12** |
+| sycophancy | 10 / 12 | 11 / 12 | 11 / 12 | 7 / 12 |
+
+With 0 of 12 and 1 of 12 in-band, ICL content cells were essentially
+unavailable to any downstream task. Only the marker family kept an ICL arm —
+and `mk-icl-con` is the one marker arm that reads negative on every predictor
+under every metric setting, the consistent outlier of that family.
+
+**Budgetary: #1900 spent 4 slots per content behavior.** The 18-arm roster is a
+fractional design "spanning persona / bare / conversation training contexts,
+contrastive and positive-only regimes, LoRA and full fine-tune" — four arms per
+content behavior across a 4 × 2 × 2 factor space, so no behavior can cover all
+four contexts. Realized coverage:
+
+| behavior | arms in #1979 | contexts covered |
+|---|---|---|
+| casual writing | cas-bare-con, cas-pers-con, cas-pers-ft-con, cas-pers-po | bare, persona |
+| impoliteness | imp-pers-con-s42, imp-pers-con-s137, imp-pers-ft-con, imp-pers-po | **persona only** |
+| sycophancy | syc-bare-con, syc-conv-con, syc-pers-ft-con, syc-pers-po | bare, conversation, persona |
+| marker | 6 arms | bare, conversation, ICL, persona |
+
+Impoliteness is the notable one: 9 in-band bare arms and 11 in-band
+conversation arms existed and were dropped, with one of its four slots spent on
+a seed replicate of the persona cell instead. Its context coverage collapsed to
+persona-only by roster choice, not by availability. Sycophancy's ICL arms
+(7 in-band) were likewise available and not selected.
+
+Consequence for the headline: the content race's 12 arms are not a balanced
+context panel. Eight of twelve are persona-context, the impoliteness family
+carries no context variation at all, and no content arm tests ICL. Any
+statement about how leakage prediction varies ACROSS training contexts rests
+almost entirely on the marker family, which is the only one with all four.
+
 **Artifacts.** `sweep.json` (528 records + reproduction check + config);
 `figures/issue_1979/c5_whiten_csls_sweep.{png,pdf}` + meta sidecar. Scripts:
 `scripts/issue1979_stage_whitencsls.py`, `scripts/issue1979_whiten_csls_sweep.py`,
