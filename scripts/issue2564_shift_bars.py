@@ -12,8 +12,16 @@ Instruction axes use the fired value-swap pairs (pair_class=swap, pair_fired_70)
 the query axis is query_content (labeled "question topic"). Point = median; error
 bars = pair-level bootstrap 95% interval (B=10,000, seed 2564). Read-only; no GPU.
 
+--extra-perpair appends the 2026-08-25 lang/oneword pilot categories
+(eval_results/issue_2564/lang_oneword_pilot/perpair.jsonl): answer_language
+fired swaps (label "answer language"; fired = programmatic language check) and
+query_content_oneword (label "question topic (one word)"; no fired gate, same
+as the parent query axis). Pilot rows carry the norm fields flattened
+(norm_pred_arm_779ce) instead of the parent's norm_pred dict — both are read.
+
 Input:  eval_results/issue_2564/perpair.jsonl (override with --perpair).
-Output: figures/issue_2564/shift_vs_ratio_bars.{png,pdf} (+ meta sidecar).
+Output: figures/issue_2564/<out-stem>.{png,pdf} (+ meta sidecar);
+        default stem shift_vs_ratio_bars (unchanged without the new flags).
 """
 
 from __future__ import annotations
@@ -41,7 +49,9 @@ def _pair_vals(rows: list[dict]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     real, pred, ratio = [], [], []
     for r in rows:
         obs = r.get("norm_obs_tail_L19")
-        pr = (r.get("norm_pred") or {}).get(MAP_ARM)
+        np_d = r.get("norm_pred")
+        # parent perpair nests norms per arm; the lang/oneword pilot flattens them
+        pr = np_d.get(MAP_ARM) if isinstance(np_d, dict) else r.get(f"norm_pred_{MAP_ARM}")
         if obs and pr and obs > 0:
             real.append(obs)
             pred.append(pr)
@@ -75,6 +85,22 @@ def _change_types(rows: list[dict]) -> list[tuple[str, list[dict]]]:
     return cts
 
 
+def _extra_change_types(rows: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Pilot categories: answer-language fired swaps + one-word query switches."""
+    cts: list[tuple[str, list[dict]]] = []
+    lang = [
+        r
+        for r in rows
+        if r["pair_class"] == "swap" and r["axis"] == "answer_language" and r.get("pair_fired_70")
+    ]
+    if lang:
+        cts.append(("answer language", lang))
+    oneword = [r for r in rows if r["pair_class"] == "query_content_oneword"]
+    if oneword:
+        cts.append(("question topic (one word)", oneword))
+    return cts
+
+
 def _errs(med: np.ndarray, lo: np.ndarray, hi: np.ndarray) -> np.ndarray:
     """Non-negative [lower, upper] offsets for matplotlib yerr (gotchas: clamp)."""
     return np.vstack([np.maximum(0.0, med - lo), np.maximum(0.0, hi - med)])
@@ -83,10 +109,15 @@ def _errs(med: np.ndarray, lo: np.ndarray, hi: np.ndarray) -> np.ndarray:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--perpair", default=str(DEFAULT_PERPAIR))
+    ap.add_argument("--extra-perpair", default=None, help="pilot perpair.jsonl to append")
+    ap.add_argument("--out-stem", default="shift_vs_ratio_bars")
     args = ap.parse_args()
 
     rows = [json.loads(line) for line in open(args.perpair, encoding="utf-8")]
     cts = _change_types(rows)
+    if args.extra_perpair:
+        extra_rows = [json.loads(line) for line in open(args.extra_perpair, encoding="utf-8")]
+        cts.extend(_extra_change_types(extra_rows))
 
     rng = np.random.default_rng(SEED)
     recs = []
@@ -175,7 +206,7 @@ def main() -> None:
     ax1.set_xticklabels(labels, rotation=30, ha="right", fontsize=8)
 
     fig.tight_layout()
-    paths = savefig_paper(fig, "shift_vs_ratio_bars", dir=FIG_DIR)
+    paths = savefig_paper(fig, args.out_stem, dir=FIG_DIR)
     plt.close(fig)
     for d in recs:
         print(
