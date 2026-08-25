@@ -14,7 +14,11 @@ figures/issue_2378/lenmatch_matched_vs_control.{png,pdf,meta.json}.
 import json
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
 
