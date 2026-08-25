@@ -21,7 +21,15 @@ compose; "fixing" them would corrupt the inlined spec.
 the awk-extracted span check (spec Step 4), plus a `grep -cF -e '{{'
 -e '}}'` over each /tmp part file the composer WROTE (expect 0). A hit
 inside the inlined lens-reference / SPEC.md region is spec-native text
-— leave it. Related assembly pattern that avoids placeholders entirely:
+— leave it. SECOND native-brace class (#1901 msd r2, 2026-08-25): a
+verbatim-inlined BODY envelope trips the bare-`{{` scan on nested JSON
+in the body's sample-data section (`"hi": 0.87...}}`). For
+verbatim-CONTENT envelopes (inlined body / marker notes / diffs), scan
+for the actual placeholder-token grammar
+`\{\{[a-zA-Z0-9_ .-]+\}\}` instead of bare `{{`; keep the strict bare
+scan on the three REQUIRED command-output envelopes + composer part
+files. Concatenation-only assembly (no template-substitute pass) is
+what licenses the relaxation — no composer slot can exist anywhere. Related assembly pattern that avoids placeholders entirely:
 build the prompt by concatenating fully-substituted part files + cat of
 captured outputs (no template-then-substitute pass), so the only {{ }}
 that can exist are inlined-reference-native. See

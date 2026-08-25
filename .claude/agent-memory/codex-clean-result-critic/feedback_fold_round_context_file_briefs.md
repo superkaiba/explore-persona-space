@@ -85,3 +85,28 @@ Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
   (status-move-proof). First grep every inline source for
   `^---(BEGIN|END) .*---$` collisions — a matching line inside
   SPEC/lens/body would corrupt the envelope strip.
+
+Two more delta/reconciler-round compose patterns (#1901 mlp-scaling-densify
+r2, 2026-08-25):
+- **Truncated verifier finding-lists get a composer recompute envelope**:
+  when a fix's adjudication turns on WHICH sections a verifier WARN names
+  and the WARN message truncates its list (check-49 prints 2 entries +
+  "…"), recompute the untruncated classification at compose time with the
+  verifier MODULE's own helpers (`sys.path.insert(0,"scripts"); import
+  verify_task_body`; re-run the check's exact loop, print per-section
+  FLAGGED/SILENCED + the operative regex) and inline it as a
+  `COMPOSER ... RECOMPUTE` envelope. Present it as NEUTRAL mechanical
+  data — never pre-judge the disposition (the #1901 case: the analyzer's
+  `companion` clause landed in the setup beat, which check-49
+  deliberately does not scan, so the fixed result still FLAGGED;
+  discharge-vs-residue was left to Codex).
+- **Reconciler-bound delta rounds inline the binding verdict + both body
+  versions' diff**: extract the `epm:review-reconcile` note verbatim as
+  its own envelope (fix list + do-not-touch rulings ARE the round's
+  adjudication standard — no 15-lens inline needed), locate the two
+  set-body commits bracketing the fix (`git log -- <body path>`), attest
+  worktree==HEAD, and inline `git diff <r1-reviewed> <fixed>` as a
+  COMPOSER DELTA DIFF envelope with the expected hunk set attested —
+  including lifecycle hunks inside the span that are NOT analyzer edits
+  (a `remove-tag keep-running` frontmatter hunk rode the #1901 span; an
+  unattested lifecycle hunk would read as a delta-confinement violation).
