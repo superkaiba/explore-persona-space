@@ -49,17 +49,49 @@ Phase driver over the assembled X19/Y19 row store (plan v4 §4 legs 1/2 moments 
              bootstrap CI (conversation-overlap components; the SAME estimator
              recomputed per draw), and the C2 measured held-out residual-pair
              noise floor (val+test rows).
+  curve      H2b B4 verdict refit series (plan §4 leg 2 step 3): per-row corpus
+             tags RE-MEASURED at phase entry from the n1m sampling-manifest rows
+             (pass_b rows tagged ``pass_b``, NEVER ``lmsys`` — they must not
+             enter the LMSYS verdict subset), then the landed
+             ``issue2569_gateladder.curve_core`` machinery — nested LMSYS-only
+             L19 refits at the verdict n grid (seed 2569, conversation-disjoint
+             fixed 5,000-row LMSYS eval + val slices, val-selected lambda over
+             the widened 27-value grid with C4 widen-on-edge, same-subset
+             2006.13198 theory curve, mechanical fit-metadata parity check
+             BEFORE any theory read, mean |dR2| on parity-passing verdict
+             points ONLY, committed points as labeled off-recipe companions,
+             identity+bias + kNN per point) — with the sha-pinned pass-B
+             400-val/1,000-test rows ALSO scored per point as comparability
+             companions (``extra_eval``).
+  der-eval   Leg-4 step 5 tail: Der-protocol (arXiv 2606.28548) 10-way matching
+             / coverage over the fitted feature map's predicted feature lists on
+             the pinned 20k holdout. Description source resolved AT RUNTIME:
+             reuse #2552's judged descriptions when available (explicit
+             ``--der-desc-file``, else a committed-artifact probe under
+             ``eval_results/issue_2552*`` — pod-side code never shells out to
+             task.py, so the probe is artifact-presence); FALLBACK: a bounded
+             own auto-interp round (describe + match, <= --der-budget = 2,000
+             judge calls total, judge ``claude-sonnet-4-5-20250929``, sync path
+             via ``llm/api_dispatch.py``, max_tokens 1024, drop-never-coerce
+             with counts reported, transport failures RE-DRIVEN never persisted
+             as drops). Judged objects are SAE FEATURE DESCRIPTIONS only (the
+             plan's standing rule-28 exemption); prompts carry descriptions +
+             neutral instructions, never corpus text or project context.
 
 Driver entry runs the B1 identity asserts on the banked L19 map payload
 (``issue2569_operator.run_driver_identity_asserts``) — a raise HALTS the driver
-(apply-path breakage class). Out-of-scope for THIS file per the unit split: the
-H2b refit series (gateladder machinery exists; a follow-up unit wires it).
+(apply-path breakage class).
 
 Smoke blind-spot mirror (unit 4b phases): the ``--answer-sae-dir`` /
 ``--alive-counts-npz`` / ``--manifest-dir`` overrides substitute the INPUT SOURCE
 for the HF staging legs (same parse/consume path either way); the HF download
 branches themselves (``hub.retry_transient``-wrapped) are exercised by the pod
-smoke + production, not by the VM unit tests.
+smoke + production, not by the VM unit tests. Same class for this unit's
+additions: ``--der-desc-file`` / ``--der-evidence-file`` substitute the
+description/evidence INPUT SOURCE (same loaders either way), and the der
+``dispatch_fn`` parameter is a TEST seam faking ONLY the network boundary
+(signature-conformant fakes) — the real ``api_dispatch.dispatch_calls`` path is
+exercised by the pod smoke + production, never by a smoke-flag branch.
 """
 
 from __future__ import annotations
@@ -68,6 +100,8 @@ import argparse
 import json
 import logging
 import math
+import os
+import re
 import shutil
 import sys
 import time
@@ -130,6 +164,25 @@ LEG8_SEED = 2_569_800  # chunk k uses default_rng((LEG8_SEED, k)) — resume-sta
 LEG8_MIN_KERNEL_PRODUCTION = 300  # pre-registered mining-abort floor
 LEG8_CTRL_TOL_LADDER = (0.02, 0.04, 0.08)  # pre-registered ||dc|| match widening
 RC_MINE_ABORT = 27  # leg-8 mining-abort HALT (T24 convention: 22-26 taken)
+
+# ── curve-phase constants (H2b B4, plan §4 leg 2 step 3) ──────────────────────────
+# Expected LMSYS-subset size per the banked map's own corpus counts; RE-MEASURED
+# from the sampling-manifest corpus tags at phase entry (a production mismatch is
+# WARN+recorded — the binding floor, max(n_grid)+eval+val rows, is asserted by
+# GL.nested_lmsys_splits itself).
+N_LMSYS_EXPECTED_PRODUCTION = 529_085
+
+# ── der-eval constants (plan §4 leg 4 step 5 + §11 judge pin) ─────────────────────
+JUDGE_MODEL_DEFAULT = "claude-sonnet-4-5-20250929"  # plan §11 (leg-4 fallback judge)
+DER_BUDGET_DEFAULT = 2_000  # plan hard cap on TOTAL judge calls (describe + match)
+DER_ITEMS_DEFAULT = 500  # matching items (rows); own-round describe calls ride the rest
+DER_NWAY = 10  # Der-protocol 10-way matching (chance = 1/10)
+DER_FEATS_PER_LIST_DEFAULT = 8  # descriptions per predicted/true list
+DER_MAX_TOKENS = 1024  # judge max_tokens (llm-judging rule 23 single-field floor)
+DER_SEED = 2_569_400  # item/distractor sampling seed (deterministic packets)
+DER_MIN_DESCRIBED = 2  # a row needs >= this many described feats per list, else skipped
+DER_EVIDENCE_STR_CAP = 1_500  # chars per own-round evidence string (prompt bound)
+DER_EVIDENCE_MAX_STRS = 8  # evidence strings per own-round describe prompt
 
 
 # ── small utils ──────────────────────────────────────────────────────────────────
@@ -364,6 +417,158 @@ def _write_sigma_pt(path: Path, gram: torch.Tensor, mean: torch.Tensor, n_rows: 
         **meta,
     }
     _atomic_torch_save(obj, path)
+
+
+# ── leg 2: H2b B4 verdict refit series (plan §4 leg 2 step 3) ─────────────────────
+
+
+def _corpus_tags_from_manifest_dir(manifest_dir: Path, row_ci: np.ndarray, n_pb: int) -> np.ndarray:
+    """Per-row corpus tags over the assembled row space, RE-MEASURED from the n1m
+    sampling-manifest rows (plan §4 leg 2 step 3 / B4: the tags are measured at
+    phase entry, never trusted from memory). Leading ``n_pb`` pass_b rows are
+    tagged ``pass_b`` — NEVER ``lmsys`` (the #1482 prov convention labels them
+    lmsys, which would leak the pass-B seed-corpus distribution into the LMSYS
+    verdict subset). Streaming line-by-line join by conversation index; manifest
+    text is never retained or logged (content hygiene). Fails loud when any
+    assembled new row has no manifest corpus tag."""
+    row_ci = np.asarray(row_ci, np.int64)
+    rev = {int(c): r for r, c in enumerate(row_ci[n_pb:], start=n_pb)}
+    out = np.full(len(row_ci), "", dtype="<U16")
+    out[:n_pb] = "pass_b"
+    parts = sorted(Path(manifest_dir).glob("part_*.jsonl"))
+    assert parts, f"no sampling-manifest parts under {manifest_dir}"
+    n_hit = 0
+    for pi, part in enumerate(parts):
+        with open(part, encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                rec = json.loads(line)
+                r = rev.get(int(rec["ci"]))
+                if r is not None:
+                    out[r] = str(rec["corpus"]).lower()
+                    n_hit += 1
+        print(f"[curve] corpus-tag part {pi + 1}/{len(parts)} joined={n_hit}", flush=True)
+    missing = int((out == "").sum())
+    assert missing == 0, (
+        f"{missing} assembled rows have no manifest corpus tag (ci join failed) — "
+        "the verdict subset cannot be measured; refusing to guess"
+    )
+    return out
+
+
+def phase_curve(args) -> None:
+    """H2b B4 verdict refit series: re-measured corpus tags -> nested LMSYS-only
+    refits + same-subset theory curve, driven through the landed
+    ``issue2569_gateladder.curve_core`` (module docstring ``curve`` entry)."""
+    import issue2569_gateladder as GL
+
+    C.phase("curve")
+    t24 = _t24_args(args)
+    out = args.out_root / "leg2_curve"
+    out.mkdir(parents=True, exist_ok=True)
+    curve_json = out / "learning_curve.json"
+    row_meta_npz = out / "row_meta_curve.npz"
+    outputs = [curve_json, row_meta_npz]
+    n_grid = (
+        tuple(int(v) for v in args.curve_n_grid.split(","))
+        if args.curve_n_grid
+        else tuple(GL.N_GRID_VERDICT)
+    )
+    eval_rows = int(args.curve_eval_rows)
+    val_rows = int(args.curve_val_rows)
+    regime, resume_ok = T24._enter_phase_regime(out, t24, "curve_2569", stale_paths=outputs)
+    _check_local_regime(
+        out,
+        {
+            "layer": int(args.layer),
+            "n_grid": list(n_grid),
+            "eval_rows": eval_rows,
+            "val_rows": val_rows,
+            "seed": int(GL.CURVE_SEED),
+            "phase": "curve_2569",
+        },
+        wipe=outputs,
+        tag="curve",
+    )
+    if resume_ok and all(p.exists() for p in outputs):
+        _upload_leaf(args, outputs, "leg2_curve", resume_skip=True)
+        logger.info("[curve] resume: outputs present under matching regime; skip")
+        return
+    a_dir = T24._assemble_dir(t24)
+    assert (a_dir / "split_meta.json").exists(), "curve needs the P1 outputs — run assemble"
+    T24.EA._headroom(args.out_root, 1 if args.smoke else 2, "pb-curve")
+    production = T24._production(t24)
+    rows_present = np.load(a_dir / "rows_present.npy")
+    x_mm = np.load(a_dir / "X19.fp16.npy", mmap_mode="r")
+    y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+    committed = T24._committed_split()
+    row_ci, _prov, _pools = T24._load_scratch_meta(t24)
+    _r1, val_ids, test_ids = T24._assert_pinned_valtest(committed)
+
+    # Corpus tags re-measured from the sampling manifest AT PHASE ENTRY (B4).
+    import issue779_ffc_n1m_generate_capture as N1G
+
+    if args.manifest_dir is not None:
+        mdir = Path(args.manifest_dir)
+        assert mdir.exists(), f"--manifest-dir missing: {mdir}"
+    else:
+        mdir = N1G._download_manifest(N1G.HF_PREFIX, T24._stage_dir(t24) / "sampling_manifest_2569")
+    corpus_global = _corpus_tags_from_manifest_dir(mdir, row_ci, int(T24.N1M.N_PASS_B))
+    corpus = corpus_global[rows_present]  # memmap row i <-> global row rows_present[i]
+    conv = np.asarray(row_ci, np.int64)[rows_present]
+    n_lmsys = int((corpus == "lmsys").sum())
+    n_wildchat = int((corpus == "wildchat").sum())
+    if production and n_lmsys != N_LMSYS_EXPECTED_PRODUCTION:
+        logger.warning(
+            "[curve] measured LMSYS subset %d != expected %d (plan §4 leg 2; recorded — "
+            "the binding floor is asserted by nested_lmsys_splits)",
+            n_lmsys,
+            N_LMSYS_EXPECTED_PRODUCTION,
+        )
+    logger.info("[curve] corpus re-measure: lmsys=%d wildchat=%d", n_lmsys, n_wildchat)
+
+    # Pass-B sha-pinned comparability companions, scored per point (B4).
+    val_pos = _positions_in_present(rows_present, val_ids, "curve/passb_val")
+    te_pos_pb = _positions_in_present(rows_present, test_ids, "curve/passb_test")
+    if production:
+        assert (len(val_pos), len(te_pos_pb)) == (400, 1_000), (len(val_pos), len(te_pos_pb))
+    extra_eval = {"passb_pinned_val": val_pos, "passb_pinned_test": te_pos_pb}
+
+    _atomic_npz_save(row_meta_npz, corpus=corpus, conv_index=conv)
+    doc = GL.curve_core(
+        x_mm,
+        y_mm,
+        corpus,
+        conv,
+        n_grid=n_grid,
+        eval_rows=eval_rows,
+        val_rows=val_rows,
+        dev=torch.device(args.device),
+        layer=int(args.layer),
+        skip_companions=False,
+        smoke=bool(args.smoke),
+        extra_eval=extra_eval,
+    )
+    doc["corpus_measurement"] = {
+        "source": "n1m sampling manifest (streaming ci join, re-measured at phase entry — B4)",
+        "n_rows_present": int(len(rows_present)),
+        "n_lmsys_measured": n_lmsys,
+        "n_wildchat_measured": n_wildchat,
+        "n_pass_b": int(T24.N1M.N_PASS_B),
+        "n_lmsys_expected_production": int(N_LMSYS_EXPECTED_PRODUCTION),
+        "production": bool(production),
+    }
+    doc["regime"]["regime_config_hash"] = regime["config_hash"]
+    GL._atomic_json(curve_json, doc)
+    _upload_leaf(args, outputs, "leg2_curve", resume_skip=False)
+    h2b = doc["h2b"]
+    _sentinel(
+        "curve-2569",
+        f"H2b series done (verdict={h2b['verdict']}, mean_abs_dr2={h2b['mean_abs_dr2']}, "
+        f"n_lmsys={n_lmsys})",
+    )
+    logger.info("[curve] done: %s", json.dumps(h2b))
 
 
 # ── SAE training core (X19 context side; exact #2476 recipe) ─────────────────────
@@ -1092,6 +1297,9 @@ def phase_feature_map(args) -> None:
         "y_union": out / "y_union.fp16.npy",
         "x_idx": out / "x_ctx_idxaligned.fp16.npy",
         "enc_meta": out / "enc_meta.json",
+        # fitted-map holdout predictions (n_te x union, fp16) — the der-eval
+        # phase's predicted-feature-list input (persisted, never re-derived)
+        "pred_te": out / "pred_te_union.fp16.npy",
     }
     regime, resume_ok = T24._enter_phase_regime(
         out, t24, "featmap_2569", stale_paths=[*outputs, *enc_files.values()]
@@ -1230,6 +1438,9 @@ def phase_feature_map(args) -> None:
             routes.append(s)
             arrays.update(a)
     assert pred_te is not None
+    # Persist the primary fitted-map holdout predictions for the der-eval phase
+    # (fp16; aligned with y_union rows n_fit+n_val..end and feat_ids == union).
+    _atomic_np_save(np.asarray(pred_te, np.float16), enc_files["pred_te"])
 
     # ── routes (ii)+(iii): banked #2476 instruments, joined per feature ──────────
     routes.append(
@@ -1910,13 +2121,529 @@ def phase_mine(args) -> None:
     logger.info("[mine] done: %s", json.dumps(stats))
 
 
-PHASE_ORDER = ("assemble", "moments", "sae-train", "feature-map", "mine")
+# ── leg 4 step 5 tail: Der-protocol 10-way matching / coverage ────────────────────
+
+
+def _load_descriptions(path: Path) -> dict[int, str]:
+    """Strict per-feature description loader (the #2552 reuse branch).
+
+    The #2552 artifact schema is UNVERIFIED at code time (that task is still
+    ``running`` with nothing banked — probed 2026-08-25), so this accepts the
+    three plausible shapes — a JSON dict ``{feat_id: description}``, a JSON
+    list / ``{"descriptions": ...}`` wrapper of records, or JSONL records
+    (id keys: feature_id/feat_id/feature/id/index; text keys: description/
+    label/explanation/text) — and FAILS LOUD on anything else, never guesses.
+    """
+    path = Path(path)
+    txt = path.read_text(encoding="utf-8")
+    if path.suffix == ".jsonl":
+        rows: list = [json.loads(ln) for ln in txt.splitlines() if ln.strip()]
+    else:
+        obj = json.loads(txt)
+        if isinstance(obj, dict) and obj and all(isinstance(v, str) for v in obj.values()):
+            rows = [{"feature_id": k, "description": v} for k, v in obj.items()]
+        elif isinstance(obj, dict) and isinstance(obj.get("descriptions"), dict):
+            rows = [{"feature_id": k, "description": v} for k, v in obj["descriptions"].items()]
+        elif isinstance(obj, dict) and isinstance(obj.get("descriptions"), list):
+            rows = obj["descriptions"]
+        elif isinstance(obj, list):
+            rows = obj
+        else:
+            raise ValueError(f"unrecognized description artifact shape: {path}")
+    id_keys = ("feature_id", "feat_id", "feature", "id", "index")
+    txt_keys = ("description", "label", "explanation", "text")
+    out: dict[int, str] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError(f"non-record description row ({type(row).__name__}): {path}")
+        fid = next((row[k] for k in id_keys if k in row), None)
+        d = next((row[k] for k in txt_keys if isinstance(row.get(k), str)), None)
+        if fid is None or d is None:
+            raise ValueError(f"description row missing id/text keys ({sorted(row)[:8]}): {path}")
+        d = d.strip()
+        if d:
+            out[int(fid)] = d
+    if not out:
+        raise ValueError(f"no usable descriptions parsed from {path}")
+    return out
+
+
+def _find_i2552_descriptions(root: Path) -> Path | None:
+    """Artifact-presence probe for the #2552 reuse branch (bounded glob over the
+    committed ``eval_results/issue_2552*`` tree). Pod-side code never shells out
+    to ``task.py`` (CLAUDE.md), so task STATUS is unreadable here — the probe is
+    artifact existence + a strict-loader parse; each rejected candidate is
+    logged LOUD. The orchestrator's instrument-supersession check at P-B end
+    passes ``--der-desc-file`` explicitly when #2552 parks (the primary route);
+    this probe is the in-driver fallback."""
+    hits: list[Path] = []
+    for base in sorted(root.glob("eval_results/issue_2552*")):
+        for pat in ("**/*descri*.json", "**/*descri*.jsonl", "**/*label*.json", "**/*label*.jsonl"):
+            hits.extend(p for p in base.glob(pat) if p.is_file())
+    for p in sorted(set(hits)):
+        try:
+            d = _load_descriptions(p)
+        except (ValueError, OSError, json.JSONDecodeError) as e:
+            logger.warning("[der] #2552 candidate %s rejected: %s", p, e)
+            continue
+        logger.info("[der] #2552 descriptions found: %s (%d features)", p, len(d))
+        return p
+    return None
+
+
+def _parse_match_answer(text: str, n_way: int) -> int:
+    """Parse the judge's 10-way answer -> 0-based candidate index. Raises
+    ValueError on anything malformed / out of range (the raise routes the row
+    to ``error=True`` -> DROPPED with counts, never coerced)."""
+    m = re.search(r'\{[^{}]*"answer"\s*:\s*"([A-Za-z])"[^{}]*\}', str(text))
+    if not m:
+        raise ValueError('no {"answer": "<letter>"} JSON object found')
+    idx = ord(m.group(1).upper()) - ord("A")
+    if not (0 <= idx < int(n_way)):
+        raise ValueError(f"answer letter out of range for {n_way}-way: {m.group(1)!r}")
+    return idx
+
+
+def _parse_description(text: str) -> str:
+    """Parse an own-round describe reply -> one whitespace-normalized sentence.
+    Raises ValueError on degenerate lengths (drop-never-coerce)."""
+    d = " ".join(str(text).split()).strip()
+    if not (3 <= len(d) <= 600):
+        raise ValueError(f"description length {len(d)} outside [3, 600]")
+    return d
+
+
+def _der_match_prompt(target: list[str], candidates: list[list[str]]) -> str:
+    """Compose one 10-way matching packet: DESCRIPTIONS ONLY + neutral
+    instructions — never corpus text, file paths, or project context (the
+    plan's rule-28 scoping: judged objects are SAE feature descriptions)."""
+    letters = [chr(ord("A") + i) for i in range(len(candidates))]
+    lines = [
+        "Below is a TARGET list of feature descriptions predicted for one text sample,",
+        f"followed by {len(candidates)} CANDIDATE lists ({letters[0]}-{letters[-1]}), each the"
+        " observed feature",
+        "descriptions of one sample. Exactly ONE candidate comes from the same sample",
+        "as the target. Pick it.",
+        "",
+        "TARGET:",
+        *[f"- {d}" for d in target],
+    ]
+    for letter, cand in zip(letters, candidates, strict=True):
+        lines += ["", f"CANDIDATE {letter}:", *[f"- {d}" for d in cand]]
+    lines += ["", 'Reply with ONLY a JSON object: {"answer": "<letter>"}.']
+    return "\n".join(lines)
+
+
+def _der_describe_prompt(evidence: list[str]) -> str:
+    """Compose one own-round describe packet from caller-supplied evidence
+    strings (each capped; count capped — prompt-size bound)."""
+    caps = [str(e)[:DER_EVIDENCE_STR_CAP] for e in evidence[:DER_EVIDENCE_MAX_STRS]]
+    lines = [
+        "You are labeling one feature of a sparse autoencoder. Below are text",
+        "excerpts where this feature is most active. Reply with ONE short sentence",
+        "(at most 30 words) describing the common content or style the excerpts",
+        "share. No preamble.",
+        "",
+        *[f"EXCERPT {i + 1}: {e}" for i, e in enumerate(caps)],
+    ]
+    return "\n".join(lines)
+
+
+def _der_candidate_features(pred: np.ndarray, true: np.ndarray, k: int) -> np.ndarray:
+    """Own-round describe PRIORITY over union columns: holdout firing count +
+    top-k-predicted membership count, best first (deterministic — stable sort,
+    ties by column index)."""
+    activity = (np.asarray(true) > 0).sum(0).astype(np.int64)
+    kk = min(int(k), pred.shape[1])
+    top = np.argpartition(np.asarray(pred), -kk, axis=1)[:, -kk:]
+    topk_counts = np.bincount(top.ravel(), minlength=pred.shape[1]).astype(np.int64)
+    return np.argsort(-(activity + topk_counts), kind="stable")
+
+
+def _build_matching_items(
+    pred: np.ndarray,
+    true: np.ndarray,
+    feat_ids: np.ndarray,
+    desc: dict[int, str],
+    *,
+    n_items: int,
+    feats_per_list: int,
+    n_way: int = DER_NWAY,
+    rng: np.random.Generator,
+    min_described: int = DER_MIN_DESCRIBED,
+) -> tuple[list[dict], dict]:
+    """Der-protocol 10-way matching items over holdout rows.
+
+    Per sampled row: TARGET = descriptions of the top-``feats_per_list``
+    PREDICTED features (by predicted activation, described features only);
+    CANDIDATES = ``n_way`` TRUE-list description sets (top active described
+    features) — one from the same row at a random position + ``n_way - 1``
+    distractor rows. Rows with fewer than ``min_described`` active described
+    features are ineligible (counted). Deterministic under the seeded ``rng``.
+    Returns ``(items, stats)``; raises when coverage/eligibility cannot
+    support ``n_items`` (fail loud, never a silent shrink).
+    """
+    feat_ids = np.asarray(feat_ids, np.int64)
+    desc_ids = np.fromiter((int(k) for k in desc), dtype=np.int64, count=len(desc))
+    described = np.isin(feat_ids, desc_ids)
+    if int(described.sum()) < max(int(feats_per_list), min_described):
+        raise ValueError(
+            f"only {int(described.sum())} union features have descriptions — "
+            f"cannot build {feats_per_list}-description lists"
+        )
+    cols = np.flatnonzero(described)
+    pred_d = np.asarray(pred[:, cols], np.float32)
+    true_d = np.asarray(true[:, cols], np.float32)
+    eligible = np.flatnonzero((true_d > 0).sum(1) >= int(min_described))
+    if len(eligible) < int(n_items) + int(n_way) - 1:
+        raise ValueError(
+            f"only {len(eligible)} eligible holdout rows (need {n_items} items "
+            f"+ {n_way - 1} distractors) — lower --der-items or widen coverage"
+        )
+    sampled = np.sort(rng.choice(eligible, size=int(n_items), replace=False))
+    k = int(feats_per_list)
+
+    def _top_desc(vec: np.ndarray, active_only: bool) -> list[str]:
+        v = np.where(vec > 0, vec, -np.inf) if active_only else vec.astype(np.float64)
+        kk = min(k, int(np.isfinite(v).sum()))
+        top = np.argpartition(v, -kk)[-kk:]
+        top = top[np.argsort(v[top])[::-1]]
+        return [desc[int(feat_ids[cols[c]])] for c in top]
+
+    # coverage of the RAW predicted top-k (undescribed-inclusive denominator)
+    kk_raw = min(k, pred.shape[1])
+    raw_top = np.argpartition(np.asarray(pred[sampled], np.float32), -kk_raw, axis=1)[:, -kk_raw:]
+    pred_topk_described_frac = float(described[raw_top].mean())
+    items: list[dict] = []
+    for r in sampled:
+        others = eligible[eligible != r]
+        distract = rng.choice(others, size=int(n_way) - 1, replace=False)
+        answer_pos = int(rng.integers(0, int(n_way)))
+        cand_rows = list(distract)
+        cand_rows.insert(answer_pos, int(r))
+        items.append(
+            {
+                "item_id": f"match_r{int(r)}",
+                "row": int(r),
+                "target": _top_desc(pred_d[r], active_only=False),
+                "candidates": [_top_desc(true_d[int(rr)], active_only=True) for rr in cand_rows],
+                "answer_pos": answer_pos,
+            }
+        )
+    stats = {
+        "n_union": int(len(feat_ids)),
+        "n_described_in_union": int(described.sum()),
+        "union_coverage": float(described.mean()),
+        "pred_topk_described_frac": pred_topk_described_frac,
+        "n_eligible_rows": int(len(eligible)),
+        "n_rows_skipped_undersize": int(true.shape[0] - len(eligible)),
+        "feats_per_list": k,
+    }
+    return items, stats
+
+
+def _dispatch_judge(
+    payloads: dict[str, str],
+    *,
+    model: str,
+    max_tokens: int,
+    cache_dir: Path,
+    parse,
+    dispatch_fn=None,
+    max_redrives: int = 3,
+):
+    """Sync-path judge dispatch through the multi-org dispatcher (plan §4 leg 4
+    step 5: ``api_dispatch.py``, sync path — under the Batch-API threshold).
+
+    ``parse`` raises on malformed returns -> the row lands ``error=True`` and is
+    DROPPED by the caller with counts (never coerced). Transport / rate-limit
+    exhaustion rows are RE-DRIVEN up to ``max_redrives`` full rounds (successes
+    persist in the content-hash cache, so a re-drive re-dispatches only the
+    failed rows); rows STILL transport-failed after that RAISE — a transport
+    failure is never persisted as a drop. ``dispatch_fn`` is a test seam
+    (default: the real ``api_dispatch.dispatch_calls``)."""
+    import asyncio
+
+    from explore_persona_space.llm import api_dispatch as AD
+
+    if dispatch_fn is None:
+        dispatch_fn = AD.dispatch_calls
+
+    def build_request(item) -> dict:
+        return {
+            "model": model,
+            "max_tokens": int(max_tokens),
+            "temperature": 0.0,
+            "messages": [{"role": "user", "content": item.payload}],
+        }
+
+    pending = [AD.DispatchItem(item_id=k, payload=v) for k, v in sorted(payloads.items())]
+    results: dict = {}
+    for rnd in range(int(max_redrives) + 1):
+        got = asyncio.run(
+            dispatch_fn(
+                pending,
+                model=model,
+                build_request=build_request,
+                parse_response=parse,
+                force_path="sync",
+                cache_dir=Path(cache_dir),
+            )
+        )
+        results.update(got)
+        pending = [
+            it
+            for it in pending
+            if results[it.item_id].category in (AD.RESULT_RATE_LIMITED, AD.RESULT_TRANSPORT)
+        ]
+        if not pending:
+            break
+        logger.warning(
+            "[der] %d transport/rate-limited rows -> re-drive %d/%d",
+            len(pending),
+            rnd + 1,
+            max_redrives,
+        )
+    if pending:
+        raise RuntimeError(
+            f"{len(pending)} judge rows still transport-failed after {max_redrives} re-drives — "
+            "transport failures are never persisted as drops (plan §4 leg 4 step 5)"
+        )
+    return results
+
+
+def _generate_descriptions(
+    cand_ids: list[int],
+    evidence: dict[int, list[str]],
+    *,
+    model: str,
+    cache_dir: Path,
+    max_calls: int,
+    dispatch_fn=None,
+) -> tuple[dict[int, str], dict]:
+    """Own-round auto-interp DESCRIBE stage (the #2552-unavailable fallback).
+
+    Dispatches at most ``max_calls`` describe packets for the highest-priority
+    candidate features that HAVE caller-supplied evidence; features without
+    evidence are counted, never guessed; malformed replies are DROPPED with
+    counts (the feature stays undescribed)."""
+    with_ev = [int(f) for f in cand_ids if evidence.get(int(f))]
+    take = with_ev[: max(int(max_calls), 0)]
+    stats = {
+        "n_candidates": len(cand_ids),
+        "n_with_evidence": len(with_ev),
+        "n_no_evidence": len(cand_ids) - len(with_ev),
+        "n_dispatched": len(take),
+        "dropped_by_category": {},
+    }
+    if not take:
+        stats["n_described"] = 0
+        return {}, stats
+    payloads = {f"desc_{fid}": _der_describe_prompt(evidence[fid]) for fid in take}
+    results = _dispatch_judge(
+        payloads,
+        model=model,
+        max_tokens=DER_MAX_TOKENS,
+        cache_dir=cache_dir,
+        parse=_parse_description,
+        dispatch_fn=dispatch_fn,
+    )
+    desc: dict[int, str] = {}
+    for fid in take:
+        res = results[f"desc_{fid}"]
+        if res.error:
+            cat = str(res.category)
+            stats["dropped_by_category"][cat] = stats["dropped_by_category"].get(cat, 0) + 1
+            continue
+        desc[fid] = str(res.result)
+    stats["n_described"] = len(desc)
+    return desc, stats
+
+
+def phase_der(args) -> None:
+    """Leg-4 step 5 tail: Der-protocol 10-way matching / coverage on the fitted
+    map's predicted feature lists (module docstring ``der-eval`` entry). Both
+    description branches + the runtime probe are implemented — neither is
+    hardcoded (the plan's instrument-supersession check fires at P-B end)."""
+    C.phase("der")
+    t24 = _t24_args(args)
+    out = args.out_root / "der"
+    out.mkdir(parents=True, exist_ok=True)
+    der_json = out / "der_eval.json"
+    items_json = out / "matching_items.json"
+    own_desc_json = out / "descriptions_own.json"
+    outputs = [der_json, items_json, own_desc_json]
+    judge_model = os.environ.get("JUDGE_MODEL", JUDGE_MODEL_DEFAULT)
+    budget = int(args.der_budget)
+    n_items_req = int(args.der_items)
+    regime, resume_ok = T24._enter_phase_regime(out, t24, "der_2569", stale_paths=outputs)
+    _check_local_regime(
+        out,
+        {
+            "items": n_items_req,
+            "feats_per_list": int(args.der_feats_per_list),
+            "n_way": int(DER_NWAY),
+            "budget": budget,
+            "seed": int(DER_SEED),
+            "judge_model": judge_model,
+            "desc_file": str(args.der_desc_file) if args.der_desc_file else None,
+            "phase": "der_2569",
+        },
+        wipe=outputs,
+        tag="der",
+    )
+    if resume_ok and der_json.exists():
+        _upload_leaf(args, [p for p in outputs if p.exists()], "der", resume_skip=True)
+        logger.info("[der] resume: outputs present under matching regime; skip")
+        return
+    leg4 = args.out_root / "leg4"
+    needed = {
+        "perfeature": leg4 / "perfeature_leg4.npz",
+        "metrics": leg4 / "feature_map_metrics.json",
+        "enc_meta": leg4 / "enc_meta.json",
+        "y_union": leg4 / "y_union.fp16.npy",
+        "pred_te": leg4 / "pred_te_union.fp16.npy",
+    }
+    for name, p in needed.items():
+        assert p.exists(), f"der-eval needs the feature-map outputs — run feature-map ({name}: {p})"
+    feat_ids = np.asarray(np.load(needed["perfeature"])["feat_ids"], np.int64)
+    n_fit, n_val, n_te = (int(v) for v in json.loads(needed["enc_meta"].read_text())["rows"])
+    y_union = np.load(needed["y_union"], mmap_mode="r")
+    y_te = np.asarray(y_union[n_fit + n_val :], np.float32)
+    assert y_te.shape[0] == n_te, (y_te.shape, n_te)
+    pred = np.asarray(np.load(needed["pred_te"], mmap_mode="r"), np.float32)
+    assert pred.shape == (n_te, len(feat_ids)), (pred.shape, n_te, len(feat_ids))
+
+    # ── description source: runtime probe -> reuse (#2552) | own bounded round ────
+    desc_stats: dict = {}
+    n_describe = 0
+    if args.der_desc_file:
+        source = {"mode": "reuse-explicit", "path": str(args.der_desc_file)}
+        desc = _load_descriptions(Path(args.der_desc_file))
+    else:
+        probe = _find_i2552_descriptions(PROJECT_ROOT)
+        if probe is not None:
+            source = {"mode": "reuse-probe", "path": str(probe)}
+            desc = _load_descriptions(probe)
+        else:
+            source = {"mode": "own-round", "path": None}
+            assert args.der_evidence_file, (
+                "no description source: #2552 has not banked judged descriptions "
+                "(reuse branch: pass --der-desc-file when it parks) and no "
+                "--der-evidence-file was given for the bounded own auto-interp "
+                "round (plan §4 leg 4 step 5 fallback)"
+            )
+            ev_raw = json.loads(Path(args.der_evidence_file).read_text(encoding="utf-8"))
+            assert isinstance(ev_raw, dict) and ev_raw, "--der-evidence-file must be a JSON dict"
+            evidence = {int(k): [str(s) for s in v] for k, v in ev_raw.items()}
+            max_desc = budget - n_items_req
+            assert max_desc >= DER_MIN_DESCRIBED, (
+                f"--der-budget {budget} leaves no describe headroom over "
+                f"--der-items {n_items_req} (own round needs describe calls)"
+            )
+            order = _der_candidate_features(pred, y_te, int(args.der_feats_per_list))
+            cand_ids = [int(feat_ids[c]) for c in order]
+            desc, desc_stats = _generate_descriptions(
+                cand_ids,
+                evidence,
+                model=judge_model,
+                cache_dir=out / "judge_cache",
+                max_calls=max_desc,
+            )
+            n_describe = int(desc_stats["n_dispatched"])
+            T24._write_json(
+                own_desc_json,
+                {"descriptions": {str(k): v for k, v in desc.items()}, "stats": desc_stats},
+                phase="der-describe",
+            )
+    logger.info("[der] description source: %s (%d features)", source["mode"], len(desc))
+
+    # ── matching wave (budget-gated BEFORE dispatch) ──────────────────────────────
+    rng = np.random.default_rng(DER_SEED)
+    items, item_stats = _build_matching_items(
+        pred,
+        y_te,
+        feat_ids,
+        desc,
+        n_items=n_items_req,
+        feats_per_list=int(args.der_feats_per_list),
+        n_way=DER_NWAY,
+        rng=rng,
+    )
+    total_calls = n_describe + len(items)
+    assert total_calls <= budget, (
+        f"judge budget exceeded: describe {n_describe} + match {len(items)} > cap {budget} "
+        "(plan §4 leg 4 step 5: <= 2,000 judge calls)"
+    )
+    T24._write_json(items_json, {"items": items, "stats": item_stats}, phase="der-items")
+    results = _dispatch_judge(
+        {it["item_id"]: _der_match_prompt(it["target"], it["candidates"]) for it in items},
+        model=judge_model,
+        max_tokens=DER_MAX_TOKENS,
+        cache_dir=out / "judge_cache",
+        parse=lambda text: _parse_match_answer(text, DER_NWAY),
+    )
+    answered = correct = 0
+    dropped: dict[str, int] = {}
+    for it in items:
+        res = results[it["item_id"]]
+        if res.error:
+            dropped[str(res.category)] = dropped.get(str(res.category), 0) + 1
+            continue
+        answered += 1
+        correct += int(int(res.result) == int(it["answer_pos"]))
+    doc = {
+        "judge": {
+            "model": judge_model,
+            "max_tokens": int(DER_MAX_TOKENS),
+            "temperature": 0.0,
+            "path": "sync via llm/api_dispatch (force_path=sync; under the Batch-API threshold)",
+        },
+        "description_source": source,
+        "describe_stage": desc_stats or {"note": "reuse branch — no describe calls"},
+        "coverage": item_stats,
+        "matching": {
+            "n_way": int(DER_NWAY),
+            "chance": 1.0 / DER_NWAY,
+            "n_items": len(items),
+            "n_answered": int(answered),
+            "n_correct": int(correct),
+            "accuracy": (float(correct) / answered) if answered else None,
+            "dropped_by_category": dropped,
+            "drop_policy": (
+                "malformed / refusal / out-of-range judge returns DROPPED (never "
+                "coerced), counts above; transport failures RE-DRIVEN, never "
+                "persisted as drops (a residual transport failure raises)"
+            ),
+        },
+        "budget": {"cap": budget, "describe_calls": n_describe, "matching_calls": len(items)},
+        "scoping": (
+            "judged objects are SAE feature descriptions only (plan §6 rule-28 "
+            "exemption); packets carry descriptions + neutral instructions"
+        ),
+        "n_te": int(n_te),
+        "regime_config_hash": regime["config_hash"],
+    }
+    T24._write_json(der_json, doc, phase="der")
+    _upload_leaf(args, [p for p in outputs if p.exists()], "der", resume_skip=False)
+    acc = doc["matching"]["accuracy"]
+    _sentinel(
+        "der-2569",
+        f"der-eval done (mode={source['mode']}, acc={acc}, answered={answered}/{len(items)}, "
+        f"coverage={item_stats['union_coverage']:.3f})",
+    )
+    logger.info("[der] done: %s", json.dumps(doc["matching"]))
+
+
+PHASE_ORDER = ("assemble", "moments", "curve", "sae-train", "feature-map", "mine", "der-eval")
 PHASES = {
     "assemble": phase_assemble,
     "moments": phase_moments,
+    "curve": phase_curve,
     "sae-train": phase_sae_train,
     "feature-map": phase_feature_map,
     "mine": phase_mine,
+    "der-eval": phase_der,
 }
 
 
@@ -2008,7 +2735,57 @@ def _parse_args(argv=None):
         "--manifest-dir",
         type=Path,
         default=None,
-        help="leg-8 override: local n1m sampling-manifest dir (else staged from HF)",
+        help="leg-8/curve override: local n1m sampling-manifest dir (else staged from HF)",
+    )
+    ap.add_argument(
+        "--curve-n-grid",
+        default=None,
+        help="curve: comma ints (default: the production verdict grid; smoke MUST "
+        "pass a small grid — nested_lmsys_splits fails loud on an undersized pool)",
+    )
+    ap.add_argument(
+        "--curve-eval-rows",
+        type=int,
+        default=5_000,
+        help="curve: fixed LMSYS verdict eval slice (mirrors GL.EVAL_ROWS_DEFAULT)",
+    )
+    ap.add_argument(
+        "--curve-val-rows",
+        type=int,
+        default=5_000,
+        help="curve: lambda-selection slice (mirrors GL.VAL_ROWS_DEFAULT)",
+    )
+    ap.add_argument(
+        "--der-desc-file",
+        type=Path,
+        default=None,
+        help="der-eval reuse branch: #2552 judged-descriptions artifact (the "
+        "orchestrator passes this when #2552 parks — instrument supersession)",
+    )
+    ap.add_argument(
+        "--der-evidence-file",
+        type=Path,
+        default=None,
+        help="der-eval own-round fallback: JSON {feat_id: [evidence strings]} for "
+        "the bounded describe stage (required only when no reuse source resolves)",
+    )
+    ap.add_argument(
+        "--der-items",
+        type=int,
+        default=DER_ITEMS_DEFAULT,
+        help="der-eval: 10-way matching items (rows); judge calls = items + describes",
+    )
+    ap.add_argument(
+        "--der-feats-per-list",
+        type=int,
+        default=DER_FEATS_PER_LIST_DEFAULT,
+        help="der-eval: descriptions per predicted/true list",
+    )
+    ap.add_argument(
+        "--der-budget",
+        type=int,
+        default=DER_BUDGET_DEFAULT,
+        help="der-eval: HARD cap on total judge calls (plan: 2,000)",
     )
     ap.add_argument(
         "--import-check",
@@ -2048,6 +2825,19 @@ def main() -> None:
 
         assert callable(_N1G._download_manifest) and callable(_GL.widen_grid)
         assert isinstance(_GL.LAMBDA_GRID_27, tuple) and len(_GL.LAMBDA_GRID_27) == 27
+        # curve + der-eval deferred imports (this unit): the gateladder curve core
+        # + the multi-org judge dispatcher (sync path) + the theory root-finder.
+        from scipy.optimize import brentq  # noqa: F401  (GL.kappa_self_consistent)
+
+        from explore_persona_space.llm.api_dispatch import (  # noqa: F401
+            RESULT_RATE_LIMITED,
+            RESULT_TRANSPORT,
+            DispatchItem,
+            dispatch_calls,
+        )
+
+        assert callable(_GL.curve_core) and callable(_GL.fit_point)
+        assert callable(_GL.nested_lmsys_splits) and callable(_GL.load_companion_points)
         print("[import-check] OK", flush=True)
         raise SystemExit(0)
     if args.device == "auto":

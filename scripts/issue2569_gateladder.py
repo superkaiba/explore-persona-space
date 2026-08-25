@@ -826,6 +826,7 @@ def fit_point(
     grid: tuple[float, ...] = LAMBDA_GRID_27,
     max_widenings: int = MAX_WIDENINGS,
     knn_ks: tuple[int, ...] = (1, 5, 10),
+    extra_eval: dict[str, np.ndarray] | None = None,
 ) -> dict:
     """One verdict refit: val-lambda-selected primal ridge + widen-on-edge (C4).
 
@@ -835,6 +836,13 @@ def fit_point(
     ``max_widenings`` the point FAILS LOUD (never reports an edge value).
     Reports test pooled R2, the identity+bias baseline, and kNN retrieval
     (chance stated) per the mapping-baselines rule (§6, B4).
+
+    ``extra_eval`` (B4 comparability companions): named EXTRA eval index sets —
+    e.g. the sha-pinned pass-B 400-val/1,000-test rows — scored per point from
+    the SAME fit pass (indices are concatenated into the eval slice fed to
+    ``fit_ridge_primal``, which never uses them for selection). Reported under
+    ``extra_eval_r2`` as off-distribution companions; the VERDICT ``test_r2``
+    is computed on ``te`` alone, byte-identical to the no-extra call.
     """
     import torch
 
@@ -846,10 +854,12 @@ def fit_point(
     tr = np.asarray(tr, dtype=np.int64)
     val = np.asarray(val, dtype=np.int64)
     te = np.asarray(te, dtype=np.int64)
+    extras = {k: np.asarray(v, dtype=np.int64) for k, v in (extra_eval or {}).items()}
+    te_all = np.concatenate([te, *extras.values()]) if extras else te
     g = np.sort(np.asarray(grid, dtype=np.float64))
     n_widen = 0
     while True:
-        pred_te, meta = fit_ridge_primal(X, Y, tr, val, te, list(g), dev)
+        pred_all, meta = fit_ridge_primal(X, Y, tr, val, te_all, list(g), dev)
         edge = meta.get("lambda_grid_edge")
         if edge is None:
             break
@@ -867,8 +877,10 @@ def fit_point(
             g[0],
             g[-1],
         )
+    pred_all = np.asarray(pred_all)
+    pred_te = pred_all[: len(te)]
     y_te = np.asarray(Y[te], dtype=np.float64)
-    return {
+    out = {
         "n_train": int(len(tr)),
         "test_r2": float(pooled_r2(pred_te, y_te)),
         "selected_lambda": float(meta["selected_lambda"]),
@@ -883,6 +895,18 @@ def fit_point(
         ),
         "knn_retrieval": knn_retrieval(pred_te, y_te, ks=knn_ks),
     }
+    if extras:
+        lo = len(te)
+        r2s: dict[str, dict] = {}
+        for name, idx in extras.items():
+            hi = lo + len(idx)
+            r2s[name] = {
+                "r2": float(pooled_r2(pred_all[lo:hi], np.asarray(Y[idx], dtype=np.float64))),
+                "n_rows": int(len(idx)),
+            }
+            lo = hi
+        out["extra_eval_r2"] = r2s
+    return out
 
 
 def pooled_moments(X, Y, rows: np.ndarray, *, chunk: int = 65_536, dev=None) -> dict:
@@ -1337,27 +1361,44 @@ def _load_row_meta(path: Path) -> tuple[np.ndarray, np.ndarray]:
     return corpus, conv
 
 
-def run_curve(args) -> int:
-    """Learning-curve driver: assembled store -> learning_curve.json (B4)."""
-    import torch
+def curve_core(
+    X,
+    Y,
+    corpus: np.ndarray,
+    conv: np.ndarray,
+    *,
+    n_grid: tuple[int, ...] = N_GRID_VERDICT,
+    eval_rows: int = EVAL_ROWS_DEFAULT,
+    val_rows: int = VAL_ROWS_DEFAULT,
+    dev=None,
+    layer: int = LAYER_DEFAULT,
+    lmsys_tag: str = "lmsys",
+    skip_companions: bool = False,
+    smoke: bool = False,
+    extra_eval: dict[str, np.ndarray] | None = None,
+    repo_root: Path = REPO_ROOT,
+) -> dict:
+    """B4 verdict series core: splits -> refits (+theory) -> parity -> H2b verdict.
 
-    X = _load_array(Path(args.x))
-    Y = _load_array(Path(args.y))
-    corpus, conv = _load_row_meta(Path(args.row_meta))
-    if not (X.shape[0] == Y.shape[0] == corpus.shape[0]):
+    Pure in-memory form of the ``curve`` CLI driver (the rowbattery ``curve``
+    phase calls this directly with memmapped store rows + re-measured corpus
+    tags). ``extra_eval`` threads to EVERY ``fit_point`` (the pass-B pinned
+    val/test comparability companions, plan §4 leg 2 step 3); returns the full
+    ``learning_curve.json`` document (caller writes it).
+    """
+    corpus = np.asarray(corpus)
+    conv = np.asarray(conv)
+    if not (X.shape[0] == Y.shape[0] == corpus.shape[0] == conv.shape[0]):
         raise ValueError(f"row mismatch: X {X.shape}, Y {Y.shape}, meta {corpus.shape}")
-    n_grid = tuple(int(v) for v in args.n_grid.split(",")) if args.n_grid else N_GRID_VERDICT
-    eval_rows = int(args.eval_rows)
-    val_rows = int(args.val_rows)
-    dev = torch.device(args.dev) if args.dev else None
+    n_grid = tuple(int(v) for v in n_grid)
     splits = nested_lmsys_splits(
         corpus,
         conv,
         n_grid=n_grid,
-        eval_rows=eval_rows,
-        val_rows=val_rows,
+        eval_rows=int(eval_rows),
+        val_rows=int(val_rows),
         seed=CURVE_SEED,
-        lmsys_tag=args.lmsys_tag,
+        lmsys_tag=lmsys_tag,
     )
     logger.info(
         "[curve] lmsys rows=%d pool=%d eval=%d val=%d",
@@ -1371,10 +1412,12 @@ def run_curve(args) -> int:
     verdict_points: list[dict] = []
     for n in n_grid:
         tr = splits["tr_by_n"][n]
-        pt = fit_point(X, Y, tr, splits["val_idx"], splits["te_idx"], dev=dev)
+        pt = fit_point(
+            X, Y, tr, splits["val_idx"], splits["te_idx"], dev=dev, extra_eval=extra_eval
+        )
         pt.update(
             label=f"verdict_n{n}",
-            layer=int(args.layer),
+            layer=int(layer),
             train_corpus="lmsys",
             eval_split_sha=splits["eval_split_sha"],
             lambda_selection=LAMBDA_SELECTION_PROTOCOL,
@@ -1401,7 +1444,7 @@ def run_curve(args) -> int:
     passing = [p for p, pp in zip(verdict_points, parity["per_point"], strict=True) if pp["pass"]]
     excluded = [pp for pp in parity["per_point"] if not pp["pass"]]
     h2b = mean_abs_delta_r2(passing)
-    companions = [] if args.skip_companions else load_companion_points(REPO_ROOT)
+    companions = [] if skip_companions else load_companion_points(repo_root)
     companion_parity = (
         fit_metadata_parity_check(companions, reference=parity["reference"]) if companions else None
     )
@@ -1409,14 +1452,14 @@ def run_curve(args) -> int:
         **_meta(),
         "regime": {
             "n_grid": list(n_grid),
-            "eval_rows": eval_rows,
-            "val_rows": val_rows,
+            "eval_rows": int(eval_rows),
+            "val_rows": int(val_rows),
             "seed": CURVE_SEED,
-            "layer": int(args.layer),
+            "layer": int(layer),
             "lambda_grid": [float(LAMBDA_GRID_27[0]), float(LAMBDA_GRID_27[-1]), 27],
             "lambda_selection": LAMBDA_SELECTION_PROTOCOL,
-            "lmsys_tag": args.lmsys_tag,
-            "smoke": bool(args.smoke),
+            "lmsys_tag": lmsys_tag,
+            "smoke": bool(smoke),
         },
         "splits": {k: v for k, v in splits.items() if k not in ("tr_by_n", "val_idx", "te_idx")},
         "moments": {
@@ -1434,6 +1477,41 @@ def run_curve(args) -> int:
         "companions_off_recipe": companions,
         "companion_parity_vs_verdict_reference": companion_parity,
     }
+    if extra_eval:
+        out["extra_eval_slices"] = {
+            name: {
+                "n_rows": int(len(np.asarray(idx))),
+                "note": "sha-pinned pass-B comparability companion — off-distribution "
+                "scoring, NEVER a verdict input (B4)",
+            }
+            for name, idx in extra_eval.items()
+        }
+    return out
+
+
+def run_curve(args) -> int:
+    """Learning-curve CLI driver: assembled store files -> learning_curve.json (B4)."""
+    import torch
+
+    X = _load_array(Path(args.x))
+    Y = _load_array(Path(args.y))
+    corpus, conv = _load_row_meta(Path(args.row_meta))
+    n_grid = tuple(int(v) for v in args.n_grid.split(",")) if args.n_grid else N_GRID_VERDICT
+    dev = torch.device(args.dev) if args.dev else None
+    out = curve_core(
+        X,
+        Y,
+        corpus,
+        conv,
+        n_grid=n_grid,
+        eval_rows=int(args.eval_rows),
+        val_rows=int(args.val_rows),
+        dev=dev,
+        layer=int(args.layer),
+        lmsys_tag=args.lmsys_tag,
+        skip_companions=bool(args.skip_companions),
+        smoke=bool(args.smoke),
+    )
     out_dir = Path(args.out)
     _atomic_json(out_dir / "learning_curve.json", out)
     logger.info("[curve] wrote %s", out_dir / "learning_curve.json")
