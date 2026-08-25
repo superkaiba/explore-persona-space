@@ -35,10 +35,29 @@ marker was ever posted for the round. Two traps and their fixes:
    re-raises them or flags ledger inconsistency.
 
 **How to apply:** any revision-round compose whose brief cites a reconciler
-verdict — FIRST probe events.jsonl for a round-matched
-`epm:code-review-reconciled` marker (round + follow-up label in the note
-head); on a miss, fall back to the stage-dispatch note + ledger-write
-cluster and inline those with provenance. Related:
-[[revision-round compose recipe (round 2+)]],
+verdict — FIRST probe events.jsonl for a round-matched reconcile marker
+(round + follow-up label in the note head); on a miss, fall back to the
+stage-dispatch note + ledger-write cluster and inline those with provenance.
+Related: [[revision-round compose recipe (round 2+)]],
 [[concern-discharge-round-severity-fence]] (the stale-severity caveat's
 origin), [[reconstructed-marker compose]].
+
+**Kind-name variance (#1901 r5, 2026-08-25):** the round-4 reconcile WAS
+posted as a marker, but under kind `epm:review-reconcile` (head sentinel
+`<!-- epm:review-reconcile v4 -->`), NOT `epm:code-review-reconciled` (the
+kind the same task used on Aug 23). Grep BOTH kinds (plus the stage-dispatch
+note fallback) before concluding no record exists. Same round's other
+posting gaps, all orchestrator-side (flag in the return, never fix): the r4
+Codex FAIL verdict lived only in `/tmp/codex-code-reviewer-1901-r4-output.md`
+(job-completed marker present, no `epm:code-review-codex` row), and the v11
+impl marker note head carried NO version sentinel (top-level version field
+only) — hand that to the twin as an out-of-scope composer observation so it
+doesn't burn the verdict on it. The r5 compose itself validated the TIGHT
+binary-enum micro-scoped discharge shape: reconcile record inlined as the
+acceptance contract, per-discharge VERIFIED-DISCHARGED|NOT-DISCHARGED status
+lines (D1 BLOCKER not-discharged ⇒ FAIL `substantive`; D2 fence
+genuinely-absent-again ⇒ FAIL `marker-shape` per the reconcile's
+workflow.yaml:1302 ruling; present-but-imperfect ⇒ Minor, never FAIL),
+new-diff defects at the ordinary bar, everything else fenced out, ordinary
+green-claim duty translated to static-trace + optional single-nodeid run
+with the `STATIC (env unavailable)` fallback.

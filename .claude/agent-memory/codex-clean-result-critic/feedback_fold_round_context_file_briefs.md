@@ -67,3 +67,21 @@ Two more fold-round compose patterns (#1901 boundary fold, 2026-08-23):
   (e.g. a footer advisory sentence discussing the same issue without the
   kebab-case id) so Codex adjudicates acknowledgement-vs-id under the
   lens rules — never pre-judge the disposition in the prompt.
+
+Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
+2026-08-25):
+- **Prior-CYCLE codex markers do not advance a new cycle's head
+  sentinel**: when the codex kind's history carries v1/v2 head sentinels
+  from an EARLIER fold cycle, a new fold cycle's first review is still
+  head-sentinel round 1 — "own-kind history" counts only WITHIN the
+  current fold cycle (the Claude critic's fold rounds restart at 1 the
+  same way; observed at the #1901 generic-boundary fold). The posted
+  top-level version stays auto max+1 on the kind (v3 there) — state the
+  head-vs-posted offset in the Step 5 return.
+- **User-directed body inline**: when the brief orders the body inlined,
+  wrap the verbatim copy in its own `---BEGIN/END ...---` span so the
+  Step-4 awk strips it from the no-residue greps (captured content, not
+  composer instruction text) and label it the review target of record
+  (status-move-proof). First grep every inline source for
+  `^---(BEGIN|END) .*---$` collisions — a matching line inside
+  SPEC/lens/body would corrupt the envelope strip.
