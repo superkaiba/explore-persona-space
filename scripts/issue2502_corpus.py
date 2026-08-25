@@ -777,13 +777,20 @@ def _stage_fingerprint(
     construction (M2(c) fixed a fallback fingerprint that dropped the recipe
     keys).
     """
+    # data_files enters the fingerprint ONLY when set: a conditional key keeps
+    # every pre-round-9 train-source fingerprint BYTE-IDENTICAL (same key set,
+    # same 'train' value), so a reused out-dir RESUMES the crashed run's
+    # already-complete pools (wildchat/lmsys/hh/itw, ~45k rows of streaming)
+    # and restages exactly the sources whose (config, split, data_files) spec
+    # round 9 changed. A later None->set flip on a source still restages it
+    # (the key set changes for THAT source only — the desired behavior).
+    extra = {} if spec.data_files_template is None else {"data_files": spec.data_files_template}
     return CS._fingerprint(
         ds=dataset_id,
         revision=revision,
         config=config,
         split=split,
         data_dir=spec.data_dir,
-        data_files=spec.data_files_template,
         filters=KEEP_FILTERS_VERSION,
         token_budget=(token_filter.budget_tokens if token_filter else None),
         tokenizers=(list(token_filter.tokenizer_ids) if token_filter else None),
@@ -791,6 +798,7 @@ def _stage_fingerprint(
         keep_cap=keep_cap,
         stream_cap=stream_cap,
         fallback=fallback,
+        **extra,
     )
 
 
