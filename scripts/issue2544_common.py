@@ -361,11 +361,14 @@ class UnitQueue:
         On resume: the existing state must hold the SAME unit-name set and,
         per unit, the SAME init-time fingerprint — any mismatch RAISES with a
         field diff (the #1333 refusal shape; fresh --out-root or a deliberate
-        queue wipe are the remedies).
+        queue wipe are the remedies). On resume this ALSO reclaims stale
+        RUNNING claims whose owner is provably dead (a SIGKILL/OOM-killed
+        worker must never wedge the phase — a relaunch recovers).
         """
         names = [u["unit"] for u in units]
         if len(set(names)) != len(names):
             raise ValueError("duplicate unit names in queue init")
+        fresh = False
         with self._locked() as h:
             if h["state"] is None:
                 h["state"] = {
@@ -377,26 +380,32 @@ class UnitQueue:
                     "reaped": [],
                 }
                 h["dirty"] = True
-                return
-            st = h["state"]
-            if set(st["units"]) != set(names):
-                raise RuntimeError(
-                    f"resume REFUSED for queue {self.phase}: unit-name set changed.\n"
-                    f"  missing now: {sorted(set(st['units']) - set(names))}\n"
-                    f"  new now:     {sorted(set(names) - set(st['units']))}\n"
-                    "Use a fresh --out-root (per-leg out-roots) or wipe the queue "
-                    f"file deliberately: {self.path}"
-                )
-            for u in units:
-                prior = st["units"][u["unit"]].get("fingerprint")
-                if prior != u["fingerprint"]:
-                    diff = fingerprint_diff(prior or {}, u["fingerprint"])
+                fresh = True
+            else:
+                st = h["state"]
+                if set(st["units"]) != set(names):
                     raise RuntimeError(
-                        f"resume REFUSED for unit {u['unit']}: fingerprint mismatch "
-                        f"(M2).\n  " + "\n  ".join(diff) + "\n"
-                        "Use a fresh --out-root or wipe the queue file deliberately: "
-                        f"{self.path}"
+                        f"resume REFUSED for queue {self.phase}: unit-name set changed.\n"
+                        f"  missing now: {sorted(set(st['units']) - set(names))}\n"
+                        f"  new now:     {sorted(set(names) - set(st['units']))}\n"
+                        "Use a fresh --out-root (per-leg out-roots) or wipe the queue "
+                        f"file deliberately: {self.path}"
                     )
+                for u in units:
+                    prior = st["units"][u["unit"]].get("fingerprint")
+                    if prior != u["fingerprint"]:
+                        diff = fingerprint_diff(prior or {}, u["fingerprint"])
+                        raise RuntimeError(
+                            f"resume REFUSED for unit {u['unit']}: fingerprint mismatch "
+                            f"(M2).\n  " + "\n  ".join(diff) + "\n"
+                            "Use a fresh --out-root or wipe the queue file deliberately: "
+                            f"{self.path}"
+                        )
+        if not fresh:
+            # Relaunch recovery (blocker queue-stale-running): a prior worker
+            # SIGKILL'd/OOM-killed mid-unit left its claim at status=running;
+            # without a reclaim the queue reads any_running()=True forever.
+            self.reclaim_stale()
 
     def _runnable(self, st: dict) -> list[str]:
         units = st["units"]
@@ -468,6 +477,11 @@ class UnitQueue:
             u["status"] = "running"
             u["worker"] = worker
             u["claimed_ts"] = time.time()
+            # Owner identity for stale-claim reclaim (claimed_ts lease): the
+            # claiming process IS the worker, so pid/host recorded here are
+            # positively probeable by reclaim_stale.
+            u["worker_pid"] = os.getpid()
+            u["worker_host"] = os.uname().nodename
             h["dirty"] = True
             return dict(u)
 
@@ -480,6 +494,111 @@ class UnitQueue:
             u["info"] = info or {}
             u["done_ts"] = time.time()
             h["dirty"] = True
+
+    @staticmethod
+    def _owner_liveness(u: dict[str, Any]) -> tuple[str, str]:
+        """('alive'|'dead'|'unknown', detail) for a RUNNING claim's owner.
+
+        Positive-evidence probe (same host only): /proc/<pid> present AND its
+        cmdline names this driver family — a pid reused by an unrelated
+        process reads as dead (the cmdline identity check). A cross-host or
+        pid-less claim is 'unknown' (the claimed_ts lease governs those)."""
+        pid = u.get("worker_pid")
+        host = u.get("worker_host")
+        if pid is None or host is None:
+            return "unknown", "claim predates pid/host recording"
+        if host != os.uname().nodename:
+            return "unknown", f"cross-host claim (owner host {host})"
+        proc = Path(f"/proc/{int(pid)}")
+        if not proc.exists():
+            return "dead", f"owner pid {pid} gone on {host}"
+        try:
+            cmdline = (proc / "cmdline").read_bytes()
+        except OSError:
+            return "dead", f"owner pid {pid} exited mid-probe"
+        if b"issue2544" not in cmdline:
+            return "dead", f"owner pid {pid} reused by an unrelated process"
+        return "alive", f"owner pid {pid} live"
+
+    def reclaim_stale(self) -> list[str]:
+        """Reclaim RUNNING units whose owner is provably dead (M1; blocker
+        queue-stale-running): status back to pending so a live worker — or a
+        relaunch — re-runs them instead of the phase wedging on a phantom
+        claim. Owner-dead = the same-host positive pid/cmdline probe above; a
+        cross-host / pid-less claim falls back to the hard claimed_ts lease
+        ``EPM_ISSUE2544_CLAIM_LEASE_S`` (default 14400 s — sized above the
+        longest healthy unit wall; ``0`` disables the lease arm). A provably
+        LIVE owner is never reclaimed regardless of lease age. Returns the
+        reclaimed unit names; an audit trail rides each unit's ``reclaims``."""
+        lease_s = float(os.environ.get("EPM_ISSUE2544_CLAIM_LEASE_S", "14400"))
+        with self._locked() as h:
+            st = h["state"]
+            if st is None:
+                return []
+            out: list[str] = []
+            now = time.time()
+            for n in st["unit_order"]:
+                u = st["units"][n]
+                if u["status"] != "running":
+                    continue
+                verdict, detail = self._owner_liveness(u)
+                if verdict == "alive":
+                    continue
+                if verdict == "unknown":
+                    age = now - u.get("claimed_ts", now)
+                    if not (lease_s > 0 and age > lease_s):
+                        continue
+                    detail = f"{detail}; claim lease expired ({age:.0f}s > {lease_s:.0f}s)"
+                print(f"[queue:{self.phase}] RECLAIM stale claim {n}: {detail}", flush=True)
+                u.setdefault("reclaims", []).append(
+                    {
+                        "from_worker": u.get("worker"),
+                        "from_pid": u.get("worker_pid"),
+                        "reason": detail,
+                        "ts": now,
+                    }
+                )
+                u["status"] = "pending"
+                u["worker"] = None
+                h["dirty"] = True
+                out.append(n)
+            return out
+
+    def revalidate_done(self, check) -> list[str]:
+        """Re-validate DONE units against on-disk consumed-artifact identity
+        (M2 hash-once; blocker capture-rollout-fingerprint). ``check`` maps a
+        unit-state dict -> None (valid) or a reason string; a reason resets
+        the unit to pending (worker/info cleared) so it re-runs — a done unit
+        whose consumed artifact changed on disk must never vouch. Returns the
+        invalidated unit names; an audit trail rides ``invalidations``."""
+        with self._locked() as h:
+            st = h["state"]
+            if st is None:
+                raise RuntimeError(f"queue {self.phase} not initialized — run --init first")
+            invalidated: list[str] = []
+            n_done = 0
+            for n in st["unit_order"]:
+                u = st["units"][n]
+                if u["status"] != "done":
+                    continue
+                n_done += 1
+                reason = check(u)
+                if reason is None:
+                    continue
+                print(f"[queue:{self.phase}] INVALIDATE done unit {n}: {reason}", flush=True)
+                u.setdefault("invalidations", []).append({"reason": reason, "ts": time.time()})
+                u["status"] = "pending"
+                u["worker"] = None
+                u.pop("info", None)
+                u.pop("done_ts", None)
+                invalidated.append(n)
+                h["dirty"] = True
+            print(
+                f"[queue:{self.phase}] revalidate_done: {n_done} done unit(s) checked, "
+                f"{len(invalidated)} invalidated",
+                flush=True,
+            )
+            return invalidated
 
     def take_reapable(self) -> list[str]:
         """Admitted rungs whose unit set has drained — handed out ONCE."""
@@ -514,6 +633,52 @@ class UnitQueue:
     def snapshot(self) -> dict[str, Any]:
         with self._locked() as h:
             return json.loads(json.dumps(h["state"]))
+
+
+# ── plan §9:345 out-root headroom floors ─────────────────────────────────────
+# Recalibrated to the implemented K=4 interleaving (blocker
+# headroom-floors-vs-plan-s9, replacing the inherited 2.5 GB x N_units formula
+# and the 24 GB fits floor): pass-phase preambles (P1/P2+P3a/P3b) assert
+# >= ~100 GB WRITABLE (plan §9:345 — high-water ~94 GB vs the ~130 GB RunPod
+# MooseFS per-pod quota); fit-phase preambles (P4a/P4b) assert >= 40 GB
+# (~1.5x the realized ~26 GB worst K-resident staging wave — the reconciler
+# recalibration superseding the plan's 20 GB fit floor UPWARD). The floor is
+# probed as WRITABLE bytes via the fallocate canary AT THE FLOOR SIZE: on
+# MooseFS the statvfs free is share-level (TB) and vacuous against the
+# per-pod quota, so the fallocate probe is the binding check there (plan
+# §9:345 "fallocate probe"; the same assert positively probes the fellows
+# lane). assert_out_root_headroom sweeps stale probe survivors at entry
+# (#2346), so an interrupted floor-size probe self-heals.
+PASS_PHASE_HEADROOM_GB = 100.0
+FITS_PHASE_HEADROOM_GB = 40.0
+SMOKE_HEADROOM_GB = 5.0
+
+
+def headroom_floor_gate(out_root: Path, phase_kind: str, *, smoke: bool) -> None:
+    """Assert the plan §9:345 out-root floor for ``phase_kind`` ('pass'|'fits').
+
+    statvfs free >= floor at the RESOLVED filesystem (df -P semantics) PLUS a
+    floor-size posix_fallocate canary (writable-bytes proof — the only check
+    MooseFS quota exposes). Under --smoke the floor downgrades to
+    ``SMOKE_HEADROOM_GB`` with a logged line (gate-calibration parity: a
+    production-scale floor on the tiny smoke slice measures the host, not the
+    run; the gate COMPUTATION is identical)."""
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    floor = {"pass": PASS_PHASE_HEADROOM_GB, "fits": FITS_PHASE_HEADROOM_GB}[phase_kind]
+    if smoke:
+        print(
+            f"[smoke-downgrade] [disk-headroom] issue2544-{phase_kind}: floor "
+            f"{SMOKE_HEADROOM_GB:.0f} GB (production floor {floor:.0f} GB; plan §9:345)",
+            flush=True,
+        )
+        floor = SMOKE_HEADROOM_GB
+    assert_out_root_headroom(out_root, floor, phase=f"issue2544-{phase_kind}", canary_gb=floor)
+    print(
+        f"[disk-headroom] issue2544-{phase_kind}: >= {floor:.0f} GB writable at "
+        f"{out_root} (statvfs + fallocate probe; plan §9:345)",
+        flush=True,
+    )
 
 
 def _dl_state_dir(out_root: Path) -> Path:

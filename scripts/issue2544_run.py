@@ -523,9 +523,13 @@ def _capture1_base(
         order_id=cell["order_id"],
         set_id=cell["set_id"],
         seed=cell.get("seed", C.GEN_SEED),  # reliability captures bind their gen seed
-        sampling=None,  # gen regime rides transitively via rollout_sha
+        sampling=None,  # gen regime rides transitively via rollout_sha (enforced below)
         rows_scope=cell["rows_scope"],
-        rollout_sha=None,  # completed at execution from the write-time sidecar
+        # Realized at execution from the write-time sidecar AND ENFORCED at
+        # every init: _capture_rollout_check invalidates a done unit whose
+        # on-disk rollout sidecar sha no longer matches the done-record's
+        # realized sha (plan:93 hash-once; blocker capture-rollout-fingerprint).
+        rollout_sha=None,
         layers=list(layers),
         pooling_keys=pooling,
         **hashes,
@@ -554,7 +558,10 @@ def _capture2_fingerprint(
         set_id=cell["set_id"],
         answer_source_rung=cell["answer_rung"],
         answer_source_revision=pins[cell["answer_rung"]],
-        rollout_sha=None,  # completed at execution (consumed completion sha)
+        # Realized at execution (consumed completion sha) AND ENFORCED at
+        # every init via _capture_rollout_check — both capture kinds carry the
+        # same on-disk-vs-done-record binding (plan:93 hash-once).
+        rollout_sha=None,
         layers=list(layers),
         pooling_keys=pooling,
         freeze_sha=freeze_sha,
@@ -562,6 +569,40 @@ def _capture2_fingerprint(
         rows_scope=cell["rows_scope"],
         **hashes,
     )
+
+
+def _capture_rollout_check(out_root: Path):
+    """Init-time done-unit validator binding the CONSUMED rollout sha into the
+    authoritative resume key (plan:93 hash-once; blocker
+    capture-rollout-fingerprint). For every DONE capture unit (both kinds:
+    pass-1 capture1 + pass-2 capture2), compare the write-time sha sidecar of
+    the rollout currently on disk against the done-record's realized
+    ``rollout_sha`` — a mismatch means the answer source was regenerated
+    under this unit (a crash-fix round re-running gen, an HF re-fetch of
+    different bytes), so the unit is INVALIDATED and re-runs. Never re-hashes
+    the multi-MB rollout (sidecars are read, not recomputed — M2). A rollout
+    not currently on disk contradicts nothing (fresh-tree resume: fetch is
+    lazy) and leaves the unit vouched."""
+
+    def check(u: dict[str, Any]) -> str | None:
+        if u.get("kind") != "capture":
+            return None
+        recorded = (u.get("info") or {}).get("rollout_sha")
+        if not recorded:
+            return "done capture unit carries no realized rollout_sha in its done record"
+        path = _rollout_path(out_root, u["answer_rung"], u["answer_cell"])
+        sidecar = Path(str(path) + ".sha256")
+        if not sidecar.exists():
+            return None  # not on disk — nothing contradicts the record
+        current = sidecar.read_text(encoding="utf-8").strip()
+        if current != recorded:
+            return (
+                f"consumed rollout changed on disk: sidecar {current[:12]}... != "
+                f"done-record {recorded[:12]}... ({u['answer_rung']}/{u['answer_cell']})"
+            )
+        return None
+
+    return check
 
 
 def _resolve_layers(spec: str, rung: str, pins: dict[str, str], freeze: dict | None) -> list[int]:
@@ -714,6 +755,11 @@ def worker_loop(
                     if ctx.rung == rung:
                         ctx.release()
                     C2.reap_snapshot(rung, pins, out_root)
+                # Reclaim stale claims BEFORE the running check: a SIGKILL'd
+                # sibling's phantom running claim would otherwise hold
+                # any_running()=True forever (blocker queue-stale-running).
+                if q.reclaim_stale():
+                    continue
                 if q.all_terminal() or not q.any_running():
                     break
                 time.sleep(15)
@@ -1017,6 +1063,8 @@ def _tokenizer_json_sha(rung: str, pins: dict[str, str]) -> str:
 def pilot_init(args: argparse.Namespace, out_root: Path) -> None:
     """P1 --init: BINDING pins, tokenizer-identity battery (A4), per-revision
     AutoConfig table incl. layer_types (A2), pilot unit queue."""
+    # P1 pass-phase preamble (plan §9:345; blocker headroom-floors-vs-plan-s9).
+    C2.headroom_floor_gate(out_root, "pass", smoke=bool(args.smoke))
     pins = R.ensure_pins(out_root)
     rows = load_rows(args, out_root)
     rungs = _requested_rungs(args)
@@ -1118,7 +1166,9 @@ def pilot_init(args: argparse.Namespace, out_root: Path) -> None:
                         **cell,
                     }
                 )
-    C2.UnitQueue(out_root, "pilot").init(units)
+    q = C2.UnitQueue(out_root, "pilot")
+    q.init(units)
+    q.revalidate_done(_capture_rollout_check(out_root))
     R._write_json_atomic(
         out_root / "pilot_init.json",
         {
@@ -1442,8 +1492,12 @@ def pass1_init(args: argparse.Namespace, out_root: Path) -> None:
                 **cell,
             }
         )
-    R.headroom_gate(out_root, "capture", len(units), R.CAPTURE_PER_CELL_GB)
-    C2.UnitQueue(out_root, "pass1").init(units)
+    # Pass-phase floor (plan §9:345), replacing the inherited 2.5 GB x N_units
+    # formula (blocker headroom-floors-vs-plan-s9).
+    C2.headroom_floor_gate(out_root, "pass", smoke=bool(args.smoke))
+    q = C2.UnitQueue(out_root, "pass1")
+    q.init(units)
+    q.revalidate_done(_capture_rollout_check(out_root))
     print(f"[phase=pass1] init: {len(units)} units across {len(rungs)} rungs", flush=True)
 
 
@@ -1688,8 +1742,12 @@ def pass2_init(args: argparse.Namespace, out_root: Path) -> None:
                 **cell,
             }
         )
-    R.headroom_gate(out_root, "capture", len(units), R.CAPTURE_PER_CELL_GB)
-    C2.UnitQueue(out_root, "pass2").init(units)
+    # Pass-phase floor (plan §9:345), replacing the inherited 2.5 GB x N_units
+    # formula (blocker headroom-floors-vs-plan-s9).
+    C2.headroom_floor_gate(out_root, "pass", smoke=bool(args.smoke))
+    q = C2.UnitQueue(out_root, "pass2")
+    q.init(units)
+    q.revalidate_done(_capture_rollout_check(out_root))
     print(f"[phase=pass2] init: {len(units)} units (band B6 = {freeze['band_b6']})", flush=True)
 
 

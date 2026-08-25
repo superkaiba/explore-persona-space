@@ -164,15 +164,42 @@ run_workers() {
       --worker-id "$wid" --gpu-id "$gid" "${COMMON[@]}" >"$log" 2>&1 &
     pids+=($!); names+=("$wid")
   done
-  local rc=0 k=0
-  for p in "${pids[@]}"; do
-    wait "$p" || rc=$?
-    if [ "$rc" -ne 0 ]; then
-      echo "[dispatch] $phase worker=${names[$k]} FAILED rc=$rc — log tail:"
-      tail -n 40 "$LOG_DIR/issue-2544-${phase}-${names[$k]}.log" || true
+  # First-failure fast exit + SIBLING KILL (worker-failure-delayed /
+  # queue-stale-running pairing): wait for ANY worker (`wait -n`); on a
+  # non-zero exit TERM->KILL the surviving siblings instead of letting them
+  # grind for hours behind a failed phase — their orphaned queue claims are
+  # reclaimed on relaunch (UnitQueue.reclaim_stale at init).
+  local rc=0 w_rc=0 n_left=${#pids[@]}
+  while [ "$n_left" -gt 0 ]; do
+    w_rc=0
+    wait -n || w_rc=$?
+    n_left=$((n_left - 1))
+    if [ "$w_rc" -ne 0 ]; then
+      rc=$w_rc
+      echo "[dispatch] $phase: a worker FAILED rc=$rc — killing surviving sibling worker(s)"
+      local p
+      for p in "${pids[@]}"; do
+        kill -0 "$p" 2>/dev/null && kill -TERM "$p" 2>/dev/null || true
+      done
+      local i live
+      for i in 1 2 3 4 5 6; do
+        sleep 5
+        live=0
+        for p in "${pids[@]}"; do kill -0 "$p" 2>/dev/null && live=$((live + 1)); done
+        [ "$live" -eq 0 ] && break
+      done
+      for p in "${pids[@]}"; do
+        kill -0 "$p" 2>/dev/null && kill -KILL "$p" 2>/dev/null || true
+      done
+      wait 2>/dev/null || true
+      local k=0
+      for p in "${pids[@]}"; do
+        echo "[dispatch] $phase worker=${names[$k]} log tail:"
+        tail -n 25 "$LOG_DIR/issue-2544-${phase}-${names[$k]}.log" || true
+        k=$((k + 1))
+      done
       exit "$rc"
     fi
-    k=$((k + 1))
   done
 }
 

@@ -1014,7 +1014,9 @@ def run_p4a(args: argparse.Namespace, out_root: Path) -> None:
     rungs = R2._requested_rungs(args)
     print(f"[phase=fits] stage=P4a rungs={list(rungs)} smoke={bool(args.smoke)}", flush=True)
     ctx = FitsCtx(args, out_root, rungs)
-    R.headroom_gate(out_root, "fits", 5, 4.0)  # fit-phase >= 20 GB floor (§9)
+    # Fit-phase floor: 40 GB = ~1.5x the realized ~26 GB worst K-resident
+    # staging wave (plan §9:345 recalibration; blocker headroom-floors-vs-plan-s9).
+    C2.headroom_floor_gate(out_root, "fits", smoke=bool(args.smoke))
     pool = F1._WorkerPool(ctx)
     k_res = int(os.environ.get("EPM_ISSUE2544_FIT_RESIDENT", "2"))
     waves = _chunks(list(rungs), max(1, k_res))
@@ -1929,6 +1931,19 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         safe = np.where(np.isfinite(mat), mat, -np.inf)
         return np.argmax(safe, axis=1)
 
+    # Selection-inherited re-selection = the REGISTERED shared rule re-run
+    # inside each draw (plan:150 + :237(a)): argmax over layers of the MEAN
+    # pooled R^2 ACROSS RUNGS — one shared layer per draw applied to EVERY
+    # rung, mirroring the frozen layer* selection. The per-rung per-draw
+    # argmax (:237(b)'s fairness-control read) stays in best_layer_idx below,
+    # a DIFFERENT registered quantity — never the headline companion CI.
+    r2_stack = np.stack([r2_mats[r] for r in ctx.rungs])  # (n_rungs, n_draws, 17)
+    finite = np.isfinite(r2_stack)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mean_over_rungs = np.where(finite, r2_stack, 0.0).sum(axis=0) / finite.sum(axis=0)
+    shared_sel_idx = _argmax_finite(mean_over_rungs)  # (n_draws,)
+    _draw_ix = np.arange(shared_sel_idx.size)
+
     F1._savez_atomic(
         eval_fits / "layer_null_matrix.npz",
         rungs=np.asarray(ctx.rungs),
@@ -1936,6 +1951,7 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         r2_draws=np.stack([r2_mats[r] for r in ctx.rungs]),  # (n_rungs, n_draws, 17)
         identity_r2_draws=np.stack([id_mats[r] for r in ctx.rungs]),
         best_layer_idx=np.stack([_argmax_finite(r2_mats[r]) for r in ctx.rungs]),
+        shared_sel_layer_idx=shared_sel_idx,  # the per-draw SHARED selection
     )
 
     dtilde_draws: dict[str, np.ndarray] = {}
@@ -1951,11 +1967,11 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         )
         draws_star = r2_mats[rung][:, li_star]
         id_star = id_mats[rung][:, li_star]
-        # selection-inherited: layer re-selected per draw (max over 17 inside
-        # each draw), identity subtracted at the SAME selected layer.
-        sel_idx = _argmax_finite(r2_mats[rung])
-        sel_draws = r2_mats[rung][np.arange(len(sel_idx)), sel_idx]
-        sel_id = id_mats[rung][np.arange(len(sel_idx)), sel_idx]
+        # selection-inherited: the SHARED layer selection re-run per draw
+        # (argmax of mean-over-rungs — computed once above), identity
+        # subtracted at the SAME selected layer (plan:150 + :237(a)).
+        sel_draws = r2_mats[rung][_draw_ix, shared_sel_idx]
+        sel_id = id_mats[rung][_draw_ix, shared_sel_idx]
         dtilde_draws[rung] = draws_star - id_star
         dtilde_point[rung] = r2_point - id_point
         star_recs = [
@@ -1996,30 +2012,51 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
             "n_rows_fitted": int(sweep[rung]["__fitted__"].sum()),
         }
         # per-class re-reduction (group bootstrap when the class spans >=2
-        # groups, else within-stratum context-level bootstrap — §6)
+        # groups, else within-stratum context-level bootstrap — §6). Classwise
+        # identity SS rides the SAME masks + draw weights, so the per-class
+        # dtilde CI is PAIRED per draw (plan:262 raw + baseline-subtracted,
+        # pooled + per-class; blocker per-class-dtilde-missing).
         per_class: dict[str, Any] = {}
+        res_id = sweep[rung]["ss_res_id"]
         for cls in sorted(set(ctx.spine.classes)):
             cmask = classes == cls
             resc = np.where(cmask, res[li_star], np.nan)
             totc = np.where(cmask, tot[li_star], np.nan)
+            resc_id = np.where(cmask, res_id[li_star], np.nan)
             point = F1._pooled_r2(float(np.nansum(resc)), float(np.nansum(totc)))
+            id_point_c = F1._pooled_r2(float(np.nansum(resc_id)), float(np.nansum(totc)))
             gset = {int(ctx.spine.gid[k]) for k in np.flatnonzero(cmask)}
             if len(gset) >= 2:
                 draws_c = _r2_draws(ctx, counts, resc, totc)
+                id_draws_c = _r2_draws(ctx, counts, resc_id, totc)
                 boot_kind = "cluster-grouped"
             else:
                 rows = np.flatnonzero(cmask & np.isfinite(res[li_star]))
                 if rows.size < 3:
-                    per_class[cls] = {"r2": point, "n_rows": int(rows.size), "ci": None}
+                    per_class[cls] = {
+                        "r2": point,
+                        "identity_r2": id_point_c,
+                        "dtilde": point - id_point_c,
+                        "n_rows": int(rows.size),
+                        "ci": None,
+                        "identity_ci": None,
+                        "dtilde_ci": None,
+                    }
                     continue
                 w = rng_c.multinomial(
                     rows.size, np.full(rows.size, 1.0 / rows.size), size=ctx.n_boot
                 ).astype(np.float64)
+                # ONE weight draw serves r2 AND identity — paired dtilde draws.
                 draws_c = F1._boot_r2(w, res[li_star][rows], tot[li_star][rows])
+                id_draws_c = F1._boot_r2(w, res_id[li_star][rows], tot[li_star][rows])
                 boot_kind = "within-stratum context-level"
             per_class[cls] = {
                 "r2": point,
                 "ci": F1._ci(draws_c),
+                "identity_r2": id_point_c,
+                "identity_ci": F1._ci(id_draws_c),
+                "dtilde": point - id_point_c,
+                "dtilde_ci": F1._ci(draws_c - id_draws_c),
                 "n_rows": int(cmask.sum()),
                 "bootstrap": boot_kind,
             }
@@ -2031,6 +2068,11 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         "smoke": ctx.smoke,
         "layer_star": ctx.layer_star,
         "selector": SELECTOR_TAG,
+        "selection_inherited_rule": (
+            "shared argmax over layers of MEAN pooled R^2 across rungs, re-run "
+            "inside each draw (plan:150 + :237(a)); per-draw indices persisted "
+            "as shared_sel_layer_idx in layer_null_matrix.npz"
+        ),
         "n_boot": ctx.n_boot,
         "rung_order": list(ctx.rungs),
         "pretrain_rungs": pretrain,
@@ -2123,6 +2165,8 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
     # ---- k-shot curve ----------------------------------------------------------
     ww = _ww_masks(ctx)
     kshot: dict[str, Any] = {}
+    delta_draws_by_rung: dict[str, np.ndarray] = {}
+    delta_point_by_rung: dict[str, float] = {}
     for rung in ctx.rungs:
         arr4 = _cellarr(f"diag4_{rung}")
         if arr4 is None:
@@ -2137,6 +2181,10 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
             "delta_ci": F1._ci(d4 - d0),
         }
         entry["delta"] = entry["r2_4shot"] - entry["r2_0shot"]
+        # Paired per-rung Delta draws feed the Delta_peak - Delta(main)
+        # selection-inherited contrast below (plan:64/:237(c)/§4 P4b item 6).
+        delta_draws_by_rung[rung] = d4 - d0
+        delta_point_by_rung[rung] = entry["delta"]
         # Delta_ww: within-window paired read (free re-aggregation)
         if rung in ww:
             m = ww[rung]
@@ -2245,9 +2293,39 @@ def finalize_p4b(ctx: FitsCtx, wall_h: float) -> None:
         else:
             entry["ceiling_delta_paired"] = {"n_contexts": 0, "note": "no shared repeat rows"}
         kshot[rung] = entry
+
+    # Delta_peak - Delta(main) with the SELECTION-INHERITED CI (plan:64 /
+    # :237(c) / §4 P4b item 6): the argmax RUNG is re-selected INSIDE each
+    # draw, so the peak's selection noise rides the CI — never a frozen-peak
+    # CI. Point estimate re-selects on the point deltas; the per-draw peak
+    # rung distribution is persisted for auditability.
+    if "main" in delta_draws_by_rung and len(delta_draws_by_rung) >= 2:
+        d_rungs = [r for r in ctx.rungs if r in delta_draws_by_rung]
+        d_stack = np.stack([delta_draws_by_rung[r] for r in d_rungs])  # (n_rungs, n_draws)
+        peak_idx = _argmax_finite(d_stack.T)  # per-draw argmax RUNG
+        peak_draws = d_stack[peak_idx, np.arange(peak_idx.size)]
+        contrast_draws = peak_draws - delta_draws_by_rung["main"]
+        points = np.asarray([delta_point_by_rung[r] for r in d_rungs])
+        peak_i = int(np.argmax(np.where(np.isfinite(points), points, -np.inf)))
+        delta_peak_minus_main: dict[str, Any] = {
+            "point": float(points[peak_i] - delta_point_by_rung["main"]),
+            "peak_rung_point": d_rungs[peak_i],
+            "ci_selection_inherited": F1._ci(contrast_draws),
+            "peak_rung_draw_frac": {
+                r: float(np.mean(peak_idx == k)) for k, r in enumerate(d_rungs)
+            },
+            "rungs": d_rungs,
+            "note": "argmax rung re-selected per draw (selection-inherited; plan:237c)",
+        }
+    else:
+        delta_peak_minus_main = {
+            "skipped": "main diag4 draws absent or <2 rungs — contrast undefined"
+        }
+
     kshot_out = {
         "metadata": R2._metadata(),
         "smoke": ctx.smoke,
+        "delta_peak_minus_main": delta_peak_minus_main,
         "layer_star": ctx.layer_star,
         "layer_fa": ctx.layer_fa,
         "band_b6": b6,
@@ -2481,7 +2559,9 @@ def run_p4b(args: argparse.Namespace, out_root: Path) -> None:
     include_lfa0 = ctx.layer_fa not in ctx.layers17
     specs = p4b_cell_specs(ctx, include_lfa0)
     _ensure_p4a_artifacts(ctx)
-    R.headroom_gate(out_root, "fits", 5, 4.0)  # fit-phase >= 20 GB floor (§9)
+    # Fit-phase floor: 40 GB = ~1.5x the realized ~26 GB worst K-resident
+    # staging wave (plan §9:345 recalibration; blocker headroom-floors-vs-plan-s9).
+    C2.headroom_floor_gate(out_root, "fits", smoke=bool(args.smoke))
 
     # RESIDENT star working set (transfer/operator/parity inputs): star-layer
     # diag0 w+ctx + the s=main column at star + l_FA files (~9 GB, kept).
