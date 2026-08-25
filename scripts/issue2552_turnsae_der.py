@@ -2148,6 +2148,8 @@ def _p4_dirs(args) -> SimpleNamespace:
 
 P4_KS = (1, 2, 3, 5)
 P4_CFG_TO_DESC_FAM = {**{f: f for f in TA_FAMILIES}, "pt_max": "pt", "pt_sum": "pt"}
+# bump when the _p4_synth_fixtures recipe changes (r5 NIT p4-smoke-fixture-versioning)
+P4_FIXTURE_VERSION = 1
 
 
 def _p4_synth_fixtures(args, io) -> None:
@@ -2181,6 +2183,11 @@ def _p4_synth_fixtures(args, io) -> None:
             "turns": [{"row_id": r, "judged_top100": [[f, 1.0] for f in feats]} for r in row_ids]
         }
     (io.fixtures / "feature_lists_2000turns.json").write_text(json.dumps(lists_doc))
+    # version fingerprint (r5 NIT p4-smoke-fixture-versioning): the reuse check keys
+    # on this, so an older valid-looking fixture set on a reused out-root regenerates
+    (io.fixtures / "fixture_meta.json").write_text(
+        json.dumps({"fixture_version": P4_FIXTURE_VERSION})
+    )
 
 
 def _p4_lists(args, io) -> dict:
@@ -2343,11 +2350,21 @@ def phase_p4_embed(args) -> None:
     sent_dir.mkdir(parents=True, exist_ok=True)
     done_path = sent_dir / "p4_done.json"
     outputs = (io.dere / "embedding_coverage.json", io.stage / "embcov_topk.npz")
-    if args.smoke and not (io.fixtures / "feature_lists_2000turns.json").exists():
+    if args.smoke:
         # idempotent synth (r4 p4-phase-contract): T._write_json stamps provenance
         # timestamps into the fixture files, so an unconditional re-synthesis would
-        # change the input hashes every run and permanently defeat the resume-skip
-        _p4_synth_fixtures(args, io)
+        # change the input hashes every run and permanently defeat the resume-skip.
+        # Reuse keys on the version fingerprint, not bare existence (r5 NIT
+        # p4-smoke-fixture-versioning): an older valid-looking fixture set on a
+        # reused out-root regenerates instead of silently feeding a stale recipe.
+        meta_p = io.fixtures / "fixture_meta.json"
+        fresh = (
+            (io.fixtures / "feature_lists_2000turns.json").exists()
+            and meta_p.exists()
+            and json.loads(meta_p.read_text()).get("fixture_version") == P4_FIXTURE_VERSION
+        )
+        if not fresh:
+            _p4_synth_fixtures(args, io)
     # inputs: descriptions per family + summaries + per-turn lists — ALL contract
     # validation AND input-identity hashing run BEFORE the 8B embedder load (#2552
     # r2: fail in seconds, not after a ~16 GB weight fetch) AND BEFORE the resume
@@ -2403,6 +2420,12 @@ def phase_p4_embed(args) -> None:
             T._sentinel("p4_embed", "P4 resume-skip (identical regime/inputs; uploads satisfied)")
             return
         logger.info("[p4] resume REJECTED — stale %s; recomputing", mismatch)
+    # RECOMPUTE decided (fresh run / --force / rejected resume) — invalidate the PRIOR
+    # completion sentinel BEFORE any output replacement begins (#2552 r5
+    # p4-recompute-sentinel-atomicity): a crash mid-recompute must not leave
+    # p4_done.json beside partially-replaced outputs, or a later run stale-skips.
+    # The fresh sentinel is re-written LAST, on the atomic write path.
+    done_path.unlink(missing_ok=True)
     # unique text pool: descriptions + (turn, field) values
     texts: list[str] = []
     t_index: dict[str, int] = {}

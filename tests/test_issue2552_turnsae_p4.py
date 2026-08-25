@@ -5,6 +5,10 @@ them — a stale recorded input hash forces a recompute; a fully matching sentin
 (regime + inputs + uploads + outputs) skips. Fails pre-fix: the r3 skip compared
 only the regime key + output existence, so the stale-hash leg skipped.
 
+r5 (p4-recompute-sentinel-atomicity): once the resume decision is RECOMPUTE, the
+prior sentinel is unlinked BEFORE any output replacement — a crash mid-recompute
+leaves NO sentinel, so the next run recomputes rather than stale-skipping.
+
 Torch-bearing module import (the driver imports torch at module top; precedent:
 tests/test_issue928_decomposition.py). No network and no repo-committed-artifact
 reads: the external embedder boundary (_p4_load_embedder / _p4_embed_texts) is
@@ -19,6 +23,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 for _p in (str(REPO_ROOT / "scripts"), str(REPO_ROOT / "scripts" / "vendored_2476")):
@@ -86,6 +91,64 @@ def test_p4_matching_sentinel_skips_and_stale_input_hash_recomputes(tmp_path, mo
     assert len(calls) == 2, "stale recorded input hash must force a recompute"
     # the recompute rewrites the sentinel with the CURRENT input identity
     assert json.loads(done.read_text())["inputs"]["summaries_sha256"] != "0" * 64
+
+
+def test_p4_crash_mid_recompute_invalidates_sentinel(tmp_path, monkeypatch):
+    """r5 p4-recompute-sentinel-atomicity: sentinel present + stale recorded hash
+    => RECOMPUTE; the prior p4_done.json is unlinked BEFORE outputs are replaced,
+    so a simulated crash mid-recompute (the embed stub raises after the unlink)
+    leaves NO sentinel and the next run recomputes. Pre-fix this test FAILED at
+    the sentinel-GONE assert (verified against the git-show HEAD copy: the
+    sentinel survived the crash); the realized stale-skip is the --force /
+    partial-output variant of that same window — a surviving sentinel whose
+    fields still match licenses a skip beside partially-replaced outputs."""
+    args = _args(tmp_path)
+    calls: list[int] = []
+    _run_p4(args, monkeypatch, calls)
+    assert len(calls) == 1, "first run must embed"
+    done = tmp_path / "sentinels" / "p4_done.json"
+    doc = json.loads(done.read_text())
+    doc["inputs"]["summaries_sha256"] = "0" * 64  # stale recorded hash => recompute
+    done.write_text(json.dumps(doc))
+
+    def fake_load_embedder(args):  # mirrors _p4_load_embedder(args) -> (model, tok)
+        return object(), object()
+
+    def crashing_embed_texts(args, model, tok, texts):  # mirrors _p4_embed_texts
+        calls.append(len(texts))
+        raise RuntimeError("simulated crash mid-recompute")
+
+    monkeypatch.setattr(M, "_p4_load_embedder", fake_load_embedder)
+    monkeypatch.setattr(M, "_p4_embed_texts", crashing_embed_texts)
+    with pytest.raises(RuntimeError, match="simulated crash mid-recompute"):
+        M.phase_p4_embed(args)
+    assert not done.exists(), (
+        "prior completion sentinel must be unlinked BEFORE output replacement begins"
+    )
+    # the next run finds no sentinel => recomputes rather than stale-skipping
+    _run_p4(args, monkeypatch, calls)
+    assert len(calls) == 3, "post-crash run must recompute, not skip"
+    assert done.exists(), "successful recompute rewrites the sentinel LAST"
+    assert json.loads(done.read_text())["inputs"]["summaries_sha256"] != "0" * 64
+
+
+def test_p4_smoke_fixture_version_fingerprint(tmp_path, monkeypatch):
+    """r5 NIT p4-smoke-fixture-versioning: fixture reuse keys on the version
+    fingerprint, not bare existence — an existing lists file with a missing or
+    stale fixture_meta.json regenerates; a matching fingerprint reuses."""
+    args = _args(tmp_path)
+    calls: list[int] = []
+    _run_p4(args, monkeypatch, calls)
+    meta = tmp_path / "p4" / "fixtures" / "fixture_meta.json"
+    assert json.loads(meta.read_text())["fixture_version"] == M.P4_FIXTURE_VERSION
+    lists_p = tmp_path / "p4" / "fixtures" / "feature_lists_2000turns.json"
+    before = lists_p.stat().st_mtime_ns
+    # stale fingerprint on a reused out-root: fixtures regenerate (pre-fix: the
+    # existence-only check reused the old lists file untouched)
+    meta.write_text(json.dumps({"fixture_version": -1}))
+    _run_p4(args, monkeypatch, calls)
+    assert json.loads(meta.read_text())["fixture_version"] == M.P4_FIXTURE_VERSION
+    assert lists_p.stat().st_mtime_ns > before, "stale fingerprint must regenerate fixtures"
 
 
 def test_p4_resume_mismatch_upload_disposition_and_outputs(tmp_path):
