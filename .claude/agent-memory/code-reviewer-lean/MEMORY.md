@@ -1,4 +1,5 @@
 # code-reviewer-lean memory index
+- [Floor fix defeats sibling relaunch fix](floor_fix_defeats_sibling_relaunch_fix.md) — simulate a fixed floor gate at mid-phase-crash residency vs quota; full-floor canary can refuse the relaunch the same round's recovery fix enables (#2544 r2 g4)
 - [Spec-sync import purity probe](spec_sync_import_purity_probe.md) — triple blob equality (commit==main-tip==HEAD) per file; worktree diff alone maskable by later commits (#2544 r2 g5)
 - [Ported headroom gate vs footprint model](ported_headroom_gate_footprint_model.md) — inherited all-units-resident disk gate under a per-cell upload→delete design: vacuous on MooseFS statvfs, false-refusing on honest FS; diff vs plan §9 floors (#2544 r1 g1)
 - [0.55 FALLBACK-row scope](smokearch_fallback_row_scope_055.md) — FALLBACK under PASS_UNIFIED blocks only in per-arm-resolution ARM rows; resume-matrix/outroot sub-blocks use it legitimately (#2544 r1 g7)
