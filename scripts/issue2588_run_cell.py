@@ -127,15 +127,20 @@ def _upload_dir(local_dir: Path, path_in_repo: str, what: str) -> None:
     the file-count overflow fallback, and the exact-set post-upload verify —
     never a bare per-file loop (gotchas.md 504-storm) or an unanchored wrap."""
     url = HUB._upload(local_dir, PC.HF_DATA_REPO, "dataset", path_in_repo, raise_on_error=True)
+    if not url:
+        raise RuntimeError(f"upload returned no path for {what} ({local_dir} -> {path_in_repo})")
     logger.info("[i2588] uploaded %s -> %s (%s: %s)", local_dir, path_in_repo, what, url)
 
 
 def _upload_file(local: Path, path_in_repo: str, what: str) -> None:
     """Single-file upload via hub._upload (upload_as_file=True; full destination
-    path — the #595/#1738 contract), retried + verified, fail-loud."""
-    HUB._upload(
+    path — the #595/#1738 contract), retried + verified, fail-loud (return
+    checked: '' from _upload is a silent durability loss, upload-policy.md)."""
+    url = HUB._upload(
         local, PC.HF_DATA_REPO, "dataset", path_in_repo, upload_as_file=True, raise_on_error=True
     )
+    if not url:
+        raise RuntimeError(f"upload returned no path for {what} ({local} -> {path_in_repo})")
     logger.info("[i2588] uploaded file %s -> %s (%s)", local, path_in_repo, what)
 
 
@@ -1253,6 +1258,7 @@ def _await_g2(args) -> dict:
     deadline = time.time() + PC.G2_SENTINEL_TIMEOUT_S
     while True:
         exists = HUB.retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in HUB.retry_transient at this call site
             lambda: api.file_exists(PC.HF_DATA_REPO, PC.G2_SENTINEL_PATH, repo_type="dataset"),
             what="G2 sentinel file_exists probe",
         )
