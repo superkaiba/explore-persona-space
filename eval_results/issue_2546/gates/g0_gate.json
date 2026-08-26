@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "git_commit": "76ac8d57c0a0c0da699b7a9d76f8c2e9daeb1564",
+    "git_dirty": false,
+    "phase": "ge_gate",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-26T14:47:37Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "seed": 0,
+    "n": 5000
+  },
+  "gate": "G-E",
+  "stem": "instruct_chat_s",
+  "revision": "deb7a4523b5233393e4fbd2497622527b3622d35",
+  "layer": 19,
+  "leg_a_legacy": {
+    "r2": 0.6730940896676356,
+    "committed_r2": 0.6731,
+    "tol": 0.01,
+    "abs_dev": 5.91033236441163e-06,
+    "pass": true,
+    "enforced": true,
+    "pins": {
+      "lambda_selection": "gcv",
+      "GCV_DOF_CAP": null,
+      "LEGACY_UNGUARDED_GCV": true,
+      "FORCE_GRAM": true,
+      "grid": "logspace(-2,4,13)"
+    }
+  },
+  "leg_b_v2_identity": {
+    "r2": 0.6935026836671432,
+    "committed_r2": 0.6935026836671432,
+    "tol": 1e-06,
+    "abs_dev": 0.0,
+    "pass": true,
+    "enforced": true,
+    "committed_source": "eval_results/issue_1336/gates_v2/g0v2.json (origin/main): leg_b_gram_vs_primal.r2_primal == leg_c_v2_anchor.s_qwen_v2",
+    "pins": {
+      "lambda_selection": "inner-group-cv",
+      "N_INNER_LAMBDA_FOLDS": 2,
+      "FORCE_GRAM": false,
+      "grid": "logspace(-3,8,23)"
+    }
+  },
+  "fold_sensitivity_probe": {
+    "r2_inner_group_cv_4fold": 0.6957042061410352,
+    "enforced": false,
+    "measured": "issue1336_fit_cells.py --g0 UNPATCHED (module-default 4 inner folds) on pod-2546-arm1c @ a917b1a9f5 -> /workspace/issue2546/out_g0probe/gates/g0_gate.json",
+    "note": "fold count moves the v2-recipe read 0.6957 -> 0.6935 (delta 2.2e-3): the P5 N_INNER_LAMBDA_FOLDS patch must stay scoped out of this gate; NEITHER fold count reaches the 0.6731 legacy anchor (selector+grid, not folds)"
+  },
+  "local_dir_fixture": false,
+  "pass": true
+}
