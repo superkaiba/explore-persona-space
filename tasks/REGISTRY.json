@@ -12388,8 +12388,8 @@
     "2606": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2606",
-      "status": "proposed",
+      "path": "tasks/planning/2606",
+      "status": "planning",
       "title": "pod.py provision exits 0 with BOOTSTRAP-OK while its own preflight reports PREFLIGHT-FAILED rc=2 \u2014 fail loud instead"
     },
     "261": {
