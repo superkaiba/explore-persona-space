@@ -79,15 +79,18 @@ EXPECTED_SPLIT_COUNTS = {
     "wc_test_1k": 998,
 }
 
-# Banked #2330 stores, consumed at the parent's record pin (plan §10)
+# Banked #2330 stores, consumed at the parent's record pin (plan §10).
+# KEYS ARE PANEL MODEL KEYS (cell.model_key) — the staging path indexes these
+# dicts by Cell.model_key, so any other key namespace KeyErrors POD-SIDE at
+# stage (wave-2 incident: 'q35_9b' vs the old long-form 'qwen35_9b' keys).
 BANKED_REVISION = "b99d86de23"
 BANKED_CAP2048 = {
-    "qwen35_9b": "issue2330_matched/qwen35_9b_cap2048",
-    "qwen25_7b": "issue2330_matched/q25_cap2048",
+    "q35_9b": "issue2330_matched/qwen35_9b_cap2048",
+    "q25_7b": "issue2330_matched/q25_cap2048",
 }
 BANKED_CEILING = {
-    "qwen35_9b": "issue2330_matched/qwen35_9b/ceiling_draws",
-    "qwen25_7b": "issue1491_scale_ladder/scale7_refit/ceiling_draws",
+    "q35_9b": "issue2330_matched/qwen35_9b/ceiling_draws",
+    "q25_7b": "issue1491_scale_ladder/scale7_refit/ceiling_draws",
 }
 ANCHOR_GATE_PREFIX = "issue1491_scale_ladder/scale7_refit"
 
@@ -108,7 +111,7 @@ ANCHOR_GATE_PREFIX = "issue1491_scale_ladder/scale7_refit"
 # Consumers compose through ``banked_store_subpath`` so the anchor cell cannot
 # 404 pod-side on a path the generic resolver never knew about.
 BANKED_STORE_SPLIT_ALIAS: dict[tuple[str, str], str] = {
-    ("qwen25_7b", "train_10k"): "train_25k",
+    ("q25_7b", "train_10k"): "train_25k",
 }
 
 

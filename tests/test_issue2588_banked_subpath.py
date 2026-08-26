@@ -41,17 +41,17 @@ _SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
 def test_anchor_train_split_aliases_to_train_25k():
     """The one registered alias: the banked 7B anchor's train store."""
-    assert PC.banked_store_subpath("qwen25_7b", "train_10k", "train_10k") == "train_25k"
+    assert PC.banked_store_subpath("q25_7b", "train_10k", "train_10k") == "train_25k"
 
 
 @pytest.mark.parametrize(
     ("key", "split"),
     [
-        ("qwen35_9b", "train_10k"),
-        ("qwen35_9b", "val_400"),
-        ("qwen35_9b", "test_1000"),
-        ("qwen25_7b", "val_400"),
-        ("qwen25_7b", "test_1000"),
+        ("q35_9b", "train_10k"),
+        ("q35_9b", "val_400"),
+        ("q35_9b", "test_1000"),
+        ("q25_7b", "val_400"),
+        ("q25_7b", "test_1000"),
     ],
 )
 def test_unaliased_combinations_pass_the_default_through(key, split):
@@ -70,14 +70,30 @@ def test_alias_table_covers_exactly_the_measured_divergence():
     Exactly one divergence exists on the data repo; a new entry should arrive
     with its own measured evidence, not be inherited from this one.
     """
-    assert dict(PC.BANKED_STORE_SPLIT_ALIAS) == {("qwen25_7b", "train_10k"): "train_25k"}
+    assert dict(PC.BANKED_STORE_SPLIT_ALIAS) == {("q25_7b", "train_10k"): "train_25k"}
 
 
 def test_ceiling_reads_are_not_routed_through_the_alias():
     """Ceiling draws live under seed dirs and must not pick up a train alias."""
-    assert PC.banked_store_subpath("qwen25_7b", "ceiling_s43", "ceiling_draws/seed43") == (
+    assert PC.banked_store_subpath("q25_7b", "ceiling_s43", "ceiling_draws/seed43") == (
         "ceiling_draws/seed43"
     )
+
+
+def test_banked_dicts_key_on_panel_model_keys():
+    """KeyError 'q35_9b' regression (wave-2 pod-side crash at stage).
+
+    ``_stage_banked`` indexes BANKED_CAP2048 / BANKED_CEILING by
+    ``cell.model_key``, so the dict keys MUST be the PANEL registry keys of
+    exactly the banked_arm_a models — any other namespace (the old long-form
+    'qwen35_9b'/'qwen25_7b' keys) KeyErrors on a provisioned, billing pod. The
+    P0 preflight iterates the dicts' own keys and is self-consistent by
+    construction, so only this cross-check catches the drift VM-side.
+    """
+    banked_models = {k for k, m in PC.PANEL.items() if m.banked_arm_a}
+    assert banked_models == set(PC.BANKED_CAP2048) == set(PC.BANKED_CEILING)
+    for key, _split in PC.BANKED_STORE_SPLIT_ALIAS:
+        assert key in PC.PANEL, key
 
 
 @pytest.mark.parametrize(
