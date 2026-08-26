@@ -12360,8 +12360,8 @@
     "2602": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2602",
-      "status": "approved",
+      "path": "tasks/running/2602",
+      "status": "running",
       "title": "artifact-reuse: prove a reused GATE's committed anchor is reproducible under the shared core's CURRENT defaults (#1887 flip silently changed #2546's G-E meaning)"
     },
     "261": {
