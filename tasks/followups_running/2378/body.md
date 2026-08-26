@@ -4,6 +4,7 @@ title: Context→answer structure is shared across story characters; chat, plain
 kind: experiment
 tags:
 - followup-auto
+- keep-running
 created_at: '2026-08-19T02:35:51Z'
 has_clean_result: true
 parent_id: 2054
