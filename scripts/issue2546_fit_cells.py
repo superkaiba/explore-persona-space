@@ -38,8 +38,16 @@ ceiling-normalized R² until the capture leg lands.
 
 Recorded module-global patch (plan §4.2 P5 / §10): ``fc.N_INNER_LAMBDA_FOLDS = 2``
 (main default 4; ``heldout_r2_sweep`` exposes no inner-folds kwarg; #1336
-realized 2 the same way on its branch). Applied loudly in ``main()`` before any
-fit, --g0 included (the #1336 G-E gate PASSed under the same regime).
+realized 2 the same way on its branch). Applied loudly INSIDE ``run_units``
+only (save-and-restore, ``_p5_inner_folds_patch``) — never at ``main()``
+entry: the pre-v15 entry-wide patch contaminated the delegated G-E gate
+(task marker v88; measured fold sensitivity 0.6957 @ 4 inner folds vs
+0.6935 @ 2). The #1336 v1 ``--g0`` gate PASSed pre-#1887 under the
+then-DEFAULT legacy-GCV regime, not under this patch; after the #1887
+defaults flip the committed 0.6731 anchor is reachable ONLY under explicit
+legacy pins, so the G-E gate here (``run_g0_gate``) pins every estimator
+knob per leg: leg (a) legacy anchor 0.6731 ± 0.01, leg (b) v2-recipe
+identity 0.6935026836671432 ± 1e-6 (#1336 ``gates_v2/g0v2.json``).
 
 CLI contract (pinned by scripts/issue2546_dispatch.sh):
   issue2546_fit_cells.py --arm K [--g0] [--smoke] --out-root <dir>
@@ -64,6 +72,7 @@ import subprocess
 import sys
 import time
 import zlib
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
@@ -91,6 +100,7 @@ import issue2546_gen_capture as g25  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as mb  # noqa: E402
 from explore_persona_space.atomic_io import write_json_atomic  # noqa: E402
+from explore_persona_space.experiments.issue_1336 import common as cm  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
@@ -142,6 +152,21 @@ TEMPLATE_POOL_MIN = 20
 # band_value = 0.02 x rate_c per corpus, so the parent constant is kept.
 DELTA_ELICIT_BAND = 0.02
 COMMITTED_ANCHOR_R2 = 0.6731  # #825 Qwen S1 @ L19 (issue_1336.common.G0)
+
+# G-E gate leg-(b) anchor (v15; task marker v88): #1336's committed v2-recipe
+# value at the SAME pinned cell — gates_v2/g0v2.json on origin/main,
+# leg_b_gram_vs_primal.r2_primal == leg_c_v2_anchor.s_qwen_v2. Reproduced
+# byte-exactly (all 16 significant figures) on pod-2546-arm1c hardware.
+G0_V2_ANCHOR_R2 = 0.6935026836671432
+# TOLERANCE, never bitwise equality (the #1336/#1946 cross-machine recompute
+# law): observed cross-hardware deviation 0; gram-vs-primal route delta
+# 2.2e-16; nearest wrong-recipe value (4 inner folds, 0.6957) is 2.2e-3 away
+# — 1e-6 sits >=3 orders of magnitude from both sides.
+G0_V2_TOL = 1e-6
+# Measured non-enforced diagnostic (v15 coordinator probe): the v2 recipe at
+# the shared core's DEFAULT 4 inner folds — documents the fold sensitivity
+# that requires the P5 patch to stay scoped out of the gate.
+G0_FOLD_PROBE_4FOLD_R2 = 0.6957042061410352
 
 LADDER_TIER_NAMES = (
     "t0_direct_transfer",
@@ -1788,7 +1813,47 @@ def unit_out_path(out_root: Path, unit: Unit) -> Path:
     return out_root / "out" / sub / f"{unit.unit_id}.json"
 
 
+@contextmanager
+def _p5_inner_folds_patch():
+    """RECORDED module-global patch (plan §4.2 P5 / §10), SCOPED to the fit units.
+
+    ``heldout_r2_sweep`` exposes no inner-folds kwarg and reads
+    ``fc.N_INNER_LAMBDA_FOLDS`` at call time; main's default is 4 and the plan
+    pins 2 (#1336 parity — its branch used the same save-and-restore idiom at
+    every patch site). v15 (task marker v88 root cause): the patch was
+    previously a PERMANENT module global set at ``main()`` entry and
+    contaminated the delegated G-E gate — measured fold sensitivity at the
+    pinned #825 cell: R^2 0.6957042061410352 @ 4 inner folds vs
+    0.6935026836671432 @ 2. It now wraps ``run_units`` ONLY (save-and-restore),
+    so no other mode (``--g0`` included) can inherit it.
+    """
+    saved = fc.N_INNER_LAMBDA_FOLDS
+    print(
+        f"[p5] RECORDED module-global patch: fc.N_INNER_LAMBDA_FOLDS "
+        f"{saved} -> {INNER_LAMBDA_FOLDS} (plan v4 §4.2 P5; #1336 parity; "
+        f"scoped save/restore, v15)",
+        flush=True,
+    )
+    fc.N_INNER_LAMBDA_FOLDS = INNER_LAMBDA_FOLDS
+    try:
+        yield
+    finally:
+        fc.N_INNER_LAMBDA_FOLDS = saved
+        print(
+            f"[p5] module-global patch RESTORED: fc.N_INNER_LAMBDA_FOLDS -> {saved}",
+            flush=True,
+        )
+
+
 def run_units(args, prof: LayerProfile, units: list[Unit], claim_dir: Path | None = None) -> int:
+    """P5 unit executor. The recorded inner-folds patch is scoped here (v15)."""
+    with _p5_inner_folds_patch():
+        return _run_units_inner(args, prof, units, claim_dir)
+
+
+def _run_units_inner(
+    args, prof: LayerProfile, units: list[Unit], claim_dir: Path | None = None
+) -> int:
     out_root = Path(args.out_root)
     smoke = bool(args.smoke)
     null_draws = (
@@ -1920,6 +1985,15 @@ def run_parent(args, prof: LayerProfile) -> int:
     )
     work_dir = out_root / "work" / f"fits_a{prof.arm}"
     work_dir.mkdir(parents=True, exist_ok=True)
+    # Parent-log record of the plan §4.2 P5 patch (plan line: "explicit
+    # RECORDED module-global patch"): each worker applies + restores it inside
+    # its own run_units scope (v15); the RECORDED/RESTORED pair lands in every
+    # slotN.log, and every unit JSON records inner_lambda_folds in fit_params.
+    print(
+        f"[p5] inner-folds patch (fc.N_INNER_LAMBDA_FOLDS -> {INNER_LAMBDA_FOLDS}) applies "
+        f"inside each worker's run_units scope (scoped save/restore, v15)",
+        flush=True,
+    )
     # Work-conserving fan-out (r2 Codex Major): workers CLAIM units from one
     # shared atomic claim dir instead of static i::N shards — an idle worker
     # + a pending independent unit is the #813/#778 anti-pattern. Claims are
@@ -2172,6 +2246,202 @@ def _selftest_write_rel_stem(
     torch.save(shard, stem_dir / "slot0.shard000.pt")
 
 
+# ---------------------------------------------------------------------------
+# G-E fit-core reuse gate (plan §7; v15 instrument fix — task marker v88)
+# ---------------------------------------------------------------------------
+# Root cause (v88, byte-level evidence): the #1887 defaults flip changed what
+# a bare ``heldout_r2_sweep`` call measures (``lambda_selection`` now defaults
+# to "inner-group-cv"), so the reused #1336 ``--g0`` instrument silently
+# stopped measuring the legacy-GCV anchor — the committed 0.6731 is reachable
+# ONLY under the explicit legacy pins #1336 recorded in
+# eval_results/issue_1336/gates_v2/g0v2.json (origin/main). Measured three-way
+# separation at the pinned cell (same bundle, layer 19, seed 0, n 5000):
+#   legacy GCV, logspace(-2,4,13)   0.6730940896676356  (abs_dev 5.9e-06)
+#   inner-group-cv, 2 inner folds   0.6935026836671432  (== #1336 leg_b/leg_c)
+#   inner-group-cv, 4 inner folds   0.6957042061410352  (unpatched pod probe)
+# The gate therefore pins EVERY estimator knob per leg — never a shared-core
+# default — so a future defaults flip cannot silently change what this gate
+# means again. The tolerances and anchors are #1336's own, unchanged (the fix
+# is the instrument, never the bar).
+
+
+def _g0_xy_at_gate_layer(
+    ns: SimpleNamespace,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, bool]:
+    """Stage + load the pinned #825 Qwen S1 bundle; slice to the gate layer.
+
+    Mirrors #1336 ``run_g0``'s staging/extraction verbatim (``f36._g0_stage``
+    scoped tree walk + ``fc._load_bundle_any`` + slot0->turn1 ``_cell_xy``
+    under the G0 expected-layer scope). Returns
+    ``(Xl, Yl, conv_ids, layer, fixture)`` with X/Y sliced to the single gate
+    layer; production shape is asserted against the G0 pins, a
+    ``--g0-local-dir`` fixture clamps the layer to its own last layer.
+    """
+    bundle_dir = ns.g0_local_dir or f36._g0_stage(ns.g0_dl_dir)
+    bundle = fc._load_bundle_any(bundle_dir, "instruct", "chat", "s")
+    fixture = ns.g0_local_dir is not None
+    exp_layers = f36._bundle_n_layers(bundle) if fixture else int(cm.G0["expected_layers"])
+    with cm.fc_expected_layers(fc, exp_layers):
+        xy = fc._cell_xy(bundle, {"slot_index": 0, "target_turn_index": 1})
+    X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
+    layer = int(cm.G0["layer"])
+    if fixture:
+        layer = min(layer, X.shape[1] - 1)  # tiny stores: gate on their last layer
+    else:
+        assert X.shape[1] == cm.G0["expected_layers"], (X.shape[1], cm.G0["expected_layers"])
+        assert X.shape[2] == cm.G0["expected_hidden"], (X.shape[2], cm.G0["expected_hidden"])
+    return X[:, [layer], :], Y[:, [layer], :], conv_ids, layer, fixture
+
+
+def run_g0_gate(ns: SimpleNamespace) -> int:
+    """G-E gate: two ENFORCED legs against the pinned #825 Qwen S1 cell.
+
+    Leg (a) — legacy anchor: the pre-#1887 instrument under EXPLICIT pins
+    (``lambda_selection="gcv"``, 13-pt logspace(-2,4) grid,
+    ``GCV_DOF_CAP=None``, ``LEGACY_UNGUARDED_GCV=True``, ``FORCE_GRAM=True``):
+    gate-layer R^2 within ±0.01 of the committed 0.6731 (the #1336 g0v2
+    leg_a idiom — save-and-restore, never a permanent module global;
+    ``N_INNER_LAMBDA_FOLDS`` is deliberately NOT set here: the gcv path never
+    reads it, and the P5 patch must not leak in).
+    Leg (b) — v2-recipe identity: the P5 production recipe under explicit
+    pins (``inner-group-cv``, 23-pt logspace(-3,8) grid ``LAMBDAS_N1M``,
+    ``N_INNER_LAMBDA_FOLDS=2``, ``FORCE_GRAM=False`` — the primal route the
+    anchor was committed under at n_train > d): R^2 within 1e-6 of #1336's
+    committed 0.6935026836671432 (g0v2 ``leg_b_gram_vs_primal.r2_primal`` ==
+    ``leg_c_v2_anchor.s_qwen_v2``). Certifies recipe + device identity
+    against #1336's committed run — our arm-1 pod reproduced this value to
+    all 16 significant figures on different hardware (v88); 1e-6 is a
+    TOLERANCE, never bitwise equality (the #1336/#1946 cross-machine
+    recompute law): >=3 orders above any last-bit libm drift and >=3 orders
+    below the nearest wrong-recipe value (4-fold, delta 2.2e-3).
+
+    PASS <=> BOTH legs pass; rc 0 / rc 3 on gate failure (the dispatcher's
+    designed-halt contract, unchanged). Fixture mode (``--g0-local-dir``):
+    both anchors are production-n-calibrated, so both legs are computed +
+    recorded but demoted to informational (#1345 gate-calibration rule; the
+    g0v2 leg-(a) fixture precedent) — structural errors still fail loud.
+    Writes ``out/gates/g0_gate.json`` mirroring g0v2.json's per-leg shape.
+    """
+    if ns.g0_probe_only:
+        return 0 if f36._g0_probe() else 1
+    Xl, Yl, conv_ids, layer, fixture = _g0_xy_at_gate_layer(ns)
+    n = len(conv_ids)
+    committed_a, tol_a = float(cm.G0["committed_r2"]), float(cm.G0["tol"])
+    sweep_common = dict(
+        n_folds=cm.N_FOLDS,
+        seed=cm.FIT_SEED,
+        null_draws=0,
+        collect_cosines=False,
+        frozen_layers=(),
+    )
+    saved = (fc.GCV_DOF_CAP, fc.LEGACY_UNGUARDED_GCV, fc.FORCE_GRAM, fc.N_INNER_LAMBDA_FOLDS)
+    # Leg (a): legacy pins, module-patched + restored (#1336 g0v2 idiom).
+    try:
+        fc.GCV_DOF_CAP = None
+        fc.LEGACY_UNGUARDED_GCV = True
+        fc.FORCE_GRAM = True
+        sweep_a = fc.heldout_r2_sweep(
+            Xl,
+            Yl,
+            conv_ids,
+            lambda_selection="gcv",
+            lambdas=np.logspace(-2, 4, 13),
+            **sweep_common,
+        )
+    finally:
+        fc.GCV_DOF_CAP, fc.LEGACY_UNGUARDED_GCV, fc.FORCE_GRAM, fc.N_INNER_LAMBDA_FOLDS = saved
+    r2_a = float(sweep_a["r2_obs"][0])
+    dev_a = abs(r2_a - committed_a)
+    pass_a = dev_a <= tol_a
+    # Leg (b): the v2/P5 recipe, explicitly pinned (``N_INNER_LAMBDA_FOLDS``
+    # is read at call time by ``heldout_r2_sweep``).
+    try:
+        fc.N_INNER_LAMBDA_FOLDS = INNER_LAMBDA_FOLDS
+        fc.FORCE_GRAM = False
+        sweep_b = fc.heldout_r2_sweep(
+            Xl,
+            Yl,
+            conv_ids,
+            lambda_selection="inner-group-cv",
+            lambdas=LAMBDAS_N1M,
+            **sweep_common,
+        )
+    finally:
+        fc.GCV_DOF_CAP, fc.LEGACY_UNGUARDED_GCV, fc.FORCE_GRAM, fc.N_INNER_LAMBDA_FOLDS = saved
+    r2_b = float(sweep_b["r2_obs"][0])
+    dev_b = abs(r2_b - G0_V2_ANCHOR_R2)
+    pass_b = dev_b <= G0_V2_TOL
+    # Production-n anchors demote to informational at fixture n (#1345).
+    enforced = not fixture
+    ok = (pass_a or not enforced) and (pass_b or not enforced)
+    payload = {
+        "metadata": {**_repro("ge_gate"), "seed": int(cm.FIT_SEED), "n": int(n)},
+        "gate": "G-E",
+        "stem": cm.G0["stem"],
+        "revision": cm.G0["revision"],
+        "layer": int(layer),
+        "leg_a_legacy": {
+            "r2": r2_a,
+            "committed_r2": committed_a,
+            "tol": tol_a,
+            "abs_dev": dev_a,
+            "pass": bool(pass_a),
+            "enforced": enforced,
+            "pins": {
+                "lambda_selection": "gcv",
+                "GCV_DOF_CAP": None,
+                "LEGACY_UNGUARDED_GCV": True,
+                "FORCE_GRAM": True,
+                "grid": "logspace(-2,4,13)",
+            },
+        },
+        "leg_b_v2_identity": {
+            "r2": r2_b,
+            "committed_r2": G0_V2_ANCHOR_R2,
+            "tol": G0_V2_TOL,
+            "abs_dev": dev_b,
+            "pass": bool(pass_b),
+            "enforced": enforced,
+            "committed_source": (
+                "eval_results/issue_1336/gates_v2/g0v2.json (origin/main): "
+                "leg_b_gram_vs_primal.r2_primal == leg_c_v2_anchor.s_qwen_v2"
+            ),
+            "pins": {
+                "lambda_selection": "inner-group-cv",
+                "N_INNER_LAMBDA_FOLDS": INNER_LAMBDA_FOLDS,
+                "FORCE_GRAM": False,
+                "grid": "logspace(-3,8,23)",
+            },
+        },
+        "fold_sensitivity_probe": {
+            "r2_inner_group_cv_4fold": G0_FOLD_PROBE_4FOLD_R2,
+            "enforced": False,
+            "measured": (
+                "issue1336_fit_cells.py --g0 UNPATCHED (module-default 4 inner folds) on "
+                "pod-2546-arm1c @ a917b1a9f5 -> /workspace/issue2546/out_g0probe/gates/"
+                "g0_gate.json"
+            ),
+            "note": (
+                "fold count moves the v2-recipe read 0.6957 -> 0.6935 (delta 2.2e-3): the "
+                "P5 N_INNER_LAMBDA_FOLDS patch must stay scoped out of this gate; NEITHER "
+                "fold count reaches the 0.6731 legacy anchor (selector+grid, not folds)"
+            ),
+        },
+        "local_dir_fixture": fixture,
+        "pass": bool(ok),
+    }
+    _atomic_json(Path(ns.out_dir) / "gates" / "g0_gate.json", payload)
+    info = "" if enforced else " (informational: fixture)"
+    print(
+        f"[ge-gate] (a) legacy R2={r2_a:.4f} vs {committed_a} dev={dev_a:.2e} "
+        f"{'PASS' if pass_a else 'FAIL'}{info} | "
+        f"(b) v2 R2={r2_b:.16f} vs {G0_V2_ANCHOR_R2:.16f} dev={dev_b:.2e} "
+        f"{'PASS' if pass_b else 'FAIL'}{info} -> {'PASS' if ok else 'FAIL'}",
+        flush=True,
+    )
+    return 0 if ok else 3
+
+
 def run_selftest() -> int:
     import tempfile
 
@@ -2294,7 +2564,10 @@ def run_selftest() -> int:
             decode_fallback = False
 
         args = _Args()
-        fc.N_INNER_LAMBDA_FOLDS = INNER_LAMBDA_FOLDS
+        # v15: run_units owns the RECORDED inner-folds patch (scoped
+        # save/restore) — capture the entry value and assert below that the
+        # patch cannot leak past run_units into any later in-process call.
+        folds_entry = fc.N_INNER_LAMBDA_FOLDS
         # No monkeypatching: the selftest profile mirrors arm-1 side names/stages,
         # so AnswerInfo resolves the REAL g25.ARMS[1] side specs and the rollouts
         # above are parsed by the real emergent/off parse path.
@@ -2310,6 +2583,10 @@ def run_selftest() -> int:
         ]
         rc = run_units(args, prof, picks)
         assert rc == 0
+        assert fc.N_INNER_LAMBDA_FOLDS == folds_entry, (
+            f"P5 inner-folds patch leaked past run_units: "
+            f"{fc.N_INNER_LAMBDA_FOLDS} != {folds_entry}"
+        )
         op = json.loads((root / "out" / "ladder" / "operator_comparison__a1.json").read_text())
         assert op["status"] == "ok", op
         assert -1.0 <= op["direction_aware"]["raw_cosine_with_rotation_null"]["raw_cosine"] <= 1.0
@@ -2474,7 +2751,8 @@ def run_selftest() -> int:
             "scatter-fill), ladder band, operator (rotation null, batched==serial), "
             "ood transfer, content hits (MCQ ladder parity), reliability ceiling "
             "(frozen-subset index mapping), shard-content-swap invalidation, "
-            "claim-dir work-conserving walk, freed-shards resume refusal"
+            "claim-dir work-conserving walk, freed-shards resume refusal, "
+            "inner-folds patch scope restore (v15)"
         )
     return 0
 
@@ -2489,7 +2767,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--arm", type=int, choices=(1, 2, 3), default=None)
     ap.add_argument("--out-root", type=Path, default=None)
     ap.add_argument("--smoke", action="store_true")
-    ap.add_argument("--g0", action="store_true", help="G-E fit-core reuse gate (delegates #1336)")
+    ap.add_argument(
+        "--g0",
+        action="store_true",
+        help="G-E fit-core reuse gate (two-leg pinned instrument, v15: legacy "
+        "0.6731 anchor + v2-recipe 0.6935026836671432 identity)",
+    )
     ap.add_argument("--g0-probe-only", action="store_true")
     ap.add_argument("--g0-local-dir", type=Path, default=None)
     ap.add_argument("--shard", default=None, help="worker mode: i/N over the unit registry")
@@ -2529,18 +2812,15 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(0)
     if args.selftest:
         return run_selftest()
-    # RECORDED module-global patch (plan §4.2 P5 / §10): inner-CV λ selection at
-    # 2 inner folds; main's default is 4 and heldout_r2_sweep has no kwarg.
-    print(
-        f"[p5] RECORDED module-global patch: fc.N_INNER_LAMBDA_FOLDS "
-        f"{fc.N_INNER_LAMBDA_FOLDS} -> {INNER_LAMBDA_FOLDS} (plan v4 §4.2 P5; #1336 parity)",
-        flush=True,
-    )
-    fc.N_INNER_LAMBDA_FOLDS = INNER_LAMBDA_FOLDS
+    # v15: the RECORDED fc.N_INNER_LAMBDA_FOLDS patch is scoped INSIDE
+    # run_units (_p5_inner_folds_patch) — an entry-wide patch here
+    # contaminated the delegated G-E gate (task marker v88).
     assert args.out_root is not None, "--out-root is required"
     if args.g0 or args.g0_probe_only:
-        # G-E gate: the #1336 --g0 mode reused verbatim (refit the pinned #825
-        # Qwen S1 cell @ deb7a452; PASS iff L19 R2 within +/-0.01 of 0.6731).
+        # G-E gate (v15): the two-leg pinned instrument (run_g0_gate). The
+        # #1336 run_g0 delegation was retired this round — after the #1887
+        # defaults flip it measured the v2 recipe against the legacy 0.6731
+        # anchor (v88 root cause). Same CLI + rc contract (0 pass / 3 fail).
         out_root = Path(args.out_root)
         ns = SimpleNamespace(
             g0_probe_only=bool(args.g0_probe_only),
@@ -2548,7 +2828,7 @@ def main(argv: list[str] | None = None) -> int:
             g0_dl_dir=out_root / "g0_dl",
             out_dir=out_root / "out",
         )
-        return int(f36.run_g0(ns))
+        return run_g0_gate(ns)
     assert args.arm is not None, "--arm is required"
     prof = profile_for_arm(args.arm)
     if args.publish:
