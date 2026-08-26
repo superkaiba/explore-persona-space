@@ -1,29 +1,60 @@
-"""Issue #2587 unit 6 — P10 figures: layer-sweep hero, matched-n table, exploratory dump.
+"""Issue #2587 unit 6 — P10 figures: the two heroes, matched-n table, and the
+FULL plan-§6/§13 exploratory dump.
 
-Consumes ONLY committed / harvested JSON artifacts (no torch, no GPU, no
-network): the unit-4 ``map_layer_sweep.json`` + ``matched7b_anchor.json``,
-the unit-5b ``minpair_delta_2587.json`` + ``crossmodel_contrasts.json``, and
-the banked #2330 reference fits (``eval_results/issue_2330/matched_fits_*``).
+Consumes ONLY committed / harvested artifacts (no torch, no GPU, no network):
+the unit-4 ``map_layer_sweep.json`` + ``matched7b_anchor.json``, the unit-5b
+``minpair_delta_2587.json`` + ``perpair_2587.jsonl`` +
+``crossmodel_contrasts.json``, the unit-5a ``manipulation_check_2587.json``
+(+ the parent's committed ``manipulation_check.json``), the unit-1/P0b
+``bank_manifest.json`` (token_gates), the harvested battery gen manifests
+(``anchors_*.done.json``) + map-side cap-hit aggregates (``cap_hit_*.json``),
+and the banked #2330 reference fits (``eval_results/issue_2330/…``).
 
-Figures (plan §6):
+Registered outputs (plan §6 "Figures." + §13 deliverables — one registry key
+per named item; the §6 name is quoted per entry):
 
-* ``hero_layer_sweep`` — held-out test R² vs FRACTIONAL depth: the fresh 9B
-  n≈25k curve over all 32 layers (L* starred), the #2330 9B n=10k points
-  (layers 16/22/30), the #2330 7B n=10k points (layers 14/19/26), the 7B
-  n=25k L19 anchor, the strongest-floor envelope, and the #2329 convention's
-  full-attention dashed verticals (Qwen3.5-9B geometry only).
-* ``matched_n_table`` — 9B@L* vs 7B@L19 at matched n≈25k (test/val/wc R²,
-  floors, kNN retrieval, two-draw ceilings, anchor gate, paired H1 delta),
-  written as ``table_matched_n.md`` + ``table_matched_n.json``.
-* Exploratory dump (over-produced, all committed): selected-λ-per-layer,
-  floors-per-layer, wc-transfer vs in-corpus, kNN acc@k per layer,
-  reliability ceilings, the cross-model per-axis profile (hero 1 of §6) and
-  the per-axis cross-model delta forest.
+* ``hero_layer_sweep``            — hero 2: held-out test R² vs FRACTIONAL depth.
+* ``crossmodel_axis_profile``     — hero 1: per-axis cross-model profile, WITH
+  per-axis CI whiskers, null 95% bands, split-half ceilings, and the
+  identity+bias (iddelta) baseline arms (plan §6 hero-1 layer contract).
+* ``matched_n_table``             — §4.6 matched-n table (md + json).
+* ``selected_lambda_per_layer``   — "selected-λ-per-layer curve".
+* ``floors_per_layer``            — "floors table per layer" (rendered per-layer).
+* ``wc_transfer_per_layer``       — "wc-transfer vs in-corpus bar".
+* ``knn_per_layer``               — fit-side kNN acc@k per layer (§6 DV row).
+* ``reliability_ceiling``         — fit-side two-draw ceilings (§6 DV row).
+* ``crossmodel_delta_forest``     — per-axis carrier-paired deltas + CIs.
+* ``delta_norm_scatter``          — "per-axis ‖Δ̂‖-vs-‖Δ‖ scatters" (per model).
+* ``install_swap_violins``        — "install-vs-swap violins".
+* ``axis_identity_heatmap``       — "axis-identity heatmaps" (per-value-pair
+  carrier-mean identity cos, map arm, per model).
+* ``crossfam_consistency_scatter``— "cross-family consistency scatters
+  (observed + predicted, both models)".
+* ``edit_dose_scatter``           — "edit-dose scatters per tokenizer".
+* ``delta_retrieval_acc``         — "Δ-retrieval acc@k curves per arm"
+  (battery-side; distinct from the fit-side ``knn_per_layer``).
+* ``carrier_direction_heatmap``   — "per-carrier direction-cos transfer
+  matrices" (carrier × axis mean map-arm cos, per model).
+* ``splithalf_vs_direction``      — "split-half-vs-direction scatters".
+* ``pilot_axis_panels``           — "pilot-axis panels" (9B-only; the 7B side
+  is rendered as pending per plan convention 12).
+* ``lstar_sensitivity_twins``     — "L*-vs-{16,22,30} sensitivity twins of
+  hero 1" (iddelta arm only — the frozen map is L*-fit, so the twin layers
+  carry no map arm by construction; plan cross-unit constraint 5).
+* ``pooling_twin_scatter``        — "span-mean pooling twin".
+* ``matched_vs_parent_scatter``   — "7B-matched-vs-7B-parent-arm agreement
+  scatter".
+* ``think_leak_cap_hit_table``    — "think-leak + cap-hit tables" (md + json).
+* ``manipulation_check_table``    — the §13 manipulation-check table (md + json).
+* ``token_count_equality_table``  — "q25-vs-q35 token-count-equality table".
 
 Display names live in ONE label map (``DISPLAY``) — internal arm/model slugs
 never reach an axis, legend, or table header. Figures carry no on-canvas
 caption blocks (axes + ticks + legend + panel titles only); provenance goes
-to the ``savefig_paper`` sidecars.
+to the ``savefig_paper`` sidecars. Color contract (one color = one meaning
+across the set): primary = Qwen3.5-9B data, baseline = Qwen2.5-7B data,
+control = WildChat transfer ONLY, accent = cosine-metric ONLY, neutral =
+reference lines / floors / arm-type legend proxies.
 
 CLI examples:
   uv run python scripts/issue2587_figures.py                      # all figures
@@ -50,6 +81,7 @@ load_dotenv()
 import argparse  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
+import math  # noqa: E402
 
 import matplotlib  # noqa: E402
 
@@ -57,6 +89,7 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
@@ -83,6 +116,12 @@ L19 = 19
 ANCHOR_7B_25K_R2 = 0.7250873220237553
 ANCHOR_TOL = 0.01
 
+MODEL_TAGS = ("qwen35_9b", "qwen25_7b")
+
+# Plan-§7 disclosure thresholds rendered by the think-leak/cap-hit table.
+CAP_HIT_REGEN_TRIGGER = 0.02
+THINK_LEAK_ASSERT = 0.01
+
 # ── display-name label map (ONE map; no internal slugs on any figure) ──
 DISPLAY: dict[str, str] = {
     # models / curves
@@ -98,6 +137,13 @@ DISPLAY: dict[str, str] = {
     "arm_fresh9b": "Qwen3.5-9B fresh map",
     "arm_7b_matched25k": "Qwen2.5-7B matched-n map",
     "ref_7b_parent": "Qwen2.5-7B parent map (reference)",
+    "arm_iddelta9b": "Qwen3.5-9B identity+bias baseline",
+    "arm_iddelta7b": "Qwen2.5-7B identity+bias baseline",
+    "iddelta_generic": "identity+bias baseline",
+    # overlay layers (hero 1 + pilot panels)
+    "null_band": "null 95% band",
+    "split_half_ceiling": "split-half reliability ceiling",
+    "pending_7b": "Qwen2.5-7B side pending (parent pilot reads)",
     # floors
     "identity_bias": "identity + learned bias",
     "identity_copy": "identity (copy input)",
@@ -111,6 +157,15 @@ DISPLAY: dict[str, str] = {
     "crossfam_cos_observed": "cross-family consistency (observed)",
     "crossfam_cos_maparm": "cross-family consistency (predicted)",
     "axis_identity_cos": "axis identity cosine",
+    # pair classes (violins)
+    "swap": "value swap",
+    "install": "install (vs bare)",
+    # pooling conventions
+    "pooling_tail": "tail-inclusive mean",
+    "pooling_span": "answer span mean",
+    # manipulation-check special axis verdicts
+    "not_in_slice": "not in this run's slice",
+    "no_manipulation_check_query_class": "no manipulation check (query class)",
 }
 
 _AXIS_OVERRIDES = {
@@ -150,6 +205,19 @@ def _mark_full_attention(ax, n_layers: int) -> None:
         ax.axvline(layer / (n_layers - 1), color=FULL_ATTN_COLOR, ls="--", lw=0.6, zorder=0)
 
 
+def _fnum(v) -> float:
+    """JSON value -> float; the producer's _json_sanitize maps NaN/inf to
+    None, so None reads back as NaN (never a silent 0)."""
+    return float("nan") if v is None else float(v)
+
+
+def _fpair(v) -> tuple[float, float]:
+    """JSON 2-list (a CI) -> (lo, hi) floats with the None->NaN coercion."""
+    if not v:
+        return float("nan"), float("nan")
+    return _fnum(v[0]), _fnum(v[1])
+
+
 # ── input loading ──────────────────────────────────────────────────────
 
 
@@ -158,6 +226,42 @@ def _load_json(path: Path, what: str) -> dict:
     if not p.is_file():
         raise FileNotFoundError(f"{what} missing: {p} (fail-loud — no placeholder figures)")
     return json.loads(p.read_text(encoding="utf-8"))
+
+
+def _load_jsonl(path: Path, what: str) -> list[dict]:
+    """JSONL rows via text-mode line iteration (never str.splitlines —
+    gotchas.md U+2028 rule); fail-loud on missing or empty."""
+    p = Path(path)
+    if not p.is_file():
+        raise FileNotFoundError(f"{what} missing: {p} (fail-loud — no placeholder figures)")
+    rows: list[dict] = []
+    with p.open(encoding="utf-8") as fh:
+        for line in fh:
+            if line.strip():
+                rows.append(json.loads(line))
+    if not rows:
+        raise RuntimeError(f"{what} parsed to ZERO rows: {p} (fail-loud)")
+    return rows
+
+
+def _load_leak_dir(path: Path, what: str) -> dict:
+    """Recursive glob of the battery gen done-manifests + map-side cap-hit
+    aggregates under one harvested directory; fail-loud when neither class
+    matches (never a silent empty table)."""
+    d = Path(path)
+    if not d.is_dir():
+        raise FileNotFoundError(f"{what} missing: {d} (fail-loud — no placeholder tables)")
+    gen = {
+        p: json.loads(p.read_text(encoding="utf-8")) for p in sorted(d.rglob("anchors_*.done.json"))
+    }
+    cap = {p: json.loads(p.read_text(encoding="utf-8")) for p in sorted(d.rglob("cap_hit_*.json"))}
+    if not gen and not cap:
+        raise RuntimeError(
+            f"{what}: no anchors_*.done.json and no cap_hit_*.json under {d} — harvest the "
+            "battery gen manifests / cap-hit aggregates first or pass --leak-caphit-dir "
+            "(fail-loud; a missing upstream artifact never yields an empty table)"
+        )
+    return {"dir": d, "gen": gen, "cap": cap}
 
 
 def sweep_layers(sweep: dict) -> list[int]:
@@ -186,7 +290,65 @@ def _floor_envelope(row: dict) -> float:
     return max(vals)
 
 
-# ── figures ────────────────────────────────────────────────────────────
+def _require_stat_axes(cm_stats: dict, what: str, *stats: str) -> None:
+    """Empty-render guard (r1 Minor 1): an empty per-stat axes list must
+    RAISE, never render a blank panel set that passes a PNG-size floor."""
+    for stat in stats:
+        axes = (cm_stats.get(stat) or {}).get("axes")
+        if not axes:
+            raise RuntimeError(
+                f"{what}: stats[{stat!r}]['axes'] is EMPTY — refusing a blank render (fail-loud)"
+            )
+
+
+def _delta_sides(delta: dict) -> dict:
+    """Validated access to minpair_delta_2587.json's per-side battery blocks
+    (fail-loud on a doc that lacks populated sides — e.g. an h1-only stub)."""
+    sides = delta.get("sides") or {}
+    missing = [t for t in MODEL_TAGS if t not in sides]
+    if missing:
+        raise RuntimeError(
+            f"minpair_delta_2587.json lacks side block(s) {missing} — the per-axis battery "
+            "reads are required for the delta-consuming figures (fail-loud)"
+        )
+    for tag in MODEL_TAGS:
+        if not sides[tag].get("axes"):
+            raise RuntimeError(
+                f"minpair_delta_2587.json side {tag!r} has an EMPTY axes map (fail-loud)"
+            )
+    return sides
+
+
+def _perpair_by_model(rows: list[dict]) -> dict[str, list[dict]]:
+    out: dict[str, list[dict]] = {}
+    for r in rows:
+        out.setdefault(str(r["model_tag"]), []).append(r)
+    missing = [t for t in MODEL_TAGS if t not in out]
+    if missing:
+        raise RuntimeError(f"perpair_2587.jsonl has no rows for model tag(s) {missing} (fail-loud)")
+    return out
+
+
+def _map_arm_of(rows: list[dict], what: str) -> str:
+    """Resolve the single map arm from a perpair row's arm-keyed dicts (the
+    other arm is the identity+bias iddelta baseline by the unit-5b contract)."""
+    arms = sorted(rows[0]["norm_pred"])
+    non_id = [a for a in arms if "iddelta" not in a]
+    if len(non_id) != 1:
+        raise RuntimeError(f"{what}: cannot resolve the map arm from arms={arms} (fail-loud)")
+    return non_id[0]
+
+
+def _fmt(v) -> str:
+    """Markdown-cell formatter shared by every table writer."""
+    if v is None:
+        return "n/a"
+    if isinstance(v, float):
+        return "n/a" if not math.isfinite(v) else f"{v:.4f}"
+    return str(v)
+
+
+# ── figures: heroes + matched-n table ──────────────────────────────────
 
 
 def fig_hero_layer_sweep(inputs: dict, out_dir: Path) -> list[Path]:
@@ -198,7 +360,7 @@ def fig_hero_layer_sweep(inputs: dict, out_dir: Path) -> list[Path]:
     c7 = paper_palette_role("baseline")
     neutral = paper_palette_role("neutral")
 
-    fig, ax = plt.subplots(figsize=(7.0, 4.2))
+    fig, ax = plt.subplots(figsize=(7.0, 4.2), layout="constrained")
     n_layers = int(sweep["n_layers"])
     _mark_full_attention(ax, n_layers)
 
@@ -347,11 +509,6 @@ def matched_n_table(inputs: dict, out_dir: Path) -> list[Path]:
     name9 = f"{DISPLAY['qwen35_9b']} @ layer {lstar} (L*)"
     name7 = f"{DISPLAY['qwen25_7b']} @ layer {L19}"
 
-    def _fmt(v) -> str:
-        if v is None:
-            return "n/a"
-        return f"{v:.4f}" if isinstance(v, float) else str(v)
-
     lines = [
         f"# Matched-n map comparison — {name9} vs {name7}",
         "",
@@ -407,9 +564,12 @@ def matched_n_table(inputs: dict, out_dir: Path) -> list[Path]:
     return [md_path, json_path]
 
 
+# ── figures: fit-side per-layer exploratory dump ───────────────────────
+
+
 def fig_selected_lambda_per_layer(inputs: dict, out_dir: Path) -> list[Path]:
     sweep = inputs["sweep"]
-    fig, ax = plt.subplots(figsize=(6.0, 3.4))
+    fig, ax = plt.subplots(figsize=(6.0, 3.4), layout="constrained")
     _mark_full_attention(ax, int(sweep["n_layers"]))
     x, lam = _sweep_series(sweep, lambda r: float(r["ridge"]["meta"]["selected_lambda"]))
     ax.plot(x, lam, color=paper_palette_role("primary"), marker="o", ms=3, lw=1.4)
@@ -426,7 +586,7 @@ def fig_floors_per_layer(inputs: dict, out_dir: Path) -> list[Path]:
     layers = sweep_layers(sweep)
     floor_names = sorted(sweep["per_layer"][str(layers[0])]["floors"])
     colors = paper_palette(len(floor_names) + 1)
-    fig, ax = plt.subplots(figsize=(6.5, 4.0))
+    fig, ax = plt.subplots(figsize=(6.5, 4.0), layout="constrained")
     _mark_full_attention(ax, int(sweep["n_layers"]))
     x, ridge = _sweep_series(sweep, lambda r: float(r["ridge"]["test_r2"]))
     ax.plot(x, ridge, color=colors[0], lw=1.8, label="ridge map")
@@ -450,7 +610,7 @@ def fig_floors_per_layer(inputs: dict, out_dir: Path) -> list[Path]:
 
 def fig_wc_transfer_per_layer(inputs: dict, out_dir: Path) -> list[Path]:
     sweep = inputs["sweep"]
-    fig, ax = plt.subplots(figsize=(6.0, 3.4))
+    fig, ax = plt.subplots(figsize=(6.0, 3.4), layout="constrained")
     _mark_full_attention(ax, int(sweep["n_layers"]))
     x, y_in = _sweep_series(sweep, lambda r: float(r["ridge"]["test_r2"]))
     _, y_wc = _sweep_series(sweep, lambda r: float(r["ridge"]["wc_test_1k_r2"]))
@@ -466,10 +626,12 @@ def fig_wc_transfer_per_layer(inputs: dict, out_dir: Path) -> list[Path]:
 
 def fig_knn_per_layer(inputs: dict, out_dir: Path) -> list[Path]:
     sweep = inputs["sweep"]
-    fig, ax = plt.subplots(figsize=(6.0, 3.6))
+    fig, ax = plt.subplots(figsize=(6.0, 3.6), layout="constrained")
     _mark_full_attention(ax, int(sweep["n_layers"]))
+    # Color contract: this figure is 9B fresh-fit data (primary); the cosine
+    # metric rides ACCENT set-wide ("control" stays WildChat-transfer-only).
     c1 = paper_palette_role("primary")
-    c2 = paper_palette_role("control")
+    c2 = paper_palette_role("accent")
     for k, ls in ((1, "-"), (10, "--")):
         x, ye = _sweep_series(sweep, lambda r, kk=k: _knn_cell(r["knn"], "ridge", "euclidean", kk))
         _, yc = _sweep_series(sweep, lambda r, kk=k: _knn_cell(r["knn"], "ridge", "cosine", kk))
@@ -496,7 +658,7 @@ def fig_reliability_ceiling(inputs: dict, out_dir: Path) -> list[Path]:
     for li in layers:
         blk = rc["by_layer"][str(li)]
         vals.append(float(blk["ceiling_var_weighted_r"]) if blk.get("available") else np.nan)
-    fig, ax = plt.subplots(figsize=(4.6, 3.2))
+    fig, ax = plt.subplots(figsize=(4.6, 3.2), layout="constrained")
     ax.bar(
         [str(li) for li in layers],
         vals,
@@ -510,59 +672,174 @@ def fig_reliability_ceiling(inputs: dict, out_dir: Path) -> list[Path]:
     return list(paths.values())
 
 
+# ── figures: cross-model profile (hero 1) + delta forest ──────────────
+
 _PROFILE_STATS = ("direction_cos", "calibration_ratio_to_global", "obs_separation_snr")
 
 
+def _side_layers(sides: dict, tag: str) -> tuple[dict, str, str]:
+    """(axes map, map arm, iddelta arm) for one side, from the side's own meta."""
+    meta = sides[tag]["meta"]
+    return sides[tag]["axes"], str(meta["map_arm"]), str(meta["id_arm"])
+
+
 def fig_crossmodel_axis_profile(inputs: dict, out_dir: Path) -> list[Path]:
-    """Hero 1 (plan §6): per-axis cross-model profile — one row per shared
-    axis, one panel per scale-free statistic, both models + the parent-map
-    reference side by side."""
+    """Hero 1 (plan §6): per-axis cross-model profile — one row per axis with
+    per-model sub-rows. Panel 1 (direction cosine) carries the full §6 layer
+    contract: map-arm point + 95% CI whisker, identity+bias baseline (×),
+    split-half reliability ceiling (|), null 95% band, and the 7B parent-map
+    reference. Panel 2 (calibration ratio) carries map + CI + baseline; panel
+    3 is the crossmodel doc's ceiling-adjusted observed-space separation.
+    Map-arm points/CIs/nulls/ceilings read from minpair_delta_2587.json
+    (side-own headline reads); the parent reference + separation panel read
+    from crossmodel_contrasts.json (symmetric-fired shared subset)."""
     cm = inputs["crossmodel"]
-    stats = cm["stats"]
-    # Row order: axes sorted by the 9B direction cosine (descending).
-    dir_rows = {r["axis"]: r for r in stats["direction_cos"]["axes"]}
-
-    def _order_key(a: str) -> float:
-        v = dir_rows[a]["s_9b"]
-        # None (JSON null) sorts last; a legitimate 0.0 keeps its rank.
-        return -v if isinstance(v, (int, float)) else float("inf")
-
-    axes_order = sorted(dir_rows, key=_order_key)
-    ypos = np.arange(len(axes_order))[::-1]
+    _require_stat_axes(cm["stats"], "crossmodel_contrasts.json", "direction_cos")
+    sides = _delta_sides(inputs["delta"])
+    axes9, map9, id9 = _side_layers(sides, "qwen35_9b")
+    axes7, map7, id7 = _side_layers(sides, "qwen25_7b")
     c9 = paper_palette_role("primary")
     c7 = paper_palette_role("baseline")
+    neutral = paper_palette_role("neutral")
 
+    def _dir9(a: str) -> float:
+        row = axes9.get(a)
+        return _fnum(row["direction"][map9]["mean_cos_headline"]) if row else float("nan")
+
+    all_axes = sorted(set(axes9) | set(axes7))
+    axes_order = sorted(all_axes, key=lambda a: -_dir9(a) if math.isfinite(_dir9(a)) else math.inf)
+    ypos = np.arange(len(axes_order))[::-1].astype(np.float64)
+    ref_rows = {r["axis"]: r for r in cm["stats"]["direction_cos"]["axes"]}
+    sep_rows = {r["axis"]: r for r in (cm["stats"].get("obs_separation_snr") or {}).get("axes", [])}
+
+    # layout="constrained": the neurips style does NOT enable constrained
+    # layout via rcParams, and multi-panel figures + outside fig-legends need
+    # it (set at creation — never a post-colorbar engine switch).
     fig, panels = plt.subplots(
         1,
         len(_PROFILE_STATS),
-        figsize=(3.2 * len(_PROFILE_STATS), 0.42 * len(axes_order) + 1.6),
+        figsize=(3.3 * len(_PROFILE_STATS), 0.52 * len(axes_order) + 2.2),
         sharey=True,
+        layout="constrained",
     )
-    for ax, stat in zip(np.atleast_1d(panels), _PROFILE_STATS):
-        rows = {r["axis"]: r for r in stats[stat]["axes"]}
-        s9 = [rows[a]["s_9b"] if a in rows else np.nan for a in axes_order]
-        s7 = [rows[a]["s_7b"] if a in rows else np.nan for a in axes_order]
-        sp = [rows[a]["s_7b_ref_parent"] if a in rows else np.nan for a in axes_order]
-        s9 = np.asarray([np.nan if v is None else v for v in s9], dtype=np.float64)
-        s7 = np.asarray([np.nan if v is None else v for v in s7], dtype=np.float64)
-        sp = np.asarray([np.nan if v is None else v for v in sp], dtype=np.float64)
-        ax.scatter(s9, ypos, color=c9, marker="o", s=26, label=DISPLAY["arm_fresh9b"])
-        ax.scatter(s7, ypos, color=c7, marker="D", s=22, label=DISPLAY["arm_7b_matched25k"])
-        ax.scatter(
-            sp,
-            ypos,
-            facecolors="none",
-            edgecolors=c7,
-            marker="D",
-            s=34,
-            label=DISPLAY["ref_7b_parent"],
+    panels = np.atleast_1d(panels)
+    model_specs = (
+        ("qwen35_9b", axes9, map9, id9, c9, +0.18, "o"),
+        ("qwen25_7b", axes7, map7, id7, c7, -0.18, "D"),
+    )
+
+    # panel 1: direction cosine (full layer contract)
+    ax = panels[0]
+    for _tag, rows, marm, iarm, color, off, mk in model_specs:
+        vals, lo, hi, idd, ceil_r, nlo, nhi = ([] for _ in range(7))
+        for a in axes_order:
+            row = rows.get(a)
+            if row is None:
+                for acc in (vals, lo, hi, idd, ceil_r, nlo, nhi):
+                    acc.append(float("nan"))
+                continue
+            d = row["direction"][marm]
+            vals.append(_fnum(d["mean_cos_headline"]))
+            clo, chi = _fpair(d.get("ci95"))
+            lo.append(clo)
+            hi.append(chi)
+            idd.append(_fnum(row["direction"][iarm]["mean_cos_headline"]))
+            ceil_r.append(_fnum(row["reliability"]["r10_mean"]))
+            null = d.get("null") or {}
+            nlo.append(_fnum(null.get("q2_5")))
+            nhi.append(_fnum(null.get("q97_5")))
+        y = ypos + off
+        ax.hlines(y, nlo, nhi, color=color, alpha=0.25, lw=3.5, zorder=1)
+        ax.plot(ceil_r, y, marker="|", ms=9, mew=1.4, color=color, ls="none", zorder=2)
+        ax.plot(idd, y, marker="x", ms=5, mew=1.2, color=color, ls="none", zorder=3)
+        vals_a = np.asarray(vals, dtype=np.float64)
+        ax.errorbar(
+            vals_a,
+            y,
+            xerr=_err_offsets(vals_a, np.asarray(lo), np.asarray(hi)),
+            fmt=mk,
+            ms=4.5,
+            color=color,
+            ecolor=color,
+            elinewidth=1.0,
+            capsize=1.6,
+            ls="none",
+            zorder=4,
         )
-        if stat == "calibration_ratio_to_global":
-            ax.axvline(1.0, color=paper_palette_role("neutral"), lw=0.8, ls=":")
-        ax.set_title(DISPLAY[stat], fontsize=9)
-    np.atleast_1d(panels)[0].set_yticks(ypos)
-    np.atleast_1d(panels)[0].set_yticklabels([axis_label(a) for a in axes_order], fontsize=8)
-    np.atleast_1d(panels)[0].legend(fontsize=7, loc="lower left")
+    ref = np.asarray([_fnum(ref_rows.get(a, {}).get("s_7b_ref_parent")) for a in axes_order])
+    ax.scatter(ref, ypos - 0.18, facecolors="none", edgecolors=c7, marker="D", s=32, zorder=3)
+    ax.axvline(0.0, color=neutral, lw=0.8, ls=":")
+    ax.set_title(DISPLAY["direction_cos"], fontsize=9)
+
+    # panel 2: calibration ratio (map + CI + identity+bias baseline)
+    ax = panels[1]
+    for _tag, rows, marm, iarm, color, off, mk in model_specs:
+        vals, lo, hi, idd = ([] for _ in range(4))
+        for a in axes_order:
+            row = rows.get(a)
+            if row is None:
+                for acc in (vals, lo, hi, idd):
+                    acc.append(float("nan"))
+                continue
+            cal = row["calibration"][marm]
+            vals.append(_fnum(cal["ratio_to_global"]))
+            clo, chi = _fpair(cal.get("ratio_to_global_ci95"))
+            lo.append(clo)
+            hi.append(chi)
+            idd.append(_fnum(row["calibration"][iarm]["ratio_to_global"]))
+        y = ypos + off
+        ax.plot(idd, y, marker="x", ms=5, mew=1.2, color=color, ls="none", zorder=3)
+        vals_a = np.asarray(vals, dtype=np.float64)
+        ax.errorbar(
+            vals_a,
+            y,
+            xerr=_err_offsets(vals_a, np.asarray(lo), np.asarray(hi)),
+            fmt=mk,
+            ms=4.5,
+            color=color,
+            ecolor=color,
+            elinewidth=1.0,
+            capsize=1.6,
+            ls="none",
+            zorder=4,
+        )
+    ax.axvline(1.0, color=neutral, lw=0.8, ls=":")
+    ax.set_title(DISPLAY["calibration_ratio_to_global"], fontsize=9)
+
+    # panel 3: observed-space separation (ceiling-adjusted; crossmodel doc)
+    ax = panels[2]
+    s9 = np.asarray([_fnum(sep_rows.get(a, {}).get("s_9b")) for a in axes_order])
+    s7 = np.asarray([_fnum(sep_rows.get(a, {}).get("s_7b")) for a in axes_order])
+    sp = np.asarray([_fnum(sep_rows.get(a, {}).get("s_7b_ref_parent")) for a in axes_order])
+    ax.plot(s9, ypos + 0.18, marker="o", ms=4.5, color=c9, ls="none")
+    ax.plot(s7, ypos - 0.18, marker="D", ms=4.5, color=c7, ls="none")
+    ax.scatter(sp, ypos - 0.18, facecolors="none", edgecolors=c7, marker="D", s=32)
+    ax.set_title(DISPLAY["obs_separation_snr"], fontsize=9)
+
+    labels = [
+        axis_label(a) + (" (pilot)" if (axes9.get(a) or {}).get("pilot_axis") else "")
+        for a in axes_order
+    ]
+    panels[0].set_yticks(ypos)
+    panels[0].set_yticklabels(labels, fontsize=8)
+    handles = [
+        Line2D([], [], marker="o", color=c9, ls="none", label=DISPLAY["arm_fresh9b"]),
+        Line2D([], [], marker="D", color=c7, ls="none", label=DISPLAY["arm_7b_matched25k"]),
+        Line2D(
+            [],
+            [],
+            marker="D",
+            mfc="none",
+            mec=c7,
+            color=c7,
+            ls="none",
+            label=DISPLAY["ref_7b_parent"],
+        ),
+        Line2D([], [], marker="x", color=neutral, ls="none", label=DISPLAY["iddelta_generic"]),
+        Line2D([], [], marker="|", color=neutral, ls="none", label=DISPLAY["split_half_ceiling"]),
+        Line2D([], [], color=neutral, alpha=0.35, lw=3.5, label=DISPLAY["null_band"]),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=7)
     paths = savefig_paper(fig, "fig_hero_crossmodel_axis_profile", dir=out_dir)
     plt.close(fig)
     return list(paths.values())
@@ -572,8 +849,13 @@ def fig_crossmodel_delta_forest(inputs: dict, out_dir: Path) -> list[Path]:
     """Per-axis 9B − 7B delta with carrier-paired bootstrap 95% CI whiskers."""
     cm = inputs["crossmodel"]
     stats = cm["stats"]
+    _require_stat_axes(stats, "crossmodel_contrasts.json", "direction_cos", "obs_separation_snr")
     fig, panels = plt.subplots(
-        1, 2, figsize=(8.6, 0.42 * len(stats["direction_cos"]["axes"]) + 1.6), sharey=True
+        1,
+        2,
+        figsize=(8.6, 0.42 * len(stats["direction_cos"]["axes"]) + 1.6),
+        sharey=True,
+        layout="constrained",
     )
     for ax, stat in zip(panels, ("direction_cos", "obs_separation_snr")):
         rows = stats[stat]["axes"]
@@ -611,6 +893,885 @@ def fig_crossmodel_delta_forest(inputs: dict, out_dir: Path) -> list[Path]:
     return list(paths.values())
 
 
+def fig_matched_vs_parent_scatter(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: 7B-matched-vs-7B-parent-arm agreement scatter — one panel per
+    scale-free statistic, x = the parent's committed frozen-map reference,
+    y = this run's matched-capacity 7B arm; identity line = agreement."""
+    cm = inputs["crossmodel"]
+    stats = cm["stats"]
+    _require_stat_axes(stats, "crossmodel_contrasts.json", "direction_cos")
+    stat_names = [s for s in stats if (stats[s] or {}).get("axes")]
+    c7 = paper_palette_role("baseline")
+    neutral = paper_palette_role("neutral")
+    ncols = 3
+    nrows = int(math.ceil(len(stat_names) / ncols))
+    fig, panels = plt.subplots(
+        nrows, ncols, figsize=(3.2 * ncols, 2.9 * nrows), layout="constrained"
+    )
+    panels = np.atleast_1d(panels).ravel()
+    n_finite = 0
+    for i, stat in enumerate(stat_names):
+        ax = panels[i]
+        xs, ys, labs = [], [], []
+        for r in stats[stat]["axes"]:
+            x, y = _fnum(r.get("s_7b_ref_parent")), _fnum(r.get("s_7b"))
+            xs.append(x)
+            ys.append(y)
+            labs.append(r["axis"])
+        xs_a, ys_a = np.asarray(xs), np.asarray(ys)
+        finite = np.isfinite(xs_a) & np.isfinite(ys_a)
+        n_finite += int(finite.sum())
+        ax.scatter(xs_a, ys_a, color=c7, s=22)
+        for x, y, a, ok in zip(xs_a, ys_a, labs, finite):
+            if ok:
+                ax.annotate(
+                    axis_label(a), (x, y), fontsize=5.5, xytext=(2, 2), textcoords="offset points"
+                )
+        if finite.any():
+            span = [
+                float(np.nanmin([xs_a[finite].min(), ys_a[finite].min()])),
+                float(np.nanmax([xs_a[finite].max(), ys_a[finite].max()])),
+            ]
+            ax.plot(span, span, color=neutral, lw=0.8, ls=":")
+        ax.set_title(DISPLAY.get(stat, stat), fontsize=8)
+        ax.set_xlabel(DISPLAY["ref_7b_parent"], fontsize=7)
+        ax.set_ylabel(DISPLAY["arm_7b_matched25k"], fontsize=7)
+    for j in range(len(stat_names), len(panels)):
+        panels[j].set_axis_off()
+    if n_finite == 0:
+        plt.close(fig)
+        raise RuntimeError(
+            "matched_vs_parent_scatter: zero finite (parent, matched) pairs across every "
+            "statistic — refusing a blank render (fail-loud)"
+        )
+    paths = savefig_paper(fig, "fig_matched_vs_parent_scatter", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+# ── figures: perpair-grain exploratory dump ────────────────────────────
+
+
+def fig_delta_norm_scatter(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: per-axis ‖Δ̂‖-vs-‖Δ‖ scatters — one figure per model, one
+    panel per axis (the low-level per-unit view of the calibration read)."""
+    by_model = _perpair_by_model(inputs["perpair"])
+    neutral = paper_palette_role("neutral")
+    written: list[Path] = []
+    for tag, color_role in (("qwen35_9b", "primary"), ("qwen25_7b", "baseline")):
+        rows = by_model[tag]
+        marm = _map_arm_of(rows, f"delta_norm_scatter[{tag}]")
+        color = paper_palette_role(color_role)
+        axes_names = sorted({str(r["axis"]) for r in rows})
+        ncols = min(4, len(axes_names))
+        nrows = int(math.ceil(len(axes_names) / ncols))
+        fig, panels = plt.subplots(
+            nrows,
+            ncols,
+            figsize=(2.6 * ncols, 2.4 * nrows),
+            sharex=False,
+            sharey=False,
+            layout="constrained",
+        )
+        panels = np.atleast_1d(panels).ravel()
+        for i, axname in enumerate(axes_names):
+            ax = panels[i]
+            xs = np.asarray(
+                [_fnum(r["norm_obs_tail_primary"]) for r in rows if r["axis"] == axname]
+            )
+            ys = np.asarray([_fnum(r["norm_pred"][marm]) for r in rows if r["axis"] == axname])
+            ax.scatter(xs, ys, color=color, s=10, alpha=0.6)
+            finite = np.isfinite(xs) & np.isfinite(ys)
+            if finite.any():
+                span = [0.0, float(np.nanmax([xs[finite].max(), ys[finite].max()]))]
+                ax.plot(span, span, color=neutral, lw=0.8, ls=":")
+            ax.set_title(axis_label(axname), fontsize=8)
+        for j in range(len(axes_names), len(panels)):
+            panels[j].set_axis_off()
+        fig.supxlabel("‖observed Δ‖ (answer state)", fontsize=9)
+        fig.supylabel("‖predicted Δ‖ (map arm)", fontsize=9)
+        fig.suptitle(DISPLAY[tag], fontsize=10)
+        paths = savefig_paper(fig, f"fig_delta_norm_scatter_{tag}", dir=out_dir)
+        plt.close(fig)
+        written += list(paths.values())
+    return written
+
+
+def fig_install_swap_violins(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: install-vs-swap violins — the map-arm direction-cos
+    distribution per pair class, one panel per model."""
+    by_model = _perpair_by_model(inputs["perpair"])
+    classes = ("swap", "install")
+    fig, panels = plt.subplots(1, 2, figsize=(7.2, 3.4), sharey=True, layout="constrained")
+    for ax, (tag, color_role) in zip(panels, (("qwen35_9b", "primary"), ("qwen25_7b", "baseline"))):
+        rows = by_model[tag]
+        marm = _map_arm_of(rows, f"install_swap_violins[{tag}]")
+        color = paper_palette_role(color_role)
+        data = []
+        for cls in classes:
+            vals = np.asarray(
+                [_fnum(r["cos"][marm]) for r in rows if r["pair_class"] == cls], dtype=np.float64
+            )
+            vals = vals[np.isfinite(vals)]
+            if vals.size == 0:
+                raise RuntimeError(
+                    f"install_swap_violins[{tag}]: no finite map-arm cos values for pair class "
+                    f"{cls!r} (fail-loud)"
+                )
+            data.append(vals)
+        parts = ax.violinplot(data, positions=range(len(classes)), showmedians=True)
+        for body in parts["bodies"]:
+            body.set_facecolor(color)
+            body.set_alpha(0.5)
+        for key in ("cmedians", "cmins", "cmaxes", "cbars"):
+            if key in parts:
+                parts[key].set_color(color)
+        ax.axhline(0.0, color=paper_palette_role("neutral"), lw=0.8, ls=":")
+        ax.set_xticks(range(len(classes)))
+        ax.set_xticklabels([DISPLAY[c] for c in classes], fontsize=8)
+        ax.set_title(DISPLAY[tag], fontsize=9)
+    panels[0].set_ylabel("direction cosine (map arm)")
+    paths = savefig_paper(fig, "fig_install_swap_violins", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_edit_dose_scatter(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: edit-dose scatters per tokenizer — changed tokens (each
+    model's OWN tokenizer) vs ‖observed Δ‖, with each side's pooled OLS line
+    read from the analysis doc (never re-fit here — single estimator source:
+    issue2587_analysis.compute_side's dose_fit block, identical on every
+    axis row of a side by construction)."""
+    by_model = _perpair_by_model(inputs["perpair"])
+    sides = _delta_sides(inputs["delta"])
+    fig, panels = plt.subplots(1, 2, figsize=(7.6, 3.4), sharey=False, layout="constrained")
+    for ax, (tag, color_role) in zip(panels, (("qwen35_9b", "primary"), ("qwen25_7b", "baseline"))):
+        rows = by_model[tag]
+        color = paper_palette_role(color_role)
+        xs = np.asarray([float(r["changed_tokens"]) for r in rows])
+        ys = np.asarray([_fnum(r["norm_obs_tail_primary"]) for r in rows])
+        ax.scatter(xs, ys, color=color, s=10, alpha=0.45)
+        axes_map = sides[tag]["axes"]
+        first_axis = sorted(axes_map)[0]
+        ols = axes_map[first_axis]["surface"]["observed"]["edit_dose_ols"]
+        icpt, slope = _fnum(ols["intercept"]), _fnum(ols["slope"])
+        if math.isfinite(icpt) and math.isfinite(slope) and np.isfinite(xs).any():
+            gx = np.linspace(float(np.nanmin(xs)), float(np.nanmax(xs)), 20)
+            ax.plot(gx, icpt + slope * gx, color=color, lw=1.5, label="pooled OLS")
+            ax.legend(fontsize=7)
+        ax.set_title(DISPLAY[tag], fontsize=9)
+        ax.set_xlabel("changed tokens (own tokenizer)")
+    panels[0].set_ylabel("‖observed Δ‖ (answer state)")
+    paths = savefig_paper(fig, "fig_edit_dose_scatter", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_carrier_direction_heatmap(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: per-carrier direction-cos transfer matrices — carrier × axis
+    mean map-arm direction cos per model (does the axis direction transfer
+    across carrier topics?)."""
+    by_model = _perpair_by_model(inputs["perpair"])
+    fig, panels = plt.subplots(1, 2, figsize=(10.0, 4.2), layout="constrained")
+    im = None
+    for ax, tag in zip(panels, MODEL_TAGS):
+        rows = by_model[tag]
+        marm = _map_arm_of(rows, f"carrier_direction_heatmap[{tag}]")
+        carriers = sorted({str(r["carrier"]) for r in rows})
+        axes_names = sorted({str(r["axis"]) for r in rows})
+        acc: dict[tuple[str, str], list[float]] = {}
+        for r in rows:
+            v = _fnum(r["cos"][marm])
+            if math.isfinite(v):
+                acc.setdefault((str(r["carrier"]), str(r["axis"])), []).append(v)
+        mat = np.full((len(carriers), len(axes_names)), np.nan)
+        for i, car in enumerate(carriers):
+            for j, axname in enumerate(axes_names):
+                vals = acc.get((car, axname))
+                if vals:
+                    mat[i, j] = float(np.mean(vals))
+        im = ax.imshow(mat, cmap="coolwarm", vmin=-1.0, vmax=1.0, aspect="auto")
+        ax.set_xticks(range(len(axes_names)))
+        ax.set_xticklabels([axis_label(a) for a in axes_names], fontsize=6, rotation=45, ha="right")
+        ax.set_yticks(range(len(carriers)))
+        ax.set_yticklabels([c[:18] for c in carriers], fontsize=6)
+        ax.set_title(DISPLAY[tag], fontsize=9)
+    fig.colorbar(im, ax=list(panels), shrink=0.8, label="mean direction cosine (map arm)")
+    paths = savefig_paper(fig, "fig_carrier_direction_heatmap", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+# ── figures: delta-doc-grain exploratory dump ──────────────────────────
+
+
+def fig_axis_identity_heatmap(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: axis-identity heatmaps — the per-value-pair carrier-mean
+    identity cos (map arm) per axis, per model (the low-level per-unit view
+    of the axis_identity_cos statistic; dyad/pilot classes with no
+    carrier-replicated grid are 'n/a' by construction and are skipped)."""
+    sides = _delta_sides(inputs["delta"])
+    fig, panels = plt.subplots(1, 2, figsize=(9.6, 4.0), layout="constrained")
+    im = None
+    any_rows = False
+    for ax, tag in zip(panels, MODEL_TAGS):
+        axes_map, marm, _ = _side_layers(sides, tag)
+        rows = []
+        names = []
+        max_vp = 0
+        for axname in sorted(axes_map):
+            ident = axes_map[axname].get("identity") or {}
+            blk = ident.get(marm)
+            if not isinstance(blk, dict) or "per_vp_cos" not in blk:
+                continue  # {"n/a": ...} classes carry no carrier-replicated grid
+            vp = blk["per_vp_cos"]
+            rows.append([_fnum(v) for _, v in sorted(vp.items())])
+            names.append(axname)
+            max_vp = max(max_vp, len(vp))
+        if rows:
+            any_rows = True
+            mat = np.full((len(rows), max_vp), np.nan)
+            for i, r in enumerate(rows):
+                mat[i, : len(r)] = r
+            im = ax.imshow(mat, cmap="coolwarm", vmin=-1.0, vmax=1.0, aspect="auto")
+            ax.set_yticks(range(len(names)))
+            ax.set_yticklabels([axis_label(a) for a in names], fontsize=7)
+            ax.set_xticks(range(max_vp))
+            ax.set_xticklabels([str(k + 1) for k in range(max_vp)], fontsize=6)
+            ax.set_xlabel("value pair (within axis)", fontsize=8)
+        ax.set_title(DISPLAY[tag], fontsize=9)
+    if not any_rows:
+        plt.close(fig)
+        raise RuntimeError(
+            "axis_identity_heatmap: no axis carries a per_vp_cos identity block on either "
+            "side — refusing a blank render (fail-loud)"
+        )
+    fig.colorbar(im, ax=list(panels), shrink=0.8, label="axis identity cosine (map arm)")
+    paths = savefig_paper(fig, "fig_axis_identity_heatmap", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_crossfam_consistency_scatter(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: cross-family consistency scatters (observed + predicted, both
+    models) — per axis, x = observed-space median, y = map-arm predicted-space
+    median (headline reads; axes with no paraphrase-family swap class are
+    'n/a' by construction and are skipped)."""
+    sides = _delta_sides(inputs["delta"])
+    neutral = paper_palette_role("neutral")
+    fig, ax = plt.subplots(figsize=(4.8, 4.2), layout="constrained")
+    n_finite = 0
+    for tag, color_role, mk in (("qwen35_9b", "primary", "o"), ("qwen25_7b", "baseline", "D")):
+        axes_map, marm, _ = _side_layers(sides, tag)
+        color = paper_palette_role(color_role)
+        xs, ys, labs = [], [], []
+        for axname in sorted(axes_map):
+            cf = axes_map[axname].get("cross_family") or {}
+            obs, prd = cf.get("observed"), cf.get(marm)
+            if not isinstance(obs, dict) or not isinstance(prd, dict):
+                continue
+            xs.append(_fnum(obs.get("median")))
+            ys.append(_fnum(prd.get("median")))
+            labs.append(axname)
+        xs_a, ys_a = np.asarray(xs), np.asarray(ys)
+        finite = np.isfinite(xs_a) & np.isfinite(ys_a)
+        n_finite += int(finite.sum())
+        ax.scatter(xs_a, ys_a, color=color, marker=mk, s=24, label=DISPLAY[tag])
+        for x, y, a, ok in zip(xs_a, ys_a, labs, finite):
+            if ok:
+                ax.annotate(
+                    axis_label(a), (x, y), fontsize=5.5, xytext=(2, 2), textcoords="offset points"
+                )
+    if n_finite == 0:
+        plt.close(fig)
+        raise RuntimeError(
+            "crossfam_consistency_scatter: zero finite (observed, predicted) medians on both "
+            "sides — refusing a blank render (fail-loud)"
+        )
+    ax.plot([-1, 1], [-1, 1], color=neutral, lw=0.8, ls=":")
+    ax.set_xlabel("cross-family consistency (observed space)")
+    ax.set_ylabel("cross-family consistency (predicted space)")
+    ax.legend(fontsize=7)
+    paths = savefig_paper(fig, "fig_crossfam_consistency_scatter", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_delta_retrieval_acc(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: battery-side Δ-retrieval acc@k curves per arm (distinct from
+    the FIT-side knn_per_layer): P(true observed Δ within k NN of the
+    predicted Δ) over the oriented pair pool, per model. Color contract:
+    model color = euclidean, accent = cosine; solid = map arm, dashed =
+    identity+bias baseline."""
+    sides = _delta_sides(inputs["delta"])
+    accent = paper_palette_role("accent")
+    neutral = paper_palette_role("neutral")
+    fig, panels = plt.subplots(1, 2, figsize=(7.6, 3.4), sharey=True, layout="constrained")
+    for ax, (tag, color_role) in zip(panels, (("qwen35_9b", "primary"), ("qwen25_7b", "baseline"))):
+        color = paper_palette_role(color_role)
+        _axes_map, marm, iarm = _side_layers(sides, tag)
+        retrieval = sides[tag].get("retrieval") or {}
+        glob = retrieval.get("global") or {}
+        if not glob:
+            plt.close(fig)
+            raise RuntimeError(
+                f"delta_retrieval_acc[{tag}]: no retrieval.global block in "
+                "minpair_delta_2587.json (fail-loud)"
+            )
+        for arm, ls, arm_lab in ((marm, "-", "map arm"), (iarm, "--", DISPLAY["iddelta_generic"])):
+            for metric, mcolor in (("euclidean", color), ("cosine", accent)):
+                blk = glob[arm][metric]
+                ks = sorted(int(k) for k in blk["acc_at_k"])
+                accs = [float(blk["acc_at_k"][str(k)]) for k in ks]
+                ax.plot(
+                    ks,
+                    accs,
+                    color=mcolor,
+                    ls=ls,
+                    marker="o",
+                    ms=3,
+                    lw=1.3,
+                    label=f"{arm_lab}, {metric}",
+                )
+        chance_blk = glob[marm]["euclidean"].get("chance_at_k") or {}
+        if chance_blk:
+            ks = sorted(int(k) for k in chance_blk)
+            ax.plot(
+                ks,
+                [float(chance_blk[str(k)]) for k in ks],
+                color=neutral,
+                ls=":",
+                lw=0.9,
+                label="chance",
+            )
+        ax.set_title(DISPLAY[tag], fontsize=9)
+        ax.set_xlabel("k (nearest neighbours)")
+    panels[0].set_ylabel("Δ-retrieval accuracy")
+    panels[0].legend(fontsize=6)
+    paths = savefig_paper(fig, "fig_delta_retrieval_acc", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_splithalf_vs_direction(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: split-half-vs-direction scatters — per axis, x = split-half
+    reliability ceiling (r10), y = map-arm direction cos (headline), points
+    labeled by axis."""
+    sides = _delta_sides(inputs["delta"])
+    fig, ax = plt.subplots(figsize=(4.8, 4.2), layout="constrained")
+    n_finite = 0
+    for tag, color_role, mk in (("qwen35_9b", "primary", "o"), ("qwen25_7b", "baseline", "D")):
+        axes_map, marm, _ = _side_layers(sides, tag)
+        color = paper_palette_role(color_role)
+        for axname in sorted(axes_map):
+            row = axes_map[axname]
+            x = _fnum(row["reliability"]["r10_mean"])
+            y = _fnum(row["direction"][marm]["mean_cos_headline"])
+            ax.scatter(
+                [x],
+                [y],
+                color=color,
+                marker=mk,
+                s=24,
+                label=DISPLAY[tag] if n_finite == 0 and tag == "qwen35_9b" else None,
+            )
+            if math.isfinite(x) and math.isfinite(y):
+                n_finite += 1
+                ax.annotate(
+                    axis_label(axname),
+                    (x, y),
+                    fontsize=5.5,
+                    xytext=(2, 2),
+                    textcoords="offset points",
+                )
+    if n_finite == 0:
+        plt.close(fig)
+        raise RuntimeError(
+            "splithalf_vs_direction: zero finite (ceiling, direction) pairs — refusing a "
+            "blank render (fail-loud)"
+        )
+    handles = [
+        Line2D(
+            [],
+            [],
+            marker="o",
+            color=paper_palette_role("primary"),
+            ls="none",
+            label=DISPLAY["qwen35_9b"],
+        ),
+        Line2D(
+            [],
+            [],
+            marker="D",
+            color=paper_palette_role("baseline"),
+            ls="none",
+            label=DISPLAY["qwen25_7b"],
+        ),
+    ]
+    ax.legend(handles=handles, fontsize=7)
+    ax.axhline(0.0, color=paper_palette_role("neutral"), lw=0.8, ls=":")
+    ax.set_xlabel("split-half reliability ceiling (r10)")
+    ax.set_ylabel("direction cosine (map arm)")
+    paths = savefig_paper(fig, "fig_splithalf_vs_direction", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_pilot_axis_panels(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: pilot-axis panels — the two pilot axes' 9B reads (direction
+    cos, calibration ratio, split-half ceiling, with CIs). The 7B side is
+    PENDING by plan convention 12 (the parent's pilot judge reads have not
+    landed) and is rendered as an explicit pending legend entry, never a
+    placeholder number."""
+    sides = _delta_sides(inputs["delta"])
+    axes9, map9, id9 = _side_layers(sides, "qwen35_9b")
+    pilots = sorted(a for a, row in axes9.items() if row.get("pilot_axis"))
+    if not pilots:
+        raise RuntimeError(
+            "pilot_axis_panels: no pilot axes present on the 9B side (production carries "
+            "answer_language + the pilot query class) — refusing a blank render (fail-loud)"
+        )
+    c9 = paper_palette_role("primary")
+    c7 = paper_palette_role("baseline")
+    neutral = paper_palette_role("neutral")
+    ypos = np.arange(len(pilots))[::-1].astype(np.float64)
+    fig, panels = plt.subplots(
+        1, 3, figsize=(9.6, 0.6 * len(pilots) + 1.9), sharey=True, layout="constrained"
+    )
+
+    def _panel(ax, vals, lo, hi, idd, title, refline):
+        vals_a = np.asarray(vals)
+        ax.errorbar(
+            vals_a,
+            ypos,
+            xerr=_err_offsets(vals_a, np.asarray(lo), np.asarray(hi)),
+            fmt="o",
+            ms=5,
+            color=c9,
+            ecolor=c9,
+            elinewidth=1.1,
+            capsize=2.0,
+            ls="none",
+        )
+        if idd is not None:
+            ax.plot(idd, ypos, marker="x", ms=6, mew=1.3, color=c9, ls="none")
+        if refline is not None:
+            ax.axvline(refline, color=neutral, lw=0.8, ls=":")
+        ax.set_title(title, fontsize=9)
+
+    d_vals, d_lo, d_hi, d_idd = [], [], [], []
+    c_vals, c_lo, c_hi, c_idd = [], [], [], []
+    r_vals, r_lo, r_hi = [], [], []
+    for a in pilots:
+        row = axes9[a]
+        d = row["direction"][map9]
+        d_vals.append(_fnum(d["mean_cos_headline"]))
+        lo, hi = _fpair(d.get("ci95"))
+        d_lo.append(lo)
+        d_hi.append(hi)
+        d_idd.append(_fnum(row["direction"][id9]["mean_cos_headline"]))
+        cal = row["calibration"][map9]
+        c_vals.append(_fnum(cal["ratio_to_global"]))
+        lo, hi = _fpair(cal.get("ratio_to_global_ci95"))
+        c_lo.append(lo)
+        c_hi.append(hi)
+        c_idd.append(_fnum(row["calibration"][id9]["ratio_to_global"]))
+        rel = row["reliability"]
+        r_vals.append(_fnum(rel["r10_mean"]))
+        lo, hi = _fpair(rel.get("r10_ci95"))
+        r_lo.append(lo)
+        r_hi.append(hi)
+    _panel(panels[0], d_vals, d_lo, d_hi, d_idd, DISPLAY["direction_cos"], 0.0)
+    _panel(panels[1], c_vals, c_lo, c_hi, c_idd, DISPLAY["calibration_ratio_to_global"], 1.0)
+    _panel(panels[2], r_vals, r_lo, r_hi, None, DISPLAY["split_half_ceiling"], None)
+    panels[0].set_yticks(ypos)
+    panels[0].set_yticklabels([axis_label(a) for a in pilots], fontsize=8)
+    handles = [
+        Line2D([], [], marker="o", color=c9, ls="none", label=DISPLAY["arm_fresh9b"]),
+        Line2D([], [], marker="x", color=c9, ls="none", label=DISPLAY["arm_iddelta9b"]),
+        Line2D([], [], marker="D", color=c7, ls="none", alpha=0.3, label=DISPLAY["pending_7b"]),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=7)
+    paths = savefig_paper(fig, "fig_pilot_axis_panels", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_lstar_sensitivity_twins(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: L*-vs-{16,22,30} sensitivity twins of hero 1 — per axis, the
+    identity+bias (iddelta) direction cos and calibration ratio at L* vs the
+    twin layers. IDDELTA ARM ONLY by construction: the frozen fresh map is
+    L*-fit, so no map arm exists off L* (plan cross-unit constraint 5 — the
+    twins are a sensitivity read, never a cross-model read); the 7B side has
+    no twin layers and is not rendered."""
+    sides = _delta_sides(inputs["delta"])
+    axes9, _map9, id9 = _side_layers(sides, "qwen35_9b")
+    meta9 = sides["qwen35_9b"]["meta"]
+    twin_layers = [int(x) for x in meta9.get("twin_layers") or []]
+    if not twin_layers:
+        raise RuntimeError(
+            "lstar_sensitivity_twins: the 9B side declares no twin layers — refusing a "
+            "blank render (fail-loud)"
+        )
+    lstar = int(meta9["primary_layer"])
+    c9 = paper_palette_role("primary")
+    neutral = paper_palette_role("neutral")
+    axes_order = sorted(axes9)
+    ypos = np.arange(len(axes_order))[::-1].astype(np.float64)
+    twin_markers = ("^", "s", "v", "P", "X")
+    fig, panels = plt.subplots(
+        1, 2, figsize=(7.8, 0.42 * len(axes_order) + 2.0), sharey=True, layout="constrained"
+    )
+
+    def _twin_val(row: dict, layer: int, key: str) -> float:
+        tw = row.get("layer_twins") or {}
+        blk = tw.get(str(layer))
+        return _fnum(blk.get(key)) if isinstance(blk, dict) else float("nan")
+
+    for ax, lstar_getter, twin_key, title, refline in (
+        (
+            panels[0],
+            lambda row: _fnum(row["direction"][id9]["mean_cos_headline"]),
+            "iddelta_mean_cos_headline",
+            "direction cosine (identity+bias baseline)",
+            0.0,
+        ),
+        (
+            panels[1],
+            lambda row: _fnum(row["calibration"][id9]["ratio_to_global"]),
+            "iddelta_ratio_to_global",
+            "calibration ratio (identity+bias baseline)",
+            1.0,
+        ),
+    ):
+        star = [lstar_getter(axes9[a]) for a in axes_order]
+        ax.plot(
+            star,
+            ypos,
+            marker="*",
+            ms=9,
+            color=c9,
+            mec="black",
+            mew=0.4,
+            ls="none",
+            label=f"layer {lstar} (L*)",
+        )
+        for mk, layer in zip(twin_markers, twin_layers):
+            vals = [_twin_val(axes9[a], layer, twin_key) for a in axes_order]
+            ax.plot(
+                vals,
+                ypos,
+                marker=mk,
+                ms=5,
+                mfc="none",
+                color=c9,
+                ls="none",
+                label=f"layer {layer} (twin)",
+            )
+        ax.axvline(refline, color=neutral, lw=0.8, ls=":")
+        ax.set_title(title, fontsize=9)
+    panels[0].set_yticks(ypos)
+    panels[0].set_yticklabels([axis_label(a) for a in axes_order], fontsize=8)
+    panels[0].legend(fontsize=6, loc="lower left")
+    fig.suptitle(DISPLAY["qwen35_9b"], fontsize=10)
+    paths = savefig_paper(fig, "fig_lstar_sensitivity_twins", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_pooling_twin_scatter(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: span-mean pooling twin — per axis, x = the primary
+    tail-inclusive-mean direction cos, y = the answer-span-mean twin, per
+    model and arm (agreement = the pooling convention does not drive the
+    read)."""
+    sides = _delta_sides(inputs["delta"])
+    neutral = paper_palette_role("neutral")
+    fig, ax = plt.subplots(figsize=(4.8, 4.2), layout="constrained")
+    n_finite = 0
+    for tag, color_role, mk in (("qwen35_9b", "primary", "o"), ("qwen25_7b", "baseline", "D")):
+        axes_map, marm, iarm = _side_layers(sides, tag)
+        color = paper_palette_role(color_role)
+        for arm, marker, alpha in ((marm, mk, 0.9), (iarm, "x", 0.7)):
+            xs, ys, labs = [], [], []
+            for axname in sorted(axes_map):
+                row = axes_map[axname]
+                xs.append(_fnum(row["direction"][arm]["mean_cos_headline"]))
+                ys.append(_fnum(row["pooling_twin_span"][arm]["mean_cos_headline"]))
+                labs.append(axname)
+            xs_a, ys_a = np.asarray(xs), np.asarray(ys)
+            finite = np.isfinite(xs_a) & np.isfinite(ys_a)
+            n_finite += int(finite.sum())
+            ax.scatter(xs_a, ys_a, color=color, marker=marker, s=22, alpha=alpha)
+            if arm == marm:
+                for x, y, a, ok in zip(xs_a, ys_a, labs, finite):
+                    if ok:
+                        ax.annotate(
+                            axis_label(a),
+                            (x, y),
+                            fontsize=5.5,
+                            xytext=(2, 2),
+                            textcoords="offset points",
+                        )
+    if n_finite == 0:
+        plt.close(fig)
+        raise RuntimeError(
+            "pooling_twin_scatter: zero finite (tail, span) direction-cos pairs — refusing "
+            "a blank render (fail-loud)"
+        )
+    ax.plot([-1, 1], [-1, 1], color=neutral, lw=0.8, ls=":")
+    handles = [
+        Line2D(
+            [],
+            [],
+            marker="o",
+            color=paper_palette_role("primary"),
+            ls="none",
+            label=DISPLAY["qwen35_9b"],
+        ),
+        Line2D(
+            [],
+            [],
+            marker="D",
+            color=paper_palette_role("baseline"),
+            ls="none",
+            label=DISPLAY["qwen25_7b"],
+        ),
+        Line2D([], [], marker="x", color=neutral, ls="none", label=DISPLAY["iddelta_generic"]),
+    ]
+    ax.legend(handles=handles, fontsize=7)
+    ax.set_xlabel(f"direction cosine ({DISPLAY['pooling_tail']})")
+    ax.set_ylabel(f"direction cosine ({DISPLAY['pooling_span']})")
+    paths = savefig_paper(fig, "fig_pooling_twin_scatter", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+# ── tables: think-leak/cap-hit, manipulation check, token counts ───────
+
+
+def think_leak_cap_hit_table(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6/§13: think-leak + cap-hit tables (md + json) — battery gen
+    cells (anchors_*.done.json) + map-fit generation splits (cap_hit_*.json),
+    with the plan-§7 disclosure thresholds (cap-hit re-gen trigger 2%,
+    think-leak assert 1%) flagged per row."""
+    lk = inputs["leakdir"]
+    rows: list[dict] = []
+    for p, doc in lk["gen"].items():
+        tl = doc["think_leak"]
+        rows.append(
+            {
+                "source": str(p.relative_to(lk["dir"])),
+                "kind": "battery generation cell",
+                "unit": p.name[len("anchors_") : -len(".done.json")],
+                "n_rows": int(tl["n"]),
+                "cap_hit_frac": _fnum(doc["cap_hit_frac"]),
+                "cap_hit_frac_after_regen": _fnum(doc.get("cap_hit_frac_regen")),
+                "think_leak_n": int(tl["n_leaked"]),
+                "think_leak_frac": _fnum(tl["frac"]),
+            }
+        )
+    for p, doc in lk["cap"].items():
+        rows.append(
+            {
+                "source": str(p.relative_to(lk["dir"])),
+                "kind": "map-fit generation split",
+                "unit": str(doc.get("split") or p.stem[len("cap_hit_") :]),
+                "n_rows": int(doc["total"]) if doc.get("total") is not None else None,
+                "cap_hit_frac": _fnum(doc["cap_hit_frac"]),
+                "cap_hit_frac_after_regen": float("nan"),
+                "think_leak_n": None,
+                "think_leak_frac": float("nan"),
+            }
+        )
+    for r in rows:
+        eff_cap = (
+            r["cap_hit_frac_after_regen"]
+            if math.isfinite(r["cap_hit_frac_after_regen"])
+            else r["cap_hit_frac"]
+        )
+        r["cap_hit_over_regen_trigger"] = (
+            bool(eff_cap > CAP_HIT_REGEN_TRIGGER) if math.isfinite(eff_cap) else None
+        )
+        r["think_leak_over_assert"] = (
+            bool(r["think_leak_frac"] >= THINK_LEAK_ASSERT)
+            if math.isfinite(r["think_leak_frac"])
+            else None
+        )
+    rows.sort(key=lambda r: (r["kind"], r["unit"]))
+
+    lines = [
+        "# Think-leak + cap-hit table — issue 2587",
+        "",
+        f"Cap-hit re-gen trigger {CAP_HIT_REGEN_TRIGGER:.0%} per cell/split; think-leak "
+        f"assert < {THINK_LEAK_ASSERT:.0%} per cell (plan §7).",
+        "",
+        "| unit | kind | rows | cap-hit | cap-hit after re-gen | think-leak | flags |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        flags = []
+        if r["cap_hit_over_regen_trigger"]:
+            flags.append("cap-hit over re-gen trigger")
+        if r["think_leak_over_assert"]:
+            flags.append("think-leak over assert")
+        lines.append(
+            f"| {axis_label(r['unit']) if r['kind'].startswith('battery') else r['unit']} "
+            f"| {r['kind']} | {_fmt(r['n_rows'])} | {_fmt(r['cap_hit_frac'])} "
+            f"| {_fmt(r['cap_hit_frac_after_regen'])} | {_fmt(r['think_leak_frac'])} "
+            f"| {'; '.join(flags) if flags else 'ok'} |"
+        )
+    doc = {
+        "issue": ISSUE,
+        "thresholds": {
+            "cap_hit_regen_trigger": CAP_HIT_REGEN_TRIGGER,
+            "think_leak_assert": THINK_LEAK_ASSERT,
+        },
+        "rows": [
+            {
+                k: (None if isinstance(v, float) and not math.isfinite(v) else v)
+                for k, v in r.items()
+            }
+            for r in rows
+        ],
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    md_path = out_dir / "table_think_leak_cap_hit.md"
+    json_path = out_dir / "table_think_leak_cap_hit.json"
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    json_path.write_text(json.dumps(doc, indent=2, sort_keys=True), encoding="utf-8")
+    return [md_path, json_path]
+
+
+def manipulation_check_table(inputs: dict, out_dir: Path) -> list[Path]:
+    """§13 deliverable: the manipulation-check table (md + json) — per-axis
+    fire floors for BOTH models side by side (9B this run; 7B the parent's
+    committed check). Special axis rows (not in slice / query classes) render
+    their verdict, never a fabricated count."""
+    m9, m7 = inputs["manip9b"], inputs["manip7b"]
+
+    def _axis_rows(doc: dict, what: str) -> dict:
+        rows = {r["axis"]: r for r in doc.get("axis_rows", [])}
+        if not rows:
+            raise RuntimeError(f"{what}: no axis_rows in the manipulation check (fail-loud)")
+        return rows
+
+    a9 = _axis_rows(m9, "manipulation_check_2587.json")
+    a7 = _axis_rows(m7, "parent manipulation_check.json")
+
+    def _cell(r: dict | None) -> str:
+        if r is None:
+            return "not judged"
+        if "floor_met" not in r:
+            v = str(r.get("verdict", "n/a"))
+            return DISPLAY.get(v, v.replace("_", " "))
+        return (
+            f"{r['n_fired_base']}/{r['width']} fired "
+            f"(floor {r['floor']}: {'met' if r['floor_met'] else 'MISSED'})"
+        )
+
+    axes = sorted(set(a9) | set(a7))
+    lines = [
+        "# Manipulation-check table — issue 2587",
+        "",
+        "Per-axis fire floors over BASE values (>=70% comply per value; floor = "
+        "ceil(0.6 x width); undetermined counts as not fired).",
+        "",
+        f"| axis | {DISPLAY['qwen35_9b']} | {DISPLAY['qwen25_7b']} |",
+        "|---|---|---|",
+    ]
+    for a in axes:
+        lines.append(f"| {axis_label(a)} | {_cell(a9.get(a))} | {_cell(a7.get(a))} |")
+
+    def _floor_summary(rows: dict) -> str:
+        floored = [r for r in rows.values() if "floor_met" in r]
+        met = sum(1 for r in floored if r["floor_met"])
+        return f"{met}/{len(floored)} judged axes meet the fire floor"
+
+    lines += [
+        "",
+        f"{DISPLAY['qwen35_9b']}: {_floor_summary(a9)}. "
+        f"{DISPLAY['qwen25_7b']}: {_floor_summary(a7)}.",
+    ]
+    doc = {
+        "issue": ISSUE,
+        "axes": {a: {"qwen35_9b": a9.get(a), "qwen25_7b": a7.get(a)} for a in axes},
+        "n_value_rows": {
+            "qwen35_9b": len(m9.get("value_rows", [])),
+            "qwen25_7b": len(m7.get("value_rows", [])),
+        },
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    md_path = out_dir / "table_manipulation_check.md"
+    json_path = out_dir / "table_manipulation_check.json"
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    json_path.write_text(json.dumps(doc, indent=2, sort_keys=True), encoding="utf-8")
+    return [md_path, json_path]
+
+
+def token_count_equality_table(inputs: dict, out_dir: Path) -> list[Path]:
+    """Plan §6: q25-vs-q35 token-count-equality table (md + json) — per axis,
+    the realized Qwen3.5 (q35) value-string token counts vs the parent's
+    pinned Qwen2.5 (q25) expectation; within-axis equality REPORTED, never
+    asserted (bank2587 token gate iii)."""
+    bank = inputs["bank"]
+    tg = bank.get("token_gates")
+    if not tg:
+        raise RuntimeError(
+            "bank_manifest.json carries no token_gates block — run the P0b token gates "
+            "(bank2587.run_token_gates) before rendering this table (fail-loud)"
+        )
+    vals: dict = tg["value_token_counts"]
+    eq: dict = tg.get("within_axis_equal") or {}
+    q25: dict = tg.get("q25_expected_value_tokens") or {}
+    paras: dict = tg.get("paraphrase_token_counts") or {}
+    names: dict = tg.get("name_token_counts") or {}
+
+    def _counts_str(d: dict | None) -> str:
+        if not d:
+            return "n/a"
+        distinct = sorted(set(int(v) for v in d.values()))
+        return str(distinct[0]) if len(distinct) == 1 else ", ".join(str(v) for v in distinct)
+
+    lines = [
+        "# q25-vs-q35 token-count-equality table — issue 2587",
+        "",
+        "Value-string token counts under the Qwen3.5 tokenizer (q35, this run) vs the",
+        "parent's pinned Qwen2.5 expectation (q25). Within-axis equality held by",
+        "construction under q25; under q35 it is RECORDED, never assumed.",
+        "",
+        "| axis | q35 counts (distinct) | q35 within-axis equal | q25 expected "
+        "| q35 paraphrase counts |",
+        "|---|---|---|---|---|",
+    ]
+    for a in sorted(vals):
+        q25v = q25.get(a)
+        lines.append(
+            f"| {axis_label(a)} | {_counts_str(vals[a])} "
+            f"| {'yes' if eq.get(a) else 'no'} | {_fmt(q25v)} | {_counts_str(paras.get(a))} |"
+        )
+    if names:
+        n_single = sum(1 for v in names.values() if v.get("single_token"))
+        lines += [
+            "",
+            f"Name tokens (q35): {n_single}/{len(names)} names remain single-token "
+            "(the q25 single-token property is recorded per name, never assumed).",
+        ]
+    doc = {
+        "issue": ISSUE,
+        "value_token_counts_q35": vals,
+        "within_axis_equal_q35": eq,
+        "q25_expected_value_tokens": q25,
+        "paraphrase_token_counts_q35": paras,
+        "name_token_counts_q35": names,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    md_path = out_dir / "table_token_count_equality.md"
+    json_path = out_dir / "table_token_count_equality.json"
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    json_path.write_text(json.dumps(doc, indent=2, sort_keys=True), encoding="utf-8")
+    return [md_path, json_path]
+
+
 # ── registry + CLI ─────────────────────────────────────────────────────
 
 # fig name -> (required input keys, renderer). Mechanically enumerable:
@@ -624,18 +1785,45 @@ FIGS: dict[str, tuple[tuple[str, ...], object]] = {
     "wc_transfer_per_layer": (("sweep",), fig_wc_transfer_per_layer),
     "knn_per_layer": (("sweep",), fig_knn_per_layer),
     "reliability_ceiling": (("sweep",), fig_reliability_ceiling),
-    "crossmodel_axis_profile": (("crossmodel",), fig_crossmodel_axis_profile),
+    "crossmodel_axis_profile": (("crossmodel", "delta"), fig_crossmodel_axis_profile),
     "crossmodel_delta_forest": (("crossmodel",), fig_crossmodel_delta_forest),
+    "matched_vs_parent_scatter": (("crossmodel",), fig_matched_vs_parent_scatter),
+    "delta_norm_scatter": (("perpair",), fig_delta_norm_scatter),
+    "install_swap_violins": (("perpair",), fig_install_swap_violins),
+    "edit_dose_scatter": (("perpair", "delta"), fig_edit_dose_scatter),
+    "carrier_direction_heatmap": (("perpair",), fig_carrier_direction_heatmap),
+    "axis_identity_heatmap": (("delta",), fig_axis_identity_heatmap),
+    "crossfam_consistency_scatter": (("delta",), fig_crossfam_consistency_scatter),
+    "delta_retrieval_acc": (("delta",), fig_delta_retrieval_acc),
+    "splithalf_vs_direction": (("delta",), fig_splithalf_vs_direction),
+    "pilot_axis_panels": (("delta",), fig_pilot_axis_panels),
+    "lstar_sensitivity_twins": (("delta",), fig_lstar_sensitivity_twins),
+    "pooling_twin_scatter": (("delta",), fig_pooling_twin_scatter),
+    "think_leak_cap_hit_table": (("leakdir",), think_leak_cap_hit_table),
+    "manipulation_check_table": (("manip9b", "manip7b"), manipulation_check_table),
+    "token_count_equality_table": (("bank",), token_count_equality_table),
 }
 
-_INPUT_FLAGS = {
-    "sweep": ("sweep_json", "map_layer_sweep.json (unit 4 finalize)"),
-    "matched7b": ("matched7b_json", "matched7b_anchor.json (unit 4 P8)"),
-    "delta": ("delta_json", "minpair_delta_2587.json (unit 5b)"),
-    "crossmodel": ("crossmodel_json", "crossmodel_contrasts.json (unit 5b)"),
-    "ref9b_n10k": ("ref2330_9b", "banked #2330 9B n=10k fits"),
-    "ref7b_n10k": ("ref2330_7b", "banked #2330 7B n=10k fits"),
+# input key -> (argparse attr, description, loader kind)
+_INPUT_SPECS: dict[str, tuple[str, str, str]] = {
+    "sweep": ("sweep_json", "map_layer_sweep.json (unit 4 finalize)", "json"),
+    "matched7b": ("matched7b_json", "matched7b_anchor.json (unit 4 P8)", "json"),
+    "delta": ("delta_json", "minpair_delta_2587.json (unit 5b)", "json"),
+    "crossmodel": ("crossmodel_json", "crossmodel_contrasts.json (unit 5b)", "json"),
+    "ref9b_n10k": ("ref2330_9b", "banked #2330 9B n=10k fits", "json"),
+    "ref7b_n10k": ("ref2330_7b", "banked #2330 7B n=10k fits", "json"),
+    "perpair": ("perpair_jsonl", "perpair_2587.jsonl (unit 5b)", "jsonl"),
+    "manip9b": ("manip9b_json", "manipulation_check_2587.json (unit 5a)", "json"),
+    "manip7b": ("manip7b_json", "parent manipulation_check.json (#2564)", "json"),
+    "bank": ("bank_json", "bank_manifest.json (unit 1 + P0b token gates)", "json"),
+    "leakdir": (
+        "leak_caphit_dir",
+        "harvested dir holding anchors_*.done.json + cap_hit_*.json",
+        "leakdir",
+    ),
 }
+
+_LOADERS = {"json": _load_json, "jsonl": _load_jsonl, "leakdir": _load_leak_dir}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -666,6 +1854,23 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=Path("eval_results/issue_2330/matched_fits_q25_n10k.json"),
     )
+    p.add_argument(
+        "--perpair-jsonl", type=Path, default=Path("eval_results/issue_2587/perpair_2587.jsonl")
+    )
+    p.add_argument(
+        "--manip9b-json",
+        type=Path,
+        default=Path("eval_results/issue_2587/manipulation_check_2587.json"),
+    )
+    p.add_argument(
+        "--manip7b-json",
+        type=Path,
+        default=Path("eval_results/issue_2564/manipulation_check.json"),
+    )
+    p.add_argument(
+        "--bank-json", type=Path, default=Path("eval_results/issue_2587/bank_manifest.json")
+    )
+    p.add_argument("--leak-caphit-dir", type=Path, default=Path("eval_results/issue_2587"))
     p.add_argument("--style", default="neurips", choices=("neurips", "generic", "blog", "iclr"))
     p.add_argument("--import-check", action="store_true")
     return p.parse_args(argv)
@@ -695,15 +1900,15 @@ def main(argv: list[str] | None = None) -> int:
             needed.add(key.rstrip("?"))
     inputs: dict = {}
     for key in sorted(needed):
-        flag, what = _INPUT_FLAGS[key]
+        flag, what, kind = _INPUT_SPECS[key]
         path = getattr(args, flag)
         optional = all(
             key not in FIGS[n][0] for n in names
         )  # key appears only as "<key>?" -> optional
-        if optional and not Path(path).is_file():
+        if optional and not Path(path).exists():
             logger.info("[figs] optional input %s absent (%s) — skipping", key, path)
             continue
-        inputs[key] = _load_json(path, what)
+        inputs[key] = _LOADERS[kind](path, what)
     set_paper_style(args.style)
     written: list[Path] = []
     args.out_dir.mkdir(parents=True, exist_ok=True)
