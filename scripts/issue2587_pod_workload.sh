@@ -23,9 +23,15 @@
 #                    venv: full §4.7 P1 check-set verify; writes
 #                    compat_smoke_report.json ALWAYS and
 #                    <out-root>/compat_smoke_done.json ONLY on all-PASS)
-#   p2_map_gen       ~29.4k rollouts, 6 splits x 2 CVD-pinned shards (vLLM)
-#   p3_map_capture   dense fp32 capture, layers 0-31, 2 shards per split
+#   p2_map_gen       ~29.4k rollouts, 6 splits x 2 shards — 12 independent
+#                    tasks consumed by 2 persistent CVD-pinned per-GPU
+#                    workers over a shared queue (work-conserving; r3 Codex
+#                    Major non-work-conserving-map-split-barriers)
+#   p3_map_capture   dense fp32 capture, layers 0-31 — same 12-task
+#                    work-conserving worker shape as p2
 #   p4_fits          ridge fits layer-sharded 0-15/16-31 (repo venv) + finalize
+#                    (--payloads-prefix/--preds-prefix explicit — fits.py
+#                    refuses --upload hf without them, r3 Codex Critical 1)
 #   p5_battery_gen   10,800 rollouts, 2 shards by axis (generate_batch)
 #   p6_battery_capture  capture 2 shards + single-GPU embed (repo venv,
 #                    vLLM 0.11.0 — §4.4 instrument-version parity DEFAULT)
@@ -40,14 +46,17 @@
 #                    issue2587_q35_map/manifests/, epm:results sentinel,
 #                    then the single terminal [phase=done]
 #
-# P1 enforcement (round-2 blocker `compat-gate-not-enforced`): every
-# production wave entry calls require_p1 (fail-loud assert that
-# <out-root>/compat_smoke_done.json exists with status PASS) — the "require
-# that sentinel at every expensive phase entry" arm — and the sentinel itself
-# is written only by `--gate compose_p1` after verifying the FULL §4.7 P1
-# check set (venv pins + banned dists in the model interpreter, driver gate,
-# run_meta PASS records for template_pin/length_scan/hook_probe/smoke_shard/
-# fits_smoke/apply_probe, tiny-battery artifacts).
+# P1 enforcement (round-2/3 blocker `compat-gate-not-enforced`): every
+# production wave entry (6 waves: p2/p3/p4/p5/p6/p8) calls require_p1, which
+# verifies the FULL sentinel contract — schema issue2587_compat_smoke_v2,
+# issue/phase/status, the report's recorded sha256, and CODE IDENTITY
+# (map_code_sha256 == the driver bytes about to run) — never the bare status
+# token (r3 Codex Critical 2). The sentinel itself is written only by
+# `--gate compose_p1` after verifying the FULL §4.7 P1 check set (venv pins +
+# banned dists in the model interpreter, driver gate, run_meta PASS records
+# for template_pin/length_scan/hook_probe/smoke_shard_gen/smoke_shard_capture/
+# fits_smoke/apply_probe, the mode-specific smoke-shard measured fields, and
+# the tiny-battery manifest geometry/counts).
 #
 # CVD discipline (§9): the drivers never set CUDA_VISIBLE_DEVICES; this
 # launcher pins it in the env per shard (gotchas.md import-time-cuInit rule).
@@ -73,6 +82,14 @@ OUT_ROOT="${EPM_I2587_OUT_ROOT:-/workspace/eps2587}"
 LOGS_DIR="${EPM_I2587_LOGS_DIR:-/workspace/logs}"
 HF_PREFIX="${EPM_I2587_HF_PREFIX:-issue2587_q35_map/qwen35_9b}"
 BATTERY_PREFIX="${EPM_I2587_BATTERY_PREFIX:-issue2587_minpair}"
+# Plan-§6.5/§10 HF destination prefixes for the P4/P8 fits phases —
+# issue2587_fits.py REFUSES `--upload hf` without them (deliberate
+# fail-loud None defaults, the #1005 upload-prefix clobber shape), so the
+# launcher passes them explicitly (r3 Codex Critical 1: the r2 launcher
+# omitted them and production would abort AFTER the 32-layer fits).
+PAYLOADS_PREFIX="${EPM_I2587_PAYLOADS_PREFIX:-issue2587_q35_map/analysis_tensors/ridge_payloads}"
+PREDS_PREFIX="${EPM_I2587_PREDS_PREFIX:-issue2587_q35_map/analysis_tensors/preds}"
+PREDS7B_PREFIX="${EPM_I2587_PREDS7B_PREFIX:-issue2587_minpair/analysis_tensors/preds_7b_matched}"
 BRANCH="${EPM_I2587_BRANCH:-issue-2587}"
 DRYRUN="${EPM_I2587_DRYRUN:-}"
 
@@ -190,21 +207,161 @@ print("[sentinel] wrote", path)' "$1" "$2"
 }
 
 require_p1() {
-  # require_p1 <next-phase> — the round-2 enforcement arm: every expensive
-  # phase entry re-asserts the FULL-P1 compat sentinel (status PASS).
+  # require_p1 <next-phase> — the round-2/3 enforcement arm: every expensive
+  # phase entry re-VERIFIES the FULL-P1 compat sentinel, not just its status
+  # token (r3 Codex Critical 2: boolean-only composite-gate evidence):
+  # schema/issue/phase/status, the report's recorded sha256 (the sentinel
+  # attests THAT report), and code identity (map_code_sha256 == the driver
+  # bytes about to run — a mid-run code change invalidates the P1 verdict
+  # until compose_p1 re-runs). Stdlib-only payload (json+hashlib), single-
+  # quoted with a double-quote-only body so the tests can extract + execute
+  # the EXACT production payload against fixture sentinels.
   if [ -n "$DRYRUN" ]; then
     printf '[dryrun] require_p1 before %s\n' "$1"
     return 0
   fi
-  uv run python -c 'import json, sys
-path, nxt = sys.argv[1], sys.argv[2]
+  uv run python -c 'import hashlib, json, sys
+sent_path, report_path, map_path, nxt = sys.argv[1:5]
+
+def _sha(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as fh:
+        for b in iter(lambda: fh.read(1 << 20), b""):
+            h.update(b)
+    return h.hexdigest()
+
 try:
-    d = json.load(open(path, encoding="utf-8"))
+    d = json.load(open(sent_path, encoding="utf-8"))
 except FileNotFoundError:
-    raise SystemExit("[p1-gate] REFUSED %s: compat sentinel %s absent" % (nxt, path))
-s = d.get("status")
-assert s == "PASS", "[p1-gate] REFUSED %s: %s status=%r != PASS" % (nxt, path, s)
-print("[p1-gate] OK before %s: %s" % (nxt, path))' "$COMPAT_SENTINEL" "$1"
+    raise SystemExit("[p1-gate] REFUSED %s: compat sentinel %s absent" % (nxt, sent_path))
+for key, want in (
+    ("schema", "issue2587_compat_smoke_v2"),
+    ("issue", 2587),
+    ("phase", "P1"),
+    ("status", "PASS"),
+):
+    got = d.get(key)
+    assert got == want, "[p1-gate] REFUSED %s: %s %s=%r != %r" % (nxt, sent_path, key, got, want)
+try:
+    report_sha = _sha(report_path)
+except FileNotFoundError:
+    raise SystemExit("[p1-gate] REFUSED %s: compat report %s absent" % (nxt, report_path))
+assert report_sha == d.get("report_sha256"), (
+    "[p1-gate] REFUSED %s: report %s sha256 %s != sentinel-recorded %r (report rewritten "
+    "since compose_p1)" % (nxt, report_path, report_sha, d.get("report_sha256")))
+code_sha = _sha(map_path)
+assert code_sha == d.get("map_code_sha256"), (
+    "[p1-gate] REFUSED %s: %s sha256 %s != sentinel-recorded %r (driver code changed since "
+    "compose_p1 — re-run the P1 smoke)" % (nxt, map_path, code_sha, d.get("map_code_sha256")))
+print("[p1-gate] OK before %s: %s (schema+report+code identity verified)" % (nxt, sent_path))' \
+    "$COMPAT_SENTINEL" "$COMPAT_REPORT" "$MAP" "$1"
+}
+
+pop_task() {
+  # pop_task <queue-file> — atomically pop + print the queue's first line
+  # (flock-serialized against the sibling GPU worker; the lock file lives
+  # beside the queue on container-local /tmp, never MooseFS); rc=1 when the
+  # queue is empty.
+  local queue="$1" task
+  {
+    flock 9
+    task="$(head -n 1 "$queue" 2>/dev/null || true)"
+    if [ -z "$task" ]; then
+      return 1
+    fi
+    tail -n +2 "$queue" > "$queue.next" && mv "$queue.next" "$queue"
+    printf '%s\n' "$task"
+  } 9>>"$queue.lock"
+}
+
+poison_queue() {
+  # poison_queue <queue-file> — empty the task queue: a FAILED worker calls
+  # this so the sibling worker stops after its in-flight task instead of
+  # consuming the dead wave's remaining splits (bounds the orphan window;
+  # the launcher still exits non-zero at the failed worker's wait_bg).
+  local queue="$1"
+  {
+    flock 9
+    : > "$queue"
+  } 9>>"$queue.lock"
+}
+
+map_wave_worker() {
+  # map_wave_worker <gpu> <capture-mode> <queue-file> <label> — persistent
+  # per-GPU worker (r3 Codex Major non-work-conserving-map-split-barriers):
+  # consumes "split shard" tasks until the queue drains, so a GPU whose
+  # task finishes early immediately picks up the next dependency-ready task
+  # instead of idling at a per-split two-shard barrier. CVD is pinned per
+  # WORKER process in the launcher env (gotchas.md import-time-cuInit
+  # rule); failure stays fail-loud — the first task failure poisons the
+  # queue and exits the worker with the task's rc, which wait_bg observes.
+  local gpu="$1" mode="$2" queue="$3" label="$4"
+  local task split shard log rc
+  while task="$(pop_task "$queue")"; do
+    split="${task% *}"
+    shard="${task#* }"
+    log="$LOGS_DIR/issue-2587-$label-$split-shard$shard.log"
+    echo "[workload] $label gpu$gpu: --split $split --shard-index $shard (log: $log)"
+    rc=0
+    env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES="$gpu" PYTHONPATH="$REPO_ROOT/src" \
+      "$MODEL_PY" "$MAP" --split "$split" --capture-mode "$mode" \
+      --num-shards 2 --shard-index "$shard" --hf-prefix "$HF_PREFIX" --h-dim 4096 \
+      --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
+      --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v > "$log" 2>&1 || rc=$?
+    if [ "$rc" -ne 0 ]; then
+      echo "[workload] FAILED $label $split shard$shard rc=$rc — tail of $log:" >&2
+      tail -n 120 "$log" >&2 || true
+      poison_queue "$queue"
+      exit "$rc"
+    fi
+    echo "[workload] done: $label $split shard$shard"
+  done
+}
+
+run_map_wave() {
+  # run_map_wave <capture-mode> <label> — enqueue ALL 12 dependency-ready
+  # tasks (6 splits x 2 shards; every task within a wave is independent —
+  # shards own disjoint row ranges, splits are disjoint id sets), then run
+  # ONE persistent worker per GPU over the shared queue (work-conserving:
+  # an idle GPU + a pending task never coexist; code-style.md
+  # multi-worker-dispatcher rule, #813/#778).
+  local mode="$1" label="$2"
+  if [ -n "$DRYRUN" ]; then
+    # Static dry-run view: one command echo per (split, shard). The echoed
+    # CVD uses the shard index; at runtime the GPU is whichever worker pops
+    # the task — both workers carry a launcher-pinned CVD.
+    local split shard
+    for split in "${SPLITS[@]}"; do
+      for shard in 0 1; do
+        launch_bg "$LOGS_DIR/issue-2587-$label-$split-shard$shard.log" \
+          env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES="$shard" PYTHONPATH="$REPO_ROOT/src" \
+          "$MODEL_PY" "$MAP" --split "$split" --capture-mode "$mode" \
+          --num-shards 2 --shard-index "$shard" --hf-prefix "$HF_PREFIX" --h-dim 4096 \
+          --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
+          --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
+      done
+    done
+    return 0
+  fi
+  # Ephemeral coordination state on container-local /tmp (pid-unique name):
+  # no resume value, and flock semantics stay kernel-local off the FUSE mount.
+  local queue="${TMPDIR:-/tmp}/issue-2587-$label-task-queue.$$"
+  rm -f "$queue" "$queue.lock" "$queue.next"
+  local split shard
+  for split in "${SPLITS[@]}"; do
+    for shard in 0 1; do
+      printf '%s %s\n' "$split" "$shard" >> "$queue"
+    done
+  done
+  launch_bg "$LOGS_DIR/issue-2587-$label-worker-gpu0.log" \
+    map_wave_worker 0 "$mode" "$queue" "$label"
+  local w0="$LAST_BG_PID"
+  launch_bg "$LOGS_DIR/issue-2587-$label-worker-gpu1.log" \
+    map_wave_worker 1 "$mode" "$queue" "$label"
+  local w1="$LAST_BG_PID"
+  wait_bg "$w0" "$label worker gpu0" "$LOGS_DIR/issue-2587-$label-worker-gpu0.log"
+  wait_bg "$w1" "$label worker gpu1" "$LOGS_DIR/issue-2587-$label-worker-gpu1.log"
+  rm -f "$queue" "$queue.lock" "$queue.next"
 }
 
 # ── bootstrap ───────────────────────────────────────────────────────────────
@@ -352,71 +509,44 @@ run_logged "$LOGS_DIR/issue-2587-p1-compose.log" \
 assert_file "$COMPAT_SENTINEL" "P1 compose (compat_smoke_done)"
 assert_file "$COMPAT_REPORT" "P1 compose (compat_smoke_report)"
 
-# ── P2: map-fit generation (vLLM, 2 CVD-pinned shards per split) ───────────
+# ── P2: map-fit generation (vLLM; 12 tasks, 2 work-conserving GPU workers) ──
 require_p1 p2_map_gen
 phase p2_map_gen
-for split in "${SPLITS[@]}"; do
-  launch_bg "$LOGS_DIR/issue-2587-p2-$split-shard0.log" \
-    env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES=0 PYTHONPATH="$REPO_ROOT/src" \
-    "$MODEL_PY" "$MAP" --split "$split" --capture-mode phase_split_gen \
-    --num-shards 2 --shard-index 0 --hf-prefix "$HF_PREFIX" --h-dim 4096 \
-    --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
-    --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
-  P2_PID0="$LAST_BG_PID"
-  launch_bg "$LOGS_DIR/issue-2587-p2-$split-shard1.log" \
-    env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES=1 PYTHONPATH="$REPO_ROOT/src" \
-    "$MODEL_PY" "$MAP" --split "$split" --capture-mode phase_split_gen \
-    --num-shards 2 --shard-index 1 --hf-prefix "$HF_PREFIX" --h-dim 4096 \
-    --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
-    --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
-  P2_PID1="$LAST_BG_PID"
-  wait_bg "$P2_PID0" "p2 $split shard0" "$LOGS_DIR/issue-2587-p2-$split-shard0.log"
-  wait_bg "$P2_PID1" "p2 $split shard1" "$LOGS_DIR/issue-2587-p2-$split-shard1.log"
-done
+run_map_wave phase_split_gen p2
 write_sentinel "$OUT_ROOT/map_gen_done.json" p2_map_gen
 
-# ── P3: map-fit dense capture (fp32, layers 0-31, 2 shards per split) ──────
+# ── P3: map-fit dense capture (fp32, layers 0-31; same worker shape) ────────
 require_p1 p3_map_capture
 phase p3_map_capture
-for split in "${SPLITS[@]}"; do
-  launch_bg "$LOGS_DIR/issue-2587-p3-$split-shard0.log" \
-    env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES=0 PYTHONPATH="$REPO_ROOT/src" \
-    "$MODEL_PY" "$MAP" --split "$split" --capture-mode phase_split_capture \
-    --num-shards 2 --shard-index 0 --hf-prefix "$HF_PREFIX" --h-dim 4096 \
-    --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
-    --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
-  P3_PID0="$LAST_BG_PID"
-  launch_bg "$LOGS_DIR/issue-2587-p3-$split-shard1.log" \
-    env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES=1 PYTHONPATH="$REPO_ROOT/src" \
-    "$MODEL_PY" "$MAP" --split "$split" --capture-mode phase_split_capture \
-    --num-shards 2 --shard-index 1 --hf-prefix "$HF_PREFIX" --h-dim 4096 \
-    --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
-    --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
-  P3_PID1="$LAST_BG_PID"
-  wait_bg "$P3_PID0" "p3 $split shard0" "$LOGS_DIR/issue-2587-p3-$split-shard0.log"
-  wait_bg "$P3_PID1" "p3 $split shard1" "$LOGS_DIR/issue-2587-p3-$split-shard1.log"
-done
+run_map_wave phase_split_capture p3
 write_sentinel "$OUT_ROOT/map_capture_done.json" p3_map_capture
 
 # ── P4: ridge fits + floors + kNN, layer-sharded 0-15 / 16-31 (repo venv) ──
 require_p1 p4_fits
 phase p4_fits
+# --store-prefix threads the (env-overridable) 9B store root into the fits
+# consumer so a non-default EPM_I2587_HF_PREFIX run reads the SAME prefix
+# P2/P3 wrote (r2 g2 concern 1; defaults are byte-equal). The finalize leg
+# passes the plan-§6.5 destination prefixes EXPLICITLY — fits.py raises on
+# `--upload hf` without them (r3 Codex Critical 1).
 launch_bg "$LOGS_DIR/issue-2587-p4-fits-l0-15.log" \
   env CUDA_VISIBLE_DEVICES=0 \
   uv run python "$FITS" --phase fits --layers 0-15 --device cuda \
-  --h-dim 4096 --upload hf -v
+  --h-dim 4096 --store-prefix "$HF_PREFIX" --upload hf -v
 P4_PID0="$LAST_BG_PID"
 launch_bg "$LOGS_DIR/issue-2587-p4-fits-l16-31.log" \
   env CUDA_VISIBLE_DEVICES=1 \
   uv run python "$FITS" --phase fits --layers 16-31 --device cuda \
-  --h-dim 4096 --upload hf -v
+  --h-dim 4096 --store-prefix "$HF_PREFIX" --upload hf -v
 P4_PID1="$LAST_BG_PID"
 wait_bg "$P4_PID0" "p4 fits layers 0-15" "$LOGS_DIR/issue-2587-p4-fits-l0-15.log"
 wait_bg "$P4_PID1" "p4 fits layers 16-31" "$LOGS_DIR/issue-2587-p4-fits-l16-31.log"
 run_logged "$LOGS_DIR/issue-2587-p4-finalize.log" \
   env CUDA_VISIBLE_DEVICES=0 \
   uv run python "$FITS" --phase finalize --device cuda --h-dim 4096 \
-  --upload hf --sentinel-path "$OUT_ROOT/fits_done.json" -v
+  --store-prefix "$HF_PREFIX" --upload hf \
+  --payloads-prefix "$PAYLOADS_PREFIX" --preds-prefix "$PREDS_PREFIX" \
+  --sentinel-path "$OUT_ROOT/fits_done.json" -v
 assert_file "$OUT_ROOT/fits_done.json" "P4 finalize"
 
 # ── P5: battery + pilot generation (generate_batch, 2 shards by axis) ──────
@@ -463,10 +593,15 @@ write_sentinel "$OUT_ROOT/battery_capture_done.json" p6_battery_capture
 # ── P8: matched-capacity 7B arm (repo venv, single GPU) ─────────────────────
 require_p1 p8_matched7b
 phase p8_matched7b
+# --preds7b-prefix is the plan-§6.5 matched-7B destination — fits.py raises
+# on `--upload hf` without it (r3 Codex Critical 1). matched7b reads the
+# BANKED 7B store via its own pinned --hf-prefix-7b/--revision-7b defaults
+# (it never consumes --store-prefix), so no store threading here.
 run_logged "$LOGS_DIR/issue-2587-p8-matched7b.log" \
   env CUDA_VISIBLE_DEVICES=0 \
   uv run python "$FITS" --phase matched7b --device cuda --h-dim 4096 \
-  --upload hf --sentinel-path "$OUT_ROOT/matched7b_done.json" -v
+  --upload hf --preds7b-prefix "$PREDS7B_PREFIX" \
+  --sentinel-path "$OUT_ROOT/matched7b_done.json" -v
 assert_file "$OUT_ROOT/matched7b_done.json" "P8 matched7b"
 
 # ── leak/cap-hit harvest (r2 concern leak-caphit-manifests-not-in-harvest-set)
@@ -501,14 +636,30 @@ else
     echo "[leak-caphit] FATAL: no anchors_*.done.json under $BATTERY_ROOT{,/shard*}/manifests" >&2
     exit 6
   fi
+  # Collision guard is scoped WITHIN this run (r2 g5 concern 1): shards own
+  # disjoint axes, so two THIS-RUN manifests sharing a basename with
+  # differing bytes is a genuine shard fault (exit 6). A PRE-EXISTING $dest
+  # is a prior round's committed copy cloned with the repo (or a truncated
+  # copy from a crash mid-copy) and is SUPERSEDED unconditionally —
+  # results_push commits the supersession as an ordinary diff; the old
+  # unconditional guard made every fresh-pod relaunch after a successful
+  # push die exit 6 with a shard-fault misdiagnosis. Copies are atomic
+  # (tmp + mv, same filesystem) so a crash mid-copy can't strand a
+  # truncated $dest either.
+  declare -A SEEN_MANIFESTS=()
   for m in "${GEN_MANIFESTS[@]}"; do
-    dest="$LEAK_DIR/$(basename "$m")"
-    if [ -e "$dest" ] && ! cmp -s "$m" "$dest"; then
-      echo "[leak-caphit] FATAL: done-manifest basename collision with differing content:" \
-        "$m vs $dest (shards must own disjoint axes)" >&2
-      exit 6
+    base="$(basename "$m")"
+    dest="$LEAK_DIR/$base"
+    if [ -n "${SEEN_MANIFESTS[$base]:-}" ]; then
+      if ! cmp -s "$m" "$dest"; then
+        echo "[leak-caphit] FATAL: done-manifest basename collision WITHIN this run:" \
+          "$m vs ${SEEN_MANIFESTS[$base]} (shards must own disjoint axes)" >&2
+        exit 6
+      fi
+      continue  # byte-identical within-run duplicate — harmless
     fi
-    cp -f "$m" "$dest"
+    cp -f "$m" "$dest.tmp.$$" && mv -f "$dest.tmp.$$" "$dest"
+    SEEN_MANIFESTS[$base]="$m"
   done
   echo "[leak-caphit] harvested ${#GEN_MANIFESTS[@]} battery gen done-manifests -> $LEAK_DIR"
   for split in "${SPLITS[@]}"; do
@@ -545,7 +696,7 @@ else
   if git diff --cached --quiet -- "${RESULT_JSONS[@]}"; then
     echo "[results-push] no new eval-JSON changes to commit"
   else
-    git commit -m "task #2587: pod-side eval JSONs (split_ids, compat report, layer sweep, matched7b anchor)" \
+    git commit -m "task #2587: pod-side eval JSONs (split_ids, compat report, layer sweep, matched7b anchor, leak_caphit set)" \
       -- "${RESULT_JSONS[@]}"
   fi
   PUSH_RC=1

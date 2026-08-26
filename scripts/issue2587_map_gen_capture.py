@@ -48,16 +48,21 @@ Recorded diff vs the source (everything else is byte-identical):
      ``scripts/issue2587_fits.py`` (unit 3's deliverable — fail-loud assert
      until it lands).
   6. Sentinel: required gate set = {template_pin, length_scan, hook_probe}
-     (the plan-§4.3 kept gates; #2330's smoke_shard/fits_smoke/parity7b
+     (the plan-§4.3 kept gates; the smoke-shard (mode-split since r3:
+     ``smoke_shard_gen``/``smoke_shard_capture``)/fits_smoke/parity7b
      records are still WRITTEN when those modes run but no longer gate the
      sentinel); schema ``issue2587_p0b_gates_v1``, issue 2587, phase P0b.
-  7. Round-2 P1 enforcement (blocker ``compat-gate-not-enforced``): new
+  7. Round-2/3 P1 enforcement (blocker ``compat-gate-not-enforced``):
      ``--gate compose_p1`` (model venv — verifies interpreter identity,
      realized §4.1 pins, banned-dist absence, the driver gate, EVERY
-     P1_COMPOSE_REQUIRED run_meta record, and the tiny battery cell's
-     manifests; writes ``compat_smoke_report.json`` ALWAYS and the
-     ``compat_smoke_done.json`` sentinel ONLY on all-PASS, rc 5 on any
-     failure) + new ``--p1-apply-probe`` mode (repo venv — the §4.7 tiny-cell
+     P1_COMPOSE_REQUIRED run_meta record PLUS the mode-specific smoke-shard
+     MEASURED-field schemas (engine identity, gen rows, zero think-leaks,
+     capture geometry) and the tiny battery cell's manifest geometry/counts
+     cross-referenced against the apply-probe record; writes
+     ``compat_smoke_report.json`` ALWAYS and the ``compat_smoke_done.json``
+     sentinel (schema v2, carrying report_sha256 + map_code_sha256 code
+     identity) ONLY on all-PASS, rc 5 on any failure) + ``--p1-apply-probe``
+     mode (repo venv — the §4.7 tiny-cell
      apply_map(random payload)->reads leg over the local ``--upload none``
      battery stores, via the REAL ``issue779_ffc_n1m_fits.apply_map``; writes
      the run_meta ``apply_probe`` record compose_p1 requires) + args
@@ -378,8 +383,9 @@ _ENGINE_CONSTRUCTED = False  # set by _build_engine; drives the os._exit termina
 _LIVE_ENGINE = None  # last-constructed engine handle (the __main__ exception-teardown guard)
 
 # Required gate run_meta keys for the plan-§9 P0b completion sentinel
-# (<out-dir>/split_ids_done.json): the plan-§4.3 kept gates. #2330's
-# smoke_shard/fits_smoke/parity7b run-meta records are still WRITTEN when
+# (<out-dir>/split_ids_done.json): the plan-§4.3 kept gates. The smoke-shard
+# (mode-split: smoke_shard_gen/smoke_shard_capture)/fits_smoke/parity7b
+# run-meta records are still WRITTEN when
 # those modes run, but they no longer gate the sentinel. NOTE: this is the
 # P0b (convention-gates) sentinel ONLY — the FULL plan-§4.7 P1 check set is
 # enforced by the SEPARATE `--gate compose_p1` sentinel below
@@ -392,17 +398,31 @@ P1_SENTINEL_REQUIRED = (
 )
 
 # Run_meta records `--gate compose_p1` requires with passed=true (plan §4.7
-# P1: the three P0b convention gates + the 500-row smoke shard + the fits
-# smoke + the tiny-battery apply probe). parity7b/emit_spans run on the 7B
-# parity leg and gate P3's port-parity anchor, not the P1 compat sentinel.
+# P1: the three P0b convention gates + BOTH 500-row smoke-shard sub-phases
+# (gen + capture — MODE-SPECIFIC records; r3 Codex Critical 2: one shared
+# `smoke_shard` key was last-writer-wins, so a capture-only run could
+# launder the gen-engine evidence) + the fits smoke + the tiny-battery
+# apply probe. parity7b/emit_spans run on the 7B parity leg and gate P3's
+# port-parity anchor, not the P1 compat sentinel.
 P1_COMPOSE_REQUIRED = (
     "template_pin",
     "length_scan",
     "hook_probe",
-    "smoke_shard",
+    "smoke_shard_gen",
+    "smoke_shard_capture",
     "fits_smoke",
     "apply_probe",
 )
+
+# Plan-§4.3 geometry + engine identities the P1 smoke-shard evidence must
+# realize (d=4096, layers 0-31; the gen sub-phase is the vLLM engine leg,
+# the capture sub-phase the HF fp32 teacher-forced leg). compose_p1
+# validates these MEASURED fields — never a bare `passed` boolean (r3
+# Codex Critical 2: boolean-only composite-gate evidence).
+P1_EXPECT_H_DIM = 4096
+P1_EXPECT_N_LAYERS = 32
+P1_ENGINE_GEN = "vllm_generate"
+P1_ENGINE_CAPTURE = "hf_teacher_forced_capture"
 
 
 # ---------------------------------------------------------------------------
@@ -2454,12 +2474,20 @@ def run_capture(args) -> int:
     if args.no_upload:
         # P1 step-3 smoke shard (local-only run; production never passes
         # --no-upload): record realized values for the P1 completion sentinel.
+        # MODE-SPECIFIC record key (r3 Codex Critical 2): the gen and capture
+        # sub-phases each persist their OWN record — one shared `smoke_shard`
+        # key was last-writer-wins, letting a capture-only re-run overwrite
+        # (launder) the gen-engine evidence. compose_p1 validates BOTH
+        # records' schemas + measured fields (engine identity, gen rows,
+        # zero think-leaks, capture geometry).
+        is_gen = args.capture_mode == "phase_split_gen"
         _update_run_meta(
             args.run_meta_out,
-            "smoke_shard",
+            "smoke_shard_gen" if is_gen else "smoke_shard_capture",
             {
                 "split": args.split,
                 "capture_mode": args.capture_mode,
+                "engine": P1_ENGINE_GEN if is_gen else P1_ENGINE_CAPTURE,
                 "shard_index": args.shard_index,
                 "num_shards": args.num_shards,
                 "shard_size": args.shard_size,
@@ -2471,6 +2499,8 @@ def run_capture(args) -> int:
                 "cap_hit": int(cap_hit_total),
                 "think_open": int(think_total),
                 "capture_fn": capture_fn_choice,
+                "h_dim": int(h_dim),
+                "n_layers": len(layers),
                 "passed": True,  # the think-leak gate above raises before this point
             },
         )
@@ -3170,7 +3200,14 @@ def run_p1_apply_probe(args) -> int:
     man_path = root / "manifests" / f"capture_{cell}.done.json"
     assert man_path.is_file(), f"tiny battery capture manifest missing: {man_path}"
     n_rows = int(json.loads(man_path.read_text(encoding="utf-8")).get("n_rows", 0))
-    assert n_rows >= 1, f"{man_path}: n_rows={n_rows} < 1"
+    # >= 2, not >= 1 (r2 g2 nit): the payload's X.std(dim=0) is NaN over a
+    # 1-row store, which would fail the downstream finiteness assert with a
+    # misleading message; the launcher's 3-carrier x K=2 cell always yields
+    # >= 2 rows, so this only sharpens the failure message.
+    assert n_rows >= 2, (
+        f"{man_path}: n_rows={n_rows} < 2 — the apply probe needs >= 2 captured rows "
+        "(payload std is undefined over a single row)"
+    )
 
     va_path = root / "capture" / "va2587" / f"{cell}.pt"
     vc_path = root / "capture" / "vc2587" / f"{cell}.pt"
@@ -3300,10 +3337,13 @@ def _compose_p1_checks(args) -> list[dict]:
         cm2587.assert_driver_compat()
         return f"host driver satisfies floor major {cm2587.MODEL_DRIVER_FLOOR_MAJOR}"
 
-    def _records():
-        meta: dict = {}
+    def _load_meta() -> dict:
         if args.run_meta_out.exists():
-            meta = json.loads(args.run_meta_out.read_text(encoding="utf-8"))
+            return json.loads(args.run_meta_out.read_text(encoding="utf-8"))
+        return {}
+
+    def _records():
+        meta = _load_meta()
         out = {}
         for key in P1_COMPOSE_REQUIRED:
             rec = meta.get(key)
@@ -3314,15 +3354,110 @@ def _compose_p1_checks(args) -> list[dict]:
             out[key] = True
         return out
 
+    def _smoke_evidence():
+        # r3 Codex Critical 2: validate the MEASURED fields of both smoke-shard
+        # sub-phase records (never the bare `passed` boolean the _records loop
+        # already checks): distinct engine identities, real generated rows,
+        # zero think-leaks (plan §7 thinking-off validity — with the empty
+        # think block prefilled by the template, ANY response opening a second
+        # <think> block means the convention is broken), capture geometry, and
+        # the fits-smoke artifact's on-disk freshness.
+        meta = _load_meta()
+        gen = meta.get("smoke_shard_gen") or {}
+        cap = meta.get("smoke_shard_capture") or {}
+        got_mode = gen.get("capture_mode")
+        assert got_mode == "phase_split_gen", (
+            f"smoke_shard_gen capture_mode={got_mode!r} != 'phase_split_gen'"
+        )
+        got_engine = gen.get("engine")
+        assert got_engine == P1_ENGINE_GEN, (
+            f"smoke_shard_gen engine={got_engine!r} != {P1_ENGINE_GEN!r} — the record was not "
+            "produced by the vLLM generation leg"
+        )
+        gen_rows = gen.get("gen_rows")
+        assert isinstance(gen_rows, int) and gen_rows >= 1, (
+            f"smoke_shard_gen gen_rows={gen_rows!r} — the engine leg produced/validated no rows"
+        )
+        think = gen.get("think_open")
+        assert isinstance(think, int) and think == 0, (
+            f"smoke_shard_gen think_open={think!r} != 0 — thinking-off not engaged (plan §7)"
+        )
+        got_mode = cap.get("capture_mode")
+        assert got_mode == "phase_split_capture", (
+            f"smoke_shard_capture capture_mode={got_mode!r} != 'phase_split_capture'"
+        )
+        got_engine = cap.get("engine")
+        assert got_engine == P1_ENGINE_CAPTURE, (
+            f"smoke_shard_capture engine={got_engine!r} != {P1_ENGINE_CAPTURE!r} — the record "
+            "was not produced by the HF teacher-forced capture leg"
+        )
+        kept = cap.get("kept_rows")
+        assert isinstance(kept, int) and kept >= 1, (
+            f"smoke_shard_capture kept_rows={kept!r} — no rows captured"
+        )
+        cap_fn = cap.get("capture_fn")
+        assert cap_fn in ("batched", "perrow"), (
+            f"smoke_shard_capture capture_fn={cap_fn!r} not a capture implementation"
+        )
+        assert cap.get("h_dim") == P1_EXPECT_H_DIM, (
+            f"smoke_shard_capture h_dim={cap.get('h_dim')!r} != {P1_EXPECT_H_DIM} (plan §4.3)"
+        )
+        assert cap.get("n_layers") == P1_EXPECT_N_LAYERS, (
+            f"smoke_shard_capture n_layers={cap.get('n_layers')!r} != {P1_EXPECT_N_LAYERS} "
+            "(plan §4.3 layers 0-31)"
+        )
+        # fits-smoke evidence freshness: the recorded artifact still matches
+        # the bytes on disk (a stale record over a rewritten artifact fails).
+        fits = meta.get("fits_smoke") or {}
+        out_json = fits.get("out_json")
+        assert out_json and Path(out_json).is_file(), (
+            f"fits_smoke out_json missing on disk: {out_json!r}"
+        )
+        got_sha = _sha256_file(Path(out_json))
+        assert got_sha == fits.get("out_json_sha256"), (
+            f"fits_smoke artifact {out_json} sha256 {got_sha} != recorded "
+            f"{fits.get('out_json_sha256')!r} (stale record)"
+        )
+        return {"gen_rows": gen_rows, "kept_rows": kept, "think_open": think}
+
     def _battery():
         root = Path(args.p1_battery_root)
         out = {}
+        counts: dict[str, int] = {}
         for stem in ("anchors", "capture"):
             p = root / "manifests" / f"{stem}_{args.p1_smoke_cell}.done.json"
             assert p.is_file(), f"tiny battery manifest missing: {p}"
-            n = int(json.loads(p.read_text(encoding="utf-8")).get("n_rows", 0))
-            assert n >= 1, f"{p}: n_rows={n} < 1"
+            doc = json.loads(p.read_text(encoding="utf-8"))
+            assert isinstance(doc, dict), f"{p}: manifest is not a JSON object"
+            n = doc.get("n_rows")
+            assert isinstance(n, int) and n >= 1, f"{p}: n_rows={n!r} malformed or < 1"
+            counts[stem] = n
             out[p.name] = n
+        # Geometry/count coherence (r3 Codex Critical 2: battery evidence
+        # beyond file-existence + n_rows>=1): capture can only DROP rows from
+        # the gen (anchors) set, and the apply-probe record's realized
+        # geometry must match the manifests + the plan-§4.3 shape.
+        assert counts["capture"] <= counts["anchors"], (
+            f"capture n_rows {counts['capture']} > anchors n_rows {counts['anchors']} — "
+            "capture can only drop rows from the gen set"
+        )
+        probe = _load_meta().get("apply_probe") or {}
+        assert probe.get("n_rows") == counts["capture"], (
+            f"apply_probe n_rows={probe.get('n_rows')!r} != capture manifest "
+            f"n_rows={counts['capture']}"
+        )
+        probe_layers = probe.get("layers_captured") or []
+        assert len(probe_layers) == P1_EXPECT_N_LAYERS, (
+            f"apply_probe layers_captured has {len(probe_layers)} layers != "
+            f"{P1_EXPECT_N_LAYERS} (battery CAPTURE_LAYERS = all 32)"
+        )
+        assert probe.get("hidden") == P1_EXPECT_H_DIM, (
+            f"apply_probe hidden={probe.get('hidden')!r} != {P1_EXPECT_H_DIM} (plan §4.3)"
+        )
+        vc_rows = probe.get("vc_rows")
+        assert isinstance(vc_rows, int) and vc_rows >= 1, (
+            f"apply_probe vc_rows={vc_rows!r} — no vc store rows"
+        )
         return out
 
     _check("interpreter_identity", _interpreter)
@@ -3330,6 +3465,7 @@ def _compose_p1_checks(args) -> list[dict]:
     _check("banned_dists_absent", _banned)
     _check("driver_gate", _driver)
     _check("p1_run_meta_records", _records)
+    _check("p1_smoke_shard_evidence", _smoke_evidence)
     _check("tiny_battery_manifests", _battery)
     return checks
 
@@ -3348,13 +3484,18 @@ def gate_compose_p1(args) -> int:
     assert args.p1_battery_root, "--p1-battery-root is required for --gate compose_p1"
     checks = _compose_p1_checks(args)
     failed = [c["name"] for c in checks if not c["passed"]]
+    # Code identity (r3: require_p1 verifies the sentinel was composed by the
+    # exact driver bytes about to run production — a mid-run code change
+    # invalidates the P1 verdict until compose_p1 re-runs).
+    map_code_sha = _sha256_file(Path(__file__).resolve())
     report = {
-        "schema": "issue2587_compat_smoke_v1",
+        "schema": "issue2587_compat_smoke_v2",
         "issue": 2587,
         "phase": "P1",
         "status": "FAIL" if failed else "PASS",
         "model_interpreter": sys.executable,
         "code_git_sha": _git_sha(),
+        "map_code_sha256": map_code_sha,
         "required_run_meta_records": list(P1_COMPOSE_REQUIRED),
         "checks": checks,
         "failed_checks": failed,
@@ -3372,12 +3513,14 @@ def gate_compose_p1(args) -> int:
         _phase("done")
         return 5
     sentinel = {
-        "schema": "issue2587_compat_smoke_v1",
+        "schema": "issue2587_compat_smoke_v2",
         "issue": 2587,
         "phase": "P1",
         "status": "PASS",
         "report_path": str(report_path),
         "report_sha256": _sha256_file(report_path),
+        "map_code_sha256": map_code_sha,
+        "code_git_sha": report["code_git_sha"],
         "checks_passed": [c["name"] for c in checks],
         "ts_utc": report["ts_utc"],
     }
@@ -3433,8 +3576,16 @@ def main() -> int:
         # Local-only (no HF token needed): runs BEFORE the token assert below.
         return run_p1_apply_probe(args)
 
-    # Every mode touches the private data repo (manifest / banked-store /
-    # upload paths) — fail fast on a missing token rather than mid-phase.
+    if args.gate == "compose_p1":
+        # Local-only verdict composer (interpreter/pins/banned-dists/driver/
+        # run_meta/manifests): dispatched BEFORE the token assert so a pod
+        # whose .env failed to stage surfaces as a compat VERDICT, not a
+        # misattributed HF_TOKEN crash (r2 g2 concern 2).
+        return gate_compose_p1(args)
+
+    # Every remaining mode touches the private data repo (manifest /
+    # banked-store / upload paths) — fail fast on a missing token rather
+    # than mid-phase.
     assert os.environ.get("HF_TOKEN"), (
         "HF_TOKEN missing — .env not loaded (set EPM_DOTENV_PATH or run from a checkout "
         "with .env present)"
@@ -3450,7 +3601,6 @@ def main() -> int:
             "emit_spans": gate_emit_spans,
             "parity7b": gate_parity7b,
             "hook_probe": gate_hook_probe,
-            "compose_p1": gate_compose_p1,
         }[args.gate](args)
 
     assert args.split, "--split is required for run mode"

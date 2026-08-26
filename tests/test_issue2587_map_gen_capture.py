@@ -470,14 +470,19 @@ import torch  # noqa: E402
 
 
 def test_p1_compose_required_records():
+    # r3: the smoke shard is MODE-SPLIT (gen + capture records) — one shared
+    # `smoke_shard` key was last-writer-wins laundering (Codex Critical 2).
     assert M.P1_COMPOSE_REQUIRED == (
         "template_pin",
         "length_scan",
         "hook_probe",
-        "smoke_shard",
+        "smoke_shard_gen",
+        "smoke_shard_capture",
         "fits_smoke",
         "apply_probe",
     )
+    assert M.P1_ENGINE_GEN != M.P1_ENGINE_CAPTURE  # distinct engine identities
+    assert M.P1_EXPECT_H_DIM == 4096 and M.P1_EXPECT_N_LAYERS == 32  # plan §4.3
 
 
 def test_parser_p1_defaults():
@@ -616,10 +621,67 @@ def _compose_args(tmp_path, root):
     return args
 
 
-def _write_all_p1_records(tmp_path):
-    (tmp_path / "run_meta.json").write_text(
-        json.dumps({k: {"passed": True} for k in M.P1_COMPOSE_REQUIRED})
-    )
+def _write_all_p1_records(tmp_path, **overrides):
+    """Full-shape P1 run_meta records, coherent with _battery_fixture's
+    manifests (capture n_rows=3, anchors n_rows=3) and with a real
+    fits_smoke.json artifact on disk (the composer now verifies MEASURED
+    fields + artifact freshness, never bare `passed` booleans — r3 Codex
+    Critical 2). `overrides` replaces whole records by key (None deletes)."""
+    fits_out = tmp_path / "fits_smoke.json"
+    if not fits_out.exists():
+        fits_out.write_text(json.dumps({"ok": True}))
+    records = {
+        "template_pin": {"passed": True},
+        "length_scan": {"passed": True},
+        "hook_probe": {"passed": True},
+        "smoke_shard_gen": {
+            "capture_mode": "phase_split_gen",
+            "engine": M.P1_ENGINE_GEN,
+            "gen_rows": 500,
+            "cap_hit": 0,
+            "think_open": 0,
+            "passed": True,
+        },
+        "smoke_shard_capture": {
+            "capture_mode": "phase_split_capture",
+            "engine": M.P1_ENGINE_CAPTURE,
+            "kept_rows": 500,
+            "capture_fn": "batched",
+            "h_dim": M.P1_EXPECT_H_DIM,
+            "n_layers": M.P1_EXPECT_N_LAYERS,
+            "passed": True,
+        },
+        "fits_smoke": {
+            "out_json": str(fits_out),
+            "out_json_sha256": hashlib.sha256(fits_out.read_bytes()).hexdigest(),
+            "passed": True,
+        },
+        "apply_probe": {
+            "n_rows": 3,  # == the _battery_fixture capture manifest
+            "hidden": M.P1_EXPECT_H_DIM,
+            "layers_captured": list(range(M.P1_EXPECT_N_LAYERS)),
+            "vc_rows": 5,
+            "passed": True,
+        },
+    }
+    for key, rec in overrides.items():
+        if rec is None:
+            records.pop(key, None)
+        else:
+            records[key] = rec
+    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    return records
+
+
+_COMPOSE_CHECK_NAMES = [
+    "interpreter_identity",
+    "realized_pins",
+    "banned_dists_absent",
+    "driver_gate",
+    "p1_run_meta_records",
+    "p1_smoke_shard_evidence",
+    "tiny_battery_manifests",
+]
 
 
 def test_compose_p1_pass_writes_report_and_sentinel(monkeypatch, tmp_path):
@@ -630,28 +692,28 @@ def test_compose_p1_pass_writes_report_and_sentinel(monkeypatch, tmp_path):
     assert M.gate_compose_p1(args) == 0
 
     report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
-    assert report["schema"] == "issue2587_compat_smoke_v1"
+    assert report["schema"] == "issue2587_compat_smoke_v2"
     assert report["issue"] == 2587 and report["phase"] == "P1"
     assert report["status"] == "PASS" and report["failed_checks"] == []
     names = [c["name"] for c in report["checks"]]
-    assert names == [
-        "interpreter_identity",
-        "realized_pins",
-        "banned_dists_absent",
-        "driver_gate",
-        "p1_run_meta_records",
-        "tiny_battery_manifests",
-    ]
+    assert names == _COMPOSE_CHECK_NAMES
     assert all(c["passed"] for c in report["checks"])
     assert report["required_run_meta_records"] == list(M.P1_COMPOSE_REQUIRED)
 
     sentinel = json.loads((tmp_path / "compat_smoke_done.json").read_text())
+    assert sentinel["schema"] == "issue2587_compat_smoke_v2"
     assert sentinel["status"] == "PASS" and sentinel["phase"] == "P1"
+    assert sentinel["issue"] == 2587
     assert sentinel["checks_passed"] == names
     assert (
         sentinel["report_sha256"]
         == hashlib.sha256((tmp_path / "compat_smoke_report.json").read_bytes()).hexdigest()
     )
+    # Code identity (r3): the sentinel pins the exact driver bytes that
+    # composed it — require_p1 re-hashes the file before every wave.
+    map_path = Path(M.__file__).resolve()
+    assert sentinel["map_code_sha256"] == hashlib.sha256(map_path.read_bytes()).hexdigest()
+    assert report["map_code_sha256"] == sentinel["map_code_sha256"]
     cm2587.assert_driver_compat.assert_called_once_with()
 
 
@@ -669,13 +731,145 @@ def test_compose_p1_fails_rc5_on_wrong_pin_no_sentinel(monkeypatch, tmp_path):
 def test_compose_p1_fails_on_missing_run_meta_record(monkeypatch, tmp_path):
     root = _battery_fixture(tmp_path)
     _compose_env(monkeypatch)
-    records = {k: {"passed": True} for k in M.P1_COMPOSE_REQUIRED if k != "apply_probe"}
-    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    _write_all_p1_records(tmp_path, apply_probe=None)
     assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
     report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
     assert "p1_run_meta_records" in report["failed_checks"]
     detail = next(c for c in report["checks"] if c["name"] == "p1_run_meta_records")["detail"]
     assert "apply_probe" in detail  # the report NAMES the missing leg
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_boolean_only_records(monkeypatch, tmp_path):
+    """The r2 test-side enshrinement INVERTED (Codex Critical 2: the old
+    positive test fabricated every record as bare `{"passed": True}` and the
+    composer PASSed it) — fieldless boolean records must now FAIL the
+    measured-field evidence check, with no sentinel."""
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    (tmp_path / "run_meta.json").write_text(
+        json.dumps({k: {"passed": True} for k in M.P1_COMPOSE_REQUIRED})
+    )
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_smoke_shard_evidence" in report["failed_checks"]
+    assert "tiny_battery_manifests" in report["failed_checks"]  # geometry cross-ref
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_capture_only_smoke_shard(monkeypatch, tmp_path):
+    """r3 Codex negative test 1: a capture-only P1 (the gen sub-phase never
+    ran — the exact record set the r2 last-writer-wins key produced, here
+    with the legacy combined `smoke_shard` key still present as the
+    laundering vector) => rc 5, no sentinel."""
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    records = _write_all_p1_records(tmp_path, smoke_shard_gen=None)
+    records["smoke_shard"] = {  # legacy combined key must NOT satisfy the gen leg
+        "capture_mode": "phase_split_capture",
+        "passed": True,
+    }
+    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_run_meta_records" in report["failed_checks"]
+    detail = next(c for c in report["checks"] if c["name"] == "p1_run_meta_records")["detail"]
+    assert "smoke_shard_gen" in detail
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_wrong_engine(monkeypatch, tmp_path):
+    """r3 Codex negative test 2: a gen record claiming the CAPTURE engine
+    (both invocations routed through one leg) => rc 5, no sentinel."""
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    records = _write_all_p1_records(tmp_path)
+    records["smoke_shard_gen"]["engine"] = M.P1_ENGINE_CAPTURE
+    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_smoke_shard_evidence" in report["failed_checks"]
+    detail = next(c for c in report["checks"] if c["name"] == "p1_smoke_shard_evidence")["detail"]
+    assert "engine" in detail
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_nonzero_think_leaks(monkeypatch, tmp_path):
+    """r3 Codex negative test 3: think_open != 0 on the gen leg (thinking-off
+    not engaged, plan §7) => rc 5, no sentinel."""
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    records = _write_all_p1_records(tmp_path)
+    records["smoke_shard_gen"]["think_open"] = 3
+    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_smoke_shard_evidence" in report["failed_checks"]
+    detail = next(c for c in report["checks"] if c["name"] == "p1_smoke_shard_evidence")["detail"]
+    assert "think_open" in detail
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_zero_gen_rows(monkeypatch, tmp_path):
+    """A resume-skipped/empty gen leg (gen_rows == 0 — no engine evidence)
+    => rc 5. The production gen leg counts SALVAGED rows too (think-scan
+    re-runs over salvaged text), so a healthy relaunch still records >= 1."""
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    records = _write_all_p1_records(tmp_path)
+    records["smoke_shard_gen"]["gen_rows"] = 0
+    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_smoke_shard_evidence" in report["failed_checks"]
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_malformed_battery_manifest(monkeypatch, tmp_path):
+    """r3 Codex negative test 4: a malformed battery manifest (non-int
+    n_rows) => rc 5, no sentinel."""
+    root = _battery_fixture(tmp_path)
+    (root / "manifests" / "capture_register.done.json").write_text(
+        json.dumps({"cell": "register", "n_rows": "3"})  # string, not int
+    )
+    _compose_env(monkeypatch)
+    _write_all_p1_records(tmp_path)
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "tiny_battery_manifests" in report["failed_checks"]
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_battery_geometry_mismatch(monkeypatch, tmp_path):
+    """Battery geometry/count coherence (r3): the apply-probe record's
+    n_rows must equal the capture manifest's — a drifted manifest (rewritten
+    after the probe ran) => rc 5."""
+    root = _battery_fixture(tmp_path)
+    (root / "manifests" / "capture_register.done.json").write_text(
+        json.dumps({"cell": "register", "n_rows": 2})  # probe recorded 3
+    )
+    _compose_env(monkeypatch)
+    _write_all_p1_records(tmp_path)
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "tiny_battery_manifests" in report["failed_checks"]
+    detail = next(c for c in report["checks"] if c["name"] == "tiny_battery_manifests")["detail"]
+    assert "apply_probe n_rows" in detail
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_stale_fits_smoke_artifact(monkeypatch, tmp_path):
+    """Evidence freshness (r3): the fits_smoke record's sha256 must match
+    the artifact bytes on disk — a rewritten artifact => rc 5."""
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    _write_all_p1_records(tmp_path)
+    (tmp_path / "fits_smoke.json").write_text(json.dumps({"ok": False, "rewritten": True}))
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_smoke_shard_evidence" in report["failed_checks"]
+    detail = next(c for c in report["checks"] if c["name"] == "p1_smoke_shard_evidence")["detail"]
+    assert "stale record" in detail
     assert not (tmp_path / "compat_smoke_done.json").exists()
 
 
@@ -735,6 +929,37 @@ def test_main_routes_p1_apply_probe_before_token_assert(monkeypatch, tmp_path):
         ],
     )
     assert M.main() == 0
+    assert captured["args"].p1_sentinel_out == tmp_path / "compat_smoke_done.json"
+
+
+def test_main_routes_compose_p1_before_token_assert(monkeypatch, tmp_path):
+    """--gate compose_p1 is fully local (interpreter/pins/banned-dists/
+    driver/run_meta/manifests): main dispatches it BEFORE the HF_TOKEN
+    assert, so a pod whose .env failed to stage gets a compat VERDICT, not
+    a misattributed HF_TOKEN crash (r2 g2 concern 2)."""
+    captured: dict = {}
+
+    def fake_compose(args):
+        captured["args"] = args
+        return 0
+
+    monkeypatch.setattr(M, "gate_compose_p1", fake_compose)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue2587_map_gen_capture.py",
+            "--gate",
+            "compose_p1",
+            "--p1-battery-root",
+            str(tmp_path / "b"),
+            "--out-dir",
+            str(tmp_path),
+        ],
+    )
+    assert M.main() == 0
+    assert captured["args"].gate == "compose_p1"
     assert captured["args"].p1_sentinel_out == tmp_path / "compat_smoke_done.json"
 
 
@@ -915,3 +1140,283 @@ def test_launcher_dryrun_every_command_log_redirected(launcher_dryrun):
     assert cmd_lines, "no dry-run command lines captured"
     for ln in cmd_lines:
         assert " > " in ln, f"command not log-redirected: {ln}"
+
+
+# ── R3a: launcher-to-argparse binding sweep (Codex Critical 1 class sweep) ──
+
+import shlex  # noqa: E402
+
+
+def _dryrun_python_invocations(out: str, script_basename: str) -> list[list[str]]:
+    """Extract the argv tail (after the script path) of every dry-run echoed
+    python-driver invocation of `script_basename`."""
+    argvs = []
+    for ln in out.splitlines():
+        if not ln.startswith(("[dryrun] ", "[dryrun-bg] ")):
+            continue
+        if script_basename not in ln:
+            continue
+        cmd = ln.split("] ", 1)[1]
+        if " > " in cmd:
+            cmd = cmd.rsplit(" > ", 1)[0]  # strip the log redirect
+        toks = shlex.split(cmd)
+        idx = next((i for i, t in enumerate(toks) if t.endswith(script_basename)), None)
+        if idx is None:
+            continue
+        argvs.append(toks[idx + 1 :])
+    return argvs
+
+
+def test_launcher_invocations_bind_target_argparse_surfaces(launcher_dryrun):
+    """r3 Codex Critical 1 class sweep ('shell caller omits conditionally
+    required argparse companions'): EVERY shell-to-Python driver invocation
+    the launcher composes must (a) parse against the target driver's OWN
+    argparse surface and (b) satisfy the target's post-parse
+    conditionally-required companion contracts — fits.py raises on
+    `--upload hf` without the phase's destination prefixes (fits.py finalize
+    ~:748-752; matched7b ~:1163-1168; parser defaults deliberately None)."""
+    import issue2587_battery_run as B
+    import issue2587_fits as F
+
+    out = launcher_dryrun
+    map_argvs = _dryrun_python_invocations(out, "issue2587_map_gen_capture.py")
+    fits_argvs = _dryrun_python_invocations(out, "issue2587_fits.py")
+    battery_argvs = _dryrun_python_invocations(out, "issue2587_battery_run.py")
+    assert map_argvs and fits_argvs and battery_argvs
+
+    def _parse(parser, argv):
+        try:
+            return parser.parse_args(argv)
+        except SystemExit:
+            pytest.fail(f"launcher argv does not bind the target parser: {argv}")
+
+    for argv in map_argvs:
+        _parse(M._build_parser(), argv)
+    for argv in battery_argvs:
+        ns = _parse(B.build_argparser(), argv)
+        assert ns.phase in ("gen", "capture", "embed"), argv
+    finalize_seen = matched7b_seen = False
+    for argv in fits_argvs:
+        ns = _parse(F.build_parser(), argv)
+        if ns.upload == "hf" and ns.phase == "finalize":
+            finalize_seen = True
+            # Conditionally-required companions, pinned to plan §6.5/§10.
+            assert ns.payloads_prefix == "issue2587_q35_map/analysis_tensors/ridge_payloads"
+            assert ns.preds_prefix == "issue2587_q35_map/analysis_tensors/preds"
+        if ns.upload == "hf" and ns.phase == "matched7b":
+            matched7b_seen = True
+            assert ns.preds7b_prefix == "issue2587_minpair/analysis_tensors/preds_7b_matched"
+        if ns.phase in ("fits", "finalize"):
+            # r2 g2 concern 1: the store the fits consumer READS threads
+            # through the same (env-overridable) prefix P2/P3 WROTE.
+            assert ns.store_prefix == "issue2587_q35_map/qwen35_9b", argv
+    assert finalize_seen, "no finalize invocation with --upload hf found"
+    assert matched7b_seen, "no matched7b invocation with --upload hf found"
+
+
+# ── R3a: hardened require_p1 (Codex Critical 2 — full sentinel verification) ──
+
+
+def _require_p1_payload() -> str:
+    """Extract the EXACT single-quoted python payload require_p1 executes
+    (the launcher keeps its body double-quote-only for this)."""
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    fn = text[text.index("require_p1() {") :]
+    fn = fn[: fn.index("\n}")]
+    start = fn.index("uv run python -c '") + len("uv run python -c '")
+    end = fn.index("' \\\n", start)
+    return fn[start:end]
+
+
+def _p1_sentinel_fixture(tmp_path, **overrides):
+    """A v2 compat sentinel + report + driver-file fixture whose hashes
+    cohere; `overrides` mutates sentinel fields (None deletes)."""
+    report = tmp_path / "compat_smoke_report.json"
+    if not report.exists():
+        report.write_text(json.dumps({"status": "PASS", "schema": "issue2587_compat_smoke_v2"}))
+    mapf = tmp_path / "map_driver.py"
+    if not mapf.exists():
+        mapf.write_text("# driver bytes v1\n")
+    sent = {
+        "schema": "issue2587_compat_smoke_v2",
+        "issue": 2587,
+        "phase": "P1",
+        "status": "PASS",
+        "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest(),
+        "map_code_sha256": hashlib.sha256(mapf.read_bytes()).hexdigest(),
+    }
+    for key, val in overrides.items():
+        if val is None:
+            sent.pop(key, None)
+        else:
+            sent[key] = val
+    sent_path = tmp_path / "compat_smoke_done.json"
+    sent_path.write_text(json.dumps(sent))
+    return sent_path, report, mapf
+
+
+def _run_require_p1(sent_path, report, mapf):
+    payload = _require_p1_payload()
+    return subprocess.run(
+        [sys.executable, "-c", payload, str(sent_path), str(report), str(mapf), "p2_map_gen"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_require_p1_payload_accepts_coherent_sentinel(tmp_path):
+    proc = _run_require_p1(*_p1_sentinel_fixture(tmp_path))
+    assert proc.returncode == 0, proc.stderr
+    assert "[p1-gate] OK before p2_map_gen" in proc.stdout
+    assert "code identity verified" in proc.stdout
+
+
+def test_require_p1_payload_refuses_absent_sentinel(tmp_path):
+    _, report, mapf = _p1_sentinel_fixture(tmp_path)
+    proc = _run_require_p1(tmp_path / "nope.json", report, mapf)
+    assert proc.returncode != 0
+    assert "compat sentinel" in proc.stderr and "absent" in proc.stderr
+
+
+def test_require_p1_payload_refuses_wrong_schema(tmp_path):
+    """A v1 (or foreign) sentinel is REFUSED — the v2 schema carries the
+    report/code-identity fields the gate verifies."""
+    proc = _run_require_p1(*_p1_sentinel_fixture(tmp_path, schema="issue2587_compat_smoke_v1"))
+    assert proc.returncode != 0
+    assert "schema=" in proc.stderr
+
+
+def test_require_p1_payload_refuses_non_pass_status(tmp_path):
+    proc = _run_require_p1(*_p1_sentinel_fixture(tmp_path, status="FAIL"))
+    assert proc.returncode != 0
+    assert "status=" in proc.stderr
+
+
+def test_require_p1_payload_refuses_wrong_issue_and_phase(tmp_path):
+    proc = _run_require_p1(*_p1_sentinel_fixture(tmp_path, issue=2588))
+    assert proc.returncode != 0 and "issue=" in proc.stderr
+    proc = _run_require_p1(*_p1_sentinel_fixture(tmp_path, phase="P0b"))
+    assert proc.returncode != 0 and "phase=" in proc.stderr
+
+
+def test_require_p1_payload_refuses_rewritten_report(tmp_path):
+    sent_path, report, mapf = _p1_sentinel_fixture(tmp_path)
+    report.write_text(json.dumps({"status": "PASS", "rewritten": True}))
+    proc = _run_require_p1(sent_path, report, mapf)
+    assert proc.returncode != 0
+    assert "report" in proc.stderr and "sha256" in proc.stderr
+
+
+def test_require_p1_payload_refuses_changed_driver_code(tmp_path):
+    """Code identity (r3): the sentinel attests the exact driver bytes —
+    a mid-run code change (git pull between waves) invalidates the P1
+    verdict until compose_p1 re-runs."""
+    sent_path, report, mapf = _p1_sentinel_fixture(tmp_path)
+    mapf.write_text("# driver bytes v2 — changed since compose_p1\n")
+    proc = _run_require_p1(sent_path, report, mapf)
+    assert proc.returncode != 0
+    assert "driver code changed" in proc.stderr
+
+
+def test_launcher_require_p1_call_count_is_one_per_wave():
+    """Marker-claim reconciliation (the r2 marker claimed 10 require_p1
+    sites; Codex counted 6): the realized count IS exactly 6 — one per
+    production wave; the P0b/P1 legs run BEFORE the sentinel exists by
+    construction, so they cannot carry the gate."""
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    calls = re.findall(r"^require_p1 (\S+)$", text, re.MULTILINE)
+    assert calls == [
+        "p2_map_gen",
+        "p3_map_capture",
+        "p4_fits",
+        "p5_battery_gen",
+        "p6_battery_capture",
+        "p8_matched7b",
+    ]
+    # and the gate binds sentinel + report + driver file (code identity)
+    fn = text[text.index("require_p1() {") :]
+    fn = fn[: fn.index("\n}")]
+    assert '"$COMPAT_SENTINEL" "$COMPAT_REPORT" "$MAP" "$1"' in fn
+
+
+# ── R3a: work-conserving P2/P3 scheduling (Codex Major) ─────────────────────
+
+
+def _extract_bash_fn(name: str) -> str:
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    fn = text[text.index(f"{name}() {{") :]
+    return fn[: fn.index("\n}") + 2]
+
+
+def test_launcher_p2_p3_work_conserving_workers():
+    """r3 Codex Major non-work-conserving-map-split-barriers: P2/P3 run as
+    2 persistent per-GPU workers over a shared 12-task queue — no per-split
+    two-shard drain barrier (the r2 shape waited on BOTH shards inside each
+    split iteration, idling a finished GPU while up to 5 independent splits
+    queued, on a billing 2x H100 pod)."""
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    # the r2 per-split barrier variables are gone
+    assert "P2_PID0" not in text and "P3_PID0" not in text
+    assert "run_map_wave phase_split_gen p2" in text
+    assert "run_map_wave phase_split_capture p3" in text
+    worker = _extract_bash_fn("map_wave_worker")
+    assert 'while task="$(pop_task' in worker
+    assert "poison_queue" in worker  # a failed worker bounds the sibling's extra work
+    assert 'CUDA_VISIBLE_DEVICES="$gpu"' in worker  # per-WORKER launcher-env CVD pin
+    assert "${ENV_PINS[@]}" in worker  # §4.1 env pins preserved on the queue path
+    pop = _extract_bash_fn("pop_task")
+    assert "flock 9" in pop  # atomic pop against the sibling worker
+    wave = _extract_bash_fn("run_map_wave")
+    prod = wave[wave.index("task-queue") :]  # production branch (after the dry-run return)
+    enqueue = prod[prod.index('for split in "${SPLITS[@]}"') :]
+    enqueue = enqueue[: enqueue.index("done")]
+    assert "wait_bg" not in enqueue and "launch_bg" not in enqueue
+    assert prod.count("map_wave_worker 0") == 1 and prod.count("map_wave_worker 1") == 1
+    # both workers are launched BEFORE the first wait (no drain barrier)
+    assert prod.index("map_wave_worker 1") < prod.index("wait_bg")
+
+
+def test_pop_task_pops_in_order_and_empties(tmp_path):
+    q = tmp_path / "q.txt"
+    q.write_text("a 0\na 1\nb 0\n")
+    script = _extract_bash_fn("pop_task") + (
+        f'\nwhile t="$(pop_task "{q}")"; do echo "POP:$t"; done\necho DRAINED\n'
+    )
+    proc = subprocess.run(["bash", "-c", script], capture_output=True, text=True, check=False)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.splitlines() == ["POP:a 0", "POP:a 1", "POP:b 0", "DRAINED"]
+    assert q.read_text() == ""
+
+
+def test_pop_task_concurrent_consumers_partition_the_queue(tmp_path):
+    """Two concurrent consumers (the 2-GPU worker shape) pop a disjoint,
+    exhaustive partition of the queue — the flock serialization is what
+    makes the shared queue work-conserving without double-running a task."""
+    q = tmp_path / "q.txt"
+    tasks = [f"s{i} {j}" for i in range(6) for j in (0, 1)]
+    q.write_text("".join(t + "\n" for t in tasks))
+    worker = _extract_bash_fn("pop_task") + (f'\nwhile t="$(pop_task "{q}")"; do echo "$t"; done\n')
+    procs = [
+        subprocess.Popen(["bash", "-c", worker], stdout=subprocess.PIPE, text=True)
+        for _ in range(2)
+    ]
+    outs = [p.communicate(timeout=60)[0] for p in procs]
+    assert all(p.returncode == 0 for p in procs)
+    popped = [ln for out in outs for ln in out.splitlines()]
+    assert sorted(popped) == sorted(tasks)  # exhaustive, disjoint, no losses
+    assert q.read_text() == ""
+
+
+def test_leak_caphit_collision_guard_scoped_within_run():
+    """r2 g5 concern 1 (relaunch trap): a PRE-EXISTING dest (a prior round's
+    committed copy cloned with the repo) is SUPERSEDED, never a shard-fault
+    exit 6 — exit 6 is reserved for WITHIN-run basename collisions with
+    differing bytes (shards own disjoint axes). Copies are atomic (tmp+mv)."""
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    block = text[text.index("SEEN_MANIFESTS") :]
+    block = block[: block.index("harvested")]
+    assert "WITHIN this run" in block
+    assert 'cp -f "$m" "$dest.tmp.$$"' in block and 'mv -f "$dest.tmp.$$" "$dest"' in block
+    # the old unconditional pre-existing-dest guard shape is gone
+    assert '[ -e "$dest" ] && ! cmp -s' not in text
