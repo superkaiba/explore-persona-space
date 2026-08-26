@@ -35,7 +35,14 @@ heading, and the "re-runs on rounds N-10" window. Finish with a
 stale-string sweep (assert old round tokens absent). Note: the Step 4
 global `{{` scan legitimately hits ~6 lines of verbatim SPEC content
 (the spec's own no-`{{`-sentinel rules) — only the envelope-scoped
-placeholder check is binding. Related: [[lens13-plan-fetch-patch]],
+placeholder check is binding. Column-zero `CONCERN:: ` wrap trap
+(#2378 r8, 2026-08-26): a composer-authored scope part that mentions
+"CONCERN:: rows are for genuinely NEW findings only" can WRAP so the
+token lands at line start — the forwarder position-parses `^CONCERN:: `
+anywhere in the marker block, so it would persist as a real concern.
+The reuse scripts' `n_concern_lines == 1` assert catches it; fix by
+re-wrapping with the token backticked mid-line. Keep that assert in
+every derived compose script. Related: [[lens13-plan-fetch-patch]],
 [[Delta-scoped rounds beyond r3 — compose, don't hard-fail]].
 ---
 name: prior-round-prompt-reuse
