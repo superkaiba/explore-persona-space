@@ -1381,8 +1381,24 @@ def load_fire(manip_path: Path) -> dict:
 # instruction families v1..v5 + v1p..v5p, but NOT for query classes and NOT
 # for the bare/unmanipulated install endpoints): the fire gate quantifies
 # over MANIPULATED values only — these stay unfiltered, never "missing".
-UNCHECKED_CLASSES = ("query_paraphrase", *GRIDLESS_CLASSES)
+# The exemption keys on the COMPLETE query-class set (the bank2587 cell ==
+# "query" classes + the query-class pilot), NEVER a partial enumeration —
+# r2 g1 Critical: an UNCHECKED_CLASSES omitting query_form false-killed all
+# 36 pairs/side of that axis (the parent's committed minpair_delta.json
+# records compliance_limited=false, n_headline_pairs_fired70=36 there).
+QUERY_CLASSES = ("query_content", "query_content_oneword", "query_form", "query_paraphrase")
+UNCHECKED_CLASSES = QUERY_CLASSES
 BARE_VALUE_IDS = ("E", "bare")  # parent install a-side / pilot install b-side
+# Axis-level twin of the exemption: the query classes that appear as AXES
+# carry no manipulation check BY DESIGN — the judge emits axis rows only for
+# INSTRUCTION_AXES + answer_language + query_content_oneword
+# (issue2587_judge.py fire-table block), and the committed parent
+# manipulation_check.json carries instruction-axis rows only — so a MISSING
+# axis row on these axes is EXPECTED, never compliance-limiting. Distinct
+# from GRIDLESS_CLASSES (grid semantics, not fire semantics; keying the
+# axis_row_missing exemption on it was the r2 g1 Critical's second arm).
+# query_paraphrase is a para class, never an axis (build_axis_views).
+UNCHECKED_AXES = ("query_content", "query_content_oneword", "query_form")
 
 
 def pair_fired_mask(
@@ -1886,9 +1902,11 @@ def compute_side(
         # no_manipulation_check_query_class) is unfiltered (the parent's
         # convention). A MISSING axis row on a fire-FILTERED axis is NOT
         # floor-cleared (missing metadata never defaults permissive — r1
-        # bug-class sweep); gridless query classes carry no manipulation
-        # check, so an absent row there stays unfiltered.
-        axis_row_missing = ar is None and axis not in GRIDLESS_CLASSES
+        # bug-class sweep); query-class axes (UNCHECKED_AXES) carry no
+        # manipulation check by design, so an absent row there stays
+        # unfiltered (r2 g1 Critical: keying this on GRIDLESS_CLASSES
+        # compliance-limited query_form on BOTH sides).
+        axis_row_missing = ar is None and axis not in UNCHECKED_AXES
         floor_met = bool(ar.get("floor_met", True)) if ar is not None else not axis_row_missing
         compliance_limited = axis_row_missing or (
             ar is not None and "floor_met" in ar and not floor_met

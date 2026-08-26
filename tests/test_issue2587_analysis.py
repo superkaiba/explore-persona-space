@@ -43,6 +43,7 @@ import issue2587_analysis as AN  # noqa: E402
 
 CARRIERS = ["c01", "c02", "c03"]
 VALS = ["v1", "v2", "v3"]
+FORMS = ["E", "imp", "stmt"]  # query_form value ids (parent #2564 bank: vids {E, imp, stmt})
 LANGS = ["de", "fr", "zh"]
 OW_SLUGS = ["owa", "owb", "owc", "owd"]
 
@@ -58,6 +59,8 @@ def _parent_pairs_and_contexts() -> tuple[dict, list[dict]]:
         ctx(f"tx::E::{c}", "toneX", c)
         ctx(f"q::E::{c}", "query", c)
         ctx(f"q::Ep::{c}", "query", c)
+        for f in FORMS[1:]:  # E-form query context already exists above
+            ctx(f"q::{f}::{c}", "query", c)
         for v in VALS:
             ctx(f"tx::{v}::{c}", "toneX", c)
             ctx(f"tx::{v}p::{c}", "toneX", c)
@@ -90,6 +93,15 @@ def _parent_pairs_and_contexts() -> tuple[dict, list[dict]]:
             # PARENT install orientation: a = bare-E context, b = value context
             add("install", "toneX", "E", v, f"tx::E::{c}", f"tx::{v}::{c}", c)
         add("query_paraphrase", "query", "E", "Ep", f"q::E::{c}", f"q::Ep::{c}", c)
+        # query_form: interrogative-form dyads (E/imp/stmt) on the SAME carrier —
+        # a query CLASS with a complete vp x carrier grid but, BY DESIGN, no
+        # manipulation-check rows (r2 g1 Critical: parent #2564 minpair_delta
+        # records axes.query_form.fire = {axis_row: None, compliance_limited:
+        # false, n_headline_pairs_fired70 == n_primary_pairs}); the fixture
+        # _fire_doc below matches the realized judge schema by carrying NO
+        # query_form rows at either level.
+        for fa, fb in itertools.combinations(FORMS, 2):
+            add("query_form", "query", fa, fb, f"q::{fa}::{c}", f"q::{fb}::{c}", c)
     for ca, cb in itertools.combinations(CARRIERS, 2):
         add(
             "query_content",
@@ -589,7 +601,13 @@ def test_spec_pins_match_units() -> None:
 def test_compute_side_9b_axes_and_pilots(world: dict) -> None:
     run9 = world["run9"]
     axes = run9.axes_out
-    assert set(axes) == {"toneX", "answer_language", "query_content", "query_content_oneword"}
+    assert set(axes) == {
+        "toneX",
+        "answer_language",
+        "query_content",
+        "query_content_oneword",
+        "query_form",
+    }
     for axis in AN.PILOT_AXES:
         assert axes[axis]["pilot_axis"] is True
         assert axes[axis]["cross_model_status"] == AN.PILOT_LABEL
@@ -655,7 +673,7 @@ def test_crossmodel_stats_tables_and_perdraw(world: dict) -> None:
     }
     assert set(doc["stats"]) == expected_stats
     dc = doc["stats"]["direction_cos"]
-    assert {r["axis"] for r in dc["axes"]} == {"toneX", "query_content"}
+    assert {r["axis"] for r in dc["axes"]} == {"toneX", "query_content", "query_form"}
     for r in dc["axes"]:
         assert np.isfinite(r["s_9b"]) and np.isfinite(r["s_7b"])
         assert np.isfinite(r["delta_9b_minus_7b"])
@@ -665,13 +683,17 @@ def test_crossmodel_stats_tables_and_perdraw(world: dict) -> None:
         assert np.isnan(r["s_7b_ref_parent"])  # empty ref doc -> NaN sensitivity read
     b = world["mult"].shape[0]
     pd = perdraw["direction_cos"]
-    assert pd["draws_9b"].shape == (2, b) and pd["delta_draws"].shape == (2, b)
-    assert pd["loco_delta"].shape == (2, 3)
+    assert pd["draws_9b"].shape == (3, b) and pd["delta_draws"].shape == (3, b)
+    assert pd["loco_delta"].shape == (3, 3)
     np.testing.assert_allclose(
         pd["delta_draws"], pd["draws_9b"] - pd["draws_7b"], rtol=0, atol=0
     )  # ONE shared carrier resample: the delta IS the paired per-draw difference
-    # grid-only stats restrict to the instruction axis
-    assert {r["axis"] for r in doc["stats"]["axis_identity_cos"]["axes"]} == {"toneX"}
+    # grid-only stats cover the carrier-replicated grids (instruction axis +
+    # the query_form grid); the cross-carrier query_content dyads stay out
+    assert {r["axis"] for r in doc["stats"]["axis_identity_cos"]["axes"]} == {
+        "toneX",
+        "query_form",
+    }
 
 
 def test_crossmodel_symmetric_fire_drops(world: dict) -> None:
@@ -808,6 +830,14 @@ def test_pair_fired_mask_missing_row_drops_both_sides_and_counts(tmp_path: Path)
     qp = np.array([pa.cls[i] == "query_paraphrase" for i in range(pa.n)])
     assert qp.any() and fa[qp].all() and fb[qp].all()
     assert not ma[qp].any() and not mb[qp].any()
+    # query_form (E/imp/stmt dyads — a query class WITH a full vp x carrier
+    # grid but no manipulation check by design; r2 g1 Critical == Codex
+    # Major 1): unfiltered on BOTH endpoints, never counted missing — the
+    # fixture fire doc carries no query_form rows, matching the realized
+    # parent #2564 judge output
+    qf = np.array([pa.cls[i] == "query_form" for i in range(pa.n)])
+    assert qf.any() and fa[qf].all() and fb[qf].all()
+    assert not ma[qf].any() and not mb[qf].any()
 
 
 @pytest.fixture(scope="module")
@@ -856,6 +886,12 @@ def test_compute_side_reports_missing_fire_row_drops(world_missing: dict) -> Non
     # the 7B side (all rows present) reports zero missing
     f7 = world_missing["run7"].axes_out["toneX"]["fire"]
     assert f7["n_missing_fire_rows"] == 0
+    # query_form is UNCHECKED on both arms: the 9B missing-row regime must
+    # leave it untouched (r2 g1 Critical — the pre-fix code killed the axis)
+    qf9 = world_missing["run9"].axes_out["query_form"]["fire"]
+    assert qf9["n_missing_fire_rows"] == 0
+    assert qf9["axis_row_missing"] is False
+    assert qf9["n_headline_pairs_fired70"] == qf9["n_primary_pairs"] > 0
 
 
 def test_crossmodel_missing_fire_rows_drop_both_sides_and_counted(world_missing: dict) -> None:
@@ -877,6 +913,44 @@ def test_world_all_rows_present_reports_zero_missing(world: dict) -> None:
     rows = {r["axis"]: r for r in world["cm_doc"]["stats"]["direction_cos"]["axes"]}
     assert rows["toneX"]["fire"]["n_missing_fire_rows_9b"] == 0
     assert rows["toneX"]["fire"]["n_missing_fire_rows_7b"] == 0
+
+
+def test_query_form_unchecked_axis_matches_realized_parent_schema(world: dict) -> None:
+    """r2 g1 Critical == Codex Major 1 (missing-fire-defaults-true, round 3):
+    query_form is a query CLASS the judge BY DESIGN emits no fire rows for
+    (value or axis level), yet it is a full-grid AXIS on both sides. The
+    fixture fire docs mirror the realized parent #2564 judge output (no
+    query_form rows anywhere), and the fire summary must match the parent's
+    committed minpair_delta.json exactly: axis_row None, not missing, not
+    compliance-limited, every primary pair headline-fired. The pre-fix code
+    (UNCHECKED_CLASSES without query_form + axis_row_missing keyed on
+    GRIDLESS_CLASSES) killed the axis on BOTH arms."""
+    n_qf = len(CARRIERS) * 3  # 3 form dyads (E-imp, E-stmt, imp-stmt) x carriers
+    for side in ("run9", "run7"):
+        f = world[side].axes_out["query_form"]["fire"]
+        assert f["axis_row"] is None
+        assert f["axis_row_missing"] is False
+        assert f["floor_met"] is None
+        assert f["compliance_limited"] is False
+        assert f["headline_ok"] is True
+        assert f["no_fired_pairs"] is False
+        assert f["n_missing_fire_rows"] == 0
+        assert f["n_primary_pairs"] == n_qf
+        assert f["n_headline_pairs_fired70"] == n_qf
+        assert f["fired_pair_counts"] == {"50": n_qf, "70": n_qf, "90": n_qf}
+    # full carrier-replicated grid -> identity defined, all three dyads fired
+    for side, arm in (("run9", AN.ARM_FRESH9B), ("run7", AN.ARM_7B_MATCHED)):
+        ident = world[side].axes_out["query_form"]["identity"][arm]
+        assert sorted(ident["per_vp_fired70"]) == ["E-imp", "E-stmt", "imp-stmt"]
+        assert all(ident["per_vp_fired70"].values())
+    # crossmodel: the shared query_form contrast is fully symmetric-fired
+    rows = {r["axis"]: r for r in world["cm_doc"]["stats"]["direction_cos"]["axes"]}
+    cf = rows["query_form"]["fire"]
+    assert cf["symmetric_headline"] is True
+    assert cf["n_shared_primary"] == n_qf
+    assert cf["n_symmetric_fired"] == n_qf
+    assert cf["n_dropped_9b_only"] == 0 and cf["n_dropped_7b_only"] == 0
+    assert cf["n_missing_fire_rows_9b"] == 0 and cf["n_missing_fire_rows_7b"] == 0
 
 
 def test_missing_axis_row_is_not_floor_cleared(tmp_path: Path) -> None:

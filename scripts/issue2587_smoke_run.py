@@ -1,6 +1,6 @@
 """Production-entrypoint smoke legs for issue #2587 (r2 concern `smoke-run-coverage`).
 
-Two legs, each running the ACTUAL production entrypoint as a REAL subprocess
+Three legs, each running the ACTUAL production entrypoint as a REAL subprocess
 with a REAL exit code and a REAL artifact on disk:
 
 - ``analysis`` — builds a fully-LOCAL tiny world at the REAL dims the spec
@@ -24,6 +24,22 @@ with a REAL exit code and a REAL artifact on disk:
   The fake is installed by this driver's ``judge-child`` mode, which then
   ``runpy``-executes the judge script as ``__main__`` — so the child's exit
   code IS the production entrypoint's.
+- ``fits`` — the plan-§9 P4 production-shape fit-timing smoke (r3 Codex
+  Critical 3; plan line ~258): builds a synthetic local dense store at the
+  EXACT production fit shape (n_train=24,900, d=4096) in the unit-2 chunk
+  layout and runs ``scripts/issue2587_fits.py --phase fits`` on ONE layer,
+  end to end through the production entrypoint (streaming, matched-ID
+  gather, the full 23-λ shared-eigh ridge, floors, kNN, per-layer
+  checkpoint + in-run pilot gate). The realized per-layer ``timing_s`` is
+  extrapolated ``t_layer x 32 layers / 2-way shard`` against the §9 P4 wall
+  (0.5 h) and persisted to ``fit_smoke_report.json``. Runs on CPU (no GPU
+  on the VM); the §9 basis is a GPU eigh, so the CPU wall is an
+  UPPER-BOUND proxy — recorded as a stated limitation in the report; the
+  production run's own first-layer pilot gate (issue2587_fits.py, abort
+  >2x budget) re-measures at the production device. The synthetic target
+  is Y = 0.5·X + noise (λ* ≈ d·σ²/‖β‖² ≈ 16k, interior), and the leg
+  ASSERTS ``grid_extensions == []`` so the timing basis is exactly ONE
+  23-λ production grid pass.
 
 No pod, no GPU, no API calls. Artifacts land under ``--out-root``
 (default ``/tmp/issue-2587-smoke/r2d1``). The tiny-world shape is imported
@@ -60,16 +76,15 @@ LSTAR = 22  # in TWIN_LAYERS_9B -> 9B store layers (16, 22, 30)
 REF7B_COMMIT = "smoke-fixture-2587"  # fixture provenance token (not a git sha)
 SEED = 2587
 
-# The six assert-skipped registry sites whose skip lines the analysis child
-# log MUST carry (bootstrap_null_b is param-narrowed: warned from build_config).
-ANALYSIS_SKIP_SITES = (
-    "expected_contexts",
-    "expected_pairs",
-    "axis_completeness",
-    "bank9_cardinality",
-    "carrier_count_12",
-    "parent_axes_count",
-)
+# fits leg: plan §9 P4 production fit shape + the row's wall/parallelism.
+FITS_N_TRAIN = 24_900  # plan §9 P4 "n≈24.9k"
+FITS_N_VAL = 400
+FITS_N_TEST = 1_000
+FITS_N_WC = 1_000
+FITS_ROWS_PER_CHUNK = 500  # <= issue779_ffc_n1m_fits.ROWS_PER_CHUNK_EST (capacity math)
+PLAN_P4_WALL_S = 1800.0  # §9 P4 planned_wall_h 0.5 (32 layers, 2-way layer shard)
+PLAN_P4_PARALLELISM = 2
+FITS_MIN_FREE_GB = 5.0  # world ~1 GB chunks + ~1 GB memmaps + ~0.7 GB outputs
 
 
 def _rng() -> np.random.Generator:
@@ -292,6 +307,15 @@ def build_analysis_world(root: Path) -> list[str]:
 
 def run_analysis(out_root: Path) -> None:
     """Analysis leg: real subprocess of the production entrypoint (rc asserted)."""
+    import issue2587_analysis as AN
+
+    # Derive the skip-site expectations from the script's OWN registry (r2 g6
+    # M2: a hardcoded tuple lags the registry — a future registered site
+    # would fire unasserted; the registry is the single enumerable source).
+    registry = {e.site: e.kind for e in AN.SMOKE_BLIND_SPOTS}
+    skip_sites = tuple(s for s, k in registry.items() if k == "assert-skipped")
+    narrowed_sites = tuple(s for s, k in registry.items() if k == "param-narrowed")
+
     root = out_root / "analysis"
     argv_tail = build_analysis_world(root)
     log_path = root / "analysis_smoke.log"
@@ -306,18 +330,26 @@ def run_analysis(out_root: Path) -> None:
         raise RuntimeError(f"analysis leg rc={proc.returncode}; log tail:\n{tail}")
 
     combined = proc.stdout + proc.stderr
-    missing_sites = [s for s in ANALYSIS_SKIP_SITES if f"[smoke-blind-spot] {s}:" not in combined]
+    # Structural OFFLINE assertion (r2 g6 M1): resolve_rel's fall-through
+    # stages from HF when a local input is missing, so a fixture-path drift
+    # could silently consume PRODUCTION artifacts once they exist under the
+    # prefix — the "fully-local, zero fakes" leg must never reach staging.
+    assert "[an] staging" not in combined, (
+        "offline smoke reached the HF staging fall-through (resolve_rel): a tiny-world "
+        "fixture path drifted — the smoke must never consume production artifacts from HF"
+    )
+    missing_sites = [s for s in skip_sites if f"[smoke-blind-spot] {s}:" not in combined]
     assert not missing_sites, (
         f"registered skip sites did NOT fire in the child log: {missing_sites}"
     )
-    assert "[smoke-blind-spot] bootstrap_null_b" in combined, "param-narrow warning missing"
+    for s in narrowed_sites:
+        assert f"[smoke-blind-spot] {s}" in combined, f"param-narrow warning missing: {s}"
 
     out = root / "out"
     doc = json.loads((out / "minpair_delta_2587.json").read_text())
     assert doc["meta"]["smoke"] is True
     bs = {e["site"]: e["kind"] for e in doc["meta"]["smoke_blind_spots"]}
-    assert set(ANALYSIS_SKIP_SITES) <= set(bs), sorted(bs)
-    assert bs["bootstrap_null_b"] == "param-narrowed", bs
+    assert bs == registry, (sorted(bs.items()), sorted(registry.items()))
     cm = json.loads((out / "crossmodel_contrasts.json").read_text())
     assert cm["meta"]["smoke"] is True and "h2" in cm
     n_rows = sum(1 for ln in (out / "perpair_2587.jsonl").open() if ln.strip())
@@ -330,6 +362,186 @@ def run_analysis(out_root: Path) -> None:
         f"[smoke2587] analysis leg PASS rc=0: minpair_delta_2587.json + "
         f"crossmodel_contrasts.json + perpair ({n_rows} rows) + {len(ckpts)} ckpts + "
         f"{len(npzs)} npz under {out}; log={log_path}",
+        flush=True,
+    )
+
+
+# ── fits leg (plan §9 P4 production-shape one-layer fit timing) ─────────
+
+
+def _write_fits_chunks(split_dir: Path, ids: list[int], d: int, rng: np.random.Generator) -> None:
+    """Unit-2-layout capture chunks (`shard*_chunk*.pt`) for ONE split at the
+    production dims: cx ~ N(0,1), v_x = 0.5*cx + noise — a KNOWN linear signal
+    whose ridge optimum sits INTERIOR to the 23-λ grid (λ* ≈ d·σ²/‖β‖² ≈ 16k
+    for ‖β_j‖² = 0.25, σ² = 1), so the edge-extension refit path cannot fire
+    and the timing basis stays exactly one production grid pass."""
+    cap = split_dir / "final_token_capture"
+    cap.mkdir(parents=True, exist_ok=True)
+    for k, s in enumerate(range(0, len(ids), FITS_ROWS_PER_CHUNK)):
+        chunk_ids = ids[s : s + FITS_ROWS_PER_CHUNK]
+        x = rng.standard_normal((len(chunk_ids), 1, d)).astype(np.float32)
+        y = (0.5 * x + rng.standard_normal(x.shape)).astype(np.float32)
+        torch.save(
+            {
+                "layers": [LSTAR],
+                "cx_last": torch.from_numpy(x),
+                "v_x": torch.from_numpy(y),
+                "ci": [int(i) for i in chunk_ids],
+            },
+            cap / f"shard00_chunk{k:04d}.pt",
+        )
+
+
+def build_fits_world(root: Path) -> tuple[Path, Path]:
+    """Synthetic local store + split_ids at the EXACT plan-§9 P4 fit shape
+    (n_train=24,900, d=4096, ONE layer). Returns (split_ids_path, store_root).
+    Always built FRESH (a stale world would trip the driver's resume-regime
+    machinery on a re-run with different fixture bytes)."""
+    import shutil
+
+    import issue2587_fits as FT
+
+    if root.exists():
+        shutil.rmtree(root)
+    root.mkdir(parents=True)
+    free_gb = shutil.disk_usage(root).free / 1e9
+    if free_gb < FITS_MIN_FREE_GB:
+        raise RuntimeError(
+            f"fits leg needs ~{FITS_MIN_FREE_GB:.0f} GB free under {root} "
+            f"(synthetic world + memmaps); only {free_gb:.1f} GB free — refusing (shared /)."
+        )
+    d = FT.H_DIM_9B
+    rng = _rng()
+    splits = {
+        "train_25k": list(range(FITS_N_TRAIN)),
+        "val_400": list(range(30_000, 30_000 + FITS_N_VAL)),
+        "test_1000": list(range(40_000, 40_000 + FITS_N_TEST)),
+        "wc_test_1k": list(range(50_000, 50_000 + FITS_N_WC)),
+    }
+    assert set(splits) == set(FT.SPLITS), (sorted(splits), FT.SPLITS)
+    store_root = root / "store"
+    for split, ids in splits.items():
+        _write_fits_chunks(store_root / split, ids, d, rng)
+    split_ids_path = root / "split_ids.json"
+    split_ids_path.write_text(
+        json.dumps(
+            {
+                "splits": splits,
+                "counts": {s: len(v) for s, v in splits.items()},
+                "sha256": {s: FT._sha_ids(v) for s, v in splits.items()},
+                "dropped_overlength": [],
+            }
+        )
+    )
+    return split_ids_path, store_root
+
+
+def run_fits_leg(out_root: Path) -> None:
+    """Fits leg: ONE full production-shape layer cell (n=24,900, d=4096, all
+    23 λs, floors, kNN) TIMED through the production entrypoint, extrapolated
+    against the plan-§9 P4 wall (r3 Codex Critical 3 / plan line ~258)."""
+    import hashlib
+    import shutil
+    import time
+
+    root = out_root / "fits"
+    split_ids_path, store_root = build_fits_world(root)
+    fits_out = root / "out"
+    cache_dir = root / "cache"
+    log_path = root / "fits_smoke.log"
+    cmd = [
+        sys.executable,
+        str(SCRIPTS / "issue2587_fits.py"),
+        "--phase",
+        "fits",
+        "--layers",
+        str(LSTAR),
+        "--device",
+        "cpu",
+        "--h-dim",
+        "4096",
+        "--split-ids",
+        str(split_ids_path),
+        "--store-prefix",
+        "smoke2587/fits_synth_local",  # local-only: --local-dir makes the hub branch unreachable
+        "--local-dir",
+        str(store_root),
+        "--cache-dir",
+        str(cache_dir),
+        "--out-root",
+        str(fits_out),
+    ]
+    print(f"[smoke2587] fits leg: {' '.join(cmd[:5])} ... ({len(cmd)} argv items)", flush=True)
+    t0 = time.time()
+    proc = subprocess.run(
+        cmd, cwd=REPO_ROOT, env={**os.environ}, capture_output=True, text=True, check=False
+    )
+    leg_wall_s = time.time() - t0
+    log_path.write_text(proc.stdout + "\n--- stderr ---\n" + proc.stderr)
+    if proc.returncode != 0:
+        tail = "\n".join((proc.stdout + "\n" + proc.stderr).splitlines()[-40:])
+        raise RuntimeError(f"fits leg rc={proc.returncode}; log tail:\n{tail}")
+
+    percell = fits_out / "percell" / f"L{LSTAR}.json"
+    row = json.loads(percell.read_text())
+    meta = row["ridge"]["meta"]
+    assert row["n_train"] == FITS_N_TRAIN and row["d"] == 4096, (row["n_train"], row["d"])
+    assert len(meta["lambda_grid"]) == 23, len(meta["lambda_grid"])
+    # ONE production grid pass is the timing basis — an edge-extension refit
+    # would inflate timing_s AND deviate from the production invocation shape.
+    assert meta["grid_extensions"] == [] and meta["lambda_grid_edge"] is None, meta
+    assert {"identity_bias", "train_mean"} <= set(row["floors"]), sorted(row["floors"])
+    assert row["knn"], "kNN block empty"
+    for artifact in (
+        fits_out / "ridge_payloads" / f"L{LSTAR}.pt",
+        fits_out / "preds" / f"L{LSTAR}_preds.pt",
+    ):
+        assert artifact.is_file(), artifact
+
+    t_layer_s = float(row["timing_s"])
+    projected_wall_s = t_layer_s * 32 / PLAN_P4_PARALLELISM
+    report = {
+        "leg": "fits",
+        "n_train": row["n_train"],
+        "n_val": FITS_N_VAL,
+        "n_test": FITS_N_TEST,
+        "n_wc": FITS_N_WC,
+        "d": row["d"],
+        "n_lambdas": len(meta["lambda_grid"]),
+        "grid_extensions": meta["grid_extensions"],
+        "selected_lambda": meta["selected_lambda"],
+        "val_r2_at_selected": meta["val_r2_at_selected"],
+        "t_layer_s": t_layer_s,
+        "leg_wall_s": round(leg_wall_s, 1),
+        "production_layers": 32,
+        "parallelism": PLAN_P4_PARALLELISM,
+        "projected_full_sweep_wall_s": round(projected_wall_s, 1),
+        "plan_p4_wall_s": PLAN_P4_WALL_S,
+        "ratio_vs_plan_wall": round(projected_wall_s / PLAN_P4_WALL_S, 3),
+        "device": "cpu",
+        "device_delta_limitation": (
+            "plan §9 P4's 30-60 s/layer basis is a GPU fp64 eigh; this CPU wall is an "
+            "UPPER-BOUND proxy on the shared VM — the production run's own first-layer "
+            "pilot gate (issue2587_fits.py, abort >2x --pilot-budget-s) re-measures at "
+            "the production device"
+        ),
+        "loadavg_1m": os.getloadavg()[0],
+        "omp_num_threads": os.environ.get("OMP_NUM_THREADS"),
+        "percell_sha256": hashlib.sha256(percell.read_bytes()).hexdigest(),
+        "rc": proc.returncode,
+    }
+    (root / "fit_smoke_report.json").write_text(json.dumps(report, indent=2, sort_keys=True))
+    # Reap the bulky synthetic world (chunks + memmaps + tensor outputs) —
+    # /tmp rides the chronically-full shared /; the JSON row + report + log
+    # carry everything downstream consumers need (disk-hygiene rule).
+    for bulky in (store_root, cache_dir, fits_out / "ridge_payloads", fits_out / "preds"):
+        shutil.rmtree(bulky, ignore_errors=True)
+    print(
+        f"[smoke2587] fits leg PASS rc=0: t_layer={t_layer_s:.1f}s at n={row['n_train']} "
+        f"d={row['d']} ({len(meta['lambda_grid'])} lambdas, 0 grid extensions, cpu); "
+        f"projected 32-layer/2-shard wall {projected_wall_s:.0f}s vs plan {PLAN_P4_WALL_S:.0f}s "
+        f"(ratio {projected_wall_s / PLAN_P4_WALL_S:.2f}); report="
+        f"{root / 'fit_smoke_report.json'} log={log_path}",
         flush=True,
     )
 
@@ -500,7 +712,7 @@ def _judge_child(args: argparse.Namespace) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("leg", choices=("analysis", "judge", "all", "judge-child"))
+    ap.add_argument("leg", choices=("analysis", "judge", "fits", "all", "judge-child"))
     ap.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
     ap.add_argument("--anchors-dir", default=None, help="judge-child: anchors dir")
     ap.add_argument("--out", default=None, help="judge-child: sentinel out path")
@@ -528,6 +740,8 @@ def main() -> int:
         run_analysis(out_root)
     if args.leg in ("judge", "all"):
         run_judge(out_root)
+    if args.leg in ("fits", "all"):
+        run_fits_leg(out_root)
     print(f"[smoke2587] done leg={args.leg} out_root={out_root}", flush=True)
     return 0
 

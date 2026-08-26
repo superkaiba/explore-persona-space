@@ -687,6 +687,62 @@ def test_matched7b_regime_mismatch_still_halts(tmp_path):
         I.run_matched7b(args)
 
 
+def test_matched7b_repair_consumes_caller_gaps(tmp_path, monkeypatch):
+    """r3 g1 concern (a): _matched7b_repair takes the COMPUTED gaps list —
+    the upload branch keys on 'upload' in gaps, never a re-derived duplicate
+    of the completion predicate. gaps=['sentinel'] must NOT upload even under
+    --upload hf with a stale-looking record; gaps=['upload'] must."""
+    from unittest.mock import create_autospec
+
+    args = _matched7b_args(tmp_path, upload="hf", prefix="p/x")
+    rk = _matched7b_rk(args)
+    preds7b = _seed_matched7b_state(args, rk, {"mode": "none"})
+    prior = json.loads(Path(args.anchor_out).read_text(encoding="utf-8"))
+    sentinel = Path(args.out_root) / "matched7b_done.json"
+    fake_upload = create_autospec(I.upload_dir_sharded)
+    monkeypatch.setattr(I, "upload_dir_sharded", fake_upload)
+    # sentinel-only gap: repair rewrites the sentinel and NEVER uploads, even
+    # though args.upload == "hf" and the record says mode=none — the caller's
+    # gaps list, not a re-derivation, drives the branch
+    rc = I._matched7b_repair(
+        prior, rk, args, Path(args.anchor_out), sentinel, preds7b, ["sentinel"]
+    )
+    assert rc == 0
+    fake_upload.assert_not_called()
+    assert json.loads(sentinel.read_text(encoding="utf-8"))["regime_key"] == rk
+    # upload gap: the same state DOES upload
+    rc = I._matched7b_repair(
+        prior, rk, args, Path(args.anchor_out), sentinel, preds7b, ["upload", "sentinel"]
+    )
+    assert rc == 0
+    fake_upload.assert_called_once()
+
+
+def test_matched7b_corrupt_sentinel_logged_and_routed_to_repair(tmp_path, monkeypatch, capsys):
+    """r3 g1 concern (b): a corrupt/unreadable sentinel is LOGGED (one line
+    naming the parse failure) and treated as unsatisfied — the repair path
+    rewrites it rather than crashing or silently coercing."""
+    from unittest.mock import create_autospec
+
+    args = _matched7b_args(tmp_path, upload="none", prefix=None)
+    rk = _matched7b_rk(args)
+    _seed_matched7b_state(args, rk, {"mode": "none"})
+    sentinel = Path(args.out_root) / "matched7b_done.json"
+    sentinel.write_text("{not json", encoding="utf-8")
+    prior = json.loads(Path(args.anchor_out).read_text(encoding="utf-8"))
+    gaps = I._matched7b_completion_gaps(prior, args, sentinel)
+    assert gaps == ["sentinel"]
+    logged = capsys.readouterr().out
+    assert "unreadable" in logged and "JSONDecodeError" in logged
+    # end to end: the production entrypoint repairs the corrupt sentinel
+    fake_upload = create_autospec(I.upload_dir_sharded)
+    monkeypatch.setattr(I, "upload_dir_sharded", fake_upload)
+    assert I.run_matched7b(args) == 0
+    fake_upload.assert_not_called()
+    sdoc = json.loads(sentinel.read_text(encoding="utf-8"))
+    assert sdoc["done"] is True and sdoc["regime_key"] == rk
+
+
 def test_edge_selected_layers_helper():
     per_layer = {
         0: {"ridge": {"meta": {"lambda_grid_edge": None}}},

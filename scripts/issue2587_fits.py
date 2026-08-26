@@ -867,7 +867,15 @@ def _matched7b_completion_gaps(prior: dict, args, sentinel: Path) -> list[str]:
     if sentinel.is_file():
         try:
             sdoc = json.loads(sentinel.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
+            # Forensic trail (r2 g1 concern 2): repair OVERWRITES the corrupt
+            # sentinel, so name the parse failure BEFORE coercing to {} —
+            # otherwise the corruption evidence vanishes with the rewrite.
+            print(
+                f"[p4-fits] matched7b sentinel at {sentinel} unreadable "
+                f"({type(e).__name__}: {e}) — treating as unsatisfied; repair rewrites it",
+                flush=True,
+            )
             sdoc = {}
         sentinel_ok = bool(sdoc.get("done")) and sdoc.get("regime_key") == prior.get("regime_key")
     if not sentinel_ok:
@@ -876,11 +884,21 @@ def _matched7b_completion_gaps(prior: dict, args, sentinel: Path) -> list[str]:
 
 
 def _matched7b_repair(
-    prior: dict, rk: str, args, anchor_out: Path, sentinel: Path, preds7b_dir: Path
+    prior: dict,
+    rk: str,
+    args,
+    anchor_out: Path,
+    sentinel: Path,
+    preds7b_dir: Path,
+    gaps: list[str],
 ) -> int:
-    """Idempotent completion repair from the PERSISTED matched-arm files: run
-    the requested-but-unrecorded upload, update the record's upload block, and
-    (re)write the sentinel — never re-fitting, never skipping past either."""
+    """Idempotent completion repair from the PERSISTED matched-arm files,
+    DRIVEN by the caller's computed ``gaps`` list (r2 g1 concern 1: the
+    upload-contract predicate lives ONLY in ``_matched7b_completion_gaps`` —
+    repair consumes its verdict, never re-derives it, so the two sites can
+    never silently desync): run the upload IFF the gaps list demands it,
+    update the record's upload block, and (re)write the sentinel — never
+    re-fitting, never skipping past either."""
     missing = [n for n in _MATCHED7B_ARM_FILES if not (preds7b_dir / n).is_file()]
     if missing:
         raise RuntimeError(
@@ -888,10 +906,7 @@ def _matched7b_repair(
             f"persisted arm files are missing: {missing} — quarantine the record or pass a "
             "fresh --anchor-out/--out-root for a full re-run (never a silent skip)."
         )
-    rec_up = dict(prior.get("upload") or {})
-    if args.upload == "hf" and not (
-        rec_up.get("mode") == "hf" and rec_up.get("preds7b_prefix") == args.preds7b_prefix
-    ):
+    if "upload" in gaps:
         if not args.preds7b_prefix:
             raise RuntimeError(
                 "--upload hf requires an explicit --preds7b-prefix (no defaults — "
@@ -955,7 +970,7 @@ def run_matched7b(args) -> int:
                 f"{'/'.join(gaps)} unsatisfied — idempotent repair (no re-fit)",
                 flush=True,
             )
-            return _matched7b_repair(prior, rk, args, anchor_out, sentinel, preds7b_dir)
+            return _matched7b_repair(prior, rk, args, anchor_out, sentinel, preds7b_dir, gaps)
 
     MF._phase("stream_7b")
     banked: dict[str, tuple] = {}
