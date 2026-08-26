@@ -219,7 +219,11 @@ def step_provenance(args) -> dict:
     capture_dates: dict[str, tuple[str, str]] = {}
     for key, prefix in PC.BANKED_CAP2048.items():
         for split in ("train_10k", "val_400", "test_1000"):
-            sub = f"{prefix}/{G.store_subpath_for_split(split)}/raw_completions"
+            # Per-store alias: the banked 7B anchor keeps train rows under
+            # train_25k (superset of train_10k). PC.banked_store_subpath is the
+            # single table; the generic resolver alone 404s on that store.
+            subpath = PC.banked_store_subpath(key, split, G.store_subpath_for_split(split))
+            sub = f"{prefix}/{subpath}/raw_completions"
             capture_dates[f"{key}/{split}"] = _first_file_date(sub, PC.BANKED_REVISION)
     for key, prefix in PC.BANKED_CEILING.items():
         for seed in PC.CEILING_SEEDS:
@@ -279,7 +283,8 @@ def step_banked_schema(args) -> dict:
     jobs: list[tuple[str, str, str]] = []  # (label, sub_prefix, expected_split)
     for key, prefix in PC.BANKED_CAP2048.items():
         for split in ("train_10k", "val_400", "test_1000"):
-            sub = f"{prefix}/{G.store_subpath_for_split(split)}/raw_completions"
+            subpath = PC.banked_store_subpath(key, split, G.store_subpath_for_split(split))
+            sub = f"{prefix}/{subpath}/raw_completions"
             jobs.append((f"{key}/{split}", sub, split))
     for key, prefix in PC.BANKED_CEILING.items():
         for seed in PC.CEILING_SEEDS:

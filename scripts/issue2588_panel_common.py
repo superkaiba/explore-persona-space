@@ -91,6 +91,39 @@ BANKED_CEILING = {
 }
 ANCHOR_GATE_PREFIX = "issue1491_scale_ladder/scale7_refit"
 
+# Per-store subpath aliases for the banked cap2048 reads.
+#
+# The two banked stores do NOT share a train-split subpath. The Qwen2.5-7B
+# anchor store writes its train rows under the MANIFEST split name
+# (``train_25k``), a SUPERSET that HOLDS the train_10k rows — the documented
+# case in ``G.store_subpath_for_split``'s docstring ("the banked 7B train store
+# is the one case where the STORE subpath differs from the logical split's
+# canonical subpath"), resolved downstream by split-ID subsetting, never by
+# minting a new logical split. The 9B store uses the logical name.
+#
+# Measured on the data repo at BANKED_REVISION (2026-08-25):
+#   issue2330_matched/q25_cap2048       -> test_1000, train_25k, val_400
+#   issue2330_matched/qwen35_9b_cap2048 -> test_1000, train_10k, val_400
+#
+# Consumers compose through ``banked_store_subpath`` so the anchor cell cannot
+# 404 pod-side on a path the generic resolver never knew about.
+BANKED_STORE_SPLIT_ALIAS: dict[tuple[str, str], str] = {
+    ("qwen25_7b", "train_10k"): "train_25k",
+}
+
+
+def banked_store_subpath(model_key: str, split: str, default_subpath: str) -> str:
+    """Store subpath for a banked cap2048 read, honoring per-store aliases.
+
+    ``default_subpath`` is the producer's generic answer
+    (``G.store_subpath_for_split(split)``); it is passed in rather than
+    imported so this module stays free of a back-import on the capture script.
+    Returns the alias when one is registered for (model_key, split), else the
+    default unchanged.
+    """
+    return BANKED_STORE_SPLIT_ALIAS.get((model_key, split), default_subpath)
+
+
 # Decoding (plan §10 fit/decoding constants; Source: #2330)
 GEN_TEMP = 1.0
 GEN_TOP_P = 0.95

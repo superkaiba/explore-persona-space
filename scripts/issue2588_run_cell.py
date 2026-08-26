@@ -337,7 +337,12 @@ def _stage_banked(args, cell: PC.Cell, paths: dict) -> None:
             # BANKED_CEILING already ends in .../ceiling_draws — append seed dir only.
             sub_prefix = f"{PC.BANKED_CEILING[key]}/seed{split.removeprefix('ceiling_s')}"
         else:
-            sub_prefix = f"{prefix_root}/{G.store_subpath_for_split(split)}"
+            # Per-store alias (PC.banked_store_subpath): the banked 7B anchor
+            # store keeps its train rows under train_25k, a superset of
+            # train_10k. Without this the qwen25_7b anchor cell 404s POD-SIDE
+            # at staging, after the pod is provisioned and billing.
+            subpath = PC.banked_store_subpath(key, split, G.store_subpath_for_split(split))
+            sub_prefix = f"{prefix_root}/{subpath}"
         remote = G._remote_index(f"{sub_prefix}/raw_completions", revision=PC.BANKED_REVISION)
         names = sorted(n for n in remote if n.endswith(".json"))
         assert names, f"banked raw completions empty at {sub_prefix}/raw_completions"
