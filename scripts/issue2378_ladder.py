@@ -339,6 +339,28 @@ class _SourceMemo:
         }
 
 
+def _fold_ckpt_fingerprint(regime: dict, fold_map: dict, target: str, n: int, d: int) -> str:
+    """Machine-stable per-fold checkpoint fingerprint (sim-user-regen r2).
+
+    Keyed on GENERATING PARAMETERS + file-read values only — the pair regime
+    dict (all output-affecting knobs), the fold map's content sha, the target,
+    and the array shape. Never hashes a recomputed float array (#1336: libm
+    last-bit drift flips byte-hashed keys and discards valid checkpoints)."""
+    import hashlib
+
+    payload = json.dumps(
+        {
+            "regime": regime,
+            "fold_map_sha": p6.fold_map_sha(fold_map),
+            "target": target,
+            "n": int(n),
+            "d": int(d),
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: int) -> None:
     ledger_root = Path(args.ledger_root)
     out_dir = ledger_root / "ladder"
@@ -403,17 +425,112 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
     null_draws: dict[str, list[list[float]]] = {r: [] for r in NULL_RUNGS}
     fold_infos: list[dict] = []
     t_unit = time.time()
+    # Per-fold durable checkpoints (sim-user-regen r2; the checkpoint-per-phase
+    # intra-phase grain: each pair is a measured ~77 min unit, so a crash late
+    # in the fold loop previously forfeited every completed fold). Each fold's
+    # rung preds + null draws + fit info persist ATOMICALLY the moment the
+    # fold completes; re-entry loads fingerprint-matched folds and recomputes
+    # only the rest. Cheap stats (per-fold r2, ss_res) are re-derived from the
+    # saved preds via the SAME expressions as the live path. The checkpoint
+    # dir is removed after the unit's terminal rung JSONs land (the existing
+    # unit-level regime resume owns completed units). Fingerprint = the pair
+    # regime (generating params + file-read values, never recomputed floats)
+    # + fold-map content sha + array shape.
+    ck_dir = out_dir / "fold_ckpt" / f"chat_to_{target}"
+    ck_fp = _fold_ckpt_fingerprint(regime, fold_map, target, n, d)
     for f, (tr, te) in enumerate(splits):
         n_train = int(tr.size)
         if n_train <= d:
             raise RuntimeError(f"{target} fold {f}: n_train={n_train} <= d={d} (under-determined)")
-        src = memo.fold(f)
-        Xt_tr, Yt_tr, Xt_te, Yt_te = Xt[tr], Yt[tr], Xt[te], Yt[te]
-        t0 = time.time()
-        preds, info = compute_rungs_for_fold(
-            src["M"], src["Minv"], src["xs_mean"], src["ys_mean"], Xt_tr, Yt_tr, Xt_te
-        )
-        t_rungs = time.time() - t0
+        Yt_te = Yt[te]
+        ck_npz = ck_dir / f"f{f}.npz"
+        ck_json = ck_dir / f"f{f}.json"
+        preds = None
+        info: dict | None = None
+        nulls: dict | None = None
+        if ck_npz.exists() and ck_json.exists():
+            side = json.loads(ck_json.read_text(encoding="utf-8"))
+            if side.get("fingerprint") == ck_fp:
+                with np.load(ck_npz) as z:
+                    preds = {r: z[f"preds__{r}"] for r in RUNGS}
+                info = side["fold_fit_info"]
+                nulls = side["null_draws"]
+                _log(
+                    f"[ladder] chat->{target} fold {f + 1}/{len(splits)}: "
+                    "RESUMED from fold checkpoint"
+                )
+            else:
+                _log(
+                    f"[ladder] chat->{target} fold {f}: STALE fold checkpoint "
+                    "(fingerprint mismatch) — recomputing"
+                )
+        if preds is None:
+            src = memo.fold(f)
+            Xt_tr, Yt_tr, Xt_te = Xt[tr], Yt[tr], Xt[te]
+            t0 = time.time()
+            preds, info = compute_rungs_for_fold(
+                src["M"], src["Minv"], src["xs_mean"], src["ys_mean"], Xt_tr, Yt_tr, Xt_te
+            )
+            t_rungs = time.time() - t0
+            t0 = time.time()
+            P_tr = pl._apply_ridge(src["M"], Xt_tr.astype(np.float64))
+            P_te = pl._apply_ridge(src["M"], Xt_te.astype(np.float64))
+            n8, _ = pf._shuffled_answer_null_r2(
+                P_tr,
+                Yt_tr,
+                P_te,
+                Yt_te,
+                n_draws=args.n_null_draws,
+                seed=p6.unit_seed(target, "null8", f),
+            )
+            n9, _ = pf._shuffled_answer_null_r2(
+                Xt_tr,
+                Yt_tr,
+                Xt_te,
+                Yt_te,
+                n_draws=args.n_null_draws,
+                seed=p6.unit_seed(target, "null9", f),
+            )
+            Zhat_tr = pl._apply_ridge(src["Minv"], Yt_tr.astype(np.float64))
+            n7 = null_ctx_reparam_r2(
+                src["M"],
+                Zhat_tr,
+                Xt_tr,
+                Yt_tr,
+                Xt_te,
+                Yt_te,
+                n_draws=args.n_null_draws,
+                seed=p6.unit_seed(target, "null7", f),
+            )
+            nulls = {
+                "7_ctx_reparam": [float(x) for x in n7],
+                "8_ans_reparam": [float(x) for x in n8],
+                "9_full_refit": [float(x) for x in n9],
+            }
+            ck_dir.mkdir(parents=True, exist_ok=True)
+            # Process-unique temp + atomic replace via the canonical helper
+            # (#2336); np.savez APPENDS .npz to bare NAMES (#1092), so the
+            # write goes through an open handle, never the temp name.
+            from explore_persona_space.atomic_io import atomic_replace
+
+            with atomic_replace(ck_npz) as tmp:
+                with open(tmp, "wb") as fh:
+                    np.savez(fh, **{f"preds__{r}": preds[r].astype(np.float32) for r in RUNGS})
+            cm.atomic_write_json(
+                ck_json,
+                {
+                    "fingerprint": ck_fp,
+                    "fold": f,
+                    "n_train": n_train,
+                    "n_eval": int(te.size),
+                    "fold_fit_info": info,
+                    "null_draws": nulls,
+                },
+            )
+            _log(
+                f"[ladder] chat->{target} fold {f + 1}/{len(splits)}: "
+                f"rungs={t_rungs:.1f}s nulls={time.time() - t0:.1f}s (checkpointed)"
+            )
         fold_infos.append(info)
         for r in RUNGS:
             r2 = pf._r2_matrix(Yt_te, preds[r])
@@ -423,44 +540,12 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
             ss_res[r][te] = ((Yt_te.astype(np.float64) - preds[r]) ** 2).sum(axis=1)
             preds_all[r][te] = preds[r].astype(np.float32)
         folds_of[te] = f
-        t0 = time.time()
-        P_tr = pl._apply_ridge(src["M"], Xt_tr.astype(np.float64))
-        P_te = pl._apply_ridge(src["M"], Xt_te.astype(np.float64))
-        n8, _ = pf._shuffled_answer_null_r2(
-            P_tr,
-            Yt_tr,
-            P_te,
-            Yt_te,
-            n_draws=args.n_null_draws,
-            seed=p6.unit_seed(target, "null8", f),
-        )
-        n9, _ = pf._shuffled_answer_null_r2(
-            Xt_tr,
-            Yt_tr,
-            Xt_te,
-            Yt_te,
-            n_draws=args.n_null_draws,
-            seed=p6.unit_seed(target, "null9", f),
-        )
-        Zhat_tr = pl._apply_ridge(src["Minv"], Yt_tr.astype(np.float64))
-        n7 = null_ctx_reparam_r2(
-            src["M"],
-            Zhat_tr,
-            Xt_tr,
-            Yt_tr,
-            Xt_te,
-            Yt_te,
-            n_draws=args.n_null_draws,
-            seed=p6.unit_seed(target, "null7", f),
-        )
-        null_draws["7_ctx_reparam"].append([float(x) for x in n7])
-        null_draws["8_ans_reparam"].append([float(x) for x in n8])
-        null_draws["9_full_refit"].append([float(x) for x in n9])
+        for rr in NULL_RUNGS:
+            null_draws[rr].append([float(x) for x in nulls[rr]])
         _log(
             f"[ladder] chat->{target} fold {f + 1}/{len(splits)}: "
             f"r2_direct={per_fold['1_direct'][-1]['r2']:+.4f} "
-            f"r2_ctx_reparam={per_fold['7_ctx_reparam'][-1]['r2']:+.4f} "
-            f"rungs={t_rungs:.1f}s nulls={time.time() - t0:.1f}s"
+            f"r2_ctx_reparam={per_fold['7_ctx_reparam'][-1]['r2']:+.4f}"
         )
     # Identity baseline for the target cell (rung-independent; the fitted-map
     # baselines pair — identity values also live in the cell's fits JSON).
@@ -586,6 +671,12 @@ def run_pair_unit(args, fold_map: dict, memo: _SourceMemo, target: str, layer: i
         rung_out["unit_wall_s"] = round(time.time() - t_unit, 2)
         rung_out["metadata"] = cm.run_metadata()
         cm.atomic_write_json(out_dir / f"chat_to_{target}__rung{ri}.json", rung_out)
+    # Terminal rung JSONs landed — the unit-level regime resume owns this unit
+    # now; drop the per-fold checkpoints (they are derived state).
+    if ck_dir.exists():
+        import shutil
+
+        shutil.rmtree(ck_dir)
     _log(
         f"[ladder] chat->{target}: done in {time.time() - t_unit:.1f}s "
         f"(direct pooled r2={p6.pooled_r2(ss_res['1_direct'], ss_tot):+.4f}, tier={tier})"
@@ -1108,6 +1199,7 @@ def build_argparser() -> argparse.ArgumentParser:
         help="comma list of TARGET cells (shard axis for the P6 fan-out), or 'all' (8 targets at v7)",
     )
     ap.add_argument("--list-pairs", action="store_true")
+    ap.add_argument("--import-check", action="store_true")
     ap.add_argument(
         "--store-root",
         default=str(cm.REPO_ROOT / "data" / "issue_2378" / "activations"),
@@ -1131,6 +1223,11 @@ def build_argparser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_argparser().parse_args()
+    if args.import_check:
+        from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+        assert_args_attributes_defined(__file__)
+        raise SystemExit(0)
     if args.list_pairs:
         for t in target_cells(list(cm.ALL_CELLS)):
             print(f"chat->{t}")

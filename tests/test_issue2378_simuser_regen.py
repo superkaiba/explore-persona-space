@@ -379,3 +379,616 @@ def test_simregen_plan_named_sync(tmp_path):
     drop = json.loads((pl / "fits" / "chat_user_sim__g2b_dropped.json").read_text())
     assert drop["superseded_by"]["round"] == cm.SIMREGEN_ROUND
     assert drop["status"] == "N/A"  # original drop record preserved, only stamped
+
+
+# ---------------------------------------------------------------------------
+# r2 (code-review round 1 union): floor-verdict ordering + _link_into content
+# identity + fresh-selection provenance + ladder fold-checkpoint resume +
+# tiny-real CPU e2e of the production phase_p7_simuser_fits body.
+# ---------------------------------------------------------------------------
+
+
+def test_link_into_content_identity(tmp_path):
+    """codex major (the #1005-family stale-mirror class): st_size equality is
+    NOT content identity — equal-length unequal bytes are REPLACED (atomic),
+    digest-equal copies and same-inode hardlinks are skipped, a missing
+    source raises."""
+    import os
+
+    src, dst = tmp_path / "src", tmp_path / "dst"
+    src.mkdir()
+    dst.mkdir()
+    (src / "a.json").write_text('{"v": "new"}')
+    (src / "b.json").write_text("AAAA")
+    (dst / "b.json").write_text("BBBB")  # equal size, unequal content
+    (src / "c.json").write_text("same-bytes")
+    (dst / "c.json").write_text("same-bytes")  # digest-equal, different inode
+    (src / "d.json").write_text("linked")
+    os.link(src / "d.json", dst / "d.json")  # same inode (samestat fast path)
+    c_inode = (dst / "c.json").stat().st_ino
+    n = dsp._link_into(src, dst, ["a.json", "b.json", "c.json", "d.json"])
+    assert n == 2  # a (new) + b (replaced); c digest-skip, d samestat-skip
+    assert (dst / "a.json").read_text() == '{"v": "new"}'
+    assert (dst / "b.json").read_text() == "AAAA"  # replaced, not silently kept
+    assert (dst / "c.json").stat().st_ino == c_inode  # digest skip left it alone
+    assert not list(dst.glob(".*.linktmp"))  # tmp names cleaned by os.replace
+    with pytest.raises(RuntimeError, match="missing source"):
+        dsp._link_into(src, dst, ["nope.json"])
+
+
+def test_stage_user_real_render_links_parent_rows(monkeypatch, tmp_path):
+    """Real _stage_user_real_render body; only the Hub staging boundary is
+    faked (signature-mirroring def). Empty leaf fails loud."""
+    leaf = tmp_path / "mirror" / "leaf"
+    leaf.mkdir(parents=True)
+
+    def fake_stage_hf_prefix(prefix_rel: str, dest_root, revision=None):
+        assert prefix_rel == f"{cm.HF_PREFIX}/raw_completions/user_real_render"
+        return leaf
+
+    monkeypatch.setattr(cm, "stage_hf_prefix", fake_stage_hf_prefix)
+    args = SimpleNamespace(stage_root=str(tmp_path / "stage"))
+    raw_root = tmp_path / "raw"
+    with pytest.raises(RuntimeError, match="no user_real_render rows"):
+        dsp._stage_user_real_render(args, raw_root)
+    (leaf / "w1_d137_s0_c0000.jsonl").write_text('{"conv_id": "a"}\n')
+    (leaf / "w1_d137_s0_c0001.jsonl").write_text('{"conv_id": "b"}\n')
+    dsp._stage_user_real_render(args, raw_root)
+    got = sorted(p.name for p in (raw_root / "user_real_render").glob("*.jsonl"))
+    assert got == ["w1_d137_s0_c0000.jsonl", "w1_d137_s0_c0001.jsonl"]
+
+
+class _RecordingRunner(dsp.Runner):
+    """Runner fake for the regen ORDERING tests: records (kind, name), runs
+    optional per-step probes/side-effects instead of spawning subprocesses
+    (the subprocess boundary is the faked seam; every dispatcher-side branch
+    body stays real). Overrides mirror the real signatures (#906)."""
+
+    def __init__(self, logs_dir, *, side_effects=None, probes=None):
+        super().__init__(logs_dir, resume=False, dry=False)
+        self.events: list[tuple[str, str]] = []
+        self.side_effects = side_effects or {}
+        self.probes = probes or {}
+
+    def _record(self, kind: str, name: str) -> None:
+        if name in self.probes:
+            self.probes[name]()
+        self.events.append((kind, name))
+        if name in self.side_effects:
+            self.side_effects[name]()
+
+    def run(self, name, argv, *, env_extra=None, ok_rcs=(0,), timeout_s=None, tail_lines=25):
+        self._record("run", name)
+        return 0
+
+    def fanout(self, name, base_argv, *, gpus, env_extra=None):
+        self._record("fanout", name)
+
+    def parallel(self, name, argv_list, *, gpus, env_extra=None):
+        self._record("parallel", name)
+
+    def cpu_parallel(self, name, argv_list, *, threads_each=None, env_extra=None):
+        self._record("cpu_parallel", name)
+
+    def names(self) -> list[str]:
+        return [n for _, n in self.events]
+
+
+def _regen_fixture(tmp_path, monkeypatch, *, n_kept, n_inter, kept_rung1, kept_rung3):
+    """Shared harness for the phase_p7_simuser_regen ordering tests: fixture
+    roots + below/above-floor capture_ready + sim elicitation summaries, with
+    every external boundary faked signature-conformant."""
+    raw = tmp_path / "raw"
+    led = tmp_path / "led"
+    store = tmp_path / "store"
+    parent_led = tmp_path / "parent_led"
+    cm.atomic_write_json(parent_led / "pilot" / "layer_sweep.json", {"selected_layer": 1})
+    cm.atomic_write_json(
+        led / "capture_ready" / "chat_user_sim.json",
+        {"n_kept": n_kept, "pair_intersection": {"n_intersection": n_inter}},
+    )
+    cm.atomic_write_json(
+        raw / "user_sim" / "summary_w1_s0.json",
+        {"elicitation": {"kept_rung1": kept_rung1, "kept_rung3": kept_rung3}},
+    )
+    # store part so the terminal build_store_index runs its REAL body.
+    cm.atomic_write_json(
+        store / "chat_user_sim__part0000__rows.json",
+        {"cell": "chat_user_sim", "tag": "chat_user_sim", "part": 0, "rows": [{"row_id": "a"}]},
+    )
+    args = SimpleNamespace(
+        simregen_raw_root=str(raw),
+        simregen_ledger_root=str(led),
+        simregen_store_root=str(store),
+        ledger_root=str(parent_led),
+        stage_root=str(tmp_path / "stage"),
+        sentinel_dir=str(tmp_path / "sent"),
+        layers="Lstar",
+        user_rows=100,
+        user_fresh_rows=4,
+        user_fresh_draws=2,
+    )
+    events: list[tuple[str, str]] = []
+    monkeypatch.setattr(dsp, "visible_gpus", lambda: ["0"])
+    monkeypatch.setattr(dsp, "_git_pull_rebase", lambda: None)
+
+    def fake_ensure_model_venv(a, runner):
+        events.append(("ensure", "model_venv"))
+
+    def fake_assert_headroom(phase: str, out_root):
+        events.append(("headroom", phase))
+
+    def fake_stage_user_real_render(a, raw_root):
+        events.append(("stage", "user_real_render"))
+
+    def fake_stage_parent_store_slice(a, npz_cells, layers):
+        assert npz_cells == {"chat_user_real"} and layers == [1]
+        events.append(("stage", "real_vcvp"))
+        return tmp_path / "parent_slice"
+
+    harvests: list[str] = []
+
+    def fake_git_harvest(paths, message, *, force_add=False):
+        harvests.append(message)
+
+    uploads: list[str] = []
+
+    def fake_upload_stage_dir(local_dir, prefix_rel):
+        uploads.append(prefix_rel)
+        return ["ok"]
+
+    monkeypatch.setattr(dsp, "ensure_model_venv", fake_ensure_model_venv)
+    monkeypatch.setattr(dsp, "assert_headroom", fake_assert_headroom)
+    monkeypatch.setattr(dsp, "_stage_user_real_render", fake_stage_user_real_render)
+    monkeypatch.setattr(dsp, "_stage_parent_store_slice", fake_stage_parent_store_slice)
+    monkeypatch.setattr(dsp, "git_harvest", fake_git_harvest)
+    monkeypatch.setattr(cm, "upload_stage_dir", fake_upload_stage_dir)
+    return args, led, raw, events, harvests, uploads
+
+
+def _sentinels(args) -> list[dict]:
+    return [
+        json.loads(p.read_text()) for p in sorted(Path(args.sentinel_dir).glob("issue-2378-*.json"))
+    ]
+
+
+def test_regen_floor_fail_reports_before_any_fresh_spend(tmp_path, monkeypatch):
+    """codex blocker 1 (mechanizable form): a below-floor wave writes the
+    floor report + blocking sentinel and exits rc 8 BEFORE any fresh-draw
+    step is even composed — gen_user_fresh/upload_user_fresh/capture never
+    appear in the step record."""
+    args, led, _raw, _events, harvests, _uploads = _regen_fixture(
+        tmp_path, monkeypatch, n_kept=6000, n_inter=5900, kept_rung1=6000, kept_rung3=0
+    )
+    runner = _RecordingRunner(tmp_path / "logs")
+    monkeypatch.setattr(
+        dsp,
+        "_stage_user_real_render",
+        lambda a, r: runner.events.append(("stage", "user_real_render")),
+    )
+    rc = dsp.phase_p7_simuser_regen(args, runner)
+    assert rc == dsp.RC_SIMREGEN_FLOOR
+    names = runner.names()
+    # Exact realized order: gen -> upload -> real render staging ->
+    # capture_ready -> floor verdict (rc 8) — and NOTHING after it.
+    assert names == [
+        "p7.gen_user_sim",
+        "p7.upload_user_sim",
+        "user_real_render",
+        "p7.capture_ready",
+    ]
+    for banned in ("p7.gen_user_fresh", "p7.upload_user_fresh", "p7.capture_sim"):
+        assert banned not in names
+    report = json.loads((led / "simregen_floor_report.json").read_text())
+    assert report["floor_gate"]["verdict"] == "FLOOR_FAIL"
+    assert report["fresh_eligibility"]["verdict"] == "OK"  # eligibility recorded either way
+    assert not (led / "fresh_reference_na.json").exists()  # floor-fail path, not NA path
+    gates = [s for s in _sentinels(args) if s.get("gate") == "simregen_floor"]
+    assert len(gates) == 1 and gates[0]["blocks_pipeline"] is True
+    assert gates[0]["kind"] == "epm:progress"
+    assert any("FLOOR_FAIL" in m for m in harvests)
+
+
+def test_regen_zero_rung1_writes_na_and_skips_fresh(tmp_path, monkeypatch):
+    """codex blocker 1: floor PASS + zero rung-1 keeps => explicit
+    fresh_reference_na.json (never an anonymous raise), fresh gen/upload +
+    capture_sim_fresh SKIPPED, the sim capture + store upload still run."""
+    args, led, _raw, events, _harvests, uploads = _regen_fixture(
+        tmp_path, monkeypatch, n_kept=6501, n_inter=6501, kept_rung1=0, kept_rung3=6501
+    )
+    runner = _RecordingRunner(tmp_path / "logs")
+    rc = dsp.phase_p7_simuser_regen(args, runner)
+    assert rc == 0
+    names = runner.names()
+    for banned in ("p7.gen_user_fresh", "p7.upload_user_fresh", "p7.capture_sim_fresh"):
+        assert banned not in names
+    assert "p7.capture_sim" in names
+    na = json.loads((led / "fresh_reference_na.json").read_text())
+    assert na["fresh_reference"] == "N/A"
+    assert na["eligibility"]["verdict"] == "NA" and na["eligibility"]["rung1_kept"] == 0
+    report = json.loads((led / "simregen_report.json").read_text())
+    assert report["fresh_reference_na"] is True and report["fresh_selection"] is None
+    assert cm.SIMREGEN_ACTIVATIONS_PREFIX in uploads
+    assert ("stage", "real_vcvp") in events  # vcvp staging still ran for capture_sim
+
+
+def test_regen_short_coverage_proceeds_after_floor_persisted(tmp_path, monkeypatch):
+    """codex blocker 1 (ordering half): rung-1 keeps below the requested
+    fresh rows => short-coverage artifact + the fresh legs still run, and the
+    floor report is ON DISK before the first fresh-generation step fires."""
+    args, led, raw, _events, _harvests, _uploads = _regen_fixture(
+        tmp_path, monkeypatch, n_kept=6501, n_inter=6501, kept_rung1=3, kept_rung3=6498
+    )
+    sel_payload = {"predicate": "elicit_rung == 1", "selected_rows": 3, "selection_digest": "d"}
+
+    def make_fresh_selection():
+        cm.atomic_write_json(raw / "user_sim_fresh" / "fresh_selection.json", sel_payload)
+
+    ordering_seen: list[str] = []
+
+    def probe_floor_persisted():
+        assert (led / "simregen_floor_report.json").exists()  # floor BEFORE fresh spend
+        ordering_seen.append("floor-before-fresh")
+
+    runner = _RecordingRunner(
+        tmp_path / "logs",
+        side_effects={"p7.gen_user_fresh": make_fresh_selection},
+        probes={"p7.gen_user_fresh": probe_floor_persisted},
+    )
+    rc = dsp.phase_p7_simuser_regen(args, runner)
+    assert rc == 0
+    assert ordering_seen == ["floor-before-fresh"]
+    names = runner.names()
+    for required in ("p7.gen_user_fresh", "p7.upload_user_fresh", "p7.capture_sim_fresh"):
+        assert required in names
+    na = json.loads((led / "fresh_reference_na.json").read_text())
+    assert na["fresh_reference"] == "short-coverage"
+    assert json.loads((led / "fresh_selection.json").read_text()) == sel_payload  # ledger copy
+    report = json.loads((led / "simregen_report.json").read_text())
+    assert report["fresh_reference_na"] is False
+    assert report["fresh_selection"] == sel_payload
+
+
+def test_phase_user_fresh_selection_provenance(monkeypatch, tmp_path):
+    """codex concern fresh-retrieval-rung1-provenance (producer side): the
+    REAL phase_user_fresh body persists the rung-1 eligibility predicate +
+    counts + selection digest BEFORE generating; only the engine/tokenizer/
+    pool/upload boundaries are faked (signature-mirroring defs, #906). The
+    zero-rung-1 backstop raise stays loud on direct invocation."""
+    raw_root = tmp_path / "raw"
+    (raw_root / "user_sim").mkdir(parents=True)
+    (raw_root / "user_sim" / "w1_d137_s0_c0000.jsonl").write_text("{}\n")  # _rows_dir local hit
+    pool_rows = [{"conv_id": f"c{i}", "u1": "q", "a1": "a", "u2": "u"} for i in range(6)]
+    kept = {
+        "c0": {"elicit_rung": 1},
+        "c1": {"elicit_rung": 3},
+        "c2": {"elicit_rung": 1},
+        "c3": {"elicit_rung": 1},
+        "c5": {"elicit_rung": 3},
+    }
+    ran: dict = {}
+
+    def fake_run_user_sim(args, llm, tok, rows, stage, seeds):
+        ran["rows"] = rows
+        ran["stage"] = stage
+        ran["seeds"] = seeds
+
+    monkeypatch.setattr(gen, "_resolve_pools_dir", lambda args: tmp_path / "pools")
+    monkeypatch.setattr(gen, "_get_tokenizer", lambda: object())
+    monkeypatch.setattr(gen, "_assert_chat_template", lambda tok: "ok")
+    monkeypatch.setattr(gen, "_load_pool", lambda pools_dir, name: list(pool_rows))
+    monkeypatch.setattr(gen, "_stage_kept_rows", lambda rows_dir, cell=None: dict(kept))
+    monkeypatch.setattr(gen, "_build_engine", lambda args: object())
+    monkeypatch.setattr(gen, "_run_user_sim", fake_run_user_sim)
+    monkeypatch.setattr(gen, "_reap_engine", lambda llm: None)
+    monkeypatch.setattr(gen, "_maybe_upload", lambda args, stage: None)
+    args = SimpleNamespace(
+        raw_root=str(raw_root),
+        stage_raw_from_hf=False,
+        user_fresh_rows=2,
+        user_fresh_draws=2,
+    )
+    gen.phase_user_fresh(args)
+    sel = json.loads((raw_root / "user_sim_fresh" / "fresh_selection.json").read_text())
+    assert sel["predicate"].startswith("elicit_rung == 1")
+    assert sel["total_sim_kept"] == 5
+    assert sel["rung1_eligible"] == 3 and sel["rung3_excluded"] == 2
+    assert sel["requested_rows"] == 2 and sel["selected_rows"] == 2
+    assert sel["draw_seeds"] == list(cm.FRESH_SEEDS[:2])
+    picked = [r["conv_id"] for r in ran["rows"]]
+    assert set(picked) <= {"c0", "c2", "c3"}  # rung-1-kept only
+    assert sel["selection_digest"] == cm.text_digest(",".join(picked))
+    assert ran["stage"] == "user_sim_fresh" and ran["seeds"] == list(cm.FRESH_SEEDS[:2])
+
+    # Zero rung-1 keeps: the dispatcher owns the N/A artifact; a DIRECT
+    # invocation that bypassed it fails loud, never a silent empty run.
+    monkeypatch.setattr(
+        gen, "_stage_kept_rows", lambda rows_dir, cell=None: {"c1": {"elicit_rung": 3}}
+    )
+    with pytest.raises(RuntimeError, match="zero rung-1-kept"):
+        gen.phase_user_fresh(args)
+
+
+def test_ladder_fold_checkpoint_resume(monkeypatch, tmp_path):
+    """codex concern p7-ladder-fold-not-resumable: a pair unit interrupted
+    mid-fold-loop resumes from the per-fold checkpoints (folds 0-1 loaded,
+    NOT recomputed), the checkpoint dir is reaped after the terminal rung
+    JSONs land, and the resumed unit's outputs match a from-scratch run."""
+    import argparse
+
+    import issue2378_fits as fits_mod
+    import issue2378_ladder as lad
+
+    store = tmp_path / "store"
+    fits_mod._write_probe_store(store, n=40, d=8)
+
+    def ns(ledger: Path) -> argparse.Namespace:
+        return argparse.Namespace(
+            store_root=str(store),
+            ledger_root=str(ledger),
+            layer=1,
+            layer_star_from=None,
+            n_null_draws=4,
+            bootstrap_draws=16,
+            reduced_k=4,
+            units="own:chat:context,own:chat_user_real:context",
+            g3_gate_file=None,
+            pairs="chat_user_real",
+            survivors=None,
+            fold_floors_override=fits_mod._PROBE_FLOORS,
+        )
+
+    real_compute = lad.compute_rungs_for_fold
+    target = "chat_user_real"
+
+    def run_fits(ledger: Path) -> argparse.Namespace:
+        a = ns(ledger)
+        ledger.mkdir(parents=True, exist_ok=True)
+        assert fits_mod.phase_g3(a) == 0
+        assert fits_mod.phase_fit(a) == 0
+        return a
+
+    # Scratch reference run (uninterrupted) in its own ledger.
+    ref_args = run_fits(tmp_path / "ledger_ref")
+    fm_ref = fits_mod._fold_map(ref_args)
+    lad.run_pair_unit(ref_args, fm_ref, lad._SourceMemo(store, fm_ref, 1), target, 1)
+
+    # Interrupted run: die BEFORE fold 2's compute; folds 0-1 checkpointed.
+    args = run_fits(tmp_path / "ledger_resume")
+    fm = fits_mod._fold_map(args)
+    ck_dir = Path(args.ledger_root) / "ladder" / "fold_ckpt" / f"chat_to_{target}"
+    calls = {"n": 0}
+
+    def dying_compute(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 3:
+            raise RuntimeError("synthetic mid-unit crash")
+        return real_compute(*a, **kw)
+
+    monkeypatch.setattr(lad, "compute_rungs_for_fold", dying_compute)
+    with pytest.raises(RuntimeError, match="synthetic mid-unit crash"):
+        lad.run_pair_unit(args, fm, lad._SourceMemo(store, fm, 1), target, 1)
+    assert calls["n"] == 3
+    assert sorted(p.name for p in ck_dir.glob("f*.npz")) == ["f0.npz", "f1.npz"]
+
+    # Resume: folds 0-1 load from checkpoint, only folds 2..k-1 recompute.
+    calls["n"] = 0
+    monkeypatch.setattr(lad, "compute_rungs_for_fold", dying_compute)  # dies on call 3 again
+    k = fm["k"]
+    resumed = {"n": 0}
+
+    def counting_compute(*a, **kw):
+        resumed["n"] += 1
+        return real_compute(*a, **kw)
+
+    monkeypatch.setattr(lad, "compute_rungs_for_fold", counting_compute)
+    lad.run_pair_unit(args, fm, lad._SourceMemo(store, fm, 1), target, 1)
+    assert resumed["n"] == k - 2  # exactly the un-checkpointed folds
+    assert not ck_dir.exists()  # derived state reaped after terminal rungs land
+    for ri in range(1, len(lad.RUNGS) + 1):
+        assert (Path(args.ledger_root) / "ladder" / f"chat_to_{target}__rung{ri}.json").exists()
+
+    # Resumed outputs match the scratch run (nulls bitwise via saved draws;
+    # r2 to float32-checkpoint precision on the resumed folds).
+    for ri in (1, len(lad.RUNGS)):
+        got = json.loads(
+            (Path(args.ledger_root) / "ladder" / f"chat_to_{target}__rung{ri}.json").read_text()
+        )
+        want = json.loads(
+            (Path(ref_args.ledger_root) / "ladder" / f"chat_to_{target}__rung{ri}.json").read_text()
+        )
+        np.testing.assert_allclose(
+            [x["r2"] for x in got["per_fold"]],
+            [x["r2"] for x in want["per_fold"]],
+            rtol=1e-3,
+            atol=1e-5,
+        )
+        np.testing.assert_allclose(got["pooled_r2"], want["pooled_r2"], rtol=1e-3, atol=1e-5)
+        if "per_fold_draws" in got.get("null", {}):
+            assert got["null"]["per_fold_draws"] == want["null"]["per_fold_draws"]
+
+    # Regime change on a completed unit refuses loud (the unit-level resume
+    # guard sits UPSTREAM of the fold fingerprint; a changed regime never
+    # silently reuses either the terminal JSONs or the fold checkpoints).
+    args2 = ns(Path(args.ledger_root))
+    args2.n_null_draws = 5
+    with pytest.raises(RuntimeError, match="regime mismatch"):
+        lad.run_pair_unit(args2, fm, lad._SourceMemo(store, fm, 1), target, 1)
+
+
+def _vary_answer_lengths(store: Path, cell: str, seed: int) -> None:
+    """Give a probe cell varied answer-span lengths inside the lenmatch
+    [8, 256] band (the probe store's constant 7-token spans sit BELOW the
+    band and would empty the matched selection)."""
+    import issue2378_p6_common as p6
+
+    rng = np.random.default_rng(seed)
+    for ci in p6.production_part_indices(store, cell):
+        path = store / f"{cell}__part{ci:04d}__rows.json"
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        for r in payload["rows"]:
+            span = int(rng.integers(8, 200))
+            r["ans_lo"] = 2
+            r["ans_hi"] = 2 + span
+            r["n_tokens"] = 4 + span
+        path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _relabel_store_layer(store: Path, to_layer: int) -> None:
+    """Rename the probe store's L1 npz parts (and their meta layer field) to
+    the parent run's REALIZED L* (issue2378_lenmatch pins LAYER=51 as a
+    parent-frozen constant, so the e2e fixture matches production's layer)."""
+    for npz_path in sorted(store.glob("*__L1.npz")):
+        with np.load(npz_path) as z:
+            arrays = {k: np.asarray(z[k]) for k in z.files}
+        meta = json.loads(str(arrays["meta"]))
+        meta["layer"] = to_layer
+        arrays["meta"] = np.array(json.dumps(meta))
+        out = npz_path.with_name(npz_path.name.replace("__L1.npz", f"__L{to_layer}.npz"))
+        with open(out, "wb") as fh:
+            np.savez(fh, **arrays)
+        npz_path.unlink()
+
+
+@pytest.mark.slow
+def test_p7_simuser_fits_tiny_real_e2e(monkeypatch, tmp_path):
+    """codex major p7-cpu-smoke-incomplete: the PRODUCTION phase_p7_simuser_fits
+    body over a tiny-real two-arm store (d=8; n at the REAL 6,500 floor — the
+    production fold-map floors stay byte-untouched), faking ONLY the Hub/git
+    boundaries. Every stage runs the real subprocess entrypoint via the real
+    Runner: fold map -> fits -> ladder pairs -> H4b -> retrieval (+ fresh
+    reference + provenance injection) -> lenmatch --pair-user -> plan-named
+    sync + digest, rc=0. Also pins code-review blocker 2's combined-store
+    assembly: a stale parent-side chat_user_sim ledger is EXCLUDED — the
+    round store is the only source of sim rows in the combined store."""
+    import shutil
+
+    import issue2378_fits as fits_mod
+    import issue2378_p6_common as p6
+    import issue2378_retrieval as ret
+
+    n = 6520  # >= the untouched 6,500 production floor after the probe drops
+    lstar = 51  # the parent run's realized L* (lenmatch pins LAYER=51)
+    parent_store = tmp_path / "parent_store"
+    round_store = tmp_path / "round_store"
+    round_store.mkdir()
+    fits_mod._write_probe_store(parent_store, n=n, d=8)
+    _relabel_store_layer(parent_store, lstar)
+    _vary_answer_lengths(parent_store, "chat_user_real", seed=41)
+    _vary_answer_lengths(parent_store, "chat_user_sim", seed=42)
+    for p in sorted(parent_store.glob("chat_user_sim__*")):
+        shutil.move(str(p), round_store / p.name)
+
+    # Preview fold map over EXACTLY the files the combined store will hold
+    # (production floors — no override); used only to seed the fresh parts.
+    preview = tmp_path / "preview"
+    dsp._link_into(parent_store, preview, [p.name for p in parent_store.iterdir()])
+    dsp._link_into(round_store, preview, [p.name for p in round_store.iterdir()])
+    fm_preview = p6.load_or_build_fold_map(preview, tmp_path / "preview_ledger")
+    ret._write_probe_fresh(round_store, fm_preview, "chat_user_sim", layer=lstar)
+
+    # STALE parent-side sim ledger + npz (blocker 2): valid-JSON junk that
+    # would poison the fold map if linked; the npz is a loud tripwire.
+    stale_rows = json.dumps(
+        {"cell": "chat_user_sim", "tag": "chat_user_sim", "part": 0, "rows": [{"row_id": "STALE"}]}
+    )
+    (parent_store / "chat_user_sim__part0000__rows.json").write_text(stale_rows)
+    (parent_store / f"chat_user_sim__part0000__L{lstar}.npz").write_bytes(b"STALE-NOT-AN-NPZ")
+
+    parent_ledger = tmp_path / "parent_ledger"
+    cm.atomic_write_json(parent_ledger / "pilot" / "layer_sweep.json", {"selected_layer": lstar})
+    cm.atomic_write_json(parent_ledger / p6.G3_GATE_NAME, {"gate": "G3", "verdict": "PASS"})
+    round_ledger = tmp_path / "round_ledger"
+    cm.atomic_write_json(
+        round_ledger / "capture_ready" / "chat_user_sim.json",
+        {"n_kept": 6517, "pair_intersection": {"n_intersection": 6514}},
+    )
+    fresh_sel = {
+        "predicate": "elicit_rung == 1 (rung-1-kept user_sim conversations only)",
+        "rung1_eligible": 6517,
+        "selected_rows": 12,
+        "selection_digest": "fixture",
+    }
+    cm.atomic_write_json(round_ledger / "fresh_selection.json", fresh_sel)
+
+    args = SimpleNamespace(
+        simregen_raw_root=str(tmp_path / "raw"),
+        simregen_ledger_root=str(round_ledger),
+        simregen_store_root=str(round_store),
+        ledger_root=str(parent_ledger),
+        stage_root=str(tmp_path / "stage"),
+        sentinel_dir=str(tmp_path / "sent"),
+    )
+    monkeypatch.setattr(dsp, "_git_pull_rebase", lambda: None)
+
+    def fake_assert_headroom(phase: str, out_root) -> None:
+        assert phase == "p7_simuser_fits"
+
+    def fake_stage_parent_store_slice(a, npz_cells, layers):
+        assert npz_cells == {"chat", "chat_user_real"} and layers == [lstar]
+        return parent_store
+
+    def fail_stage_hf_prefix(prefix_rel, dest_root, revision=None):
+        raise AssertionError(f"unexpected HF staging of {prefix_rel} (round npz are local)")
+
+    uploads: list[str] = []
+    harvests: list[list[str]] = []
+    monkeypatch.setattr(dsp, "assert_headroom", fake_assert_headroom)
+    monkeypatch.setattr(dsp, "_stage_parent_store_slice", fake_stage_parent_store_slice)
+    monkeypatch.setattr(cm, "stage_hf_prefix", fail_stage_hf_prefix)
+    monkeypatch.setattr(
+        cm, "upload_stage_dir", lambda d, prefix: (uploads.append(prefix), ["ok"])[1]
+    )
+    monkeypatch.setattr(
+        dsp, "git_harvest", lambda paths, msg, force_add=False: harvests.append(paths)
+    )
+
+    runner = dsp.Runner(tmp_path / "logs", resume=True, dry=False)
+    rc = dsp.phase_p7_simuser_fits(args, runner)
+    assert rc == 0
+
+    # Blocker 2: the combined store's sim ledger is the ROUND bytes — the
+    # stale parent copy was excluded from the parent link set.
+    combined = Path(args.stage_root) / "simregen_combined"
+    got = (combined / "chat_user_sim__part0000__rows.json").read_bytes()
+    assert got == (round_store / "chat_user_sim__part0000__rows.json").read_bytes()
+    assert got != stale_rows.encode()
+    # Assembly identity: the realized fold map matches the preview built from
+    # the intended file set (same content -> same canonical sha).
+    fm_real = json.loads((round_ledger / p6.FOLD_MAP_NAME).read_text())
+    assert fm_real["sha256"] == fm_preview["sha256"]
+
+    # Per-stage artifacts (fits / ladder / h4b / retrieval / lenmatch / sync
+    # / digest), each produced by the REAL subprocess entrypoint.
+    for cell in ("chat_user_real", "chat_user_sim"):
+        fits = json.loads((round_ledger / "fits" / f"{cell}__context.json").read_text())
+        assert fits["pooled_r2"] > 0.5  # planted linear geometry
+        assert (round_ledger / "fits" / f"{cell}__prefix.json").exists()
+        for ri in range(1, len(dsp_ladder_rungs()) + 1):
+            assert (round_ledger / "ladder" / f"chat_to_{cell}__rung{ri}.json").exists()
+    h4b = json.loads((round_ledger / "ladder" / "h4b_real_vs_sim.json").read_text())
+    assert h4b["pair_assert"]["n_hash_mismatched"] == 0
+    fresh_real = json.loads((round_ledger / "retrieval" / "chat_user_real__fresh.json").read_text())
+    assert fresh_real["status"] == "N/A"  # deterministic render — disclosed, never a crash
+    fresh_sim = json.loads((round_ledger / "retrieval" / "chat_user_sim__fresh.json").read_text())
+    assert fresh_sim["status"] == "ok" and fresh_sim["counts"]["n_covered"] > 0
+    for rj in (round_ledger / "retrieval").glob("*.json"):
+        payload = json.loads(rj.read_text())
+        assert payload["fresh_selection"] == fresh_sel, rj.name  # provenance injection
+    pair = json.loads((round_ledger / "lenmatch" / "lenmatch_user_pair.json").read_text())
+    assert "sim_min_tokens_floor" in pair
+    digest = json.loads((round_ledger / "p7_digest.json").read_text())
+    assert digest["fresh_reference_na"] is False and len(digest["plan_named_sync"]) >= 3
+    synced = json.loads((parent_ledger / "fits" / "chat_user_sim__context.json").read_text())
+    assert synced["round"] == cm.SIMREGEN_ROUND
+    kinds = [
+        json.loads(p.read_text())["kind"] for p in Path(args.sentinel_dir).glob("issue-2378-*.json")
+    ]
+    assert "epm:results" in kinds
+    assert any("p6_sidecars_simregen" in u for u in uploads)
+
+
+def dsp_ladder_rungs() -> tuple[str, ...]:
+    import issue2378_ladder as lad
+
+    return lad.RUNGS

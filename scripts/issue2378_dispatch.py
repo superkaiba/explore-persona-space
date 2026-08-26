@@ -490,6 +490,80 @@ class Runner:
             )
         _log(f"[step] {name} all {len(argv_list)} shards OK wall={self.walls[name]:.1f}s")
 
+    def cpu_parallel(
+        self,
+        name: str,
+        argv_list: list[list[str]],
+        *,
+        threads_each: int | None = None,
+        env_extra: dict[str, str] | None = None,
+    ) -> None:
+        """CPU sibling of parallel(): PRE-COMPOSED per-shard argvs concurrently
+        with per-shard BLAS/OMP thread SPLITS instead of CVD pins (sim-user-
+        regen r2, codex blocker p7-fit-loop-unbatched: the P7 CPU battery
+        shards ACROSS independent cells/pairs — the within-unit fits stay the
+        parent-reviewed vectorized cores). Same OK-flag resume, log rotation,
+        and fail-loud collection as parallel(). threads_each defaults to
+        cpu_count // n_shards capped at 8 (the shared-VM thread-cap
+        discipline, code-style.md #847); override via
+        EPM_I2378_CPU_SHARD_THREADS on a dedicated CPU venue."""
+        n_shards = max(1, len(argv_list))
+        t = (
+            threads_each
+            or int(os.environ.get("EPM_I2378_CPU_SHARD_THREADS", "0"))
+            or max(2, min(8, (os.cpu_count() or 8) // n_shards))
+        )
+        pins = {
+            k: str(t)
+            for k in (
+                "OMP_NUM_THREADS",
+                "MKL_NUM_THREADS",
+                "OPENBLAS_NUM_THREADS",
+                "NUMEXPR_NUM_THREADS",
+            )
+        }
+        pins["MALLOC_ARENA_MAX"] = "2"
+        if self.dry:
+            for i, argv in enumerate(argv_list):
+                _log(f"[dry] {name}.s{i} (threads={t}): {shlex.join(argv)}")
+            return
+        procs: list[tuple[int, Path, subprocess.Popen | None]] = []
+        t0 = time.time()
+        for i, argv in enumerate(argv_list):
+            sname = f"{name}.s{i}"
+            if self._skip(sname, argv):
+                procs.append((i, self.logs_dir / f"{sname}.log", None))
+                continue
+            log_path, log = self._open_log(sname)
+            p = subprocess.Popen(
+                argv,
+                stdout=log,
+                stderr=subprocess.STDOUT,
+                cwd=str(cm.REPO_ROOT),
+                env={**os.environ, **cm.LAUNCH_ENV_PINS, **pins, **(env_extra or {})},
+            )
+            log.close()
+            _log(f"[step] {sname} START pid={p.pid} threads={t} log={log_path}")
+            procs.append((i, log_path, p))
+        failures = []
+        for i, log_path, p in procs:
+            if p is None:
+                continue
+            rc = p.wait()
+            _log(f"[step] {name}.s{i} rc={rc}")
+            if rc != 0:
+                failures.append((i, rc, log_path))
+            else:
+                self._ok_path(f"{name}.s{i}").write_text(_argv_sha(argv_list[i]))
+        self.walls[name] = time.time() - t0
+        if failures:
+            lines = [f"shard {i} rc={rc} log={lp}" for i, rc, lp in failures]
+            raise RuntimeError(
+                f"cpu_parallel {name}: {len(failures)}/{len(argv_list)} shards failed\n"
+                + "\n".join(lines)
+            )
+        _log(f"[step] {name} all {len(argv_list)} shards OK wall={self.walls[name]:.1f}s")
+
 
 # ---------------------------------------------------------------------------
 # Sentinels (poll_pipeline contract) + git harvest
@@ -2971,9 +3045,25 @@ def _simregen_paths(args) -> tuple[Path, Path, Path]:
     )
 
 
+def _file_digest(path: Path) -> str:
+    """Chunked blake2b of a file's bytes (content identity for _link_into)."""
+    h = hashlib.blake2b(digest_size=16)
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _link_into(src_dir: Path, dst_dir: Path, names: list[str]) -> int:
-    """Hardlink (copy fallback) named files src->dst; size-checked skip on
-    existing targets; fail-loud on a missing source (never a silent gap)."""
+    """Hardlink (copy fallback) named files src->dst; CONTENT-verified skip on
+    existing targets; fail-loud on a missing source (never a silent gap).
+
+    r2 (codex major, the #1005-family stale-mirror class): st_size equality is
+    NOT content identity — same-shape npz / same-row-set rows.json regenerate
+    at identical byte size — so an existing target is kept only when it is the
+    SAME inode as the source (hardlink fast path) or its content digest
+    matches; unequal content is ATOMICALLY replaced (tmp link/copy +
+    os.replace), never silently kept."""
     dst_dir.mkdir(parents=True, exist_ok=True)
     n = 0
     for name in names:
@@ -2982,13 +3072,18 @@ def _link_into(src_dir: Path, dst_dir: Path, names: list[str]) -> int:
             raise RuntimeError(f"_link_into: missing source {src}")
         dst = dst_dir / name
         if dst.exists():
-            if dst.stat().st_size == src.stat().st_size:
+            if os.path.samestat(src.stat(), dst.stat()):
+                continue  # same inode — content-identical by construction
+            if _file_digest(dst) == _file_digest(src):
                 continue
-            dst.unlink()
+            _log(f"[link] content mismatch at {dst.name} — replacing from {src_dir}")
+        tmp = dst_dir / f".{name}.linktmp"
+        tmp.unlink(missing_ok=True)
         try:
-            os.link(src, dst)
+            os.link(src, tmp)
         except OSError:
-            shutil.copy2(src, dst)
+            shutil.copy2(src, tmp)
+        os.replace(tmp, dst)
         n += 1
     return n
 
@@ -3088,6 +3183,35 @@ def _simregen_floor_verdict(cr_sim: dict) -> dict:
     }
 
 
+def _simregen_fresh_eligibility(elicitation: list[dict], requested_rows: int) -> dict:
+    """Pure fresh-reference eligibility verdict from the sim stage summaries'
+    elicitation blocks (sim-user-regen r2, codex blocker 1: fresh redraws are
+    BARE rung-1 elicitations, so a floor-passing wave with zero/insufficient
+    rung-1 keeps gets an EXPLICIT N/A / short-coverage artifact — never an
+    anonymous raise inside the fresh generation, and never GPU spend on it)."""
+    rung1 = sum(int(e.get("kept_rung1", 0) or 0) for e in elicitation)
+    rung3 = sum(int(e.get("kept_rung3", 0) or 0) for e in elicitation)
+    if rung1 == 0:
+        verdict = "NA"
+    elif rung1 < int(requested_rows):
+        verdict = "SHORT_COVERAGE"
+    else:
+        verdict = "OK"
+    return {
+        "gate": "simregen_fresh_eligibility",
+        "verdict": verdict,
+        "predicate": "elicit_rung == 1 (bare fresh redraws need rung-1-kept conversations)",
+        "rung1_kept": rung1,
+        "rung3_kept": rung3,
+        "requested_rows": int(requested_rows),
+        "policy": (
+            "NA: skip fresh gen/upload/capture, write fresh_reference_na.json; "
+            "SHORT_COVERAGE: proceed with the available rung-1 cohort, record it; "
+            "OK: proceed"
+        ),
+    }
+
+
 def _simregen_plan_named_sync(round_ledger: Path, parent_ledger: Path) -> list[str]:
     """Copy the round's plan-named sim results onto the PARENT plan paths with
     round provenance (brief: 'prefer the plan-named fits/chat_user_sim__*.json
@@ -3180,34 +3304,10 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
             cm.SIMREGEN_HF_RAW_PREFIX,
         ),
     )
-    runner.fanout(
-        "p7.gen_user_fresh",
-        _model_py(
-            "issue2378_gen.py",
-            "--phase",
-            "user_fresh",
-            "--user-fresh-rows",
-            str(args.user_fresh_rows),
-            "--user-fresh-draws",
-            str(args.user_fresh_draws),
-            *gen_common,
-        ),
-        gpus=gpus,
-    )
-    runner.run(
-        "p7.upload_user_fresh",
-        _py(
-            "issue2378_gen.py",
-            "--phase",
-            "upload_stage",
-            "--stage",
-            "user_sim_fresh",
-            "--raw-root",
-            str(raw_root),
-            "--hf-prefix-override",
-            cm.SIMREGEN_HF_RAW_PREFIX,
-        ),
-    )
+    # r2 ordering fix (codex blocker 1): the real render + capture_ready +
+    # FLOOR VERDICT run immediately after user_sim; fresh draws (and every
+    # other paid leg) run only AFTER the floor is evaluated AND persisted —
+    # a below-floor wave must never spend fresh-draw GPU first.
     if runner.dry:
         _log("[dry] p7.stage_user_real_render: parent raw user_real_render -> round raw root")
     else:
@@ -3226,8 +3326,10 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
             str(round_ledger),
         ),
     )
+    fresh_na = False
     if runner.dry:
         _log("[dry] p7.floor_gate: capture_ready/chat_user_sim.json -> PASS | rc 8 (FLOOR_FAIL)")
+        _log("[dry] p7.fresh_eligibility: rung-1 kept -> OK | SHORT_COVERAGE | NA (skip fresh)")
     else:
         cr = json.loads(
             (round_ledger / "capture_ready" / "chat_user_sim.json").read_text(encoding="utf-8")
@@ -3237,14 +3339,34 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
             {"file": p.name, **json.loads(p.read_text(encoding="utf-8")).get("elicitation", {})}
             for p in sorted((raw_root / "user_sim").glob("summary_w*_s*.json"))
         ]
-        report = {"floor_gate": verdict, "elicitation": elicitation, "metadata": cm.run_metadata()}
+        eligibility = _simregen_fresh_eligibility(elicitation, args.user_fresh_rows)
+        report = {
+            "floor_gate": verdict,
+            "fresh_eligibility": eligibility,
+            "elicitation": elicitation,
+            "metadata": cm.run_metadata(),
+        }
         cm.atomic_write_json(round_ledger / "simregen_floor_report.json", report)
+        harvest_paths = [
+            "eval_results/issue_2378/sim-user-regen/capture_ready/*.json",
+            "eval_results/issue_2378/sim-user-regen/simregen_floor_report.json",
+        ]
+        if verdict["verdict"] == "PASS" and eligibility["verdict"] != "OK":
+            # Explicit fresh-reference disposition artifact (never an
+            # anonymous raise inside phase_user_fresh, never GPU spend).
+            na_payload = {
+                "fresh_reference": ("N/A" if eligibility["verdict"] == "NA" else "short-coverage"),
+                "eligibility": eligibility,
+                "metadata": cm.run_metadata(),
+            }
+            cm.atomic_write_json(round_ledger / "fresh_reference_na.json", na_payload)
+            harvest_paths.append("eval_results/issue_2378/sim-user-regen/fresh_reference_na.json")
+            fresh_na = eligibility["verdict"] == "NA"
+            _log(f"[p7] fresh eligibility {eligibility['verdict']}: {json.dumps(eligibility)}")
         git_harvest(
-            [
-                "eval_results/issue_2378/sim-user-regen/capture_ready/*.json",
-                "eval_results/issue_2378/sim-user-regen/simregen_floor_report.json",
-            ],
-            f"task #{ISSUE}: sim-user-regen floor gate ({verdict['verdict']})",
+            harvest_paths,
+            f"task #{ISSUE}: sim-user-regen floor gate ({verdict['verdict']}, "
+            f"fresh={eligibility['verdict']})",
         )
         write_sentinel(
             args,
@@ -3256,6 +3378,45 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
         if verdict["verdict"] != "PASS":
             _log("[p7] sim-user-regen floor FAIL — reported, never backfilled (#612)")
             return RC_SIMREGEN_FLOOR
+    if fresh_na:
+        _log("[p7] fresh reference N/A (zero rung-1 keeps) — fresh gen/upload/capture SKIPPED")
+    else:
+        runner.fanout(
+            "p7.gen_user_fresh",
+            _model_py(
+                "issue2378_gen.py",
+                "--phase",
+                "user_fresh",
+                "--user-fresh-rows",
+                str(args.user_fresh_rows),
+                "--user-fresh-draws",
+                str(args.user_fresh_draws),
+                *gen_common,
+            ),
+            gpus=gpus,
+        )
+        runner.run(
+            "p7.upload_user_fresh",
+            _py(
+                "issue2378_gen.py",
+                "--phase",
+                "upload_stage",
+                "--stage",
+                "user_sim_fresh",
+                "--raw-root",
+                str(raw_root),
+                "--hf-prefix-override",
+                cm.SIMREGEN_HF_RAW_PREFIX,
+            ),
+        )
+        if not runner.dry:
+            # Fresh-selection provenance travels via the git-harvested round
+            # ledger (the CPU fits leg injects it into the retrieval JSONs).
+            sel_src = raw_root / "user_sim_fresh" / "fresh_selection.json"
+            if sel_src.is_file():
+                shutil.copy2(sel_src, round_ledger / "fresh_selection.json")
+            else:
+                raise RuntimeError(f"[p7] fresh_selection.json missing at {sel_src}")
     if runner.dry:
         real_store = Path(args.stage_root) / ACTIVATIONS_PREFIX
         _log("[dry] p7.stage_real_vcvp: parent chat_user_real npz (capture layers) for vcvp sub")
@@ -3287,22 +3448,25 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
         ),
         env_extra=_first_gpu_env(runner, gpus, "p7.capture_sim"),
     )
-    runner.run(
-        "p7.capture_sim_fresh",
-        _model_py(
-            "issue2378_capture.py",
-            "--phase",
-            "capture_fresh",
-            "--cells",
-            "chat_user_sim",
-            "--fresh-draws",
-            str(args.user_fresh_draws),
-            "--layers",
-            str(lstar),
-            *cap_common,
-        ),
-        env_extra=_first_gpu_env(runner, gpus, "p7.capture_sim_fresh"),
-    )
+    if fresh_na:
+        _log("[p7] fresh reference N/A — capture_sim_fresh SKIPPED")
+    else:
+        runner.run(
+            "p7.capture_sim_fresh",
+            _model_py(
+                "issue2378_capture.py",
+                "--phase",
+                "capture_fresh",
+                "--cells",
+                "chat_user_sim",
+                "--fresh-draws",
+                str(args.user_fresh_draws),
+                "--layers",
+                str(lstar),
+                *cap_common,
+            ),
+            env_extra=_first_gpu_env(runner, gpus, "p7.capture_sim_fresh"),
+        )
     if not runner.dry:
         import issue2378_p6_common as p6
 
@@ -3319,10 +3483,15 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
             f"[p7] round store uploaded+verified: {len(uploaded)} files "
             f"-> {cm.SIMREGEN_ACTIVATIONS_PREFIX}"
         )
+        sel_path = round_ledger / "fresh_selection.json"
         report = {
             "phase": "p7_simuser_regen",
             "round": cm.SIMREGEN_ROUND,
             "layers": layers,
+            "fresh_reference_na": fresh_na,
+            "fresh_selection": (
+                json.loads(sel_path.read_text(encoding="utf-8")) if sel_path.is_file() else None
+            ),
             "walls_s": {k: round(v, 1) for k, v in runner.walls.items()},
             "hf": {
                 "raw": cm.SIMREGEN_HF_RAW_PREFIX,
@@ -3332,7 +3501,10 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
         }
         cm.atomic_write_json(round_ledger / "simregen_report.json", report)
         git_harvest(
-            ["eval_results/issue_2378/sim-user-regen/simregen_report.json"],
+            [
+                "eval_results/issue_2378/sim-user-regen/simregen_report.json",
+                "eval_results/issue_2378/sim-user-regen/fresh_selection.json",
+            ],
             f"task #{ISSUE}: sim-user-regen regen+capture report",
         )
         write_sentinel(args, "epm:progress", report, gate="simregen_gpu_leg")
@@ -3369,6 +3541,18 @@ def phase_p7_simuser_fits(args, runner: Runner) -> int:
         if not any(sim_src.glob(f"chat_user_sim__part*__L{lstar}.npz")):
             sim_src = cm.stage_hf_prefix(cm.SIMREGEN_ACTIVATIONS_PREFIX, Path(args.stage_root))
         combined = Path(args.stage_root) / "simregen_combined"
+        # r2 (codex major + claude minor): the combined dir is REBUILT from
+        # scratch every assembly — hardlinks are cheap and a persistent mirror
+        # can silently keep a stale same-size link after a re-capture
+        # (_link_into's digest check is defense-in-depth for the OTHER call
+        # sites; here rebuild-from-scratch removes the class outright).
+        if combined.exists():
+            shutil.rmtree(combined)
+        # Parent link set EXCLUDES chat_user_sim rows: the round store is the
+        # ONLY legitimate source of sim row ledgers in the combined store — a
+        # stale parent-side chat_user_sim rows.json beside round npz would mix
+        # generations (codex major; the wave-1 parent store holds no sim entry
+        # on realized data, code-level guarantee regardless).
         n_parent = _link_into(
             parent_store,
             combined,
@@ -3376,6 +3560,7 @@ def phase_p7_simuser_fits(args, runner: Runner) -> int:
                 p.name
                 for p in parent_store.iterdir()
                 if "__fresh_d" not in p.name
+                and not p.name.startswith("chat_user_sim__")
                 and (p.name.endswith("__rows.json") or p.name.endswith(f"__L{lstar}.npz"))
             ],
         )
@@ -3408,40 +3593,49 @@ def phase_p7_simuser_fits(args, runner: Runner) -> int:
         str(round_ledger),
         *parent_refs,
     ]
-    runner.run(
+    # r2 (codex blocker p7-fit-loop-unbatched): the independent CELL/PAIR axis
+    # shards across concurrent processes with per-shard BLAS thread splits —
+    # within-unit fits stay the parent-reviewed vectorized cores (the
+    # shuffled-answer null batteries are already batched). The two fits shards
+    # may race the first fold-map build; load_or_build_fold_map's write is
+    # atomic and the rebuilt content is deterministic (sha excludes metadata),
+    # so a double-build is benign. Measured serial basis (parent p6): fits
+    # 2893.5s/2 units, ladder 4644.4s/pair, retrieval 869.3s/cell — 2-way
+    # sharding roughly halves each stage's wall.
+    user_cells = ("chat_user_real", "chat_user_sim")
+    runner.cpu_parallel(
         "p7.fits",
-        _py(
-            "issue2378_fits.py",
-            "--phase",
-            "fit",
-            "--units",
-            "chat_user_real,chat_user_sim",
-            *fit_common,
-        ),
+        [_py("issue2378_fits.py", "--phase", "fit", "--units", c, *fit_common) for c in user_cells],
     )
-    runner.run(
+    runner.cpu_parallel(
         "p7.ladder",
-        _py(
-            "issue2378_ladder.py",
-            "--phase",
-            "pairs",
-            "--pairs",
-            "chat_user_real,chat_user_sim",
-            *fit_common,
-        ),
+        [
+            _py("issue2378_ladder.py", "--phase", "pairs", "--pairs", c, *fit_common)
+            for c in user_cells
+        ],
     )
     runner.run("p7.h4b", _py("issue2378_ladder.py", "--phase", "h4b", *fit_common))
-    runner.run(
-        "p7.retrieval",
-        _py(
-            "issue2378_retrieval.py",
-            "--phase",
-            "all",
-            "--cells",
-            "chat_user_real,chat_user_sim",
-            *fit_common,
-        ),
+    fresh_na = (
+        not runner.dry
+        and (round_ledger / "fresh_reference_na.json").is_file()
+        and json.loads((round_ledger / "fresh_reference_na.json").read_text(encoding="utf-8")).get(
+            "fresh_reference"
+        )
+        == "N/A"
     )
+    if fresh_na:
+        # No fresh draws exist (zero rung-1 keeps) — the N/A artifact is the
+        # durable record; the retrieval battery's fresh-reference legs cannot
+        # run without them (codex blocker 1: explicit N/A, never a crash).
+        _log("[p7-fits] fresh_reference_na.json: N/A — p7.retrieval SKIPPED")
+    else:
+        runner.cpu_parallel(
+            "p7.retrieval",
+            [
+                _py("issue2378_retrieval.py", "--phase", "all", "--cells", c, *fit_common)
+                for c in user_cells
+            ],
+        )
     runner.run(
         "p7.lenmatch_pair",
         _py(
@@ -3454,6 +3648,20 @@ def phase_p7_simuser_fits(args, runner: Runner) -> int:
         ),
     )
     if not runner.dry:
+        # Fresh-selection provenance rides every retrieval JSON (codex concern
+        # fresh-retrieval-rung1-provenance): the fresh reference is conditional
+        # on rung-1 survival — inject the recorded eligibility/selection block
+        # so the artifact names its own cohort restriction.
+        sel_path = round_ledger / "fresh_selection.json"
+        if sel_path.is_file():
+            sel = json.loads(sel_path.read_text(encoding="utf-8"))
+            for rj in sorted((round_ledger / "retrieval").glob("*.json")):
+                payload = json.loads(rj.read_text(encoding="utf-8"))
+                if "fresh_selection" not in payload:
+                    payload["fresh_selection"] = sel
+                    cm.atomic_write_json(rj, payload)
+                    _log(f"[p7-fits] fresh_selection provenance -> {rj.name}")
+    if not runner.dry:
         for sub in ("fits/percell", "ladder/percell"):
             d = round_ledger / sub
             if d.exists() and any(d.iterdir()):
@@ -3463,6 +3671,7 @@ def phase_p7_simuser_fits(args, runner: Runner) -> int:
             "phase": "p7_simuser_fits",
             "round": cm.SIMREGEN_ROUND,
             "layer": lstar,
+            "fresh_reference_na": fresh_na,
             "plan_named_sync": synced,
             "walls_s": {k: round(v, 1) for k, v in runner.walls.items()},
             "metadata": cm.run_metadata(),
@@ -4151,6 +4360,49 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
         check(
             "simregen plan-named sync (provenance + drop-marker stamp)", t_simregen_plan_named_sync
         )
+
+        def t_link_into_digest():
+            src = tmp / "li_src"
+            dst = tmp / "li_dst"
+            src.mkdir()
+            (src / "a.json").write_text('{"v": 1}')  # 8 bytes
+            n = _link_into(src, dst, ["a.json"])
+            assert n == 1
+            # Same inode (hardlinked) — fast-path skip, no relink.
+            assert _link_into(src, dst, ["a.json"]) == 0
+            # Equal-size DIFFERENT content (the #1005-family stale-mirror
+            # shape): destination must be REPLACED, never size-skipped.
+            (dst / "a.json").unlink()
+            (dst / "a.json").write_text('{"v": 2}')  # same 8 bytes
+            assert (dst / "a.json").stat().st_size == (src / "a.json").stat().st_size
+            assert _link_into(src, dst, ["a.json"]) == 1
+            assert (dst / "a.json").read_text() == '{"v": 1}'
+            # Equal CONTENT via copy (different inode) — digest skip.
+            (dst / "a.json").unlink()
+            shutil.copy2(src / "a.json", dst / "a.json")
+            assert _link_into(src, dst, ["a.json"]) == 0
+            # Missing source stays fail-loud.
+            try:
+                _link_into(src, dst, ["missing.json"])
+                raise AssertionError("missing source did not raise")
+            except RuntimeError as e:
+                assert "missing source" in str(e)
+
+        check("_link_into content identity (equal-size replace + digest skip)", t_link_into_digest)
+
+        def t_fresh_eligibility():
+            ok = _simregen_fresh_eligibility(
+                [{"kept_rung1": 3000, "kept_rung3": 10}, {"kept_rung1": 2500}], 4000
+            )
+            assert ok["verdict"] == "OK" and ok["rung1_kept"] == 5500, ok
+            short = _simregen_fresh_eligibility([{"kept_rung1": 100, "kept_rung3": 900}], 4000)
+            assert short["verdict"] == "SHORT_COVERAGE" and short["rung3_kept"] == 900, short
+            na = _simregen_fresh_eligibility([{"kept_rung1": 0, "kept_rung3": 7000}], 4000)
+            assert na["verdict"] == "NA", na
+            # Empty elicitation (no summaries found) reads as NA, never OK.
+            assert _simregen_fresh_eligibility([], 4000)["verdict"] == "NA"
+
+        check("simregen fresh eligibility (OK / SHORT_COVERAGE / NA branches)", t_fresh_eligibility)
 
     if failures:
         raise RuntimeError(f"probe FAILURES ({len(failures)}): " + " | ".join(failures))

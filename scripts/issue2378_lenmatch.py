@@ -360,13 +360,22 @@ def main_pair(args) -> int:
     n_m = table["n_matched_per_cell"]
     _log(f"[lenmatch-pair] KS={ks['statistic']:.4f} p~{ks['pvalue_asymptotic']:.2e}")
     _log(f"[lenmatch-pair] matching table: {json.dumps(table)}")
+    # r2 (codex minor): pre-draw the CONTROL selections too, so the reduced k
+    # is preflighted against the min realized training fold over BOTH legs —
+    # a control fold smaller than every matched fold would otherwise break
+    # the n_train >= 2k invariant only at run time.
+    sel_control = {c: control_selection(fm, c, n_m) for c in cm.USER_CELLS}
     min_n_train = min(
-        int(np.sum(np.asarray(fm["cells"][c]["folds"])[sel_matched[c]] != f))
+        int(np.sum(np.asarray(fm["cells"][c]["folds"])[sel] != f))
         for c in fm["cells"]
+        for sel in (sel_matched[c], sel_control[c])
         for f in range(int(np.asarray(fm["cells"][c]["folds"]).max()) + 1)
     )
     k = min(REDUCED_K_MAX, min_n_train // 2)
-    _log(f"[lenmatch-pair] n_matched={n_m}/arm; min n_train={min_n_train}; reduced k={k}")
+    _log(
+        f"[lenmatch-pair] n_matched={n_m}/arm; min n_train={min_n_train} "
+        f"(over matched+control legs); reduced k={k}"
+    )
     regime = {
         "script_version": SCRIPT_VERSION,
         "arm": ARM,
@@ -387,7 +396,7 @@ def main_pair(args) -> int:
     for cell in cm.USER_CELLS:
         row: dict = {}
         for leg in LEGS:
-            sel = sel_matched[cell] if leg == "matched" else control_selection(fm, cell, n_m)
+            sel = sel_matched[cell] if leg == "matched" else sel_control[cell]
             d = run_cell_leg(args, fm, cell, leg, sel, k, regime, lengths[cell])
             row[leg] = {
                 "fold_mean_r2": d["fold_mean_r2"],
@@ -409,6 +418,20 @@ def main_pair(args) -> int:
     out = {
         "regime": regime,
         "length_ks": ks,
+        # Reading-discipline disclosure (claude minor 2): the sim arm carries a
+        # DESIGNED mechanical length floor the real arm lacks — min_tokens
+        # censors sim turns below USER_SIM_MIN_TOKENS beyond the pure
+        # non-empty constraint — so part of any real-vs-sim KS is this floor;
+        # the matched-refit companion legs are the control.
+        "sim_min_tokens_floor": {
+            "min_tokens": cm.USER_SIM_MIN_TOKENS,
+            "note": (
+                "sim arm elicitation floor-censors natural sub-"
+                f"{cm.USER_SIM_MIN_TOKENS}-token turns (sim-user-regen repair regime); "
+                "the real arm has no such floor — read the KS with this designed "
+                "component in mind (matched legs control for it)"
+            ),
+        },
         "paired_len_delta_tokens": {
             "median": float(np.median(paired_delta)),
             "p5": float(np.percentile(paired_delta, 5)),

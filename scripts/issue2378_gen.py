@@ -1730,15 +1730,43 @@ def phase_user_fresh(args) -> None:
     # conversation would deterministically under-cover under bare redraws
     # (selection disclosed via the stage summaries' elicitation blocks).
     sim_kept = {rid for rid, r in sim_rows.items() if r.get("elicit_rung", 1) == 1}
+    rung3_kept = sum(1 for r in sim_rows.values() if r.get("elicit_rung", 1) == 3)
     rows = [r for r in rows if r["conv_id"] in sim_kept]
     if not rows:
-        raise RuntimeError("user_fresh: no kept user_sim conversations (run user_sim first)")
+        # The dispatcher gates this phase behind the floor verdict + a fresh-
+        # eligibility check that writes an explicit fresh_reference_na.json
+        # artifact and SKIPS the stage (never spends GPU here); this raise is
+        # the fail-loud backstop for a direct invocation that bypassed it.
+        raise RuntimeError(
+            "user_fresh: zero rung-1-kept user_sim conversations — the fresh reference "
+            "is N/A for this wave (dispatcher writes fresh_reference_na.json and skips; "
+            "run user_sim first / check the floor gate before invoking user_fresh directly)"
+        )
     llm = _build_engine(args)
     order = random.Random(cm.derived_seed(cm.SEED, "user_fresh_select")).sample(
         range(len(rows)), len(rows)
     )
     sel = [rows[i] for i in order[: args.user_fresh_rows]]
     draw_seeds = list(cm.FRESH_SEEDS[: args.user_fresh_draws])
+    # Fresh-selection provenance (codex concern fresh-retrieval-rung1-provenance):
+    # the fresh reference is CONDITIONAL on surviving rung 1 without opener
+    # assistance — persist the eligibility predicate + counts + a selection
+    # digest so downstream retrieval reads carry the restriction explicitly.
+    sel_ids = [r["conv_id"] for r in sel]
+    cm.atomic_write_json(
+        Path(args.raw_root) / "user_sim_fresh" / "fresh_selection.json",
+        {
+            "predicate": "elicit_rung == 1 (rung-1-kept user_sim conversations only)",
+            "total_sim_kept": len(sim_rows),
+            "rung1_eligible": len(sim_kept),
+            "rung3_excluded": rung3_kept,
+            "requested_rows": int(args.user_fresh_rows),
+            "selected_rows": len(sel),
+            "selection_digest": cm.text_digest(",".join(sel_ids)),
+            "draw_seeds": draw_seeds,
+            "metadata": cm.run_metadata(),
+        },
+    )
     _run_user_sim(args, llm, tok, sel, "user_sim_fresh", draw_seeds)
     _reap_engine(llm)
     _maybe_upload(args, "user_sim_fresh")
