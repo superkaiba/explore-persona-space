@@ -10516,8 +10516,8 @@
     "2361": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2361",
-      "status": "running",
+      "path": "tasks/reviewing/2361",
+      "status": "reviewing",
       "title": "workflow-fix: tick_triage reads STALE-REDRIVE at planning while a live subagent runs, risking a duplicate planner spawn"
     },
     "2362": {
