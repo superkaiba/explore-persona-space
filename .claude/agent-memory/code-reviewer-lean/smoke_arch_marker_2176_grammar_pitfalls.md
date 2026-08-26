@@ -130,3 +130,19 @@ standalone flag arm (corpus `--probe`) but OMITTED another (gen_capture
 omitted arm (pure-CPU self-test, nothing stubbed behind it) is a Minor with the
 exact one-row fix, not a FAIL; an omitted arm hiding a production/pod path would
 be substantive.
+
+Eighth hit #2587 R1 g8 (2026-08-25): pitfall 4 again — bare `arm-registry:`
+heading + per-driver derivation BULLETS on a 6-driver round (substance
+otherwise fully verified: per-driver set-equality, arms_stubbed==FALLBACK set
+9/9). NEW wrinkle: the bullet claimed "judge / analysis / map_gen_capture:
+single-entry drivers (no --phase/mode/stage argparse arg; grep confirmed)" —
+FALSE for map_gen_capture, whose dispatch arg is named `--capture-mode`
+(choices coresident|phase_split_gen|phase_split_capture; production runs the
+two split modes sequentially). A grep for `--phase|mode|stage` NAMES misses
+differently-named dispatch flags: sweep every `add_argument(...choices=...)`
+whose branches gate main-flow phases (the #2163 omission via flag-name
+variance). Mitigation calibration: all omitted arms were FALLBACK-rowed at
+driver grain (nothing REAL overstated) → fold into the marker-shape one-post
+fix, not `substantive`. For mixed-registry multi-driver rounds (tuple PHASES +
+argparse choices + dict FIGS), the N/A-form line is the cheapest conforming
+re-post (tolerates dotted rows + embedded commands).
