@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2595,
+  "highest_id": 2596,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12300,6 +12300,13 @@
       "path": "tasks/proposed/2595",
       "status": "proposed",
       "title": "verify_task_body: caption range-claim (N-M pairs per group) reconciliation coverage"
+    },
+    "2596": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2596",
+      "status": "proposed",
+      "title": "test_no_new_torch_before_dotenv_vm_entrypoints red on main: 4 scripts missing load_dotenv, reds Step 9c gates fleet-wide"
     },
     "26": {
       "has_clean_result": false,
