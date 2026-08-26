@@ -92,20 +92,21 @@ METHOD_OF = {
     ("arm11_oracle_proj", "linear"): "oracle",
 }
 
-# --style iclr roster (user orders 2026-08-25): the four persona-vector arms
-# PLUS the four regression (ridge probe) arms, keyed by the points files' own
-# `method` field. Colour = input representation (one colour = one meaning
-# paper-wide); fill = readout family (solid = persona-vector projection,
-# open = regression). The regression-on-real-answer arm (arm12_oracle_reg)
-# rides the companion artifact reg_oracle_points.json (same inline round).
+# --style iclr roster (user orders 2026-08-25): three persona-vector arms and
+# three regression (ridge probe) arms, keyed by the points files' own `method`
+# field; the nonlinear (MLP-map) arms are excluded per the linear-by-default
+# order. Colour = input representation (one colour = one meaning paper-wide);
+# fill = readout family (solid = persona-vector projection, open =
+# regression). The regression-on-real-answer arm (arm12_oracle_reg) rides the
+# companion artifact reg_oracle_points.json (same inline round). The
+# mapped-answer arms are the LINEAR map; the "(linear map)" qualifier is
+# dropped from labels because no other map kind is shown.
 # (method slot, label, paper-colour concept, filled?)
 ICLR_METHODS = [
     ("pv_context", "Persona vector on context", "persona_vector", True),
     ("regression_ctx", "Regression on context", "persona_vector", False),
-    ("pv_map_linear", "Persona vector on mapped answer (linear map)", "instruct", True),
-    ("reg_map_linear", "Regression on mapped answer (linear map)", "instruct", False),
-    ("pv_map_mlp", "Persona vector on mapped answer (MLP map)", "neural_map", True),
-    ("reg_map_mlp", "Regression on mapped answer (MLP map)", "neural_map", False),
+    ("pv_map_linear", "Persona vector on mapped answer", "instruct", True),
+    ("reg_map_linear", "Regression on mapped answer", "instruct", False),
     ("oracle", "Persona vector on real answer", "oracle_answer", True),
     ("reg_oracle", "Regression on real answer", "oracle_answer", False),
 ]

@@ -15,8 +15,9 @@ rung, the 5-seed mean RAW DIFFERENCE dtrue (regression on mapped answer −
 regression on context) with its seed t-CI, per-seed values as light points.
 User order 2026-08-25: the figure shows the raw difference; the margin over
 the shuffled-pairing control stays quoted in the paper prose (claims.md
-rev 3, C5 ruling), not in this display. The sycophancy are-you-sure set is
-excluded from the paper figure (same order).
+rev 3, C5 ruling), not in this display. The sycophancy are-you-sure,
+evil Tom Gibbs multi-turn, and sycophancy mimicry sets are excluded from the
+paper figure (same orders; negative-raw sets pending diagnosis).
 """
 
 from __future__ import annotations
@@ -57,30 +58,30 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
     )
 
     set_paper_style("iclr")
-    # Paper scope: the sycophancy are-you-sure set is excluded from the
-    # Applications forest (user order 2026-08-25); the pinned blog-register
-    # figures keep all 13 rungs.
-    paper_excluded = {("sycophancy", "sycoays")}
+    # Paper scope: the sycophancy are-you-sure, evil Tom Gibbs multi-turn, and
+    # sycophancy mimicry sets are excluded from the Applications forest (user
+    # orders 2026-08-25; the negative-raw sets are excluded pending diagnosis).
+    # The pinned blog-register figures keep all 13 rungs.
+    paper_excluded = {
+        ("sycophancy", "sycoays"),
+        ("evil", "evil_tomgibbs"),
+        ("sycophancy", "sycomim"),
+    }
     rows = [
         r
         for r in table["per_rung"]
         if r.get("complete") and (r["behavior"], r["eval_rung"]) not in paper_excluded
     ]
     order = sorted(rows, key=lambda r: (r["behavior"], r["eval_rung"]))
-    flagships = {tuple(f) for f in table["meta"]["flagships"]}
-    labels = []
-    for r in order:
-        lab = mod.rung_label(r["behavior"], r["eval_rung"])
-        if (r["behavior"], r["eval_rung"]) in flagships:
-            lab += " *"
-        labels.append(lab)
+    # No flagship star / size emphasis (user order 2026-08-25: "remove the
+    # stars") — every set renders identically.
+    labels = [mod.rung_label(r["behavior"], r["eval_rung"]) for r in order]
     ys = list(range(len(order)))[::-1]
     blue = paper_color("instruct")
 
     fig, ax = plt.subplots(figsize=figsize_iclr_full(0.66))
     for y, r in zip(ys, order, strict=True):
         m = r["dtrue"]
-        fl = (r["behavior"], r["eval_rung"]) in flagships
         ax.plot(
             m["per_seed"],
             [y] * len(m["per_seed"]),
@@ -100,7 +101,7 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
             xerr=xerr,
             fmt="o",
             color=blue,
-            ms=4.4 if fl else 3.2,
+            ms=3.2,
             capsize=1.8,
             elinewidth=0.8,
             zorder=3,
