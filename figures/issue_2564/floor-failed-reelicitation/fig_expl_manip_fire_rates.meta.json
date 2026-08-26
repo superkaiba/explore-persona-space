@@ -1,0 +1,108 @@
+{
+  "commit": "b259ac85",
+  "render_id": "994127799fa143ce",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:03Z",
+  "figsize": [
+    6.5,
+    9.0
+  ],
+  "points": [
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.395833,
+      "y": 0.7916666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.479167,
+      "y": 0.9583333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.458333,
+      "y": 0.9166666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.5,
+      "y": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.458333,
+      "y": 0.9166666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.479167,
+      "y": 0.9583333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.4375,
+      "y": 0.875,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.395833,
+      "y": 0.7916666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.479167,
+      "y": 0.9583333333333334,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.395833,
+      "y": 0.7916666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.375,
+      "y": 0.75,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 11,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Did each instruction actually fire in the rollouts?",
+        "xlabel": "compliance fraction (dashed line: 70% fire threshold)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "hedging: h1c",
+          "hedging: h2a",
+          "persona: p2",
+          "persona: p3",
+          "persona: p5",
+          "persona: p6",
+          "persona: p7",
+          "stance: s1b",
+          "stance: s2a",
+          "stance: s3a",
+          "stance: s4a"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

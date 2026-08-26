@@ -1,0 +1,88 @@
+{
+ "leg0": {
+  "tol_rows": 3.0,
+  "single_draw_target": {
+   "recomputed": {
+    "whiten_csls": 0.971830985915493,
+    "whiten_cos": 0.9617706237424547,
+    "raw_euclidean": 0.8148893360160966
+   },
+   "banked_raw_euclidean": 0.8148893360160966,
+   "banked_whiten_cos": 0.9617706237424547
+  },
+  "draw_averaged_target": {
+   "recomputed": {
+    "whiten_csls": 0.9919517102615694,
+    "whiten_cos": 0.9869215291750503,
+    "raw_euclidean": 0.9094567404426559
+   },
+   "banked_raw_euclidean": 0.9094567404426559,
+   "banked_whiten_cos": 0.9869215291750503
+  }
+ },
+ "regime": {
+  "round": "opsurface-rebase",
+  "surface": "issue2202-operating-point",
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "parent_prefix": "issue1738_multiturn",
+  "parent_pin": "09788eef2f85330c6f9c6b7cd3d28cb47cfb8429",
+  "issue2202_tensors_revision": "80d455b2e3cd516eccb439b12fbba9b738f4cf8c",
+  "n_pool": 9941,
+  "n_covered": 1988,
+  "k_draws": 4,
+  "draw_seeds": [
+   43,
+   44,
+   45,
+   46
+  ],
+  "metric": "whiten_cos+csls",
+  "csls_k": 10,
+  "whiten_lambda": 0.1,
+  "target": "draw_averaged",
+  "layers": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20,
+   21,
+   22,
+   23,
+   24,
+   25,
+   26,
+   27
+  ],
+  "n_boot": 1000,
+  "seed": 42,
+  "capture_convention": "one-forward cx@prompt_len-1 + v=mean(answer span); fp16"
+ },
+ "metadata": {
+  "git_commit": "346b2fca353a198d327b464f96edff795536d116",
+  "git_dirty": false,
+  "phase": "score",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_opsurface.py",
+  "script": "issue1901_opsurface",
+  "issue": 1901,
+  "round": "opsurface-rebase",
+  "timestamp_utc": "2026-08-26T05:04:02Z"
+ }
+}

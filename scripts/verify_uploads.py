@@ -122,6 +122,73 @@ logger = logging.getLogger(__name__)
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 
+# Overflow routing record (#2578): the write path commits this breadcrumb to
+# the CANONICAL repo when a prefix reroutes to an overflow repo (hub.py
+# `_write_overflow_pointer`; the #841 hand-written pointers share the shape).
+# It is a routing record, not a run artifact, so it is EXCLUDED from the
+# residue check's covered-name set.
+OVERFLOW_POINTER_BASENAME = "OVERFLOW_POINTER.json"
+
+
+def _validate_repo_id_shape(repo: str) -> str:
+    """'org/name' shape gate: exactly one '/', both halves non-empty.
+
+    Catches the operator hazard of passing an HF *prefix* where a repo id
+    belongs; a well-shaped but nonexistent id still fails loud downstream
+    (RepositoryNotFoundError -> ERROR row). Raises ValueError.
+    """
+    value = str(repo).strip()
+    parts = value.split("/")
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ValueError(
+            f"malformed HF repo id {repo!r}: expected exactly 'org/name' "
+            "(one '/', both halves non-empty)"
+        )
+    return value
+
+
+def resolve_data_repos(issue_num: int, cli_repos: tuple[str, ...] = ()) -> list[dict[str, str]]:
+    """Ordered, deduped, ADDITIVE data-repo search set: [{"repo", "source"}].
+
+    Order: HF_DATA_REPO ("default") first — the singleton no-flag set is
+    byte-identical to today's behavior — then EPM_<issue>_DATA_WRITE_REPO
+    when set/non-empty ("env:EPM_<N>_DATA_WRITE_REPO"), then each comma-
+    split --hf-data-repo value in given order ("flag"). Dedup by repo id,
+    first source wins. The default is NEVER removed (union is additive by
+    design: a repo enters the search only when a named source supplies it).
+    Deliberately does NOT read EPM_HF_OVERFLOW_ROUTING (arming switch, not
+    a repo id; ambient via .env; see plan #2578 §3).
+
+    Every source asserts the run's ISSUE declared/used that repo as a write
+    target — no repo is ever searched speculatively. Malformed repo ids
+    raise ValueError (surfaced as parser.error exit 2 on the CLI path).
+
+    Pointer-discovered repos are appended AFTER residue check 9 by the
+    residue arm (source "pointer:<prefix>", carrying the payload's ts).
+    That lane is CANONICAL-REPO-ONLY and ISSUE-grain — it reads pointers on
+    the default repo at the caller-supplied prefixes only, so it is never
+    exhaustive (a pointer committed to an env-named canonical under a
+    chained reroute is missed — fail-closed). The flag + env lanes are the
+    operator's coverage guarantee.
+    """
+    entries: list[dict[str, str]] = [{"repo": HF_DATA_REPO, "source": "default"}]
+    seen = {HF_DATA_REPO}
+    env_key = f"EPM_{issue_num}_DATA_WRITE_REPO"
+    env_val = (os.environ.get(env_key) or "").strip()
+    if env_val:
+        repo = _validate_repo_id_shape(env_val)
+        if repo not in seen:
+            entries.append({"repo": repo, "source": f"env:{env_key}"})
+            seen.add(repo)
+    for raw in cli_repos:
+        for part in str(raw).split(","):
+            repo = _validate_repo_id_shape(part)
+            if repo not in seen:
+                entries.append({"repo": repo, "source": "flag"})
+                seen.add(repo)
+    return entries
+
+
 # Out-root residue sweep (#2187): scratch classes excluded from the disk set.
 # Deliberately NO size floor anywhere in the residue check — all three #2162
 # losses (pilot_gate_report.json, stage2_results.json, upload_done.json) were
@@ -891,12 +958,14 @@ def _card_model_pairs(
     return list(dict.fromkeys(pairs)), prose_violation
 
 
-def check_hf_model_from_card(card: dict) -> dict | None:
+def check_hf_model_from_card(card: dict, default_repo: str = HF_MODEL_REPO) -> dict | None:
     """Verify model paths declared in an epm:results reproducibility_card.
 
     Accepts a per-cell ``adapter_paths`` dict/list and/or a single
     ``hf_model_path``. Every path resolves against ``hf_model_repo``
-    (default ``HF_MODEL_REPO``) UNLESS the card carries a per-cell
+    (default ``default_repo`` — the ``--hf-model-repo`` override or
+    ``HF_MODEL_REPO``; a card-level ``hf_model_repo`` declaration still
+    WINS over the flag, #2578) UNLESS the card carries a per-cell
     ``adapter_repo_overrides`` dict (``{cell_id: repo_id}`` keyed on
     ``adapter_paths`` cells — the #1108 overflow-repo split; incident
     #1586: two cells uploaded to the main repo while the card default
@@ -925,7 +994,7 @@ def check_hf_model_from_card(card: dict) -> dict | None:
     (``_prose_declaration_row``). Returns ``None`` when the card
     declares no model paths (caller falls through to the MISSING row).
     """
-    repo = str(card.get("hf_model_repo") or HF_MODEL_REPO)
+    repo = str(card.get("hf_model_repo") or default_repo)
     overrides, notes = _card_repo_overrides(card)
     pairs, prose_violation = _card_model_pairs(card, repo, overrides, notes)
     if not pairs:
@@ -1446,41 +1515,193 @@ def _git_blob_sha1(path: str) -> str:
     return h.hexdigest()
 
 
-def _hf_prefix_basenames(hf_prefixes: tuple[str, ...]) -> set[str]:
-    """Basenames of files under each caller-supplied HF data-repo prefix.
+def _fetch_overflow_pointer(pointer_path: str) -> dict:
+    """Fetch + parse one OVERFLOW_POINTER.json from the CANONICAL repo.
+
+    Fetched AT ITS LISTED PATH (never a reconstructed
+    ``<supplied-prefix>/OVERFLOW_POINTER.json`` — that would EntryNotFound on
+    a pointer committed under a nested sub-prefix). Fail-loud end-to-end: a
+    fetch failure or unparseable JSON raises (the residue call site surfaces
+    it as ERROR — a broken routing record is never silently skipped).
+    """
+    import tempfile
+
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    with tempfile.TemporaryDirectory(prefix="ovfptr-") as td:
+        target = Path(td) / OVERFLOW_POINTER_BASENAME
+        try:
+            fetched = stage_hub_file(HF_DATA_REPO, pointer_path, target, repo_type="dataset")
+            payload = json.loads(Path(fetched).read_text(encoding="utf-8"))
+        except Exception as e:
+            raise RuntimeError(
+                f"overflow-pointer fetch/parse failed for "
+                f"{HF_DATA_REPO}/{pointer_path}: {type(e).__name__}: {e}"
+            ) from e
+    if not isinstance(payload, dict):
+        raise ValueError(
+            f"overflow pointer {HF_DATA_REPO}/{pointer_path} is not a JSON object: "
+            f"{type(payload).__name__}"
+        )
+    return payload
+
+
+def _hf_prefix_basenames(
+    hf_prefixes: tuple[str, ...],
+    data_repos: tuple[str, ...] = (HF_DATA_REPO,),
+) -> tuple[set[str], list[dict], dict[str, int]]:
+    """Basenames under each caller-supplied prefix across EVERY searched repo.
+
+    Returns ``(basenames, discovered, coverage)``: the covered-name set, the
+    pointer-discovered repo records (``{"repo", "source", "ts"}``), and a
+    per-repo files-found count across the supplied prefixes (the audit
+    surface for the multi-repo union).
 
     Prefix-scoped listings only (a bare full-repo ``list_repo_files`` wedges
     over 600 s on the ~1M-file data repo — #920); prefixes are issue-scoped by
     construction (``issue<N>_<slug>/...``), so no token filter is needed on
-    this arm. A prefix that does not resolve contributes NOTHING — its files
-    then read as residue, the safe (fail-toward-FAIL) direction; any OTHER
-    listing failure propagates (fail-loud -> ERROR row at the caller).
+    this arm. A (prefix x repo) pair that does not resolve contributes
+    NOTHING — a prefix absent on ALL repos leaves its files reading as
+    residue, the safe (fail-toward-FAIL) direction; any OTHER listing failure
+    propagates wrapped with the (repo, prefix) pair (fail-loud -> ERROR row
+    at the caller, naming the repo — round-1 F11).
+
+    Scope discipline (round-1 B1): the realized listing-call product is
+    EXACTLY the requested (prefix x repo) product, plus — on pointer
+    discovery — the prefixes x discovered repos; never an omitted-prefix /
+    root / broadened listing.
+
+    Pointer discovery (two-pass, CANONICAL-REPO-ONLY, issue-grain): pass 1
+    detects ``OVERFLOW_POINTER.json`` entries in the DEFAULT repo's scoped
+    listings (the recursive listing returns full paths, so a nested per-cell
+    pointer is detected at its actual path), fetches each at its listed path,
+    and requires ``payload["overflow_repo"]`` to be a shape-valid str —
+    anything else raises. A pointer asserts ISSUE-grain provenance only (SOME
+    attempt at this prefix rerouted there, not that THIS run wrote there).
+    Pass 2 lists ALL prefixes on each newly-discovered repo. The pointer
+    basename itself is never a covered name.
     """
     from huggingface_hub import HfApi
-    from huggingface_hub.utils import EntryNotFoundError
-
-    from explore_persona_space.orchestrate.hub import list_repo_files_complete
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     basenames: set[str] = set()
+    coverage: dict[str, int] = {}
+    pointer_paths: list[str] = []
+
+    normalized_prefixes: list[str] = []
     for prefix in hf_prefixes:
         normalized = str(prefix).rstrip("/")
         if not normalized:
             continue
-        try:
-            files = list_repo_files_complete(
-                api,
-                HF_DATA_REPO,
-                repo_type="dataset",
-                path_in_repo=normalized,
+        normalized_prefixes.append(normalized)
+
+    # Pass 1: the static (prefix x repo) product.
+    for prefix in normalized_prefixes:
+        for repo in data_repos:
+            files = _list_prefix_on_repo(api, repo, prefix)
+            if files is None:
+                continue
+            n = _consume_prefix_listing(
+                files, basenames, pointer_paths, collect_pointers=(repo == HF_DATA_REPO)
             )
-        except EntryNotFoundError:
-            # Prefix absent on the repo: zero permanent homes under it. The
-            # unmatched disk files then surface as residue (FAIL) rather than
-            # ERROR — the remediation is uploading/declaring, not debugging.
+            coverage[repo] = coverage.get(repo, 0) + n
+
+    # Pointer fetch + validation (fail-loud; ERROR at the residue call site).
+    discovered = _discover_pointer_repos(pointer_paths, searched=set(data_repos))
+
+    # Pass 2: newly-discovered repos x ALL prefixes.
+    for entry in discovered:
+        repo = entry["repo"]
+        n_total = 0
+        for prefix in normalized_prefixes:
+            files = _list_prefix_on_repo(api, repo, prefix)
+            if files is None:
+                continue
+            n_total += _consume_prefix_listing(
+                files, basenames, pointer_paths, collect_pointers=False
+            )
+        coverage[repo] = coverage.get(repo, 0) + n_total
+
+    return basenames, discovered, coverage
+
+
+def _list_prefix_on_repo(api, repo: str, prefix: str) -> list[str] | None:
+    """One scoped listing; None on EntryNotFoundError, wrapped otherwise.
+
+    A prefix absent on this repo yields zero permanent homes under it here —
+    files unmatched across ALL repos then surface as residue (FAIL) rather
+    than ERROR: the remediation is uploading/declaring. Any OTHER listing
+    failure propagates wrapped with the (repo, prefix) pair (round-1 F11).
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    try:
+        return list_repo_files_complete(
+            api,
+            repo,
+            repo_type="dataset",
+            path_in_repo=prefix,
+        )
+    except EntryNotFoundError:
+        return None
+    except Exception as e:
+        raise RuntimeError(
+            f"scoped HF listing failed for repo={repo} prefix={prefix}: {type(e).__name__}: {e}"
+        ) from e
+
+
+def _consume_prefix_listing(
+    files: list[str],
+    basenames: set[str],
+    pointer_paths: list[str],
+    *,
+    collect_pointers: bool,
+) -> int:
+    """Fold one listing into ``basenames``/``pointer_paths``; return the files-found count.
+
+    The pointer basename (``OVERFLOW_POINTER.json``) is never a covered name;
+    its full listed path is collected only on the canonical-repo pass.
+    """
+    n = 0
+    for f in files:
+        base = f.rsplit("/", 1)[-1]
+        if base == OVERFLOW_POINTER_BASENAME:
+            if collect_pointers:
+                pointer_paths.append(f)
             continue
-        basenames.update(f.rsplit("/", 1)[-1] for f in files)
-    return basenames
+        basenames.add(base)
+        n += 1
+    return n
+
+
+def _discover_pointer_repos(pointer_paths: list[str], *, searched: set[str]) -> list[dict]:
+    """Fetch + validate each pointer; return NEW repo records (fail-loud).
+
+    Each record is ``{"repo", "source": "pointer:<parent prefix>", "ts"}``;
+    repos already in ``searched`` (the static set or an earlier pointer) are
+    skipped. A non-string / shape-invalid ``overflow_repo`` raises (ERROR at
+    the residue call site) — never a silent skip.
+    """
+    discovered: list[dict] = []
+    for pointer_path in pointer_paths:
+        payload = _fetch_overflow_pointer(pointer_path)
+        overflow_repo = payload.get("overflow_repo")
+        if not isinstance(overflow_repo, str):
+            raise ValueError(
+                f"overflow pointer {HF_DATA_REPO}/{pointer_path} carries a "
+                f"non-string overflow_repo: {overflow_repo!r}"
+            )
+        overflow_repo = _validate_repo_id_shape(overflow_repo)
+        if overflow_repo in searched:
+            continue  # already searched (static set or an earlier pointer)
+        parent = pointer_path.rsplit("/", 1)[0] if "/" in pointer_path else ""
+        discovered.append(
+            {"repo": overflow_repo, "source": f"pointer:{parent}", "ts": payload.get("ts")}
+        )
+        searched.add(overflow_repo)
+    return discovered
 
 
 def _file_size_or_unknown(path: str) -> str:
@@ -1616,8 +1837,18 @@ def check_outroot_residue(
     hf_prefixes: tuple[str, ...] = (),
     exempt_globs: tuple[str, ...] = (),
     discarded_names: tuple[str, ...] = (),
+    data_repos: tuple[str, ...] = (HF_DATA_REPO,),
 ) -> dict:
     """Name-set diff of the run's out-root files vs their permanent homes (#2187).
+
+    ``data_repos`` is the ordered ADDITIVE search set from
+    :func:`resolve_data_repos` (#2578): every caller-supplied prefix is listed
+    on EVERY searched repo, and pointer-discovered overflow repos (see
+    :func:`_hf_prefix_basenames`) extend the set. On a non-singleton resolved
+    set the row's detail carries per-repo coverage counts (the audit surface);
+    the singleton no-discovery path is byte-identical to the pre-#2578
+    behavior. Discovered repos ride the row as ``"discovered_data_repos"`` so
+    ``run_verification`` can fold them into the search set for check 10.
 
     ``residue = names(disk) - (names(HF prefixes UNION issue-scoped git trees)
     UNION declared_discards UNION exemptions)``. Matching key is the BASENAME
@@ -1718,7 +1949,9 @@ def check_outroot_residue(
     # A listing failure on either arm is surfaced as ERROR — never swallowed
     # into a false OK.
     try:
-        covered_names = _hf_prefix_basenames(tuple(hf_prefixes))
+        covered_names, discovered_repos, repo_coverage = _hf_prefix_basenames(
+            tuple(hf_prefixes), tuple(data_repos)
+        )
         git_candidates = _git_tree_candidates_for_issue(issue_num)
     except Exception as e:
         return {
@@ -1727,6 +1960,19 @@ def check_outroot_residue(
             "detail": (f"{warn_prefix}permanent-home listing failed: {type(e).__name__}: {e}"),
         }
     covered_names.update(discarded_names)
+
+    # Multi-repo audit surface (#2578): per-repo coverage counts ride the
+    # detail ONLY when the resolved set is non-singleton — the singleton
+    # no-discovery path stays byte-identical to the pre-#2578 strings.
+    resolved_order = list(data_repos) + [d["repo"] for d in discovered_repos]
+    coverage_note = ""
+    if len(resolved_order) > 1:
+        coverage_note = " | HF files per searched repo: " + ", ".join(
+            f"{repo}={repo_coverage.get(repo, 0)}" for repo in resolved_order
+        )
+    row_extra: dict = {}
+    if discovered_repos:
+        row_extra["discovered_data_repos"] = discovered_repos
 
     # 3. Verdict: the per-file name-set diff (+ git-arm content check), never
     # the counts. residue -> FAIL; git-only matches with no local bytes ->
@@ -1748,7 +1994,7 @@ def check_outroot_residue(
                 f"match(es) with no local bytes to compare (byte-check in the "
                 f"exploratory pass): {'; '.join(git_only_unverified)}"
             )
-        return {"status": "FAIL", "url": "", "detail": detail}
+        return {"status": "FAIL", "url": "", "detail": detail + coverage_note, **row_extra}
     if git_only_unverified:
         return {
             "status": "WARN",
@@ -1758,8 +2004,9 @@ def check_outroot_residue(
                 f"{len(git_only_unverified)} file(s) matched ONLY issue-scoped "
                 f"git basenames and have no local bytes to compare - "
                 f"byte-check in the exploratory pass: "
-                f"{'; '.join(git_only_unverified)}"
+                f"{'; '.join(git_only_unverified)}" + coverage_note
             ),
+            **row_extra,
         }
     return {
         "status": "OK",
@@ -1767,8 +2014,9 @@ def check_outroot_residue(
         "detail": (
             f"{warn_prefix}disk={len(disk_paths)} matched={matched}; "
             f"content-verified={content_verified}; "
-            f"verdict is the name-set diff, never the counts"
+            f"verdict is the name-set diff, never the counts" + coverage_note
         ),
+        **row_extra,
     }
 
 
@@ -1795,15 +2043,17 @@ def _labels_for_path(labels: tuple[str, ...], rel_path: str) -> list[str]:
     return [lb for lb in labels if any(_label_matches_component(lb, c) for c in comps)]
 
 
-def _row_index_resolve_revision() -> str:
-    """Resolve ONE data-repo revision at check entry (#2148 round 2).
+def _row_index_resolve_revision(repo: str) -> str:
+    """Resolve ONE revision for ``repo`` at check entry (#2148 round 2).
 
     The ``stage_hub_prefix`` pattern (hub.py: retried ``repo_info(...).sha``):
     the listing walks, the batched size probe, and every staged fetch read
     that SAME SHA, so a verdict is traceable to one Hub snapshot - a commit
     landing between listing and fetch can neither fuse files from different
     commits into one verdict nor grow past the byte caps checked off the
-    listing. Seam for tests.
+    listing. Per searched repo (#2578: one pinned sha per repo in the
+    additive search set — the resolve doubles as up-front existence
+    validation for flag/env-named repos). Seam for tests.
     """
     from huggingface_hub import HfApi
 
@@ -1811,25 +2061,66 @@ def _row_index_resolve_revision() -> str:
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     info = retry_transient(
-        lambda: api.repo_info(HF_DATA_REPO, repo_type="dataset"),
-        what=f"repo_info({HF_DATA_REPO})",
+        lambda: api.repo_info(repo, repo_type="dataset"),
+        what=f"repo_info({repo})",
     )
     return str(info.sha)
 
 
-def _row_index_hf_entries(
-    hf_prefixes: tuple[str, ...], *, revision: str | None
-) -> list[tuple[str, int | None]]:
-    """One scoped tree walk per DISTINCT prefix, pinned to ``revision``.
+def _resolve_row_index_revisions(
+    repo_ids: tuple[str, ...], hf_prefixes: tuple[str, ...]
+) -> tuple[dict[str, str | None], dict | None]:
+    """Pin one revision per searched repo; ``(revisions, error_row | None)``.
 
-    Seam for tests (monkeypatched); the live body reuses the canonical
-    sizes-preserving walker (`list_repo_entries_complete`, #833 pagination) -
-    never a bare full-repo `list_repo_files` (wedges on the ~1M-file repo,
-    #920). Prefixes are canonicalized (trailing-slash strip) and exact
-    duplicates walk ONCE; OVERLAPPING (parent/child) prefixes still re-list
-    shared paths - the caller dedupes entries by (mode, path) (#2148 round
-    2). A prefix that does not resolve raises (fail-loud -> ERROR row at
-    the caller): unlike the residue check there is no fail-toward-FAIL
+    Local-only invocations (no HF prefix) perform no Hub read and pin
+    nothing. A resolve failure returns the fail-loud ERROR row — zero
+    listing/probe/fetch reads performed — naming the failing repo when the
+    search set is a multi-repo union (#2578); the singleton detail stays
+    byte-identical to the pre-#2578 shape.
+    """
+    revisions: dict[str, str | None] = {}
+    if not hf_prefixes:
+        return revisions, None
+    for repo in repo_ids:
+        try:
+            revisions[repo] = _row_index_resolve_revision(repo)
+        except Exception as e:
+            repo_note = f" (repo: {repo})" if len(repo_ids) > 1 else ""
+            return revisions, {
+                "status": "ERROR",
+                "url": "",
+                "detail": (
+                    f"row-index revision resolve failed: {type(e).__name__}: {e} "
+                    "- every Hub read (listing / size probe / fetch) pins ONE "
+                    "revision; an unpinnable snapshot is never read (fail-loud, "
+                    "zero listing/probe/fetch reads performed - the failed "
+                    "repo_info was itself the only Hub read)" + repo_note
+                ),
+            }
+    return revisions, None
+
+
+def _row_index_hf_entries(
+    hf_prefixes: tuple[str, ...],
+    data_repos: tuple[str, ...],
+    *,
+    revisions: dict[str, str | None],
+) -> list[tuple[str, str, int | None]]:
+    """One scoped tree walk per DISTINCT (prefix x repo) pair, per-repo pinned.
+
+    Returns ``(repo, path, size)`` triples: each prefix walks EVERY repo in
+    ``data_repos`` where it resolves, at that repo's pinned revision from
+    ``revisions`` (#2578 additive search set). Seam for tests
+    (monkeypatched); the live body reuses the canonical sizes-preserving
+    walker (`list_repo_entries_complete`, #833 pagination) - never a bare
+    full-repo `list_repo_files` (wedges on the ~1M-file repo, #920).
+    Prefixes are canonicalized (trailing-slash strip) and exact duplicates
+    walk ONCE; OVERLAPPING (parent/child) prefixes still re-list shared
+    paths - the caller dedupes entries by (mode, repo, path) (#2148 round
+    2; #2578 repo grain). A prefix absent on ONE repo is skipped for that
+    repo (`EntryNotFoundError`), but a prefix resolving on NO searched repo
+    raises (fail-loud -> ERROR row at the caller — the pre-#2578 behavior
+    preserved): unlike the residue check there is no fail-toward-FAIL
     direction here - a silently-empty prefix would read as `row-index-missing`
     with a store-defect remediation when the actual defect is the invocation.
     A prefix that canonicalizes to EMPTY (``""`` / ``"/"``) raises for the
@@ -1839,6 +2130,7 @@ def _row_index_hf_entries(
     this raise is defense in depth for direct callers.
     """
     from huggingface_hub import HfApi
+    from huggingface_hub.utils import EntryNotFoundError
 
     from explore_persona_space.orchestrate.hub import list_repo_entries_complete
 
@@ -1849,31 +2141,49 @@ def _row_index_hf_entries(
             "- a malformed flag is an invocation defect, never a store defect"
         )
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    entries: list[tuple[str, int | None]] = []
+    entries: list[tuple[str, str, int | None]] = []
     seen_prefixes: set[str] = set()
     for prefix in hf_prefixes:
         normalized = str(prefix).rstrip("/")
         if normalized in seen_prefixes:
             continue
         seen_prefixes.add(normalized)
-        entries.extend(
-            list_repo_entries_complete(
-                api,
-                HF_DATA_REPO,
-                repo_type="dataset",
-                revision=revision,
-                path_in_repo=normalized,
-            )
-        )
+        not_found: list[Exception] = []
+        resolved_any = False
+        for repo in data_repos:
+            try:
+                listed = list_repo_entries_complete(
+                    api,
+                    repo,
+                    repo_type="dataset",
+                    revision=revisions.get(repo),
+                    path_in_repo=normalized,
+                )
+            except EntryNotFoundError as e:
+                not_found.append(e)
+                continue
+            resolved_any = True
+            entries.extend((repo, path, size) for path, size in listed)
+        if not resolved_any:
+            if len(data_repos) == 1 and not_found:
+                # Singleton set: re-raise the original exception so the
+                # caller's ERROR detail is byte-identical to pre-#2578.
+                raise not_found[0]
+            raise RuntimeError(
+                f"row-index prefix {normalized!r} resolves on NO searched repo "
+                f"({', '.join(data_repos)})"
+            ) from (not_found[-1] if not_found else None)
     return entries
 
 
-def _row_index_resolve_sizes(paths: list[str], *, revision: str | None) -> dict[str, int | None]:
-    """ONE batched ``get_paths_info`` POST for listing entries whose size the
-    tree walk left unknown (#2148 budget step), pinned to ``revision`` and
-    riding ``retry_transient`` - a verify-path Hub call is retried, never a
-    one-transient-429-fails-a-healthy-store probe (upload-policy #1335 r5;
-    #2148 round 2). Seam for tests."""
+def _row_index_resolve_sizes(
+    repo: str, paths: list[str], *, revision: str | None
+) -> dict[str, int | None]:
+    """ONE batched ``get_paths_info`` POST per repo for listing entries whose
+    size the tree walk left unknown (#2148 budget step), pinned to ``repo``'s
+    ``revision`` and riding ``retry_transient`` - a verify-path Hub call is
+    retried, never a one-transient-429-fails-a-healthy-store probe
+    (upload-policy #1335 r5; #2148 round 2). Seam for tests."""
     from huggingface_hub import HfApi
 
     from explore_persona_space.orchestrate.hub import retry_transient
@@ -1881,22 +2191,20 @@ def _row_index_resolve_sizes(paths: list[str], *, revision: str | None) -> dict[
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     infos = retry_transient(
         lambda: api.get_paths_info(
-            HF_DATA_REPO, paths, expand=True, repo_type="dataset", revision=revision
+            repo, paths, expand=True, repo_type="dataset", revision=revision
         ),
-        what=f"get_paths_info(realized row counts, {len(paths)} path(s))",
+        what=f"get_paths_info(realized row counts, {len(paths)} path(s), {repo})",
     )
     return {getattr(i, "path", ""): getattr(i, "size", None) for i in infos}
 
 
-def _row_index_fetch(path_in_repo: str, target: Path, *, revision: str | None) -> Path:
-    """Fetch ONE budget-passed index file at the pinned ``revision`` via the
-    retried atomic staging helper (`stage_hub_file` - transport-retried,
-    fail-loud). Seam for tests."""
+def _row_index_fetch(repo: str, path_in_repo: str, target: Path, *, revision: str | None) -> Path:
+    """Fetch ONE budget-passed index file from ``repo`` at its pinned
+    ``revision`` via the retried atomic staging helper (`stage_hub_file` -
+    transport-retried, fail-loud). Seam for tests."""
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
-    return stage_hub_file(
-        HF_DATA_REPO, path_in_repo, target, repo_type="dataset", revision=revision
-    )
+    return stage_hub_file(repo, path_in_repo, target, repo_type="dataset", revision=revision)
 
 
 def _row_index_entries(
@@ -1904,19 +2212,22 @@ def _row_index_entries(
     local_root: str | None,
     glob_pattern: str,
     *,
-    revision: str | None,
+    data_repos: tuple[str, ...] = (HF_DATA_REPO,),
+    revisions: dict[str, str | None] | None = None,
 ) -> list[dict] | dict:
     """Enumerate candidate row-index files, or return an ERROR row dict.
 
     Entry shape: ``{"path": <fetch id>, "rel": <attribution path>, "size":
-    int | None, "mode": "hf" | "local"}``. Missing-input handling is
+    int | None, "mode": "hf" | "local", "repo": str | None}`` (``repo`` is
+    None for local entries; #2578). Missing-input handling is
     fail-loud (a nonexistent local root / failed Hub listing is never a
     clean zero - the silent-default false-PASS is the #2091 class).
 
-    The returned set is DEDUPLICATED by ``(mode, path)`` (#2148 round 2):
-    repeated / overlapping ``--row-index-hf-prefix`` values re-list shared
-    paths, and a doubled entry would double every line count (flipping a
-    keyless `realized-rows-short` FAIL into the nonblocking
+    The returned set is DEDUPLICATED by ``(mode, repo, path)`` (#2148 round
+    2; #2578 repo grain — the SAME path on TWO searched repos is two
+    entries, two stores): repeated / overlapping ``--row-index-hf-prefix``
+    values re-list shared paths, and a doubled entry would double every line
+    count (flipping a keyless `realized-rows-short` FAIL into the nonblocking
     `realized-rows-no-distinct-key` WARN) and corrupt the file/byte budget
     sums. (The caller additionally REFUSES mixed local+HF sources at check
     entry - #2148 round 3 - so in practice every entry shares one mode.)
@@ -1953,25 +2264,35 @@ def _row_index_entries(
                     "detail": f"row-index file unreadable: {p} ({type(e).__name__}: {e})",
                 }
             entries.append(
-                {"path": str(p), "rel": str(p.relative_to(root)), "size": size, "mode": "local"}
+                {
+                    "path": str(p),
+                    "rel": str(p.relative_to(root)),
+                    "size": size,
+                    "mode": "local",
+                    "repo": None,
+                }
             )
     if hf_prefixes:
         try:
-            listed = _row_index_hf_entries(tuple(hf_prefixes), revision=revision)
+            listed = _row_index_hf_entries(
+                tuple(hf_prefixes), tuple(data_repos), revisions=dict(revisions or {})
+            )
         except Exception as e:
             return {
                 "status": "ERROR",
                 "url": "",
                 "detail": f"row-index Hub listing failed: {type(e).__name__}: {e}",
             }
-        for path, size in listed:
+        for repo, path, size in listed:
             if fnmatch.fnmatch(path.rsplit("/", 1)[-1], glob_pattern):
-                entries.append({"path": path, "rel": path, "size": size, "mode": "hf"})
+                entries.append(
+                    {"path": path, "rel": path, "size": size, "mode": "hf", "repo": repo}
+                )
 
     deduped: list[dict] = []
-    first_seen: dict[tuple[str, str], dict] = {}
+    first_seen: dict[tuple[str, str | None, str], dict] = {}
     for entry in entries:
-        key = (entry["mode"], entry["path"])
+        key = (entry["mode"], entry["repo"], entry["path"])
         prior = first_seen.get(key)
         if prior is None:
             first_seen[key] = entry
@@ -2058,33 +2379,40 @@ def _row_index_budget_error(
     max_bytes: int,
     max_total_bytes: int,
     max_files: int,
-    revision: str | None,
+    revisions: dict[str, str | None],
 ) -> dict | None:
     """Enforce the fetch budgets off the LISTING, before the first fetch.
 
     Unknown sizes are resolved with ONE batched retried ``get_paths_info``
-    probe at the pinned ``revision``; a size that stays unknown is never
-    assumed under cap (#2148). Every failing arm returns with ZERO downloads
-    performed.
+    probe PER REPO at that repo's pinned revision (#2578 — a singleton
+    search set keeps the pre-#2578 single-probe shape); a size that stays
+    unknown is never assumed under cap (#2148). Every failing arm returns
+    with ZERO downloads performed.
     """
     unknown = [e for e in entries if e["size"] is None]
     if unknown:
-        paths = [e["path"] for e in unknown]
-        try:
-            resolved = _row_index_resolve_sizes(paths, revision=revision)
-        except Exception as e:
-            return {
-                "status": "ERROR",
-                "url": "",
-                "detail": (
-                    f"row-index-size-unknown: batched get_paths_info size probe "
-                    f"failed for {len(paths)} file(s) ({type(e).__name__}: {e}); "
-                    "an unprovable size is never assumed under cap (zero "
-                    "downloads performed)"
-                ),
-            }
-        for entry in unknown:
-            entry["size"] = resolved.get(entry["path"])
+        repos_in_order: list[str] = []
+        for e in unknown:
+            if e["repo"] not in repos_in_order:
+                repos_in_order.append(e["repo"])
+        for repo in repos_in_order:
+            repo_unknown = [e for e in unknown if e["repo"] == repo]
+            paths = [e["path"] for e in repo_unknown]
+            try:
+                resolved = _row_index_resolve_sizes(repo, paths, revision=revisions.get(repo))
+            except Exception as e:
+                return {
+                    "status": "ERROR",
+                    "url": "",
+                    "detail": (
+                        f"row-index-size-unknown: batched get_paths_info size probe "
+                        f"failed for {len(paths)} file(s) ({type(e).__name__}: {e}); "
+                        "an unprovable size is never assumed under cap (zero "
+                        "downloads performed)"
+                    ),
+                }
+            for entry in repo_unknown:
+                entry["size"] = resolved.get(entry["path"])
         still = sorted(e["path"] for e in entries if e["size"] is None)
         if still:
             return {
@@ -2154,22 +2482,27 @@ def _count_row_index_file(
     return len(lines), distinct, violations
 
 
-def _read_row_index_entry(entry: dict, *, revision: str | None) -> str:
+def _read_row_index_entry(entry: dict, *, revisions: dict[str, str | None]) -> str:
     """Read one budget-passed index file's text (local stat'd file, or a
-    KB-scale Hub fetch at the pinned ``revision`` via the retried staging
-    seam into a temp dir)."""
+    KB-scale Hub fetch from the entry's repo at that repo's pinned revision
+    via the retried staging seam into a temp dir)."""
     if entry["mode"] == "local":
         return Path(entry["path"]).read_text(encoding="utf-8")
     with tempfile.TemporaryDirectory(prefix="rowindex-") as td:
         target = Path(td) / entry["path"].rsplit("/", 1)[-1]
-        fetched = _row_index_fetch(entry["path"], target, revision=revision)
+        fetched = _row_index_fetch(
+            entry["repo"], entry["path"], target, revision=revisions.get(entry["repo"])
+        )
         return Path(fetched).read_text(encoding="utf-8")
 
 
 def _count_label_entries(
-    by_label: dict[str, list[dict]], key_fields: tuple[str, ...], *, revision: str | None
+    by_label: dict[str, list[dict]],
+    key_fields: tuple[str, ...],
+    *,
+    revisions: dict[str, str | None],
 ) -> tuple[dict[str, dict], list[str]]:
-    """Fetch + count every attributed index file, per label, at ``revision``.
+    """Fetch + count every attributed index file, per label, per-repo pinned.
 
     Returns ``(counts, errors)``: counts[label] = {lines, distinct, shards};
     errors collects fetch failures + key-absent violations (both fail-loud).
@@ -2200,7 +2533,7 @@ def _count_label_entries(
                 flush=True,
             )
             try:
-                text = _read_row_index_entry(entry, revision=revision)
+                text = _read_row_index_entry(entry, revisions=revisions)
             except Exception as e:
                 errors.append(
                     f"row-index fetch/read failed for {entry['rel']}: {type(e).__name__}: {e}"
@@ -2398,8 +2731,18 @@ def check_realized_row_counts(
     max_bytes: int = ROW_INDEX_MAX_BYTES_DEFAULT,
     max_total_bytes: int = ROW_INDEX_MAX_TOTAL_BYTES_DEFAULT,
     max_files: int = ROW_INDEX_MAX_FILES_DEFAULT,
+    data_repos: tuple[str, ...] = (HF_DATA_REPO,),
 ) -> dict:
     """Reconcile REALIZED row-index contents vs the input-side declaration (#2148).
+
+    ``data_repos`` is the ordered ADDITIVE search set (#2578; from
+    ``resolve_data_repos`` plus any pointer-discovered repos check 9
+    surfaced): each prefix is enumerated on every repo where it resolves, at
+    that repo's own pinned revision. A store split across repos sums
+    correctly under the union; a store DUPLICATED on two repos collapses at
+    ROW grain whenever a distinct key is declared (keyless mode is already
+    floor-only WARN, never OK). The singleton default set is byte-identical
+    to the pre-#2578 behavior.
 
     The within-file sibling of :func:`check_outroot_residue`: the residue
     check binds DISK to the upload filters at FILE grain; this binds the
@@ -2475,27 +2818,23 @@ def check_realized_row_counts(
             ),
         }
 
-    # (1) ONE pinned revision for every Hub read this verdict performs
-    # (#2148 round 2, blocker `row-index-moving-head-snapshot` + plan §4(A)
-    # step 3). Local-only invocations perform no Hub read and pin nothing.
-    revision: str | None = None
-    if hf_prefixes:
-        try:
-            revision = _row_index_resolve_revision()
-        except Exception as e:
-            return {
-                "status": "ERROR",
-                "url": "",
-                "detail": (
-                    f"row-index revision resolve failed: {type(e).__name__}: {e} "
-                    "- every Hub read (listing / size probe / fetch) pins ONE "
-                    "revision; an unpinnable snapshot is never read (fail-loud, "
-                    "zero listing/probe/fetch reads performed - the failed "
-                    "repo_info was itself the only Hub read)"
-                ),
-            }
+    # (1) ONE pinned revision PER SEARCHED REPO for every Hub read this
+    # verdict performs (#2148 round 2, blocker `row-index-moving-head-
+    # snapshot` + plan §4(A) step 3; #2578 per-repo grain — the resolve also
+    # validates each searched repo exists). Local-only invocations perform
+    # no Hub read and pin nothing.
+    repo_ids = tuple(dict.fromkeys(data_repos))
+    revisions, revision_error = _resolve_row_index_revisions(repo_ids, tuple(hf_prefixes))
+    if revision_error is not None:
+        return revision_error
 
-    entries = _row_index_entries(tuple(hf_prefixes), local_root, glob_pattern, revision=revision)
+    entries = _row_index_entries(
+        tuple(hf_prefixes),
+        local_root,
+        glob_pattern,
+        data_repos=repo_ids,
+        revisions=revisions,
+    )
     if isinstance(entries, dict):
         return entries
 
@@ -2510,13 +2849,13 @@ def check_realized_row_counts(
         max_bytes=max_bytes,
         max_total_bytes=max_total_bytes,
         max_files=max_files,
-        revision=revision,
+        revisions=revisions,
     )
     if budget_error is not None:
         return budget_error
 
     key_fields = tuple(distinct_key_fields or ())
-    label_counts, count_errors = _count_label_entries(by_label, key_fields, revision=revision)
+    label_counts, count_errors = _count_label_entries(by_label, key_fields, revisions=revisions)
     if count_errors:
         return {
             "status": "ERROR",
@@ -2559,11 +2898,20 @@ def check_realized_row_counts(
         ),
         "labels": labels_report,
     }
-    if revision is not None:
-        # Traceability (#2148 round 2): the verdict names the ONE Hub
-        # snapshot every listing / probe / fetch read.
-        result["revision"] = revision
-        result["detail"] += f" | hub revision: {revision}"
+    if revisions:
+        # Traceability (#2148 round 2): the verdict names the Hub snapshot(s)
+        # read. Singleton search set keeps the pre-#2578 shape byte-identical
+        # (`revision` key + `hub revision:` detail); a multi-repo set reports
+        # per-repo pins (`revisions` key + `hub revisions:` detail — #2578).
+        if len(revisions) == 1:
+            (revision,) = revisions.values()
+            result["revision"] = revision
+            result["detail"] += f" | hub revision: {revision}"
+        else:
+            result["revisions"] = dict(revisions)
+            result["detail"] += " | hub revisions: " + ", ".join(
+                f"{repo}@{sha}" for repo, sha in revisions.items()
+            )
     return result
 
 
@@ -2718,6 +3066,62 @@ def check_eval_json(issue_num: int) -> dict:
     }
 
 
+def _check_hf_dataset_across_repos(repo_ids: list[str], hf_dataset_path: str) -> dict:
+    """Walk the searched data repos in order for one --hf-dataset path (#2578).
+
+    First OK wins (the returned row's URL already names the repo it resolved
+    on). No OK + any ERROR -> ERROR (fail-loud dominates: presence in the
+    erroring repo cannot be ruled out). No OK + all MISSING -> MISSING with a
+    detail naming every repo searched. A singleton set returns the bare
+    ``check_hf_hub_path`` row verbatim (byte-parity with pre-#2578).
+    """
+    if len(repo_ids) == 1:
+        return check_hf_hub_path(repo_ids[0], hf_dataset_path, "dataset")
+    rows: list[tuple[str, dict]] = []
+    for repo in repo_ids:
+        row = check_hf_hub_path(repo, hf_dataset_path, "dataset")
+        if row["status"] == "OK":
+            return row
+        rows.append((repo, row))
+    errors = [(repo, row) for repo, row in rows if row["status"] == "ERROR"]
+    if errors:
+        described = "; ".join(f"{repo}: {row['detail']}" for repo, row in errors)
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": (
+                f"HF dataset path {hf_dataset_path} resolved on none of the "
+                f"searched repos and the check ERRORED on: {described} - "
+                "presence in an erroring repo cannot be ruled out (fail-loud)"
+            ),
+        }
+    return {
+        "status": "MISSING",
+        "url": "",
+        "detail": (
+            f"HF dataset path {hf_dataset_path} not found on any searched "
+            f"repo: {', '.join(repo for repo, _ in rows)}"
+        ),
+    }
+
+
+def _fold_discovered_data_repos(report: dict) -> None:
+    """Fold check 9's pointer-discovered repos into ``report["hf_data_repos"]`` (#2578).
+
+    Dedup by repo id (first source wins — the static entry keeps its
+    ``default``/``env:*``/``flag`` source over a later pointer record).
+    Mutates ``report`` in place; a non-dict residue row folds nothing.
+    """
+    residue_row = report["checks"].get("outroot_residue")
+    if not isinstance(residue_row, dict):
+        return
+    known = {d["repo"] for d in report["hf_data_repos"]}
+    for disc in residue_row.get("discovered_data_repos", []):
+        if disc["repo"] not in known:
+            report["hf_data_repos"].append(disc)
+            known.add(disc["repo"])
+
+
 def run_verification(
     issue_num: int,
     experiment_type: str | None = None,
@@ -2743,6 +3147,8 @@ def run_verification(
     row_index_max_bytes: int = ROW_INDEX_MAX_BYTES_DEFAULT,
     row_index_max_total_bytes: int = ROW_INDEX_MAX_TOTAL_BYTES_DEFAULT,
     row_index_max_files: int = ROW_INDEX_MAX_FILES_DEFAULT,
+    hf_data_repos: tuple[str, ...] = (),
+    hf_model_repo: str | None = None,
 ) -> dict:
     """Run all verification checks and return structured report.
 
@@ -2756,15 +3162,31 @@ def run_verification(
     ``adapter_paths`` + ``wandb_run_names`` — #608; empty resume-pass
     cards do not shadow earlier declarations — #601). Explicit
     declarations always win unchanged.
+
+    Data-repo union (#2578): ``hf_data_repos`` extends (never replaces) the
+    default data-repo search set via :func:`resolve_data_repos` — the
+    resolved set rides ``report["hf_data_repos"]`` and threads into checks
+    5, 9, and 10; pointer-discovered repos from check 9 extend it BEFORE
+    check 10 runs (check 5 has already run and never sees them — the
+    flag/env lanes are load-bearing for dataset-only shapes).
+    ``hf_model_repo`` overrides the model-repo default for check 4 and the
+    card fallback (a card-level ``hf_model_repo`` still wins).
     """
     experiment_type_source = "cli"
     if experiment_type is None:
         experiment_type, experiment_type_source = infer_experiment_type(issue_num)
+    data_repo_entries = resolve_data_repos(issue_num, tuple(hf_data_repos or ()))
+    resolved_model_repo = hf_model_repo or HF_MODEL_REPO
     report = {
         "issue": issue_num,
         "experiment_type": experiment_type,
         "experiment_type_source": experiment_type_source,
         "verdict": "PASS",
+        "hf_data_repos": data_repo_entries,
+        "hf_model_repo": {
+            "repo": resolved_model_repo,
+            "source": "flag" if hf_model_repo else "default",
+        },
         "checks": {},
     }
 
@@ -2816,9 +3238,15 @@ def run_verification(
     # 4. HF model (training experiments)
     if experiment_type == "training":
         if hf_model_path:
-            report["checks"]["hf_model"] = check_hf_hub_path(HF_MODEL_REPO, hf_model_path, "model")
+            report["checks"]["hf_model"] = check_hf_hub_path(
+                resolved_model_repo, hf_model_path, "model"
+            )
         else:
-            card_check = check_hf_model_from_card(results_card) if results_card else None
+            card_check = (
+                check_hf_model_from_card(results_card, default_repo=resolved_model_repo)
+                if results_card
+                else None
+            )
             report["checks"]["hf_model"] = card_check or {
                 "status": "MISSING",
                 "url": "",
@@ -2829,9 +3257,14 @@ def run_verification(
                 ),
             }
 
-    # 5. HF dataset (if new data was generated)
+    # 5. HF dataset (if new data was generated). Walks the STATIC resolved
+    # set only (#2578): check 9's pointer discovery runs later by design —
+    # dataset-only invocations rely on the flag/env lanes (fail-closed: a
+    # missed repo can only produce a wrong MISSING, never a wrong PASS).
     if hf_dataset_path:
-        report["checks"]["hf_dataset"] = check_hf_hub_path(HF_DATA_REPO, hf_dataset_path, "dataset")
+        report["checks"]["hf_dataset"] = _check_hf_dataset_across_repos(
+            [d["repo"] for d in data_repo_entries], hf_dataset_path
+        )
 
     # 6. Figures committed to git
     report["checks"]["figures"] = check_git_figures(issue_num)
@@ -2860,7 +3293,14 @@ def run_verification(
         hf_prefixes=tuple(hf_prefixes or ()),
         exempt_globs=tuple(outroot_exempt or ()),
         discarded_names=tuple(discarded_names or ()),
+        data_repos=tuple(d["repo"] for d in data_repo_entries),
     )
+
+    # 9-bis (#2578): fold check 9's pointer-discovered repos into the search
+    # set BEFORE check 10 runs, so the row-index enumeration also consults
+    # them. Check 5 has already run and never sees them (documented ordering;
+    # the flag/env lanes are the coverage guarantee for that shape).
+    _fold_discovered_data_repos(report)
 
     # 10. Realized row-count reconciliation (#2148): distinct full-key rows
     # REALLY inside the store's row_index*.jsonl files vs the input-side
@@ -2879,6 +3319,7 @@ def run_verification(
         max_bytes=row_index_max_bytes,
         max_total_bytes=row_index_max_total_bytes,
         max_files=row_index_max_files,
+        data_repos=tuple(d["repo"] for d in report["hf_data_repos"]),
     )
 
     # Compute overall verdict
@@ -2895,6 +3336,19 @@ def run_verification(
     return report
 
 
+def _format_repos_searched_line(report: dict) -> str:
+    """Render the searched-repo header line from the report's repo keys (#2578).
+
+    Falls back to the defaults for reports produced before the keys existed
+    (a hand-built dict in a legacy caller) — the fallback names exactly the
+    set such a report actually searched.
+    """
+    data_entries = report.get("hf_data_repos") or [{"repo": HF_DATA_REPO, "source": "default"}]
+    model = report.get("hf_model_repo") or {"repo": HF_MODEL_REPO, "source": "default"}
+    data_str = " + ".join(f"{d['repo']} ({d['source']})" for d in data_entries)
+    return f"**HF repos searched:** data: {data_str}; model: {model['repo']} ({model['source']})"
+
+
 def format_report(report: dict) -> str:
     """Format the verification report as markdown for a GitHub comment."""
     lines = [
@@ -2903,6 +3357,7 @@ def format_report(report: dict) -> str:
         f"**Verdict: {report['verdict']}**",
         f"**Experiment type:** {report['experiment_type']}"
         f" (source: {report.get('experiment_type_source', 'cli')})",
+        _format_repos_searched_line(report),
         "",
         "| Artifact | Status | URL / Detail |",
         "|----------|--------|-------------|",
@@ -3142,6 +3597,32 @@ def main():
         default=ROW_INDEX_MAX_FILES_DEFAULT,
         help="Matched-set file-count cap (over-cap ERRORs with zero downloads)",
     )
+    parser.add_argument(
+        "--hf-data-repo",
+        action="append",
+        default=[],
+        dest="hf_data_repos",
+        metavar="ORG/NAME[,ORG/NAME...]",
+        help=(
+            "ADDITIONAL HF data repo to search (repeatable; comma-list "
+            "accepted). UNION semantics (#2578): EXTENDS the search set - "
+            f"the default data repo ({HF_DATA_REPO}) and the issue's "
+            "EPM_<N>_DATA_WRITE_REPO env repo are always searched too; a "
+            "repo is never removed from the set. Feeds checks 5 "
+            "(--hf-dataset), 9 (out-root residue), and 10 (realized row "
+            "counts). A malformed repo id is rejected at parse time."
+        ),
+    )
+    parser.add_argument(
+        "--hf-model-repo",
+        metavar="ORG/NAME",
+        help=(
+            "HF model repo overriding the default for --hf-model existence "
+            "checks and as the reproducibility-card fallback default (a "
+            "card-level hf_model_repo declaration still wins; default "
+            f"{HF_MODEL_REPO})"
+        ),
+    )
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     parser.add_argument("--no-fail", action="store_true", help="Don't exit with error on FAIL")
 
@@ -3154,6 +3635,16 @@ def main():
             "cross-source row identity exists, and a local-only row cannot "
             "prove Hub durability)"
         )
+
+    # Repo-id shape validation at parse time (#2578): a malformed repo id is
+    # an invocation defect - exit 2, never a downstream Hub read. The resolve
+    # here is validation-only; run_verification re-resolves identically.
+    try:
+        resolve_data_repos(args.issue, tuple(args.hf_data_repos))
+        if args.hf_model_repo:
+            _validate_repo_id_shape(args.hf_model_repo)
+    except ValueError as e:
+        parser.error(str(e))
 
     report = run_verification(
         issue_num=args.issue,
@@ -3186,6 +3677,8 @@ def main():
         row_index_max_bytes=args.row_index_max_bytes,
         row_index_max_total_bytes=args.row_index_max_total_bytes,
         row_index_max_files=args.row_index_max_files,
+        hf_data_repos=tuple(args.hf_data_repos),
+        hf_model_repo=args.hf_model_repo,
     )
 
     if args.json:

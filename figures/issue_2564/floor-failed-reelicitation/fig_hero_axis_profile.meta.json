@@ -1,0 +1,1509 @@
+{
+  "commit": "b259ac85",
+  "render_id": "9c60b65b15394d3c",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:01Z",
+  "figsize": [
+    16.0,
+    3.85
+  ],
+  "points": [
+    {
+      "direction cosine": 0.7421892848005761,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "direction cosine": 0.7261270794778182,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "direction cosine": 0.3503323144008972,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "direction cosine": 0.9922888127728959,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "direction cosine": 0.7735029261646471,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "direction cosine": 0.7814724302545181,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "direction cosine": 0.6373059388789157,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "direction cosine": 0.9619438810766285,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "direction cosine": 0.36850240887332475,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "direction cosine": 0.3560359043817491,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "direction cosine": 0.1462426784836614,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "direction cosine": 0.9423256755338547,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "per-pair direction cosine": 0.74429642307216,
+      "y": 1.9224104175317576,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7562289453376819,
+      "y": 1.8933971605508009,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7003286106695205,
+      "y": 2.059563943054569,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7686592326356595,
+      "y": 2.0146499543601033,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7163027767448015,
+      "y": 1.7486915968368735,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.6584757831600305,
+      "y": 1.8839045223719186,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7822021348247217,
+      "y": 1.8357719554873408,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7762024246607856,
+      "y": 1.8933873476805232,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7220859370400874,
+      "y": 1.852906160238785,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7704980385540939,
+      "y": 2.1191622707152566,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7623816187590527,
+      "y": 1.994894157007177,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.7486094921483192,
+      "y": 2.1904382931261317,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "per-pair direction cosine": 0.8311098855672087,
+      "y": 0.7735646757717937,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8398371024314275,
+      "y": 0.9332088871483694,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8126843181019273,
+      "y": 1.1029199490110295,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7733850864538655,
+      "y": 0.9960365598585709,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8460974031481111,
+      "y": 0.8419069624737338,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8171752201652289,
+      "y": 0.911466785459812,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7487758525126973,
+      "y": 0.9866738233054001,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7833216307787507,
+      "y": 0.9701858114812238,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.822534945664653,
+      "y": 1.054383888677498,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6927463038070535,
+      "y": 1.203554586029198,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8118263250229343,
+      "y": 0.8014686964927967,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8049758347933703,
+      "y": 0.9384956672628165,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7961555674751444,
+      "y": 1.216009804871194,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7540615089593782,
+      "y": 0.9512673174654136,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8288699760441687,
+      "y": 0.7760069442509092,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8146674811817184,
+      "y": 0.8096268258885015,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7521016647049078,
+      "y": 0.8357920612950546,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7460916851349019,
+      "y": 1.2378233293186152,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8017728881315751,
+      "y": 0.9994719918661255,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7015719962299379,
+      "y": 0.8936704577508368,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8417975068398094,
+      "y": 1.2596324349117793,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.846955235738544,
+      "y": 0.8462583822428529,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8029766282566825,
+      "y": 0.8811850083889073,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7948402487554161,
+      "y": 1.1967136089974315,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8656202245085558,
+      "y": 1.1653510002383498,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8470304011256844,
+      "y": 1.151730510062588,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7757684881024242,
+      "y": 1.2501515957883211,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7701800808189331,
+      "y": 1.0488622453487078,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8202522970404047,
+      "y": 1.1335799901584387,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6992671314249811,
+      "y": 0.8926523904105019,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7568044458226192,
+      "y": 0.9725660535451047,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7286355371127917,
+      "y": 1.0140282809113073,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7284779451134665,
+      "y": 1.0349114699379818,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.72600695865434,
+      "y": 1.2531824891231693,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7761521358553622,
+      "y": 0.9597577668795924,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.748370821051979,
+      "y": 1.0691925840963665,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.640184576435425,
+      "y": 0.7936369410432471,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7181647600351229,
+      "y": 0.9343469930590956,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7727518309050204,
+      "y": 1.201055962147393,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6960852906427086,
+      "y": 0.8226226536053779,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8079205273853827,
+      "y": 0.9742850043565329,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7755574138729158,
+      "y": 1.2254933352913235,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7298169610719569,
+      "y": 1.1538955170167697,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7302307423930908,
+      "y": 1.0865588201534286,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7890377118030388,
+      "y": 1.1795483789481302,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7402886597919126,
+      "y": 0.8933057239695424,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6792831368965921,
+      "y": 1.2157928183775681,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7536279907842154,
+      "y": 1.1489112186525874,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8030780363902273,
+      "y": 0.9197291890505415,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.683955855984519,
+      "y": 1.1060259215745654,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8380905552503141,
+      "y": 0.8175190162373367,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8273397523328216,
+      "y": 1.0511475179031686,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.806319301553173,
+      "y": 1.2486447934879283,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7894132179939762,
+      "y": 0.8274775990634905,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8524106050583199,
+      "y": 0.9188393281731659,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8264471824289793,
+      "y": 1.072338855142638,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7597501156274418,
+      "y": 1.2229187786183315,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7639808926285948,
+      "y": 0.9519201157603616,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8039329211476246,
+      "y": 0.9177083533807868,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6872320975128035,
+      "y": 0.9830750052790153,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8085254820280191,
+      "y": 0.8476621851762576,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7816543628864143,
+      "y": 1.2371769691824641,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7917245540801009,
+      "y": 1.0426299106343566,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.785259016754596,
+      "y": 1.1123855516164556,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8025475003681585,
+      "y": 1.1986149041005039,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8053820923872849,
+      "y": 0.9262820804972407,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7584888133380319,
+      "y": 1.0803658602956157,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7707273228450355,
+      "y": 0.951623746717817,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7939730367803626,
+      "y": 1.1533241057423496,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7366699286145842,
+      "y": 1.0060455785512596,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7970956381863173,
+      "y": 0.8361106893891396,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7853681738831567,
+      "y": 1.2032321427465797,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7793442537981693,
+      "y": 1.2448976244232788,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7095270422616585,
+      "y": 1.0424464822626962,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8142898976298591,
+      "y": 0.9066397232626464,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7855291347842009,
+      "y": 1.0533286674555251,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7358308952803024,
+      "y": 1.0053569624153835,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.75015342676818,
+      "y": 0.8725194895951366,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7943678952652657,
+      "y": 0.7875858996193855,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6516336515255622,
+      "y": 0.766563109212655,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8184355293112919,
+      "y": 0.8150842329803955,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8256817446030431,
+      "y": 0.7438025348349175,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7968318110992779,
+      "y": 0.9189327225587542,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7532648060126821,
+      "y": 0.9671827288102108,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.825495461069671,
+      "y": 0.7417871596418737,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8039534628377004,
+      "y": 0.9276284657630746,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7416223275080591,
+      "y": 0.9107948668583781,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7734901911780282,
+      "y": 0.8429690876373145,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8093324034620792,
+      "y": 1.22250125733163,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7136353984360401,
+      "y": 1.171630869106605,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8299483484900496,
+      "y": 0.8689848851338717,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7502893307855343,
+      "y": 0.8356168467860381,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7645013162697784,
+      "y": 0.9273128950253393,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7490577298656492,
+      "y": 0.9466545938736091,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7889796692900439,
+      "y": 0.9041315054029598,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7826915076033242,
+      "y": 0.9292085344371072,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7354530533822715,
+      "y": 0.9638436938663911,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7590603677779431,
+      "y": 0.9341176929107997,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7641391914082935,
+      "y": 1.0423514061125108,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6881369453003047,
+      "y": 1.1085116691910275,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8196980925549597,
+      "y": 0.8619536891792156,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.795078094160447,
+      "y": 1.1704443600088148,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7743305286093548,
+      "y": 0.8120108999013053,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7511977521190883,
+      "y": 1.0093954749735272,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7997854921239393,
+      "y": 1.1068099366321036,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7841691739741136,
+      "y": 0.7873638516797499,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7229468399314195,
+      "y": 1.1898655330918517,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.747811558563893,
+      "y": 0.9253591325906589,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7904348830454629,
+      "y": 1.0305828353660043,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7177849156348092,
+      "y": 1.059357467767541,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7931824609238605,
+      "y": 1.1013242619578016,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8127645323939355,
+      "y": 1.2280587605939997,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7778418204979008,
+      "y": 1.1246469710293443,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7200534664343962,
+      "y": 0.8218594048323339,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.8291762693360493,
+      "y": 0.8858253328446508,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7943499982311203,
+      "y": 0.9592205377518496,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7207538100499231,
+      "y": 1.126647882655377,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7442981480540158,
+      "y": 1.209468883324113,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.7640359576008344,
+      "y": 1.147359812813032,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.6647657319046739,
+      "y": 0.9604060270763854,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "per-pair direction cosine": 0.4308038917363612,
+      "y": -0.17295902586813722,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2685672318598933,
+      "y": -0.0288604216763218,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4853150262347223,
+      "y": 0.08310962082014078,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.43538726632934843,
+      "y": 0.173882368253433,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2322349780801613,
+      "y": 0.030280628161994783,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4828601901190653,
+      "y": 0.10747072207698488,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.30583702765880866,
+      "y": 0.002161187711966661,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2788987664900401,
+      "y": -0.07036961743684816,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3892907102041386,
+      "y": 0.05156924189811041,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.26029465253678913,
+      "y": -0.04135915196553311,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.18940839213582666,
+      "y": 0.11795415526452707,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.5068632340878302,
+      "y": -0.20447545931947061,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3499809738528002,
+      "y": -0.12125875817864151,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.1502639666650952,
+      "y": 0.2561331345978225,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.28339418200620325,
+      "y": -0.25206454283023616,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.37942888811004294,
+      "y": 0.00662961470853618,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.16449456805683169,
+      "y": 0.17748236813103951,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.518556293853543,
+      "y": -0.0802100426619208,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.5154008120959688,
+      "y": -0.17156236182658002,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3956684388396034,
+      "y": -0.1782846026789804,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.48296368038833903,
+      "y": -0.04981671879104779,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4535525220113378,
+      "y": 0.1065329240568158,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2790470932375997,
+      "y": 0.22138915875498888,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4951124114251393,
+      "y": -0.14580256795769664,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3834916806399318,
+      "y": -0.048889054999192466,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.26638322654259733,
+      "y": 0.0016752551552368655,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.42549390717915614,
+      "y": -0.14372423622081637,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2850432605629496,
+      "y": 0.24490957175784067,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3261009541517284,
+      "y": 0.08655034633704628,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4962471317306496,
+      "y": 0.059246119646032436,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.43093963216821585,
+      "y": 0.17616773555523596,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.15125790761062144,
+      "y": 0.012471243620195749,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4304364288262229,
+      "y": -0.042006008867983474,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.30508356174719387,
+      "y": 0.0908277300169838,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2920452638317916,
+      "y": 0.06902630694200856,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4886996395282817,
+      "y": -0.1163452405327734,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.36985169573984944,
+      "y": -0.05337928581497928,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.35048836837106084,
+      "y": -0.0219028891656321,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.38662934061323573,
+      "y": 0.024433479011306436,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4872086086374903,
+      "y": 0.160586404338314,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.36273947162842113,
+      "y": -0.18806829426852145,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.6230325570771424,
+      "y": 0.1614859646337749,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.454615053920652,
+      "y": -0.08268124797368281,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.333702385880426,
+      "y": -0.22888871421933693,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4613611842028706,
+      "y": -0.17465165273389804,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.40150302565797286,
+      "y": 0.21300483367944645,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.28085755840621185,
+      "y": -0.11034986689431933,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.5067837074828069,
+      "y": -0.05708570648080166,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4172138448315079,
+      "y": -0.19269205550259932,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.24136857017020097,
+      "y": -0.0031616366927212924,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.48732725247494113,
+      "y": 0.2560409904276828,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.2065627493393187,
+      "y": -0.10624734390497015,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.23679802666427094,
+      "y": 0.20648708488422768,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4404941170660555,
+      "y": 0.14656020253618868,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.38366355701918453,
+      "y": 0.1849738105826198,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.34698068203261034,
+      "y": 0.003987316243770689,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4716222697736594,
+      "y": -0.08587556942835875,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4205702601093799,
+      "y": 0.18146581143312746,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3251884616775594,
+      "y": -0.10839369600520496,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.5710107339912235,
+      "y": 0.25324106692745507,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3976059864857727,
+      "y": 0.17034646272970005,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.23674416776233967,
+      "y": -0.2408795304942974,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3937960997042327,
+      "y": 0.016961514401992728,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.21254475961507974,
+      "y": -0.11506408928092646,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.16050145209904512,
+      "y": 0.22239845335248792,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4842569459866242,
+      "y": -0.003845831604496641,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.3025908839823247,
+      "y": 0.02749180862576034,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.23887251770466814,
+      "y": -0.16172468934191137,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4058596830945168,
+      "y": -0.2000447507817023,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.34588645574223403,
+      "y": 0.0395597666232827,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.28051673269996685,
+      "y": 0.1013818372350418,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "per-pair direction cosine": 0.4905764786996975,
+      "y": -0.014973476065413771,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "slope ratio, axis / parent global": 0.7180411904433575,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "slope ratio, axis / parent global": 0.7136236443972311,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "slope ratio, axis / parent global": 0.7030096241293391,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "slope ratio, axis / parent global": 1.130229360675938,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "slope ratio, axis / parent global": 1.136999911106449,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "slope ratio, axis / parent global": 0.8951132124847985,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "slope ratio, axis / parent global": 1.0476171227551454,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "slope ratio, axis / parent global": 0.9797118382092231,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "slope ratio, axis / parent global": 1.4131565706074072,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "axis-identity cosine": 0.844445719189688,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "axis-identity cosine": 0.824082828535275,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "axis-identity cosine": 0.38283061220818926,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "axis-identity cosine": 0.8276755267025041,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "axis-identity cosine": 0.8372679465996798,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "axis-identity cosine": 0.6962690685586811,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "axis-identity cosine": 0.4709437994823133,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "axis-identity cosine": 0.4304888636340657,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "axis-identity cosine": 0.17104835411193584,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 32
+    }
+  ],
+  "n_series": 33,
+  "total_points": 234,
+  "text": {
+    "suptitle": "Per-axis profile of the frozen context-to-answer maps",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "direction recovery",
+        "xlabel": "direction cosine",
+        "legend_labels": [
+          "single-turn frozen map",
+          "multi-turn frozen map",
+          "identity baseline"
+        ],
+        "xticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ],
+        "yticklabels": [
+          "hedging",
+          "persona",
+          "stance"
+        ]
+      },
+      {
+        "title_left": "per-pair spread",
+        "xlabel": "per-pair direction cosine",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "calibration",
+        "xlabel": "slope ratio, axis / parent global",
+        "xticklabels": [
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75"
+        ]
+      },
+      {
+        "title_left": "within-axis consistency",
+        "xlabel": "axis-identity cosine",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "text vs representation",
+        "xlabel": "flip / paraphrase norm",
+        "legend_labels": [
+          "answer text (embedding)",
+          "representation (observed)"
+        ],
+        "xticklabels": [
+          "0.8",
+          "1.6",
+          "2.4",
+          "3.2",
+          "4.0"
+        ]
+      }
+    ],
+    "series": [
+      "answer text (embedding)",
+      "representation (observed)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
