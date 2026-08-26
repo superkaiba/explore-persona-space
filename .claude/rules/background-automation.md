@@ -187,7 +187,19 @@ OWN keep reason (`unmerged-branch probe failed (fail toward keep)`) —
 fail-toward-retention, never collapsed to falsy. The timestamp arm is
 DISABLED for suffixed `issue-<N>-<slug>` siblings: they share the task's
 ONE events file, so a sibling round's task-grained merge marker must
-never alias this branch's verdict. Human-named worktrees are never
+never alias this branch's verdict. Issue worktrees additionally carry a
+follow-up shield (#2354): the audit keeps an otherwise-reapable
+`issue-<N>` worktree while the parent task's `keep-running` tag is set
+(or the tag state is unknowable — fail toward keep, no age bound), or
+while the newest follow-up signal marker (`epm:run-launched` /
+`epm:followup-scope` / `epm:free-analysis-followup-run`) is BOTH newer
+than the latest done-transition (`epm:promoted` / `epm:status-changed` /
+`epm:pod-terminated` / `epm:step-completed`) AND younger than the 168h
+signal-age ceiling (`EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H`) — closing
+the #2223 shape (an inline round's pod-side compute on an
+`awaiting_promotion` parent whose worktree read clean + merged); the
+kind sets mirror the watcher's session-reconcile predicate, pinned by an
+anti-drift test. Human-named worktrees are never
 touched; `issue-<N>-<suffix>` follow-up worktrees ARE in scope (mapped to
 issue N). For done-and-merged
 (`completed`/`archived`/`awaiting_promotion`) issue worktrees, `--apply`

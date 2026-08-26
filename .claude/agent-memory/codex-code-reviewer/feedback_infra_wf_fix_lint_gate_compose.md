@@ -197,6 +197,20 @@ adjudication for lint-compliance fixes:** the CI pin is the EXISTING lint
 checks — compose it as a hollow-gate-style registration trace (both checks
 wired into the no-flags run), not as a missing-test finding.
 
+**#2354 r1 (2026-08-25) sharpening — destructive-JANITOR variant (diff adds a
+keep/shield guard to a reaper like `worktree_audit.py`):** stakes gain a THIRD
+named direction beyond FP/FN — crash-safety with an explicit failure-DIRECTION
+duty: on probe errors the shield must fail CLOSED (keep + unknown-reason
+constant), never fail OPEN into a reap, never raise out of the sweep loop.
+Hollow-gate trace widens to KWARG DEFAULTS: when the shield threads through a
+decision function's new kwarg (`should_remove(followup_shield=False)`), have
+Codex grep ALL callers — a production path silently passing the disabling
+default is the hollow shape. Execution ban names the janitor explicitly
+(`--apply` deletes worktrees; even dry-run spawns fleet-wide git subprocesses).
+Also validated again here: #2306 plan-verify version nuance (PASS at v3, plan
+amended to v4 — attest both), truthful identical-plan envelope on a brief that
+orders inlining, and pinned-round-parent sha-range diff acquisition.
+
 **#2342 r1 (2026-08-24) sharpenings — second #2309-shape round (reconcile-kind
 guard on `task.py post-marker`):** (a) the origin-prompt arm of TAG-first
 wf-fix detection fired — tags `[]` AND no title prefix, but `origin_prompt`
