@@ -38,6 +38,7 @@ import logging
 import subprocess
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 _SCRIPTS = Path(__file__).resolve().parent
@@ -195,6 +196,54 @@ def step_split_counts(args) -> dict:
     }
 
 
+# Bank vintages whose generating inputs are the MANIFEST ONLY: the #1491
+# 7B anchor/ceiling stores predate #2330's split_ids.json BY DESIGN — the
+# split assignment is applied at consume time by ci-filtering, and
+# ID-membership coherence is step_banked_schema's + the staged-row-coverage
+# guard's job (an ID read, never a date read). Defect 4 (2026-08-26): the v1
+# global max(input) <= min(capture) form mixed these vintages and was
+# unsatisfiable by construction, so it had never actually been executed.
+_MANIFEST_ONLY_BANK_ROOTS = ("issue1491_scale_ladder/",)
+
+
+def check_provenance_ordering(
+    input_dates: dict[str, str], capture_records: dict[str, dict[str, str]]
+) -> dict[str, str]:
+    """Item-(j) ordering PER STORE: each banked store's captures postdate the
+    inputs that generated THAT store.
+
+    - issue2330_* stores were generated FROM split_ids.json + the manifest:
+      BOTH inputs must predate the store's capture date.
+    - _MANIFEST_ONLY_BANK_ROOTS stores (#1491 anchor/ceiling): the manifest
+      alone is the generating input (see the constant's comment).
+
+    Dates arrive in two formats (git %cI ``2026-08-16T13:07:01-07:00`` vs
+    ``str(datetime)`` ``2026-08-05 07:37:17+00:00``); both parse with
+    ``datetime.fromisoformat`` and compare as AWARE datetimes — the v1 string
+    ``max()``/``<=`` compared mixed formats lexicographically, which inverts
+    near timezone boundaries.
+
+    Returns {store_label: ordering line}; raises AssertionError naming the
+    violating store + input.
+    """
+    out: dict[str, str] = {}
+    for label, rec in sorted(capture_records.items()):
+        prefix, cap = rec["prefix"], rec["date"]
+        if prefix.startswith(_MANIFEST_ONLY_BANK_ROOTS):
+            inputs = {"manifest": input_dates["manifest"]}
+        else:
+            inputs = dict(input_dates)
+        cap_dt = datetime.fromisoformat(cap)
+        for iname, idate in sorted(inputs.items()):
+            assert datetime.fromisoformat(idate) <= cap_dt, (
+                f"item-(j) PROVENANCE FAIL ({label} @ {prefix}): input {iname}={idate} "
+                f"postdates the banked capture {cap} — the pair is incoherent; "
+                "re-pin or re-capture per artifact-reuse.md item (j)."
+            )
+        out[label] = f"ok — inputs({','.join(sorted(inputs))}) <= capture {cap}"
+    return out
+
+
 def step_provenance(args) -> dict:
     """Item-(j): banked capture dates at the consumed pin vs input dates."""
     del args
@@ -216,19 +265,22 @@ def step_provenance(args) -> dict:
         assert info and info[0].last_commit is not None, (prefix, name)
         return name, str(info[0].last_commit.date)
 
-    capture_dates: dict[str, tuple[str, str]] = {}
+    capture_records: dict[str, dict[str, str]] = {}
+
+    def _record(label: str, prefix: str) -> None:
+        name, date = _first_file_date(prefix, PC.BANKED_REVISION)
+        capture_records[label] = {"prefix": prefix, "first_file": name, "date": date}
+
     for key, prefix in PC.BANKED_CAP2048.items():
         for split in ("train_10k", "val_400", "test_1000"):
             # Per-store alias: the banked 7B anchor keeps train rows under
             # train_25k (superset of train_10k). PC.banked_store_subpath is the
             # single table; the generic resolver alone 404s on that store.
             subpath = PC.banked_store_subpath(key, split, G.store_subpath_for_split(split))
-            sub = f"{prefix}/{subpath}/raw_completions"
-            capture_dates[f"{key}/{split}"] = _first_file_date(sub, PC.BANKED_REVISION)
+            _record(f"{key}/{split}", f"{prefix}/{subpath}/raw_completions")
     for key, prefix in PC.BANKED_CEILING.items():
         for seed in PC.CEILING_SEEDS:
-            sub = f"{prefix}/seed{seed}/raw_completions"
-            capture_dates[f"{key}/ceiling_s{seed}"] = _first_file_date(sub, PC.BANKED_REVISION)
+            _record(f"{key}/ceiling_s{seed}", f"{prefix}/seed{seed}/raw_completions")
 
     # Input side: split_ids.json (git) + one manifest file at the pinned revision.
     git_date = subprocess.run(
@@ -254,17 +306,12 @@ def step_provenance(args) -> dict:
         revision=PC.MANIFEST_REVISION,
     )
     manifest_date = str(minfo[0].last_commit.date)
-    input_max = max(git_date, manifest_date)
-    capture_min = min(d for _, d in capture_dates.values())
-    assert input_max <= capture_min, (
-        f"item-(j) PROVENANCE FAIL: an input postdates the banked captures "
-        f"(max input {input_max} > min capture {capture_min}) — the pair is incoherent; "
-        "re-pin or re-capture per artifact-reuse.md item (j)."
-    )
+    input_dates = {"split_ids_git": git_date, "manifest": manifest_date}
+    ordering = check_provenance_ordering(input_dates, capture_records)
     return {
-        "input_dates": {"split_ids_git": git_date, "manifest": manifest_date},
-        "capture_dates": {k: v[1] for k, v in capture_dates.items()},
-        "ordering": f"max(input)={input_max} <= min(capture)={capture_min}",
+        "input_dates": input_dates,
+        "capture_dates": {k: v["date"] for k, v in capture_records.items()},
+        "ordering": ordering,
     }
 
 
