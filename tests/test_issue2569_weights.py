@@ -18,6 +18,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -462,8 +463,22 @@ def test_driver_e2e_smoke_and_resume(tmp_path, monkeypatch):
         "fixed_point_L19.pt",
         "fixed_point_L19.json",
         "sae_dashboards_L19.json",
+        "dw_mass_L19.json",
+        "splithalf_stability_L19.json",
+        "criterion_L19.json",
     ):
         assert (leg1 / name).exists(), name
+    # leg-1 criterion producers: no --moments-dir on this run => explicit deferral
+    dwd = json.loads((leg1 / "dw_mass_L19.json").read_text())
+    assert dwd["status"] == "deferred" and dwd["deferral_reason"].startswith("deferred")
+    shd = json.loads((leg1 / "splithalf_stability_L19.json").read_text())
+    assert shd["status"] == "deferred"
+    assert not (leg1 / "splithalf_stability_L19.pt").exists()
+    critd = json.loads((leg1 / "criterion_L19.json").read_text())
+    assert critd["overall"]["n_evaluated"] == 2  # rho + kappa only; producers deferred
+    assert critd["overall"]["verdict"] in ("INCOMPLETE", "FAIL")
+    assert critd["clauses"]["stable_directions"]["pass"] is None
+    assert critd["clauses"]["copied_data_share"]["pass"] is None
     for name in ("receipts_L19.json", "wiring_L19.json", "wiring_edges_L19.npz"):
         assert (leg3 / name).exists(), name
     for name in (
@@ -839,7 +854,6 @@ def test_load_ctx_feature_labels_ordering_negids_and_absent(tmp_path):
 
 def test_answer_union_real_body(tmp_path):
     """WB._answer_union executes the REAL RB staging + union bodies via the seam."""
-    from types import SimpleNamespace
 
     npz = _tiny_alive_npz(tmp_path)
     args = SimpleNamespace(out_root=tmp_path / "out", alive_counts_npz=npz)
@@ -852,7 +866,6 @@ def test_answer_union_real_body(tmp_path):
 
 def test_load_ans_sae_real_body(tmp_path):
     """WB._load_ans_sae executes RB._stage_answer_sae + T24.load_local for real."""
-    from types import SimpleNamespace
 
     import issue2476_turnavg_sae as T24
 
@@ -869,7 +882,6 @@ def test_load_ans_sae_real_body(tmp_path):
 def test_load_ctx_sae_real_body(tmp_path, monkeypatch):
     """WB._load_ctx_sae executes its real body; ONLY the HF fetch classmethod is
     faked, signature-conformantly (same params as issue1482_sae.BatchTopKSAE.load)."""
-    from types import SimpleNamespace
 
     import issue1482_sae as S1482
 
@@ -891,7 +903,6 @@ def test_load_ctx_sae_real_body(tmp_path, monkeypatch):
 def test_attr_holdout_ids_real_body(tmp_path, monkeypatch):
     """WB._attr_holdout_ids executes its real body; T24._load_scratch_meta is
     faked signature-conformantly at the HF/scratch boundary."""
-    from types import SimpleNamespace
 
     import issue2476_turnavg_sae as T24
 
@@ -991,3 +1002,282 @@ def test_driver_leg3_rows_attached_branch(tmp_path, monkeypatch):
             }
             for c in row["contributions"]:
                 assert {"ctx_feat_id", "a_j", "edge", "contribution", "label"} <= set(c)
+
+
+# ── leg-1 criterion producers (dw-mass / split-half / criterion; #2569 unit 9) ────
+
+
+def test_data_weighted_mass_identity_and_planted_eigs():
+    """u_i^T Sigma u_i: 1s under Sigma=I; planted eigenvalues in the U basis."""
+    rng = np.random.default_rng(71)
+    d = 24
+    u, _ = np.linalg.qr(rng.standard_normal((d, d)))
+    assert np.allclose(WB.data_weighted_mass(u, np.eye(d)), 1.0, atol=1e-12)
+    w = rng.uniform(0.5, 3.0, size=d)
+    sigma = (u * w) @ u.T
+    m = WB.data_weighted_mass(u, sigma)
+    assert np.allclose(m, w, atol=1e-10)
+    assert np.isclose(m.sum(), np.trace(sigma), atol=1e-9)
+
+
+def test_greedy_match_series_permutation_and_min_over_sides():
+    """Greedy factor match recovers a sign-flipped permutation; min-over-sides holds."""
+    rng = np.random.default_rng(72)
+    d = 16
+    u1, _ = np.linalg.qr(rng.standard_normal((d, d)))
+    v1, _ = np.linalg.qr(rng.standard_normal((d, d)))
+    perm = rng.permutation(d)
+    signs = rng.choice([-1.0, 1.0], size=d)
+    u2 = u1[:, perm] * signs
+    v2 = v1[:, perm] * signs
+    out = WB.greedy_match_series(u1, v1, u2, v2)
+    inv = np.argsort(perm)  # rank i's true partner j satisfies perm[j] == i
+    assert np.array_equal(out["partner"], inv)
+    assert np.allclose(out["factor_cos"], 1.0, atol=1e-10)
+    assert sorted(out["partner"].tolist()) == list(range(d))  # partners form a permutation
+    # min-over-sides: breaking the v side of rank 0's true partner caps the min
+    v2b = v2.copy()
+    v2b[:, inv[0]] = v1[:, 1]  # orthogonal to v1[:, 0]
+    out2 = WB.greedy_match_series(u1, v1, u2, v2b)
+    assert np.allclose(out2["factor_cos"], np.minimum(out2["cos_u"], out2["cos_v"]), atol=1e-12)
+    assert out2["factor_cos"][0] < 0.5
+
+
+def test_half_row_operator_b1_parity_and_guards():
+    """half_row_operator == the registered row action (affine-difference parity)."""
+    rng = np.random.default_rng(73)
+    d = 12
+    payload = _synth_raw_payload(d, seed=73)
+    half = {k: payload[k] for k in ("W", "xmu", "xsd", "ymu")}
+    half["selected_lambda"] = payload["selected_lambda"]
+    half["n_rows"] = 50
+    A = WB.half_row_operator(half, 19)
+    assert A.shape == (d, d) and A.dtype == np.float64
+    x1 = rng.standard_normal((5, d))
+    x2 = rng.standard_normal((5, d))
+    lhs = _fake_apply_map(payload, x1, "cpu") - _fake_apply_map(payload, x2, "cpu")
+    assert np.allclose(lhs, (x1 - x2) @ A, atol=1e-8)
+    with pytest.raises(AssertionError, match="missing keys"):
+        WB.half_row_operator({k: half[k] for k in ("W", "xmu", "xsd")}, 19)
+    bad = dict(half)
+    bad["xsd"] = torch.zeros(d)
+    with pytest.raises(AssertionError, match="strictly positive"):
+        WB.half_row_operator(bad, 19)
+
+
+def test_moments_meta_fail_loud_and_absent(tmp_path):
+    """--moments-dir absent => None; supplied-but-incomplete => FileNotFoundError."""
+    assert WB._moments_meta(SimpleNamespace(moments_dir=None)) is None
+    mdir = tmp_path / "m2"
+    mdir.mkdir()
+    (mdir / "moments_meta.json").write_text("{}")
+    with pytest.raises(FileNotFoundError, match="incomplete"):
+        WB._moments_meta(SimpleNamespace(moments_dir=mdir))
+
+
+def test_load_sigma_c_rejects_gram_xy_schema_and_wrong_side(tmp_path):
+    """The dw-mass Sigma_c loader refuses the gram_xy schema and a non-context side."""
+    d = 8
+    mdir = tmp_path / "m"
+    mdir.mkdir()
+    args = SimpleNamespace(moments_dir=mdir)
+    torch.save(
+        {
+            "gram": torch.eye(d, dtype=torch.float64) * d,
+            "mean_x": torch.zeros(d, dtype=torch.float64),
+            "mean_y": torch.zeros(d, dtype=torch.float64),
+            "n_rows": d,
+            "side": "cross (X19 -> Y19)",
+        },
+        mdir / "gram_xx.pt",
+    )
+    with pytest.raises(RuntimeError, match="sigma-producer triple"):
+        WB._load_sigma_c(args, d)
+    torch.save(
+        {
+            "gram": torch.eye(d, dtype=torch.float64) * d,
+            "mean": torch.zeros(d, dtype=torch.float64),
+            "n_rows": d,
+            "side": "answer (Y19)",
+        },
+        mdir / "gram_xx.pt",
+    )
+    with pytest.raises(RuntimeError, match="not the context"):
+        WB._load_sigma_c(args, d)
+
+
+def _synth_moments_dir(tmp_path: Path, d: int, payload: dict, n_pool: int = 400) -> Path:
+    """P-B moments/ fixture with the PRODUCER's schemas (rowbattery --phase moments).
+
+    gram_xx.pt = the sigma-producer triple {gram (uncentered sum-of-outer fp64),
+    mean, n_rows} + side/pool strings; splithalf_maps.pt = per-half moments
+    (sum_x/sum_y/gram_xx/gram_xy/gram_yy/n_rows) merged with the ridge-refit
+    dict (W/xmu/xsd/ymu/selected_lambda), replicating _half_ridge_refit's math
+    (standardize-X at the half's own unbiased sd + 1e-9, center-Y, ABSOLUTE
+    banked lambda); moments_meta.json = the fingerprint keys. Pooled X ~
+    N(0, I) and Y = the banked payload's affine map + tiny noise, so each
+    half's raw-space row operator estimates the banked A.
+    """
+    rng = np.random.default_rng(97)
+    x = rng.standard_normal((n_pool, d))
+    y = _fake_apply_map(payload, x, "cpu") + 0.005 * rng.standard_normal((n_pool, d))
+    lam = float(payload["selected_lambda"])
+    mdir = tmp_path / "moments"
+    mdir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "gram": torch.tensor(x.T @ x, dtype=torch.float64),
+            "mean": torch.tensor(x.mean(0), dtype=torch.float64),
+            "n_rows": n_pool,
+            "side": "context (X19)",
+            "pool": "synthetic-test-fixture",
+        },
+        mdir / "gram_xx.pt",
+    )
+    halves: dict[str, dict] = {}
+    for hname, sl in (("half1", slice(0, n_pool // 2)), ("half2", slice(n_pool // 2, n_pool))):
+        xh, yh = x[sl], y[sl]
+        n = xh.shape[0]
+        xmu, ymu = xh.mean(0), yh.mean(0)
+        xsd = xh.std(0, ddof=1) + 1e-9
+        xstd = (xh - xmu) / xsd
+        w = np.linalg.solve(xstd.T @ xstd + lam * np.eye(d), xstd.T @ (yh - ymu))
+        halves[hname] = {
+            "sum_x": torch.tensor(xh.sum(0), dtype=torch.float64),
+            "sum_y": torch.tensor(yh.sum(0), dtype=torch.float64),
+            "gram_xx": torch.tensor(xh.T @ xh, dtype=torch.float64),
+            "gram_xy": torch.tensor(xh.T @ yh, dtype=torch.float64),
+            "gram_yy": torch.tensor(yh.T @ yh, dtype=torch.float64),
+            "n_rows": n,
+            "W": torch.tensor(w, dtype=torch.float64),
+            "xmu": torch.tensor(xmu, dtype=torch.float64),
+            "xsd": torch.tensor(xsd, dtype=torch.float64),
+            "ymu": torch.tensor(ymu, dtype=torch.float64),
+            "selected_lambda": lam,
+        }
+    torch.save(
+        {
+            **halves,
+            "selected_lambda": lam,
+            "split_seed": 0,
+            "ridge_convention": "standardize-X (unbiased sd + 1e-9) / center-Y; "
+            "W = (Xstd^T Xstd + lam I)^-1 Xstd^T Yc (fit_ridge_primal parity)",
+        },
+        mdir / "splithalf_maps.pt",
+    )
+    (mdir / "moments_meta.json").write_text(
+        json.dumps(
+            {
+                "n_pool": n_pool,
+                "n_half1": n_pool // 2,
+                "n_half2": n_pool - n_pool // 2,
+                "selected_lambda": lam,
+                "split_seed": 0,
+                "regime_config_hash": "synthetic-test-fixture",
+            }
+        )
+    )
+    return mdir
+
+
+def test_driver_criterion_phases_moments_attached(tmp_path, monkeypatch):
+    """dw-mass + split-half + criterion at d=32: deferral, moments arming, resume.
+
+    Runs each phase through the production CLI. Without --moments-dir the two
+    producers write explicit deferral records and the criterion evaluates only
+    rho/kappa; supplying --moments-dir flips the regime (deferred -> computed)
+    and the criterion recomputes with all four clauses evaluated.
+    """
+    d = 32
+    map_root = tmp_path / "maproot"
+    path = OP.banked_map_path(19, root=map_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = _synth_raw_payload(d)
+    torch.save(payload, path)
+    out = tmp_path / "out"
+    base = ["--smoke", "--skip-upload", "--out-root", str(out), "--map-root", str(map_root)]
+    _run_driver(monkeypatch, tmp_path, ["--phase", "factor", *base])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "anatomy", *base])
+    leg1 = out / "leg1"
+
+    # (a) no --moments-dir: explicit deferrals; criterion INCOMPLETE-or-FAIL
+    _run_driver(monkeypatch, tmp_path, ["--phase", "dw-mass", *base])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "split-half", *base])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "criterion", *base])
+    dw = json.loads((leg1 / "dw_mass_L19.json").read_text())
+    assert dw["status"] == "deferred" and "no P-B moments" in dw["deferral_reason"]
+    shj = json.loads((leg1 / "splithalf_stability_L19.json").read_text())
+    assert shj["status"] == "deferred"
+    assert not (leg1 / "splithalf_stability_L19.pt").exists()
+    crit = json.loads((leg1 / "criterion_L19.json").read_text())
+    assert crit["overall"]["n_evaluated"] == 2
+    assert crit["overall"]["verdict"] in ("INCOMPLETE", "FAIL")
+    assert crit["clauses"]["stable_directions"]["deferral"]
+    assert crit["clauses"]["copied_data_share"]["deferral"]
+    crit_mtime = os.stat(leg1 / "criterion_L19.json").st_mtime_ns
+
+    # (b) --moments-dir arms the producers (regime flips deferred -> computed)
+    mdir = _synth_moments_dir(tmp_path, d, payload)
+    withm = [*base, "--moments-dir", str(mdir)]
+    _run_driver(monkeypatch, tmp_path, ["--phase", "dw-mass", *withm])
+    dw = json.loads((leg1 / "dw_mass_L19.json").read_text())
+    assert dw["status"] == "computed"
+    assert dw["trace_rel_err"] < WB.DW_TRACE_RTOL
+    m = np.asarray(dw["dw_mass"])
+    assert m.shape == (d,) and m.min() >= -1e-9 * dw["trace_sigma_c"]
+    assert np.isclose(dw["sum_dw_mass"], dw["trace_sigma_c"], rtol=WB.DW_TRACE_RTOL)
+    # X ~ N(0, I) => trace(Sigma_c) ~ d; class fracs partition the trace
+    assert abs(dw["trace_sigma_c"] - d) / d < 0.3
+    assert np.isclose(sum(v["dw_mass_frac"] for v in dw["classes"].values()), 1.0, atol=1e-6)
+    assert 0.0 <= dw["copied_dw_share"] <= 1.0
+    assert dw["criterion"]["pass"] == (dw["copied_dw_share"] < WB.CRITERION_COPIED_SHARE_MAX)
+    assert len(dw["top_directions"]) == 8  # smoke top_k
+    assert dw["moments"]["regime_config_hash"] == "synthetic-test-fixture"
+
+    _run_driver(monkeypatch, tmp_path, ["--phase", "split-half", *withm])
+    shj = json.loads((leg1 / "splithalf_stability_L19.json").read_text())
+    assert shj["status"] == "computed"
+    pt = torch.load(leg1 / "splithalf_stability_L19.pt", map_location="cpu", weights_only=False)
+    stab = pt["stability"].numpy()
+    assert stab.shape == (d,)
+    assert np.allclose(
+        stab, np.minimum(pt["half1"]["factor_cos"].numpy(), pt["half2"]["factor_cos"].numpy())
+    )
+    assert stab[0] > 0.9  # accurate half refits recover the top factor
+    floor = shj["floor"]
+    assert 0.0 < floor["floor"] < 1.0
+    assert floor["floor"] == max(floor["analytic"], floor["empirical"]["p99"])
+    assert floor["empirical"]["n_draws"] == 100  # smoke draws
+    assert shj["n_above_floor"] == int((stab > floor["floor"]).sum()) >= 1
+    assert shj["criterion"]["pass"] == (shj["n_above_floor"] >= WB.CRITERION_STABLE_MIN)
+    assert shj["estimator"]["well_posed"] == {"half1": True, "half2": True}
+    assert shj["estimator"]["n_rows"] == {"half1": 200, "half2": 200}
+    assert shj["selected_lambda"] == float(payload["selected_lambda"])
+    for h in ("half1", "half2"):
+        assert sorted(pt[h]["partner"].numpy().tolist()) == list(range(d))
+
+    # (c) criterion recomputes on the source-status flip; all 4 clauses evaluated
+    _run_driver(monkeypatch, tmp_path, ["--phase", "criterion", *withm])
+    assert os.stat(leg1 / "criterion_L19.json").st_mtime_ns != crit_mtime
+    crit = json.loads((leg1 / "criterion_L19.json").read_text())
+    fdoc = json.loads((leg1 / "factor_L19.json").read_text())
+    assert crit["overall"]["n_evaluated"] == 4
+    assert crit["clauses"]["rho_contraction"]["value"] == fdoc["stats"]["rho"]
+    assert crit["clauses"]["kappa_nonnormal"]["value"] == fdoc["stats"]["kappa_v"]
+    assert crit["clauses"]["stable_directions"]["value"] == shj["n_above_floor"]
+    assert crit["clauses"]["copied_data_share"]["value"] == dw["copied_dw_share"]
+    n_failed = sum(1 for c in crit["clauses"].values() if c["pass"] is False)
+    assert crit["overall"]["n_failed"] == n_failed
+    assert crit["overall"]["verdict"] == ("FAIL" if n_failed else "PASS")
+    kill = crit["kill"]
+    assert kill["kappa_lt_10"] == (fdoc["stats"]["kappa_v"] < 10.0)
+    assert kill["copied_gt_50"] == (dw["copied_dw_share"] > 0.5)
+    assert kill["fired"] == (kill["kappa_lt_10"] and kill["copied_gt_50"])
+
+    # (d) resume: unchanged regime => the computed units SKIP (mtime untouched)
+    before_dw = os.stat(leg1 / "dw_mass_L19.json").st_mtime_ns
+    before_sh = os.stat(leg1 / "splithalf_stability_L19.pt").st_mtime_ns
+    _run_driver(monkeypatch, tmp_path, ["--phase", "dw-mass", *withm])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "split-half", *withm])
+    assert os.stat(leg1 / "dw_mass_L19.json").st_mtime_ns == before_dw
+    assert os.stat(leg1 / "splithalf_stability_L19.pt").st_mtime_ns == before_sh

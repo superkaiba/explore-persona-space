@@ -176,6 +176,37 @@ on the generating-parameter regime dict — never a recomputed-float hash):
                 (gradient / pre-image directions vs andyrdt; r_hat vs #2476)
                 -> leg1/sae_dashboards_L<L>.json +
                 leg8/monitor_sae_naming_L<L>.json. L19-only.
+  dw-mass       leg-1 registered-criterion input (P-B-fed): DATA-weighted mass
+                m_i = u_i^T Sigma_c u_i over the INPUT/read singular
+                directions (LEFT singular vectors, B1), Sigma_c = the centered
+                context covariance from rowbattery's moments/gram_xx.pt
+                (issue2569_gateladder.load_sigma_file convention), + per-class
+                data-variance shares next to anatomy's sigma^2-weighted twins
+                -> leg1/dw_mass_L<L>.json. Layer-19 only (the row store is
+                X19/Y19); without --moments-dir an explicit deferral is
+                recorded, never a fabricated number.
+  split-half    leg-1 registered-criterion input (P-B-fed): split-half
+                stability of the singular directions — per-half raw-space row
+                operators re-formed from moments/splithalf_maps.pt refits via
+                OP.row_operator (the registered A = diag(1/xsd) @ W, never a
+                re-derived product), full SVD each half, greedy factor match
+                against the banked full map's directions (the unit-7c leg-6
+                convention: factor cosine = min(|cos u|, |cos v|), descending
+                rank, best unmatched partner), stability_r = min over halves;
+                floor = max(analytic sqrt(2 ln d / d), empirical p99
+                random-unit-direction max-|cos| null, seed
+                SPLITHALF_NULL_SEED) -> leg1/splithalf_stability_L<L>.pt +
+                .json. Layer-19 only / deferral, as dw-mass. NO new fit runs
+                here — the half refits are rowbattery's persisted estimators
+                at the pinned banked lambda.
+  criterion     leg-1 registered success-criterion assembly (plan SS7.5):
+                rho(A) < 1, kappa(V) >= 10, >= 300 singular directions above
+                the split-half stability floor, copied-class data-variance
+                share < 20% — one record per layer with per-clause measured
+                values + pass/fail (a deferred producer is carried as an
+                explicit deferral clause), plus the leg-1 KILL clause
+                (kappa(V) < 10 AND copied > 50% of data variance)
+                -> leg1/criterion_L<L>.json.
   upload        production-only HF upload of leg1/ + leg3/ + leg8/
                 (fail-loud exact-set verify; smoke/skip is LOUD).
 
@@ -221,6 +252,46 @@ artifact, #1900 convention; every .json carries ``regime`` + ``metadata``
       place with the decode dict (see sae_dashboards fixed_point_decode),
     nearest_banked_answers: deferral str (no P-B producer yet — concern
       leg1-fixedpoint-neighbors-no-pb-producer)
+  leg1/dw_mass_L<L>.json:
+    status: "computed" | "deferred" (+ deferral_reason on deferred records),
+    moments: {n_pool, n_half1, n_half2, selected_lambda, split_seed,
+      regime_config_hash} (the consumed moments_meta.json fingerprint),
+    trace_sigma_c, sum_dw_mass, trace_rel_err (orthogonality identity
+      sum_i m_i == trace(Sigma_c); asserted < 1e-3 — fp32-U roundoff scale),
+    dw_mass_min, dw_mass: [d] (m_i = u_i^T Sigma_c u_i, factor-rank order),
+    classes: {<label>: {count, dw_mass_frac, sigma2_mass_frac}},
+    copied_dw_share,
+    criterion: {clause, value, pass} (copied-class data-variance share < 0.20),
+    top_directions: [{svd_rank, sigma, label, dw_mass, dw_mass_frac}]
+      (ordered by descending dw_mass; svd_rank = factor rank), convention
+  leg1/splithalf_stability_L<L>.pt:
+    stability: float64 [d] (min over halves of the greedy factor cosine),
+    sigma_full: float64 [d],
+    half1/half2: {factor_cos, cos_u, cos_v: float64 [d], partner: int64 [d]
+      (matched half-SVD rank per full rank), sigma_half: float64 [d],
+      sigma_matched: float64 [d], n_rows: int},
+    floor: {analytic, empirical: {n_draws, seed, mean, p50, p90, p95, p99,
+      max}, floor}, regime, metadata
+  leg1/splithalf_stability_L<L>.json:
+    status (+ deferral_reason on deferred records), floor components,
+    n_above_floor, criterion: {clause, value, pass} (>= 300 above the floor),
+    frac_above_floor, stability_quantiles,
+    matched_frac_above_{analytic,empirical_p99},
+    halves: {half1/half2: {n_rows, factor_cos_top1, factor_cos_median,
+      sigma_half_max, sigma_half_median}},
+    estimator: {d, n_rows per half, well_posed, note — no new fit here},
+    selected_lambda, lambda_provenance, split_seed, ridge_convention,
+    null_note (single-side max-|cos| null is CONSERVATIVE for the
+      min-over-sides statistic), series_pt (pointer str)
+  leg1/criterion_L<L>.json:
+    status, thresholds, clauses: {rho_contraction, kappa_nonnormal,
+      stable_directions, copied_data_share} — each {metric, threshold,
+      value | null, pass | null, deferral? (str, deferred producers only)},
+    overall: {n_clauses, n_evaluated, n_failed, verdict:
+      "PASS" | "FAIL" | "INCOMPLETE" — FAIL is final under the registered
+      conjunction; deferred clauses cannot rescue it},
+    kill: {clause, kappa_lt_10, copied_gt_50 | null, fired | null},
+    sources: {dw_mass, splithalf: status strings}, notes: [str, ...]
   leg8/effective_kernel_L<L>.pt:
     kernel_basis_fp32: float32 [d, m] (columns = kernel INPUT dirs, sigma<tau)
     sigma_kernel: float64 [m]; regime, metadata
@@ -469,6 +540,27 @@ LABEL_SOURCES = (
 )
 WHITENED_DEFERRAL = "deferred-to-P-B (side-matched whitening needs Sigma_c/Sigma_a moments)"
 
+# ── leg-1 registered-criterion producers (P-B moments consumers; plan SS7.5) ───────
+# The leg-1 success criterion is a 4-clause conjunction; two clauses had no
+# producer until these phases (blocker leg1-criterion-inputs-no-producer).
+MOMENTS_LAYER = CERT_ROWS_LAYER  # the only layer with a P-B row store (X19/Y19)
+SPLITHALF_NULL_SEED = 2_569_910  # split-half empirical max-|cos| null (regime member)
+CRITERION_RHO_MAX = 1.0  # leg 1: stable contraction — rho(A) < 1
+CRITERION_KAPPA_MIN = 10.0  # leg 1: non-normality — kappa(V) >= 10
+CRITERION_STABLE_MIN = 300  # leg 1: >= 300 directions above the split-half floor
+CRITERION_COPIED_SHARE_MAX = 0.20  # leg 1: copied-class DATA-variance share < 20%
+KILL_COPIED_SHARE_MIN = 0.50  # leg-1 kill: kappa(V) < 10 AND copied > 50% of data var
+DW_TRACE_RTOL = 1e-3  # sum_i m_i == trace(Sigma_c) identity tolerance (fp32-U roundoff)
+MOMENTS_ABSENT_DEFERRAL = (
+    "deferred — no P-B moments supplied (--moments-dir absent); re-run this phase with "
+    "--moments-dir <rowbattery out_root>/moments once P-B lands (issue2569_rowbattery.py "
+    "--phase moments)"
+)
+MOMENTS_LAYER_DEFERRAL = (
+    "deferred — the P-B row store is layer-19 only (X19/Y19), so no Sigma_c / split-half "
+    "refits exist for this layer"
+)
+
 
 # ── small writers (atomic; provenance-stamped) ────────────────────────────────────
 
@@ -623,6 +715,82 @@ def anatomy_stats(sigma: np.ndarray, c: np.ndarray) -> dict:
         "labels": labels,
         "classes": classes,
     }
+
+
+def data_weighted_mass(read_input_u: np.ndarray, sigma_c: np.ndarray) -> np.ndarray:
+    """DATA-weighted mass per INPUT direction: ``m_i = u_i^T Sigma_c u_i`` (fp64).
+
+    ONE (d, d) GEMM (``Sigma_c @ U``) + a column reduction — never a
+    per-direction Python loop. With orthonormal U the masses sum to
+    ``trace(Sigma_c)`` exactly; the caller asserts that identity (the
+    fp32-stored U bounds the residual at the DW_TRACE_RTOL scale).
+    """
+    u = np.asarray(read_input_u, dtype=np.float64)
+    s = np.asarray(sigma_c, dtype=np.float64)
+    assert s.shape == (u.shape[0], u.shape[0]), (s.shape, u.shape)
+    return np.einsum("di,di->i", u, s @ u)
+
+
+def greedy_match_series(u1: np.ndarray, v1: np.ndarray, u2: np.ndarray, v2: np.ndarray) -> dict:
+    """Greedy factor match of decomposition 1 onto decomposition 2 (7c convention).
+
+    Mirrors ``issue2569_leg6.greedy_factor_match`` (the unit-7c factor-matching
+    convention): rank order = column order (descending sigma by construction);
+    factor cosine = min(|cos(u1_i, u2_j)|, |cos(v1_i, v2_j)|) — BOTH the
+    input-side and the output-side directions must agree; each rank-1 factor
+    takes the best UNMATCHED partner. Vectorized over the full rank range with
+    no cos_floor (the split-half stability floor is applied downstream).
+    Returns ``{factor_cos, cos_u, cos_v: float64 [k], partner: int64 [k]}``.
+    """
+    cos_u = np.abs(np.asarray(u1, dtype=np.float64).T @ np.asarray(u2, dtype=np.float64))
+    cos_v = np.abs(np.asarray(v1, dtype=np.float64).T @ np.asarray(v2, dtype=np.float64))
+    factor_cos = np.minimum(cos_u, cos_v)
+    k = factor_cos.shape[0]
+    taken = np.zeros(factor_cos.shape[1], dtype=bool)
+    out_cos = np.empty(k, dtype=np.float64)
+    out_j = np.empty(k, dtype=np.int64)
+    for i in range(k):
+        row = np.where(taken, -1.0, factor_cos[i])
+        j = int(np.argmax(row))
+        taken[j] = True
+        out_cos[i] = factor_cos[i, j]
+        out_j[i] = j
+    ranks = np.arange(k)
+    return {
+        "factor_cos": out_cos,
+        "cos_u": cos_u[ranks, out_j],
+        "cos_v": cos_v[ranks, out_j],
+        "partner": out_j,
+    }
+
+
+def half_row_operator(half: dict, layer: int) -> np.ndarray:
+    """Raw-space ROW operator of one persisted split-half ridge refit.
+
+    Constructs an ``OP.MapPayload`` from the half's ``{W, xmu, xsd, ymu,
+    selected_lambda}`` (rowbattery's ``splithalf_maps.pt`` per-half schema,
+    fp64 upcast) and returns ``OP.row_operator``'s A — the REGISTERED
+    ``A = diag(1/xsd) @ W`` form, never a re-derived product (B1). Fails loud
+    on missing keys, a non-square W, or a non-positive xsd.
+    """
+    missing = [k for k in ("W", "xmu", "xsd", "ymu", "selected_lambda") if k not in half]
+    assert not missing, f"split-half refit missing keys {missing}"
+    comp = {k: np.asarray(half[k], dtype=np.float64) for k in ("W", "xmu", "xsd", "ymu")}
+    d = comp["W"].shape[0]
+    assert comp["W"].shape == (d, d), comp["W"].shape
+    assert (comp["xsd"] > 0).all(), "xsd must be strictly positive (it divides)"
+    payload = OP.MapPayload(
+        layer=int(layer),
+        path=Path("<splithalf-refit>"),
+        W=comp["W"],
+        xmu=comp["xmu"],
+        xsd=comp["xsd"],
+        ymu=comp["ymu"],
+        selected_lambda=float(half["selected_lambda"]),
+        raw={},
+    )
+    A, _b = OP.row_operator(payload)
+    return A
 
 
 def alpha_low_rank_stats(A: np.ndarray, ks: tuple[int, ...] = ALPHA_RESIDUAL_KS) -> dict:
@@ -1381,6 +1549,121 @@ def _load_factor(args, layer: int) -> dict:
             f"(or pass --fresh) before downstream phases"
         )
     return obj
+
+
+# ── leg-1 criterion plumbing (P-B moments fingerprint + Sigma_c + regime keys) ────
+
+
+def _moments_meta(args) -> dict | None:
+    """Fingerprint of the P-B moments dir, or None when --moments-dir is absent.
+
+    Fail-loud when the dir is supplied but incomplete (a partial P-B upload
+    must never silently defer). The fingerprint is built from STABLE
+    file-read values (never recomputed floats, #1336): pool/half row counts,
+    the banked selected_lambda, the split seed, and P-B's own regime config
+    hash as recorded in moments_meta.json.
+    """
+    if args.moments_dir is None:
+        return None
+    mdir = Path(args.moments_dir)
+    required = ("moments_meta.json", "gram_xx.pt", "splithalf_maps.pt")
+    missing = [n for n in required if not (mdir / n).exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"--moments-dir {mdir} is incomplete (missing {missing}) — point it at a "
+            f"finished rowbattery moments/ out dir (issue2569_rowbattery.py --phase moments)"
+        )
+    meta = json.loads((mdir / "moments_meta.json").read_text())
+    return {
+        "n_pool": meta.get("n_pool"),
+        "n_half1": meta.get("n_half1"),
+        "n_half2": meta.get("n_half2"),
+        "selected_lambda": meta.get("selected_lambda"),
+        "split_seed": meta.get("split_seed"),
+        "regime_config_hash": meta.get("regime_config_hash"),
+    }
+
+
+def _load_sigma_c(args, d: int) -> np.ndarray:
+    """Load Sigma_c (context-side data covariance) from P-B's gram_xx.pt.
+
+    Schema check FIRST (fail-loud): the sigma-producer triple
+    ``{gram, mean, n_rows}`` with ``side`` starting with "context" — the
+    cross-moment file gram_xy.pt carries ``mean_x``/``mean_y`` instead and
+    must never be accepted here. Centering + symmetrization are delegated to
+    the registered consumer ``issue2569_gateladder.load_sigma_file`` (never
+    re-derived — blocker B1's failure mode).
+    """
+    path = Path(args.moments_dir) / "gram_xx.pt"
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    missing = [k for k in ("gram", "mean", "n_rows") if k not in raw]
+    if missing:
+        raise RuntimeError(
+            f"{path}: missing keys {missing} — expected the sigma-producer triple "
+            f"(gram, mean, n_rows); gram_xy.pt (mean_x/mean_y schema) is NOT Sigma_c"
+        )
+    side = str(raw.get("side", ""))
+    if not side.startswith("context"):
+        raise RuntimeError(
+            f"{path}: side={side!r} is not the context (X19) gram — refusing to treat it as Sigma_c"
+        )
+    import issue2569_gateladder as GL
+
+    sigma = np.asarray(GL.load_sigma_file(path), dtype=np.float64)
+    assert sigma.shape == (d, d), (sigma.shape, d)
+    return sigma
+
+
+def _dwmass_regime(args, layer: int, moments: dict | None) -> dict:
+    """dw-mass phase regime: base regime + the P-B moments fingerprint."""
+    base = _regime(args, layer)
+    base["dw_mass"] = {"moments": moments, "trace_rtol": DW_TRACE_RTOL}
+    return base
+
+
+def _splithalf_regime(args, layer: int, moments: dict | None) -> dict:
+    """split-half phase regime: base + moments fingerprint + the null seed."""
+    base = _regime(args, layer)
+    base["split_half"] = {"moments": moments, "null_seed": SPLITHALF_NULL_SEED}
+    return base
+
+
+def _criterion_thresholds() -> dict:
+    """Registered leg-1 criterion thresholds (plan SS7.5), one place."""
+    return {
+        "rho_max": CRITERION_RHO_MAX,
+        "kappa_min": CRITERION_KAPPA_MIN,
+        "stable_min": CRITERION_STABLE_MIN,
+        "copied_share_max": CRITERION_COPIED_SHARE_MAX,
+        "kill_copied_share_min": KILL_COPIED_SHARE_MIN,
+    }
+
+
+def _source_status(json_path: Path) -> str:
+    """Status of a criterion source JSON: computed | deferred | absent | unreadable."""
+    if not json_path.exists():
+        return "absent"
+    try:
+        return str(json.loads(json_path.read_text()).get("status", "unreadable"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return "unreadable"
+
+
+def _criterion_regime(args, layer: int) -> dict:
+    """criterion phase regime: base + thresholds + source statuses.
+
+    Embedding the source statuses makes the verdict recompute automatically
+    when a deferred producer later lands (deferred -> computed flips the key).
+    """
+    base = _regime(args, layer)
+    base["criterion"] = {
+        "thresholds": _criterion_thresholds(),
+        "sources": {
+            "dw_mass": _source_status(_leg1(args) / f"dw_mass_L{layer}.json"),
+            "splithalf": _source_status(_leg1(args) / f"splithalf_stability_L{layer}.json"),
+        },
+    }
+    return base
 
 
 # ── leg 8 steps 3+4 plumbing (r_B staging + phase-specific regime keys) ───────────
@@ -3023,6 +3306,459 @@ def phase_sae_dashboards(args) -> None:
     _sentinel("pa-sae-dashboards", f"dashboards done layers={list(layers)}")
 
 
+def phase_dw_mass(args) -> None:
+    """DATA-weighted mass fractions u_i^T Sigma_c u_i -> leg1/dw_mass_L<L>.json.
+
+    Produces the registered leg-1 criterion input "copied-class data-variance
+    share" (plan SS7.5) from P-B's context gram (gram_xx.pt). Consumes the
+    persisted factor artifact (never re-derives the operator, B1) and the
+    anatomy labels. Layers without a P-B row store, or runs without
+    --moments-dir, write an explicit DEFERRAL record — never a fabricated
+    value. NO new fit runs here.
+    """
+    moments = _moments_meta(args)
+    layers = _layers(args)
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _dwmass_regime(args, layer, moments)
+        jpath = _leg1(args) / f"dw_mass_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[dw-mass] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        deferral = None
+        if layer != MOMENTS_LAYER:
+            deferral = MOMENTS_LAYER_DEFERRAL
+        elif moments is None:
+            deferral = MOMENTS_ABSENT_DEFERRAL
+        if deferral is not None:
+            _write_json(
+                jpath,
+                {"regime": regime, "status": "deferred", "deferral_reason": deferral},
+                phase="pa-dw-mass",
+            )
+            logger.info("[dw-mass] unit %d/%d L%d DEFERRED", i, len(layers), layer)
+            continue
+        fac = _load_factor(args, layer)
+        u = fac["read_input_u_fp32"].numpy().astype(np.float64)
+        s = fac["sigma"].numpy()
+        d = u.shape[0]
+        sigma_c = _load_sigma_c(args, d)
+        m = data_weighted_mass(u, sigma_c)
+        tr = float(np.trace(sigma_c))
+        assert tr > 0, f"[dw-mass] trace(Sigma_c)={tr} must be positive"
+        trace_rel_err = float(abs(m.sum() - tr) / tr)
+        assert trace_rel_err < DW_TRACE_RTOL, (
+            f"[dw-mass] L{layer} trace identity breached: rel_err={trace_rel_err:.3e} "
+            f">= {DW_TRACE_RTOL} (orthonormal-U mass must sum to trace(Sigma_c))"
+        )
+        assert float(m.min()) >= -1e-9 * tr, (
+            f"[dw-mass] L{layer} negative mass {m.min():.3e} beyond PSD roundoff tolerance"
+        )
+        apath = _leg1(args) / f"anatomy_L{layer}.json"
+        if not apath.exists():
+            raise FileNotFoundError(f"{apath} absent — run `--phase anatomy` first")
+        anatomy = json.loads(apath.read_text())
+        if anatomy.get("regime") != json.loads(json.dumps(_regime(args, layer))):
+            raise RuntimeError(
+                f"{apath}: stale anatomy artifact (regime mismatch) — re-run `--phase anatomy`"
+            )
+        labels = np.asarray(anatomy["labels"])
+        classes = {}
+        for label in sorted(set(labels.tolist())):
+            mask = labels == label
+            classes[label] = {
+                "count": int(mask.sum()),
+                "dw_mass_frac": float(m[mask].sum() / tr),
+                "sigma2_mass_frac": float(
+                    anatomy["classes"].get(label, {}).get("sigma2_mass_frac", float("nan"))
+                ),
+            }
+        copied_dw_share = float(classes.get("copied", {}).get("dw_mass_frac", 0.0))
+        k = _top_k(args)
+        order = np.argsort(-m)
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "status": "computed",
+                "moments": moments,
+                "trace_sigma_c": tr,
+                "sum_dw_mass": float(m.sum()),
+                "trace_rel_err": trace_rel_err,
+                "dw_mass_min": float(m.min()),
+                "dw_mass": m.tolist(),
+                "classes": classes,
+                "copied_dw_share": copied_dw_share,
+                "criterion": {
+                    "clause": "copied-class data-variance share < 20% (plan SS7.5)",
+                    "metric": "copied_dw_share",
+                    "threshold": CRITERION_COPIED_SHARE_MAX,
+                    "value": copied_dw_share,
+                    "pass": bool(copied_dw_share < CRITERION_COPIED_SHARE_MAX),
+                },
+                "top_directions": [
+                    {
+                        "svd_rank": int(j) + 1,
+                        "dw_mass": float(m[j]),
+                        "dw_mass_frac": float(m[j] / tr),
+                        "sigma": float(s[j]),
+                        "label": str(labels[j]),
+                    }
+                    for j in order[: min(k, d)]
+                ],
+                "convention": (
+                    "dw_mass[i] = u_i^T Sigma_c u_i over INPUT/read singular directions "
+                    "(LEFT singular vectors of the row-action operator, B1); Sigma_c from "
+                    "P-B gram_xx.pt, centered + symmetrized via gateladder.load_sigma_file"
+                ),
+            },
+            phase="pa-dw-mass",
+        )
+        logger.info(
+            "[dw-mass] unit %d/%d L%d elapsed=%.1fs copied_dw_share=%.4f trace_rel_err=%.2e",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            copied_dw_share,
+            trace_rel_err,
+        )
+    _sentinel("pa-dw-mass", f"dw-mass done layers={list(layers)}")
+
+
+def phase_splithalf(args) -> None:
+    """Split-half stability floor -> leg1/splithalf_stability_L<L>.pt + .json.
+
+    Produces the registered leg-1 criterion input ">= 300 singular directions
+    above the split-half stability floor" (plan SS7.5). Per half: read the
+    PERSISTED P-B ridge refit (splithalf_maps.pt), form its row operator via
+    the registered OP formula, full SVD, greedy-|cos| match onto the full
+    banked map's factors (the unit-7c convention). Stability per rank =
+    min over halves of the matched factor cosine; the floor is the max of the
+    analytic sqrt(2 ln N / d) and the empirical random-direction p99 null.
+    NO new fit runs here — the per-half maps are P-B's persisted refits.
+    """
+    moments = _moments_meta(args)
+    layers = _layers(args)
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _splithalf_regime(args, layer, moments)
+        jpath = _leg1(args) / f"splithalf_stability_L{layer}.json"
+        ppath = _leg1(args) / f"splithalf_stability_L{layer}.pt"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[split-half] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        deferral = None
+        if layer != MOMENTS_LAYER:
+            deferral = MOMENTS_LAYER_DEFERRAL
+        elif moments is None:
+            deferral = MOMENTS_ABSENT_DEFERRAL
+        if deferral is not None:
+            _write_json(
+                jpath,
+                {"regime": regime, "status": "deferred", "deferral_reason": deferral},
+                phase="pa-split-half",
+            )
+            logger.info("[split-half] unit %d/%d L%d DEFERRED", i, len(layers), layer)
+            continue
+        fac = _load_factor(args, layer)
+        u_full = fac["read_input_u_fp32"].numpy().astype(np.float64)
+        v_full = fac["write_output_v_fp32"].numpy().astype(np.float64)
+        s_full = fac["sigma"].numpy()
+        d = u_full.shape[0]
+        sh_path = Path(args.moments_dir) / "splithalf_maps.pt"
+        sh = torch.load(sh_path, map_location="cpu", weights_only=False)
+        missing = [k for k in ("half1", "half2", "selected_lambda", "split_seed") if k not in sh]
+        if missing:
+            raise RuntimeError(
+                f"{sh_path}: missing keys {missing} — expected rowbattery's per-half "
+                f"moments+refit dicts (issue2569_rowbattery.py --phase moments)"
+            )
+        halves: dict[str, dict] = {}
+        for hname in ("half1", "half2"):
+            a_half = half_row_operator(sh[hname], layer)
+            u_h, s_h, _v_h = full_svd_row(a_half)
+            match = greedy_match_series(u_full, v_full, u_h, _v_h)
+            halves[hname] = {
+                **match,
+                "sigma_half": s_h,
+                "sigma_matched": s_h[match["partner"]],
+                "n_rows": int(sh[hname]["n_rows"]),
+            }
+            logger.info(
+                "[split-half] L%d %s matched (n_rows=%d top1_cos=%.4f)",
+                layer,
+                hname,
+                halves[hname]["n_rows"],
+                float(match["factor_cos"][0]),
+            )
+        stability = np.minimum(halves["half1"]["factor_cos"], halves["half2"]["factor_cos"])
+        analytic = analytic_max_cos_floor(d, d)
+        empirical = empirical_max_cos_null(u_full, _n_draws(args), SPLITHALF_NULL_SEED)
+        floor = float(max(analytic, empirical["p99"]))
+        n_above = int((stability > floor).sum())
+        # per-rank series FIRST; the .json (resume key) is written LAST
+        _atomic_torch_save(
+            {
+                "stability": torch.from_numpy(stability),
+                "sigma_full": torch.from_numpy(s_full),
+                **{
+                    hname: {
+                        "factor_cos": torch.from_numpy(h["factor_cos"]),
+                        "cos_u": torch.from_numpy(h["cos_u"]),
+                        "cos_v": torch.from_numpy(h["cos_v"]),
+                        "partner": torch.from_numpy(h["partner"]),
+                        "sigma_half": torch.from_numpy(h["sigma_half"]),
+                        "sigma_matched": torch.from_numpy(h["sigma_matched"]),
+                        "n_rows": h["n_rows"],
+                    }
+                    for hname, h in halves.items()
+                },
+                "floor": {"analytic": analytic, "empirical": empirical, "floor": floor},
+                "regime": regime,
+                "metadata": C.reproducibility_metadata(),
+            },
+            ppath,
+        )
+        qs = np.quantile(stability, [0.5, 0.9, 0.95])
+        n1, n2 = halves["half1"]["n_rows"], halves["half2"]["n_rows"]
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "status": "computed",
+                "moments": moments,
+                "floor": {"analytic": analytic, "empirical": empirical, "floor": floor},
+                "n_above_floor": n_above,
+                "frac_above_floor": float(n_above / d),
+                "matched_frac_above_analytic": float((stability > analytic).sum() / d),
+                "matched_frac_above_empirical_p99": float((stability > empirical["p99"]).sum() / d),
+                "criterion": {
+                    "clause": ">= 300 singular directions above the split-half stability "
+                    "floor (plan SS7.5)",
+                    "metric": "n_above_floor",
+                    "threshold": CRITERION_STABLE_MIN,
+                    "value": n_above,
+                    "pass": bool(n_above >= CRITERION_STABLE_MIN),
+                },
+                "stability_quantiles": {
+                    "p50": float(qs[0]),
+                    "p90": float(qs[1]),
+                    "p95": float(qs[2]),
+                    "min": float(stability.min()),
+                    "max": float(stability.max()),
+                },
+                "halves": {
+                    hname: {
+                        "n_rows": h["n_rows"],
+                        "factor_cos_top1": float(h["factor_cos"][0]),
+                        "factor_cos_median": float(np.median(h["factor_cos"])),
+                        "sigma_half_max": float(h["sigma_half"][0]),
+                        "sigma_half_median": float(np.median(h["sigma_half"])),
+                    }
+                    for hname, h in halves.items()
+                },
+                "estimator": {
+                    "d": int(d),
+                    "n_rows": {"half1": n1, "half2": n2},
+                    "well_posed": {"half1": bool(n1 >= d), "half2": bool(n2 >= d)},
+                    "note": (
+                        "NO new fits run here — per-half operators are P-B's persisted "
+                        "ridge refits (splithalf_maps.pt); n_rows vs d recorded for the "
+                        "estimator-validity read of the floor"
+                    ),
+                },
+                "selected_lambda": float(sh["selected_lambda"]),
+                "lambda_provenance": (
+                    "pinned to the banked payload's selected_lambda (rowbattery "
+                    "_half_ridge_refit) — not re-selected here; selector grid-edge N/A"
+                ),
+                "split_seed": int(sh["split_seed"]),
+                "ridge_convention": str(sh.get("ridge_convention", "")),
+                "null_note": (
+                    "floor = max(analytic sqrt(2 ln N / d), empirical p99 of max-|cos| of "
+                    "random unit directions vs the full map's input dictionary); the "
+                    "single-side max-|cos| null is CONSERVATIVE for the min-over-sides "
+                    "factor-cosine statistic"
+                ),
+                "series_pt": ppath.name,
+            },
+            phase="pa-split-half",
+        )
+        logger.info(
+            "[split-half] unit %d/%d L%d elapsed=%.1fs floor=%.4f n_above=%d",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            floor,
+            n_above,
+        )
+    _sentinel("pa-split-half", f"split-half done layers={list(layers)}")
+
+
+def phase_criterion(args) -> None:
+    """Assembled leg-1 registered-criterion verdict inputs -> leg1/criterion_L<L>.json.
+
+    One record per layer holding all four clause inputs (plan SS7.5): rho(A)
+    < 1, kappa(V) >= 10, >= 300 directions above the split-half stability
+    floor, copied-class data-variance share < 20% — plus the kill-criterion
+    read (kappa < 10 AND copied share > 50%). Deferred inputs stay null with
+    the producing phase's deferral reason; verdict semantics: FAIL is final
+    under conjunction (a failed evaluated clause cannot be rescued by
+    deferred members); PASS requires all four evaluated and passing; else
+    INCOMPLETE.
+    """
+    layers = _layers(args)
+    thresholds = _criterion_thresholds()
+    for i, layer in enumerate(layers, 1):
+        t0 = time.time()
+        regime = _criterion_regime(args, layer)
+        jpath = _leg1(args) / f"criterion_L{layer}.json"
+        if _unit_done(jpath, regime, args.fresh):
+            logger.info("[criterion] unit %d/%d L%d SKIP (done)", i, len(layers), layer)
+            continue
+        fpath = _leg1(args) / f"factor_L{layer}.json"
+        if not fpath.exists():
+            raise FileNotFoundError(f"{fpath} absent — run `--phase factor` first")
+        fdoc = json.loads(fpath.read_text())
+        if fdoc.get("regime") != json.loads(json.dumps(_regime(args, layer))):
+            raise RuntimeError(
+                f"{fpath}: stale factor artifact (regime mismatch) — re-run `--phase factor`"
+            )
+        rho = float(fdoc["stats"]["rho"])
+        kappa = float(fdoc["stats"]["kappa_v"])
+        dw_path = _leg1(args) / f"dw_mass_L{layer}.json"
+        sh_path = _leg1(args) / f"splithalf_stability_L{layer}.json"
+        dw = json.loads(dw_path.read_text()) if dw_path.exists() else None
+        shj = json.loads(sh_path.read_text()) if sh_path.exists() else None
+
+        def _deferred_clause(doc: dict | None, path: Path) -> dict:
+            """Null value/pass + the producing phase's deferral reason (or absence)."""
+            if doc is None:
+                return {"value": None, "pass": None, "deferral": f"{path.name} absent"}
+            return {
+                "value": None,
+                "pass": None,
+                "deferral": doc.get("deferral_reason", f"{path.name} status={doc.get('status')}"),
+            }
+
+        clauses = {
+            "rho_contraction": {
+                "metric": "rho(A) (spectral radius)",
+                "threshold": thresholds["rho_max"],
+                "op": "<",
+                "value": rho,
+                "pass": bool(rho < thresholds["rho_max"]),
+            },
+            "kappa_nonnormal": {
+                "metric": "kappa(V) (eigenbasis condition number)",
+                "threshold": thresholds["kappa_min"],
+                "op": ">=",
+                "value": kappa,
+                "pass": bool(kappa >= thresholds["kappa_min"]),
+            },
+        }
+        if shj is not None and shj.get("status") == "computed":
+            n_above = int(shj["n_above_floor"])
+            clauses["stable_directions"] = {
+                "metric": "n_above_floor (split-half stability)",
+                "threshold": thresholds["stable_min"],
+                "op": ">=",
+                "value": n_above,
+                "pass": bool(n_above >= thresholds["stable_min"]),
+            }
+        else:
+            clauses["stable_directions"] = {
+                "metric": "n_above_floor (split-half stability)",
+                "threshold": thresholds["stable_min"],
+                "op": ">=",
+                **_deferred_clause(shj, sh_path),
+            }
+        if dw is not None and dw.get("status") == "computed":
+            copied = float(dw["copied_dw_share"])
+            clauses["copied_data_share"] = {
+                "metric": "copied_dw_share (copied-class data-variance share)",
+                "threshold": thresholds["copied_share_max"],
+                "op": "<",
+                "value": copied,
+                "pass": bool(copied < thresholds["copied_share_max"]),
+            }
+        else:
+            copied = None
+            clauses["copied_data_share"] = {
+                "metric": "copied_dw_share (copied-class data-variance share)",
+                "threshold": thresholds["copied_share_max"],
+                "op": "<",
+                **_deferred_clause(dw, dw_path),
+            }
+        evaluated = [c for c in clauses.values() if c["pass"] is not None]
+        n_failed = sum(1 for c in evaluated if not c["pass"])
+        if n_failed > 0:
+            verdict = "FAIL"
+        elif len(evaluated) == len(clauses):
+            verdict = "PASS"
+        else:
+            verdict = "INCOMPLETE"
+        kill_kappa = bool(kappa < thresholds["kappa_min"])
+        kill_copied = None if copied is None else bool(copied > thresholds["kill_copied_share_min"])
+        notes = [
+            "verdict semantics: FAIL is final under conjunction; PASS requires all four "
+            "clauses evaluated and passing; else INCOMPLETE",
+        ]
+        if rho >= thresholds["rho_max"]:
+            notes.append(
+                f"rho(A) = {rho:.4f} >= 1: the registered 'stable non-normal contraction' "
+                "clause FAILS on the measured map — the iterated-map/attractor reading is "
+                "dropped; x* is an affine-consistency point only, not an attractor"
+            )
+        if layer == 19:
+            notes.append(
+                "#1774 measured rho = 0.910 for its L19 map variant — the rho >= 1 read "
+                "here is map-variant-conditional; contradiction tracked in the task body"
+            )
+        _write_json(
+            jpath,
+            {
+                "regime": regime,
+                "status": "computed",
+                "thresholds": thresholds,
+                "clauses": clauses,
+                "overall": {
+                    "n_clauses": len(clauses),
+                    "n_evaluated": len(evaluated),
+                    "n_failed": n_failed,
+                    "verdict": verdict,
+                },
+                "kill": {
+                    "clause": "kappa(V) < 10 AND copied-class data-variance share > 50% "
+                    "(falsifies H1, plan SS7.5)",
+                    "kappa_lt_10": kill_kappa,
+                    "copied_gt_50": kill_copied,
+                    "fired": None if kill_copied is None else bool(kill_kappa and kill_copied),
+                },
+                "sources": {
+                    "factor": fpath.name,
+                    "dw_mass": {"file": dw_path.name, "status": _source_status(dw_path)},
+                    "splithalf": {"file": sh_path.name, "status": _source_status(sh_path)},
+                },
+                "notes": notes,
+            },
+            phase="pa-criterion",
+        )
+        logger.info(
+            "[criterion] unit %d/%d L%d elapsed=%.1fs verdict=%s rho=%.4f kappa=%.3e",
+            i,
+            len(layers),
+            layer,
+            time.time() - t0,
+            verdict,
+            rho,
+            kappa,
+        )
+    _sentinel("pa-criterion", f"criterion done layers={list(layers)}")
+
+
 def phase_upload(args) -> None:
     """Production-only HF upload of leg1/ + leg8/ with fail-loud exact-set verify.
 
@@ -3079,6 +3815,9 @@ PHASE_ORDER = (
     "wiring",
     "attribution",
     "sae-dashboards",
+    "dw-mass",
+    "split-half",
+    "criterion",
     "upload",
 )
 PHASES = {
@@ -3093,6 +3832,9 @@ PHASES = {
     "wiring": phase_wiring,
     "attribution": phase_attribution,
     "sae-dashboards": phase_sae_dashboards,
+    "dw-mass": phase_dw_mass,
+    "split-half": phase_splithalf,
+    "criterion": phase_criterion,
     "upload": phase_upload,
 }
 
@@ -3183,6 +3925,15 @@ def _parse_args(argv=None):
         help="local alive_c.npz override for the #2476 answer union (test seam; "
         "drops the production 2,150-feature count pin, mirroring rowbattery)",
     )
+    ap.add_argument(
+        "--moments-dir",
+        type=Path,
+        default=None,
+        help="P-B rowbattery moments/ out dir (moments_meta.json + gram_xx.pt + "
+        "splithalf_maps.pt; issue2569_rowbattery.py --phase moments) — arms the "
+        "dw-mass + split-half criterion producers at layer 19 (else an explicit "
+        "deferral is recorded)",
+    )
     ap.add_argument("--fresh", action="store_true", help="ignore the per-unit resume predicate")
     ap.add_argument("--skip-upload", action="store_true", help="local-only run (loud)")
     ap.add_argument(
@@ -3232,6 +3983,10 @@ def main() -> None:
         assert callable(T24._load_scratch_meta)
         assert callable(RB._stage_answer_sae) and callable(RB._stage_alive_counts)
         assert callable(RB._answer_union_from_counts)
+        # leg-1 criterion producers' deferred symbol: Sigma_c consumer (dw-mass)
+        import issue2569_gateladder as GL  # noqa: F401
+
+        assert callable(GL.load_sigma_file)
         print("[import-check] OK", flush=True)
         raise SystemExit(0)
     args.out_root.mkdir(parents=True, exist_ok=True)
