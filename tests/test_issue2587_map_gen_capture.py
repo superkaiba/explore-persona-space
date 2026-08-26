@@ -515,7 +515,12 @@ def _battery_fixture(tmp_path, *, n_rows=3, layers=(0, 1, 2, 3), hidden=8, cell=
         "va_tail_incl": torch.randn(n_rows, len(layers), hidden, generator=gen),
         "rows": [{"row": i} for i in range(n_rows)],
     }
-    vc = {"cell": cell, "hidden": hidden, "vc": torch.randn(5, hidden, generator=gen)}
+    vc = {
+        "cell": cell,
+        "layers": list(layers),
+        "hidden": hidden,
+        "vc": torch.randn(5, len(layers), hidden, generator=gen),
+    }
     (root / "capture" / "va2587").mkdir(parents=True)
     (root / "capture" / "vc2587").mkdir(parents=True)
     torch.save(va, root / "capture" / "va2587" / f"{cell}.pt")

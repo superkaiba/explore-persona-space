@@ -3227,7 +3227,12 @@ def run_p1_apply_probe(args) -> int:
     assert va_t.shape[2] == hidden, (va_t.shape[2], hidden)
     assert torch.isfinite(va_t).all(), "non-finite values in va_tail_incl"
     vc_t = vc["vc"]
-    assert vc_t.ndim == 2 and vc_t.shape[1] == hidden, tuple(vc_t.shape)
+    # (n_ctx, n_layers, hidden): the battery writer stores the context-end
+    # state per CAPTURE layer (issue2587_battery_run store_common shares one
+    # "layers" list across the va and vc stores).
+    vc_layers = [int(x) for x in vc["layers"]]
+    assert vc_layers == layers, (vc_layers, layers)
+    assert vc_t.ndim == 3 and tuple(vc_t.shape[1:]) == (len(vc_layers), hidden), tuple(vc_t.shape)
     assert torch.isfinite(vc_t).all(), "non-finite values in vc"
 
     layer = int(args.p1_apply_layer)
