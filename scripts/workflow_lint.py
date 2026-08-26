@@ -1076,12 +1076,14 @@ import argparse
 import ast
 import dataclasses
 import functools
+import io
 import json
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import tokenize
 import tomllib
 from collections import Counter
 from collections.abc import Callable, Collection, Iterator
@@ -10995,15 +10997,68 @@ def _hf_routing_scan_files(root: Path):
             yield py, rel
 
 
+def _hf_routing_exempt_spans(text: str) -> dict[int, list[tuple[int, int]]] | None:
+    """Map 1-based line number -> ``[(col_start, col_end))`` ranges covered by
+    non-f-string STRING / FSTRING_START|MIDDLE|END / COMMENT tokens (#2355:
+    string/docstring + comment content is TEXT, not a call). F-prefixed
+    STRING tokens are NEVER masked: on py3.11 an f-string is ONE STRING
+    token whose replacement fields may carry REAL calls, so masking it would
+    silently exempt a live call site (the #2355 round-1 critic Must-Fix); on
+    py3.12+ the FSTRING_* tokens cover only the LITERAL parts (replacement
+    fields tokenize as real NAME/OP tokens), so those token types ARE safe
+    to mask. Returns None when tokenization fails (malformed file:
+    ``tokenize.TokenError`` / ``IndentationError`` / ``SyntaxError``) — the
+    caller falls back to the pre-#2355 no-exemption behavior rather than
+    crashing the lint or silently passing the file. NOTE (disposition,
+    #2355 round-1 advisory): masking makes docstrings carrying HF-call text
+    legal, and :func:`_hf_routing_call_is_wrapped` still reads
+    retry_transient mentions + paren balance on ABOVE lines including
+    docstring content — a pre-existing, unobserved, separate concern,
+    explicitly out of scope here; see #2355.
+    """
+    spans: dict[int, list[tuple[int, int]]] = {}
+    fstring_types: set[int] = set()
+    for name in ("FSTRING_START", "FSTRING_MIDDLE", "FSTRING_END"):  # py3.12+
+        t = getattr(tokenize, name, None)
+        if t is not None:
+            fstring_types.add(t)
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+            if tok.type == tokenize.STRING:
+                # Prefix letters = the chars before the opening quote
+                # ('f', 'rb', 'F', ...): 'f'/'F' present => NOT masked.
+                body = tok.string.lstrip("rbufRBUF")
+                prefix = tok.string[: len(tok.string) - len(body)]
+                if "f" in prefix.lower():
+                    continue
+            elif tok.type != tokenize.COMMENT and tok.type not in fstring_types:
+                continue
+            (srow, scol), (erow, ecol) = tok.start, tok.end
+            for row in range(srow, erow + 1):
+                a = scol if row == srow else 0
+                b = ecol if row == erow else sys.maxsize
+                spans.setdefault(row, []).append((a, b))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return None
+    return spans
+
+
 def _hf_routing_file_errors(py: Path, rel: str) -> list[str]:
     """Per-file scan body shared by :func:`check_live_hf_retry_routing`
     (verdict) and :func:`regen_hf_routing_snapshot` (offender enumeration).
     Snapshot-BLIND — the caller decides whether the frozen snapshot exempts
     ``rel`` (#1568). Returns one error line per bare (unwrapped, unwaived)
-    HF Hub call.
+    HF Hub call. A match whose start position falls inside a non-f-string
+    STRING or COMMENT token span is exempt — text, not a call (#2355;
+    :func:`_hf_routing_exempt_spans`); spans are computed LAZILY, on the
+    first regex-matching line, so the ~thousands of scanned no-match files
+    pay zero tokenize cost.
     """
     errors: list[str] = []
-    lines = py.read_text(encoding="utf-8").splitlines()
+    text = py.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    spans: dict[int, list[tuple[int, int]]] | None = None
+    spans_ready = False
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         if stripped.startswith("#") or stripped.startswith("what="):
@@ -11011,6 +11066,25 @@ def _hf_routing_file_errors(py: Path, rel: str) -> list[str]:
         m = HF_ROUTING_CALL_RE.search(line)
         if m is None:
             continue
+        if not spans_ready:
+            spans = _hf_routing_exempt_spans(text)
+            spans_ready = True
+        if spans is not None:
+            # First NON-exempt match on the line (not `search`'s first): an
+            # exempt string-literal match must not shadow a later real call
+            # on the same line (#2355 acceptance criterion 3). spans=None
+            # (tokenize failure) keeps every match — today's behavior.
+            row_spans = spans.get(i + 1, ())
+            m = next(
+                (
+                    mm
+                    for mm in HF_ROUTING_CALL_RE.finditer(line)
+                    if not any(a <= mm.start() < b for a, b in row_spans)
+                ),
+                None,
+            )
+            if m is None:
+                continue
         if "# NO_RETRY:" in line or (i > 0 and "# NO_RETRY:" in lines[i - 1]):
             continue
         if _hf_routing_call_is_wrapped(lines, i, m.start()):
