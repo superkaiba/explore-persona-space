@@ -1,0 +1,67 @@
+{
+  "floor_gate": {
+    "gate": "simregen_floor",
+    "verdict": "PASS",
+    "floor": 6500,
+    "n_sim_kept": 9939,
+    "n_intersection": 9939,
+    "sim_floor_pass": true,
+    "intersection_floor_pass": true,
+    "close_miss_band": false,
+    "policy": "below-floor is REPORTED (rc 8 + blocking sentinel), never backfilled (#612)"
+  },
+  "fresh_eligibility": {
+    "gate": "simregen_fresh_eligibility",
+    "verdict": "OK",
+    "predicate": "elicit_rung == 1 (bare fresh redraws need rung-1-kept conversations)",
+    "rung1_kept": 9939,
+    "rung3_kept": 0,
+    "requested_rows": 1000,
+    "policy": "NA: skip fresh gen/upload/capture, write fresh_reference_na.json; SHORT_COVERAGE: proceed with the available rung-1 cohort, record it; OK: proceed"
+  },
+  "elicitation": [
+    {
+      "file": "summary_w1_s0.json",
+      "constraint": "rung-1 min_tokens + stop_token_ids (vLLM masks EOS/stop-id logits for the first 8 steps); #612 ladder repair, sim-user-regen",
+      "kept_rung1": 9939,
+      "kept_rung3": 0,
+      "rung1_retry_recovered": 238,
+      "retry_passes": [
+        {
+          "done": true,
+          "n_selected": 294,
+          "n_recovered": 200,
+          "pass": 1
+        },
+        {
+          "done": true,
+          "n_selected": 94,
+          "n_recovered": 38,
+          "pass": 2
+        }
+      ],
+      "rung3": {
+        "enabled": true,
+        "fired": false,
+        "kept_before": 9939,
+        "quota": 6500
+      }
+    }
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T07:52:56+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p7_simuser_regen",
+      "--sentinel-dir",
+      "/workspace/logs"
+    ],
+    "git_commit": "b318c4e18575f2c73803965ab24828dc36bfd126",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}
