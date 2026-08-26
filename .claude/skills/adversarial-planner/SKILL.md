@@ -499,7 +499,30 @@ Run the structural verifier against the plan version just persisted:
   (check 70 — the harvested threshold/draws/arms pairing is a superseded
   quote the parser guard misses, a cross-item pairing, or an aggregate
   threshold upgraded by a neighboring per-arm token; prefer stating the
-  gate's own sizing so the harvest sees it; #2299).
+  gate's own sizing so the harvest sees it; #2299), and
+  `N/A — no registered jq probe`
+  (check 71 — the jq vocabulary is incidental: the plan quotes jq behavior
+  or discusses the tool without registering any probe as its own gate
+  input; a plan genuinely registering a probe instead verifies it by
+  executing it against `git show HEAD:<target>` before registration;
+  #2590, incident #2588 v2:108), and
+  `N/A — quoted jq probe is historical or a sibling's, not this plan's gate input`
+  (check 71 — a jq command appears verbatim but belongs to an incident
+  narrative, a superseded version, or a sibling issue's recipe, and no
+  P0/preflight step of THIS plan executes it; #2590), and
+  `N/A — registered jq probes assert post-run state, not current committed state`
+  (check 71 — the probes are real gate inputs but their expectations
+  describe artifacts a FUTURE run writes, so a dry-run against current
+  HEAD bytes cannot adjudicate them; #2590), and
+  `N/A — no contingent judge wave`
+  (check 72 — the fallback/judge vocabulary is incidental or quotes an
+  incident/sibling; the plan registers no conditional judge wave of its
+  own; #2590, incident #2588 v2:155), and
+  `N/A — the contingent judge wave inherits the primary wave's pilot gate`
+  (check 72 — the wave is real but its instrument is the SAME
+  already-piloted rubric as an unconditional primary wave in the same
+  plan; the inheritance claim is the reviewer-auditable declaration;
+  #2590).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

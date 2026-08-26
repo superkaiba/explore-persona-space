@@ -231,10 +231,15 @@ def test_good_plan_passes_all():
         # SKIP: GOOD_PLAN never resolves the judge-pilot (threshold, draws,
         # arms) triple — trigger-conditional (#2299).
         "c70_pilot_resolution": "SKIP",
+        # SKIP: GOOD_PLAN carries no jq token — trigger-conditional (#2590).
+        "c71_jq_probe_dryrun": "SKIP",
+        # SKIP: GOOD_PLAN carries no contingent judge-wave vocabulary —
+        # trigger-conditional (#2590).
+        "c72_contingent_judge_pilot": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 67
+    assert len(results) == 69
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6399,12 +6404,16 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   token; trigger-conditional, #2269)
     # + c70 (SKIP: GOOD_PLAN never resolves the judge-pilot (threshold,
     #   draws, arms) triple; trigger-conditional, #2299)
-    assert payload["n_skip"] == 61
+    # + c71 (SKIP: GOOD_PLAN carries no jq token; trigger-conditional,
+    #   #2590)
+    # + c72 (SKIP: GOOD_PLAN carries no contingent judge-wave vocabulary;
+    #   trigger-conditional, #2590)
+    assert payload["n_skip"] == 63
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 70
-    assert len({c["id"] for c in payload["checks"]}) == 70
+    assert len(payload["checks"]) == 72
+    assert len({c["id"] for c in payload["checks"]}) == 72
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
