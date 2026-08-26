@@ -151,7 +151,12 @@ REPEAT_4GRAM_MAX_FRAC = 0.50  # ported 2546 constant (parse drop class)
 
 THINK_OPEN, THINK_CLOSE = "<think>", "</think>"
 EMPTY_THINK = "<think>\n\n</think>"
-OLMO_THINK_PREFILL_SUFFIX = "<|im_start|>assistant\n<think>"
+# Shared by OLMo-Think AND the Qwen3.5/3.6/3.8 thinking arm: measured 2026-08-26
+# under the pinned stack (transformers 5.15.1), enable_thinking=True renders end
+# with this pre-opened block on ALL 7 Qwen panel checkpoints (P0 render probes).
+# The plan §7 G1 "emergent" premise for Qwen arm b did not survive the live
+# render; the prefill contract below is the corrected, measured one.
+THINK_PREFILL_SUFFIX = "<|im_start|>assistant\n<think>"
 
 TRANSFORMERS_FLOOR = "5.13.0"  # G6 (transformers PR #39847 / #46911; OLMo-core #685)
 
@@ -294,11 +299,19 @@ class Cell:
 
     @property
     def parse_mode(self) -> str:
-        """Completion parse mode (ported 2546 segment semantics)."""
+        """Completion parse mode (ported 2546 segment semantics).
+
+        PREFILL for every thinking arm: the Qwen3.5/3.6/3.8 templates
+        pre-open the think block under enable_thinking=True (measured
+        2026-08-26, all 7 Qwen checkpoints — see THINK_PREFILL_SUFFIX),
+        exactly like OLMo-Think. The plan §7 "emergent" premise for Qwen
+        arm b was a #2546-era Qwen3 port the Qwen3.5 template family
+        obsoleted; the G1 SideSpec probe caught it at P0, zero GPU cost.
+        """
         m = self.model
         if self.arm == "a" or not m.thinking:
             return "off"
-        return "prefill" if m.family == "olmo_think" else "emergent"
+        return "prefill"
 
     @property
     def input_positions(self) -> tuple[str, ...]:
@@ -447,10 +460,14 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
 
     Ported from issue2502_gen_capture.assert_chat_template @ a736aebb92 L343
     (the pinned Qwen empty-<think> contract), generalized to the plan's
-    per-(family x arm) table:
+    per-(family x arm) table. The qwen arm-b row is the MEASURED 2026-08-26
+    correction of the plan §7 "emergent" premise (all 7 Qwen checkpoints
+    pre-open the block under enable_thinking=True; recorded in #2588 events):
 
     - qwen* arm a  -> the literal closed empty ``<think>\\n\\n</think>`` present;
-    - qwen* arm b  -> NO think delimiters in the render (emergent parse mode);
+    - qwen* arm b  -> render ENDS with the pre-opened
+      ``<|im_start|>assistant\\n<think>`` and carries NO ``</think>``
+      (prefill parse mode; the generated ``</think>`` is the read boundary);
     - olmo_instruct (both arms) -> NO think delimiters anywhere;
     - olmo_think arm b -> render ENDS with ``<|im_start|>assistant\\n<think>``
       (prefill parse mode; the generated ``</think>`` is the read boundary).
@@ -462,11 +479,18 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
                 f"G1 FAIL ({family}, arm a): enable_thinking=False did not render the empty "
                 f"think block {EMPTY_THINK!r} (template drift vs the #2502/#2378 pin)."
             )
-        if arm == "b" and (THINK_OPEN in probe or THINK_CLOSE in probe):
-            raise RuntimeError(
-                f"G1 FAIL ({family}, arm b): think delimiters present in the PROMPT render — "
-                "the emergent parse mode requires the model to open its own block."
-            )
+        if arm == "b":
+            if THINK_CLOSE in probe:
+                raise RuntimeError(
+                    f"G1 FAIL ({family}, arm b): {THINK_CLOSE!r} present in the PROMPT render "
+                    "— the prefill parse mode requires the model to CLOSE the block itself."
+                )
+            if not probe.rstrip("\n").endswith(THINK_PREFILL_SUFFIX):
+                raise RuntimeError(
+                    f"G1 FAIL ({family}, arm b): render does not end with the pre-opened "
+                    f"{THINK_PREFILL_SUFFIX!r} (prefill parse mode; template drift vs the "
+                    "2026-08-26 measured Qwen3.5/3.6/3.8 contract)."
+                )
     elif family in ("olmo_instruct", "qwen25"):
         if THINK_OPEN in probe or THINK_CLOSE in probe:
             raise RuntimeError(
@@ -476,10 +500,10 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
     elif family == "olmo_think":
         if arm != "b":
             raise RuntimeError("olmo_think runs arm (b) only (plan §4.1)")
-        if not probe.rstrip("\n").endswith(OLMO_THINK_PREFILL_SUFFIX):
+        if not probe.rstrip("\n").endswith(THINK_PREFILL_SUFFIX):
             raise RuntimeError(
                 f"G1 FAIL (olmo_think): render does not end with the pre-opened "
-                f"{OLMO_THINK_PREFILL_SUFFIX!r} (prefill parse mode premise, §12 A14)."
+                f"{THINK_PREFILL_SUFFIX!r} (prefill parse mode premise, §12 A14)."
             )
     else:
         raise ValueError(f"unknown family {family!r}")
@@ -499,18 +523,19 @@ def render_prompt_ids(tok, text: str, family: str, arm: str) -> list[int]:
     """
     kwargs = _template_kwargs(family, arm)
     msgs = [{"role": "user", "content": text}]
-    if (family.startswith("qwen3") and arm == "a") or family == "olmo_think":
+    if family.startswith("qwen3") or family == "olmo_think":
         rendered = tok.apply_chat_template(
             msgs, tokenize=False, add_generation_prompt=True, **kwargs
         )
-        if family.startswith("qwen3") and EMPTY_THINK not in rendered:
+        if family.startswith("qwen3") and arm == "a" and EMPTY_THINK not in rendered:
             raise RuntimeError(
                 "G1 FAIL on render: empty think block absent (context digest "
                 f"{hashlib.sha256(text.encode()).hexdigest()[:12]})"
             )
-        if family == "olmo_think" and not rendered.rstrip("\n").endswith(OLMO_THINK_PREFILL_SUFFIX):
+        prefill = family == "olmo_think" or (family.startswith("qwen3") and arm == "b")
+        if prefill and not rendered.rstrip("\n").endswith(THINK_PREFILL_SUFFIX):
             raise RuntimeError(
-                "G1 FAIL on render: olmo_think prefill suffix absent (context digest "
+                "G1 FAIL on render: pre-opened think prefill suffix absent (context digest "
                 f"{hashlib.sha256(text.encode()).hexdigest()[:12]})"
             )
     ids = tok.apply_chat_template(
@@ -597,11 +622,13 @@ def segment_completion_arm(
     """(well_formed, reason, cot_char_span, ans_char_span) per parse mode.
 
     Ported verbatim from issue2546_gen_capture.segment_completion_arm
-    @ 89680c72f9 L643. emergent: exactly one <think> (only whitespace before
-    it) + one </think>, open before close (Qwen think). prefill: the prompt
-    carries the <think>; well-formed iff exactly one </think> and NO open tag
-    in the completion (OLMo-Think). off: no think block — the answer span is
-    the whole generated text.
+    @ 89680c72f9 L643. prefill: the prompt carries the <think>; well-formed
+    iff exactly one </think> and NO open tag in the completion (ALL thinking
+    cells — OLMo-Think and, since the 2026-08-26 G1 correction, the Qwen
+    thinking arm too). emergent: exactly one <think> (only whitespace before
+    it) + one </think>, open before close (retained verbatim from the port;
+    no 2588 cell produces it). off: no think block — the answer span is the
+    whole generated text.
     """
     if mode == "off":
         s, e = _strip_span(text, 0, len(text))

@@ -435,7 +435,17 @@ def step_length_scan(args) -> dict:
 def step_unit_test(args) -> dict:
     del args
     proc = subprocess.run(
-        ["uv", "run", "pytest", "tests/test_issue2588_cot_boundary.py", "-q"],
+        [
+            "uv",
+            "run",
+            "pytest",
+            # MF1 arm-b read pin + the 2026-08-26 G1 prefill-contract pin
+            # (Qwen thinking arm renders pre-open the block; plan §7's
+            # "emergent" premise corrected — see THINK_PREFILL_SUFFIX).
+            "tests/test_issue2588_cot_boundary.py",
+            "tests/test_issue2588_template_prefill.py",
+            "-q",
+        ],
         cwd=_REPO_ROOT,
         capture_output=True,
         text=True,

@@ -4,8 +4,10 @@ The v2 defect class: reading the end-of-CoT state through ``compute_read_idx``
 (prompt-side by construction — its modes all resolve inside ``prompt_ids``)
 silently captures a pre-CoT state and nulls H2 across all nine thinking cells.
 These tests drive SYNTHETIC completions through the PRODUCTION builder
-(``issue2588_panel_common.build_capture_row_2588``) for BOTH thinking shapes
-(emergent = Qwen think, prefill = OLMo-Think) with fake offset-producing
+(``issue2588_panel_common.build_capture_row_2588``) for BOTH segmenter shapes
+(prefill = ALL thinking cells since the 2026-08-26 G1 correction — the Qwen3.5
+family templates pre-open the block, same as OLMo-Think; emergent = the ported
+generic mode, no longer produced by any 2588 cell) with fake offset-producing
 tokenizers (char-level AND multi-char, so BPE-seam offsets are exercised) and
 assert the cot_boundary index is (a) >= prompt_len in the concatenated
 sequence, (b) the token whose offsets CONTAIN the final ``</think>`` char, and
