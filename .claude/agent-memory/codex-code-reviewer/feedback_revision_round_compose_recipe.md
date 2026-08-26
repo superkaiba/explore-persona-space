@@ -2919,3 +2919,31 @@ compose-time parent-constant additivity grep over the range's +/− lines
 can hit a prose COMMENT naming the constant (`# pool sizes (2,778 ...)`)
 — attest it as a non-semantic hit and hand the hunk to Codex, rather than
 dropping or silently passing the additivity claim.
+
+**Reconciler-FAIL fix round where ALL upheld blockers were the twin's own +
+one twin mis-citation (#2588 r3, 2026-08-25):** the ruling inlines as the
+contract envelope (`---BEGIN BINDING RECONCILER RULING (round 2)---`; its
+"Consolidated must-fix list" = the acceptance criteria; its inner
+epm:review-reconcile tags stay verbatim — no extraction collision, but add
+the never-echo-any-marker-tag line). Three additions beyond the discharge
+shapes: (a) a CITATION-DISCIPLINE fence naming the twin's mis-read verbatim
+(which line pinned the CURRENT constant vs the sentinel-selected one) and
+requiring every Evidence field to QUOTE the matched line — "a finding
+resting on an unverified citation will be discarded"; (b) a three-way
+`deferred`-row preface: REJECTED (never re-raise) vs DOWNGRADED-NARROWED
+(the narrowed successor id carries the closure duty; the parent never
+re-opens), with `verified-open` rows explaining why blocker ids carry BOTH a
+round-2 and round-3 addressed row; (c) a split severity fence in the
+closure-ledger bracket — blocker NOT-ADDRESSED = substantive FAIL,
+ride-along-CONCERN NOT-ADDRESSED = CONCERN-row re-raise (the one sanctioned
+re-emit of a persisted id), UNLESS the addressed claim is provably FALSE
+(ordinary bar). Also hit live AGAIN (#2329-r6(a) class): the impl marker's
+own (a) diff-stat disagreed with git numstat in BOTH directions (+1,268/−56
+claimed vs +953/−37 real at the same range) — re-derive at compose time, put
+the truth in the HEAD block AND the Step 0.5 composer note with
+present-but-imperfect routing (at most CONCERNS). Implementer `(d)` eyeball
+items convert to REQUIRED adjudication tail lines in the ledger section
+(odd-sequence membership; judge-fallback prompts_path ordering residual);
+the fix-introduced hunt LEADS with the named precedent ("round 2's fixes
+introduced the odd-pass regen blocker") and pre-traces each new mechanism's
+break shapes without pre-resolving severity.
