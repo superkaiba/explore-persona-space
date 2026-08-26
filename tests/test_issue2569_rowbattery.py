@@ -20,9 +20,14 @@ ported #2476 fixes this unit depends on:
 - ``_run_sae_training`` executes the real matryoshka loop on a tiny memmap
   (fp16, width 16), writes a per-epoch checkpoint, and resumes to completion
   without re-training (epoch_done == SAE_EPOCHS short-circuits the loop);
-- ``load_sae_ctx`` round-trips the ae.pt bundle (threshold buffer included).
+- ``load_sae_ctx`` round-trips the ae.pt bundle (threshold buffer included);
+- fix-round-2 regression pins: leg-8 answer lengths from the n1m
+  raw-completions chunk files (REAL schema — the sampling manifest has no
+  response field) + the C2 coverage guard; the der-eval resume key's CONTENT
+  fingerprints; the leg-4 OOD corpus-transfer fold (fit LMSYS -> score
+  per-corpus holdout, #2476 corpus_fold mirror).
 
-All synthetic + CPU-fast (d <= 12); the dense 3584-dim fp64 factorizations stay
+All synthetic + CPU-fast (d <= 16); the dense 3584-dim fp64 factorizations stay
 out of every test path (unit brief).
 """
 
@@ -557,19 +562,83 @@ def test_leg8_residual_floor_matches_bruteforce():
     np.testing.assert_allclose(out["q90"], np.quantile(dists, 0.9), rtol=1e-9)
 
 
-def test_leg8_ans_len_manifest_join(tmp_path):
-    """Answer lengths join by ci to the assembled row space; pass_b rows stay -1
-    (the length-unknown stratum)."""
+def test_leg8_ans_len_raw_completions_join(tmp_path):
+    """Answer lengths come from the n1m RAW-COMPLETIONS chunk files (the only
+    artifact carrying the GENERATED answers), joined by ci; pass_b rows stay -1;
+    the shardNN_skipped.json sidecar sharing the prefix is ignored. The real
+    sampling manifest has NO response field (probed part_00020.jsonl: keys
+    corpus/depth/i/messages/n_chars/source_hash/split/stream_pos), so the
+    pre-fix manifest-side join returned 0 for EVERY row — the blocker
+    manifest-response-field-absent-answer-lengths-zero this pins against."""
     import json as _json
 
-    # Manifest rows key the conversation index as "i" (the store side is "ci").
-    rows = [{"i": 0, "response": "abcd"}, {"i": 1, "response": ""}, {"i": 2, "response": "xy"}]
-    (tmp_path / "part_00000.jsonl").write_text(
-        "".join(_json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+    (tmp_path / "shard00_chunk0000.json").write_text(
+        _json.dumps(
+            {
+                "shard_index": 0,
+                "chunk": 0,
+                "rows": [
+                    {"ci": 0, "prompt": "p", "response": "abcd"},
+                    {"ci": 1, "prompt": "p", "response": "xy"},
+                ],
+            }
+        ),
+        encoding="utf-8",
     )
+    (tmp_path / "shard01_chunk0000.json").write_text(
+        _json.dumps(
+            {"shard_index": 1, "chunk": 0, "rows": [{"ci": 2, "prompt": "p", "response": "hello!"}]}
+        ),
+        encoding="utf-8",
+    )
+    # the over-length-skip sidecar lives under the SAME prefix and must be ignored
+    (tmp_path / "shard00_skipped.json").write_text(_json.dumps({"skipped": []}), encoding="utf-8")
     row_ci = np.array([-1, -1, 0, 1, 2], np.int64)
-    out = RB._ans_len_from_manifest_dir(tmp_path, row_ci, n_pb=2)
-    np.testing.assert_array_equal(out, [-1, -1, 4, 0, 2])
+    out = RB._ans_len_from_raw_completions(
+        row_ci, 2, need_rows=np.arange(5, dtype=np.int64), raw_dir=tmp_path, stage_dir=tmp_path
+    )
+    np.testing.assert_array_equal(out, [-1, -1, 4, 2, 6])
+    # need_rows scoping: a row outside need_rows stays -1 (streaming early-exit)
+    out2 = RB._ans_len_from_raw_completions(
+        row_ci, 2, need_rows=np.array([2, 3]), raw_dir=tmp_path, stage_dir=tmp_path
+    )
+    np.testing.assert_array_equal(out2, [-1, -1, 4, 2, -1])
+
+
+def test_leg8_ans_len_raw_schema_drift_fails_loud(tmp_path):
+    """A raw chunk row WITHOUT a response field raises (KeyError) — never a
+    silent 0-length (the pre-fix `.get("response") or ""` shape, which zeroed
+    every answer length while the audit stat read green)."""
+    import json as _json
+
+    import pytest
+
+    (tmp_path / "shard00_chunk0000.json").write_text(
+        _json.dumps({"shard_index": 0, "chunk": 0, "rows": [{"ci": 0, "prompt": "p"}]}),
+        encoding="utf-8",
+    )
+    row_ci = np.array([-1, 0], np.int64)
+    with pytest.raises(KeyError):
+        RB._ans_len_from_raw_completions(
+            row_ci, 1, need_rows=np.arange(2, dtype=np.int64), raw_dir=tmp_path, stage_dir=tmp_path
+        )
+
+
+def test_leg8_ans_len_coverage_guard_fails_loud():
+    """The C2 coverage guard raises when ANY present non-pass_b row lacks a
+    measured generated-answer length (a join shortfall must never leave the
+    stratifier running inert); a healthy pass_b-only unknown set returns the
+    unknown-count among present rows."""
+    import pytest
+
+    with pytest.raises(AssertionError, match="stratifier inert"):
+        RB._assert_ans_len_coverage(
+            np.array([-1, -1, 4, -1], np.int64), np.array([0, 2, 3], np.int64), n_pb=2
+        )
+    n_unknown = RB._assert_ans_len_coverage(
+        np.array([-1, -1, 4, 7], np.int64), np.array([0, 2, 3], np.int64), n_pb=2
+    )
+    assert n_unknown == 1  # exactly the present pass_b row
 
 
 def test_leg8_pair_strata_encoding():
@@ -584,3 +653,156 @@ def test_leg8_pair_strata_encoding():
     assert s[0] == 0 * 100 + 3  # (0,0), mean 15 == edge -> side="right" puts it in bin 3
     assert s[1] == 1 * 100 - 1  # (0,1), row 2 unknown -> -1 bucket
     assert s[2] == 1 * 100 + 9  # (0,1), mean 510 clips to decile 9
+
+
+# ── unit 4b: der-eval resume regime key ───────────────────────────────────────────
+
+
+def test_der_regime_key_fingerprints_description_inputs(tmp_path):
+    """The der-eval resume key carries CONTENT hashes of the desc / evidence /
+    probed-description files: regenerating any of them under the SAME path
+    changes the key (blocker der-eval-resume-ignores-evidence-file — a
+    path-only key served a stale verdict via 'SKIP (done)')."""
+    import argparse
+
+    def _ns(desc=None, ev=None):
+        return argparse.Namespace(
+            der_items=10, der_feats_per_list=4, der_budget=100, der_desc_file=desc,
+            der_evidence_file=ev,
+        )  # fmt: skip
+
+    ev = tmp_path / "evidence.json"
+    ev.write_text('{"1": ["a"]}', encoding="utf-8")
+    k1 = RB._der_regime_key(_ns(ev=ev), "judge-x", None)
+    assert k1["evidence_file"] == str(ev) and k1["evidence_file_sha256"]
+    ev.write_text('{"1": ["b"]}', encoding="utf-8")  # regenerated evidence, SAME path
+    k2 = RB._der_regime_key(_ns(ev=ev), "judge-x", None)
+    assert k1 != k2 and k1["evidence_file_sha256"] != k2["evidence_file_sha256"]
+    desc = tmp_path / "desc.json"
+    desc.write_text('{"5": "a feature"}', encoding="utf-8")
+    k3 = RB._der_regime_key(_ns(desc=desc), "judge-x", None)
+    desc.write_text('{"5": "a different feature"}', encoding="utf-8")
+    k4 = RB._der_regime_key(_ns(desc=desc), "judge-x", None)
+    assert k3 != k4 and k3["desc_file_sha256"] != k4["desc_file_sha256"]
+    # the runtime-probed #2552 path is fingerprinted the same way
+    k5 = RB._der_regime_key(_ns(), "judge-x", desc)
+    assert k5["desc_probe"] == str(desc) and k5["desc_probe_sha256"]
+    # None passthrough: absent inputs key as None, never a crash
+    k6 = RB._der_regime_key(_ns(), "judge-x", None)
+    assert k6["desc_file_sha256"] is None and k6["evidence_file_sha256"] is None
+
+
+# ── unit 4b: leg-4 corpus-transfer fold (plan §6) ─────────────────────────────────
+
+
+def test_leg4_corpus_transfer_fold_fits_lmsys_only_and_splits_scores():
+    """The transfer fit's TRAIN rows are exactly the LMSYS fit rows (group-level
+    fold, ood-generalization-folds); per-corpus holdout splits match direct
+    recomputation for BOTH maps; pass_b holdout rows (te_corpus==2) enter
+    NEITHER split (blocker leg4-ood-corpus-transfer-fold-not-implemented)."""
+    rng = np.random.default_rng(0)
+    n_fit, n_val, n_te, d, dy = 40, 8, 12, 4, 3
+    x = rng.normal(size=(n_fit + n_val + n_te, d)).astype(np.float16)
+    y = rng.normal(size=(n_fit + n_val + n_te, dy)).astype(np.float32)
+    tr = np.arange(n_fit)
+    va = n_fit + np.arange(n_val)
+    te = n_fit + n_val + np.arange(n_te)
+    lm_fit_mask = np.zeros(n_fit, bool)
+    lm_fit_mask[: n_fit // 2] = True
+    te_corpus = np.array([0] * 5 + [1] * 5 + [2] * 2, np.int64)
+    pred_primary = rng.normal(size=(n_te, dy))
+    y_te64 = y[te].astype(np.float64)
+    seen = {}
+
+    def fake_fit(x_, y_, tr_, va_, te_, lambdas, dev):
+        """Signature-conformant fake capturing the transfer fit's train rows."""
+        seen["tr"] = np.asarray(tr_).copy()
+        meta = {"selected_lambda": 1.0, "val_r2_at_selected": 0.0, "lambda_grid_edge": None}
+        return np.ones((len(te_), y_.shape[1])), meta
+
+    doc, arrays = RB._corpus_transfer_fold(
+        x,
+        np.asarray(y, np.float32),
+        np.arange(d),
+        tr,
+        va,
+        te,
+        lm_fit_mask,
+        te_corpus,
+        pred_primary,
+        y_te64,
+        "cpu",
+        production=False,
+        fit_fn=fake_fit,
+    )
+    np.testing.assert_array_equal(seen["tr"], tr[lm_fit_mask])  # LMSYS-only fit rows
+    for label, code in (("lmsys", 0), ("wildchat", 1)):
+        m = te_corpus == code
+        exp_fit, _ = RB._perfeature_r2(pred_primary[m], y_te64[m])
+        np.testing.assert_allclose(arrays[f"r2_fitted_{label}"], exp_fit.astype(np.float32))
+        exp_tr, _ = RB._perfeature_r2(np.ones((int(m.sum()), dy)), y_te64[m])
+        np.testing.assert_allclose(arrays[f"r2_transfer_{label}"], exp_tr.astype(np.float32))
+    np.testing.assert_array_equal(arrays["te_corpus"], te_corpus)
+    assert doc["n_fit_lmsys"] == n_fit // 2 and doc["n_te_wildchat"] == 5
+    assert doc["n_te_pass_b_excluded"] == 2
+    assert doc["fit_meta"]["selected_lambda"] == 1.0
+
+
+def test_leg4_corpus_transfer_fold_production_floors_and_smoke_skip():
+    """Production asserts the n<d regime away (n_lmsys_fit >= 2*d) and requires
+    both holdout corpora populated; a thin smoke mix skips LOUD with the reason
+    recorded (never a silent fit on an empty arm)."""
+    import pytest
+
+    x = np.zeros((10, 4), np.float16)
+    y = np.zeros((10, 2), np.float32)
+    tr, va, te = np.arange(6), np.arange(6, 8), np.arange(8, 10)
+    lm = np.array([True, True, True, False, False, False])
+    y_te64 = np.zeros((2, 2), np.float64)
+    with pytest.raises(AssertionError, match="forbids n<d"):
+        RB._corpus_transfer_fold(
+            x, y, np.arange(4), tr, va, te, lm, np.array([0, 1]), np.zeros((2, 2)), y_te64,
+            "cpu", production=True,
+        )  # fmt: skip
+    doc, arrays = RB._corpus_transfer_fold(
+        x, y, np.arange(4), tr, va, te, lm, np.array([0, 0]), np.zeros((2, 2)), y_te64,
+        "cpu", production=False,
+    )  # fmt: skip
+    assert "skipped" in doc and "wildchat_te=0" in doc["skipped"]
+    assert set(arrays) == {"te_corpus"}  # no fit ran on the empty arm
+
+
+def test_leg4_corpus_transfer_fold_real_core():
+    """The fold drives the REAL #779 fit core end-to-end (no seams; the
+    production-body test for the seam-stubbed helper) and returns finite
+    per-corpus medians with a non-edge widened-grid fit meta."""
+    rng = np.random.default_rng(11)
+    d = 8
+    eta = 1.0 / np.arange(1, d + 1) ** 1.5
+    b = rng.standard_normal((d, d)) * 0.3
+    n = 700
+    x = (rng.standard_normal((n, d)) * np.sqrt(eta)).astype(np.float32)
+    y = (x @ b + rng.standard_normal((n, d))).astype(np.float32)
+    tr, va, te = np.arange(500), 500 + np.arange(100), 600 + np.arange(100)
+    lm_fit = np.zeros(500, bool)
+    lm_fit[:250] = True
+    te_corpus = np.concatenate([np.zeros(50, np.int64), np.ones(50, np.int64)])
+    doc, arrays = RB._corpus_transfer_fold(
+        x,
+        y,
+        np.arange(d),
+        tr,
+        va,
+        te,
+        lm_fit,
+        te_corpus,
+        np.zeros((100, d)),
+        y[te].astype(np.float64),
+        "cpu",
+        production=False,
+    )
+    assert "skipped" not in doc
+    assert not doc["fit_meta"]["lambda_grid_edge"]  # non-edge guaranteed (C4)
+    assert np.isfinite(doc["r2_median"]["transfer_on_wildchat"])
+    assert doc["r2_median"]["transfer_on_wildchat"] > 0.0  # real signal recovered
+    assert arrays["r2_transfer_wildchat"].shape == (d,)

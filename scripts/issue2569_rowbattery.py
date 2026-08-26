@@ -38,12 +38,17 @@ Phase driver over the assembled X19/Y19 row store (plan v4 §4 legs 1/2 moments 
              the hurdle decomposition (firing AUROC + conditional-magnitude R2,
              NEVER mixed with the unconditional R2), P/R@k at the realized L0,
              kNN retrieval (euclidean + cosine, chance stated), and the #2476
-             ctx-alive floor sweep (1%/0.5%/0.25%/0.2%).
+             ctx-alive floor sweep (1%/0.5%/0.25%/0.2%), plus the plan-§6 OOD
+             corpus-transfer fold (fit LMSYS-only -> score per-corpus holdout,
+             mirroring #2476's corpus_fold / #1482 refit_lmsys_transfer).
   mine       Leg-8 step 2 (unit 4b): chunked-GEMM kernel-pair mining over random
              conversation pairs (kernel fraction ||dc @ A|| / ||dc||; B1 assert
              iii runs as a REAL probe-batch assert against the registered
              prediction difference), stratified distance-matched controls
-             (corpus-source x answer-length-decile strata), realized ||dv_A||
+             (corpus-source x answer-length-decile strata; answer lengths joined
+             from the n1m raw-completions chunk JSONs — the GENERATED answers;
+             the sampling manifest is written BEFORE generation and has no
+             response field), realized ||dv_A||
              read with the PINNED estimator (median of paired ratios; the
              ratio-of-medians companion), rank tests, a 10,000-draw clustered
              bootstrap CI (conversation-overlap components; the SAME estimator
@@ -83,7 +88,8 @@ Driver entry runs the B1 identity asserts on the banked L19 map payload
 (apply-path breakage class).
 
 Smoke blind-spot mirror (unit 4b phases): the ``--answer-sae-dir`` /
-``--alive-counts-npz`` / ``--manifest-dir`` overrides substitute the INPUT SOURCE
+``--alive-counts-npz`` / ``--manifest-dir`` / ``--raw-completions-dir`` overrides
+substitute the INPUT SOURCE
 for the HF staging legs (same parse/consume path either way); the HF download
 branches themselves (``hub.retry_transient``-wrapped) are exercised by the pod
 smoke + production, not by the VM unit tests. Same class for this unit's
@@ -97,6 +103,7 @@ exercised by the pod smoke + production, never by a smoke-flag branch.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -1015,6 +1022,22 @@ def _check_local_regime(out: Path, key: dict, wipe: list[Path], tag: str) -> Non
         tmp.write_text(json.dumps(key, sort_keys=True))
 
 
+def _file_sha256(path: Path | str | None) -> str | None:
+    """CONTENT fingerprint of an output-affecting input file for resume regime
+    keys (None passthrough). A path-only key lets a REGENERATED producer under
+    the same path serve a stale verdict via 'SKIP (done)' (#722 r3 class;
+    fix-round-2 blocker der-eval-resume-ignores-evidence-file). Bytes read
+    from disk are safe to hash directly (never a recomputed float array —
+    the machine-stable-key rule). A provided-but-missing path fails loud."""
+    if not path:
+        return None
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for block in iter(lambda: fh.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
 def _gather_rows(mm, idx: np.ndarray) -> np.ndarray:
     """Rows of a memmap at possibly-unsorted / repeated indices via ONE sorted
     gather + inverse permutation (memmap fancy-indexing wants sorted runs)."""
@@ -1278,6 +1301,97 @@ def _banked_route_summary(fname: str, union: np.ndarray, banked_dir: Path, *, ro
     }
 
 
+def _corpus_transfer_fold(
+    x_alive,
+    y_fit32: np.ndarray,
+    cols_primary: np.ndarray,
+    tr: np.ndarray,
+    va: np.ndarray,
+    te: np.ndarray,
+    lm_fit_mask: np.ndarray,
+    te_corpus: np.ndarray,
+    pred_te_primary: np.ndarray,
+    y_te64: np.ndarray,
+    dev,
+    *,
+    production: bool,
+    fit_fn=None,
+) -> tuple[dict, dict]:
+    """Leg-4 OOD corpus-transfer fold (plan §6: fit LMSYS -> score WildChat,
+    mirroring #2476's corpus_fold — ``issue2476_turnavg_sae`` EA fit id
+    ``refit_lmsys_transfer__ridge__seed0`` via #1482 ``_train_rows_for``:
+    LMSYS-only train rows, lambda selected on the SAME val rows).
+
+    GROUP-level fold: corpus is the fold group (ood-generalization-folds) — a
+    pointwise holdout R2 never carries the generalization claim alone; the
+    carrier is transfer_on_wildchat vs fitted_on_wildchat (SAME target rows,
+    SAME union features — matched-target disclosure). ``te_corpus`` codes:
+    0=lmsys, 1=wildchat, 2=pass_b (excluded from BOTH score splits). Returns
+    (doc, arrays); arrays carry per-feature R2 splits for BOTH maps plus
+    ``te_corpus`` (so score-side splits stay reconstructible from the
+    persisted holdout predictions). Production floors assert (n < d regime
+    forbidden); a sub-floor smoke corpus mix skips LOUD (recorded in the doc).
+    ``fit_fn`` is a test seam faking ONLY the fit core (same widen loop)."""
+    tr_lm = np.asarray(tr, np.int64)[np.asarray(lm_fit_mask, bool)]
+    te_corpus = np.asarray(te_corpus, np.int64)
+    n_lm, d_primary = int(len(tr_lm)), int(len(cols_primary))
+    wc_mask = te_corpus == 1
+    lm_mask = te_corpus == 0
+    n_wc, n_lm_te = int(wc_mask.sum()), int(lm_mask.sum())
+    doc: dict = {
+        "fold": "fit LMSYS-only (pass_b masked out by row id) -> score per-corpus holdout",
+        "mirrors": (
+            "#2476 corpus_fold: EA fit id refit_lmsys_transfer__ridge__seed0 "
+            "(#1482 _train_rows_for LMSYS train rows; lambda on the same val set)"
+        ),
+        "group_level": (
+            "corpus is the fold group (ood-generalization-folds): the transfer read "
+            "carries the generalization claim, never a pointwise holdout R2 alone"
+        ),
+        "n_fit_lmsys": n_lm,
+        "d_alive_ctx": d_primary,
+        "n_over_d": (float(n_lm) / d_primary) if d_primary else None,
+        "n_te_wildchat": n_wc,
+        "n_te_lmsys": n_lm_te,
+        "n_te_pass_b_excluded": int((te_corpus == 2).sum()),
+    }
+    arrays: dict[str, np.ndarray] = {"te_corpus": te_corpus.astype(np.int8)}
+    if production:
+        assert n_lm >= 2 * d_primary, (
+            f"corpus-transfer fit n {n_lm} < 2*d {d_primary} — plan §4 leg 4 forbids n<d"
+        )
+        assert n_wc >= 2 and n_lm_te >= 2, (n_wc, n_lm_te)
+    if n_lm < 2 or n_wc < 2 or n_lm_te < 2:
+        doc["skipped"] = (
+            f"corpus mix too thin (lmsys_fit={n_lm}, wildchat_te={n_wc}, lmsys_te={n_lm_te})"
+        )
+        logger.warning("[featmap] corpus-transfer fold skipped: %s", doc["skipped"])
+        return doc, arrays
+    xf = np.asarray(x_alive[:, cols_primary], np.float32)
+    pt, meta = _fit_val_widened(xf, y_fit32, tr_lm, va, te, dev, fit_fn=fit_fn)
+    doc["fit_meta"] = {
+        "estimator": "val-selected primal ridge, widened 27-value grid (C4 widen-on-edge)",
+        "selected_lambda": float(meta["selected_lambda"]),
+        "val_r2_at_selected": float(meta["val_r2_at_selected"]),
+        "lambda_grid_edge": meta.get("lambda_grid_edge"),
+        "widenings": int(meta["widenings"]),
+    }
+    med: dict[str, float] = {}
+    for label, mask in (("wildchat", wc_mask), ("lmsys", lm_mask)):
+        r2_tr, _ = _perfeature_r2(np.asarray(pt)[mask], y_te64[mask])
+        r2_fit, _ = _perfeature_r2(np.asarray(pred_te_primary)[mask], y_te64[mask])
+        arrays[f"r2_transfer_{label}"] = r2_tr.astype(np.float32)
+        arrays[f"r2_fitted_{label}"] = r2_fit.astype(np.float32)
+        med[f"transfer_on_{label}"] = float(np.nanmedian(r2_tr))
+        med[f"fitted_on_{label}"] = float(np.nanmedian(r2_fit))
+    doc["r2_median"] = med
+    doc["headline_read"] = (
+        "transfer_on_wildchat (LMSYS-trained map on WildChat holdout rows) vs "
+        "fitted_on_wildchat (mixed-fit map on the SAME rows / SAME union features)"
+    )
+    return doc, arrays
+
+
 def phase_feature_map(args) -> None:
     """Leg-4 steps 3-6: alive-ctx-feature -> banked-alive-answer-union ridge map
     + the six comparison routes + hurdle metrics + floor sweep (module docstring).
@@ -1333,7 +1447,7 @@ def phase_feature_map(args) -> None:
     y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
     rows_present = np.load(a_dir / "rows_present.npy")
     committed = T24._committed_split()
-    _row_ci, _prov, pools = T24._load_scratch_meta(t24)
+    _row_ci, prov_u8, pools = T24._load_scratch_meta(t24)
     _r1, val_ids, _test_ids = T24._assert_pinned_valtest(committed)
 
     fit_pos = _positions_in_present(rows_present, pools["sae_fit"], "featmap/fit")
@@ -1503,6 +1617,32 @@ def phase_feature_map(args) -> None:
     )
     arrays["activity_te"] = (y_te64 > 0).mean(0).astype(np.float32)
 
+    # ── OOD corpus-transfer fold (plan §6: fit LMSYS -> score WildChat) ──────────
+    n_pb = int(T24.N1M.N_PASS_B)
+    row_ids_fit = np.asarray(rows_present[fit_pos], np.int64)
+    row_ids_te = np.asarray(rows_present[te_pos], np.int64)
+    # prov_u8: 0=lmsys / 1=wildchat; the #1482 convention labels pass_b rows
+    # lmsys — mask them by row id (pass_b = the leading n_pb global rows) so the
+    # LMSYS fit arm never absorbs the pass-B seed-corpus distribution (the same
+    # rule the curve phase applies to the verdict subset).
+    lm_fit_mask = (prov_u8[row_ids_fit] == 0) & (row_ids_fit >= n_pb)
+    te_corpus = np.where(row_ids_te < n_pb, 2, prov_u8[row_ids_te].astype(np.int64))
+    transfer_doc, transfer_arrays = _corpus_transfer_fold(
+        x_alive,
+        y_fit32,
+        np.searchsorted(alive_loose, alive_by_floor[LEG4_CTX_FLOOR_FRACS[0]]),
+        tr,
+        va,
+        te,
+        lm_fit_mask,
+        te_corpus,
+        pred_te,
+        y_te64,
+        args.device,
+        production=production,
+    )
+    arrays.update(transfer_arrays)
+
     # ── kNN retrieval in answer-SAE activation space (chance = k/n_pool) ─────────
     knn = {
         m: knn_retrieval(np.asarray(pred_te, np.float64), y_te64, metric=m)
@@ -1522,6 +1662,7 @@ def phase_feature_map(args) -> None:
             "realized_l0_k": int(k_l0),
             "routes": routes,
             "floor_sweep": sweep,
+            "corpus_transfer": transfer_doc,
             "knn_retrieval": knn,
             "shuffle_null": {
                 "n_draws": len(T24.SHUFFLE_SEEDS_2476),
@@ -1624,32 +1765,151 @@ def _mine_chunks(
     return files
 
 
-def _ans_len_from_manifest_dir(manifest_dir: Path, row_ci: np.ndarray, n_pb: int) -> np.ndarray:
-    """Per-row answer CHAR length over the assembled row space, joined from the
-    n1m sampling-manifest parts by conversation index (ci). pass_b rows (the
-    leading ``n_pb`` rows, ci == -1) have no manifest text -> -1 = the
-    'length-unknown' stratum (5,000 rows, 0.52% of the production pool).
-    Response text is consumed ONLY via len() — never logged (content hygiene)."""
+RAW_CHUNK_RE = re.compile(r"shard\d+_chunk\d+\.json$")  # skips shardNN_skipped.json sidecars
+ANS_LEN_CKPT_EVERY = 200  # partial-checkpoint cadence over the 1,920 HF chunk files
+
+
+def _ans_len_join_raw_file(path: Path, rev: dict[int, int], out: np.ndarray) -> int:
+    """Join ONE n1m raw-completions chunk file (top-level ``{chunk, rows,
+    shard_index}``; rows ``[{ci, prompt, response}]`` — schema probed on the
+    real ``shard00_chunk0000.json``, 2026-08-25) into ``out`` as the GENERATED
+    answer's char length, keyed by conversation index. Schema drift fails LOUD
+    (KeyError) — never a silent 0-length: the C2 stratifier must not no-op
+    while its audit statistic reads green (fix-round-2 blocker
+    manifest-response-field-absent-answer-lengths-zero). Response text is
+    consumed ONLY via len() — never logged (content hygiene)."""
+    d = json.loads(Path(path).read_text(encoding="utf-8"))
+    n = 0
+    for rec in d["rows"]:  # KeyError on a drifted top level = fail loud
+        r = rev.get(int(rec["ci"]))
+        if r is not None:
+            out[r] = len(rec["response"])  # KeyError on a missing response = fail loud
+            n += 1
+    return n
+
+
+def _ans_len_from_raw_completions(
+    row_ci: np.ndarray, n_pb: int, *, need_rows: np.ndarray, raw_dir: Path | None, stage_dir: Path
+) -> np.ndarray:
+    """Per-row GENERATED-answer char length over the assembled row space.
+
+    Source: the n1m raw-completions chunk JSONs — the ONLY artifact carrying
+    the generated answer text (`issue779_ffc_n1m_generate_capture` persists
+    ``{ci, prompt, response}`` rows per capture chunk). The sampling manifest
+    is written at SAMPLING time, BEFORE any generation exists — its keys are
+    corpus/depth/i/messages/n_chars/source_hash/split/stream_pos with NO
+    response field (probed ``part_00020.jsonl``, 2026-08-25), so a
+    manifest-side join returns 0 for every row (the fix-round-2 blocker).
+    pass_b rows (leading ``n_pb``, ci == -1) have no n1m generation -> -1 =
+    the length-unknown stratum. ``raw_dir`` consumes local
+    ``shard*_chunk*.json`` files (input-source override; same join either
+    way); the default streams the HF chunk files ONE at a time (download ->
+    join -> unlink, peak ~1 file of the 3.22 GB prefix) with a partial
+    checkpoint every ``ANS_LEN_CKPT_EVERY`` files keyed on GENERATING
+    PARAMETERS (file count + prefix — never recomputed floats). Both paths
+    early-exit once every needed row is joined."""
     row_ci = np.asarray(row_ci, np.int64)
-    rev = {int(c): r for r, c in enumerate(row_ci[n_pb:], start=n_pb)}
+    need = np.asarray(need_rows, np.int64)
+    need = need[need >= int(n_pb)]
+    rev = {int(row_ci[r]): int(r) for r in need}
+    assert len(rev) == len(need), "duplicate conversation index among needed rows"
     out = np.full(len(row_ci), -1, np.int64)
-    parts = sorted(Path(manifest_dir).glob("part_*.jsonl"))
-    assert parts, f"no sampling-manifest parts under {manifest_dir}"
-    n_hit = 0
-    for pi, part in enumerate(parts):
-        with open(part, encoding="utf-8") as fh:
-            for line in fh:
-                if not line.strip():
-                    continue
-                rec = json.loads(line)
-                # Manifest-side key is "i" (the store side is "ci") — see the
-                # corpus-tag join above for the rename boundary.
-                r = rev.get(int(rec["i"]))
-                if r is not None:
-                    out[r] = len(rec.get("response") or "")
-                    n_hit += 1
-        print(f"[mine] ans-len part {pi + 1}/{len(parts)} joined={n_hit}", flush=True)
+    if raw_dir is not None:
+        files = sorted(Path(raw_dir).glob("shard*_chunk*.json"))
+        files = [p for p in files if RAW_CHUNK_RE.search(p.name)]
+        assert files, f"no raw-completions chunk files under {raw_dir}"
+        n_hit = 0
+        for fi, p in enumerate(files):
+            n_hit += _ans_len_join_raw_file(p, rev, out)
+            print(f"[mine] ans-len raw chunk {fi + 1}/{len(files)} joined={n_hit}", flush=True)
+            if n_hit == len(rev):
+                break
+        return out
+    # HF streaming path (production/pod): list -> per-file download/join/unlink.
+    import issue779_ffc_n1m_generate_capture as N1G
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{N1G.HF_PREFIX}/raw_completions"
+    names = hub.retry_transient(
+        lambda: sorted(
+            f.path
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
+            for f in HfApi().list_repo_tree(
+                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
+            )
+            if getattr(f, "size", None) is not None and RAW_CHUNK_RE.search(f.path)
+        ),
+        what=f"raw-completions listing ({prefix})",
+    )
+    assert names, f"no raw-completions chunk files under HF {prefix}"
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    ck = stage_dir / "ans_len_partial.npz"
+    key = json.dumps(
+        {"n_files": len(names), "prefix": prefix, "n_rows": int(len(row_ci)), "v": 2},
+        sort_keys=True,
+    )
+    start = n_hit = 0
+    if ck.exists():
+        with np.load(ck) as z:
+            if str(z["key"]) == key:
+                out = np.asarray(z["ans_len"], np.int64)
+                start, n_hit = int(z["n_done"]), int(z["n_hit"])
+                logger.info("[mine] ans-len resume at raw file %d/%d", start, len(names))
+            else:
+                logger.warning("[mine] ans-len partial regime changed; restarting the join")
+    t0 = time.time()
+    for fi in range(start, len(names)):
+        got = Path(
+            hub.retry_transient(
+                lambda n=names[fi]: hf_hub_download(
+                    C.HF_DATA_REPO,
+                    filename=n,
+                    repo_type="dataset",
+                    local_dir=str(stage_dir / "_hf"),
+                ),
+                what=f"raw-completions fetch ({Path(names[fi]).name})",
+            )
+        )
+        n_hit += _ans_len_join_raw_file(got, rev, out)
+        got.unlink()  # stream-reduce: never materialize the whole prefix
+        done = fi + 1 == len(names) or n_hit == len(rev)
+        if (fi + 1) % ANS_LEN_CKPT_EVERY == 0 or done:
+            _atomic_npz_save(
+                ck,
+                ans_len=out,
+                n_done=np.int64(fi + 1),
+                n_hit=np.int64(n_hit),
+                key=np.str_(key),
+            )
+            print(
+                f"[mine] ans-len raw file {fi + 1}/{len(names)} joined={n_hit}/{len(rev)} "
+                f"elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        if done:
+            break
     return out
+
+
+def _assert_ans_len_coverage(ans_len: np.ndarray, rows_present: np.ndarray, n_pb: int) -> int:
+    """C2 fail-loud coverage guard: every PRESENT non-pass_b row must carry a
+    measured generated-answer length (>= 0). A shortfall means the
+    raw-completions join failed and the answer-length decile stratifier would
+    run INERT (every known pair collapsed into one bucket) while
+    ``n_rows_unknown_len`` still read small — the exact silent no-op the
+    fix-round-2 blocker bans. Returns the unknown-length count among present
+    rows (expected: exactly the pass_b rows)."""
+    present = np.asarray(rows_present, np.int64)
+    lens = np.asarray(ans_len, np.int64)
+    nonpb = present[present >= int(n_pb)]
+    missing = int((lens[nonpb] < 0).sum())
+    assert missing == 0, (
+        f"{missing}/{len(nonpb)} present non-pass_b rows have no generated-answer "
+        "length (raw-completions join failed); refusing to run the C2 stratifier inert"
+    )
+    return int((lens[present] < 0).sum())
 
 
 def _pair_strata(
@@ -1909,6 +2169,11 @@ def phase_mine(args) -> None:
             "boot_draws": int(args.boot_draws),
             "seed": LEG8_SEED,
             "layer": int(args.layer),
+            # source-versioned: wipes any pre-fix ans_len.npy (the manifest join
+            # returned all-zero lengths — blocker
+            # manifest-response-field-absent-answer-lengths-zero), including
+            # under --resume-across-code-sha.
+            "ans_len_source": "n1m_raw_completions_v2",
         },
         wipe=[*outputs, ans_len_path, chunks_dir],
         tag="mine",
@@ -1940,20 +2205,20 @@ def phase_mine(args) -> None:
     logger.info("[mine] B1 assert iii probe PASS: %s", probe)
 
     # ── answer-length stratifier (C2; checkpointed) ───────────────────────────────
+    n_pb = int(T24.N1M.N_PASS_B)
     if ans_len_path.exists():
         ans_len = np.load(ans_len_path)
     else:
-        if args.manifest_dir is not None:
-            mdir = Path(args.manifest_dir)
-        else:
-            import issue779_ffc_n1m_generate_capture as N1G
-
-            mdir = N1G._download_manifest(
-                N1G.HF_PREFIX, T24._stage_dir(t24) / "sampling_manifest_2569"
-            )
-        ans_len = _ans_len_from_manifest_dir(mdir, row_ci, int(T24.N1M.N_PASS_B))
+        ans_len = _ans_len_from_raw_completions(
+            row_ci,
+            n_pb,
+            need_rows=rows_present,
+            raw_dir=Path(args.raw_completions_dir) if args.raw_completions_dir else None,
+            stage_dir=T24._stage_dir(t24) / "raw_completions_2569",
+        )
         _atomic_np_save(ans_len, ans_len_path)
     assert len(ans_len) == len(row_ci), (len(ans_len), len(row_ci))
+    n_unknown_present = _assert_ans_len_coverage(ans_len, rows_present, n_pb)
 
     # ── chunked mining pass (per-chunk checkpoints) ──────────────────────────────
     A, _b = OP.row_operator(payload)
@@ -1987,6 +2252,13 @@ def phase_mine(args) -> None:
         dec_edges = np.quantile(((l1[known_elig] + l2[known_elig]) / 2.0), np.linspace(0.1, 0.9, 9))
     else:  # all-unknown lengths (possible only in tiny fixtures): one -1 bucket
         dec_edges = np.zeros(9)
+    if production:
+        # Degenerate edges collapse every known pair into one decile — the C2
+        # stratifier would run inert while its audit stat reads green (the
+        # shard-B live demo shape: dec_edges == [0.0] * 9).
+        assert np.unique(dec_edges).size == len(dec_edges), (
+            f"degenerate answer-length decile edges at production: {dec_edges.tolist()}"
+        )
     strata = _pair_strata(i_id, j_id, prov_u8, ans_len, dec_edges)
 
     sel = _select_kernel_pairs(i_id, j_id, dcn, kap, strata, top_pairs=int(args.top_pairs))
@@ -2109,8 +2381,14 @@ def phase_mine(args) -> None:
                 "held-out residual-pair floor, never against 1 alone",
             },
             "ans_len_strata": {
+                "source": (
+                    "n1m raw_completions chunk JSONs (GENERATED answer char length); "
+                    "the sampling manifest carries no response field"
+                ),
                 "n_rows_unknown_len": int((ans_len < 0).sum()),
                 "n_rows_total": int(len(ans_len)),
+                "n_unknown_among_present": int(n_unknown_present),
+                "n_rows_present": int(len(rows_present)),
                 "decile_edges": [float(x) for x in dec_edges],
             },
             "production": bool(production),
@@ -2466,6 +2744,30 @@ def _generate_descriptions(
     return desc, stats
 
 
+def _der_regime_key(args, judge_model: str, desc_probe: Path | None) -> dict:
+    """der-eval resume regime key: EVERY output-affecting input is keyed,
+    including CONTENT fingerprints (sha256) of the description / evidence
+    files and the runtime-probed #2552 path. A path-only key let a regenerated
+    ``--der-evidence-file`` under the same out-root serve a STALE verdict via
+    'SKIP (done)' (fix-round-2 blocker der-eval-resume-ignores-evidence-file;
+    the #722 r3 resume-key class)."""
+    return {
+        "items": int(args.der_items),
+        "feats_per_list": int(args.der_feats_per_list),
+        "n_way": int(DER_NWAY),
+        "budget": int(args.der_budget),
+        "seed": int(DER_SEED),
+        "judge_model": judge_model,
+        "desc_file": str(args.der_desc_file) if args.der_desc_file else None,
+        "desc_file_sha256": _file_sha256(args.der_desc_file),
+        "desc_probe": str(desc_probe) if desc_probe else None,
+        "desc_probe_sha256": _file_sha256(desc_probe),
+        "evidence_file": str(args.der_evidence_file) if args.der_evidence_file else None,
+        "evidence_file_sha256": _file_sha256(args.der_evidence_file),
+        "phase": "der_2569",
+    }
+
+
 def phase_der(args) -> None:
     """Leg-4 step 5 tail: Der-protocol 10-way matching / coverage on the fitted
     map's predicted feature lists (module docstring ``der-eval`` entry). Both
@@ -2482,19 +2784,13 @@ def phase_der(args) -> None:
     judge_model = os.environ.get("JUDGE_MODEL", JUDGE_MODEL_DEFAULT)
     budget = int(args.der_budget)
     n_items_req = int(args.der_items)
+    # Description-source probe runs BEFORE the resume check so the regime key
+    # fingerprints the CONTENT of whichever description source would be used.
+    desc_probe = None if args.der_desc_file else _find_i2552_descriptions(PROJECT_ROOT)
     regime, resume_ok = T24._enter_phase_regime(out, t24, "der_2569", stale_paths=outputs)
     _check_local_regime(
         out,
-        {
-            "items": n_items_req,
-            "feats_per_list": int(args.der_feats_per_list),
-            "n_way": int(DER_NWAY),
-            "budget": budget,
-            "seed": int(DER_SEED),
-            "judge_model": judge_model,
-            "desc_file": str(args.der_desc_file) if args.der_desc_file else None,
-            "phase": "der_2569",
-        },
+        _der_regime_key(args, judge_model, desc_probe),
         wipe=outputs,
         tag="der",
     )
@@ -2527,10 +2823,11 @@ def phase_der(args) -> None:
         source = {"mode": "reuse-explicit", "path": str(args.der_desc_file)}
         desc = _load_descriptions(Path(args.der_desc_file))
     else:
-        probe = _find_i2552_descriptions(PROJECT_ROOT)
-        if probe is not None:
-            source = {"mode": "reuse-probe", "path": str(probe)}
-            desc = _load_descriptions(probe)
+        # desc_probe was resolved BEFORE the resume check (regime-key content
+        # fingerprint) — reuse it, never a second probe.
+        if desc_probe is not None:
+            source = {"mode": "reuse-probe", "path": str(desc_probe)}
+            desc = _load_descriptions(desc_probe)
         else:
             source = {"mode": "own-round", "path": None}
             assert args.der_evidence_file, (
@@ -2741,7 +3038,14 @@ def _parse_args(argv=None):
         "--manifest-dir",
         type=Path,
         default=None,
-        help="leg-8/curve override: local n1m sampling-manifest dir (else staged from HF)",
+        help="curve override: local n1m sampling-manifest dir (else staged from HF)",
+    )
+    ap.add_argument(
+        "--raw-completions-dir",
+        type=Path,
+        default=None,
+        help="leg-8 override: local n1m raw-completions chunk dir (shard*_chunk*.json; "
+        "else streamed one file at a time from HF — the generated-answer lengths)",
     )
     ap.add_argument(
         "--curve-n-grid",
