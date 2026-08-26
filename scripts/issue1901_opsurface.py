@@ -1575,7 +1575,8 @@ def _fig_plot2(args) -> dict:
         )
     ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
     ax_r2.set_ylabel("held-out $R^2$,\ndraw-averaged target")
-    ax_r2.set_ylim(-1.05, 1.0)
+    # identity_bias reads ~-1.45 on the operating-point rows -- keep it in frame.
+    ax_r2.set_ylim(-1.6, 1.0)
     ax_acc.axhline(1.0 / n_pool, color="black", lw=0.7, ls=":")
     ax_acc.set_ylabel(f"acc@1, draw-averaged target\n(whitened cos + CSLS, pool {n_pool:,})")
     ax_acc.set_ylim(0.0, 1.0)
