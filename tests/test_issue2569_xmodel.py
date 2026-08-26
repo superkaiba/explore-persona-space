@@ -361,14 +361,23 @@ def test_stage_texts_tolerates_shard_skip_manifests(tmp_path, monkeypatch):
         XC._stage_texts(args2, np.asarray([7], dtype=np.int64), {7: "lmsys"}, {"drops": {}})
 
 
+def _write_finalize_meta(tmp_path, model, realized):
+    fdir = tmp_path / "final"
+    fdir.mkdir(parents=True, exist_ok=True)
+    (fdir / f"{model}_finalize_meta.json").write_text(json.dumps({"realized": realized}))
+
+
 def test_phase_sentinel_envelope_is_poller_conformant(tmp_path):
     """The pd-done sentinel carries poll_pipeline._SENTINEL_REQUIRED_KEYS
     (schema 1) so the VM drain parses + renames it instead of warn-skipping
-    every tick (final-round smoke _parse_sentinel dry-run, 2026-08-25)."""
+    every tick — re-verified by a round-trip through the REAL two-arg
+    ``poll_pipeline._parse_sentinel``, never by reading the writer."""
     import json as _json
 
     import poll_pipeline as PP
 
+    for model in XC.MODEL_SPECS:
+        _write_finalize_meta(tmp_path, model, 8)
     args = type(
         "A",
         (),
@@ -384,6 +393,29 @@ def test_phase_sentinel_envelope_is_poller_conformant(tmp_path):
         assert k in payload, k
     parsed = PP._parse_sentinel("issue-2569-pd-done.json", body)
     assert parsed is not None and parsed["kind"] == "phase-pd-done"
+    assert parsed["qwen_realized"] == 8 and parsed["llama_realized"] == 8
+
+
+def test_phase_sentinel_requires_both_finalize_metas(tmp_path):
+    """(resume-keys-omit-content-and-required-outputs) The done sentinel is the
+    P-D lane's completion claim: it REFUSES to be written while either model's
+    finalize meta — a required output — is absent (was: a silent `if
+    meta.exists()` optional read that signalled done with finalize missing)."""
+    args = type(
+        "A",
+        (),
+        {
+            "sentinel_path": str(tmp_path / "issue-2569-pd-done.json"),
+            "out_root": str(tmp_path),
+        },
+    )()
+    with pytest.raises(AssertionError, match="finalize"):
+        XC.phase_sentinel(args)
+    assert not (tmp_path / "issue-2569-pd-done.json").exists()
+    _write_finalize_meta(tmp_path, "qwen", 8)  # one of two present — still refused
+    with pytest.raises(AssertionError, match="llama"):
+        XC.phase_sentinel(args)
+    assert not (tmp_path / "issue-2569-pd-done.json").exists()
 
 
 # ---------------------------------------------------------------------------
@@ -434,6 +466,12 @@ def _seed_texts(tmp_path, n=10):
     return rows
 
 
+def _pparams(args, model=None):
+    """The pilot-binding params for a real argparse namespace (real helper)."""
+    spec = XC.MODEL_SPECS[model or args.model]
+    return XC._pilot_params(args, spec, XC._parse_layers(args, spec))
+
+
 # --- blocker 1: pilot-gate-halt-erased-by-resume ---------------------------
 
 
@@ -451,35 +489,53 @@ def test_pilot_gate_fail_record_survives_noop_resume_and_rehalts(tmp_path):
     }
     path = _write_gate(tmp_path, "pilot_gate_qwen", fail_rec)
     with pytest.raises(SystemExit) as ei:
-        XC._pilot_gate_report(args, fresh_rows=0, fresh_wall_s=0.05, resumed_chunks=1)
+        XC._pilot_gate_report(
+            args, _pparams(args), fresh_rows=0, fresh_wall_s=0.05, resumed_chunks=1
+        )
     assert ei.value.code == 3
     assert json.loads(path.read_text()) == fail_rec  # never rewritten
 
 
-def test_pilot_gate_noop_resume_writes_nothing_and_pass_is_idempotent(tmp_path):
-    """A no-fresh-work resume writes NO record when none exists, and neither
-    halts nor mutates a prior PASS record."""
+def test_pilot_gate_noop_smoke_resume_missing_record_fails_loud(tmp_path):
+    """(resume-keys-omit-content-and-required-outputs) A smoke-scale resume that
+    did NO fresh work and finds NO pilot record must FAIL LOUD — the pilot
+    verdict is the smoke capture's REQUIRED output, and the chunk resume-skip
+    may not stand in for the measurement (was: a silent 'nothing to measure'
+    return, i.e. exit 0 with the required output absent). Production scale
+    stays informational (no verdict is owed there — the smoke record is the
+    durable gate), and a prior PASS record is never mutated."""
     args = _cli_args(tmp_path)
-    XC._pilot_gate_report(args, fresh_rows=0, fresh_wall_s=0.0, resumed_chunks=2)
-    assert not (tmp_path / "gates" / "pilot_gate_qwen.json").exists()
+    with pytest.raises(RuntimeError, match="required output"):
+        XC._pilot_gate_report(
+            args, _pparams(args), fresh_rows=0, fresh_wall_s=0.0, resumed_chunks=2
+        )
+    assert not (tmp_path / "gates" / "pilot_gate_qwen.json").exists()  # still writes nothing
+    prod = _cli_args(tmp_path, rows="0")
+    XC._pilot_gate_report(prod, _pparams(prod), fresh_rows=0, fresh_wall_s=0.0, resumed_chunks=2)
+    assert not (tmp_path / "gates" / "capture_wall_qwen.json").exists()
     pass_rec = {"per_row_s": 0.1, "rows_measured": 32, "verdict": "PASS"}
     path = _write_gate(tmp_path, "pilot_gate_qwen", pass_rec)
-    XC._pilot_gate_report(args, fresh_rows=0, fresh_wall_s=0.0, resumed_chunks=2)
-    assert json.loads(path.read_text()) == pass_rec
+    XC._pilot_gate_report(args, _pparams(args), fresh_rows=0, fresh_wall_s=0.0, resumed_chunks=2)
+    assert json.loads(path.read_text()) == pass_rec  # PASS idempotent, byte-identical
 
 
 def test_pilot_gate_fresh_smoke_measurement_pass_and_fail(tmp_path):
     """A fresh smoke-scale measurement writes an honest verdict: PASS proceeds,
-    FAIL persists the record then halts rc=3 (plan §7 halt-and-report)."""
+    FAIL persists the record then halts rc=3 (plan §7 halt-and-report); the
+    record BINDS the capture params it was measured under
+    (pd-pilot-pass-not-bound-to-production-regime)."""
     args = _cli_args(tmp_path)
-    XC._pilot_gate_report(args, fresh_rows=32, fresh_wall_s=3.2, resumed_chunks=0)
+    XC._pilot_gate_report(args, _pparams(args), fresh_rows=32, fresh_wall_s=3.2, resumed_chunks=0)
     rec = json.loads((tmp_path / "gates" / "pilot_gate_qwen.json").read_text())
     assert rec["verdict"] == "PASS"
     assert rec["rows_measured"] == 32 and rec["resumed_chunks"] == 0
+    assert rec["capture_params"] == _pparams(args)  # the regime the PASS certifies
     slow = tmp_path / "slow"
     args2 = _cli_args(slow)
     with pytest.raises(SystemExit) as ei:
-        XC._pilot_gate_report(args2, fresh_rows=32, fresh_wall_s=2.0 * 32, resumed_chunks=0)
+        XC._pilot_gate_report(
+            args2, _pparams(args2), fresh_rows=32, fresh_wall_s=2.0 * 32, resumed_chunks=0
+        )
     assert ei.value.code == 3
     rec2 = json.loads((slow / "gates" / "pilot_gate_qwen.json").read_text())
     assert rec2["verdict"] == "FAIL"
@@ -492,7 +548,9 @@ def test_pilot_gate_production_scale_never_touches_the_gate_record(tmp_path):
     args = _cli_args(tmp_path, rows="0")
     pass_rec = {"verdict": "PASS", "per_row_s": 0.1}
     path = _write_gate(tmp_path, "pilot_gate_qwen", pass_rec)
-    XC._pilot_gate_report(args, fresh_rows=60_000, fresh_wall_s=8.0 * 3600, resumed_chunks=0)
+    XC._pilot_gate_report(
+        args, _pparams(args), fresh_rows=60_000, fresh_wall_s=8.0 * 3600, resumed_chunks=0
+    )
     assert json.loads(path.read_text()) == pass_rec
     wall = json.loads((tmp_path / "gates" / "capture_wall_qwen.json").read_text())
     assert wall.get("informational") is True and "verdict" not in wall
@@ -521,11 +579,26 @@ def test_capture_smoke_scale_is_the_pilot_no_self_precondition(tmp_path):
 
 
 def _seed_chunk_store(tmp_path, model="qwen", n=8, layer=14):
-    """Minimal consistent chunk store + staged texts for finalize (CPU-only)."""
+    """Minimal consistent chunk store + staged texts for finalize (CPU-only).
+    The regime is built through the REAL ``_capture_regime`` helper — a
+    hand-rolled fixture regime validates against an impossible schema (the
+    round-2 fixture trap) and would miss the pilot-binding fields finalize now
+    reads back from ``regime.json``. Returns the regime."""
     rows = [{"ci": i, "corpus": "lmsys", "prompt": f"q{i}", "response": f"a{i}"} for i in range(n)]
     (tmp_path / "texts_kept.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
-    hidden = XC.MODEL_SPECS[model]["hidden"]
-    regime = {"layers": [layer], "template_sha": "fake-sha"}
+    cargs = _cli_args(
+        tmp_path, phase="capture", model=model, rows=str(n), extra=("--layers", str(layer))
+    )
+    spec = XC.MODEL_SPECS[model]
+    hidden = spec["hidden"]
+    regime = XC._capture_regime(
+        cargs,
+        spec,
+        XC._parse_layers(cargs, spec),
+        np.arange(n, dtype=np.int64),
+        "fake-sha",
+        XC._texts_content_sha(XC.load_selection(cargs)),
+    )
     cdir = tmp_path / "chunks" / model
     cdir.mkdir(parents=True)
     (cdir / "regime.json").write_text(json.dumps(regime))
@@ -549,14 +622,19 @@ def _seed_chunk_store(tmp_path, model="qwen", n=8, layer=14):
         },
         cdir / "chunk00000.pt",
     )
+    return regime
 
 
 def test_finalize_requires_gate_and_pilot_pass(tmp_path):
     """finalize is DOWNSTREAM of the gates: chunks exist even from a halted
     pilot run (the chunk lands before the gate fires), so finalize refuses
-    without the model gate record, without a pilot record, and on a pilot
-    FAIL; it proceeds on PASS+PASS."""
-    _seed_chunk_store(tmp_path)
+    without the model gate record, without a pilot record, on a pilot FAIL,
+    on an UNBOUND pilot PASS (no capture_params), and on a PASS measured
+    under a DIFFERENT capture regime — binding is checked against the chunk
+    store's OWN regime.json, what the capture actually ran with
+    (pd-pilot-pass-not-bound-to-production-regime). It proceeds only on a
+    PASS bound to the matching regime."""
+    regime = _seed_chunk_store(tmp_path)
     args = _cli_args(tmp_path, phase="finalize", rows="8", extra=("--skip-upload",))
     with pytest.raises(AssertionError, match="run the gate phase"):
         XC.phase_finalize(args)
@@ -566,11 +644,32 @@ def test_finalize_requires_gate_and_pilot_pass(tmp_path):
     _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "FAIL"})
     with pytest.raises(AssertionError, match="pilot gate blocks"):
         XC.phase_finalize(args)
+    # unbound PASS: no capture_params — an unrelated historical PASS certifies nothing
     _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "PASS"})
+    with pytest.raises(AssertionError, match="capture_params"):
+        XC.phase_finalize(args)
+    # PASS measured under a DIFFERENT execution shape — refused with the diff named
+    good = XC._pilot_binding_from_regime(regime)
+    _write_gate(
+        tmp_path,
+        "pilot_gate_qwen",
+        {"verdict": "PASS", "capture_params": dict(good, batch_tokens=4096)},
+    )
+    with pytest.raises(AssertionError, match="DIFFERENT capture regime"):
+        XC.phase_finalize(args)
+    # PASS bound to the matching regime — proceeds
+    _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "PASS", "capture_params": good})
     XC.phase_finalize(args)
     assert (tmp_path / "final" / "qwen_vc_L14.pt").exists()
     meta = json.loads((tmp_path / "final" / "qwen_finalize_meta.json").read_text())
     assert meta["realized"] == 8
+
+
+def test_pilot_binding_from_regime_rejects_prebinding_store(tmp_path):
+    """A chunk regime lacking the binding fields (a pre-binding store) is
+    refused loud — never silently accepted as 'any PASS will do'."""
+    with pytest.raises(AssertionError, match="pilot-binding fields"):
+        XC._pilot_binding_from_regime({"layers": [14], "template_sha": "x"})
 
 
 # --- blocker 3: pd-gate-cardinality-unenforced ------------------------------
@@ -669,3 +768,98 @@ def test_spot_gate_resume_skips_on_pass_record(tmp_path, monkeypatch):
     )
     with pytest.raises(RuntimeError, match="hub staging attempted"):
         XC.phase_spot_gate(args2)
+
+
+# ---------------------------------------------------------------------------
+# Step 5 fix round 3 — Unit G4 BLOCKERs
+# (gpu-gate-resume-key-omits-text-content /
+#  pd-pilot-pass-not-bound-to-production-regime /
+#  resume-keys-omit-content-and-required-outputs)
+# ---------------------------------------------------------------------------
+
+
+def test_texts_content_sha_keys_on_content_and_order_not_identity():
+    """The content fingerprint moves when a row's TEXT changes at the same ci
+    set, and when the kept ORDER changes (the gate roster and capture slice are
+    position-dependent); it is deterministic across equal copies."""
+    rows = _fake_rows()
+    a = XC._texts_content_sha(rows)
+    assert a == XC._texts_content_sha([dict(r) for r in rows])  # deterministic
+    changed = [dict(r) for r in rows]
+    changed[1]["response"] = "different words, same ci"
+    assert XC._texts_content_sha(changed) != a  # identity same, content moved
+    assert XC._texts_content_sha([rows[1], rows[0], rows[2]]) != a  # order-sensitive
+
+
+def test_gate_resume_reruns_on_text_content_change_same_ci(tmp_path, monkeypatch):
+    """(gpu-gate-resume-key-omits-text-content) A gate PASS recorded under the
+    OLD texts must NOT be reused when a response body is regenerated at the
+    SAME ci selection: the regime carries the text-content sha, so the gate
+    RE-RUNS (reaches the model-load boundary) instead of resume-skipping."""
+    args = _cli_args(tmp_path, phase="identity-gate", model="llama")
+    rows = _seed_texts(tmp_path)
+    spec = XC.MODEL_SPECS["llama"]
+    layers = XC._parse_layers(args, spec)
+    regime_before = XC._gate_regime(args, spec, layers, XC.load_selection(args))
+    _write_gate(tmp_path, "identity_gate_llama", {"verdict": "PASS", "regime": regime_before})
+    # regenerate ONE response at the same ci set (same selection identity)
+    rows[3]["response"] = "a3 REGENERATED"
+    (tmp_path / "texts_kept.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    regime_after = XC._gate_regime(args, spec, layers, XC.load_selection(args))
+    assert regime_after["selection_ci_sha256"] == regime_before["selection_ci_sha256"]
+    assert regime_after != regime_before  # the content sha moved the key
+
+    def boom(*a, **k):
+        raise RuntimeError("model load attempted")
+
+    monkeypatch.setattr(XC, "_load_model_ctx", boom)
+    with pytest.raises(RuntimeError, match="model load attempted"):
+        XC.phase_identity_gate(args)
+
+
+def test_capture_regime_includes_text_content(tmp_path):
+    """(resume-keys-omit-content-and-required-outputs) The chunk-store regime
+    moves when the consumed text content changes at the same ci slice, so
+    ``_check_regime`` wipes the stale chunks instead of resume-skipping them."""
+    args = _cli_args(tmp_path)
+    spec = XC.MODEL_SPECS["qwen"]
+    layers = XC._parse_layers(args, spec)
+    rows = _fake_rows()
+    ci = np.asarray([int(r["ci"]) for r in rows], dtype=np.int64)
+    r1 = XC._capture_regime(args, spec, layers, ci, "tsha", XC._texts_content_sha(rows))
+    changed = [dict(r) for r in rows]
+    changed[0]["response"] = "regenerated"
+    r2 = XC._capture_regime(args, spec, layers, ci, "tsha", XC._texts_content_sha(changed))
+    assert r1["kept_ci_sha256"] == r2["kept_ci_sha256"] and r1 != r2
+    # and the pilot-binding subset is readable back from the regime (finalize path)
+    assert XC._pilot_binding_from_regime(r1) == _pparams(args)
+
+
+def test_capture_production_refuses_unbound_or_mismatched_pilot_pass(tmp_path, monkeypatch):
+    """(pd-pilot-pass-not-bound-to-production-regime) The production pass
+    refuses a pilot PASS that carries no capture_params, and one measured under
+    a DIFFERENT execution shape; a PASS bound to the matching shape proceeds
+    past the precondition (to the model-load boundary — seam-stubbed so a
+    wrongly-accepted PASS would fail the test by touching the model)."""
+    _seed_texts(tmp_path)
+    _write_gate(tmp_path, "spot_gate_qwen", {"verdict": "PASS"})
+    args = _cli_args(tmp_path, rows="0")
+
+    def boom(*a, **k):
+        raise RuntimeError("model load attempted")
+
+    monkeypatch.setattr(XC, "_load_model_ctx", boom)
+    good = _pparams(args)
+    _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "PASS"})  # unbound
+    with pytest.raises(AssertionError, match="capture_params"):
+        XC.phase_capture(args)
+    _write_gate(
+        tmp_path,
+        "pilot_gate_qwen",
+        {"verdict": "PASS", "capture_params": dict(good, max_batch_rows=8)},
+    )
+    with pytest.raises(AssertionError, match="DIFFERENT capture regime"):
+        XC.phase_capture(args)
+    _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "PASS", "capture_params": good})
+    with pytest.raises(RuntimeError, match="model load attempted"):
+        XC.phase_capture(args)  # binding satisfied — proceeds to the real work

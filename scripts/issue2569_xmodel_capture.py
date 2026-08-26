@@ -46,13 +46,18 @@ Identity gates (plan §7 rows; BOTH are preconditions of the production pass):
 
 Phases: ``select`` (row selection + corpus tags + text staging, stream-reduced with
 per-file checkpoint/resume) → ``identity-gate``/``spot-gate`` (regime-keyed PASS
-resume-skip; fixed 8-row roster + full comparison cardinality asserted) →
-``capture`` (chunked, regime-keyed resume; the built-in pilot-gate report is
-measured on FRESH forward rows ONLY — a resume that did no work can never
-overwrite a recorded FAIL — and the production-scale pass REQUIRES a smoke-scale
-pilot PASS, plan §7) → ``finalize`` (per (model, summary, layer)
-``{model}_{vc,va}_L{K}.pt`` bundles + realized-row asserts + gate/pilot PASS
-preconditions + HF upload) → ``sentinel`` (pod-side done JSON).
+resume-skip — the regime keys carry the selection TEXT-CONTENT fingerprint, not
+just the ci identity, so regenerated prompts/responses re-run the gate; fixed
+8-row roster + full comparison cardinality asserted) → ``capture`` (chunked,
+regime-keyed resume incl. the content fingerprint; the built-in pilot-gate report
+is measured on FRESH forward rows ONLY — a resume that did no work can never
+overwrite a recorded FAIL, and a zero-fresh-work smoke resume with NO record
+fails loud — and the production-scale pass REQUIRES a smoke-scale pilot PASS
+whose recorded ``capture_params`` EXACTLY match this run's execution shape,
+plan §7) → ``finalize`` (per (model, summary, layer) ``{model}_{vc,va}_L{K}.pt``
+bundles + realized-row asserts + gate/pilot preconditions bound to the chunk
+store's OWN regime + HF upload) → ``sentinel`` (pod-side done JSON; REQUIRES both
+models' finalize metas — the done-claim never precedes its outputs).
 
 Observed banked schemas (probed 2026-08-25, keys only):
 ``raw_completions/shardSS_chunkCCCC.json`` = ``{"shard_index": int, "chunk": int,
@@ -208,6 +213,34 @@ def _token_before_char(offsets, char_pos: int) -> int | None:
 # ---------------------------------------------------------------------------
 # Small utilities
 # ---------------------------------------------------------------------------
+
+
+def _texts_content_sha(texts: list[dict]) -> str:
+    """Content fingerprint of the CONSUMED text rows — ci + corpus + prompt +
+    response, in kept order (order is output-affecting: the gate roster and the
+    capture slice are position-dependent). The members are FILE-READ strings
+    (staged ``texts_kept.jsonl``), never recomputed floats, so the key is
+    machine-stable (code-style float-last-bit rule). This is what pins resume
+    keys to WHAT the rows contain, not just WHICH rows were selected
+    (gpu-gate-resume-key-omits-text-content): changed prompts/responses at the
+    same ci selection change the key. Text is hashed, never printed/logged
+    (content hygiene)."""
+    h = hashlib.sha256()
+    for r in texts:
+        h.update(
+            json.dumps(
+                {
+                    "ci": int(r["ci"]),
+                    "corpus": str(r["corpus"]),
+                    "prompt": str(r["prompt"]),
+                    "response": str(r["response"]),
+                },
+                sort_keys=True,
+                ensure_ascii=False,
+            ).encode("utf-8")
+        )
+        h.update(b"\n")
+    return h.hexdigest()
 
 
 def _sha_int64(a: np.ndarray) -> str:
@@ -835,9 +868,14 @@ def _gate_regime(
 ) -> dict:
     """Generating-parameters-only regime key for the GPU gate phases' resume
     idempotency: covers every output-affecting input of the gate — model, layers,
-    tolerance, tokenize/batch knobs, gate cardinality, and the selection CONTENT
-    fingerprint (ordered ci array) — never a status string, never a
-    recomputed-float hash (machine-stable, code-style float-last-bit rule)."""
+    tolerance, tokenize/batch knobs, gate cardinality, the selection IDENTITY
+    (ordered ci array sha) AND the selection text CONTENT
+    (``texts_sha256`` over ci+corpus+prompt+response per row) — never a status
+    string, never a recomputed-float hash (machine-stable, code-style
+    float-last-bit rule). The ci sha alone pins only WHICH rows were selected;
+    without the content sha, regenerated prompts/responses at the same ci
+    selection would reuse a stale gate PASS
+    (gpu-gate-resume-key-omits-text-content)."""
     cis = np.asarray([int(r["ci"]) for r in texts], dtype=np.int64)
     key = {
         "model_id": spec["model_id"],
@@ -848,6 +886,7 @@ def _gate_regime(
         "max_batch_rows": int(args.max_batch_rows),
         "gate_rows": GATE_ROWS,
         "selection_ci_sha256": _sha_int64(cis),
+        "texts_sha256": _texts_content_sha(texts),
         "n_texts": int(len(cis)),
     }
     if extra:
@@ -1080,18 +1119,75 @@ def _parse_layers(args, spec: dict) -> list[int]:
     return layers
 
 
-def _capture_regime(args, spec: dict, layers: list[int], kept_ci: np.ndarray, tsha: str) -> dict:
-    """Generating-parameters-only regime key for the chunk store (float-hash-free)."""
+# The capture-parameter subset a pilot PASS certifies (compared by EXACT
+# equality between the pilot record and the run about to proceed). These are
+# the fields that define the MEASURED per-row execution shape — the plan §7
+# P-D pilot row's own contract ("production entrypoint, production shape —
+# same --batch-tokens 8192 --max-batch-rows 64 packing, same capture path")
+# and the gotchas.md pilot-timing rule (measure at the sweep's execution
+# shape). EXEMPT, with reasons: rows_cap + kept_ci_sha256 + texts_sha256 (the
+# pilot is DELIBERATELY the smoke-scale row slice, so the row count and the
+# slice-identity/content fingerprints differ by design); template_sha
+# (throughput-inert — correctness drift is owned by the chunk-store regime
+# wipe + the identity/spot gates); chunk_rows (checkpoint granularity: it
+# never changes the forward shape, and at pilot scale — rows <=
+# SMOKE_ROWS_CEILING < the chunk_rows default — it is inert by construction,
+# so comparing it would pin a knob the pilot cannot exercise).
+_PILOT_BINDING_FIELDS = (
+    "model_id",
+    "layers",
+    "max_capture_tokens",
+    "batch_tokens",
+    "max_batch_rows",
+    "device",
+)
+
+
+def _pilot_params(args, spec: dict, layers: list[int]) -> dict:
+    """The execution-shape parameters a pilot measurement certifies (the
+    ``_PILOT_BINDING_FIELDS`` values for THIS run's args). Computable from
+    args+spec alone so preconditions can refuse BEFORE any model load."""
     return {
         "model_id": spec["model_id"],
         "layers": [int(x) for x in layers],
-        "rows_cap": int(args.rows),
-        "kept_ci_sha256": _sha_int64(kept_ci),
-        "template_sha": tsha,
-        "chunk_rows": int(args.chunk_rows),
         "max_capture_tokens": int(args.max_capture_tokens),
         "batch_tokens": int(args.batch_tokens),
         "max_batch_rows": int(args.max_batch_rows),
+        "device": str(args.device),
+    }
+
+
+def _pilot_binding_from_regime(regime: dict) -> dict:
+    """Extract the pilot-binding subset from a chunk-store regime (what the
+    capture ACTUALLY ran with — finalize binds to that, not to its own argv).
+    A regime lacking the fields predates the binding contract: fail loud."""
+    missing = [k for k in _PILOT_BINDING_FIELDS if k not in regime]
+    assert not missing, (
+        f"chunk-store regime lacks pilot-binding fields {missing} — a pre-binding "
+        "chunk store cannot be verified against the pilot record "
+        "(pd-pilot-pass-not-bound-to-production-regime); re-run --phase capture"
+    )
+    return {k: regime[k] for k in _PILOT_BINDING_FIELDS}
+
+
+def _capture_regime(
+    args, spec: dict, layers: list[int], kept_ci: np.ndarray, tsha: str, texts_sha: str
+) -> dict:
+    """Generating-parameters-only regime key for the chunk store (float-hash-free).
+    Carries the selection IDENTITY (``kept_ci_sha256``) AND the consumed text
+    CONTENT (``texts_sha256`` — file-read strings, so changed prompts/responses
+    at the same ci slice wipe the stale chunks instead of resume-skipping over
+    them; resume-keys-omit-content-and-required-outputs), plus ``device``
+    (numerics differ across devices, so cpu- and cuda-computed chunks must never
+    silently mix in one store). Embeds ``_pilot_params`` so the pilot-binding
+    subset is readable back from ``regime.json`` at finalize."""
+    return {
+        **_pilot_params(args, spec, layers),
+        "rows_cap": int(args.rows),
+        "kept_ci_sha256": _sha_int64(kept_ci),
+        "texts_sha256": texts_sha,
+        "template_sha": tsha,
+        "chunk_rows": int(args.chunk_rows),
     }
 
 
@@ -1104,11 +1200,15 @@ def _require_gate(args, name: str) -> None:
     assert rec.get("verdict") == "PASS", f"{path}: verdict {rec.get('verdict')!r} != PASS"
 
 
-def _require_pilot_pass(args) -> None:
+def _require_pilot_pass(args, pilot_params: dict) -> None:
     """Pilot-gate precondition (plan §7 P-D pilot row; pd-gate-precondition-bypass):
     the production-scale pass and finalize refuse to proceed until a smoke-scale
-    pilot record with verdict PASS exists for this model. The smoke-scale capture
-    itself is EXEMPT — it IS the pilot (gate-calibration parity, the #1345 class)."""
+    pilot record with verdict PASS exists for this model AND that PASS was
+    measured under THIS run's execution shape — exact equality on the
+    ``_PILOT_BINDING_FIELDS`` (pd-pilot-pass-not-bound-to-production-regime; an
+    unrelated historical PASS certifies nothing about the production regime).
+    The smoke-scale capture itself is EXEMPT — it IS the pilot
+    (gate-calibration parity, the #1345 class)."""
     path = Path(args.out_root) / "gates" / f"pilot_gate_{args.model}.json"
     assert path.exists(), (
         f"pilot gate record {path} missing — run the smoke-scale capture pilot "
@@ -1118,6 +1218,23 @@ def _require_pilot_pass(args) -> None:
     assert rec.get("verdict") == "PASS", (
         f"{path}: verdict {rec.get('verdict')!r} != PASS — the pilot gate blocks this phase"
     )
+    recorded = rec.get("capture_params")
+    assert recorded is not None, (
+        f"{path}: PASS record carries no capture_params — an UNBOUND pilot PASS cannot "
+        "certify the production regime (pd-pilot-pass-not-bound-to-production-regime); "
+        "re-run the smoke-scale pilot at the production shape"
+    )
+    if recorded != pilot_params:
+        diffs = {
+            k: {"pilot": recorded.get(k), "production": pilot_params.get(k)}
+            for k in sorted(set(recorded) | set(pilot_params))
+            if recorded.get(k) != pilot_params.get(k)
+        }
+        raise AssertionError(
+            f"{path}: pilot PASS was measured under a DIFFERENT capture regime than this "
+            f"run — mismatched fields: {diffs} — re-run the smoke-scale pilot at the "
+            "production shape (pd-pilot-pass-not-bound-to-production-regime)"
+        )
 
 
 def phase_capture(args) -> None:
@@ -1131,19 +1248,28 @@ def phase_capture(args) -> None:
     if args.model == "qwen" and not args.skip_gate_check:
         _require_gate(args, "spot_gate_qwen")
     smoke_scale = 0 < int(args.rows) <= SMOKE_ROWS_CEILING
+    pilot_params = _pilot_params(args, spec, layers)
     if not smoke_scale and not args.skip_gate_check:
         # plan §7 P-D pilot row: the production pass proceeds ONLY on a pilot PASS
-        # (pd-gate-precondition-bypass). The smoke-scale run IS the pilot — exempt.
-        _require_pilot_pass(args)
+        # measured under THIS run's execution shape (pd-gate-precondition-bypass +
+        # pd-pilot-pass-not-bound-to-production-regime). The smoke-scale run IS
+        # the pilot — exempt (a self-precondition would make it unrunnable).
+        _require_pilot_pass(args, pilot_params)
     texts = load_selection(args)
     if int(args.rows) > 0:
         texts = texts[: int(args.rows)]
+    assert texts, (
+        "selection produced ZERO rows — refusing a vacuous capture "
+        "(empty-selection fail-loud rule, gotchas.md)"
+    )
     mctx = _load_model_ctx(args, spec)
     tok = mctx["tok"]
     probe = template_probe(tok, args.model)
     kept_ci = np.asarray([int(r["ci"]) for r in texts], dtype=np.int64)
     chunk_dir = Path(args.out_root) / "chunks" / args.model
-    regime = _capture_regime(args, spec, layers, kept_ci, probe["template_sha"])
+    regime = _capture_regime(
+        args, spec, layers, kept_ci, probe["template_sha"], _texts_content_sha(texts)
+    )
     _check_regime(chunk_dir, regime, ["chunk*.pt"], f"capture/{args.model}")
 
     n_chunks = (len(texts) + args.chunk_rows - 1) // args.chunk_rows
@@ -1198,25 +1324,41 @@ def phase_capture(args) -> None:
             f"drops={dict(drops)} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
-    _pilot_gate_report(args, fresh_rows, fresh_wall_s, resumed_chunks)
+    # Required-output presence check (resume-keys-omit-content-and-required-outputs):
+    # the capture phase's declared outputs are EVERY chunk file — a resume-skip is
+    # honoured per chunk only via cpath.exists() above, and the phase may not
+    # report done with any chunk absent.
+    missing_chunks = [k for k in range(n_chunks) if not (chunk_dir / f"chunk{k:05d}.pt").is_file()]
+    assert not missing_chunks, (
+        f"capture required outputs missing under {chunk_dir}: chunks {missing_chunks} "
+        f"of {n_chunks} — refusing to report the phase done"
+    )
+    _pilot_gate_report(args, pilot_params, fresh_rows, fresh_wall_s, resumed_chunks)
     print(
         f"[capture] done model={args.model} realized={rows_done} drops={dict(total_drops)}",
         flush=True,
     )
 
 
-def _pilot_gate_report(args, fresh_rows: int, fresh_wall_s: float, resumed_chunks: int) -> None:
+def _pilot_gate_report(
+    args, pilot_params: dict, fresh_rows: int, fresh_wall_s: float, resumed_chunks: int
+) -> None:
     """Built-in pilot-gate report (plan §7 P-D pilot row): the 32-row smoke IS the
     measured sizing pilot. The measurement basis is FRESH forward-pass rows ONLY —
     resume-skipped chunks contribute NOTHING to per_row_s, so a relaunch that did
     no work can neither write nor overwrite the gate record: a recorded FAIL
     stands byte-identical and RE-HALTS (rc=3) at smoke scale
-    (pilot-gate-halt-erased-by-resume). A fresh smoke-scale measurement writes the
-    verdict; extrapolation > 2x the booked wall EXITS rc=3 (halt-and-report).
-    Production-scale runs (rows == 0 or > SMOKE_ROWS_CEILING) write an
-    INFORMATIONAL ``capture_wall_{model}.json`` instead and NEVER touch the pilot
-    gate record (the smoke verdict is the durable gate; sunk production compute is
-    not re-gated on its own wall)."""
+    (pilot-gate-halt-erased-by-resume), and a smoke-scale zero-fresh-work resume
+    with NO record at all FAILS LOUD — the pilot verdict is the smoke capture's
+    REQUIRED OUTPUT, and a resume-skip may not stand in for the measurement
+    (resume-keys-omit-content-and-required-outputs). A fresh smoke-scale
+    measurement writes the verdict WITH the ``capture_params`` it was measured
+    under (``_pilot_params`` — what ``_require_pilot_pass`` later binds against;
+    pd-pilot-pass-not-bound-to-production-regime); extrapolation > 2x the booked
+    wall EXITS rc=3 (halt-and-report). Production-scale runs (rows == 0 or >
+    SMOKE_ROWS_CEILING) write an INFORMATIONAL ``capture_wall_{model}.json``
+    instead and NEVER touch the pilot gate record (the smoke verdict is the
+    durable gate; sunk production compute is not re-gated on its own wall)."""
     smoke_scale = 0 < int(args.rows) <= SMOKE_ROWS_CEILING
     gate_dir = Path(args.out_root) / "gates"
     gate_path = gate_dir / f"pilot_gate_{args.model}.json"
@@ -1236,10 +1378,19 @@ def _pilot_gate_report(args, fresh_rows: int, fresh_wall_s: float, resumed_chunk
                 )
                 sys.stdout.flush()
                 raise SystemExit(3)
+        elif smoke_scale:
+            raise RuntimeError(
+                f"[pilot-gate] required output {gate_path} is ABSENT after a "
+                f"zero-fresh-work smoke resume (resumed_chunks={resumed_chunks}) — the "
+                "resume-skip cannot stand in for the pilot measurement; wipe the chunk "
+                f"store ({Path(args.out_root) / 'chunks' / args.model}) and re-run the "
+                "smoke capture (resume-keys-omit-content-and-required-outputs)"
+            )
         else:
             print(
                 f"[pilot-gate] no fresh rows this run (resumed_chunks={resumed_chunks}) "
-                "and no prior record — nothing to measure",
+                "and no prior record — nothing to measure (production scale; the wall "
+                "report is informational-only)",
                 flush=True,
             )
         return
@@ -1253,6 +1404,7 @@ def _pilot_gate_report(args, fresh_rows: int, fresh_wall_s: float, resumed_chunk
         "resumed_chunks": int(resumed_chunks),
         "extrapolated_wall_h": extrapolated_h,
         "booked_wall_h": booked_h,
+        "capture_params": pilot_params,
         "metadata": _meta("pilot-gate"),
     }
     if not smoke_scale:
@@ -1289,18 +1441,20 @@ def phase_finalize(args) -> None:
     floor (plan §4 leg 7 step 1); upload the bundle set to the HF data repo."""
     spec = MODEL_SPECS[args.model]
     print(f"[phase=finalize] model={args.model}", flush=True)
-    if not args.skip_gate_check:
-        # finalize is DOWNSTREAM of the gates: chunks exist even from a halted
-        # pilot run (the chunk lands before the gate fires), so a blind finalize
-        # must refuse rather than bundle+upload past a FAIL/missing verdict
-        # (pd-gate-precondition-bypass).
-        _require_gate(args, "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen")
-        _require_pilot_pass(args)
     chunk_dir = Path(args.out_root) / "chunks" / args.model
     chunks = sorted(chunk_dir.glob("chunk*.pt"))
     assert chunks, f"no chunks under {chunk_dir} — run --phase capture first"
     regime = json.loads((chunk_dir / "regime.json").read_text())
     layers = [int(x) for x in regime["layers"]]
+    if not args.skip_gate_check:
+        # finalize is DOWNSTREAM of the gates: chunks exist even from a halted
+        # pilot run (the chunk lands before the gate fires), so a blind finalize
+        # must refuse rather than bundle+upload past a FAIL/missing verdict
+        # (pd-gate-precondition-bypass). The pilot binding is checked against the
+        # chunk store's OWN regime — what the capture ACTUALLY ran with — never
+        # finalize's argv (pd-pilot-pass-not-bound-to-production-regime).
+        _require_gate(args, "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen")
+        _require_pilot_pass(args, _pilot_binding_from_regime(regime))
 
     ci_parts, corpus_parts, drops = [], [], Counter()
     per_key: dict[str, list[np.ndarray]] = {}
@@ -1370,9 +1524,19 @@ def phase_finalize(args) -> None:
             "metadata": _meta("finalize"),
         },
     )
+    # Required-output presence check: every declared finalize output must be a
+    # FILE on disk before the phase reports done / uploads
+    # (resume-keys-omit-content-and-required-outputs; is_file per the
+    # FILE-vs-DIR kind rule, gotchas.md).
+    required = [*names, f"{args.model}_finalize_meta.json"]
+    missing_out = [n for n in required if not (final_dir / n).is_file()]
+    assert not missing_out, (
+        f"finalize required outputs missing under {final_dir}: {missing_out} — "
+        "refusing to report the phase done"
+    )
     print(f"[finalize] realized={realized} files={len(names)}", flush=True)
     if not args.skip_upload:
-        _upload_final(args, final_dir, names + [f"{args.model}_finalize_meta.json"])
+        _upload_final(args, final_dir, required)
 
 
 def _n_selected(args) -> int:
@@ -1429,10 +1593,19 @@ def phase_sentinel(args) -> None:
         "metadata": _meta("sentinel"),
     }
     for model in MODEL_SPECS:
+        # The done sentinel is the P-D lane's COMPLETION claim (plan §4: the
+        # gates are preconditions of the production sentinel) — both models'
+        # finalize outputs are REQUIRED before it may be written; a silently
+        # optional read here would signal done with a model's finalize absent
+        # (resume-keys-omit-content-and-required-outputs).
         meta = Path(args.out_root) / "final" / f"{model}_finalize_meta.json"
-        if meta.exists():
-            m = json.loads(meta.read_text())
-            payload[f"{model}_realized"] = m["realized"]
+        assert meta.is_file(), (
+            f"required output {meta} missing — the done sentinel may not be written "
+            f"before --phase finalize completed for {model} (plan §4: P-D captures "
+            "BOTH models; a done-claim with a finalize output absent is a false done)"
+        )
+        m = json.loads(meta.read_text())
+        payload[f"{model}_realized"] = m["realized"]
     path = Path(args.sentinel_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     _atomic_json(path, payload)
