@@ -410,9 +410,23 @@ phase_p3_gen_short() {
 phase_p4_capture() {
     echo "[phase=p4_capture]"
     assert_headroom p4_capture "$NEED_GB_CAPTURE"
+    set +e
     # shellcheck disable=SC2086
     uv run python scripts/issue2546_gen_capture.py --arm "$ARM" --phase capture \
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        # rc=3 (RC_GATE_FAIL) = the G-F determinism gate's designed halt
+        # (artifact gf_fail_a$ARM.json); any other rc = crash. Before r14 this
+        # phase had NO failure branch: a crash aborted under set -e with no
+        # sentinel and the poller read sentinels_processed:0 (the r14
+        # math-gold-join AssertionError was invisible; epm:failure v5).
+        emit_signal "epm:failure" "capture-fail-a$ARM" "p4_capture" "true" \
+            "failure_class: code — arm $ARM P4 capture FAILED rc=$rc (rc=3 = G-F determinism gate designed halt, artifact $OUT_ROOT/out/reports/gf_fail_a${ARM}.json; other rc = crash — see log tail)"
+        echo "[dispatch2546] FATAL: p4_capture rc=$rc" >&2
+        exit "$rc"
+    fi
     emit_signal "epm:progress" "capture-a$ARM" "p4_capture" "false" \
         "arm $ARM capture complete (per-corpus upload-then-free; store verified-uploaded); out_root=$OUT_ROOT"
 }
@@ -422,9 +436,18 @@ phase_p4b_capture_rel() {
     # FROZEN layer subset only (per-draw rel_ stems; feeds run_reliability_unit).
     echo "[phase=p4b_capture_rel]"
     assert_headroom p4b_capture_rel "$NEED_GB_CAPREL"
+    set +e
     # shellcheck disable=SC2086
     uv run python scripts/issue2546_gen_capture.py --arm "$ARM" --phase capture-reliability \
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        emit_signal "epm:failure" "capture-rel-fail-a$ARM" "p4b_capture_rel" "true" \
+            "failure_class: code — arm $ARM P4b reliability-draw capture FAILED rc=$rc (teacher-force of persisted reliability draws at the arm's frozen layers; crash — see log tail)"
+        echo "[dispatch2546] FATAL: p4b_capture_rel rc=$rc" >&2
+        exit "$rc"
+    fi
     emit_signal "epm:progress" "capture-rel-a$ARM" "p4b_capture_rel" "false" \
         "arm $ARM reliability-draw capture complete (frozen-layer per-draw rel_ stems uploaded); out_root=$OUT_ROOT"
 }
@@ -454,9 +477,18 @@ phase_p5_fits() {
     assert_headroom p5_fits "$NEED_GB_FITS"
     # Engaged fallback rungs thread into P5 (r3 Critical 1: the parse-mode
     # rung + run-meta record must match what P2-P4 generated/captured).
+    set +e
     # shellcheck disable=SC2086
     uv run python scripts/issue2546_fit_cells.py --arm "$ARM" \
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        emit_signal "epm:failure" "fits-fail-a$ARM" "p5_fits" "true" \
+            "failure_class: code — arm $ARM P5 fits FAILED rc=$rc (fit_cells parent/worker crash — see log tail; per-unit fitcache resumes on relaunch)"
+        echo "[dispatch2546] FATAL: p5_fits rc=$rc" >&2
+        exit "$rc"
+    fi
 }
 
 publish_results_git() {
@@ -539,14 +571,38 @@ phase_p6_publish() {
     # exact-set verified in-script); (b) production only: pod-side git
     # commit+push of eval_results/issue_2546/ per the result-push contract.
     echo "[phase=p6_publish]"
+    set +e
     # shellcheck disable=SC2086
     uv run python scripts/issue2546_fit_cells.py --arm "$ARM" --publish \
         --out-root "$OUT_ROOT" ${SMOKE:+--smoke} $FB_ARGS
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        emit_signal "epm:failure" "publish-fail-a$ARM" "p6_publish" "true" \
+            "failure_class: code — arm $ARM P6 HF publish FAILED rc=$rc (fit_cells --publish: preds npz + out/ JSON mirror, exact-set verified in-script — see log tail)"
+        echo "[dispatch2546] FATAL: p6_publish (HF publish) rc=$rc" >&2
+        exit "$rc"
+    fi
     if [ -n "$SMOKE" ]; then
         echo "[dispatch2546] smoke mode: skipping pod-side git publish of eval_results/ (HF mirror only)"
         return 0
     fi
-    publish_results_git
+    # Subshell (with set -e restored inside) so publish_results_git's internal
+    # fail-loud `exit 1` sites terminate the SUBSHELL and land here as rc —
+    # its own [dispatch2546] FATAL lines + semantics are byte-unchanged.
+    set +e
+    (
+        set -e
+        publish_results_git
+    )
+    rc=$?
+    set -e
+    if [ "$rc" -ne 0 ]; then
+        emit_signal "epm:failure" "publish-git-fail-a$ARM" "p6_publish" "true" \
+            "failure_class: code — arm $ARM P6 pod-side git publish FAILED rc=$rc (result-push contract: expected-path set / fetch+rebase / push-verify / ls-tree assert — the [dispatch2546] FATAL line above names the failing leg)"
+        echo "[dispatch2546] FATAL: p6_publish (git publish) rc=$rc" >&2
+        exit "$rc"
+    fi
     emit_signal "epm:progress" "publish-a$ARM" "p6_publish" "false" \
         "arm $ARM P6 publish complete: preds npz + out/ JSON mirror on HF; eval JSONs committed+push-verified on git; out_root=$OUT_ROOT"
 }

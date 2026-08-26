@@ -1154,17 +1154,27 @@ def exact_match_correct(corpus: str, ans_text: str, gold: str | None) -> bool | 
     raise ValueError(f"unknown corpus {corpus!r}")
 
 
-def stage_math_golds(rows: list[dict]) -> dict[str, str]:
+def stage_math_golds(rows: list[dict]) -> tuple[dict[str, str], dict[str, dict]]:
     """Join MATH golds from the RLVR mix by src_index (capture-metadata time).
 
     The #1336 math7500 rows carry src_index into the RLVR train split @
     RLVR_REV; ``ground_truth`` is the verifiable gold. Grain-checked per row:
     the staged question must be contained in the source first user turn.
+
+    Returns ``(golds, dropped)``: ``dropped`` maps row_id ->
+    ``{"src_index", "reason"}`` for rows whose upstream ``ground_truth`` is
+    PRESENT but EMPTY — a measured upstream data condition (exactly 2 of
+    29,946 RLVR rows at RLVR_REV, src_index 2467/13255, both grain-ok MATH
+    rows; #2546 epm:failure v5). Those rows become an explicit COUNTED DROP
+    from the correctness covariate — never a fabricated/None-scored gold.
+    Every OTHER unexpected condition (no user turn, broken join grain,
+    ``ground_truth`` field missing entirely) stays a hard assert.
     """
     from datasets import load_dataset
 
     ds = load_dataset(RLVR_DATASET, split="train", revision=RLVR_REV)
     out: dict[str, str] = {}
+    dropped: dict[str, dict] = {}
     for r in rows:
         srow = ds[int(r["src_index"])]
         turn = next((m["content"] for m in srow["messages"] if m["role"] == "user"), None)
@@ -1174,11 +1184,44 @@ def stage_math_golds(rows: list[dict]) -> dict[str, str]:
             "first user turn — join grain broke, refusing"
         )
         gold = srow.get("ground_truth")
-        assert gold is not None and str(gold).strip(), (
-            f"math src_index {r['src_index']}: RLVR row lacks ground_truth"
+        assert gold is not None, (
+            f"math src_index {r['src_index']}: RLVR row has NO ground_truth field"
         )
+        if not str(gold).strip():
+            dropped[r["row_id"]] = {
+                "src_index": int(r["src_index"]),
+                "reason": "upstream_ground_truth_empty",
+            }
+            continue
         out[r["row_id"]] = str(gold)
-    return out
+    return out, dropped
+
+
+def resolve_row_gold(
+    corpus: str,
+    row_id: str,
+    src: dict,
+    math_golds: dict[str, str],
+    math_gold_drops: dict[str, dict],
+) -> tuple[str | None, bool]:
+    """Resolve the correctness gold for one rollout row.
+
+    Returns ``(gold, gold_dropped)``. A recorded drop returns ``(None, True)``
+    — the caller sets ``correct = None`` EXPLICITLY, never routing a None gold
+    through exact_match_correct. Every math row MUST be covered by the RLVR
+    join (joined non-empty gold, or a recorded drop): ``gold_answer`` is None
+    on ALL staged math rows (that is why the join exists), so an uncovered
+    math row is a broken join — fail loud (#2546 epm:failure v5).
+    """
+    if row_id in math_gold_drops:
+        return None, True
+    gold = math_golds.get(row_id, src.get("gold_answer"))
+    if corpus == "math":
+        assert gold is not None and str(gold).strip(), (
+            f"math row {row_id}: no joined gold and no recorded drop — "
+            "stage_math_golds must cover every math row"
+        )
+    return gold, False
 
 
 # ---------------------------------------------------------------------------
@@ -2860,13 +2903,23 @@ def run_capture(
     per-corpus upload-then-free -> necessity labels."""
     row_index = {r["row_id"]: r for rows in rows_by_corpus.values() for r in rows}
     math_golds: dict[str, str] = {}
+    math_gold_drops: dict[str, dict] = {}
     if any(r["corpus"] == "math" for rows in rows_by_corpus.values() for r in rows) and (
         corpora_filter is None or "math" in corpora_filter
     ):
         math_rows = [r for r in rows_by_corpus.get("math", [])]
         if math_rows:
             logger.info("[capture] joining %d MATH golds from %s", len(math_rows), RLVR_DATASET)
-            math_golds = stage_math_golds(math_rows)
+            math_golds, math_gold_drops = stage_math_golds(math_rows)
+            if math_gold_drops:
+                logger.warning(
+                    "[capture] math golds: %d/%d joined; %d DROPPED from the correctness "
+                    "covariate (upstream ground_truth empty): %s",
+                    len(math_golds),
+                    len(math_rows),
+                    len(math_gold_drops),
+                    sorted(math_gold_drops),
+                )
     correctness: dict[str, dict[str, bool | None]] = {s.side: {} for s in arm.sides}
     reports: dict[str, dict] = {}
     gf_results: dict[str, dict] = {}
@@ -2912,9 +2965,18 @@ def run_capture(
             for rec in rollouts:
                 parse = parse_generation(rec, mode)
                 src = row_index[rec["row_id"]]
-                gold = math_golds.get(rec["row_id"], src.get("gold_answer"))
+                gold, gold_dropped = resolve_row_gold(
+                    c, rec["row_id"], src, math_golds, math_gold_drops
+                )
                 ans_text = rec["text"][parse["ans_char_span"][0] : parse["ans_char_span"][1]]
-                correct = exact_match_correct(c, ans_text, gold) if parse["well_formed"] else None
+                # A gold-dropped row is captured (activations valid) but carries
+                # NO correctness label — explicit None, never a None gold routed
+                # through exact_match_correct (#2546 epm:failure v5).
+                correct = (
+                    exact_match_correct(c, ans_text, gold)
+                    if parse["well_formed"] and not gold_dropped
+                    else None
+                )
                 corr_this[rec["row_id"]] = correct
                 if not parse["well_formed"]:
                     parse_counts[parse["reason"]] += 1
@@ -2943,6 +3005,7 @@ def run_capture(
                             "ch_type": src.get("ch_type"),
                             "rescue_rate": src.get("rescue_rate"),
                             "correct": correct,
+                            "gold_dropped": gold_dropped,
                             "parse_reason": "",
                         },
                     }
@@ -3038,6 +3101,17 @@ def run_capture(
                 "short_think_frac": float(np.mean([s["short_think_frac"] for s in summaries])),
                 "wall_s": time.time() - t_ser0,
             }
+            if c == "math":
+                # Counted drop record (Step-8 planned-vs-actual): rows whose
+                # upstream RLVR ground_truth is present-but-empty are excluded
+                # from the correctness covariate; the denominator is revised.
+                drops_this = sorted({rec["row_id"] for rec in rollouts} & set(math_gold_drops))
+                report["math_gold_drops"] = {
+                    "count": len(drops_this),
+                    "row_ids": drops_this,
+                    "src_indices": {r: math_gold_drops[r]["src_index"] for r in drops_this},
+                    "reason": "upstream_ground_truth_empty",
+                }
             reports[stem] = report
             correctness[side.side].update(corr_this)
             # Per-corpus upload-then-free (bounds arm-3 peak disk; plan §4.2 P4).
@@ -3066,7 +3140,7 @@ def run_capture(
                 },
             )
             print(f"[capture] {stem}: complete ({n_captured} rows)", flush=True)
-    necessity = compute_necessity(arm, correctness, row_index, out_root)
+    necessity = compute_necessity(arm, correctness, row_index, out_root, math_gold_drops)
     return {"reports": reports, "gf": gf_results, "necessity_summary": necessity}
 
 
@@ -3075,6 +3149,7 @@ def compute_necessity(
     correctness: dict[str, dict[str, bool | None]],
     row_index: dict[str, dict],
     out_root: Path,
+    math_gold_drops: dict[str, dict] | None = None,
 ) -> dict:
     """Toggle necessity (arm 3) + pair_necessity (arms 1-2) from exact-match labels."""
     post_side, short_side = arm.sides[0].side, arm.sides[1].side
@@ -3106,6 +3181,16 @@ def compute_necessity(
         "labels": labels,
         "question_by_row_id": {rid: row_index[rid]["question"] for rid in labels},
         "class_sizes": summary,
+        # Counted covariate drop (upstream RLVR ground_truth present-but-empty;
+        # #2546 epm:failure v5): these rows label 'unknown', which every
+        # class_sizes consumer already excludes from the classified denominator
+        # (issue2546_figures._necessity_rates) — recorded here so the revised
+        # denominator is nameable in ## Takeaways (Step-8 planned-vs-actual).
+        "math_gold_drops": {
+            "count": len(math_gold_drops or {}),
+            "row_ids": sorted(math_gold_drops or {}),
+            "reason": "upstream_ground_truth_empty",
+        },
         "repro": repro_meta("necessity"),
     }
     name = "qwen3_toggle_labels.json" if arm.arm == 3 else f"pair_necessity_a{arm.arm}.json"
