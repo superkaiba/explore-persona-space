@@ -220,6 +220,24 @@ class SideSpec:
     open_ids: tuple[int, ...] | None = None  # pinned think-open encoding (asserted)
     close_ids: tuple[int, ...] | None = None  # pinned think-close encoding (asserted)
 
+    def __post_init__(self) -> None:
+        """Restore the declared tuple invariant across the JSON worker handoff.
+
+        The parent serializes `asdict(side)` into the per-slot work file and
+        each worker rebuilds `SideSpec(**work["side_spec"])`. JSON has no
+        tuple type, so `open_ids`/`close_ids` come back as LISTS, silently
+        violating the annotations above — `assert_think_pins` then compares
+        `tuple(...) == [...]` and fails on CONTAINER TYPE while the token ids
+        are identical (pod-side crash, arm-1 p1_smoke_rig: `'<think>' ->
+        (13708, 766, 29) != [13708, 766, 29]`). Coercing here fixes all three
+        reconstruction sites at once and keeps every downstream consumer
+        (`_find_last_subseq`, the pin asserts) on the declared type.
+        """
+        for field_name in ("open_ids", "close_ids"):
+            value = getattr(self, field_name)
+            if value is not None and not isinstance(value, tuple):
+                object.__setattr__(self, field_name, tuple(value))
+
 
 @dataclass(frozen=True)
 class ArmSpec:
