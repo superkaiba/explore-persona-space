@@ -1,0 +1,120 @@
+{
+  "commit": "b259ac85",
+  "render_id": "be27a6a4735a4bb0",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:31Z",
+  "figsize": [
+    5.6,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.11970848363804448,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.3503323144008972,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.2102811427818211,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.33158946292748614,
+      "series": "persona",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.6373059388789157,
+      "series": "persona",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.5490867568823347,
+      "series": "persona",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.13145923816646088,
+      "series": "stance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.1462426784836614,
+      "series": "stance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.14375726286024962,
+      "series": "stance",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer sensitivity (identity baseline only)",
+        "xlabel": "layer",
+        "ylabel": "direction cosine, identity baseline",
+        "legend_labels": [
+          "hedging",
+          "persona",
+          "stance"
+        ],
+        "xticklabels": [
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "hedging",
+      "persona",
+      "stance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
