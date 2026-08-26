@@ -60,7 +60,7 @@ from issue2378_dispatch import (  # noqa: E402
     _assert_driver_compat as assert_driver_compat,
 )
 from issue2378_dispatch import (  # noqa: E402
-    _build_model_venv as build_model_venv,
+    _build_model_venv as _build_model_venv_2378,
 )
 
 from explore_persona_space.experiments.issue2587.bank2587 import (  # noqa: E402
@@ -108,11 +108,42 @@ ISSUE = 2587
 # §4.1 pins — re-exported from issue2378_common BY IMPORT (never retyped).
 MODEL_VENV_DEFAULT = cm2378.MODEL_VENV_DEFAULT
 MODEL_VENV_PINS = cm2378.MODEL_VENV_PINS
-MODEL_VENV_EXTRA_PINS = cm2378.MODEL_VENV_EXTRA_PINS
+# Issue-local extra pin beyond the #2378 set: transformers 5.15.1 refuses any
+# device_map load without the `accelerate` dist (check_and_set_device_map) —
+# the #2378 vLLM-only venv never needed it; this issue's fp32 capture path
+# (AutoModelForCausalLM.from_pretrained(..., device_map=...)) does. Asserted
+# on-pod by the P1 realized-pin check like every other extra pin.
+MODEL_VENV_EXTRA_PINS = (*cm2378.MODEL_VENV_EXTRA_PINS, "accelerate==1.14.0")
 MODEL_VENV_BANNED_DISTS = cm2378.MODEL_VENV_BANNED_DISTS
 ENGINE_KWARG_PINS = cm2378.ENGINE_KWARG_PINS
 MODEL_DRIVER_FLOOR_MAJOR = cm2378.MODEL_DRIVER_FLOOR_MAJOR
 CUDA_COMPAT_DIR = cm2378.CUDA_COMPAT_DIR
+
+
+def build_model_venv(logs_dir: Path) -> None:
+    """#2378 shared build (pins + banned-dist uninstall LAST), then the
+    issue-2587 delta pins (entries of this module's MODEL_VENV_EXTRA_PINS
+    beyond the #2378 set) installed into the same venv. Raises on any
+    nonzero uv rc; appends to the same model_venv_build.log."""
+    import shutil
+    import subprocess
+
+    _build_model_venv_2378(logs_dir)
+    delta = [s for s in MODEL_VENV_EXTRA_PINS if s not in cm2378.MODEL_VENV_EXTRA_PINS]
+    if not delta:
+        return
+    uv = shutil.which("uv")
+    if uv is None:
+        raise RuntimeError("model venv delta-pin install: `uv` not on PATH")
+    py = str(Path(MODEL_VENV_DEFAULT) / "bin" / "python")
+    log_path = Path(logs_dir) / "model_venv_build.log"
+    argv = [uv, "pip", "install", "--python", py, *delta]
+    logger.info("[model-venv] delta-pin install: %s log=%s", " ".join(argv), log_path)
+    with log_path.open("a", encoding="utf-8") as log:
+        rc = subprocess.run(argv, stdout=log, stderr=subprocess.STDOUT, check=False).returncode
+    if rc != 0:
+        raise RuntimeError(f"model venv delta-pin install failed rc={rc} (see {log_path})")
+
 
 # §4.1 launch env for every model step: the #2378 flashinfer-sampler pin PLUS
 # the multiproc-spawn pin (plan §4.1 names both).
