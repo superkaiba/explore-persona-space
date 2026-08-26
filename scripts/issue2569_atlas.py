@@ -1057,17 +1057,33 @@ def h7_demote_block(rows: list[dict], table: list[dict]) -> dict:
       of the two half-refit operators) and between-operator distance = 1 - the
       pair's direction-aware ALIGNED raw cosine. The rotation-invariant spectrum
       fallback is NEVER used here (unmatched units); such pairs are excluded
-      with a recorded reason.
+      from the EVALUABLE set with a recorded reason. Cross-basis asymmetry
+      (disclosure, concern h7-cross-basis-unit-asymmetry): for cross-basis pairs
+      the within floor is a NATIVE-basis split-half cosine while the between
+      distance is measured after the semi-orthogonal activation-Procrustes
+      alignment, so "matched vec-cosine units" is exact on same-basis pairs and
+      approximate on cross-model pairs (plausibly under-firing the demote
+      there); both conventions are the plan's own — disclosed, not changed.
     - **Pair-level within distance:** the MAX of the two members' within
       distances — a pair's separation is resolvable only if it exceeds BOTH
       members' split-half self-distance, so the noisier member binds (the
       conservative reading: the demote fires more readily, never less).
-    - **Denominator:** evaluable pairs only (both floors known AND a
-      direction-aware cosine present); every exclusion carries a reason. The
-      demote fires on the STRICT majority (n_noise * 2 > n_evaluable, the plan's
-      "> half"). Zero evaluable pairs -> verdict UNDECIDABLE and the atlas ships
-      descriptive-only (no above-noise separation claim is possible) — never a
-      silent not-demoted default.
+    - **Denominator (registered — concern h7-denominator-evaluable-not-all-pairs):**
+      ALL enumerated atlas pairs (``n_pairs_total``). The plan registers the
+      criterion twice (v4 line 57 H7 statement + line 295 leg-7 Demote clause)
+      as "> half of pairs" with NO evaluability qualifier, so the verdict is the
+      strict majority over the full pair table: ``n_noise * 2 > n_pairs_total``.
+      What an excluded pair means (a stated READING — the plan text did not
+      anticipate exclusions): a pair excluded for incommensurate units (the
+      spectrum fallback) or a missing floor is not evidence either way, and
+      under the registered "> half of pairs" text it stays in the denominator
+      while never entering the numerator — so exclusions bias the verdict toward
+      NOT demoting, the OPPOSITE bias from the evaluable-only majority, which is
+      retained as ``diagnostic_evaluable_majority`` (diagnostic only, never the
+      verdict; disagreement between the readings is flagged). Zero evaluable
+      pairs -> verdict UNDECIDABLE and the atlas ships descriptive-only (no
+      above-noise separation claim is possible) — never a silent not-demoted
+      default from zero evidence.
 
     Mutates each table entry with an ``h7`` record; returns the verdict block.
     """
@@ -1104,21 +1120,28 @@ def h7_demote_block(rows: list[dict], table: list[dict]) -> dict:
         if not rec["evaluable"]:
             excluded[rec["reason"]] = excluded.get(rec["reason"], 0) + 1
         e["h7"] = rec
+    n_total = len(table)
     if n_eval == 0:
         noise_dominated = None
         disposition = (
             "undecidable — descriptive only (zero pairs carry both split-half "
             "floors and a direction-aware aligned cosine)"
         )
-    elif n_noise * 2 > n_eval:
+    elif n_noise * 2 > n_total:
         noise_dominated = True
-        disposition = "noise-dominated — descriptive only (pre-registered H7 demote fired)"
+        disposition = (
+            "noise-dominated — descriptive only (pre-registered H7 demote fired: "
+            f"within >= between on {n_noise} of {n_total} total pairs, a strict "
+            "majority of ALL pairs — the registered denominator)"
+        )
     else:
         noise_dominated = False
         disposition = (
-            "not demoted — within-operator split-half distance < between-operator "
-            "distance for at least half of evaluable pairs"
+            "not demoted — within-operator split-half distance >= between-operator "
+            f"distance for {n_noise} of {n_total} total pairs, not > half of ALL "
+            "pairs (the registered denominator)"
         )
+    eval_majority = (n_noise * 2 > n_eval) if n_eval else None
     return {
         "predicate": H7_PREDICATE,
         "reading": {
@@ -1128,25 +1151,64 @@ def h7_demote_block(rows: list[dict], table: list[dict]) -> dict:
                 "operators); between = 1 - the pair's direction-aware aligned raw "
                 "cosine; the rotation-invariant spectrum fallback is never used"
             ),
+            "cross_basis_unit_asymmetry": (
+                "disclosure: for cross-basis pairs the within floor is a "
+                "NATIVE-basis split-half cosine while the between distance is "
+                "measured after the semi-orthogonal activation-Procrustes "
+                "alignment, so 'matched vec-cosine units' is exact on same-basis "
+                "pairs and approximate on cross-model pairs (plausibly "
+                "under-firing the demote there); both conventions are the plan's "
+                "own — disclosed, not changed"
+            ),
             "pair_within": (
                 "max over the two members' within-operator distances (the noisier "
                 "member binds: a separation is resolvable only above BOTH self-floors)"
             ),
             "denominator": (
-                "evaluable pairs only (both floors present + direction-aware "
-                "cosine); every exclusion recorded with a reason; strict > half"
+                "ALL enumerated atlas pairs (n_pairs_total) — the plan registers "
+                "'> half of pairs' twice (v4 line 57 + line 295) with no "
+                "evaluability qualifier, so the verdict is the strict majority "
+                "over the full pair table: n_noise_dominated * 2 > n_pairs_total"
+            ),
+            "excluded_pairs": (
+                "a pair excluded for incommensurate units (spectrum fallback) or "
+                "a missing floor is not evidence either way; under the registered "
+                "'> half of pairs' text it stays in the denominator and never "
+                "enters the numerator, so exclusions bias the verdict toward NOT "
+                "demoting — a stated READING of plan text that did not anticipate "
+                "exclusions (the opposite bias from the evaluable-only majority, "
+                "kept as diagnostic_evaluable_majority); zero evaluable pairs -> "
+                "verdict undecidable, atlas ships descriptive-only regardless"
             ),
         },
-        "n_pairs_total": int(len(table)),
+        "n_pairs_total": int(n_total),
         "n_evaluable": int(n_eval),
         "n_noise_dominated": int(n_noise),
-        "fraction_noise_dominated": (float(n_noise) / n_eval) if n_eval else None,
+        "verdict_denominator": "all_pairs",
+        "fraction_noise_dominated_all_pairs": (float(n_noise) / n_total) if n_total else None,
+        "fraction_noise_dominated_evaluable": (float(n_noise) / n_eval) if n_eval else None,
         "noise_dominated": noise_dominated,
         "disposition": disposition,
+        "diagnostic_evaluable_majority": {
+            "noise_dominated": eval_majority,
+            "readings_disagree": (
+                None
+                if (noise_dominated is None or eval_majority is None)
+                else bool(eval_majority != noise_dominated)
+            ),
+            "note": (
+                "strict majority over EVALUABLE pairs only — the alternative "
+                "reading (and the pre-fix implementation's); DIAGNOSTIC ONLY, "
+                "never the verdict"
+            ),
+        },
         "excluded_pair_reasons": excluded,
         "conservatism_note": (
             "floors are split-half refits at n/2 train rows, which overstates the "
-            "full-n operator's noise — the demote fires conservatively"
+            "full-n operator's noise — per-pair noise_dominated flags fire "
+            "conservatively (the registered all-pairs denominator, by contrast, "
+            "biases the AGGREGATE verdict toward not-demoting when pairs are "
+            "excluded — see reading.excluded_pairs)"
         ),
     }
 

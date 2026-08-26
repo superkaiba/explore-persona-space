@@ -23,6 +23,11 @@ Concern coverage (each test FAILS on the pre-fix file — verified red before th
   ``issue2569_leg6.write_operator_factors`` (the landed producer) feeds
   ``_resolve_atlas_rows``'s leg-6 branch; operator reconstruction and the
   bare-float ``split_half_floor`` normalization (``_floor_cos``) asserted.
+- **h7-denominator-evaluable-not-all-pairs (r3):** the H7 demote VERDICT uses the
+  registered all-pairs denominator (plan v4 lines 57 + 295: "> half of pairs",
+  no evaluability qualifier) — ``n_noise * 2 > n_pairs_total`` — with the
+  evaluable-only majority kept as a named diagnostic, both fractions persisted,
+  and the zero-evaluable / all-excluded edges still undecidable + descriptive-only.
 
 All synthetic, CPU-fast (d <= 48); no network, no repo-root writes (tmp_path only).
 """
@@ -317,6 +322,110 @@ def test_h7_excludes_spectrum_fallback_pairs():
     assert table[0]["h7"]["noise_dominated"] is False
     assert not table[1]["h7"]["evaluable"] and "no split-half floor" in table[1]["h7"]["reason"]
     assert not table[2]["h7"]["evaluable"] and "direction-aware" in table[2]["h7"]["reason"]
+
+
+# ---------------------------------------------------------------------------
+# Concern: h7-denominator-evaluable-not-all-pairs (fix round r3)
+# ---------------------------------------------------------------------------
+
+
+def _five_rows_four_floored() -> list[dict]:
+    """5 operators -> 10 pairs; a..d carry floors (0.9 -> within-distance 0.1),
+    e is floorless so every e-pair is excluded from the evaluable set."""
+    return [
+        {"name": "a", "floor": {"floor": 0.9}},
+        {"name": "b", "floor": 0.9},  # leg6 bare-float shape
+        {"name": "c", "floor": 0.9},
+        {"name": "d", "floor": 0.9},
+        {"name": "e", "floor": None},
+    ]
+
+
+def test_h7_verdict_uses_registered_all_pairs_denominator():
+    """THE REGRESSION PIN for h7-denominator-evaluable-not-all-pairs: plan v4
+    registers the demote criterion twice (line 57 H7 statement + line 295 leg-7
+    Demote clause) as '> half of PAIRS' with no evaluability qualifier, so the
+    VERDICT denominator is ALL enumerated pairs (n_pairs_total), never the
+    evaluable subset. Fixture: 10 total pairs, 6 evaluable, 4 noise-dominated ->
+    the evaluable-only majority (8 > 6) would demote; the registered all-pairs
+    majority (8 > 10 is false) does NOT. The pre-fix implementation
+    (``n_noise * 2 > n_evaluable``) demotes on this fixture — verified RED
+    before the fix, GREEN after."""
+    noise = {"raw_cosine": 0.95}  # between 0.05 <= within 0.1 -> noise-dominated
+    resolved = {"raw_cosine": 0.5}  # between 0.5 > within 0.1 -> resolved
+    table = [
+        {"pair": ["a", "b"], "cosine": dict(noise)},
+        {"pair": ["a", "c"], "cosine": dict(noise)},
+        {"pair": ["a", "d"], "cosine": dict(noise)},
+        {"pair": ["b", "c"], "cosine": dict(noise)},
+        {"pair": ["b", "d"], "cosine": dict(resolved)},
+        {"pair": ["c", "d"], "cosine": dict(resolved)},
+        {"pair": ["a", "e"], "cosine": dict(resolved)},  # excluded: e floorless
+        {"pair": ["b", "e"], "cosine": dict(resolved)},  # excluded: e floorless
+        {"pair": ["c", "e"], "cosine": None},  # excluded: spectrum fallback
+        {"pair": ["d", "e"], "cosine": None},  # excluded: spectrum fallback
+    ]
+    h7 = AT.h7_demote_block(_five_rows_four_floored(), table)
+    assert h7["n_pairs_total"] == 10 and h7["n_evaluable"] == 6
+    assert h7["n_noise_dominated"] == 4
+    # registered verdict: 4 * 2 = 8 is NOT > 10 -> not demoted
+    assert h7["noise_dominated"] is False, h7
+    assert h7["disposition"].startswith("not demoted"), h7["disposition"]
+    assert h7["verdict_denominator"] == "all_pairs"
+    # BOTH fractions persisted so the disposition is decidable from the file alone
+    assert abs(h7["fraction_noise_dominated_all_pairs"] - 0.4) < 1e-12
+    assert abs(h7["fraction_noise_dominated_evaluable"] - 4.0 / 6.0) < 1e-12
+    # the evaluable-only reading survives as a NAMED diagnostic (never the
+    # verdict) and its disagreement with the registered verdict is flagged
+    diag = h7["diagnostic_evaluable_majority"]
+    assert diag["noise_dominated"] is True and diag["readings_disagree"] is True
+    # the excluded-pair semantics are stated in the artifact's reading block
+    assert "NOT demoting" in h7["reading"]["excluded_pairs"]
+    assert "n_pairs_total" in h7["reading"]["denominator"]
+
+
+def test_h7_demote_fires_on_all_pairs_majority_with_exclusions():
+    """Demote under the REGISTERED denominator with exclusions present: 10 total
+    pairs, 6 evaluable, all 6 noise-dominated -> 12 > 10 fires the demote; both
+    readings agree here (12 > 6 too) so ``readings_disagree`` is False."""
+    table = []
+    for x, y in (("a", "b"), ("a", "c"), ("a", "d"), ("b", "c"), ("b", "d"), ("c", "d")):
+        table.append({"pair": [x, y], "cosine": {"raw_cosine": 0.95}})
+    for x in ("a", "b", "c", "d"):
+        table.append({"pair": [x, "e"], "cosine": None})
+    h7 = AT.h7_demote_block(_five_rows_four_floored(), table)
+    assert h7["n_pairs_total"] == 10 and h7["n_evaluable"] == 6
+    assert h7["n_noise_dominated"] == 6
+    assert h7["noise_dominated"] is True, h7
+    assert "noise-dominated" in h7["disposition"] and "descriptive only" in h7["disposition"]
+    assert h7["diagnostic_evaluable_majority"]["noise_dominated"] is True
+    assert h7["diagnostic_evaluable_majority"]["readings_disagree"] is False
+
+
+def test_h7_all_excluded_pairs_undecidable():
+    """Non-empty table with EVERY pair excluded (mixed reasons) -> the verdict is
+    UNDECIDABLE (None) + descriptive-only: the zero-evaluable fail-loud branch
+    takes precedence over the all-pairs majority, which would otherwise read
+    0 > half as a silent not-demoted from zero evidence."""
+    rows = [
+        {"name": "a", "floor": {"floor": 0.9}},
+        {"name": "b", "floor": None},
+        {"name": "c", "floor": None},
+    ]
+    table = [
+        {"pair": ["a", "b"], "cosine": {"raw_cosine": 0.5}},  # floor missing on b
+        {"pair": ["a", "c"], "cosine": None},  # spectrum fallback
+        {"pair": ["b", "c"], "cosine": None},  # spectrum fallback
+    ]
+    h7 = AT.h7_demote_block(rows, table)
+    assert h7["n_pairs_total"] == 3 and h7["n_evaluable"] == 0
+    assert h7["noise_dominated"] is None
+    assert "undecidable" in h7["disposition"] and "descriptive only" in h7["disposition"]
+    assert h7["fraction_noise_dominated_evaluable"] is None
+    assert h7["fraction_noise_dominated_all_pairs"] == 0.0
+    assert h7["diagnostic_evaluable_majority"]["noise_dominated"] is None
+    assert h7["diagnostic_evaluable_majority"]["readings_disagree"] is None
+    assert sum(h7["excluded_pair_reasons"].values()) == 3
 
 
 # ---------------------------------------------------------------------------
