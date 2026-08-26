@@ -303,6 +303,10 @@ The repaired cell clears its null: own R² 0.222 context, 0.208 prefix, vs 0.205
 
 Whether this reflects the model tracking its own simulation is unresolved by design.
 
+> Open review concern `simregen-stale-verdict-artifact-git-transport` (pod-local unlinks after a cross-dispatch fresh-verdict flip never reach the git-fed fits leg): not exercised here; the realized round ran a single dispatch whose fresh-eligibility gate read eligible outright (rung 1 kept 9,939 of 10,000; the stronger rung never fired), so no verdict flip occurred.
+
+> Open review concern `simregen-derived-fresh-na-resume-mismatch` (dispatcher-written not-applicable fresh records omit the regime key and would crash resume validation on a later retry): also unexercised; the not-applicable branch never ran, and both committed fresh-read records are callee-written with the current regime key present.
+
 ### One map fit jointly on all 8 framings reaches 0.95–1.11 of own ceilings under corrected family folds
 
 The figure shows the pooled map's per-framing R² divided by that framing's own ceiling under global family folds, as-is (full color) and with a rank-128 residual (pale), against the ceiling (dashed) and 0.90 bar (dotted). The per-fold pooled-vs-own view below is the embedded low-level companion.
@@ -376,6 +380,12 @@ The first figure compares two intervals for the story-Dana-into-chat behavior fa
 > **Figure.** *Per-question companion.* Each point is one question's steered minus null difference (question index labeled); black bars are family means; the confirmation pairs spread far wider than the grid's.
 
 The fresh confirmation lands near the grid mean (+0.104 vs +0.120; family means 0.181 null, 0.285 steered) but its interval spans zero at 12 pairs: the one grid family that crossed the screen — exactly the count 20 families produce at the 95% level — does not survive independent re-measurement. The no-confirmed-behavior takeaway now rests on fresh re-measurement of all three behavior families, not on this family's structural exclusion from the original confirmation. At this width the result is indistinguishable from null given the variance, not evidence of a zero effect.
+
+> Open review concern `danaconf-draw-battery-timing-unscaled` (no production-shape wall or kernel estimate was recorded before dispatch): not binding on the realized run; the full pod leg at 12 pairs and 5 draws per side completed in under 20 minutes of wall time, about 0.3 GPU-hours against the 2 GPU-hour budget.
+
+> Open review concern `danaconf-guard-path-alias-bypass` (the round-isolation guard compares destination spellings, so alias spellings could slip past it): the committed gate record's argv shows every guarded destination explicitly set to a canonical distinct spelling, with the ledger subdir a plain relative name, so no alias form was ever passed.
+
+> Open review concern `danaconf-bank-staged-no-exit0-terminal-smoke` (the pre-dispatch smoke halted before a clean terminal exit of the bank-staging phase): the realized pod run exercised that path live; the committed gate report records the staged bank passing digest binding over all 180 contexts, and the confirm phase, which dispatches only after a clean bank-staging exit, ran to completion.
 
 ---
 
