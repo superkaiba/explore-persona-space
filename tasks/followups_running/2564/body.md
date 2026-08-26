@@ -19,7 +19,7 @@ tags:
 # The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout, after re-elicitation clears the three compliance-failed axes (MODERATE confidence)
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_2564.md](https://github.com/superkaiba/explore-persona-space/blob/5d7aa27b8a647057d52a0a0f65c916545c7e799c/docs/methodology/issue_2564.md) · [gist mirror](https://gist.github.com/superkaiba/de36ebc7054e5e9152ed263dc7873305)
+**Methodology:** [docs/methodology/issue_2564.md](https://github.com/superkaiba/explore-persona-space/blob/df0b07caef292bf095f2fc4179a42bcfc77d93c4/docs/methodology/issue_2564.md) · [gist mirror](https://gist.github.com/superkaiba/de36ebc7054e5e9152ed263dc7873305)
 
 ## Takeaways
 
