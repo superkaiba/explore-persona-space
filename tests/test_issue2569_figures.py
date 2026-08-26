@@ -549,8 +549,15 @@ def _dv3_payload(obs: float, p95: float, arm: str = "write") -> dict:
     }
 
 
-def _align_cell(cos: float, p95: float) -> dict:
-    """One alignment_vs_null record (issue2569_dw_fleet shape)."""
+def _align_cell(cos: float, p95: float, well_sep: bool = True) -> dict:
+    """One scored cmd_align alignment cell (issue2569_dw_fleet shape).
+
+    Carries the ``alignment_vs_null`` fields PLUS the three per-cell
+    self-label fields the producer appends at the read site
+    (``argmax_factor`` / ``argmax_well_separated`` / ``subspace_proj`` —
+    issue2569_dw_fleet.py cmd_align; fix-round-4
+    ``dw-degeneracy-labels-not-consumed``).
+    """
     return {
         "max_abs_cos": cos,
         "null_p95": p95,
@@ -558,6 +565,9 @@ def _align_cell(cos: float, p95: float) -> dict:
         "above_null": cos > p95,
         "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
         "k_basis": 8,
+        "argmax_factor": 0,
+        "argmax_well_separated": well_sep,
+        "subspace_proj": cos * 1.1,
     }
 
 
@@ -567,6 +577,22 @@ def _align_factor(side: str, alignments: dict) -> dict:
     ``cmd_align`` run 2026-08-26, fix-round-3
     ``dwfleet-alignment-consumer-flat-schema-stale``)."""
     return {"side": side, "k_basis": 8, "alignments": alignments}
+
+
+def _top_sep(well_sep: bool) -> dict:
+    """One ``top_vector_separation`` label, emitted by the REAL producer function.
+
+    Generated through ``issue2569_dw_fleet.top_vector_separation`` (never
+    hand-encoded — this round's brief names a fixture that validated an
+    impossible schema): a 0.5 relative gap clears ``DEGEN_REL_GAP_FLOOR``
+    (1e-3); a 5e-4 gap sits under it (near-tied top pair).
+    """
+    import issue2569_dw_fleet as DW
+
+    svals = np.array([1.0, 0.5, 0.1]) if well_sep else np.array([1.0, 1.0 - 5e-4, 0.1])
+    sep = DW.top_vector_separation(svals)
+    assert sep["well_separated"] is well_sep
+    return sep
 
 
 def _write_dw(root: Path) -> None:
@@ -589,6 +615,13 @@ def _write_dw(root: Path) -> None:
             "q_proj": _dv3_payload(0.11, 0.09, arm="read"),
         },
         "intruder_side": {"down_proj": "U", "o_proj": "U", "q_proj": "V"},
+        # Per-layer top-pair separation labels (producer schema: str layer keys).
+        # down_proj's band-max layer is near-tied -> renders rotation-arbitrary.
+        "intruder_top_separation": {
+            "down_proj": {"19": _top_sep(False)},
+            "o_proj": {"19": _top_sep(True)},
+            "q_proj": {"19": _top_sep(True)},
+        },
         "regime_key": "rk",
         "metadata": {},
     }
@@ -611,7 +644,8 @@ def _write_dw(root: Path) -> None:
                         "U",
                         {
                             "r_B[evil]": _align_cell(0.3, 0.1),
-                            "Ar[evil]": _align_cell(0.05, 0.1),
+                            # near-tied max factor: renders as the diamond marker
+                            "Ar[evil]": _align_cell(0.05, 0.1, well_sep=False),
                             "delta_tbar": _align_cell(0.5, 0.1),
                         },
                     ),
@@ -629,7 +663,15 @@ def _write_dw(root: Path) -> None:
         "seed_noise_anchor": {
             "pair": ["imp-pers-con-lr3e5-s42", "imp-pers-con-lr3e5-s137"],
             "note": "no full-FT seed pair exists (scope limit)",
-            "down_proj": {"top1_abs_cos": 0.15, "max_abs_cos_topk": 0.2},
+            "down_proj": {
+                "top1_abs_cos": 0.15,
+                "max_abs_cos_topk": 0.2,
+                # producer schema (cmd_align seed anchor): per-arm top1 labels
+                "top1_well_separated": {
+                    "imp-pers-con-lr3e5-s42": True,
+                    "imp-pers-con-lr3e5-s137": True,
+                },
+            },
         },
         "metadata": {},
     }
@@ -1603,6 +1645,10 @@ def test_dw_intruder_reads_arm_from_payload_and_guards_empty():
             "o_proj": _dv3_payload(0.05, 0.09),  # U-side: arm "write"
             "q_proj": _dv3_payload(0.11, 0.09, arm="read"),  # V-side: arm "read"
         },
+        "intruder_top_separation": {
+            "o_proj": {"19": _top_sep(True)},
+            "q_proj": {"19": _top_sep(True)},
+        },
     }
     fig = F.build_dw_intruder([rec])
     pts = [ln for ln in fig.axes[0].lines if ln.get_marker() == "o"]
@@ -1641,7 +1687,10 @@ def test_dw_consumers_accept_real_producer_outputs(tmp_path, monkeypatch):
     arm_names = {a for p in rec["intruder"].values() for a in p["observed"]}
     assert arm_names == {"write", "read"}  # one record carries BOTH arms
     fig = F.build_dw_intruder([rec])
-    pts = [ln for ln in fig.axes[0].lines if ln.get_marker() == "o"]
+    # Marker is "o" (well-separated band-max top pair) or "D" (near-tied) —
+    # the real producer's per-layer labels are consumed either way, one point
+    # per module (fix-round-4 dw-degeneracy-labels-not-consumed).
+    pts = [ln for ln in fig.axes[0].lines if ln.get_marker() in ("o", "D")]
     assert len(pts) == len(DW.LORA_MODULES)  # all 7 modules, no KeyError
     plt.close(fig)
 
@@ -1657,6 +1706,110 @@ def test_dw_consumers_accept_real_producer_outputs(tmp_path, monkeypatch):
     fig = F.build_dw_alignment(align)
     assert _n_artists(fig) >= 8  # per-direction panels: alignment points + null ticks
     plt.close(fig)
+
+
+def test_dw_degeneracy_labels_render_distinct_markers(full_root):
+    """Regression: dw-degeneracy-labels-not-consumed (fix-round-4).
+
+    The producer self-labels rotation-arbitrary factor reads
+    (``intruder_top_separation`` per layer; ``argmax_well_separated`` +
+    ``top1_well_separated`` in alignment.json); pre-fix the figures consumed
+    NONE of them, so a near-tied (rotation-arbitrary) read rendered
+    identically to a well-separated one. Marker shape now carries the
+    distinction (circle = well-separated, diamond = near-tied), missing
+    labels raise loudly, and the seed anchor uses well-separated modules only.
+    """
+    import matplotlib.pyplot as plt
+
+    # ── intruder: the full_root fixture has down_proj near-tied at its
+    # band-max layer, o_proj/q_proj well-separated ──────────────────────────
+    lora = F._load_dw_units(full_root, "lora")
+    fig = F.build_dw_intruder(lora)
+    diamonds = [ln for ln in fig.axes[0].lines if ln.get_marker() == "D"]
+    circles = [ln for ln in fig.axes[0].lines if ln.get_marker() == "o"]
+    assert len(diamonds) == 1 and len(circles) == 2
+    assert float(diamonds[0].get_ydata()[0]) == pytest.approx(0.21)  # down_proj band max
+    plt.close(fig)
+
+    # Band-max KEYING: a near-tied label on a NON-band-max layer never flags
+    # the point — the plotted value is that band-max layer's top-vector read.
+    payload = _dv3_payload(0.21, 0.08)
+    payload["observed"]["write"]["max_by_layer"] = {"19": 0.21, "20": 0.15}
+    rec = {
+        "arm_id": "arm1",
+        "intruder": {"down_proj": payload},
+        "intruder_top_separation": {"down_proj": {"19": _top_sep(True), "20": _top_sep(False)}},
+    }
+    fig = F.build_dw_intruder([rec])
+    assert [ln.get_marker() for ln in fig.axes[0].lines if ln.get_marker() in ("o", "D")] == ["o"]
+    plt.close(fig)
+
+    # Fail-loud: a record without labels, and a band-max layer without a label.
+    no_labels = {"arm_id": "a", "intruder": {"o_proj": _dv3_payload(0.1, 0.2)}}
+    with pytest.raises(ValueError, match="intruder_top_separation"):
+        F.build_dw_intruder([no_labels])
+    wrong_layer = {
+        "arm_id": "a",
+        "intruder": {"o_proj": _dv3_payload(0.1, 0.2)},
+        "intruder_top_separation": {"o_proj": {"20": _top_sep(True)}},
+    }
+    with pytest.raises(ValueError, match="band-max layer"):
+        F.build_dw_intruder([wrong_layer])
+
+    # ── alignment: the full_root fixture has Ar[evil] near-tied ────────────
+    align = json.loads((full_root / "dw_fleet" / "alignment.json").read_text())
+    fig = F.build_dw_alignment(align)
+    by_marker: dict[str, int] = {}
+    for ax in fig.axes:
+        for ln in ax.lines:
+            if ln.get_marker() in ("o", "D"):
+                by_marker[ln.get_marker()] = by_marker.get(ln.get_marker(), 0) + 1
+    assert by_marker.get("D", 0) == 1  # exactly the Ar[evil] near-tied cell
+    assert by_marker.get("o", 0) >= 3  # the well-separated cells keep circles
+    # Anchor line present (both arms well-separated in the fixture).
+    anchor_lines = [
+        ln for ax in fig.axes for ln in ax.lines if ln.get_linestyle() in (":", "dotted")
+    ]
+    assert anchor_lines and float(anchor_lines[0].get_xdata()[0]) == pytest.approx(0.15)
+    plt.close(fig)
+
+    # A degenerate-on-one-arm anchor module is EXCLUDED from the anchor line.
+    align2 = json.loads(json.dumps(align))
+    align2["seed_noise_anchor"]["o_proj"] = {
+        "top1_abs_cos": 0.9,
+        "max_abs_cos_topk": 0.95,
+        "top1_well_separated": {
+            "imp-pers-con-lr3e5-s42": True,
+            "imp-pers-con-lr3e5-s137": False,  # near-tied top factor: rotation read
+        },
+    }
+    fig = F.build_dw_alignment(align2)
+    anchor_lines = [
+        ln for ax in fig.axes for ln in ax.lines if ln.get_linestyle() in (":", "dotted")
+    ]
+    assert anchor_lines and float(anchor_lines[0].get_xdata()[0]) == pytest.approx(0.15)
+    plt.close(fig)
+
+    # All-degenerate anchor: no line at all (never a rotation read as a level).
+    align3 = json.loads(json.dumps(align))
+    align3["seed_noise_anchor"]["down_proj"]["top1_well_separated"] = {
+        "imp-pers-con-lr3e5-s42": False,
+        "imp-pers-con-lr3e5-s137": True,
+    }
+    fig = F.build_dw_alignment(align3)
+    assert not [ln for ax in fig.axes for ln in ax.lines if ln.get_linestyle() in (":", "dotted")]
+    plt.close(fig)
+
+    # Fail-loud: a scored cell / anchor module lacking its separation label.
+    align4 = json.loads(json.dumps(align))
+    arm = align4["arms"]["cas-pers-con-lr1e5-s42"]
+    del arm["factors"]["L19.down_proj"]["alignments"]["r_B[evil]"]["argmax_well_separated"]
+    with pytest.raises(ValueError, match="argmax_well_separated"):
+        F.build_dw_alignment(align4)
+    align5 = json.loads(json.dumps(align))
+    del align5["seed_noise_anchor"]["down_proj"]["top1_well_separated"]
+    with pytest.raises(ValueError, match="top1_well_separated"):
+        F.build_dw_alignment(align5)
 
 
 def test_leg6_figures_render_and_skip_pooled(full_root, tmp_path):

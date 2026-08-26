@@ -603,12 +603,29 @@ def test_fit_metadata_parity_check_names_mismatches():
 
 
 def test_mean_abs_delta_r2_bands():
-    """H2b verdict bands on WELL-POSED points: pass <= 0.05 < localized <= 0.15 < kill."""
-    ok = [_verdict_point(100, 0.50, 0.51), _verdict_point(200, 0.60, 0.58)]
+    """H2b verdict bands on WELL-POSED points: pass <= 0.05 < localized <= 0.15 < kill.
+
+    Three points per band — the smallest series clearing
+    ``MIN_WELLPOSED_VERDICT_POINTS`` (= 3, fix-round-4
+    ``h2b-two-of-five-yields-registered-verdict``).
+    """
+    ok = [
+        _verdict_point(100, 0.50, 0.51),
+        _verdict_point(200, 0.60, 0.58),
+        _verdict_point(400, 0.65, 0.64),
+    ]
     assert GL.mean_abs_delta_r2(ok, d=16)["verdict"] == "h2b-pass"
-    mid = [_verdict_point(100, 0.50, 0.60), _verdict_point(200, 0.60, 0.70)]
+    mid = [
+        _verdict_point(100, 0.50, 0.60),
+        _verdict_point(200, 0.60, 0.70),
+        _verdict_point(400, 0.65, 0.75),
+    ]
     assert GL.mean_abs_delta_r2(mid, d=16)["verdict"] == "localized-misfit (no kill)"
-    kill = [_verdict_point(100, 0.50, 0.70), _verdict_point(200, 0.60, 0.80)]
+    kill = [
+        _verdict_point(100, 0.50, 0.70),
+        _verdict_point(200, 0.60, 0.80),
+        _verdict_point(400, 0.65, 0.85),
+    ]
     out = GL.mean_abs_delta_r2(kill, d=16)
     assert out["verdict"] == "h2b-kill-candidate" and out["same_sign_all"]
     assert all(r["well_posed"] for r in out["well_posedness"]["per_point"])
@@ -647,10 +664,11 @@ def test_mean_abs_delta_r2_mixed_scores_wellposed_only():
         _verdict_point(8, 0.10, 0.90),  # degenerate (n < d): a huge delta that must not enter
         _verdict_point(100, 0.50, 0.51),
         _verdict_point(200, 0.60, 0.58),
+        _verdict_point(400, 0.65, 0.64),
     ]
     out = GL.mean_abs_delta_r2(pts, d=16)
-    assert out["verdict"] == "h2b-pass"  # scored on the two well-posed points only
-    assert out["mean_abs_dr2"] == pytest.approx(0.015)
+    assert out["verdict"] == "h2b-pass"  # scored on the three well-posed points only
+    assert out["mean_abs_dr2"] == pytest.approx((0.01 + 0.02 + 0.01) / 3)
     assert out["well_posedness"]["degenerate_excluded"] == ["verdict_n8"]
     assert out["degenerate_per_point_delta_r2"] == pytest.approx([-0.80])
     with pytest.raises(ValueError, match="must be positive"):
@@ -686,20 +704,72 @@ def test_mean_abs_delta_r2_single_survivor_never_yields_verdict():
     assert "degenerate_per_point_delta_r2" not in out2
 
 
-def test_mean_abs_delta_r2_sign_definition_at_two_plus_points():
-    """Same-sign is a real bool at >= 2 survivors; mixed signs never kill.
+def test_mean_abs_delta_r2_sign_definition_at_verdict_floor():
+    """Same-sign is a real bool at the verdict floor (3 survivors); mixed never kills.
 
-    A genuine same-sign kill still fires at two points (``same_sign_all`` is
+    A genuine same-sign kill fires at three points (``same_sign_all`` is
     True, not a vacuity artifact); a kill-sized MIXED-sign misfit stays
     ``large-misfit-not-systematic``.
     """
-    kill = [_verdict_point(100, 0.50, 0.70), _verdict_point(200, 0.60, 0.80)]
+    kill = [
+        _verdict_point(100, 0.50, 0.70),
+        _verdict_point(200, 0.60, 0.80),
+        _verdict_point(400, 0.65, 0.85),
+    ]
     out = GL.mean_abs_delta_r2(kill, d=16)
     assert out["verdict"] == "h2b-kill-candidate" and out["same_sign_all"] is True
-    mixed = [_verdict_point(100, 0.70, 0.50), _verdict_point(200, 0.60, 0.80)]
+    mixed = [
+        _verdict_point(100, 0.70, 0.50),
+        _verdict_point(200, 0.60, 0.80),
+        _verdict_point(400, 0.85, 0.65),
+    ]
     out2 = GL.mean_abs_delta_r2(mixed, d=16)
     assert out2["verdict"] == "large-misfit-not-systematic"
     assert out2["same_sign_all"] is False
+
+
+def test_mean_abs_delta_r2_two_survivors_undecidable():
+    """Regression: h2b-two-of-five-yields-registered-verdict (fix-round-4).
+
+    Plan v4 B4 (line 482) REJECTED a <=2-point single-corpus curve as an H2b
+    verdict basis ("no single-corpus sub-series has more than 2 points"), so
+    exclusions collapsing the five-point series to TWO well-posed survivors
+    must yield the insufficient-wellposed token with NO scored statistic —
+    previously two survivors emitted a registered ``h2b-kill-candidate`` /
+    ``h2b-pass``. At exactly two survivors ``same_sign_all`` IS a real bool
+    (defined across two deltas) and is carried diagnostically; the verdict
+    stays undecidable regardless of its value.
+    """
+    # Kill-sized same-sign pair: the exact shape that previously stamped a kill.
+    kill_pair = [_verdict_point(100, 0.50, 0.70), _verdict_point(200, 0.60, 0.80)]
+    out = GL.mean_abs_delta_r2(kill_pair, d=16)
+    assert out["verdict"] == GL.UNDECIDABLE_INSUFFICIENT_WELLPOSED
+    assert out["mean_abs_dr2"] is None
+    assert out["per_point_delta_r2"] == []
+    assert out["underpowered_per_point_delta_r2"] == pytest.approx([-0.20, -0.20])
+    assert out["same_sign_all"] is True  # diagnostic only — never verdict-bearing here
+    # Pass-sized pair: same refusal (the floor is band-independent).
+    ok_pair = [_verdict_point(100, 0.50, 0.51), _verdict_point(200, 0.60, 0.58)]
+    out2 = GL.mean_abs_delta_r2(ok_pair, d=16)
+    assert out2["verdict"] == GL.UNDECIDABLE_INSUFFICIENT_WELLPOSED
+    assert out2["mean_abs_dr2"] is None
+    # Two survivors beside degenerate exclusions: the collapse scenario itself.
+    pts = [
+        _verdict_point(8, 0.10, 0.90),  # n < d: excluded and named
+        _verdict_point(100, 0.50, 0.70),
+        _verdict_point(200, 0.60, 0.80),
+    ]
+    out3 = GL.mean_abs_delta_r2(pts, d=16)
+    assert out3["verdict"] == GL.UNDECIDABLE_INSUFFICIENT_WELLPOSED
+    assert out3["well_posedness"]["degenerate_excluded"] == ["verdict_n8"]
+    assert out3["degenerate_per_point_delta_r2"] == pytest.approx([-0.80])
+    # Three survivors: the smallest series that yields a registered verdict.
+    three = [
+        _verdict_point(100, 0.50, 0.70),
+        _verdict_point(200, 0.60, 0.80),
+        _verdict_point(400, 0.65, 0.85),
+    ]
+    assert GL.mean_abs_delta_r2(three, d=16)["verdict"] == "h2b-kill-candidate"
 
 
 def test_companion_loader_reads_committed_artifacts():

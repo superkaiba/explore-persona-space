@@ -1071,13 +1071,20 @@ def fit_metadata_parity_check(points: list[dict], reference: dict | None = None)
 UNDECIDABLE_UNDERDETERMINED = "undecidable-underdetermined (n_train < d)"
 
 # Minimum well-posed point count for ANY registered H2b verdict (fix-round-3
-# ``h2b-single-survivor-still-yields-population-verdict``). The §7.5 kill predicate
-# is "mean |dR2| > 0.15 with a SAME-SIGN systematic pattern ACROSS n": same-sign
-# systematicity is undefined below two points (vacuously true over one delta), and a
-# mean over one delta is a point read, not a population statistic over the grid.
-# The registered §7.5 grid (five points, n in {4,500..500,000}, all > d=3,584) always
-# clears this floor; it binds only when exclusions collapse the series.
-MIN_WELLPOSED_VERDICT_POINTS = 2
+# ``h2b-single-survivor-still-yields-population-verdict``; floor raised 2 -> 3 in
+# fix-round-4 ``h2b-two-of-five-yields-registered-verdict``). Grounding — plan v4
+# B4 decision row (line 482), verbatim: "Alternatives: committed-points-only curve
+# (rejected — no single-corpus sub-series has more than 2 points)": the plan itself
+# REJECTED a <=2-point single-corpus curve as an H2b verdict basis, so a floor of 2
+# would let parity/well-posedness exclusions reconstruct exactly that rejected
+# alternative and still stamp a registered pass/kill. Why 3 and not 5: plan §4
+# (line 113) registers exclusion-and-name ("a mismatch excludes the point and is
+# named"), so a floor of 5 would make any single exclusion fatal to the statistic;
+# 3 is the smallest floor clearing the rejected <=2-point regime while preserving
+# registered exclusion. The registered §7.5 grid (five points, n in
+# {4,500..500,000}, all > d=3,584) always clears this floor; it binds only when
+# exclusions collapse the series.
+MIN_WELLPOSED_VERDICT_POINTS = 3
 UNDECIDABLE_INSUFFICIENT_WELLPOSED = (
     f"undecidable-insufficient-wellposed (fewer than {MIN_WELLPOSED_VERDICT_POINTS} "
     "well-posed points)"
@@ -1095,15 +1102,18 @@ def mean_abs_delta_r2(points: list[dict], *, d: int) -> dict:
     well-posed point remains the verdict is ``UNDECIDABLE_UNDERDETERMINED`` —
     structurally distinct from every computed token, so a smoke-scale run
     (e.g. n_grid=[96, 192] against d=3,584) can never present as a measured
-    H2b kill or pass. Fewer than ``MIN_WELLPOSED_VERDICT_POINTS`` (= 2)
+    H2b kill or pass. Fewer than ``MIN_WELLPOSED_VERDICT_POINTS`` (= 3)
     surviving well-posed points yields ``UNDECIDABLE_INSUFFICIENT_WELLPOSED``
-    (also distinct from every computed token, ``mean_abs_dr2`` None): a mean
-    over one delta is a point read, and the kill branch's same-sign
-    systematicity is undefined below two points (``same_sign_all`` is None
-    there, never a vacuous True). The registered §7.5 grid (five points, n in
-    {4,500..500,000} vs d=3,584 — plan §0 "all n>d") is well-posed at every
-    point, so production behavior is unchanged; no registered threshold or
-    band is altered.
+    (also distinct from every computed token, ``mean_abs_dr2`` None): plan v4
+    B4 rejected a <=2-point single-corpus curve as a verdict basis ("no
+    single-corpus sub-series has more than 2 points"), a mean over one delta
+    is a point read, and the kill branch's same-sign systematicity is
+    undefined below two points (``same_sign_all`` is None below two survivors
+    — never a vacuous True; at exactly two survivors it is a real bool,
+    reported diagnostically while the verdict stays undecidable). The
+    registered §7.5 grid (five points, n in {4,500..500,000} vs d=3,584 —
+    plan §0 "all n>d") is well-posed at every point, so production behavior
+    is unchanged; no registered threshold or band is altered.
 
     Off-recipe companions never enter (callers pass verdict points only); the
     verdict bands are the plan §7.5 registrations (pass <= 0.05; localized misfit

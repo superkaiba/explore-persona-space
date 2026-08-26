@@ -804,6 +804,12 @@ def build_dw_effective_rank(lora_recs: list[dict], ft_recs: list[dict]) -> plt.F
     with the r/2 reference for the rank-32 fleet. Panel B: top-1 spectral
     energy share per full-FT weight matrix, grouped by arm, with the 0.6
     rank-1 criterion line.
+
+    No degeneracy encoding here by design (fix-round-4
+    ``dw-degeneracy-labels-not-consumed``): both panels plot
+    rotation-invariant SPECTRUM summaries (stable rank, top-1 energy share
+    depend on singular values only), never a per-factor singular-VECTOR read,
+    so near-tied factor identity cannot make these points arbitrary.
     """
     if not lora_recs and not ft_recs:
         raise ValueError("no dW unit records found")
@@ -858,6 +864,19 @@ def build_dw_intruder(lora_recs: list[dict]) -> plt.Figure:
     the payload itself, never hardcoded, and one record carries BOTH arm names
     across its modules (fix-round-3 ``dwfleet-intruder-consumer-write-key-mismatch``).
     Small-N per-unit plot, so points carry identity labels.
+
+    Degeneracy encoding (fix-round-4 ``dw-degeneracy-labels-not-consumed``):
+    the band max IS one layer's top-vector read, and the producer self-labels
+    every layer's top pair under ``intruder_top_separation[module][layer]``
+    (``top_vector_separation``: ``{"rel_gap_01", "well_separated",
+    "rel_gap_floor"}``, string layer keys) — a near-tied top pair makes that
+    read rotation-arbitrary within the tied span. MARKER SHAPE carries the
+    distinction (colour stays arm-agnostic COLOR_PRIMARY; fill carries nothing
+    here): circle = the band-max layer's top vector is well-separated;
+    diamond = near-tied (the plotted observed value is rotation-arbitrary).
+    The band-max layer is recomputed from ``observed[arm]["max_by_layer"]``
+    (int keys in-memory, str after JSON — normalized via ``str``). A record
+    lacking the labels predates the separation schema and raises loudly.
     """
     rows = []
     for rec in lora_recs:
@@ -871,12 +890,28 @@ def build_dw_intruder(lora_recs: list[dict]) -> plt.Figure:
                         f"{rec['arm_id']}/{mod}: observed arm {arm!r} has no matching "
                         f"null (null arms: {sorted(payload['null'])})"
                     )
+                sep_by_layer = rec.get("intruder_top_separation", {}).get(mod)
+                if not sep_by_layer:
+                    raise ValueError(
+                        f"{rec['arm_id']}/{mod}: no intruder_top_separation labels — the "
+                        "record predates the separation-labels schema; re-run the "
+                        "producing dW phase (fix-round-4 dw-degeneracy-labels-not-consumed)"
+                    )
+                by_layer = payload["observed"][arm]["max_by_layer"]
+                band_max_layer = max(by_layer, key=lambda k: float(by_layer[k]))
+                sep = sep_by_layer.get(str(band_max_layer))
+                if sep is None:
+                    raise ValueError(
+                        f"{rec['arm_id']}/{mod}: no separation label for band-max layer "
+                        f"{band_max_layer} (labeled layers: {sorted(sep_by_layer)})"
+                    )
                 rows.append(
                     (
                         rec["arm_id"],
                         mod,
                         float(payload["observed"][arm]["band_max"]),
                         float(payload["null"][arm]["band_p95"]),
+                        bool(sep["well_separated"]),
                     )
                 )
     if not rows:
@@ -885,8 +920,8 @@ def build_dw_intruder(lora_recs: list[dict]) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(6.8, 5.2), layout="constrained")
     lim = max(max(r[2] for r in rows), max(r[3] for r in rows)) * 1.15
     ax.plot([0, lim], [0, lim], color=COLOR_NEUTRAL, lw=1, label="Observed = null p95")
-    for aid, mod, obs, p95 in rows:
-        ax.plot(p95, obs, "o", ms=5, color=COLOR_PRIMARY)
+    for aid, mod, obs, p95, well_sep in rows:
+        ax.plot(p95, obs, "o" if well_sep else "D", ms=5, color=COLOR_PRIMARY)
         ax.annotate(
             f"{labels[aid]} / {display(mod)}",
             (p95, obs),
@@ -894,10 +929,29 @@ def build_dw_intruder(lora_recs: list[dict]) -> plt.Figure:
             xytext=(4, 3),
             fontsize=6,
         )
+    handles = [
+        plt.Line2D([], [], color=COLOR_NEUTRAL, lw=1, label="Observed = null p95"),
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            ls="none",
+            color=COLOR_PRIMARY,
+            label="Band-max layer well-separated",
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="D",
+            ls="none",
+            color=COLOR_PRIMARY,
+            label="Band-max layer near-tied (value rotation-arbitrary)",
+        ),
+    ]
     ax.set_xlabel("Max-matched null p95 (max |cos| to base singular vectors)")
     ax.set_ylabel("Observed band max |cos|")
     ax.set_title("Intruder read vs the #650 max-matched null")
-    ax.legend(fontsize=7)
+    ax.legend(handles=handles, fontsize=7)
     return fig
 
 
@@ -916,6 +970,18 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
     for a V-side module whose only readable direction is absent). A missing
     ``alignments`` key raises KeyError loudly: it means a pre-fix flat-schema
     (or foreign) artifact, never silently zero directions.
+
+    Degeneracy encoding (fix-round-4 ``dw-degeneracy-labels-not-consumed``):
+    every scored cell carries the producer's ``argmax_well_separated``
+    self-label (the |cos| max landing on a near-tied factor is
+    rotation-arbitrary within the tied span). MARKER SHAPE carries it —
+    circle = well-separated max factor, diamond = near-tied — orthogonal to
+    FILL, which keeps its null-verdict meaning (filled = above null p95,
+    open = at/below). A scored cell lacking the label predates the
+    separation schema and raises loudly. The seed-pair anchor line uses only
+    modules whose ``top1_well_separated`` is True on BOTH arms (a near-tied
+    top factor makes ``top1_abs_cos`` a rotation read, not a noise level);
+    with no such module the line and its legend entry are omitted.
     """
     arms = align_doc["arms"]
     if not arms:
@@ -934,9 +1000,18 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
     labels = arm_labels_deduped(sorted(arms))
     arm_ids = sorted(arms, key=lambda a: labels[a])
     anchor = align_doc.get("seed_noise_anchor", {})
-    anchor_vals = [
-        v["top1_abs_cos"] for v in anchor.values() if isinstance(v, dict) and "top1_abs_cos" in v
-    ]
+    anchor_vals = []
+    for mod_key, v in anchor.items():
+        if not (isinstance(v, dict) and "top1_abs_cos" in v):
+            continue
+        if "top1_well_separated" not in v:
+            raise ValueError(
+                f"seed_noise_anchor[{mod_key!r}] lacks top1_well_separated — the "
+                "artifact predates the separation-labels schema; re-run --phase align "
+                "(fix-round-4 dw-degeneracy-labels-not-consumed)"
+            )
+        if all(bool(x) for x in v["top1_well_separated"].values()):
+            anchor_vals.append(v["top1_abs_cos"])
 
     ncols = min(3, len(directions))
     nrows = int(np.ceil(len(directions) / ncols))
@@ -954,8 +1029,16 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
                 cell = mod_rec["alignments"].get(direction)
                 if not isinstance(cell, dict) or "max_abs_cos" not in cell:
                     continue
+                if "argmax_well_separated" not in cell:
+                    raise ValueError(
+                        f"{aid}/{mod_key}/{direction}: scored cell lacks "
+                        "argmax_well_separated — the artifact predates the "
+                        "separation-labels schema; re-run --phase align "
+                        "(fix-round-4 dw-degeneracy-labels-not-consumed)"
+                    )
+                marker = "o" if cell["argmax_well_separated"] else "D"
                 mfc = COLOR_PRIMARY if cell["above_null"] else "none"
-                ax.plot(cell["max_abs_cos"], y, "o", color=COLOR_PRIMARY, mfc=mfc, ms=4, mew=1.0)
+                ax.plot(cell["max_abs_cos"], y, marker, color=COLOR_PRIMARY, mfc=mfc, ms=4, mew=1.0)
                 ax.plot(cell["null_p95"], y, "|", color=COLOR_NEUTRAL, ms=8, mew=1.5)
         if anchor_vals:
             ax.axvline(max(anchor_vals), color=COLOR_NEUTRAL, ls=":", lw=1)
@@ -977,12 +1060,26 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
             label="At or below null p95",
         ),
         plt.Line2D(
+            [],
+            [],
+            marker="D",
+            ls="none",
+            color=COLOR_PRIMARY,
+            label="Max on near-tied factor (rotation-arbitrary)",
+        ),
+        plt.Line2D(
             [], [], marker="|", ls="none", color=COLOR_NEUTRAL, mew=1.5, label="Matched null p95"
         ),
     ]
     if anchor_vals:
         handles.append(
-            plt.Line2D([], [], ls=":", color=COLOR_NEUTRAL, label="Seed-pair noise anchor")
+            plt.Line2D(
+                [],
+                [],
+                ls=":",
+                color=COLOR_NEUTRAL,
+                label="Seed-pair noise anchor (well-separated top factors)",
+            )
         )
     fig.legend(handles=handles, loc="outside lower center", ncols=len(handles), fontsize=7)
     return fig
