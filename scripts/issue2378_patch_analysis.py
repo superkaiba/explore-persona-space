@@ -246,6 +246,13 @@ def main() -> None:
     ap.add_argument(
         "--out-dir", default=str(cm.REPO_ROOT / "eval_results" / "issue_2378" / pc.LEDGER_SUBDIR)
     )
+    ap.add_argument(
+        "--followup-label",
+        default=pc.FOLLOWUP_LABEL,
+        help="round identity written into patch_summary.json (round-scoped follow-up legs, "
+        "e.g. dana-behavior-confirm, must pass their own label — r1 review "
+        "danaconf-analysis-label-hardcoded)",
+    )
     ap.add_argument("--lstar", type=int, default=0)
     ap.add_argument("--tiny", action="store_true")
     ap.add_argument("--tiny-layers", type=int, default=4)
@@ -298,7 +305,7 @@ def main() -> None:
     fbeh_confirm = _fbeh_cells("confirm", confirm_rows, scores, anchor_deltas, drops)
 
     summary = {
-        "followup_label": pc.FOLLOWUP_LABEL,
+        "followup_label": args.followup_label,
         "model_caveat": MODEL_CAVEAT,
         "scope_notes": [
             "chat~plain (arm b) is F_act-only: both framings answer in the assistant "

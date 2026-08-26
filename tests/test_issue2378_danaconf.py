@@ -189,6 +189,10 @@ def test_phase_confirm_default_path_unchanged(tmp_path):
 
 
 def test_model_chain_confirm_only_selection():
+    """Confirm-only rounds ALWAYS route through bank_staged (no fresh-bank
+    recapture fallback — r1 review: donor-bit-identity is the round's claim;
+    the missing-prefix case is refused by the round-scoping guard / the
+    phase's own fail-loud)."""
     import issue2378_patch_run as run
 
     base = ["--phase", "model_all"]
@@ -201,17 +205,71 @@ def test_model_chain_confirm_only_selection():
         run.phase_confirm,
     )
     conf = run.build_argparser().parse_args([*base, "--confirm-families", DANA_FAM])
-    assert run._model_chain(conf) == (run.phase_bank, run.phase_confirm)
-    staged = run.build_argparser().parse_args(
-        [
-            *base,
-            "--confirm-families",
-            DANA_FAM,
-            "--stage-bank-from-hf-prefix",
-            "x/raw/causal_patching/bank",
-        ]
+    assert run._model_chain(conf) == (run.phase_bank_staged, run.phase_confirm)
+
+
+def _round_scoped_argv(tmp: str) -> list[str]:
+    return [
+        "--hf-suffix",
+        "_danaconf",
+        "--ledger-subdir",
+        "dana-behavior-confirm",
+        "--out-root",
+        f"{tmp}/root",
+        "--logs-dir",
+        f"{tmp}/logs",
+        "--stage-bank-from-hf-prefix",
+        "issue2378_xframing/raw_completions/causal_patching/bank",
+    ]
+
+
+def test_confirm_only_requires_round_scoped_flags(tmp_path):
+    """r1 review BLOCKER danaconf-round-isolation-uncoupled: --confirm-families
+    with ANY write-surface flag left at its original-round default must refuse
+    naming the missing flag(s) — never silently overwrite the parent round's
+    HF prefixes / committed harvest / local roots."""
+    import issue2378_patch_run as run
+
+    defaults = run.build_argparser().parse_args(
+        ["--phase", "upload", "--confirm-families", DANA_FAM]
     )
-    assert run._model_chain(staged) == (run.phase_bank_staged, run.phase_confirm)
+    with pytest.raises(SystemExit) as exc:
+        run._require_round_scoped_flags(defaults)
+    msg = str(exc.value)
+    for frag in (
+        "--hf-suffix",
+        "--ledger-subdir",
+        "--out-root",
+        "--logs-dir",
+        "--stage-bank-from-hf-prefix",
+    ):
+        assert frag in msg, f"guard must name {frag}"
+    # One flag still default -> still refused, naming exactly that flag.
+    partial = run.build_argparser().parse_args(
+        ["--phase", "upload", "--confirm-families", DANA_FAM, *_round_scoped_argv(str(tmp_path))][
+            :-2
+        ]  # drop --stage-bank-from-hf-prefix's value+flag pair
+    )
+    with pytest.raises(SystemExit, match="stage-bank-from-hf-prefix"):
+        run._require_round_scoped_flags(partial)
+    # Fully round-scoped -> passes; no override -> guard is a no-op on defaults.
+    scoped = run.build_argparser().parse_args(
+        ["--phase", "upload", "--confirm-families", DANA_FAM, *_round_scoped_argv(str(tmp_path))]
+    )
+    run._require_round_scoped_flags(scoped)
+    run._require_round_scoped_flags(run.build_argparser().parse_args(["--phase", "upload"]))
+
+
+def test_main_wires_round_scoping_guard(tmp_path, monkeypatch):
+    """The guard fires at post-parse in main() (covers parent AND child CLI
+    invocations via the passthrough) — BEFORE any phase body executes."""
+    import issue2378_patch_run as run
+
+    monkeypatch.setattr(
+        sys, "argv", ["issue2378_patch_run.py", "--phase", "upload", "--confirm-families", DANA_FAM]
+    )
+    with pytest.raises(SystemExit, match="round-scoping"):
+        run.main()
 
 
 def test_child_passthrough_forwards_round_flags_and_roundtrips():
@@ -243,6 +301,9 @@ def test_child_passthrough_forwards_round_flags_and_roundtrips():
     assert child.stage_bank_from_hf_prefix == "x/bank"
     assert child.ledger_subdir == "dana-behavior-confirm"
     assert child.hf_suffix == "_danaconf"
+    # --logs-dir rides the passthrough (children must pass the round-scoping
+    # guard with the SAME round-scoped logs dir, never the default).
+    assert child.logs_dir == dana.logs_dir
 
 
 def test_ledger_dir_and_hf_prefix_round_scoping():
@@ -351,29 +412,85 @@ def test_phase_upload_default_mode_still_fail_loud(tmp_path):
 # ── bank_staged: staged banked inputs + fresh-pod gate re-run ───────────────
 
 
-def test_stage_bank_files_real_body(tmp_path, monkeypatch):
-    """Real ``_stage_bank_files`` body; only the network boundary
-    (hf_hub_download) is faked, signature-conformantly."""
-    import huggingface_hub as hf
-    import issue2378_patch_run as run
+_REV = "deadbeefcafe0123deadbeefcafe0123deadbeef"
+_BANK_PREFIX = "issue2378_xframing/raw_completions/causal_patching/bank"
 
-    def fake_download(repo_id, filename, repo_type=None, local_dir=None):
+
+def _fake_bank_hub(monkeypatch, ledger_digest_fn):
+    """Fake the network boundary of ``_stage_bank_files`` signature-
+    conformantly: pinned-revision downloads serve deterministic payload bytes;
+    the sibling grid ledger serves ``regime["bank"] = ledger_digest_fn(true)``.
+    Returns the download mock."""
+    import hashlib
+    import types
+
+    import huggingface_hub as hf
+
+    payloads = {
+        "bank_rows.jsonl": b"payload:rows",
+        "vc_bank.npz": b"payload:vc",
+        "gate_report.json": b"{}",
+    }
+    true_digest = hashlib.sha256(payloads["bank_rows.jsonl"] + payloads["vc_bank.npz"]).hexdigest()[
+        :16
+    ]
+
+    def fake_download(repo_id, filename, repo_type=None, revision=None, local_dir=None):
+        assert revision == _REV, "every download must use the ONE pinned revision (#2061)"
         p = Path(local_dir) / filename
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_bytes(b"payload:" + filename.encode())
+        name = filename.rsplit("/", 1)[-1]
+        if name == "grid_ledger.json":
+            p.write_text(
+                json.dumps({"regime": {"bank": ledger_digest_fn(true_digest)}}), encoding="utf-8"
+            )
+        else:
+            p.write_bytes(payloads[name])
         return str(p)
 
-    monkeypatch.setattr(
-        hf, "hf_hub_download", mock.create_autospec(hf.hf_hub_download, side_effect=fake_download)
-    )
+    dl = mock.create_autospec(hf.hf_hub_download, side_effect=fake_download)
+    monkeypatch.setattr(hf, "hf_hub_download", dl)
+    fake_api_cls = mock.create_autospec(hf.HfApi)
+    fake_api_cls.return_value.repo_info.return_value = types.SimpleNamespace(sha=_REV)
+    monkeypatch.setattr(hf, "HfApi", fake_api_cls)
+    return dl
+
+
+def test_stage_bank_files_real_body_digest_bound(tmp_path, monkeypatch):
+    """Real ``_stage_bank_files`` body; only the network boundary is faked,
+    signature-conformantly. Verifies: main->sha pinned ONCE and used on every
+    download (#2061), idempotent present-target skip, atomic publish + scratch
+    cleanup, grid-ledger digest binding PASS, and the provenance manifest."""
+    import issue2378_patch_run as run
+
+    _fake_bank_hub(monkeypatch, lambda true: true)  # ledger digest == staged digest
     out = tmp_path / "bank"
     out.mkdir()
     (out / "gate_report.json").write_text("{}", encoding="utf-8")  # present -> idempotent skip
-    run._stage_bank_files("issue2378_xframing/raw_completions/causal_patching/bank", out)
-    assert (out / "bank_rows.jsonl").read_bytes().startswith(b"payload:")
-    assert (out / "vc_bank.npz").read_bytes().startswith(b"payload:")
+    manifest = run._stage_bank_files(_BANK_PREFIX, out)
+    assert (out / "bank_rows.jsonl").read_bytes() == b"payload:rows"
+    assert (out / "vc_bank.npz").read_bytes() == b"payload:vc"
     assert (out / "gate_report.json").read_text(encoding="utf-8") == "{}"
     assert not (out / ".hfstage").exists(), "staging scratch must be cleaned up"
+    assert manifest["revision"] == _REV
+    assert manifest["bank_digest"] == run._bank_payload_digest(out)
+    persisted = json.loads((out / "bank_staged_manifest.json").read_text(encoding="utf-8"))
+    assert persisted["staged_from"] == _BANK_PREFIX
+    assert persisted["bank_digest"] == manifest["bank_digest"]
+
+
+def test_stage_bank_files_refuses_digest_mismatch(tmp_path, monkeypatch):
+    """A wrong/stale bank (digest != the original grid ledger's regime bank)
+    refuses loud BEFORE any model load — never confirm against unknown donors
+    (r1 review danaconf-bank-provenance-unbound)."""
+    import issue2378_patch_run as run
+
+    _fake_bank_hub(monkeypatch, lambda true: "0" * 16)  # ledger names a DIFFERENT bank
+    out = tmp_path / "bank"
+    out.mkdir()
+    with pytest.raises(RuntimeError, match="digest"):
+        run._stage_bank_files(_BANK_PREFIX, out)
+    assert not (out / "bank_staged_manifest.json").exists()
 
 
 def test_phase_bank_staged_requires_prefix():
@@ -384,48 +501,88 @@ def test_phase_bank_staged_requires_prefix():
         run.phase_bank_staged(args)
 
 
-def test_phase_bank_staged_reruns_gates_on_staged_bank(tmp_path, monkeypatch):
-    """Real phase body: staged bank -> real ``_load_bank`` key-coverage ->
-    gates re-run on THIS pod's env (GPU boundary autospec'd) -> the fresh
-    verdict supersedes the staged gate report; FAIL returns RC_GATE."""
-    import issue2378_patch_run as run
+def _fake_staged_bank(run, monkeypatch, gate_ok=True):
+    """Autospec'd GPU/network boundaries for phase_bank_staged tests; the
+    staging fake writes the real fixture + returns a REAL-digest manifest."""
 
     def fake_stage(prefix, out):
         _ctx_fixture(out.parent)
         (out / "gate_report.json").write_text(
             json.dumps({"ok": True, "stale_original": True}), encoding="utf-8"
         )
+        return {
+            "staged_from": prefix,
+            "revision": _REV,
+            "bank_digest": run._bank_payload_digest(out),
+        }
 
-    monkeypatch.setattr(
-        run,
-        "_stage_bank_files",
-        mock.create_autospec(run._stage_bank_files, side_effect=fake_stage),
-    )
+    stage = mock.create_autospec(run._stage_bank_files, side_effect=fake_stage)
+    monkeypatch.setattr(run, "_stage_bank_files", stage)
     monkeypatch.setattr(
         run, "_ensure_mctx", mock.create_autospec(run._ensure_mctx, return_value={})
     )
-    gates = mock.create_autospec(run._run_gates, return_value={"ok": True, "spots": []})
+    gates = mock.create_autospec(run._run_gates, return_value={"ok": gate_ok, "spots": []})
     monkeypatch.setattr(run, "_run_gates", gates)
-    argv = [
+    return stage, gates
+
+
+def _bank_staged_argv(tmp_path) -> list[str]:
+    return [
         "--phase",
         "bank_staged",
         "--out-root",
         str(tmp_path),
         "--stage-bank-from-hf-prefix",
-        "issue2378_xframing/raw_completions/causal_patching/bank",
+        _BANK_PREFIX,
         "--lstar",
         "3",
         "--tiny",
     ]
-    args = run.build_argparser().parse_args(argv)
-    assert run.phase_bank_staged(args) == 0
+
+
+def test_phase_bank_staged_gates_and_sentinel_idempotency(tmp_path, monkeypatch):
+    """Real phase body: staged bank -> real ``_load_bank`` key-coverage ->
+    gates re-run on THIS pod's env (GPU boundary autospec'd) -> fresh verdict
+    supersedes the staged gate report -> provenance-keyed completion sentinel.
+    A matching re-entry skips staging AND the 27B gate re-run (r1 review
+    danaconf-bank-staged-not-idempotent); a corrupted bank under a sentinel
+    fails loud."""
+    import issue2378_patch_run as run
+
+    stage, gates = _fake_staged_bank(run, monkeypatch)
+    argv = _bank_staged_argv(tmp_path)
+    assert run.phase_bank_staged(run.build_argparser().parse_args(argv)) == 0
     rep = json.loads((tmp_path / "bank" / "gate_report.json").read_text(encoding="utf-8"))
     assert rep["ok"] is True
     assert "stale_original" not in rep, "fresh-pod gate verdict must supersede the staged report"
     assert rep["metadata"]["staged_from"].endswith("/bank")
     assert rep["metadata"]["phase"] == "patch_bank_staged"
-    gates.return_value = {"ok": False, "spots": []}
+    sentinel = json.loads(
+        (tmp_path / "bank" / run.BANK_STAGED_SENTINEL).read_text(encoding="utf-8")
+    )
+    assert sentinel["gate_ok"] is True
+    assert sentinel["bank_digest"] == run._bank_payload_digest(tmp_path / "bank")
+    # Re-entry: provenance-keyed skip — no re-staging, no 27B gate re-run.
+    assert run.phase_bank_staged(run.build_argparser().parse_args(argv)) == 0
+    assert stage.call_count == 1 and gates.call_count == 1
+    # Corrupt the bank under the sentinel -> fail loud (stale/foreign root).
+    (tmp_path / "bank" / "vc_bank.npz").write_bytes(b"corrupt")
+    with pytest.raises(RuntimeError, match="mismatch"):
+        run.phase_bank_staged(run.build_argparser().parse_args(argv))
+
+
+def test_phase_bank_staged_gate_fail_no_sentinel_then_retry_reruns(tmp_path, monkeypatch):
+    """Gate FAIL returns RC_GATE and writes NO sentinel — a retry after a fix
+    re-runs staging + gates (never a false-PASS resume)."""
+    import issue2378_patch_run as run
+
+    _stage, gates = _fake_staged_bank(run, monkeypatch, gate_ok=False)
+    argv = _bank_staged_argv(tmp_path)
     assert run.phase_bank_staged(run.build_argparser().parse_args(argv)) == run.RC_GATE
+    assert not (tmp_path / "bank" / run.BANK_STAGED_SENTINEL).exists()
+    gates.return_value = {"ok": True, "spots": []}
+    assert run.phase_bank_staged(run.build_argparser().parse_args(argv)) == 0
+    assert gates.call_count == 2
 
 
 # ── vm_stage: round/stage/tensor parametrization ────────────────────────────
@@ -475,3 +632,62 @@ def test_vm_stage_stage_back_real_body(tmp_path, monkeypatch):
     assert not (dest / "judge_persona").exists()
     with pytest.raises(RuntimeError, match="empty selection"):
         vs.stage_back(dest, hf_suffix="_danaconf", stages={"nonexistent"})
+
+
+# ── analysis: round identity threading ──────────────────────────────────────
+
+
+def test_analysis_followup_label_threaded(tmp_path, monkeypatch):
+    """Real ``issue2378_patch_analysis.main`` body over a minimal-real fixture
+    (screen report + a published judge fold; no anchors/grid/confirm dirs):
+    ``--followup-label`` lands in patch_summary.json (r1 review
+    danaconf-analysis-label-hardcoded — the Dana summary must not carry the
+    parent round's identity)."""
+    import issue2378_patch_analysis as pa
+    import issue2378_patch_judge as pj
+
+    root = tmp_path / "root"
+    (root / "screen").mkdir(parents=True)
+    (root / "screen" / "screen_report.json").write_text(
+        json.dumps(
+            {
+                "screen_rule": "ci-excludes-0",
+                "families": {},
+                "confirm_families": [],
+                "family_means": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    judge_dir = tmp_path / "judge"
+    judge_dir.mkdir()
+    pj._write_fold(
+        judge_dir,
+        {
+            "anchors|chat:q0_00|d0|persona": {
+                "class": "valid",
+                "score": 80,
+                "reasoning": None,
+                "stop_reason": "end_turn",
+            }
+        },
+    )
+    out_dir = tmp_path / "out"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue2378_patch_analysis.py",
+            "--patch-root",
+            str(root),
+            "--judge-dir",
+            str(judge_dir),
+            "--out-dir",
+            str(out_dir),
+            "--followup-label",
+            "dana-behavior-confirm",
+        ],
+    )
+    pa.main()
+    summary = json.loads((out_dir / "patch_summary.json").read_text(encoding="utf-8"))
+    assert summary["followup_label"] == "dana-behavior-confirm"

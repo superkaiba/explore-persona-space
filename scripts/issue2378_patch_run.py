@@ -39,12 +39,17 @@ Phases (each resumable; ``model_all`` = one model load for the model chain):
 Confirm-only rounds (e.g. the ``dana-behavior-confirm`` follow-up): pass
 ``--confirm-families '<pair|char|dir|variant|steered>'`` +
 ``--stage-bank-from-hf-prefix <orig>/bank`` + round-scoped ``--out-root`` /
-``--logs-dir`` / ``--hf-suffix`` / ``--ledger-subdir``. ``model_all`` then
-runs ``bank_staged`` + ``confirm`` only (anchors/grid/screen stay banked in
-the original round; the VM judge/analysis legs stage those back from the
+``--logs-dir`` / ``--hf-suffix`` / ``--ledger-subdir`` — ALL five are
+ENFORCED by ``_require_round_scoped_flags`` at post-parse (r1 review: a
+dropped flag must refuse, never silently overwrite the original round's HF
+prefixes / committed reports / local roots). ``model_all`` then runs
+``bank_staged`` + ``confirm`` only (anchors/grid/screen stay banked in the
+original round; the VM judge/analysis legs stage those back from the
 original HF prefixes via issue2378_patch_vm_stage.py), and ``upload``
 tolerates the absent anchors/grid dirs (fail-loud contract unchanged when
-the flag is absent).
+the flag is absent). ``bank_staged`` is digest-bound to the original grid
+ledger's ``regime["bank"]`` and idempotent via a provenance-keyed
+completion sentinel.
 
 Layer-indexing seam (LOAD-BEARING): this task's stores index hidden states as
 ``hs[l]`` (hs[0]=embeddings), so task-layer L is the output of decoder BLOCK
@@ -113,6 +118,9 @@ if Path("/workspace").exists():  # pod clones; never rebinds a VM env
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
 RC_GATE = 21  # designed gate halt (never a bare rc=1 — #1415 routing lesson)
+# Original-round defaults (shared by argparse + the confirm-only round guard).
+_DEFAULT_OUT_ROOT = str(cm.REPO_ROOT / "data" / "issue_2378" / "patch_round")
+_DEFAULT_LOGS_DIR = str(cm.REPO_ROOT / "data" / "issue_2378" / "patch_logs")
 GEN_BATCH_ROWS = 16
 CAPTURE_BATCH_TOKENS = 16_384
 CAPTURE_MAX_ROWS = 16
@@ -226,17 +234,24 @@ def _tok(args, mctx: dict | None = None):
     return gen._get_tokenizer()
 
 
+def _bank_payload_digest(bank_dir: Path) -> str:
+    """sha256[:16] over the two bank payload files' on-disk bytes — the SAME
+    definition the original round's StageLedger regimes recorded, so a staged
+    bank can be identity-bound to the grid/screen-time bank (r1 review
+    danaconf-bank-provenance-unbound)."""
+    import hashlib
+
+    h = hashlib.sha256()
+    for p in (bank_dir / "bank_rows.jsonl", bank_dir / "vc_bank.npz"):
+        h.update(p.read_bytes())
+    return h.hexdigest()[:16]
+
+
 def _bank_digest(args) -> str:
     """sha256 over the bank files' on-disk bytes (bit-exact file inputs — safe
     to hash; regenerating the bank changes the digest and fail-louds every
     downstream StageLedger regime)."""
-    import hashlib
-
-    out = _out(args) / "bank"
-    h = hashlib.sha256()
-    for p in (out / "bank_rows.jsonl", out / "vc_bank.npz"):
-        h.update(p.read_bytes())
-    return h.hexdigest()[:16]
+    return _bank_payload_digest(_out(args) / "bank")
 
 
 def _openers_digest(openers: dict[str, list[int]]) -> str:
@@ -658,54 +673,120 @@ def _load_bank(args) -> tuple[list[dict], dict[str, np.ndarray]]:
 
 
 BANK_STAGE_FILES = ("bank_rows.jsonl", "vc_bank.npz", "gate_report.json")
+BANK_STAGED_SENTINEL = "bank_staged_ok.json"
 
 
-def _stage_bank_files(prefix: str, out: Path) -> None:
+def _stage_bank_files(prefix: str, out: Path) -> dict:
     """Stage the ORIGINAL round's three named bank files under HF ``prefix``
-    into ``out`` (never the ``vc_parts/`` capture residue). Idempotent
-    (present targets skip); atomic per-file publish via same-filesystem
-    ``os.replace`` (EXDEV-safe: scratch lives INSIDE ``out``)."""
+    into ``out`` (never the ``vc_parts/`` capture residue), IDENTITY-BOUND to
+    the screen-time bank (r1 review danaconf-bank-provenance-unbound):
+
+    - the data-repo revision is pinned main->sha ONCE and every download uses
+      it (paired bank files must come from ONE snapshot, #2061);
+    - present targets skip (idempotent resume) — safe because the digest
+      check below binds whatever is on disk, however it got there;
+    - after staging, the payload digest (``_bank_payload_digest`` — the same
+      definition the original StageLedger regimes recorded) must EQUAL the
+      original round's grid ledger ``regime["bank"]`` (fetched from the
+      sibling ``meta/grid_ledger.json`` at the pinned revision) — a
+      wrong/stale/mispointed bank refuses loud BEFORE any model load;
+    - a provenance manifest (prefix, revision, digest) is persisted beside
+      the bank. Returns the manifest dict.
+    """
     import shutil
 
-    from huggingface_hub import hf_hub_download
+    from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.atomic_io import atomic_replace
     from explore_persona_space.orchestrate import hub
 
+    revision = hub.retry_transient(
+        lambda: HfApi().repo_info(cm.HF_DATA_REPO, repo_type="dataset").sha,
+        what="resolve data-repo revision (main -> sha pin, #2061)",
+    )
     scratch = out / ".hfstage"
     for name in BANK_STAGE_FILES:
         target = out / name
         if target.exists():
-            _log(f"[bank_staged] {name} already present — skip")
+            _log(f"[bank_staged] {name} already present — skip (digest-bound below)")
             continue
         got = hub.retry_transient(
             lambda p=f"{prefix}/{name}": hf_hub_download(
-                cm.HF_DATA_REPO, p, repo_type="dataset", local_dir=str(scratch)
+                cm.HF_DATA_REPO, p, repo_type="dataset", revision=revision, local_dir=str(scratch)
             ),
-            what=f"stage {prefix}/{name}",
+            what=f"stage {prefix}/{name}@{revision[:12]}",
         )
-        from explore_persona_space.atomic_io import atomic_replace
-
         with atomic_replace(target) as tmp:  # process-unique temp name (#2336)
             tmp.write_bytes(Path(got).read_bytes())
-        _log(f"[bank_staged] staged {name} <- {prefix}")
+        _log(f"[bank_staged] staged {name} <- {prefix}@{revision[:12]}")
+    # Identity binding: staged payload digest == the original grid ledger's
+    # recorded bank digest (the bank the screen that nominated the confirm
+    # family actually ran on).
+    ledger_path = prefix.rsplit("/", 1)[0] + "/meta/grid_ledger.json"
+    got_ledger = hub.retry_transient(
+        lambda: hf_hub_download(
+            cm.HF_DATA_REPO,
+            ledger_path,
+            repo_type="dataset",
+            revision=revision,
+            local_dir=str(scratch),
+        ),
+        what=f"fetch {ledger_path}@{revision[:12]}",
+    )
+    expected = json.loads(Path(got_ledger).read_text(encoding="utf-8"))["regime"]["bank"]
+    digest = _bank_payload_digest(out)
     if scratch.is_dir():
         shutil.rmtree(scratch)
+    if digest != expected:
+        raise RuntimeError(
+            f"staged bank digest {digest} != original grid-ledger bank digest {expected} "
+            f"(source {ledger_path}@{revision[:12]}) — wrong/stale bank under {out}; "
+            "use a fresh out-root (fail loud, never confirm against unknown donors)"
+        )
+    manifest = {
+        "staged_from": prefix,
+        "revision": revision,
+        "bank_digest": digest,
+        "grid_ledger": ledger_path,
+        "metadata": cm.run_metadata({"phase": "patch_bank_staged_manifest"}),
+    }
+    cm.atomic_write_json(out / "bank_staged_manifest.json", manifest)
+    _log(f"[bank_staged] digest {digest} == grid-ledger regime bank (bound @{revision[:12]})")
+    return manifest
 
 
 def phase_bank_staged(args) -> int:
     """Confirm-only rounds: stage the ORIGINAL round's banked v_C inputs
     (bank rows + vc_bank.npz + its gate report) from HF instead of
     re-capturing them — the confirm leg then patches with donors BIT-IDENTICAL
-    to the ones the screen phase nominated — and RE-RUN the in-process gates
-    against the staged donors on THIS pod (fresh venv/CUDA env; the #2094
-    hs-vs-block seam + padding-parity + hooked-generate gates). Gate FAIL
-    exits RC_GATE exactly like phase_bank."""
+    to the ones the screen phase nominated (digest-bound to the original grid
+    ledger) — and RE-RUN the in-process gates against the staged donors on
+    THIS pod (fresh venv/CUDA env; the #2094 hs-vs-block seam +
+    padding-parity + hooked-generate gates). Gate FAIL exits RC_GATE exactly
+    like phase_bank. IDEMPOTENT via a provenance-keyed completion sentinel
+    (r1 review danaconf-bank-staged-not-idempotent): a re-entry whose on-disk
+    bank digest matches a PASSed sentinel skips staging AND the 27B gate
+    re-run (a fresh pod has a fresh out-root, so the fresh-pod gate property
+    is preserved); a sentinel/digest mismatch fails loud."""
     _phase_line("patch_bank_staged")
     if not args.stage_bank_from_hf_prefix:
         raise SystemExit("phase bank_staged requires --stage-bank-from-hf-prefix (fail loud)")
     out = _out(args) / "bank"
     out.mkdir(parents=True, exist_ok=True)
-    _stage_bank_files(args.stage_bank_from_hf_prefix, out)
+    sentinel = out / BANK_STAGED_SENTINEL
+    if sentinel.exists():
+        rec = json.loads(sentinel.read_text(encoding="utf-8"))
+        if rec.get("gate_ok") and rec.get("bank_digest") == _bank_payload_digest(out):
+            _log(
+                f"[bank_staged] completion sentinel matches on-disk bank "
+                f"(digest {rec['bank_digest']}) — staging + gates skipped (resume)"
+            )
+            return 0
+        raise RuntimeError(
+            f"bank_staged sentinel/bank mismatch at {sentinel} — stale/foreign root; "
+            "use a fresh out-root"
+        )
+    manifest = _stage_bank_files(args.stage_bank_from_hf_prefix, out)
     ctxs, bank_vc = _load_bank(args)  # key-coverage asserts on the staged bank
     mctx = _ensure_mctx(args)
     gate = _run_gates(args, mctx, ctxs, bank_vc)
@@ -714,6 +795,8 @@ def phase_bank_staged(args) -> int:
             "phase": "patch_bank_staged",
             "n_contexts": len(ctxs),
             "staged_from": args.stage_bank_from_hf_prefix,
+            "bank_digest": manifest["bank_digest"],
+            "revision": manifest["revision"],
         }
     )
     # Fresh-pod gate verdict supersedes the staged original's report.
@@ -725,6 +808,16 @@ def phase_bank_staged(args) -> int:
     if not gate["ok"]:
         _log("[bank_staged] GATE FAIL — designed halt (see gate_report.json)")
         return RC_GATE
+    cm.atomic_write_json(
+        sentinel,
+        {
+            "gate_ok": True,
+            "bank_digest": manifest["bank_digest"],
+            "staged_from": manifest["staged_from"],
+            "revision": manifest["revision"],
+            "metadata": cm.run_metadata({"phase": "patch_bank_staged_ok"}),
+        },
+    )
     return 0
 
 
@@ -1534,6 +1627,46 @@ def phase_screen(args) -> int:
 # ── confirm (temp-1.0 K=5, labeled post-selection) ─────────────────────────
 
 
+def _require_round_scoped_flags(args) -> None:
+    """Confirm-only round-isolation INVARIANT (r1 review BLOCKER
+    danaconf-round-isolation-uncoupled): a ``--confirm-families`` run must be
+    EXPLICITLY round-scoped on every write surface, or the leg silently
+    overwrites the ORIGINAL round's published artifacts — ``upload_folder``
+    overwrites colliding unit slugs on the original HF prefixes silently, the
+    git harvest overwrites the committed
+    eval_results/issue_2378/causal-patching-arms reports, the default
+    out-root reuses the original local state, and the default logs dir can
+    consume the original round's Runner ok-flags. It must also STAGE the
+    original bank (donor-bit-identity is the round's claim — a silent fresh
+    recapture would weaken it). Refuses naming every missing/default flag."""
+    if not args.confirm_families:
+        return
+    missing = []
+    if not args.hf_suffix:
+        missing.append("--hf-suffix (round HF prefix suffix, e.g. _danaconf)")
+    if args.ledger_subdir == pc.LEDGER_SUBDIR:
+        missing.append(
+            f"--ledger-subdir (non-default; '{pc.LEDGER_SUBDIR}' is the original "
+            "round's committed harvest dir)"
+        )
+    if str(args.out_root) == _DEFAULT_OUT_ROOT:
+        missing.append("--out-root (non-default; the default is the original round's local root)")
+    if str(args.logs_dir) == _DEFAULT_LOGS_DIR:
+        missing.append(
+            "--logs-dir (non-default; the default carries the original round's Runner ok-flags)"
+        )
+    if not args.stage_bank_from_hf_prefix:
+        missing.append(
+            "--stage-bank-from-hf-prefix (the ORIGINAL round's bank prefix — confirm-only "
+            "rounds stage the banked donors, never recapture)"
+        )
+    if missing:
+        raise SystemExit(
+            "--confirm-families (confirm-only round) requires explicit round-scoping — "
+            "missing/default flag(s):\n  - " + "\n  - ".join(missing)
+        )
+
+
 def _confirm_family_override(raw: str | None, grid_families: set[str]) -> list[str] | None:
     """Parse + validate ``--confirm-families`` against the REALIZED grid family
     set (dana-behavior-confirm round: confirm a family the activation screen
@@ -1747,12 +1880,13 @@ def phase_upload(args) -> int:
 
 def _model_chain(args) -> tuple:
     """Model-phase chain for ``model_all``: the full grid chain by default; a
-    confirm-only round (``--confirm-families``) stages the banked inputs
-    (``--stage-bank-from-hf-prefix``; else re-captures the bank) and runs
-    confirm alone — anchors/grid/screen stay banked in the original round."""
+    confirm-only round (``--confirm-families``) ALWAYS stages the banked
+    inputs (``--stage-bank-from-hf-prefix``, enforced by
+    ``_require_round_scoped_flags`` — never a fresh recapture, r1 review) and
+    runs confirm alone — anchors/grid/screen stay banked in the original
+    round."""
     if args.confirm_families:
-        bank = phase_bank_staged if args.stage_bank_from_hf_prefix else phase_bank
-        return (bank, phase_confirm)
+        return (phase_bank_staged, phase_confirm)
     return (phase_bank, phase_anchors, phase_grid, phase_screen, phase_confirm)
 
 
@@ -1777,6 +1911,8 @@ def _child_passthrough(args) -> list[str]:
     passthrough = [
         "--out-root",
         str(args.out_root),
+        "--logs-dir",
+        str(args.logs_dir),
         "--kept-dir",
         str(args.kept_dir),
         "--raw-root",
@@ -1881,8 +2017,8 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--phase", required=False, choices=sorted(PHASES), default=None)
     ap.add_argument("--list-phases", action="store_true")
     ap.add_argument("--import-check", action="store_true")
-    ap.add_argument("--out-root", default=str(cm.REPO_ROOT / "data" / "issue_2378" / "patch_round"))
-    ap.add_argument("--logs-dir", default=str(cm.REPO_ROOT / "data" / "issue_2378" / "patch_logs"))
+    ap.add_argument("--out-root", default=_DEFAULT_OUT_ROOT)
+    ap.add_argument("--logs-dir", default=_DEFAULT_LOGS_DIR)
     ap.add_argument(
         "--kept-dir", default=str(cm.REPO_ROOT / "eval_results" / "issue_2378" / "kept")
     )
@@ -1965,6 +2101,7 @@ def main() -> None:
         raise SystemExit(
             "--tiny requires --skip-upload or an '_smoke' --hf-suffix (never production prefixes)"
         )
+    _require_round_scoped_flags(args)  # confirm-only round-isolation invariant
     rc = PHASES[args.phase](args)
     if rc == 0 and os.environ.get(CHILD_ENV) != "1":
         _phase_line("done")

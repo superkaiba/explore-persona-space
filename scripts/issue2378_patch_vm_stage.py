@@ -62,10 +62,14 @@ def stage_back(
     """Stage the round's HF prefixes into ``dest`` (idempotent: present
     targets skip). Fails loud on an empty listing or an all-filtered
     selection (empty selection is never a silent no-op)."""
+    import os
+
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.atomic_io import atomic_replace
     from explore_persona_space.orchestrate import hub
 
+    scratch = f"/tmp/i2378_stageback_{os.getpid()}"  # per-process scratch (#1979 collision class)
     api = HfApi()
     prefixes = [f"{cm.HF_PREFIX}/raw_completions/causal_patching{hf_suffix}"]
     if tensors:
@@ -85,12 +89,15 @@ def stage_back(
                 continue
             got = hub.retry_transient(
                 lambda p=path: hf_hub_download(
-                    cm.HF_DATA_REPO, p, repo_type="dataset", local_dir="/tmp/i2378_stageback"
+                    cm.HF_DATA_REPO, p, repo_type="dataset", local_dir=scratch
                 ),
                 what=f"download {path}",
             )
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(Path(got).read_bytes())
+            # Atomic publish (r1 review danaconf-vm-stage-nonatomic): the
+            # exists-skip above must only ever see FULLY-published files — a
+            # direct write could leave a truncated target every retry skips.
+            with atomic_replace(target) as tmp:
+                tmp.write_bytes(Path(got).read_bytes())
             n += 1
     if tot == 0:
         raise RuntimeError(
