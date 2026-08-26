@@ -484,7 +484,20 @@ def _gen_stage_with_regen(
     at max_model_len = PROMPT_TOKEN_BUDGET + 2*cap (bounded by 23,488; the
     max_position_embeddings floor is asserted at prologue). Persistent residue
     is dropped-and-counted at parse (plan §7 G4/G5).
+
+    Round 3 (gen-capture-stage-resume): a stage whose terminal artifact
+    (cap_hit_report.json — written LAST, after every chunk) is already on
+    disk is skipped (--force re-runs), so a mid-phase crash resumes at the
+    first incomplete stage instead of regenerating completed ones.
     """
+    report_p = paths["raw"] / stage / "cap_hit_report.json"
+    if report_p.exists() and not args.force:
+        logger.info(
+            "[i2588] [%s] cap_hit_report.json present — stage already generated; "
+            "skipped (--force to re-run)",
+            stage,
+        )
+        return _iter_stage_rows(paths, stage)
     m = cell.model
     if llm_holder.get("llm") is None:
         mml = PC.PROMPT_TOKEN_BUDGET + cap
@@ -723,20 +736,43 @@ def _iter_stage_rows(paths: dict, stage: str) -> list[dict]:
 
 
 def _banked_stage_rows(cell: PC.Cell, paths: dict, stage: str, tok) -> list[dict]:
-    """Banked #2330 rows -> wrow shape (producer render conventions, G module)."""
+    """Banked #2330 rows -> wrow shape (producer render conventions, G module).
+
+    A19 (round 3, banked-full-grain-not-exact): the banked chunk files carry
+    the FULL producer split, so ids the P0 union-drop excluded exist in the
+    files BY CONSTRUCTION. Consume EXACTLY the expected post-union-drop id
+    set: filter to it, dedupe by ``ci`` (first usable row wins), and assert
+    the consumed set equals the expected set — union-dropped ids never enter
+    banked cells' fits, duplicates never set-collapse silently, and an
+    expected id with no usable row fails loud naming the ids.
+    """
+    split = "test_1000" if stage.startswith("ceiling_s") else stage
+    expected = _banked_expected_ids(split)
+    assert expected, f"banked stage {stage}: empty expected id set (split {split})"
     split_dir = paths["cell"] / "banked" / stage
     rows: list[dict] = []
+    consumed: set[int] = set()
+    n_extra = n_dup = n_empty = 0
     for f in sorted(split_dir.glob("*.json")):
         payload = json.loads(f.read_text(encoding="utf-8"))
         for r in payload["rows"]:
+            ci = int(r["ci"])
+            if ci not in expected:
+                n_extra += 1  # union-dropped / out-of-split id — NEVER consumed
+                continue
+            if ci in consumed:
+                n_dup += 1
+                continue
             if G._is_empty_response(r["response"]):
+                n_empty += 1
                 continue
             prompt_render = G._render_prompt(tok, r["prompt"])
             ids = tok(prompt_render, add_special_tokens=False)["input_ids"]
+            consumed.add(ci)
             rows.append(
                 {
-                    "row_id": f"{stage}_{int(r['ci'])}",
-                    "ci": int(r["ci"]),
+                    "row_id": f"{stage}_{ci}",
+                    "ci": ci,
                     "prompt": prompt_render,
                     "n_prompt_tokens": len(ids),
                     "read_points": {"prompt_last": len(ids) - 1},
@@ -745,7 +781,21 @@ def _banked_stage_rows(cell: PC.Cell, paths: dict, stage: str, tok) -> list[dict
                     "stage": stage,
                 }
             )
-    assert rows, f"banked stage {stage}: zero usable rows"
+    missing = expected - consumed
+    assert not missing, (
+        f"A19 banked-consume FAIL [{stage}]: {len(missing)} expected {split} ids have no usable "
+        f"(non-empty, in-split) banked row (first 5: {sorted(missing)[:5]}); "
+        f"extras_filtered={n_extra} duplicates_skipped={n_dup} empty_rows_skipped={n_empty}"
+    )
+    logger.info(
+        "[i2588] A19 banked-consume exact [%s]: consumed=%d extras_filtered=%d "
+        "duplicates_skipped=%d empty_rows_skipped=%d",
+        stage,
+        len(consumed),
+        n_extra,
+        n_dup,
+        n_empty,
+    )
     return rows
 
 
@@ -857,8 +907,24 @@ def _capture_stage(
     y_only: bool = False,
     layer_tag: str = "capture",
 ) -> None:
+    """Teacher-forced multi-layer capture for one stage; writes shards + rows.json.
+
+    Round 3 (gen-capture-stage-resume): rows.json is the stage's terminal
+    artifact (written LAST, after every shard) — when present the stage is
+    skipped (--force re-runs), so a mid-phase crash resumes at the first
+    incomplete stage.
+    """
     from explore_persona_space.atomic_io import savez_atomic
 
+    rows_json = paths[layer_tag] / stage / "rows.json"
+    if rows_json.exists() and not args.force:
+        logger.info(
+            "[i2588] [%s/%s] rows.json present — stage already captured; "
+            "skipped (--force to re-run)",
+            layer_tag,
+            stage,
+        )
+        return
     m = cell.model
     if cell.fresh or stage.startswith("gpqa"):
         wrows = PC.read_jsonl(paths["parsed"] / f"{stage}.jsonl")
@@ -1012,8 +1078,17 @@ def _validate_capture_inputs(args, cell: PC.Cell, paths: dict) -> dict:
             rows = PC.read_jsonl(p)
             assert rows, f"capture input empty: {p}"
             need = {"row_id", "prompt", "n_prompt_tokens", "text", "ans_char_span"}
-            missing = need - set(rows[0])
-            assert not missing, f"parsed stage {stage}: row 0 missing keys {sorted(missing)}"
+            # Round 3 (consumer-contract-post-init): EVERY row validates, not
+            # only row 0 — a malformed later row otherwise passes preflight
+            # and capture dies AFTER the 7-54 GB model load (B2's exact
+            # failure class at row grain). Exact row counts are unknowable for
+            # fresh parsed stages (parse drops are data-dependent) — counts
+            # are recorded here and asserted exactly on the banked branch.
+            bad = [(i, sorted(need - set(r))) for i, r in enumerate(rows) if need - set(r)]
+            assert not bad, (
+                f"parsed stage {stage}: {len(bad)} rows missing required keys "
+                f"(first: row {bad[0][0]} missing {bad[0][1]})"
+            )
             report["stages"][stage] = {"kind": "parsed", "n_rows": len(rows)}
         else:
             split = "test_1000" if stage.startswith("ceiling_s") else stage
@@ -1021,34 +1096,51 @@ def _validate_capture_inputs(args, cell: PC.Cell, paths: dict) -> dict:
             files = sorted(split_dir.glob("*.json"))
             assert files, f"banked capture input missing: {split_dir} — run --phase stage first"
             banked_ids: set[int] = set()
-            n_rows = n_empty = 0
+            usable_ids: set[int] = set()  # ids with >= 1 NON-empty row (consumable)
+            n_rows = n_empty = n_dup = 0
             for f in files:
                 payload = json.loads(f.read_text(encoding="utf-8"))
                 assert isinstance(payload, dict) and "rows" in payload, (f.name, "no rows key")
                 for r in payload["rows"]:
                     for k in ("ci", "prompt", "response"):
                         assert k in r, f"banked row missing key {k!r} ({f.name})"
+                    ci = int(r["ci"])
                     n_rows += 1
-                    n_empty += int(G._is_empty_response(r["response"]))
-                    banked_ids.add(int(r["ci"]))
+                    n_dup += int(ci in banked_ids)
+                    banked_ids.add(ci)
+                    if G._is_empty_response(r["response"]):
+                        n_empty += 1
+                    else:
+                        usable_ids.add(ci)
             expected = _banked_expected_ids(split)
-            missing_ids = expected - banked_ids
+            # Round 3 (banked-full-grain-not-exact): A19's 1:1 is asserted on
+            # the USABLE id set — an expected id whose only rows are empty
+            # would otherwise pass presence-validation and silently vanish at
+            # consume (_banked_stage_rows skips empty rows). Extras exist BY
+            # CONSTRUCTION whenever the P0 union-drop is nonempty (banked
+            # files carry the full producer split); they are counted here and
+            # FILTERED at consume, never ingested into fits.
+            missing_ids = expected - usable_ids
             assert not missing_ids, (
-                f"A19 matched-id FAIL [{stage}]: {len(missing_ids)} expected {split} ids absent "
-                f"from the banked rows (first 5: {sorted(missing_ids)[:5]})"
+                f"A19 matched-id FAIL [{stage}]: {len(missing_ids)} expected {split} ids lack a "
+                f"usable (non-empty) banked row (first 5: {sorted(missing_ids)[:5]})"
             )
             report["stages"][stage] = {
                 "kind": "banked",
                 "n_files": len(files),
                 "n_rows": n_rows,
                 "n_empty_response": n_empty,
+                "n_duplicate_ci": n_dup,
                 "n_expected_ids": len(expected),
-                "n_matched": len(expected & banked_ids),
+                "n_usable_matched": len(expected & usable_ids),
                 "n_extra_banked": len(banked_ids - expected),
             }
             logger.info("[i2588] A19 matched-id OK [%s]: %s", stage, report["stages"][stage])
+    # Round 3: the odd pass writes its OWN suffixed report — the primary
+    # (swept) validation report is never overwritten (C3).
+    suffix = "_odd" if args.layer_set == "odd" else ""
     PC.write_json_atomic(
-        paths["cell"] / "capture_input_validation.json",
+        paths["cell"] / f"capture_input_validation{suffix}.json",
         {"meta": _meta(), "cell": cell.key, "layer_set": args.layer_set, **report},
     )
     return report
@@ -1235,9 +1327,13 @@ def _validate_g2_sentinel(rec: dict) -> None:
     pp = rec.get("production_path")
     assert isinstance(pp, dict), "G2 sentinel lacks the C1 production-path equivalence record"
     ppr = float(pp.get("realized_r2", float("nan")))
-    assert math.isfinite(ppr) and float(pp["abs_deviation_vs_pin"]) <= float(pp["tol"]), (
-        "G2 sentinel production-path record fails its tolerance",
+    # Round 3 (g2-prodpath-tol-unpinned): validate against the CURRENT pinned
+    # tolerance, never the sentinel's own self-reported pp["tol"] (a sentinel
+    # minted under a looser tol must be refused, not trusted).
+    assert math.isfinite(ppr) and float(pp["abs_deviation_vs_pin"]) <= PC.ANCHOR_PROD_EQUIV_TOL, (
+        "G2 sentinel production-path record fails the pinned tolerance",
         pp,
+        PC.ANCHOR_PROD_EQUIV_TOL,
     )
     meta = rec.get("meta")
     assert isinstance(meta, dict) and meta.get("git_sha"), (
@@ -1479,6 +1575,7 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
                 per_layer[layer] = json.loads(unit_path.read_text(encoding="utf-8"))
                 logger.info("[fits] unit L%02d pos=%s resumed from %s", layer, pos, unit_path.name)
                 continue
+            t_unit = time.monotonic()
             b = _bundle(paths, layer, pos, tag=tag)
             if args.smoke and len(b["tr"]) < b["X"].shape[1]:
                 logger.info(
@@ -1513,14 +1610,16 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
             if layer == layers[0]:
                 logger.info("[i2588] [fits %s pos=%s] first layer done", cell.key, pos)
             # checkpoint-per-unit: persist the per-layer record the moment it lands
+            per_layer[layer]["unit_elapsed_s"] = round(time.monotonic() - t_unit, 3)
             PC.write_json_atomic(unit_path, {"meta": _meta(), **per_layer[layer]})
             logger.info(
-                "[fits] unit L%02d/%s pos=%s val_acc1_cos=%.4f test_r2=%.4f",
+                "[fits] unit L%02d/%s pos=%s val_acc1_cos=%.4f test_r2=%.4f elapsed=%.1fs",
                 layer,
                 cell.key,
                 pos,
                 _acc1(knn_val["ridge"]["cosine"]),
                 per_layer[layer]["test_r2"],
+                per_layer[layer]["unit_elapsed_s"],
             )
             # persist the selected-λ payload only at layer_star (below); free here
             del payload
@@ -2118,6 +2217,48 @@ _ALL_SEQUENCE = (
     "upload-fits",
 )
 
+# Round 3 (oddlayer-overwrites-primary / C3): the odd-layer sensitivity pass
+# runs ONLY the layer-DEPENDENT phases. gen/parse/upload-raw (and
+# prologue/stage) are layer-set-INDEPENDENT: _cell_prefix and
+# paths["raw"]/["parsed"] do not vary by layer set, so re-driving them under
+# the odd pass's "_odd" sentinels would regenerate the primary parsed rows
+# (vLLM continuous batching gives no byte-identity guarantee) and re-upload
+# the primary raw/parsed HF prefixes — "the odd pass never overwrites the
+# primary" is violated either way. The odd pass CONSUMES the primary pass's
+# gen/parse artifacts on the same out-root; capture fails loud (B2) when they
+# are absent.
+_ODD_SEQUENCE = (
+    "capture",
+    "upload-capture",
+    "fits",
+    "nulls",
+    "gpqa-transfer",
+    "resid",
+    "upload-fits",
+)
+_ODD_FORBIDDEN_PHASES = ("gen", "parse", "upload-raw")
+
+
+def _sequence_for(args) -> tuple[str, ...]:
+    """Resolve the phase sequence for the requested (--phase, --layer-set).
+
+    ``--phase all`` under ``--layer-set odd`` runs the layer-dependent
+    sequence only; an EXPLICIT odd invocation of a primary-artifact phase
+    (gen/parse/upload-raw) is refused — those phases belong to the swept pass.
+    """
+    if args.phase == "all":
+        if args.layer_set == "odd":
+            return _ODD_SEQUENCE
+        if args.smoke:
+            return (*_ALL_SEQUENCE, "smoke-null-timing")
+        return _ALL_SEQUENCE
+    assert not (args.layer_set == "odd" and args.phase in _ODD_FORBIDDEN_PHASES), (
+        f"--layer-set odd --phase {args.phase} refused: {args.phase} is layer-set-independent "
+        "and writes/uploads PRIMARY artifacts (C3: the odd pass never overwrites the primary); "
+        "run it under --layer-set swept — the odd pass consumes the swept pass's outputs"
+    )
+    return (args.phase,)
+
 
 def _build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
@@ -2238,9 +2379,7 @@ def main(argv: list[str] | None = None) -> int:
     assert args.cell, "--cell is required for run phases"
     cell = PC.cell_by_key(args.cell)
     paths = _paths(args, cell)
-    seq = _ALL_SEQUENCE if args.phase == "all" else (args.phase,)
-    if args.phase == "all" and args.smoke:
-        seq = (*seq, "smoke-null-timing")
+    seq = _sequence_for(args)
     ran = _run_phases(args, cell, paths, seq)
     logger.info("[i2588] phases run=%s skipped=%s", ran, [s for s in seq if s not in ran])
     return 0

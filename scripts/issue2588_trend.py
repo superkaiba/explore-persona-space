@@ -208,7 +208,17 @@ def _calibrated(rec: dict) -> dict:
     sr1 = None
     if ceil_retr is not None and mu is not None:
         denom = float(ceil_retr["ceiling_acc1_cos"]) - mu
-        sr1 = float((obs - mu) / denom) if denom > 1e-12 else None
+        # Round 3 (standing rec): a ceiling at/below the null mean makes SR1
+        # undefined — fail loud, never a silent None that reads downstream as
+        # "ceiling not computed".
+        if denom <= 1e-12:
+            raise ValueError(
+                f"SR1 ceiling normalization degenerate: ceiling_acc1_cos="
+                f"{float(ceil_retr['ceiling_acc1_cos']):.6f} <= null_mean={mu:.6f} "
+                f"(denom={denom:.3g}) — the repeat-draw retrieval ceiling sits at/below "
+                "the permutation null; the cell's capture or nulls are broken"
+            )
+        sr1 = float((obs - mu) / denom)
     return {
         "acc1_cos_at_star": obs,
         "null_mean": mu,
@@ -467,13 +477,35 @@ def h2_reads(maps: dict[str, dict], universe: list[str], matrix: np.ndarray) -> 
         aa_vals.append(PC.AA_PIN[key][0])
         detail[key] = rec_entry
     assert len(surface_deltas) == 7, len(surface_deltas)
-    rho, p = spearmanr(aa_vals, gaps_cal)
+    # Round 3 (h2-paired-analysis-missing): the registered H2 gap-vs-AA read
+    # consumes the RAW complete-case shared-ID generic gaps (gap_generic_raw)
+    # — the paired-bootstrap surface this function computes — never the
+    # calibrated aggregate gap, which stays a labeled E4 sensitivity field.
+    rho, p = spearmanr(aa_vals, gaps_raw)
     stat, wp = wilcoxon(surface_deltas, alternative="two-sided", method="exact")
     return {
         "pairs": detail,
-        "n_gap_pairs": len(gaps_cal),
+        "n_gap_pairs": len(gaps_raw),
         "min_two_sided_p_at_n7": 0.015625,
-        "gap_vs_aa_spearman": {"rho": float(rho), "p": float(p), "n": len(gaps_cal)},
+        "gap_vs_aa_spearman": {
+            "rho": float(rho),
+            "p": float(p),
+            "n": len(gaps_raw),
+            "gap_basis": "raw complete-case shared-ID generic gaps (gap_generic_raw)",
+        },
+        "sensitivity_gap_semantics": {
+            "gap_generic_cal": (
+                "aggregate-based (per-arm calibrated acc@1 difference; NOT shared-ID intersected)"
+            ),
+            "gap_generic_resid": (
+                "aggregate-based (per-arm length-residualized acc@1 difference; "
+                "NOT shared-ID intersected)"
+            ),
+            "gap_gpqa_resid": (
+                "aggregate-based (per-arm GPQA same-question resid acc@1 difference; "
+                "NOT shared-ID intersected)"
+            ),
+        },
         "surface_wilcoxon": {
             "stat": float(stat),
             "p_two_sided": float(wp),
@@ -673,7 +705,9 @@ def _pilot_gate(pilot_results: dict, out_dir: Path) -> dict:
     return report
 
 
-def run_judge_fallback(pending_path: Path, parsed_dir: Path, out_path: Path) -> dict:
+def run_judge_fallback(
+    pending_path: Path, parsed_dir: Path, out_path: Path, *, prompts_path: Path | None = None
+) -> dict:
     """Judge-extract letters for unparseable GPQA rollouts (trigger: >5%
     extraction failure, recorded pod-side in gpqa_judge_pending.json).
 
@@ -686,13 +720,19 @@ def run_judge_fallback(pending_path: Path, parsed_dir: Path, out_path: Path) -> 
     stop_reason is captured per verdict; transport-class exhaustions are
     RE-DRIVEN with fresh checkpoint dirs (never persisted as drops);
     malformed judge returns are DROPPED + COUNTED (rule 9, never coerced).
+
+    ``prompts_path`` defaults to the P0-frozen committed gpqa_prompts.json;
+    tests inject a fixture (round 3 — the composed-path test must not depend
+    on the committed artifact, absent from sparse worktrees).
     """
     pending = json.loads(pending_path.read_text(encoding="utf-8"))
-    gpqa = json.loads(
-        (_REPO_ROOT / "eval_results" / "issue_2588" / "gpqa_prompts.json").read_text(
-            encoding="utf-8"
-        )
+    if prompts_path is None:
+        prompts_path = _REPO_ROOT / "eval_results" / "issue_2588" / "gpqa_prompts.json"
+    assert prompts_path.exists(), (
+        f"{prompts_path} missing — run issue2588_p0_preflight.py step 3 (GPQA staging) and "
+        "commit the frozen prompts before the judge fallback"
     )
+    gpqa = json.loads(prompts_path.read_text(encoding="utf-8"))
     from explore_persona_space.llm.api_dispatch import DispatchItem
 
     q_by_id = {q["qid"]: q for q in gpqa["prompts"]}
@@ -785,8 +825,10 @@ def merged_behavioral(rec: dict, map_id: str) -> dict | None:
         raise RuntimeError(
             f"{map_id}: GPQA judge fallback FLAGGED "
             f"(frac_unparseable={beh.get('frac_unparseable'):.3f}) but "
-            "gpqa_judge_verdicts.json is ABSENT — run issue2588_trend.py --judge-fallback for "
-            "this cell first (plan §4.5); the trend never assembles on uncorrected metrics."
+            "gpqa_judge_verdicts.json is ABSENT — run issue2588_trend.py --judge-fallback "
+            "--pending <cell_dir>/gpqa_judge_pending.json --parsed-dir <cell_dir>/parsed "
+            "for this cell first (--harvest stages <cell_dir>/parsed/gpqa_s*.jsonl and logs "
+            "the exact command, plan §4.5); the trend never assembles on uncorrected metrics."
         )
     gold = {r["row_id"]: r["gold"] for r in pend["rows"]}
     n_extra_correct = sum(
@@ -806,6 +848,87 @@ def merged_behavioral(rec: dict, map_id: str) -> dict | None:
         if k in verd
     }
     return beh
+
+
+# ---------------------------------------------------------------------------
+# Harvest helpers (round 3)
+# ---------------------------------------------------------------------------
+
+
+def _resolve_harvest_revision(explicit: str | None) -> str:
+    """Round 3 (p3-harvest-missing): hub.stage_hub_prefix resolves
+    revision=None to a sha PER CALL, so the fits + nulls staging calls (and
+    the judge-fallback input staging) could straddle a concurrent upload and
+    mirror incoherent generations. Resolve main -> ONE sha up front and
+    thread it into EVERY staging call; the realized sha is logged and
+    persisted in the summary meta (harvest_revision_resolved)."""
+    if explicit:
+        return explicit
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    sha = hub.retry_transient(
+        lambda: HfApi().repo_info(PC.HF_DATA_REPO, repo_type="dataset").sha,
+        what="resolve --harvest revision (data-repo main sha)",
+    )
+    assert isinstance(sha, str) and len(sha) >= 7, f"repo_info returned no usable sha: {sha!r}"
+    return sha
+
+
+def _stage_judge_fallback_inputs(fits_root: Path, revision: str) -> dict[str, list[Path]]:
+    """Round 3 (judge-fallback-unintegrated, B5 staging route): --harvest
+    mirrors only the fits/ + nulls/ prefixes, while run_judge_fallback
+    consumes the pod-side parsed GPQA rollouts (gpqa_s*.jsonl, uploaded to
+    {cell.hf_prefix}/parsed/). For every harvested cell whose
+    gpqa_judge_pending.json is present, stage exactly the gpqa_s*.jsonl
+    parsed files into <cell_dir>/parsed/ (beside the pending file) at the
+    SAME resolved harvest revision, and log the composed per-cell
+    --judge-fallback command. Fail-loud: a flagged cell with zero parsed
+    GPQA files on the Hub is an error, never a silent skip. Returns
+    {cell_key: [staged paths]} for the flagged cells."""
+    from fnmatch import fnmatch
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    api = HfApi()
+    staged: dict[str, list[Path]] = {}
+    for cell in PC.all_cells():
+        pending = fits_root / cell.key / "gpqa_judge_pending.json"
+        if not pending.exists():
+            continue
+        prefix = f"{cell.hf_prefix}/parsed"
+        remote = hub.list_hf_files_under_path(
+            api, PC.HF_DATA_REPO, prefix, repo_type="dataset", revision=revision
+        )
+        wanted = sorted(p for p in remote if fnmatch(p.rsplit("/", 1)[-1], "gpqa_s*.jsonl"))
+        assert wanted, (
+            f"judge-fallback staging: {cell.key} flagged (gpqa_judge_pending.json present) but "
+            f"no gpqa_s*.jsonl under {PC.HF_DATA_REPO}/{prefix}@{revision[:12]} — the pod-side "
+            "upload-raw phase must persist parsed GPQA rollouts before the VM judge fallback"
+        )
+        parsed_dir = pending.parent / "parsed"
+        for rp in wanted:
+            hub.stage_hub_file(
+                PC.HF_DATA_REPO,
+                rp,
+                parsed_dir / rp.rsplit("/", 1)[-1],
+                repo_type="dataset",
+                revision=revision,
+            )
+        staged[cell.key] = [parsed_dir / rp.rsplit("/", 1)[-1] for rp in wanted]
+        logger.info(
+            "[i2588] judge-fallback inputs staged for %s (%d files) — run: "
+            "uv run python scripts/issue2588_trend.py --judge-fallback "
+            "--pending %s --parsed-dir %s",
+            cell.key,
+            len(wanted),
+            pending,
+            parsed_dir,
+        )
+    return staged
 
 
 # ---------------------------------------------------------------------------
@@ -835,8 +958,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--harvest-revision",
         default=None,
-        help="HF data-repo revision pin for --harvest (default: ONE resolved main sha "
-        "for the whole harvest — the stage_hub_prefix coherence contract)",
+        help="HF data-repo revision pin for --harvest (default: main is resolved to ONE sha "
+        "via HfApi().repo_info up front and threaded into every staging call — the realized "
+        "sha is logged and persisted as meta.harvest_revision_resolved)",
     )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
@@ -852,7 +976,16 @@ def main(argv: list[str] | None = None) -> int:
             DispatchItem,
             dispatch_calls,
         )
-        from explore_persona_space.orchestrate.hub import stage_hub_prefix  # noqa: F401
+        from fnmatch import fnmatch  # noqa: F401
+
+        from huggingface_hub import HfApi  # noqa: F401
+
+        from explore_persona_space.orchestrate.hub import (  # noqa: F401
+            list_hf_files_under_path,
+            retry_transient,
+            stage_hub_file,
+            stage_hub_prefix,
+        )
 
         print("[import-check] OK")
         return 0
@@ -866,11 +999,17 @@ def main(argv: list[str] | None = None) -> int:
         logger.info("[i2588] judge fallback: %s", {k: v for k, v in rec.items() if k != "verdicts"})
         return 0
 
+    harvest_rev: str | None = None
     if args.harvest:
         import shutil
 
         from explore_persona_space.orchestrate import hub
 
+        # Round 3 (p3-harvest-missing): ONE resolved sha threads through BOTH
+        # prefix stages + the judge-fallback input staging — never per-call
+        # revision=None resolution, which can straddle a concurrent upload.
+        harvest_rev = _resolve_harvest_revision(args.harvest_revision)
+        logger.info("[i2588] harvest revision resolved: %s", harvest_rev)
         mirror = args.fits_dir.parent / "hub_mirror"
         staged: list[Path] = []
         for pfx in (f"{PC.PANEL_PREFIX}/fits", f"{PC.PANEL_PREFIX}/nulls"):
@@ -879,7 +1018,7 @@ def main(argv: list[str] | None = None) -> int:
                 pfx,
                 mirror,
                 repo_type="dataset",
-                revision=args.harvest_revision,
+                revision=harvest_rev,
             )
         # Uploads split nulls_* to the nulls/ prefix; _load_map reads ONE cell
         # dir — fold the nulls mirror into the fits mirror per cell.
@@ -891,10 +1030,14 @@ def main(argv: list[str] | None = None) -> int:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(f, dest)
         args.fits_dir = fits_root
+        # Round 3 (judge-fallback-unintegrated): stage the parsed GPQA
+        # rollouts every flagged cell's --judge-fallback run consumes.
+        judge_staged = _stage_judge_fallback_inputs(fits_root, harvest_rev)
         logger.info(
-            "[i2588] harvested %d files (revision pin: %s) -> %s",
+            "[i2588] harvested %d files (revision pin: %s; judge-fallback cells staged: %d) -> %s",
             len(staged),
-            args.harvest_revision or "resolved-main-sha",
+            harvest_rev,
+            len(judge_staged),
             fits_root,
         )
 
@@ -931,6 +1074,9 @@ def main(argv: list[str] | None = None) -> int:
             "fits_dir": str(args.fits_dir),
             "harvest": bool(args.harvest),
             "harvest_revision": args.harvest_revision,
+            # Round 3 (p3-harvest-missing): the REALIZED sha every staging
+            # call used (== harvest_revision when explicitly pinned).
+            "harvest_revision_resolved": harvest_rev,
             "n_maps_loaded": len(maps),
             "bootstrap": {
                 "draws": PC.BOOTSTRAP_DRAWS,
