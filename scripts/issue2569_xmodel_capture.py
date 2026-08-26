@@ -405,6 +405,7 @@ def _source_snapshot(args) -> tuple[str, list[tuple[str, str | None, int | None]
         def _walk(prefix=prefix):
             return [
                 (e.path, getattr(e, "blob_id", None), getattr(e, "size", None))
+                # HUB_VERIFY_RETRY_EXEMPT: raw list_repo_tree wrapped in hub._retry_upload below
                 for e in api.list_repo_tree(
                     repo_id=args.hf_data_repo,
                     repo_type="dataset",
