@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2602,
+  "highest_id": 2603,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12363,6 +12363,13 @@
       "path": "tasks/running/2602",
       "status": "running",
       "title": "artifact-reuse: prove a reused GATE's committed anchor is reproducible under the shared core's CURRENT defaults (#1887 flip silently changed #2546's G-E meaning)"
+    },
+    "2603": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2603",
+      "status": "proposed",
+      "title": "EngineCore drain guard fails OPEN on UUID/MIG-form CUDA_VISIBLE_DEVICES pins (fix + UUID-pin test, due since #2546 round 11)"
     },
     "261": {
       "has_clean_result": false,
