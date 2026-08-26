@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2607,
+  "highest_id": 2608,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12398,6 +12398,13 @@
       "path": "tasks/planning/2607",
       "status": "planning",
       "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
+    },
+    "2608": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2608",
+      "status": "proposed",
+      "title": "Pod bootstrap cone sparse-checkout omits CROSS-ISSUE artifact cones, so drivers reading prior issues' committed eval_results/figures crash at launch"
     },
     "261": {
       "has_clean_result": false,
