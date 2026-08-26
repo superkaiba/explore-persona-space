@@ -45,6 +45,29 @@ the launcher to confirm the consumer gets LIVE inputs, then order the
 filter/assert/engine-init lines — "recomputed live + asserted pre-spend"
 is what demotes a missing-revalidation BLOCKER.
 
+**Third datapoint (#2378 r3, `simregen-derived-fresh-na-resume-mismatch`):**
+Codex FAILed on a round-INTRODUCED schema defect (dispatcher-written N/A
+`__fresh.json` lacking `regime`; the callee's `_resume_ok` RAISES on any
+existing regime-mismatched artifact — missing key ⇒ None ≠ regime ⇒ crash,
+not recompute). Real at every line, but demoted to CONCERN: fires only on an
+NA→OK retry over a reused ledger, AND the arming condition (fits clone
+reading the flip) was structurally prevented by a SIBLING CONCERN (the git
+transport drops deletions), so the crash sat strictly behind an
+already-CONCERN-graded gate; origin ledger was empty (imminent dispatch
+clean); failure loud + pre-digest/sentinel with GPU outputs already
+harvested. Two wrinkles worth re-using: (a) **interacting fixes** — the
+sibling CONCERN's prescribed fix, applied alone, ARMS the demoted crash;
+persist BOTH with cross-referencing evidence mandating a joint close, and
+record the anti-fix (stamping `regime` would convert the loud crash into a
+silent resume-skip — strictly worse); (b) Claude named `_resume_ok` in its
+gate line and still credited the implementer's "omitting regime → safe
+re-execution" claim without reading the raise arm — the read-the-NAMED-
+function miss ([[claude-gate-object-identity-unchecked]]), which decides
+the finding's REALITY while the precondition arithmetic decides SEVERITY.
+Also: Codex's body classed it Major/"Critical: None"/revise-then-merge while
+its persist row said BLOCKER — the r10 internal-severity-contradiction tell
+again; the body's calibration was the coherent one.
+
 **How to apply:** (1) verify the code property yourself (here: ancestor not
 relative-to descendant ⇒ falls through to the allowlist branch); (2) list
 the residual's trigger preconditions vs the parent's — count required
