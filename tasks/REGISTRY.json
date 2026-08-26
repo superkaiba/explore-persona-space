@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2597,
+  "highest_id": 2598,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12314,6 +12314,13 @@
       "path": "tasks/proposed/2597",
       "status": "proposed",
       "title": "representation_shift teardown: guard torch.cuda.ipc_collect() on is_initialized() \u2014 unguarded call lazy-inits CUDA at teardown"
+    },
+    "2598": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2598",
+      "status": "proposed",
+      "title": "workflow_lint: verify test-evidence and diff-stat claims in epm:experiment-implementation markers resolve to real artifacts"
     },
     "26": {
       "has_clean_result": false,
