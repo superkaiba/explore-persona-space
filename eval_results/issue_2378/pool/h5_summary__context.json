@@ -1,0 +1,193 @@
+{
+  "definition": "H5 field (plan §3): pooled-map + per-cell bias (tier m1) reaches >= 0.90 of the own ceiling in a STRICT MAJORITY of surviving clearly-mappable cells; the denominator is the cells whose own-fit tier is clearly-mappable AND whose m1 recovery ratio is not suppressed by the skip-and-count guard; boundary-indeterminate / unmappable / suppressed cells are reported but excluded (disclosed here). Recovery is the POINT pooled-R2 ratio (the #2054 convention); the 200-draw CI rides each cell JSON.",
+  "arm": "context",
+  "tier_used": "m1",
+  "bar": 0.9,
+  "n_cells": 8,
+  "n_eligible": 8,
+  "n_ge_bar": 8,
+  "strict_majority": true,
+  "excluded": {},
+  "per_cell": [
+    {
+      "cell": "chat",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 0.9542501356558237,
+      "ge_bar": true,
+      "recovery_ci": [
+        0.9516843604053192,
+        0.9562647543993984
+      ],
+      "exceeds_one": false,
+      "pooled_r2_m0": 0.5800171957355511,
+      "pooled_r2_m1": 0.5800219006391989,
+      "ceiling_pooled_r2": 0.6078300426340202
+    },
+    {
+      "cell": "chat_user_real",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 0.9751051023985207,
+      "ge_bar": true,
+      "recovery_ci": [
+        0.9698971540947824,
+        0.981123240289824
+      ],
+      "exceeds_one": false,
+      "pooled_r2_m0": 0.20156885887941645,
+      "pooled_r2_m1": 0.2016362944579504,
+      "ceiling_pooled_r2": 0.20678416507305142
+    },
+    {
+      "cell": "plain_text",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 0.974908715363937,
+      "ge_bar": true,
+      "recovery_ci": [
+        0.9692385927290273,
+        0.9799018313141848
+      ],
+      "exceeds_one": false,
+      "pooled_r2_m0": 0.2924729652962397,
+      "pooled_r2_m1": 0.29253433021026065,
+      "ceiling_pooled_r2": 0.3000633039792413
+    },
+    {
+      "cell": "storyq_astra",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 1.1456131418355535,
+      "ge_bar": true,
+      "recovery_ci": [
+        1.139202371831253,
+        1.1518378250058698
+      ],
+      "exceeds_one": true,
+      "pooled_r2_m0": 0.30895689198693266,
+      "pooled_r2_m1": 0.3089652968308949,
+      "ceiling_pooled_r2": 0.26969426724265455
+    },
+    {
+      "cell": "storyq_dana",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 1.1369233510262868,
+      "ge_bar": true,
+      "recovery_ci": [
+        1.1306796458033679,
+        1.145631416438278
+      ],
+      "exceeds_one": true,
+      "pooled_r2_m0": 0.2795611115824298,
+      "pooled_r2_m1": 0.27960335642339706,
+      "ceiling_pooled_r2": 0.24592982118891527
+    },
+    {
+      "cell": "storyq_helios",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 1.1374284208351506,
+      "ge_bar": true,
+      "recovery_ci": [
+        1.130105038957841,
+        1.1443721858755904
+      ],
+      "exceeds_one": true,
+      "pooled_r2_m0": 0.3224987257368226,
+      "pooled_r2_m1": 0.3224897010292598,
+      "ceiling_pooled_r2": 0.28352527079679746
+    },
+    {
+      "cell": "storyq_vex",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 1.1353324333065655,
+      "ge_bar": true,
+      "recovery_ci": [
+        1.1252483726139806,
+        1.1449535748389486
+      ],
+      "exceeds_one": true,
+      "pooled_r2_m0": 0.26224206824803353,
+      "pooled_r2_m1": 0.26229610403212456,
+      "ceiling_pooled_r2": 0.23103022193086475
+    },
+    {
+      "cell": "storyq_wren",
+      "tier": "clearly-mappable",
+      "eligible": true,
+      "excluded_reason": null,
+      "point_recovery_m1": 1.1617074323611247,
+      "ge_bar": true,
+      "recovery_ci": [
+        1.1531186722118236,
+        1.1696297812254295
+      ],
+      "exceeds_one": true,
+      "pooled_r2_m0": 0.3040056140585182,
+      "pooled_r2_m1": 0.3040557765856392,
+      "ceiling_pooled_r2": 0.2617317993461209
+    }
+  ],
+  "regime": {
+    "script_version": "issue2378_pool_v1",
+    "arm": "context",
+    "layer": 51,
+    "k": 5,
+    "seed": 137,
+    "n_eq": 6601,
+    "fold_map_sha": "72bb15c6c9c04010b7e7f5ae047058b71d045efcaf5166e59ee34a54c73704aa",
+    "cells": [
+      "chat",
+      "chat_user_real",
+      "plain_text",
+      "storyq_astra",
+      "storyq_dana",
+      "storyq_helios",
+      "storyq_vex",
+      "storyq_wren"
+    ],
+    "ranks": [
+      8,
+      32,
+      128
+    ],
+    "n_null_draws": 100,
+    "bootstrap_draws": 200,
+    "lambda_grid": [
+      "logspace",
+      -2,
+      4,
+      13
+    ],
+    "dof_cap": 0.9,
+    "seed_derivation": "137-rooted per-(cell,arm,fold,rank) via cm.derived_seed"
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T22:37:32+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_pool.py",
+      "--phase",
+      "h5",
+      "--cells",
+      "chat,plain_text,storyq_astra,storyq_helios,storyq_wren,storyq_dana,storyq_vex,chat_user_real",
+      "--store-root",
+      "/workspace/explore-persona-space/data/issue_2378/p6_stage/issue2378_xframing/analysis_tensors/activations"
+    ],
+    "git_commit": "c732134e",
+    "git_dirty": null,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_pool.py"
+  }
+}

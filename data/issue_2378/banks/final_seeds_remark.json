@@ -1,0 +1,56 @@
+{
+  "items": [
+    "The stranger leaned across the bar, finger pointed at {name}, mouth opening to deliver what looked like an accusation.",
+    "Her mother took a deep breath, and {name} recognized the expression that always preceded a devastating truth.",
+    "The doctor's face went carefully blank as she turned toward {name}, clearly preparing to share the test results.",
+    "Marcus grabbed {name} by the shoulder, his eyes wild, plainly about to confess what he had done.",
+    "The old woman on the park bench fixed {name} with a knowing stare and began to recount what she had seen.",
+    "His supervisor closed the office door with ominous care before turning to tell {name} exactly what the audit had found.",
+    "The child tugged on {name}'s sleeve three times, gathering courage to say whatever small truth she'd been carrying.",
+    "Agent Morrison set down the photographs and looked directly at {name}, preparing to connect dots no one should connect.",
+    "The priest's expression shifted from warmth to something harder as he prepared to accuse {name} of taking the missing funds.",
+    "She cornered {name} at the funeral reception, jaw set, clearly ready to reveal what she'd kept silent about for years.",
+    "The stranger at the airport gate turned pale upon seeing {name}, then stepped forward as if compelled to deliver a warning.",
+    "His brother exhaled slowly, the way he always did before saying something that would hurt but needed saying to {name}.",
+    "The fortune teller's playful manner evaporated as she studied the cards, then looked up to tell {name} plainly what they foretold.",
+    "Detective Park placed both palms on the interrogation table and leaned toward {name}, beginning her careful revelation.",
+    "The bride's father intercepted {name} in the church hallway, face flushed, obviously about to issue some kind of warning.",
+    "Her oldest friend positioned herself between {name} and the exit, mouth twisted with the burden of an unwelcome confession.",
+    "The lawyer adjusted his glasses twice before meeting {name}'s eyes, signaling he was about to deliver particularly bad news.",
+    "A co-worker {name} barely knew approached during the fire drill, urgency making her brave enough to finally report what she had witnessed.",
+    "The homeless man {name} passed every morning suddenly stood up, recognition flooding his face, a declaration already on his lips.",
+    "His daughter set down her fork with deliberate precision, plainly about to deliver the verdict {name} had been dreading.",
+    "The museum curator went very still when she spotted {name} among the visitors, then walked over, determined to state what she had discovered.",
+    "Their new neighbor stepped onto the shared porch, holding an envelope, wearing an expression that promised complications for {name}.",
+    "The taxi driver kept glancing in the rearview mirror before finally pulling over to tell {name} something he had clearly been rehearsing.",
+    "She found {name} alone in the copy room and immediately locked the door, betraying the weight of her intended disclosure.",
+    "The nurse touched {name}'s elbow with unexpected gentleness, her intake of breath suggesting she was breaking some kind of protocol."
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T00:45:38-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks",
+      "--banks-dir",
+      "data/issue_2378/banks"
+    ],
+    "git_commit": "98565a9d",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "data/issue_2378/banks/final_seeds_question.json",
+      "data/issue_2378/banks/prime_bank_dialogue.json",
+      "data/issue_2378/banks/prime_bank_question.json",
+      "data/issue_2378/banks/registers.json",
+      "data/issue_2378/banks/settings.json",
+      "data/issue_2378/banks/situations.json",
+      "scripts/issue2378_banks.py",
+      "scripts/issue2378_common.py",
+      "scripts/issue2378_gen.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

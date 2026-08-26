@@ -45,6 +45,7 @@ capture, geometry, and upload alike.
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -1765,6 +1766,10 @@ def _merge_adapter(cfg: Cfg, adapter_dir: str, merged_dir: Path) -> Path:
             return merged_dir
         logger.warning("[merge] incomplete merged dir at %s — wiping + re-merging", merged_dir)
         shutil.rmtree(merged_dir, ignore_errors=True)
+    # Temp-DIRECTORY publish/reclaim (#2336 plan 4(g)): a crashed merge leaves residue at
+    # this PREDICTABLE path and the exists()+rmtree reclaim depends on it; atomic_replace
+    # is file-scoped and cannot replace a directory publish.
+    # SHARED_TMP_EXEMPT: temp-DIRECTORY publish/reclaim; deterministic name is load-bearing
     tmp_dir = merged_dir.parent / (merged_dir.name + ".tmp")
     if tmp_dir.exists():
         shutil.rmtree(tmp_dir, ignore_errors=True)  # stale partial from a prior crash
@@ -2012,9 +2017,8 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
             "tf_batch_size": C.TF_BATCH_SIZE,
         },
     }
-    tmp = out_dir / "pooled.pt.tmp"
-    torch.save(store, tmp)
-    os.replace(tmp, out_dir / "pooled.pt")
+    with atomic_replace(out_dir / "pooled.pt") as tmp:
+        torch.save(store, tmp)
     if cleanup_merged is not None:
         shutil.rmtree(cleanup_merged, ignore_errors=True)
 
@@ -2374,9 +2378,8 @@ def run_capture_tf_unit(
                 "git_commit": _git_commit_sha(),
             },
         }
-        tmp = out_dir / "pooled.pt.tmp"
-        torch.save(store, tmp)
-        os.replace(tmp, pooled_path)
+        with atomic_replace(pooled_path) as tmp:
+            torch.save(store, tmp)
     finally:
         # cleanup-as-you-go (plan §9): staged FT checkpoint / merged dir are
         # transient; a retry re-stages idempotently from the pinned revision.

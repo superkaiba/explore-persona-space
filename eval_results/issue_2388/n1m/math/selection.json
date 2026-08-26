@@ -1,0 +1,371 @@
+{
+ "surface": "math",
+ "cells": {
+  "arm_n1m__L1000_draw0": {
+   "arm": "arm_n1m",
+   "budget": "1000",
+   "draw": 0,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6872930727541847,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 1000,
+    "lambda_selected": 10.0,
+    "dof_selected": 46.15795334164694
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L1000_draw1": {
+   "arm": "arm_n1m",
+   "budget": "1000",
+   "draw": 1,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6827726799704364,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 1000,
+    "lambda_selected": 10.0,
+    "dof_selected": 46.115599191955916
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L1000_draw2": {
+   "arm": "arm_n1m",
+   "budget": "1000",
+   "draw": 2,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6874071334192474,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 1000,
+    "lambda_selected": 10.0,
+    "dof_selected": 46.17063177681467
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L2000_draw0": {
+   "arm": "arm_n1m",
+   "budget": "2000",
+   "draw": 0,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.694090088858645,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 2000,
+    "lambda_selected": 10.0,
+    "dof_selected": 47.05170753611844
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L2000_draw1": {
+   "arm": "arm_n1m",
+   "budget": "2000",
+   "draw": 1,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6880618980098228,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 2000,
+    "lambda_selected": 10.0,
+    "dof_selected": 47.06430721026716
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L2000_draw2": {
+   "arm": "arm_n1m",
+   "budget": "2000",
+   "draw": 2,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6913386415399057,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 2000,
+    "lambda_selected": 10.0,
+    "dof_selected": 47.06029044178065
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L250_draw0": {
+   "arm": "arm_n1m",
+   "budget": "250",
+   "draw": 0,
+   "basis": "pca16",
+   "layer": 2,
+   "dev_rho": 0.6495652778132601,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 250,
+    "lambda_selected": 10.0,
+    "dof_selected": 14.7996036398073
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L250_draw1": {
+   "arm": "arm_n1m",
+   "budget": "250",
+   "draw": 1,
+   "basis": "pca128",
+   "layer": 1,
+   "dev_rho": 0.66406905752121,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 250,
+    "lambda_selected": 1000.0,
+    "dof_selected": 15.841341257554893
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L250_draw2": {
+   "arm": "arm_n1m",
+   "budget": "250",
+   "draw": 2,
+   "basis": "pca16",
+   "layer": 1,
+   "dev_rho": 0.6519685649155973,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 250,
+    "lambda_selected": 10.0,
+    "dof_selected": 14.75268635435987
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L4000_draw0": {
+   "arm": "arm_n1m",
+   "budget": "4000",
+   "draw": 0,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7008493729331516,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 4000,
+    "lambda_selected": 1000.0,
+    "dof_selected": 541.1577484952734
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L4000_draw1": {
+   "arm": "arm_n1m",
+   "budget": "4000",
+   "draw": 1,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6904820970465988,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 4000,
+    "lambda_selected": 10.0,
+    "dof_selected": 47.52021376542292
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L4000_draw2": {
+   "arm": "arm_n1m",
+   "budget": "4000",
+   "draw": 2,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7008564160579679,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 4000,
+    "lambda_selected": 1000.0,
+    "dof_selected": 539.5575720593677
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L500_draw0": {
+   "arm": "arm_n1m",
+   "budget": "500",
+   "draw": 0,
+   "basis": "pca128",
+   "layer": 1,
+   "dev_rho": 0.6516801587950661,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 500,
+    "lambda_selected": 100.0,
+    "dof_selected": 66.75935234304106
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L500_draw1": {
+   "arm": "arm_n1m",
+   "budget": "500",
+   "draw": 1,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.676901216221442,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 500,
+    "lambda_selected": 100.0,
+    "dof_selected": 31.307131451780425
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L500_draw2": {
+   "arm": "arm_n1m",
+   "budget": "500",
+   "draw": 2,
+   "basis": "pca48",
+   "layer": 1,
+   "dev_rho": 0.6683048258223026,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 500,
+    "lambda_selected": 100.0,
+    "dof_selected": 31.55819358687566
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L8000_draw0": {
+   "arm": "arm_n1m",
+   "budget": "8000",
+   "draw": 0,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7104683343806469,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 8000,
+    "lambda_selected": 1000.0,
+    "dof_selected": 712.4642667531602
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L8000_draw1": {
+   "arm": "arm_n1m",
+   "budget": "8000",
+   "draw": 1,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7065502623209531,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 8000,
+    "lambda_selected": 1000.0,
+    "dof_selected": 712.3972158698167
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__L8000_draw2": {
+   "arm": "arm_n1m",
+   "budget": "8000",
+   "draw": 2,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7098195269240855,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 8000,
+    "lambda_selected": 1000.0,
+    "dof_selected": 712.7633349221305
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__Lfull_draw0": {
+   "arm": "arm_n1m",
+   "budget": "full",
+   "draw": 0,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7093000332072885,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 8746,
+    "lambda_selected": 1000.0,
+    "dof_selected": 736.4320150385765
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__Lfull_draw1": {
+   "arm": "arm_n1m",
+   "budget": "full",
+   "draw": 1,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7093000332072885,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 8746,
+    "lambda_selected": 1000.0,
+    "dof_selected": 736.4320150385765
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  },
+  "arm_n1m__Lfull_draw2": {
+   "arm": "arm_n1m",
+   "budget": "full",
+   "draw": 2,
+   "basis": "ambient",
+   "layer": 1,
+   "dev_rho": 0.7093000332072885,
+   "selector": {
+    "mode": "gcv-dof-capped",
+    "dof_cap": 0.9,
+    "n_train": 8746,
+    "lambda_selected": 1000.0,
+    "dof_selected": 736.4320150385765
+   },
+   "map_cell": null,
+   "qa_disjoint": null
+  }
+ },
+ "rung1_realization": null,
+ "frozen_ts": "2026-08-25T00:17:51Z",
+ "metadata": {
+  "git_commit": "c1b4102ae1674d67f630bd4c43a52e37e43ea54d",
+  "git_dirty": false,
+  "phase": "select",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2388_n1m_map.py"
+ }
+}

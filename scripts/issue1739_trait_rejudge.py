@@ -67,6 +67,8 @@ import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 # The re-judge is trait-DV-fixed (BEHAVIOR="evil"): plan v16 §4.2 re-judges
@@ -487,9 +489,8 @@ def main() -> int:
         manifest["per_rung"][rung] = report
 
     manifest_path = output_dir / "manifest.json"
-    tmp = manifest_path.with_name(manifest_path.name + ".tmp")
-    tmp.write_text(json.dumps(manifest, indent=1, default=str))
-    os.replace(tmp, manifest_path)
+    with atomic_replace(manifest_path) as tmp:
+        tmp.write_text(json.dumps(manifest, indent=1, default=str))
 
     # Smoke assertions: file structure + rule-24 split + rubric fingerprint.
     if args.smoke:

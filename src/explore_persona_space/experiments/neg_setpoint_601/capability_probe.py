@@ -24,9 +24,10 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from datetime import UTC, datetime
+from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.eval.callbacks import PeriodicCapabilityCallback
 
 logger = logging.getLogger(__name__)
@@ -162,8 +163,5 @@ class CapabilityTrajectoryCallback(PeriodicCapabilityCallback):
             "records": self._records,
             "timestamp_utc": datetime.now(UTC).isoformat(),
         }
-        os.makedirs(os.path.dirname(self.trajectory_out_path) or ".", exist_ok=True)
-        tmp = self.trajectory_out_path + ".tmp"
-        with open(tmp, "w") as f:
+        with atomic_replace(Path(self.trajectory_out_path)) as tmp, open(tmp, "w") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, self.trajectory_out_path)

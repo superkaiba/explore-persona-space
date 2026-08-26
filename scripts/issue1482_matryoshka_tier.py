@@ -62,6 +62,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM smoke)
@@ -778,9 +779,11 @@ def _flush_rec(rec: dict[str, list], path: Path) -> None:
             arrays[kk] = np.concatenate(vals) if vals else np.empty(0, np.int32)
         else:
             arrays[kk] = np.concatenate(vals) if vals else np.empty(0, np.float16)
-    tmp = path.parent / f".tmp_{path.name}"
-    np.savez(tmp, **arrays)
-    tmp.replace(path)
+    # Handle-form np.savez (the yielded tmp ends ".tmp"; numpy appends ".npz"
+    # to path-typed names lacking it — #2336 recipe edge (c)).
+    with atomic_replace(path) as tmp:
+        with open(tmp, "wb") as fh:
+            np.savez(fh, **arrays)
 
 
 def phase_capture(args) -> None:
@@ -881,14 +884,16 @@ def phase_capture(args) -> None:
                     n_done += 1
         for fam in fams:
             _flush_rec(recs[fam], paths[fam])
-        dtmp = dense_path.parent / f".tmp_{dense_path.name}"
-        np.savez(
-            dtmp,
-            row_idx=np.asarray(dense["row_idx"], np.int64),
-            c20=np.stack(dense["c20"]) if dense["c20"] else np.empty((0, 3584), np.float16),
-            hp20=np.stack(dense["hp20"]) if dense["hp20"] else np.empty((0, 3584), np.float16),
-        )
-        dtmp.replace(dense_path)
+        with atomic_replace(dense_path) as dtmp:
+            with open(dtmp, "wb") as fh:
+                np.savez(
+                    fh,
+                    row_idx=np.asarray(dense["row_idx"], np.int64),
+                    c20=np.stack(dense["c20"]) if dense["c20"] else np.empty((0, 3584), np.float16),
+                    hp20=np.stack(dense["hp20"])
+                    if dense["hp20"]
+                    else np.empty((0, 3584), np.float16),
+                )
         print(
             f"[m1] unit {gi + 1}/{len(groups)} rows_total={n_done} tok={tok_count} "
             f"elapsed={time.time() - t_loop:.0f}s",
@@ -1070,9 +1075,9 @@ def _add_tier_key(path: Path) -> None:
     deterministic tier column is appended atomically)."""
     d = dict(np.load(path, allow_pickle=False))
     d["tier"] = S.tier_of(np.asarray(d["feat_ids"], np.int64))
-    tmp = path.parent / f".tmp_{path.name}"
-    np.savez(tmp, **d)
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        with open(tmp, "wb") as fh:
+            np.savez(fh, **d)
 
 
 def _per_feature_npz_m(args, name, feat_ids, pt, true_te, activity, te_prov, te) -> dict:

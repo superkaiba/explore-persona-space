@@ -1,0 +1,113 @@
+{
+ "kind": "dgap-context-bootstrap",
+ "description": "Paired context bootstrap (analyzer concern 1, plan v15): the 1,000 pinned test contexts resampled jointly across every fitted cell on one shared draw matrix; R2 recomputed per draw from persisted fp16 predictions vs the pinned pass_b targets (test-set-own-mean SS_tot convention).",
+ "n_boot": 1000,
+ "boot_seed": 1901,
+ "margin": 0.01,
+ "targets": {
+  "source": "issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt",
+  "layer": 19,
+  "test_id_sha256_match": true,
+  "sha_convention": "issue779_fitter_fair_comparison._sha_ids (order-sensitive int64 tobytes)"
+ },
+ "point_recompute_checks": {
+  "worst_abs_delta_vs_committed": 2.4974486664275375e-06,
+  "note": "recomputed from fp16 persisted predictions; committed values are fp32"
+ },
+ "verdict_bootstrap": {
+  "S_mlp": {
+   "lo": 0.04362047985196114,
+   "hi": 0.05016920417547226,
+   "mean": 0.04672495648264885
+  },
+  "S_ridge": {
+   "lo": 0.014894481003284454,
+   "hi": 0.01809679865837097,
+   "mean": 0.016471626237034798
+  },
+  "slope_gap": {
+   "lo": 0.02777703506872058,
+   "hi": 0.03293255092576146,
+   "mean": 0.030253328382968903
+  },
+  "D_gap": {
+   "lo": 0.017777035292237998,
+   "hi": 0.02293255114927888,
+   "mean": 0.02025332674384117
+  },
+  "frac_draws_D_gap_ge_0": 1.0,
+  "point_D_gap_committed": 0.020256670869014698
+ },
+ "per_rung_mlp_minus_ridge_r2": {
+  "5000": {
+   "point": -0.019524838857315707,
+   "lo": -0.022478973865509032,
+   "hi": -0.016872087121009828,
+   "mean": -0.01955244317650795
+  },
+  "10000": {
+   "point": -0.008056322056542498,
+   "lo": -0.011129315197467803,
+   "hi": -0.005196380615234375,
+   "mean": -0.008072471246123314
+  },
+  "25000": {
+   "point": 0.004998394494008962,
+   "lo": 0.0026325732469558716,
+   "hi": 0.007349374890327454,
+   "mean": 0.004953211639076471
+  },
+  "50000": {
+   "point": 0.017042165381555785,
+   "lo": 0.014376728236675263,
+   "hi": 0.01975632756948471,
+   "mean": 0.017075631767511368
+  },
+  "100000": {
+   "point": 0.027112621042570617,
+   "lo": 0.024267427623271942,
+   "hi": 0.029911592602729797,
+   "mean": 0.027102183550596237
+  },
+  "150000": {
+   "point": 0.032855866849584414,
+   "lo": 0.029703277349472045,
+   "hi": 0.03610560745000839,
+   "mean": 0.03281788527965546
+  },
+  "250000": {
+   "point": 0.03855564702914682,
+   "lo": 0.03500479012727738,
+   "hi": 0.04185955822467804,
+   "mean": 0.03854743391275406
+  },
+  "500000": {
+   "point": 0.04636941863027033,
+   "lo": 0.0429249033331871,
+   "hi": 0.049735735356807705,
+   "mean": 0.0463789664208889
+  }
+ },
+ "prediction_files": [
+  "n100000_mlp",
+  "n100000_ridge",
+  "n10000_mlp",
+  "n10000_ridge",
+  "n150000_mlp",
+  "n150000_ridge",
+  "n250000_mlp",
+  "n250000_ridge",
+  "n25000_mlp",
+  "n25000_ridge",
+  "n500000_mlp",
+  "n500000_mlp_seed43",
+  "n500000_mlp_seed44",
+  "n500000_ridge",
+  "n50000_mlp",
+  "n50000_mlp_seed43",
+  "n50000_mlp_seed44",
+  "n50000_ridge",
+  "n5000_mlp",
+  "n5000_ridge"
+ ]
+}

@@ -63,6 +63,27 @@ lens. Open ledger rows (all main-pipeline scope) get regression-duty-ONLY
 framing + one named look-hardest row where the diff grazes a concern's
 neighborhood (donor STAGING edit vs the generate-side donor-cache concern).
 
+**Variant (#2378 r16 lenmatch, 2026-08-25): 9a-ter round WITH a real impl
+marker + brief-supplied focus lenses — compose-time artifact probes must run
+from the WORKTREE.** The round posted `epm:experiment-implementation v16`
+(the #958-r5 fetch+inline path; sentinel = impl version = max codex marker+1,
+both aligned). Two deltas: (a) a 9a-ter round's committed artifacts exist
+ONLY on the issue branch — a probe that `cd`s to the repo root (main) gets a
+SILENT empty glob and reads as absence (hit live: the per-fold n_train sweep
+returned nothing from repo root while the earlier summary probe had worked
+because Bash cwd resets to the worktree between calls). Probe from the
+worktree/commit blob (`git show <sha>:<path>`), and treat an empty listing
+from the wrong tree as a wrong-tree symptom, never artifact absence.
+(b) When the brief supplies focus lenses AND spot-check numbers, verify each
+number against the committed JSONs at compose time and inline them as
+attested facts (pooled_r2 4/4 matched; per_bin_min summed to n=996; all 16
+records' n_train/k >= 2.0) — plus attest realized-vs-marker prose deltas
+neutrally (marker said n_train "760-821", realized max 830) and hand
+code-comment-vs-mechanism gaps as named tensions (the k-from-matched-only
+"leg-invariant" comment). Tight shape landed at ~34 KB with the standard
+IMPLEMENTATION MARKER BODY envelope (so the spec's Step-3 grep guard passes
+unmodified) + a ROUND CONTRACT envelope for the dispatch note.
+
 **Variant (#823 P-Gen ladder round, 2026-08-19): the placeholder pattern
 also fires on a 9b PAID/GPU same-issue follow-up round, not only 9a-ter.**
 After the round-1 implementer died to autocompact thrash and was respawned

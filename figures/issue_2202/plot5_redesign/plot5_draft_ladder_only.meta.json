@@ -1,0 +1,132 @@
+{
+  "commit": "956a6d27+dirty",
+  "render_id": "7cca306d626e41fc",
+  "git_commit": "956a6d27d6549d1fb0152f92a0edc82b202b0f4a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2202_plot5_redesign.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2568/concerns.jsonl",
+    "tasks/running/2568/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2202_plot5_redesign.py",
+  "created": "2026-08-25T07:54:31Z",
+  "figsize": [
+    3.4,
+    2.6
+  ],
+  "points": [
+    {
+      "rank-1 failure rate (%, log)": 18.398551453576097,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "rank-1 failure rate (%, log)": 17.181370083492606,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "rank-1 failure rate (%, log)": 11.759380344029776,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "rank-1 failure rate (%, log)": 9.05341514938135,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "rank-1 failure rate (%, log)": 4.647419776682426,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "rank-1 failure rate (%, log)": 2.384065989337089,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "rank-1 failure rate (%, log)": 1.8611670020120725,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank-1 failure rate (%, log)": 0.5533199195171026,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "scoring/target regime ladder (ridge map)",
+        "xlabel": "rank-1 failure rate (%, log)",
+        "legend_labels": [
+          "single-draw targets",
+          "draw-averaged targets"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$"
+        ],
+        "yticklabels": [
+          "raw euclidean (1,829/9,941)",
+          "raw cosine (1,708/9,941)",
+          "centered cosine (1,169/9,941)",
+          "CSLS on raw cosine (900/9,941)",
+          "whitened cosine (462/9,941)",
+          "whitened cosine + CSLS (237/9,941)",
+          "whitened cos + CSLS, covered rows (37/1,988)",
+          "and draw-averaged targets (11/1,988)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

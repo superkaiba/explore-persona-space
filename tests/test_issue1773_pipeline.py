@@ -636,8 +636,9 @@ def test_stage_selection_empty_prefix_fails_loud(tmp_path, monkeypatch):
 
 
 def test_upload_selection_done_gate_skip_and_verify_fail(tmp_path, monkeypatch):
-    """upload_selection: DONE.json gate; transient .tmp_* files excluded from
-    the expected set; already-on-Hub -> skip without uploading; a post-upload
+    """upload_selection: DONE.json gate; transient .tmp_* files AND post-#2336
+    shared non-hidden `<name>.<pid>.<uuid8>.tmp` temps excluded from the
+    expected set; already-on-Hub -> skip without uploading; a post-upload
     verify miss -> fail-loud RuntimeError."""
     import issue1773_evidence_builder as EB
 
@@ -650,6 +651,8 @@ def test_upload_selection_done_gate_skip_and_verify_fail(tmp_path, monkeypatch):
     (sel / "DONE.json").write_text("{}")
     (sel / "inverted_index.npz").write_bytes(b"x")
     (sel / ".tmp_partial.npz").write_bytes(b"x")
+    # Shared atomic_replace temp shape (#2336): non-hidden, ends ".tmp".
+    (sel / "x.npz.12345.abcd1234.tmp").write_bytes(b"x")
 
     calls = {"verify": [], "upload": 0}
     returns = [set()]  # first verify: nothing missing -> skip path
@@ -669,6 +672,10 @@ def test_upload_selection_done_gate_skip_and_verify_fail(tmp_path, monkeypatch):
     exp = calls["verify"][0]
     assert f"{CM.HF_SELECTION_PREFIX}/inverted_index.npz" in exp
     assert not any(".tmp_" in e for e in exp)  # transient files excluded
+    # #2336 shared-temp pin: the non-hidden `*.tmp` shape is excluded too
+    # (issue1773_evidence_builder.py:308-314 listing filter).
+    assert not any(e.endswith(".tmp") for e in exp)
+    assert not any("abcd1234" in e for e in exp)
 
     returns.extend([{"m"}, {"m"}])  # missing before AND after upload
     with pytest.raises(RuntimeError, match="verify FAILED"):

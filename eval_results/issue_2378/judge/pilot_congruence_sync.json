@@ -1,0 +1,46 @@
+{
+  "wave": "congruence",
+  "transport": "sync",
+  "n_items": 210,
+  "verdict": "PASS",
+  "fail_reasons": [],
+  "tally": {
+    "per_family": {
+      "question": {
+        "valid": 209,
+        "rubric_refusal": 1
+      }
+    },
+    "per_cell": {
+      "storyq_astra": {
+        "valid": 209,
+        "rubric_refusal": 1
+      }
+    },
+    "stop_reasons": {
+      "end_turn": 210
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "rubric_sha": "28b5a61cfc267d00",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T06:06:29-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_judge.py",
+      "--wave",
+      "congruence",
+      "--pilot",
+      "200",
+      "--transport",
+      "sync",
+      "--stage-from-hf"
+    ],
+    "git_commit": "ee30ae9e",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}

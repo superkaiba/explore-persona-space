@@ -1,0 +1,47 @@
+[phase=c0-stage]
+2026-08-25 02:52:53,008 [INFO] [job-c] store revision (stage-time): 448d9bd954fc607d5ef3359cf20b0fd6c6db4ed1
+2026-08-25 02:52:54,256 [INFO] [disk-headroom] job-c-stage: out_root=/workspace/eps-issue-1901-mlpdense/staging mount=/workspace free=192.7 GB (floor 12.8 GB) canary=ok
+2026-08-25 02:52:54,892 [INFO] [stage] issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture: 4 files (0.2 GB), 4 to download
+2026-08-25 02:52:59,357 [INFO] [stage] issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture: 4/4 files (4s)
+2026-08-25 02:52:59,358 [INFO] [stage] issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture verified: 4 files, 0.2 GB (4s)
+2026-08-25 02:52:59,594 [INFO] [stage] issue779_monitoring/analysis_tensors/pass_b: 1 files (6.0 GB), 1 to download
+2026-08-25 02:53:15,252 [INFO] [stage] issue779_monitoring/analysis_tensors/pass_b: 1/1 files (16s)
+2026-08-25 02:53:15,253 [INFO] [stage] issue779_monitoring/analysis_tensors/pass_b verified: 1 files, 6.0 GB (16s)
+2026-08-25 02:53:15,480 [INFO] [stage] issue779_monitoring/n1m_readout/weights/L19: 4 files (2.8 GB), 4 to download
+2026-08-25 02:53:29,332 [INFO] [stage] issue779_monitoring/n1m_readout/weights/L19: 4/4 files (14s)
+2026-08-25 02:53:29,333 [INFO] [stage] issue779_monitoring/n1m_readout/weights/L19 verified: 4 files, 2.8 GB (14s)
+[phase=c1-assemble]
+2026-08-25 02:54:56,754 [INFO] [manifest] downloaded 88 files from HF issue779_monitoring/fitter-fair-comparison-n1m/sampling_manifest -> /workspace/eps-issue-1901-mlpdense/staging/work/sampling_manifest
+2026-08-25 02:55:02,322 [INFO] [n1m] 4 chunks (local)
+2026-08-25 02:55:05,129 [INFO] [job-c] assembled n_rows=7000 (lmsys pool 5600)
+2026-08-25 02:55:05,129 [INFO] [job-c] ru_maxrss after c1 assemble: 6.3 GB
+2026-08-25 02:55:05,130 [INFO] [ladder-fits] streaming captures: issue1491_scale_ladder/scale7_refit/train_25k/final_token_capture layer=19
+2026-08-25 02:55:05,438 [INFO] [n1m] --fresh-stream: ignoring any existing stream checkpoint
+2026-08-25 02:57:10,033 [INFO] [n1m] streamed 25/56 chunks
+2026-08-25 02:59:19,629 [INFO] [n1m] streamed 50/56 chunks
+2026-08-25 03:00:03,425 [INFO] [n1m] 56 chunks (HF stream)
+2026-08-25 03:00:03,435 [INFO] [ladder-fits]   train_25k: n=25000
+2026-08-25 03:00:03,436 [INFO] [ladder-fits] streaming captures: issue1491_scale_ladder/scale7_refit/val_400/final_token_capture layer=19
+2026-08-25 03:00:03,671 [INFO] [n1m] --fresh-stream: ignoring any existing stream checkpoint
+2026-08-25 03:00:28,479 [INFO] [n1m] 8 chunks (HF stream)
+2026-08-25 03:00:28,480 [INFO] [ladder-fits]   val_400: n=400
+2026-08-25 03:00:28,480 [INFO] [ladder-fits] streaming captures: issue1491_scale_ladder/scale7_refit/test_1000/final_token_capture layer=19
+2026-08-25 03:00:28,762 [INFO] [n1m] --fresh-stream: ignoring any existing stream checkpoint
+2026-08-25 03:00:53,101 [INFO] [n1m] 8 chunks (HF stream)
+2026-08-25 03:00:53,102 [INFO] [ladder-fits]   test_1000: n=1000
+2026-08-25 03:00:53,103 [INFO] [ladder-fits] streaming captures: issue1491_scale_ladder/scale7_refit/wc_test_1k/final_token_capture layer=19
+2026-08-25 03:00:53,336 [INFO] [n1m] --fresh-stream: ignoring any existing stream checkpoint
+2026-08-25 03:01:20,731 [INFO] [n1m] 8 chunks (HF stream)
+2026-08-25 03:01:20,732 [INFO] [ladder-fits]   wc_test_1k: n=999
+Traceback (most recent call last):
+  File "/workspace/explore-persona-space/scripts/issue1901_paper_densify_mlp.py", line 2001, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/workspace/explore-persona-space/scripts/issue1901_paper_densify_mlp.py", line 1992, in main
+    run_job_c(args, dev, out_c)
+  File "/workspace/explore-persona-space/scripts/issue1901_paper_densify_mlp.py", line 1178, in run_job_c
+    gates["G1"] = _g1_fold_identity(asm, Y, val, test)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/explore-persona-space/scripts/issue1901_paper_densify_mlp.py", line 735, in _g1_fold_identity
+    raise RuntimeError(
+RuntimeError: G1 FAIL: scale7 val_400 context-id set != n1m val id set (n_scale7=400, n_n1m=400)

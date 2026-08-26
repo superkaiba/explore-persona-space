@@ -1,0 +1,1315 @@
+{
+ "convention": "margins/ranks under whitened cosine + CSLS (k=10); operating point = draw-AVERAGED covered pool rows (avgtgt_completion), 1,988 covered rows vs the 9,941 pool; single-draw regime = all 9,941 rows; margin = true-answer CSLS score minus best competitor (positive iff rank 1)",
+ "margin_distribution_covered_avg": {
+  "n_pass": 1977,
+  "pass_margin_percentiles": {
+   "1": 0.028296267912648044,
+   "5": 0.06416755550239073,
+   "25": 0.12780356469693066,
+   "50": 0.17538941457905327,
+   "75": 0.2179502655628157,
+   "95": 0.27202116265531656
+  },
+  "n_fail": 11,
+  "fail_margins": [
+   -0.13065271930192043,
+   -0.09992654054235278,
+   -0.08456707338487716,
+   -0.06328328164476454,
+   -0.03442570442036458,
+   -0.025146486655935885,
+   -0.025094149292535062,
+   -0.01631706508532277,
+   -0.010090052999953372,
+   -0.006271221714452831,
+   -0.005001390376383141
+  ]
+ },
+ "failures_avg": [
+  {
+   "ci": 12765,
+   "rank": 23.0,
+   "margin": -0.09992654054235278,
+   "competitor_ci": 36460,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 4
+  },
+  {
+   "ci": 18697,
+   "rank": 9.0,
+   "margin": -0.025146486655935885,
+   "competitor_ci": 74358,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "mixed",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 23945,
+   "rank": 3.0,
+   "margin": -0.06328328164476454,
+   "competitor_ci": 15371,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 4
+  },
+  {
+   "ci": 25708,
+   "rank": 2.0,
+   "margin": -0.01631706508532277,
+   "competitor_ci": 41654,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 27413,
+   "rank": 3.0,
+   "margin": -0.010090052999953372,
+   "competitor_ci": 29184,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 51000,
+   "rank": 2.0,
+   "margin": -0.025094149292535062,
+   "competitor_ci": 9721,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "zh",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 57671,
+   "rank": 4.0,
+   "margin": -0.006271221714452831,
+   "competitor_ci": 94531,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "zh",
+    "format": "mixed",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 3
+  },
+  {
+   "ci": 67184,
+   "rank": 3.0,
+   "margin": -0.005001390376383141,
+   "competitor_ci": 27044,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 3
+  },
+  {
+   "ci": 72669,
+   "rank": 14.0,
+   "margin": -0.08456707338487716,
+   "competitor_ci": 95250,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "zh",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 8
+  },
+  {
+   "ci": 72816,
+   "rank": 3.0,
+   "margin": -0.03442570442036458,
+   "competitor_ci": 55021,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 4
+  },
+  {
+   "ci": 93209,
+   "rank": 7.0,
+   "margin": -0.13065271930192043,
+   "competitor_ci": 97101,
+   "labels_1738": {
+    "topic": "translation",
+    "language": "ko",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "partial"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  }
+ ],
+ "near_misses_avg": [
+  {
+   "ci": 19808,
+   "rank": 1.0,
+   "margin": 0.002503029004591817,
+   "competitor_ci": 28276,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 3
+  },
+  {
+   "ci": 98939,
+   "rank": 1.0,
+   "margin": 0.006513134838268764,
+   "competitor_ci": 99015,
+   "labels_1738": {
+    "topic": "summarization_extraction",
+    "language": "zh",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 14536,
+   "rank": 1.0,
+   "margin": 0.006538646175835966,
+   "competitor_ci": 36630,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 4
+  },
+  {
+   "ci": 64188,
+   "rank": 1.0,
+   "margin": 0.00677948492786995,
+   "competitor_ci": 77009,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "zh",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 11815,
+   "rank": 1.0,
+   "margin": 0.008164496295036225,
+   "competitor_ci": 6306,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "es",
+    "format": "list",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 3
+  },
+  {
+   "ci": 9802,
+   "rank": 1.0,
+   "margin": 0.011213870302883122,
+   "competitor_ci": 3588,
+   "labels_1738": {
+    "topic": "harmful_or_unsafe_request",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "yes",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 61498,
+   "rank": 1.0,
+   "margin": 0.013734374145824915,
+   "competitor_ci": 70553,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "zh",
+    "format": "mixed",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 14014,
+   "rank": 1.0,
+   "margin": 0.014306228092277551,
+   "competitor_ci": 16652,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 34664,
+   "rank": 1.0,
+   "margin": 0.014870111058138666,
+   "competitor_ci": 40712,
+   "labels_1738": {
+    "topic": "nsfw",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "yes",
+    "answer_is_refusal": "partial"
+   },
+   "corpus": "lmsys",
+   "depth": 8
+  },
+  {
+   "ci": 26288,
+   "rank": 1.0,
+   "margin": 0.01580066777331196,
+   "competitor_ci": 23928,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 84451,
+   "rank": 1.0,
+   "margin": 0.016025510127591944,
+   "competitor_ci": 25830,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "zh",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 11
+  },
+  {
+   "ci": 79897,
+   "rank": 1.0,
+   "margin": 0.01938875539574901,
+   "competitor_ci": 60487,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 9263,
+   "rank": 1.0,
+   "margin": 0.022114737980464566,
+   "competitor_ci": 13153,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 3
+  },
+  {
+   "ci": 42812,
+   "rank": 1.0,
+   "margin": 0.02229184627803593,
+   "competitor_ci": 22094,
+   "labels_1738": {
+    "topic": "chitchat_social",
+    "language": "zh",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 22786,
+   "rank": 1.0,
+   "margin": 0.022616653865343034,
+   "competitor_ci": 2844,
+   "labels_1738": {
+    "topic": "nsfw",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "borderline",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 26401,
+   "rank": 1.0,
+   "margin": 0.023288874625730982,
+   "competitor_ci": 16932,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 58449,
+   "rank": 1.0,
+   "margin": 0.02357304206500277,
+   "competitor_ci": 64955,
+   "labels_1738": {
+    "topic": "nsfw",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "yes",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 80163,
+   "rank": 1.0,
+   "margin": 0.02394430245763221,
+   "competitor_ci": 79868,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 24751,
+   "rank": 1.0,
+   "margin": 0.025406207510196593,
+   "competitor_ci": 598,
+   "labels_1738": {
+    "topic": "creative_writing",
+    "language": "en",
+    "format": "mixed",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 12
+  },
+  {
+   "ci": 15607,
+   "rank": 1.0,
+   "margin": 0.027555575112336,
+   "competitor_ci": 55763,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "pt",
+    "format": "list",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 86911,
+   "rank": 1.0,
+   "margin": 0.028530170902220264,
+   "competitor_ci": 86663,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "en",
+    "format": "list",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 16932,
+   "rank": 1.0,
+   "margin": 0.02854788885655818,
+   "competitor_ci": 26401,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  },
+  {
+   "ci": 56976,
+   "rank": 1.0,
+   "margin": 0.028556041638379284,
+   "competitor_ci": 36038,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "prose",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "wildchat",
+   "depth": 2
+  },
+  {
+   "ci": 30272,
+   "rank": 1.0,
+   "margin": 0.03076373316107628,
+   "competitor_ci": 4091,
+   "labels_1738": {
+    "topic": "coding",
+    "language": "en",
+    "format": "code",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 4
+  },
+  {
+   "ci": 4616,
+   "rank": 1.0,
+   "margin": 0.03172744596185356,
+   "competitor_ci": 39865,
+   "labels_1738": {
+    "topic": "factual_qa",
+    "language": "en",
+    "format": "mixed",
+    "request_refusal_adjacent": "no",
+    "answer_is_refusal": "no"
+   },
+   "corpus": "lmsys",
+   "depth": 2
+  }
+ ],
+ "single_draw_tail": {
+  "rank_threshold": 10.0,
+  "n": 26,
+  "rows": [
+   {
+    "ci": 1292,
+    "rank": 14.0,
+    "margin": -0.13525750534752,
+    "competitor_ci": 4703,
+    "labels_1738": {
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 2
+   },
+   {
+    "ci": 3614,
+    "rank": 267.0,
+    "margin": -0.07806277029783726,
+    "competitor_ci": 59377,
+    "labels_1738": {
+     "topic": "factual_qa",
+     "language": "pt",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 2
+   },
+   {
+    "ci": 5216,
+    "rank": 16.0,
+    "margin": -0.11594246859157509,
+    "competitor_ci": 28136,
+    "labels_1738": {
+     "topic": "chitchat_social",
+     "language": "pt",
+     "format": "mixed",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 8
+   },
+   {
+    "ci": 8787,
+    "rank": 239.0,
+    "margin": -0.04763561631952294,
+    "competitor_ci": 19489,
+    "labels_1738": {
+     "topic": "coding",
+     "language": "es",
+     "format": "code",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 6
+   },
+   {
+    "ci": 10420,
+    "rank": 11.0,
+    "margin": -0.03942582888922471,
+    "competitor_ci": 91675,
+    "labels_1738": {
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed",
+     "request_refusal_adjacent": "borderline",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 3
+   },
+   {
+    "ci": 12765,
+    "rank": 24.0,
+    "margin": -0.08997398893606916,
+    "competitor_ci": 36460,
+    "labels_1738": {
+     "topic": "coding",
+     "language": "en",
+     "format": "code",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 4
+   },
+   {
+    "ci": 13939,
+    "rank": 12.0,
+    "margin": -0.04034173175564153,
+    "competitor_ci": 33228,
+    "labels_1738": {
+     "topic": "factual_qa",
+     "language": "ko",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 3
+   },
+   {
+    "ci": 15725,
+    "rank": 44.0,
+    "margin": -0.09817139891286103,
+    "competitor_ci": 88966,
+    "labels_1738": {
+     "topic": "factual_qa",
+     "language": "ko",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 12
+   },
+   {
+    "ci": 16803,
+    "rank": 35.0,
+    "margin": -0.07643877860502975,
+    "competitor_ci": 55041,
+    "labels_1738": {
+     "topic": "translation",
+     "language": "en",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 3
+   },
+   {
+    "ci": 18697,
+    "rank": 11.0,
+    "margin": -0.037603422377631576,
+    "competitor_ci": 74358,
+    "labels_1738": {
+     "topic": "coding",
+     "language": "en",
+     "format": "mixed",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 2
+   },
+   {
+    "ci": 20448,
+    "rank": 18.0,
+    "margin": -0.09230919775346716,
+    "competitor_ci": 25825,
+    "labels_1738": {
+     "topic": "creative_writing",
+     "language": "en",
+     "format": "prose",
+     "request_refusal_adjacent": "yes",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 3
+   },
+   {
+    "ci": 28414,
+    "rank": 28.0,
+    "margin": -0.17091960099062026,
+    "competitor_ci": 25841,
+    "labels_1738": {
+     "topic": "chitchat_social",
+     "language": "ar",
+     "format": "list",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 2
+   },
+   {
+    "ci": 36922,
+    "rank": 13.0,
+    "margin": -0.13169740305177471,
+    "competitor_ci": 4703,
+    "labels_1738": {
+     "topic": "factual_qa",
+     "language": "en",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 2
+   },
+   {
+    "ci": 42506,
+    "rank": 65.0,
+    "margin": -0.07738248669031252,
+    "competitor_ci": 96933,
+    "labels_1738": {
+     "topic": "factual_qa",
+     "language": "de",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "lmsys",
+    "depth": 8
+   },
+   {
+    "ci": 56861,
+    "rank": 24.0,
+    "margin": -0.1773259487796423,
+    "competitor_ci": 91149,
+    "labels_1738": {
+     "topic": "translation",
+     "language": "en",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   },
+   {
+    "ci": 61065,
+    "rank": 29.0,
+    "margin": -0.05769280948106806,
+    "competitor_ci": 24349,
+    "labels_1738": {
+     "topic": "nsfw",
+     "language": "de",
+     "format": "mixed",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   },
+   {
+    "ci": 70059,
+    "rank": 149.0,
+    "margin": -0.1335294031481571,
+    "competitor_ci": 59738,
+    "labels_1738": {
+     "topic": "translation",
+     "language": "en",
+     "format": "mixed",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   },
+   {
+    "ci": 74101,
+    "rank": 11.0,
+    "margin": -0.04265194460950682,
+    "competitor_ci": 86880,
+    "labels_1738": {
+     "topic": "coding",
+     "language": "en",
+     "format": "code",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 5
+   },
+   {
+    "ci": 81882,
+    "rank": 30.0,
+    "margin": -0.09733433412723072,
+    "competitor_ci": 84122,
+    "labels_1738": {
+     "topic": "coding",
+     "language": "ru",
+     "format": "code",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 3
+   },
+   {
+    "ci": 83659,
+    "rank": 48.0,
+    "margin": -0.05093638992495916,
+    "competitor_ci": 30118,
+    "labels_1738": {
+     "topic": "creative_writing",
+     "language": "ru",
+     "format": "code",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   },
+   {
+    "ci": 88484,
+    "rank": 18.0,
+    "margin": -0.24470230496383705,
+    "competitor_ci": 90377,
+    "labels_1738": {
+     "topic": "translation",
+     "language": "ko",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   },
+   {
+    "ci": 93561,
+    "rank": 12.0,
+    "margin": -0.09912439757876208,
+    "competitor_ci": 49997,
+    "labels_1738": {
+     "topic": "chitchat_social",
+     "language": "en",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 6
+   },
+   {
+    "ci": 93935,
+    "rank": 13.0,
+    "margin": -0.08595544175757844,
+    "competitor_ci": 84365,
+    "labels_1738": {
+     "topic": "translation",
+     "language": "fa",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   },
+   {
+    "ci": 96155,
+    "rank": 15.0,
+    "margin": -0.05693401129969586,
+    "competitor_ci": 83149,
+    "labels_1738": {
+     "topic": "advice_howto",
+     "language": "fa",
+     "format": "list",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 3
+   },
+   {
+    "ci": 96476,
+    "rank": 20.0,
+    "margin": -0.054716364556347666,
+    "competitor_ci": 96458,
+    "labels_1738": {
+     "topic": "factual_qa",
+     "language": "tr",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 3
+   },
+   {
+    "ci": 98411,
+    "rank": 15.0,
+    "margin": -0.0354453872369008,
+    "competitor_ci": 94797,
+    "labels_1738": {
+     "topic": "creative_writing",
+     "language": "fa",
+     "format": "prose",
+     "request_refusal_adjacent": "no",
+     "answer_is_refusal": "no"
+    },
+    "corpus": "wildchat",
+    "depth": 2
+   }
+  ]
+ },
+ "composition": {
+  "covered_base_rates_n1988": {
+   "topic": {
+    "creative_writing": 333,
+    "nsfw": 42,
+    "coding": 328,
+    "harmful_or_unsafe_request": 47,
+    "factual_qa": 620,
+    "chitchat_social": 122,
+    "summarization_extraction": 55,
+    "advice_howto": 230,
+    "roleplay_persona": 53,
+    "other": 20,
+    "math": 53,
+    "translation": 82,
+    "None": 3
+   },
+   "language": {
+    "en": 1174,
+    "es": 83,
+    "de": 36,
+    "ru": 178,
+    "fr": 67,
+    "pt": 67,
+    "nl": 2,
+    "tr": 5,
+    "it": 33,
+    "el": 4,
+    "id": 5,
+    "zh": 239,
+    "ko": 13,
+    "bg": 1,
+    "ar": 22,
+    "fi": 1,
+    "ja": 6,
+    "cs": 3,
+    "pl": 8,
+    "vi": 7,
+    "None": 3,
+    "hi": 1,
+    "uk": 6,
+    "fa": 13,
+    "he": 1,
+    "ta": 1,
+    "sr": 1,
+    "hu": 3,
+    "ms": 1,
+    "sl": 1,
+    "kk": 1,
+    "ro": 2
+   },
+   "format": {
+    "prose": 1073,
+    "code": 182,
+    "mixed": 447,
+    "list": 283,
+    "None": 3
+   },
+   "request_refusal_adjacent": {
+    "no": 1836,
+    "yes": 93,
+    "borderline": 56,
+    "None": 3
+   },
+   "answer_is_refusal": {
+    "no": 1906,
+    "partial": 49,
+    "yes": 30,
+    "None": 3
+   },
+   "corpus": {
+    "lmsys": 1003,
+    "wildchat": 985
+   },
+   "depth_ge3": {
+    "False": 830,
+    "True": 1158
+   }
+  },
+  "failures_avg_n11": {
+   "topic": {
+    "coding": 3,
+    "factual_qa": 3,
+    "creative_writing": 4,
+    "translation": 1
+   },
+   "language": {
+    "en": 7,
+    "zh": 3,
+    "ko": 1
+   },
+   "format": {
+    "code": 2,
+    "mixed": 2,
+    "prose": 7
+   },
+   "request_refusal_adjacent": {
+    "no": 11
+   },
+   "answer_is_refusal": {
+    "no": 10,
+    "partial": 1
+   },
+   "corpus": {
+    "lmsys": 5,
+    "wildchat": 6
+   },
+   "depth_ge3": {
+    "True": 6,
+    "False": 5
+   }
+  },
+  "near_misses_n25": {
+   "topic": {
+    "coding": 11,
+    "summarization_extraction": 1,
+    "creative_writing": 3,
+    "factual_qa": 5,
+    "harmful_or_unsafe_request": 1,
+    "nsfw": 3,
+    "chitchat_social": 1
+   },
+   "language": {
+    "en": 18,
+    "zh": 5,
+    "es": 1,
+    "pt": 1
+   },
+   "format": {
+    "code": 8,
+    "prose": 11,
+    "list": 3,
+    "mixed": 3
+   },
+   "request_refusal_adjacent": {
+    "no": 21,
+    "yes": 3,
+    "borderline": 1
+   },
+   "answer_is_refusal": {
+    "no": 24,
+    "partial": 1
+   },
+   "corpus": {
+    "lmsys": 16,
+    "wildchat": 9
+   },
+   "depth_ge3": {
+    "True": 8,
+    "False": 17
+   }
+  },
+  "holdout_base_rates_n9941": {
+   "topic": {
+    "factual_qa": 2996,
+    "creative_writing": 1604,
+    "math": 311,
+    "nsfw": 209,
+    "coding": 1586,
+    "chitchat_social": 608,
+    "advice_howto": 1297,
+    "summarization_extraction": 299,
+    "harmful_or_unsafe_request": 267,
+    "None": 16,
+    "roleplay_persona": 252,
+    "translation": 414,
+    "other": 82
+   },
+   "language": {
+    "en": 5870,
+    "ru": 950,
+    "es": 408,
+    "zh": 1132,
+    "de": 159,
+    "it": 164,
+    "pt": 295,
+    "None": 16,
+    "fr": 307,
+    "ja": 34,
+    "ar": 119,
+    "sv": 9,
+    "uk": 24,
+    "ko": 81,
+    "hu": 16,
+    "tl": 4,
+    "pl": 62,
+    "nl": 15,
+    "tr": 52,
+    "vi": 50,
+    "el": 12,
+    "sk": 3,
+    "id": 26,
+    "bg": 4,
+    "bs": 1,
+    "no": 3,
+    "fa": 55,
+    "fi": 4,
+    "lt": 3,
+    "da": 5,
+    "cs": 8,
+    "ro": 11,
+    "sr": 3,
+    "ca": 3,
+    "bn": 3,
+    "uz": 2,
+    "he": 3,
+    "th": 5,
+    "eo": 1,
+    "hi": 5,
+    "hr": 2,
+    "ta": 1,
+    "lv": 2,
+    "et": 1,
+    "sa": 1,
+    "ms": 1,
+    "kk": 2,
+    "os": 1,
+    "sl": 2,
+    "ur": 1
+   },
+   "format": {
+    "prose": 5341,
+    "mixed": 2307,
+    "code": 755,
+    "list": 1522,
+    "None": 16
+   },
+   "request_refusal_adjacent": {
+    "no": 9134,
+    "yes": 519,
+    "None": 16,
+    "borderline": 272
+   },
+   "answer_is_refusal": {
+    "no": 9505,
+    "partial": 216,
+    "yes": 204,
+    "None": 16
+   },
+   "corpus": {
+    "lmsys": 5016,
+    "wildchat": 4925
+   },
+   "depth_ge3": {
+    "False": 4154,
+    "True": 5787
+   }
+  },
+  "single_draw_tail": {
+   "topic": {
+    "coding": 6,
+    "factual_qa": 6,
+    "chitchat_social": 3,
+    "translation": 6,
+    "creative_writing": 3,
+    "nsfw": 1,
+    "advice_howto": 1
+   },
+   "language": {
+    "en": 11,
+    "pt": 2,
+    "es": 1,
+    "ko": 3,
+    "ar": 1,
+    "de": 2,
+    "ru": 2,
+    "fa": 3,
+    "tr": 1
+   },
+   "format": {
+    "mixed": 6,
+    "prose": 13,
+    "code": 5,
+    "list": 2
+   },
+   "request_refusal_adjacent": {
+    "no": 24,
+    "borderline": 1,
+    "yes": 1
+   },
+   "answer_is_refusal": {
+    "no": 26
+   },
+   "corpus": {
+    "lmsys": 14,
+    "wildchat": 12
+   },
+   "depth_ge3": {
+    "False": 12,
+    "True": 14
+   }
+  }
+ },
+ "meta": {
+  "generated_utc": "2026-08-25T16:44:09.894418+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "ade0098a38d1da398e0dacaa0c989ab8ea464c52",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue2202_plot5_failchar_tail.py",
+   "eval_results/issue_2474/n1m_map_arms.json",
+   "figures/issue_2564/sep_ratio_by_change_type.meta.json",
+   "figures/issue_2564/sep_ratio_by_change_type.pdf",
+   "figures/issue_2564/sep_ratio_by_change_type.png",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+   "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+   "figures/paper/c1_layer_profile.meta.json",
+   "figures/paper/c1_layer_profile.pdf",
+   "figures/paper/c1_layer_profile.png",
+   "figures/paper/c1_scaling_train_pool.meta.json",
+   "figures/paper/c1_scaling_train_pool.pdf",
+   "figures/paper/c1_scaling_train_pool.png",
+   "figures/paper/c1_stage_retention.meta.json",
+   "figures/paper/c1_stage_retention.pdf",
+   "figures/paper/c1_stage_retention.png",
+   "figures/paper/c3_persona_direction_spectrum.meta.json",
+   "figures/paper/c3_persona_direction_spectrum.pdf",
+   "figures/paper/c3_persona_direction_spectrum.png",
+   "figures/paper/c4_speaker_ladder.meta.json",
+   "figures/paper/c4_speaker_ladder.pdf",
+   "figures/paper/c4_speaker_ladder.png",
+   "scripts/issue1901_avgtarget_plots.py",
+   "scripts/issue2054_paper_speaker_ladder_fig.py",
+   "scripts/issue2474_n1m_map.py",
+   "scripts/issue2564_sep_ratio_plot.py",
+   "scripts/issue2564_type_reads_plot.py",
+   "scripts/issue779_plot3_redesign.py",
+   "tasks/completed/2214/body.md",
+   "tasks/completed/2214/comments.jsonl",
+   "tasks/completed/2214/concerns.jsonl",
+   "tasks/completed/2214/events.jsonl",
+   "tasks/completed/2214/plans/plan.md",
+   "tasks/completed/2214/plans/v1.md",
+   "tasks/completed/2214/plans/v2.md",
+   "tasks/completed/2214/plans/v3.md",
+   "tasks/proposed/2416/body.md",
+   "tasks/proposed/2416/comments.jsonl",
+   "tasks/proposed/2416/events.jsonl",
+   "tasks/running/2502/events.jsonl",
+   "tasks/running/2568/events.jsonl",
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2202_plot5_failchar_tail.py"
+ }
+}

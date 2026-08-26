@@ -1,0 +1,138 @@
+{
+  "val_r2": 0.8090476386190875,
+  "test_r2": 0.810358327392884,
+  "test_ci": {
+    "r2": {
+      "point": 0.810358327392884,
+      "lo": 0.8007243229058604,
+      "hi": 0.8193163685792642
+    },
+    "mean_cosine": {
+      "point": 0.9649279471975014,
+      "lo": 0.9630879789605912,
+      "hi": 0.9666439819420959
+    },
+    "n_test": 1000
+  },
+  "knn": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.841,
+        "5": 0.929,
+        "10": 0.974,
+        "50": 0.996
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8845658850358727
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.833,
+        "5": 0.924,
+        "10": 0.971,
+        "50": 0.995
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.880150611567158
+    }
+  },
+  "whitened_csls": {
+    "acc_at_k": {
+      "1": 0.9,
+      "5": 0.964,
+      "10": 1.0
+    },
+    "chance_at_k": {
+      "1": 0.001,
+      "5": 0.005,
+      "10": 0.01
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9325360389610389,
+    "n_pool": 1000,
+    "k_csls": 10,
+    "whitening": {
+      "lam": 0.1,
+      "stats": "train-pool mu_A + shrunk-Cholesky L"
+    }
+  },
+  "whitened_cosine": {
+    "acc_at_k": {
+      "1": 0.896,
+      "5": 0.96,
+      "10": 1.0
+    },
+    "chance_at_k": {
+      "1": 0.001,
+      "5": 0.005,
+      "10": 0.01
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9284610389610389,
+    "n_pool": 1000,
+    "k_csls": 10,
+    "whitening": {
+      "lam": 0.1,
+      "stats": "train-pool mu_A + shrunk-Cholesky L"
+    }
+  },
+  "applied_banked_weights": "issue779_monitoring/n1m_readout/weights/L19/mlp_w8192.pt",
+  "fingerprint": {
+    "arm": "mlp_apply",
+    "n": 5600,
+    "source": "n1m",
+    "sel_name": "mixed_1m",
+    "sel_sha256": "5ad434e96d7f5fd2578ea6a0e3a14fa4742602a292a89053efe3623367998ee0",
+    "code_sha": "22d0b98fdd60f033e74292c34c5f6642848985ec",
+    "store_revision": "0620bbd6adbc88cba4af8974ed6006f47844ea04",
+    "pythonhashseed": "0",
+    "seed": 42,
+    "seed_b": 0,
+    "seeds": [
+      42
+    ],
+    "recipe": {
+      "estimator": "banked-weights apply_map",
+      "weights_prefix": "issue779_monitoring/n1m_readout/weights/L19"
+    },
+    "metrics": {
+      "n_boot": 1000,
+      "bootstrap": "FFC._bootstrap_recon_ci (context resample; per-cell seeded)",
+      "whiten": {
+        "pool_sha256": "5ad434e96d7f5fd2578ea6a0e3a14fa4742602a292a89053efe3623367998ee0",
+        "lam": 0.1,
+        "helper": "null_battery.shrunk_cholesky_from_cov"
+      },
+      "k_csls": 10,
+      "knn_ks": [
+        1,
+        5,
+        10,
+        50
+      ],
+      "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+      "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+      "eval_store": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture"
+    },
+    "smoke_chunks": 4,
+    "layer": 19
+  }
+}

@@ -11,3 +11,4 @@
 - [Spelled-out literal sweep blindspot](feedback_spelled_out_literal_sweep_blindspot.md) — On cap/constant sweep diffs, grep spelled-out English old-value forms ("Five rounds") too; every sweep instrument is digit-keyed (#2391 r1).
 - [Bg-lint wrapper rc masking](feedback_bg_lint_wrapper_rc_masking.md) — A background compound's exit 0 masks an inner lint timeout-kill (rc=124); require the `workflow_lint: PASS` line, re-fence 1500s under contention (#2263 r3).
 - [Opportunistic prod assert misses blind-spot enum](feedback_opportunistic_prod_assert_misses_blindspot_enum.md) — Fix-born `if production:` asserts skip the smoke enumeration update; grep round diff for production-gated asserts vs the enumeration block (#2476 r2).
+- [Annotated machine-parsed marker line](feedback_annotated_machine_parsed_marker_line.md) — RUN check-smoke-arch-registry each round: a trailing parenthetical on `arm-registry:` REFUSEs the checker even with byte-correct substance (#2546 r5).

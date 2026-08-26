@@ -903,7 +903,12 @@ semantic change to this contract): a bare backtick HF-style artifact path
 (`issue<N>_...` prefix, or a `raw_completions`/`analysis_tensors` path) in
 the footer must sit in the same bullet/paragraph as a pinned
 `huggingface.co` `/tree|/resolve|/blob/<rev>` link or carry `@ <rev>`
-immediately after it (`verify_task_body.py` check 44, #1509).
+immediately after it (`verify_task_body.py` check 44, #1509). Enforcement
+note (check 61, WARN — no semantic change to this contract): a footer
+naming a code branch/commit sha (`@ <sha>`) or a bare backtick
+`eval_results/` path must sit in the same bullet/paragraph as a SHA-pinned
+`github.com` `/blob|/tree/<sha>` link (`verify_task_body.py` check 61,
+#2340).
 
 ### Stray `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` / `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` is a FAIL (v4)
 

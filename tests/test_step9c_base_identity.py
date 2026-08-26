@@ -135,6 +135,15 @@ def _build_synced_repo(d: Path) -> Path:
     # The Step 5a sibling-sync arm's own idiom: checkout main's copy, commit.
     _git(repo, "checkout", "main", "--", _SIB_SCRIPT, _SIB_TEST)
     _git(repo, "commit", "-q", "-m", "sync workflow-surface specs from origin/main")
+    # Materialize every WORKFLOW_INVARIANT member (the _make_tree convention in
+    # tests/test_select_step9c_tests.py): since #2537, main()'s SELECTION path
+    # fails CLOSED on a nonempty missing_invariants(), so any sel.main run on
+    # this fixture needs the members present. UNTRACKED by design — invisible
+    # to every diff this file exercises.
+    for inv in sel.WORKFLOW_INVARIANT:
+        p = repo / inv
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("# invariant stub\n")
     return repo
 
 
@@ -229,12 +238,10 @@ def test_sync_only_branch_exclusion_is_loud(scratch_dir: Path, capsys):
     the ``if not touched`` guard short-circuited the audit and the exclusion
     was the one silent case."""
     repo = _build_synced_repo(scratch_dir)  # NO branch edit: sync commit only
-    # Seed one invariant member so the invariant-only fallback selection is
-    # non-empty (an empty selection is main()'s own fail-loud exit 1, which
-    # would swallow the JSON under test). Untracked -> invisible to the diff.
-    inv0 = Path(repo) / sel.WORKFLOW_INVARIANT[0]
-    inv0.parent.mkdir(parents=True, exist_ok=True)
-    inv0.write_text("# invariant stub\n")
+    # _build_synced_repo materializes every invariant member (untracked), so
+    # the invariant-only fallback selection is non-empty (an empty selection
+    # is main()'s own fail-loud exit 1, which would swallow the JSON under
+    # test) AND the #2537 fail-closed missing-invariant refusal stays quiet.
     rc = sel.main(["--json", "--repo-root", str(repo), "--base", "main"])
     captured = capsys.readouterr()
     assert rc == 0

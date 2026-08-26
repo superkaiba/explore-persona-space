@@ -55,6 +55,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -756,16 +757,14 @@ def _stream_with_cache(
 
     # Persist pool FIRST, meta LAST (meta presence == pool complete).
     cache_dir.mkdir(parents=True, exist_ok=True)
-    tmp_pool = cache_dir / (pool_path.name + ".tmp")
-    with open(tmp_pool, "w", encoding="utf-8") as f:
-        for row in results:
-            f.write(json.dumps(row, ensure_ascii=False))
-            f.write("\n")
-    os.replace(tmp_pool, pool_path)
-    tmp_meta = cache_dir / (meta_path.name + ".tmp")
-    with open(tmp_meta, "w", encoding="utf-8") as f:
-        json.dump({"fingerprint": fp, **stats}, f, indent=2)
-    os.replace(tmp_meta, meta_path)
+    with atomic_replace(pool_path) as tmp_pool:
+        with open(tmp_pool, "w", encoding="utf-8") as f:
+            for row in results:
+                f.write(json.dumps(row, ensure_ascii=False))
+                f.write("\n")
+    with atomic_replace(meta_path) as tmp_meta:
+        with open(tmp_meta, "w", encoding="utf-8") as f:
+            json.dump({"fingerprint": fp, **stats}, f, indent=2)
     logger.info(
         "[stream-cache %s] persisted %d rows -> %s (+ fingerprint sidecar)",
         source_tag,

@@ -105,6 +105,7 @@ tests/test_sparse_worktree.py
 tests/test_step0_enumerator_total_form.py
 tests/test_step10d_guard3.py
 tests/test_step10d_guards.py
+tests/test_step9c_constructed_path_consumers.py
 tests/test_step_completed_resume.py
 tests/test_suffixed_pod_completion_teardown_pin.py
 tests/test_task_workflow.py

@@ -67,6 +67,7 @@ import issue779_fitter_fair_comparison as FFC  # noqa: E402
 import issue779_percontext_recon as PR  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as MB  # noqa: E402
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
     git_provenance,
@@ -104,10 +105,8 @@ GRID_BIG_NS = (5000, 10000, 15000, 20000, 25000)
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, default=str))
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, default=str))
 
 
 def _resume_ok(path: Path, regime: dict) -> dict | None:
@@ -293,15 +292,15 @@ def _stage_ladder_split(split: str, layers: tuple[int, ...], staged_dir: Path, c
         if (i + 1) % 25 == 0:
             print(f"[ladder-stage] {split}: {i + 1}/{len(names)} chunks", flush=True)
     out = {li: (np.concatenate(cx_parts[li]), np.concatenate(vx_parts[li])) for li in layers}
-    staged_dir.mkdir(parents=True, exist_ok=True)
-    tmp = staged.with_name(f"{split}.tmp.npz")  # suffix stays .npz (np.savez appends it otherwise)
-    np.savez(
-        tmp,
-        ci=np.array(ci, dtype=np.int64),
-        **{f"cx_L{li}": out[li][0] for li in layers},
-        **{f"vx_L{li}": out[li][1] for li in layers},
-    )
-    tmp.replace(staged)
+    # open-handle np.savez: the yielded tmp ends .tmp and np.savez APPENDS .npz
+    # to path-typed names lacking it (#1092 trap); numpy never appends to handles.
+    with atomic_replace(staged) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            ci=np.array(ci, dtype=np.int64),
+            **{f"cx_L{li}": out[li][0] for li in layers},
+            **{f"vx_L{li}": out[li][1] for li in layers},
+        )
     print(f"[ladder-stage] {split}: staged {len(ci)} rows -> {staged}", flush=True)
     return out, ci
 

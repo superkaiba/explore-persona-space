@@ -35,7 +35,6 @@ import argparse
 import gc
 import json
 import logging
-import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -45,6 +44,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM run)
@@ -83,9 +83,11 @@ def _chunk_ci(name: str, cache_dir: Path, ci_dir: Path) -> np.ndarray:
     rows = json.loads(got.read_text())["rows"]
     ci = np.asarray([int(r["ci"]) for r in rows], dtype=np.int64)
     got.unlink()  # raw text (LMSYS/WildChat) is transient — never cached by this script
-    tmp = ci_dir / f"{name}.ci.tmp.npy"
-    np.save(tmp, ci)
-    os.replace(tmp, out)
+    # Handle-form np.save (the yielded tmp ends ".tmp"; numpy appends ".npy"
+    # to path-typed names lacking it — #2336 recipe edge (c)).
+    with atomic_replace(out) as tmp:
+        with open(tmp, "wb") as fh:
+            np.save(fh, ci)
     return ci
 
 
@@ -225,23 +227,23 @@ def reconstruct(args) -> dict:
 
     # Atomic writes into the scratch dir the analysis driver reads.
     args.scratch.mkdir(parents=True, exist_ok=True)
-    npz_tmp = args.scratch / "split_indices.npz.tmp"
-    with open(npz_tmp, "wb") as f:
-        np.savez(
-            f,
-            train_full=train_full,
-            train_lmsys=pools["lmsys"],
-            val=val,
-            test=test,
-            holdout=holdout,
-            sae_fit=sae_fit,
-            sae_val=sae_val,
-        )
-    os.replace(npz_tmp, args.scratch / "split_indices.npz")
+    with atomic_replace(args.scratch / "split_indices.npz") as npz_tmp:
+        with open(npz_tmp, "wb") as f:
+            np.savez(
+                f,
+                train_full=train_full,
+                train_lmsys=pools["lmsys"],
+                val=val,
+                test=test,
+                holdout=holdout,
+                sae_fit=sae_fit,
+                sae_val=sae_val,
+            )
     for nm, arr in (("row_ci.npy", row_ci), ("prov.npy", prov_u8)):
-        tmp = args.scratch / f"{nm}.tmp.npy"
-        np.save(tmp, arr)
-        os.replace(tmp, args.scratch / nm)
+        # Handle-form np.save — #2336 recipe edge (c).
+        with atomic_replace(args.scratch / nm) as tmp:
+            with open(tmp, "wb") as fh:
+                np.save(fh, arr)
     doc = {
         "reconstructed": list(SCRATCH_FILES),
         "scratch": str(args.scratch),

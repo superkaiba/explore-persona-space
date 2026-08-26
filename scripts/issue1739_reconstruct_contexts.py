@@ -25,6 +25,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 
 def reconstruct(rollout_dir: Path, out_dir: Path, behavior: str) -> dict[str, int]:
     """Write per-(split, rung) context JSONLs; returns {filename: n_rows}."""
@@ -59,11 +61,9 @@ def reconstruct(rollout_dir: Path, out_dir: Path, behavior: str) -> dict[str, in
     for fname, rows in sorted(rows_by_file.items()):
         rows.sort(key=lambda r: r["context_id"])
         path = out_dir / fname
-        tmp = path.with_name(path.name + ".tmp")
-        with tmp.open("w", encoding="utf-8") as f:
+        with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as f:
             for r in rows:
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
-        tmp.replace(path)
         counts[fname] = len(rows)
     total = sum(counts.values())
     per_rung = Counter({k: v for k, v in counts.items()})

@@ -53,6 +53,7 @@ Pod-side contract: NEVER shells out to scripts/task.py; progress = structured
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -500,11 +501,10 @@ def _prestage_base_store(cfg: Cfg, revision: str) -> dict:
             ),
             what=f"prestage base {name} @ {revision[:12]}",
         )
-        # tmp + os.replace so a kill mid-copy never leaves a truncated file
+        # atomic_replace so a kill mid-copy never leaves a truncated file
         # the skip-if-present branch would trust (file convention: :1644)
-        tmp = target.with_name(target.name + ".tmp")
-        shutil.copyfile(got, tmp)
-        os.replace(tmp, target)
+        with atomic_replace(target) as tmp:
+            shutil.copyfile(got, tmp)
     required = _base_store_required_pairs(cfg)
     store = torch.load(dest / "pooled.pt", map_location="cpu", mmap=True)
     pooled_keys = {(m["context_id"], int(m["question_idx"])) for m in store["row_meta"]}
@@ -1720,9 +1720,8 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
             "span_seam_counts": {"exact": n_exact, **seam_counts},
         },
     }
-    tmp = out_dir / "pooled.pt.tmp"
-    torch.save(store, tmp)
-    os.replace(tmp, out_dir / "pooled.pt")
+    with atomic_replace(out_dir / "pooled.pt") as tmp:
+        torch.save(store, tmp)
     if cleanup_merged is not None:
         shutil.rmtree(cleanup_merged, ignore_errors=True)
 
@@ -1802,9 +1801,8 @@ def run_capture_tf_unit(cfg: Cfg, cell: str) -> None:
         },
         "metadata": {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
     }
-    tmp = out_dir / "pooled.pt.tmp"
-    torch.save(store, tmp)
-    os.replace(tmp, out_dir / "pooled.pt")
+    with atomic_replace(out_dir / "pooled.pt") as tmp:
+        torch.save(store, tmp)
     if cleanup_merged is not None:
         shutil.rmtree(cleanup_merged, ignore_errors=True)
 

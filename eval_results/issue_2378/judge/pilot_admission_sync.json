@@ -1,0 +1,77 @@
+{
+  "wave": "admission",
+  "transport": "sync",
+  "n_items": 220,
+  "verdict": "PASS",
+  "fail_reasons": [],
+  "tally": {
+    "per_family": {
+      "dialogue": {
+        "valid": 110
+      },
+      "question": {
+        "valid": 110
+      }
+    },
+    "per_cell": {
+      "dialog_astra": {
+        "valid": 28
+      },
+      "dialog_dana": {
+        "valid": 28
+      },
+      "dialog_helios": {
+        "valid": 27
+      },
+      "dialog_vex": {
+        "valid": 27
+      },
+      "storyq_astra": {
+        "valid": 22
+      },
+      "storyq_dana": {
+        "valid": 22
+      },
+      "storyq_helios": {
+        "valid": 22
+      },
+      "storyq_vex": {
+        "valid": 22
+      },
+      "storyq_wren": {
+        "valid": 22
+      }
+    },
+    "stop_reasons": {
+      "end_turn": 220
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "max_tokens": 1024,
+  "rubric_sha": "28b5a61cfc267d00",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T09:17:49+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--pilot",
+      "200",
+      "--transport",
+      "sync",
+      "--mined-dir",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/sega_mined",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--out-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378",
+      "--skip-upload"
+    ],
+    "git_commit": "b2542657",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}

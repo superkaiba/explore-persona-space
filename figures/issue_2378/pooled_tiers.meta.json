@@ -1,0 +1,278 @@
+{
+  "commit": "ee7f55ab+dirty",
+  "render_id": "4c268c5b0dab4df8",
+  "git_commit": "ee7f55ab",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2378/hero_ladder_recovery.meta.json",
+    "figures/issue_2378/hero_ladder_recovery.pdf",
+    "figures/issue_2378/hero_ladder_recovery.png",
+    "figures/issue_2378/ladder_r2_points.meta.json",
+    "figures/issue_2378/ladder_r2_points.pdf",
+    "figures/issue_2378/ladder_r2_points.png",
+    "figures/issue_2378/own_ceilings.meta.json",
+    "figures/issue_2378/own_ceilings.pdf",
+    "figures/issue_2378/own_ceilings.png",
+    "figures/issue_2378/user_turn_panel.meta.json",
+    "figures/issue_2378/user_turn_panel.pdf",
+    "figures/issue_2378/user_turn_panel.png",
+    "scripts/issue2378_analyzer_figs.py",
+    "scripts/issue2378_poolgf_run.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2378_analyzer_figs.py",
+  "created": "2026-08-25T06:33:27Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.954254654553937,
+      "error": 0.002131855347164202,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9748819131943587,
+      "error": 0.005214100451710335,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0937469827166069,
+      "error": 0.0052246507430536715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0844380414780026,
+      "error": 0.005311994791755925,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1050825349114344,
+      "error": 0.004930594874703376,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0889846197075799,
+      "error": 0.005173466686260175,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0929050319494225,
+      "error": 0.006074920000803785,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9746916888368549,
+      "error": 0.0057448036807132286,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9623263830051895,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9883094588851418,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0983938172929786,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.089088241405435,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1090820816907199,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.095589082471969,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0988140793538015,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9911192782391166,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9521909163958454,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9698638561516785,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0892153011235526,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0794484189609637,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1002125900903639,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.084539830073963,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0867312721877642,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9690931021358495,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9564546270901738,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.9802920570550991,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.09966460260966,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0900724085444755,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.1100737798397706,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0948867634464834,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 1.0988811121893718,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.81,
+      "pooled-map R\u00b2 / own-ceiling R\u00b2": 0.980582709497276,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "One jointly fit map matches every framing's own ceiling",
+        "ylabel": "pooled-map R\u00b2 / own-ceiling R\u00b2",
+        "legend_labels": [
+          "one shared map, no per-cell term",
+          "shared map + rank-128 per-cell residual"
+        ],
+        "annotations": [
+          "fit on all 8 framings under global family folds, scored per framing; dashed = ceiling, dotted = the 90% bar"
+        ],
+        "xticklabels": [
+          "Chat (train)",
+          "Plain text",
+          "Astra",
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "User (real)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ],
+    "series": [
+      "one shared map, no per-cell term",
+      "shared map + rank-128 per-cell residual"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

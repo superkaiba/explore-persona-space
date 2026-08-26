@@ -1,0 +1,865 @@
+{
+  "commit": "feedd300+dirty",
+  "render_id": "5454e2afcd7b4865",
+  "git_commit": "feedd300",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_lenmatch_fig.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_lenmatch_fig.py",
+  "created": "2026-08-25T12:02:18Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5214966228041666,
+      "error": 0.013315968189129113,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.28525742520044284,
+      "error": 0.01288222180045312,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.12373959743401608,
+      "error": 0.00806148117829121,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.12426155441032394,
+      "error": 0.007075783423303249,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11912813006392176,
+      "error": 0.008937736751774977,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.05711869334130171,
+      "error": 0.008825613600866072,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.07403070240878629,
+      "error": 0.007988105556109515,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.15695407695067043,
+      "error": 0.007581363242809197,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.4596598967431923,
+      "error": 0.01152830864834567,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1675489997273958,
+      "error": 0.011618894310541944,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1293069425546799,
+      "error": 0.011963514190995145,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14147798011530632,
+      "error": 0.012737209125698687,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.12220490370257209,
+      "error": 0.008063730422547537,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.13240068073774314,
+      "error": 0.014585869519139871,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10621542889904567,
+      "error": 0.011586239646200883,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11027121392277939,
+      "error": 0.007442164340019132,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5074424733620574,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.27211018661734276,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11658200471563404,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11776466949857099,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10926797209549899,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.04780812885802816,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.06618868220468864,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14970592972452162,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5340744097403156,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.297874630218249,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.13270496707221646,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1319162363451775,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.12714344559904894,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.0654593560597603,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.08216489331690767,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.16486865621014002,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.507036926571079,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5178965866844627,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5136100309643274,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5300687939500379,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.5322142854286462,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.25755349633031044,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.274924912355911,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.2826593174635874,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.29276014461865796,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.3042942638989383,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09643702741355409,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09806736476275923,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10707695939289041,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.07181261113252957,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11104103778729413,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10864071641212869,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10145144843815634,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09730884582848298,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.0874530499588052,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1060996904853797,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1155937711960856,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09451176627483959,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.08346987588398869,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.049089026934640456,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11250041455800297,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.04176667590583438,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.024096175570801237,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.05050838157929172,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.022675760842982284,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.05973079918028079,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.06425333451075277,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.0686071080820867,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.05087705389371189,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.048828904552789654,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.06017008453895989,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.15174182865689234,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14840123195735033,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1606475563778751,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1654278518250235,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.81,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14506328162095206,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.4475167338982993,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.15623390535508555,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.118373959759841,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1292797957564398,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11429240244679355,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11780320322883833,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09416049812599434,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10325666463035889,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.47057335119499066,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.17947169397616944,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14230098814183129,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.15475421400783718,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.13041986329188862,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14697494226711807,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1173329774183961,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11814099331039715,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.45045290837829766,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.4424847587214923,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.448706018862558,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.47522620806365556,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.47206772054720647,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14385696566432438,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1737030711691081,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.18032634603149378,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14416165499261657,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1784650681379174,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.08317051048385182,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11660896742839111,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09744195681966106,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10998388416488303,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.13088799042863275,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.1123922530740199,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11860678012865311,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.13910157649377475,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09098971578533288,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.14368611829969413,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11553610351690957,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.0914488027954522,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.08209990559377367,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.07008869012003438,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11767214344818777,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09567583460851392,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10786166493515825,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.12734821505397043,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10082420260171454,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.12481211671913084,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09562805518715045,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.07623949356297788,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.09449710309877934,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.07217247283859918,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.0913168806500626,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10134593623970645,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.10524200818863849,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11122650046243909,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.11487762283561465,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.19,
+      "held-out R\u00b2 (pooled, reduced-basis k=380)": 0.102108437636527,
+      "_kind": "line",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 128,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Length matching keeps chat above plain text; user turns pass stories",
+        "ylabel": "held-out R\u00b2 (pooled, reduced-basis k=380)",
+        "legend_labels": [
+          "length-matched (identical histograms, n=996)",
+          "size-matched control (natural lengths, n=996)"
+        ],
+        "annotations": [
+          "one shared answer-length histogram (8\u2013256 tokens, 10 log bins), n=996/cell; open points = 5 folds"
+        ],
+        "xticklabels": [
+          "Chat (train)",
+          "Plain text",
+          "Astra",
+          "HELIOS",
+          "Wren",
+          "Dana",
+          "Vex",
+          "User (real)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "length-matched (identical histograms, n=996)",
+      "size-matched control (natural lengths, n=996)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "series_annotation": {
+    "bar_groups": {
+      "0": "length-matched (n=996), 8 bars in cells_order",
+      "1": "size-matched control (natural lengths, n=996), 8 bars in cells_order"
+    },
+    "cells_order": [
+      "chat",
+      "plain_text",
+      "storyq_astra",
+      "storyq_helios",
+      "storyq_wren",
+      "storyq_dana",
+      "storyq_vex",
+      "chat_user_real"
+    ],
+    "line_groups": "per-(cell, leg) fold points (5 each, open circles); 8-point line groups are errorbar cap artifacts"
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "regime": {
+    "script_version": "issue2378_pool_v1",
+    "arm": "context",
+    "layer": 51,
+    "k": 5,
+    "seed": 137,
+    "n_eq": 6601,
+    "fold_map_sha": "b8e1fd97d42c7bdd7508d96cb887d69d8e13952cbfd8aa285908b186f8d5018e",
+    "cells": [
+      "chat",
+      "chat_user_real",
+      "plain_text",
+      "storyq_astra",
+      "storyq_dana",
+      "storyq_helios",
+      "storyq_vex",
+      "storyq_wren"
+    ],
+    "ranks": [
+      8,
+      32,
+      128
+    ],
+    "n_null_draws": 100,
+    "bootstrap_draws": 200,
+    "lambda_grid": [
+      "logspace",
+      -2,
+      4,
+      13
+    ],
+    "dof_cap": 0.9,
+    "seed_derivation": "137-rooted per-(cell,arm,fold,rank) via cm.derived_seed",
+    "fold_regime": "global-family"
+  },
+  "arm": "context",
+  "per_fold": {
+    "0": {
+      "best_lambda": 10000.0,
+      "dof": 2128.2186247501804,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov-moments",
+      "n_train": 42251,
+      "d_fit": 5120
+    },
+    "1": {
+      "best_lambda": 10000.0,
+      "dof": 2124.7872780887697,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov-moments",
+      "n_train": 42320,
+      "d_fit": 5120
+    },
+    "2": {
+      "best_lambda": 10000.0,
+      "dof": 2121.5816299402327,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov-moments",
+      "n_train": 42119,
+      "d_fit": 5120
+    },
+    "3": {
+      "best_lambda": 10000.0,
+      "dof": 2120.024650596355,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov-moments",
+      "n_train": 42258,
+      "d_fit": 5120
+    },
+    "4": {
+      "best_lambda": 10000.0,
+      "dof": 2125.9713880098993,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov-moments",
+      "n_train": 42284,
+      "d_fit": 5120
+    }
+  },
+  "n_per_cell": {
+    "chat": 6601,
+    "chat_user_real": 6601,
+    "plain_text": 6601,
+    "storyq_astra": 6601,
+    "storyq_dana": 6601,
+    "storyq_helios": 6601,
+    "storyq_vex": 6601,
+    "storyq_wren": 6601
+  },
+  "parity_gate": {
+    "n_train": 5280,
+    "n_eval": 1000,
+    "best_lambda": 1000.0,
+    "max_rel": 1.3462928596245025e-14,
+    "tol": 1e-06,
+    "reference": "issue2054_fits._ridge_gcv_fit_predict"
+  },
+  "ram_check": {
+    "bound_gib": 6.78,
+    "fixed_overhead_gib": 2.0,
+    "available_gib": 217.33,
+    "available_source": "cgroup-v2",
+    "k": 5,
+    "d": 5120,
+    "n_max": 6601
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-25T03:48:50+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_pool.py",
+      "--phase",
+      "pool",
+      "--global-family-folds",
+      "--store-root",
+      "/workspace/explore-persona-space/data/issue_2378/p6_stage/issue2378_xframing/analysis_tensors/activations",
+      "--ledger-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378",
+      "--cells",
+      "chat,plain_text,storyq_astra,storyq_helios,storyq_wren,storyq_dana,storyq_vex,chat_user_real"
+    ],
+    "git_commit": "62757e57",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_pool.py"
+  }
+}

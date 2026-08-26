@@ -53,6 +53,7 @@ from pathlib import Path
 # MUST precede any `import vllm` (vLLM reads this at import time) — #628.
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -231,13 +232,11 @@ def append_rows(out_path: Path, rows: list[dict]) -> None:
 
 def write_meta(meta_path: Path, payload: dict) -> None:
     """Atomically rewrite the sidecar meta (tmp + os.replace, same dir)."""
-    meta_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = meta_path.with_name(meta_path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(tmp, meta_path)
+    with atomic_replace(meta_path) as tmp:
+        with tmp.open("w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2)
+            fh.flush()
+            os.fsync(fh.fileno())
 
 
 # ---------------------------------------------------------------------------

@@ -27,6 +27,7 @@ import sys  # noqa: E402
 import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue_1739 import dv_build, judging  # noqa: E402
 from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E402
     JUDGE_MAX_TOKENS,
@@ -202,9 +203,8 @@ def main() -> int:
     )
 
     scores_path = out_dir / "labeling_scores.json"
-    tmp = scores_path.with_name(scores_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload_out, indent=1))
-    os.replace(tmp, scores_path)
+    with atomic_replace(scores_path) as tmp:
+        tmp.write_text(json.dumps(payload_out, indent=1))
     n_scores = len(payload_out.get("scores", payload_out.get("three_way", {})))
     print(
         json.dumps(

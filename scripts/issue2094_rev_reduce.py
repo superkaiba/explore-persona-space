@@ -41,6 +41,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # shared-VM thread caps (#847) must bind BEFORE any heavy import
@@ -439,9 +440,8 @@ def main(argv: list[str] | None = None) -> int:
         },
     }
     out = args.work_root / fam_cfg["summary_name"]
-    tmp = out.with_name(out.name + ".tmp")
-    tmp.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    tmp.replace(out)
+    with atomic_replace(out) as tmp:
+        tmp.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(f"[{tag}] {len(cells)} cells ({n_incoherent} incoherent-excluded) -> {out}")
     if weak:
         print(f"[{tag}] weak-separation pairs excluded from aggregate means: {weak}")

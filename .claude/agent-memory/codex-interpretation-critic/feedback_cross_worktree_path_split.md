@@ -82,6 +82,22 @@ advisory network carve-out, eliminating the EXCEPTION-2 BLOCKED risk. The
 interpretation marker's phrase "local judge-input mirror" is the tell it
 exists.
 
+**Stale-AND-large plan → materialize canonical to /tmp, don't inline
+(#2378 r2, 2026-08-25).** When the worktree plan FAILS the #2333 identity
+check (md5 mismatch — worktree symlinked v6 while canonical was v8) AND the
+canonical plan is large (141 KB), inlining the Step 2-b envelope balloons
+the prompt ~7×. Instead `cp` the canonical `plans/plan.md` to
+`/tmp/issue-<N>-plan-canonical.md` and path-reference it — the same /tmp
+materialization convention the spec already sanctions for pinned figures,
+with the same "plan unreachable is invalid — file verified at compose time"
+guard sentence plus a grep-then-slice instruction. Same trick for revision
+rounds' prior-critique bodies: extract each r1 marker note from canonical
+events.jsonl to its own /tmp file and pass paths (24 KB of critiques stayed
+out of a 23 KB prompt). Also re-confirmed both stale-worktree traps in one
+task: `tasks/approved/<N>/body.md` frozen at the pre-r1 title (needs the
+explicit do-not-read warning) while ALL 8 figure PNGs + sidecars in the same
+worktree blob-MATCHED the body pin (figures fine to pass by worktree path).
+
 **`rawcomp_cache/` HF-snapshot mirror — a second lens-7 local-text source
 (#2379 r1, 2026-08-20).** Sibling of the judge_inputs pattern: probe
 `<worktree>/data/issue_<N>/rawcomp_cache/<hf-prefix>/` — some runs stage a

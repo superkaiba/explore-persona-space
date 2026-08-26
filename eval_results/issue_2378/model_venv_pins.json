@@ -1,0 +1,21 @@
+{
+  "interpreter": "/root/eps-model-venv/bin/python",
+  "realized": {
+    "python": "3.11.10",
+    "vllm": "0.27.1",
+    "transformers": "5.15.1",
+    "torch": "2.13.0",
+    "banned_present": []
+  },
+  "pinned": {
+    "vllm": "0.27.1",
+    "transformers": "5.15.1",
+    "torch": "2.13.0"
+  },
+  "extra_pins": [
+    "python-dotenv==1.2.2"
+  ],
+  "banned": [
+    "flashinfer-python"
+  ]
+}

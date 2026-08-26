@@ -1,0 +1,36 @@
+{
+  "role": "fits-a",
+  "cells": [
+    "chat",
+    "plain_text",
+    "storyq_astra"
+  ],
+  "g2b_survivors": [
+    "chat",
+    "plain_text",
+    "storyq_astra"
+  ],
+  "g2b_dropped": [],
+  "walls_s": {
+    "p6.g3": 891.5,
+    "p6.fits": 4528.1,
+    "p6.ladder": 5382.7,
+    "p6.retrieval": 214.8
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T17:09:18+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p6_fits",
+      "--pod-role",
+      "fits-a"
+    ],
+    "git_commit": "811828a1",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}

@@ -58,7 +58,6 @@ import argparse
 import hashlib
 import json
 import logging
-import os
 import re
 import sys
 import unicodedata
@@ -67,6 +66,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # credentials before any API-bearing import (uv run does not auto-load .env)
@@ -583,19 +583,17 @@ def run_audits(kind: str, rows: list[dict], out_dir: Path) -> dict:
 
 
 def _write_json_atomic(path: Path, obj) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def _write_jsonl_atomic(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(
-        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8"
-    )
-    os.replace(tmp, path)
+    """Atomic JSONL write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(
+            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8"
+        )
 
 
 def _repro() -> dict:

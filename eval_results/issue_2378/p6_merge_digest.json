@@ -1,0 +1,155 @@
+{
+  "roles": {
+    "fits-a": {
+      "role": "fits-a",
+      "cells": [
+        "chat",
+        "plain_text",
+        "storyq_astra"
+      ],
+      "g2b_survivors": [
+        "chat",
+        "plain_text",
+        "storyq_astra"
+      ],
+      "g2b_dropped": [],
+      "walls_s": {
+        "p6.g3": 891.5,
+        "p6.fits": 4528.1,
+        "p6.ladder": 5382.7,
+        "p6.retrieval": 214.8
+      },
+      "metadata": {
+        "issue": 2378,
+        "timestamp": "2026-08-24T17:09:18+0000",
+        "python": "3.11.10",
+        "argv": [
+          "scripts/issue2378_dispatch.py",
+          "--phase",
+          "p6_fits",
+          "--pod-role",
+          "fits-a"
+        ],
+        "git_commit": "811828a1",
+        "git_dirty": false,
+        "git_argv0_state": "tracked",
+        "git_argv0_path": "scripts/issue2378_dispatch.py"
+      }
+    },
+    "fits-b": {
+      "role": "fits-b",
+      "cells": [
+        "storyq_helios",
+        "storyq_wren"
+      ],
+      "g2b_survivors": [
+        "storyq_helios",
+        "storyq_wren"
+      ],
+      "g2b_dropped": [],
+      "walls_s": {
+        "p6.ladder": 5235.1,
+        "p6.retrieval": 181.8
+      },
+      "metadata": {
+        "issue": 2378,
+        "timestamp": "2026-08-24T17:41:07+0000",
+        "python": "3.11.10",
+        "argv": [
+          "scripts/issue2378_dispatch.py",
+          "--phase",
+          "p6_fits",
+          "--pod-role",
+          "fits-b"
+        ],
+        "git_commit": "c48f63a0",
+        "git_dirty": false,
+        "git_argv0_state": "tracked",
+        "git_argv0_path": "scripts/issue2378_dispatch.py"
+      }
+    },
+    "fits-c": {
+      "role": "fits-c",
+      "cells": [
+        "storyq_dana",
+        "storyq_vex"
+      ],
+      "g2b_survivors": [
+        "storyq_dana",
+        "storyq_vex"
+      ],
+      "g2b_dropped": [],
+      "walls_s": {
+        "p6.fits": 4989.2,
+        "p6.ladder": 6702.2,
+        "p6.retrieval": 358.1
+      },
+      "metadata": {
+        "issue": 2378,
+        "timestamp": "2026-08-24T19:37:14+0000",
+        "python": "3.11.10",
+        "argv": [
+          "scripts/issue2378_dispatch.py",
+          "--phase",
+          "p6_fits",
+          "--pod-role",
+          "fits-c"
+        ],
+        "git_commit": "45c4c2d9",
+        "git_dirty": false,
+        "git_argv0_state": "tracked",
+        "git_argv0_path": "scripts/issue2378_dispatch.py"
+      }
+    },
+    "fits-d": {
+      "role": "fits-d",
+      "cells": [
+        "chat_user_real",
+        "chat_user_sim"
+      ],
+      "g2b_survivors": [
+        "chat_user_real"
+      ],
+      "g2b_dropped": [
+        "chat_user_sim"
+      ],
+      "walls_s": {
+        "p6.fits": 2893.5,
+        "p6.ladder": 4644.4,
+        "p6.retrieval": 869.3
+      },
+      "metadata": {
+        "issue": 2378,
+        "timestamp": "2026-08-24T19:50:11+0000",
+        "python": "3.11.10",
+        "argv": [
+          "scripts/issue2378_dispatch.py",
+          "--phase",
+          "p6_fits",
+          "--pod-role",
+          "fits-d"
+        ],
+        "git_commit": "e83c33fc",
+        "git_dirty": null,
+        "git_argv0_state": "tracked",
+        "git_argv0_path": "scripts/issue2378_dispatch.py"
+      }
+    }
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T22:38:45+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p6_fits",
+      "--pod-role",
+      "fits-d"
+    ],
+    "git_commit": "c732134e",
+    "git_dirty": null,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}

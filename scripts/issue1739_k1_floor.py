@@ -27,6 +27,8 @@ import sys
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 ALL_RUNGS_FAIL_RC = 3  # designed halt rc (gotchas.md pilot-gate convention)
@@ -117,10 +119,8 @@ def main(argv: list[str] | None = None) -> int:
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     if args.out:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        tmp = args.out.with_name(args.out.name + ".tmp")
-        tmp.write_text(json.dumps(payload, indent=1))
-        tmp.replace(args.out)
+        with atomic_replace(args.out) as tmp:
+            tmp.write_text(json.dumps(payload, indent=1))
         print(f"[k1] verdict table -> {args.out}")
     print(json.dumps({"undispatchable_behaviors": undispatchable}))
     return ALL_RUNGS_FAIL_RC if undispatchable else 0

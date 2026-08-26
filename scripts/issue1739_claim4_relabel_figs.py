@@ -10,12 +10,14 @@ the true-map-only `claim4_spaghetti` draft) and the per-context scatter
 behind the corrected-sycophancy correlations (`claim4_syco_percontext`).
 
 --style iclr renders the Overleaf-paper HEADLINE variant instead
-(`figures/paper/c5_claim4_margin_forest`): a margin-first forest — per rung,
-the 5-seed mean ADVANTAGE OVER THE SHUFFLED-PAIRING CONTROL (dtrue − dshuf
-per seed) with its seed t-CI, per-seed values as light points — because
-roughly half the raw probe-on-mapped edge is a generic-transform effect the
-shuffled control also produces, so the paper quotes the margin, never the
-raw delta (claims.md rev 3, C5 ruling).
+(`figures/paper/c5_claim4_margin_forest`): a raw-difference forest — per
+rung, the 5-seed mean RAW DIFFERENCE dtrue (regression on mapped answer −
+regression on context) with its seed t-CI, per-seed values as light points.
+User order 2026-08-25: the figure shows the raw difference; the margin over
+the shuffled-pairing control stays quoted in the paper prose (claims.md
+rev 3, C5 ruling), not in this display. The sycophancy are-you-sure,
+evil Tom Gibbs multi-turn, and sycophancy mimicry sets are excluded from the
+paper figure (same orders; negative-raw sets pending diagnosis).
 """
 
 from __future__ import annotations
@@ -56,22 +58,30 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
     )
 
     set_paper_style("iclr")
-    rows = [r for r in table["per_rung"] if r.get("complete")]
+    # Paper scope: the sycophancy are-you-sure, evil Tom Gibbs multi-turn, and
+    # sycophancy mimicry sets are excluded from the Applications forest (user
+    # orders 2026-08-25; the negative-raw sets are excluded pending diagnosis).
+    # The pinned blog-register figures keep all 13 rungs.
+    paper_excluded = {
+        ("sycophancy", "sycoays"),
+        ("evil", "evil_tomgibbs"),
+        ("sycophancy", "sycomim"),
+    }
+    rows = [
+        r
+        for r in table["per_rung"]
+        if r.get("complete") and (r["behavior"], r["eval_rung"]) not in paper_excluded
+    ]
     order = sorted(rows, key=lambda r: (r["behavior"], r["eval_rung"]))
-    flagships = {tuple(f) for f in table["meta"]["flagships"]}
-    labels = []
-    for r in order:
-        lab = mod.rung_label(r["behavior"], r["eval_rung"])
-        if (r["behavior"], r["eval_rung"]) in flagships:
-            lab += " *"
-        labels.append(lab)
+    # No flagship star / size emphasis (user order 2026-08-25: "remove the
+    # stars") — every set renders identically.
+    labels = [mod.rung_label(r["behavior"], r["eval_rung"]) for r in order]
     ys = list(range(len(order)))[::-1]
     blue = paper_color("instruct")
 
     fig, ax = plt.subplots(figsize=figsize_iclr_full(0.66))
     for y, r in zip(ys, order, strict=True):
-        m = r["margin"]
-        fl = (r["behavior"], r["eval_rung"]) in flagships
+        m = r["dtrue"]
         ax.plot(
             m["per_seed"],
             [y] * len(m["per_seed"]),
@@ -91,7 +101,7 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
             xerr=xerr,
             fmt="o",
             color=blue,
-            ms=4.4 if fl else 3.2,
+            ms=3.2,
             capsize=1.8,
             elinewidth=0.8,
             zorder=3,
@@ -100,7 +110,9 @@ def render_paper_margin_forest(mod, table: dict) -> Path:
     ax.set_yticks(ys)
     ax.set_yticklabels(labels)
     ax.set_ylim(-0.6, len(order) - 0.4)
-    ax.set_xlabel("Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)")
+    ax.set_xlabel(
+        "Regression on mapped answer $-$ regression on context\n($\\Delta$ Spearman $\\rho$)"
+    )
     fig.tight_layout()
     out_dir = Path(__file__).resolve().parent.parent / "figures/paper"
     if not (out_dir.parent / "eval_results").exists():

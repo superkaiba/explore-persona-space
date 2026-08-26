@@ -53,6 +53,7 @@ Designed halts exit DISTINCT rcs (pilot gate rc=7) with a report JSON.
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -3473,6 +3474,7 @@ def _reap_arm_artifacts_after(
         if kind == "lora":
             merged_dir = _merged_model_dir(cfg, arm_id)
             reaped = 0
+            # SHARED_TMP_EXEMPT: cleanup probe, not a writer; reaps the dir-idiom .tmp sibling
             for d in (merged_dir, merged_dir.parent / (merged_dir.name + ".tmp")):
                 if d.exists():
                     reaped += _tree_bytes(d)
@@ -3985,9 +3987,8 @@ def run_capture_unit(cfg: Cfg, arg: str) -> None:
                 "span_seam_counts": seam_counts,
             },
         }
-        tmp = out_dir / "pooled.pt.tmp"
-        torch.save(store, tmp)
-        os.replace(tmp, out_dir / "pooled.pt")
+        with atomic_replace(out_dir / "pooled.pt") as tmp:
+            torch.save(store, tmp)
         _atomic_json(
             out_dir / "manifest.json",
             {
@@ -4053,9 +4054,8 @@ def run_capture_tf_unit(cfg: Cfg, arg: str) -> None:
                 "shared_text": True,
             },
         }
-        tmp = out_dir / "pooled.pt.tmp"
-        torch.save(store, tmp)
-        os.replace(tmp, out_dir / "pooled.pt")
+        with atomic_replace(out_dir / "pooled.pt") as tmp:
+            torch.save(store, tmp)
         _atomic_json(
             out_dir / "manifest.json",
             {

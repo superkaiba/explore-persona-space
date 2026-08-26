@@ -2833,3 +2833,65 @@ def test_skills_pin_reachability_live_tree():
     # Live-tree sanity: at least one skill (issue) has referencing tests today,
     # so this pin is never vacuously green.
     assert checked_any
+
+
+# --- #2537: constructed-path consumer registration + fail-closed missing invariant --
+_JANITOR_MODULE = "scripts/clean_experiment_downloads.py"
+
+
+def test_transitive_consumer_janitor_family_live_tree():
+    """#2537 acceptance 2 (case-81 shape): the incident module's registry
+    entry maps BOTH escaped consumers on the live tree — the two tests the
+    #2336 round never ran (constructed-path loads, invisible to every
+    text-scan arm)."""
+    repo_root = _HELPER_PATH.parents[1]
+    pairs = sel.transitive_consumer_pairs([_JANITOR_MODULE], repo_root)
+    assert ("tests/test_janitor_tmp_scratch_sweep.py", _JANITOR_MODULE) in pairs
+    assert ("tests/test_vm_disk_guard_slurm_src.py", _JANITOR_MODULE) in pairs
+
+
+def test_cli_map_files_janitor_consumers_present(tmp_path: Path, capsys):
+    """#2537 acceptance 1 (verbatim task-body criterion): a --map-files run on
+    the incident-module payload emits BOTH escaped consumers' pair lines at
+    rc 0. Deliberately a CONTAINMENT assert, not the case-86 exact-set shape:
+    the janitor module's mapping legitimately churns (new test_vm_disk_guard_*
+    files stem-map in; THIS test file becomes literal-arm-mapped by carrying
+    the payload literal) — the exact-set loudness posture stays reserved for
+    the selector-key payload (case 86), a recorded deviation, not an
+    oversight."""
+    repo_root = _HELPER_PATH.parents[1]
+    payload = tmp_path / "payload.txt"
+    payload.write_text(f"{_JANITOR_MODULE}\n")
+    rc = sel.main(["--map-files", str(payload), "--repo-root", str(repo_root)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    lines = captured.out.splitlines()
+    assert f"tests/test_janitor_tmp_scratch_sweep.py\t{_JANITOR_MODULE}" in lines
+    assert f"tests/test_vm_disk_guard_slurm_src.py\t{_JANITOR_MODULE}" in lines
+
+
+def test_missing_invariant_fails_closed(tmp_path: Path, monkeypatch, capsys):
+    """#2537 criterion 8 (the §4.2c pin, case-10/50 hermetic pattern): a
+    WORKFLOW_INVARIANT member missing on disk makes the SELECTION path refuse
+    — nonzero rc, NO selection payload on stdout, the per-member
+    WORKFLOW-INVARIANT MISSING line + the remedy on stderr. Placed HERE, not in the
+    new invariant file: the refusal guards ALL members (the pin must survive
+    the meta-test descope), and a check inside the new file could not guard
+    its own deletion. The sanctioned 3-part deregistration (tuple + manifest
+    + file removed in ONE commit) leaves missing_invariants() empty and never
+    trips this — cases 6/6b enforce the atomicity."""
+    repo = _make_tree(tmp_path, ["test_widget.py"])  # every REAL invariant present
+    monkeypatch.setattr(
+        sel,
+        "WORKFLOW_INVARIANT",
+        (*sel.WORKFLOW_INVARIANT, "tests/test_does_not_exist_2537.py"),
+    )
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widget.py"])
+    rc = sel.main(["--json", "--no-fetch", "--repo-root", str(repo)])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert captured.out == ""  # no selection payload emitted on the refusal
+    assert "WORKFLOW-INVARIANT MISSING: tests/test_does_not_exist_2537.py" in captured.err
+    assert "REFUSING to emit a selection" in captured.err
+    assert "3-part deregistration" in captured.err  # the remedy is printed

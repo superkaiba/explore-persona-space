@@ -148,6 +148,9 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
+
+from explore_persona_space.atomic_io import atomic_replace
 
 kind, gate, note_path, dest, out_dir, fig_dir, elapsed_h = sys.argv[1:8]
 summary = {}
@@ -204,10 +207,9 @@ payload = {
     "by": "issue1417_run.sh",
     "note": note,
 }
-tmp = dest + ".tmp"
-with open(tmp, "w", encoding="utf-8") as f:
-    json.dump(payload, f)
-os.replace(tmp, dest)
+with atomic_replace(Path(dest)) as tmp:
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f)
 print(f"[i1417-run] sentinel written: {dest}")
 PY
 }

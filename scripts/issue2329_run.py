@@ -62,11 +62,11 @@ import time
 import unicodedata
 import uuid
 from collections import Counter
-from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE torch import (shared-VM thread caps + API keys)
@@ -1400,42 +1400,17 @@ def build_config(args: argparse.Namespace) -> RunConfig:
 # ── io helpers ────────────────────────────────────────────────────────
 
 
-@contextmanager
 def _atomic_replace(path: Path):
-    """Yield a PROCESS-UNIQUE same-directory temp path; ``os.replace`` it
-    onto ``path`` on success, best-effort unlink it on failure (a cleanup
-    failure never masks the original exception).
+    """Delegate to the shared :func:`explore_persona_space.atomic_io.atomic_replace`
+    (hoisted from this module's donor body by #2336), threading this module's
+    ``issue2329.run`` logger so the cleanup-warning logger-name pin
+    (``tests/test_issue2329_r2_fixes.py`` :693/:709) keeps observing it.
 
-    The temp name embeds pid + a uuid fragment: concurrent workers writing
-    identical content to ONE shared destination (all 8 grid workers write
-    ``manifests/pe_exclusions.json``) must not share a temp name, or one
-    worker's replace consumes the shared temp and every later worker dies
-    ``FileNotFoundError`` (grid crash 2026-08-16 05:36Z, rc=1). Same-dir
-    keeps the replace atomic (one filesystem — never route through /tmp);
-    unlink-on-failure keeps orphan ``*.tmp`` residue out of the out-root
-    (the upload-verifier residue-sweep surface). Concurrent same-content
-    writes stay safe/idempotent: last atomic replace wins with identical
-    bytes."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / f"{path.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp"
-    try:
-        yield tmp
-        os.replace(tmp, path)
-    except BaseException:
-        # Best-effort cleanup: a failed unlink (PermissionError / non-ENOENT
-        # OSError) must never displace the ORIGINAL write/replace exception —
-        # the bare ``raise`` re-raises it with its traceback intact. Only the
-        # SECONDARY cleanup error is suppressed (logged); the fault itself
-        # stays loud (r3 finding 1, ``cleanup-can-mask-original``).
-        try:
-            tmp.unlink(missing_ok=True)
-        except OSError as cleanup_exc:
-            logger.warning(
-                "cleanup unlink of %s failed (%s); propagating original exception",
-                tmp,
-                cleanup_exc,
-            )
-        raise
+    PLAIN delegating function, deliberately NOT ``@contextmanager``-decorated:
+    the shared function is already a contextmanager factory, so decorating the
+    delegate would double-wrap the returned object and hand ``with`` the wrong
+    thing (#2336 plan 4(e))."""
+    return atomic_replace(path, logger=logger)
 
 
 def _write_json_atomic(path: Path, obj) -> None:

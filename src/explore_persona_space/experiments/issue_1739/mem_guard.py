@@ -38,6 +38,8 @@ import os
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 logger = logging.getLogger(__name__)
 
 RSS_GUARD_RC = 9  # designed-halt rc — distinct from the pilot fence's rc=7
@@ -235,9 +237,8 @@ def check_phase(
             except (OSError, json.JSONDecodeError, UnicodeDecodeError):
                 logger.warning("[rss-guard] unreadable prior report at %s — rewriting", path)
         payload.setdefault("checks", []).append(record)
-        tmp = path.with_name(path.name + ".tmp")
-        tmp.write_text(json.dumps(payload, indent=1))
-        os.replace(tmp, path)
+        with atomic_replace(path) as tmp:
+            tmp.write_text(json.dumps(payload, indent=1))
     if over and enforce:
         raise MemGuardRefusal(
             f"phase {phase} projects +{projected / GIB:.1f} GiB over "

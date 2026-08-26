@@ -1,0 +1,21 @@
+{
+  "cell": "chat_user_sim",
+  "status": "N/A",
+  "reason": "G2b dropped this non-binding cell (below floor) — plan §7",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-24T17:18:33+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p6_fits",
+      "--pod-role",
+      "fits-d"
+    ],
+    "git_commit": "9c669e3b",
+    "git_dirty": null,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}

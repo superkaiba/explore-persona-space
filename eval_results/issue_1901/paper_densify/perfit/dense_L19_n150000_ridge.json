@@ -1,0 +1,164 @@
+{
+  "val_r2": 0.7567180198158304,
+  "test_r2": 0.7555159142185076,
+  "test_ci": {
+    "r2": {
+      "point": 0.7555159142185076,
+      "lo": 0.7448591921363662,
+      "hi": 0.7649776561702972
+    },
+    "mean_cosine": {
+      "point": 0.9548680471449333,
+      "lo": 0.9528007230314233,
+      "hi": 0.9567279778343497
+    },
+    "n_test": 1000
+  },
+  "knn": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.807,
+        "5": 0.901,
+        "10": 0.95,
+        "50": 0.993
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8529509908631928
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 1000,
+      "n_pool": 1000,
+      "acc_at_k": {
+        "1": 0.803,
+        "5": 0.899,
+        "10": 0.952,
+        "50": 0.991
+      },
+      "chance_at_k": {
+        "1": 0.001,
+        "5": 0.005,
+        "10": 0.01,
+        "50": 0.05
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8518319874210029
+    }
+  },
+  "fit_meta": {
+    "n_train": 150000,
+    "selection": "val-lambda (primal, streaming)",
+    "selected_lambda": 1000.0,
+    "val_r2_at_selected": 0.7567180198158304,
+    "lambda_grid_edge": null,
+    "ridge_block": 50000
+  },
+  "whitened_csls": {
+    "acc_at_k": {
+      "1": 0.894,
+      "5": 0.952,
+      "10": 0.993
+    },
+    "chance_at_k": {
+      "1": 0.001,
+      "5": 0.005,
+      "10": 0.01
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9256522105414609,
+    "n_pool": 1000,
+    "k_csls": 10,
+    "whitening": {
+      "lam": 0.1,
+      "stats": "train-pool mu_A + shrunk-Cholesky L"
+    }
+  },
+  "whitened_cosine": {
+    "acc_at_k": {
+      "1": 0.865,
+      "5": 0.945,
+      "10": 0.991
+    },
+    "chance_at_k": {
+      "1": 0.001,
+      "5": 0.005,
+      "10": 0.01
+    },
+    "median_rank": 1.0,
+    "mrr": 0.9064886761304771,
+    "n_pool": 1000,
+    "k_csls": 10,
+    "whitening": {
+      "lam": 0.1,
+      "stats": "train-pool mu_A + shrunk-Cholesky L"
+    }
+  },
+  "fingerprint": {
+    "arm": "ridge",
+    "n": 150000,
+    "source": "n1m",
+    "sel_name": "lmsys_150k",
+    "sel_sha256": "fbba56ab7a5faa7cce015476593b2d8c36a9a6c6af3a690b07f865a08ec4a7f9",
+    "code_sha": "0477102ef1158e0ac3b853fe2c9016a210092f09",
+    "store_revision": "0620bbd6adbc88cba4af8974ed6006f47844ea04",
+    "pythonhashseed": "0",
+    "seed": 42,
+    "seed_b": 0,
+    "seeds": [
+      42
+    ],
+    "recipe": {
+      "lambda_grid": [
+        "logspace",
+        -3,
+        8,
+        23
+      ],
+      "ridge_block": 50000,
+      "selection": "val-lambda (primal, streaming)"
+    },
+    "metrics": {
+      "n_boot": 1000,
+      "bootstrap": "FFC._bootstrap_recon_ci (context resample; per-cell seeded)",
+      "whiten": {
+        "pool_sha256": "aba6f837c4f478e135429e56227de9380133788df6bfd08cde4d8ec881a74481",
+        "lam": 0.1,
+        "helper": "null_battery.shrunk_cholesky_from_cov"
+      },
+      "k_csls": 10,
+      "knn_ks": [
+        1,
+        5,
+        10,
+        50
+      ],
+      "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+      "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+      "eval_store": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture"
+    },
+    "smoke_chunks": 0,
+    "layer": 19
+  },
+  "g2": {
+    "verdict": "PASS",
+    "downgrade_recorded": false,
+    "point": {
+      "recorded_sel_sha256": "fbba56ab7a5faa7cce015476593b2d8c36a9a6c6af3a690b07f865a08ec4a7f9",
+      "realized_sel_sha256": "fbba56ab7a5faa7cce015476593b2d8c36a9a6c6af3a690b07f865a08ec4a7f9",
+      "sha_match": true,
+      "refit_r2": 0.7555159142185076,
+      "banked_r2": 0.755515914218508,
+      "abs_delta": 3.3306690738754696e-16,
+      "parity_within_tol": true
+    }
+  }
+}

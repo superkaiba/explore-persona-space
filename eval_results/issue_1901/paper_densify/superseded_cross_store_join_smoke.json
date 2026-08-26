@@ -1,0 +1,35 @@
+{
+  "kind": "superseded-cross-store-join",
+  "superseded_join": {
+    "what": "the v13 cross-store scaling join: scale7-prefix rungs (5k-25k, issue1491_scale_ladder/scale7_refit folds) plotted as ONE ladder with the n1m capture bigN points (150k/500k/963k)",
+    "why_refuted": "G1 cross-store fold identity FAILED on-pod 2026-08-25: 0/400 scale7 val rows content-equal to the n1m pinned rows at L19 (max |dY| ~ 37 vs the 2e-3 fp16-cast bound) \u2014 the two stores' eval pools are different rows, so cross-store cells are not on one comparable ladder",
+    "banked_files": [
+      "eval_results/issue_1901/paper_densify/scaling_bigN_acc1_L19.json",
+      "eval_results/issue_1901/paper_densify/scaling_ladder_L19.json",
+      "eval_results/issue_1901/paper_densify/mlp_scaling_L19.json"
+    ],
+    "disposition": "each banked JSON stays valid WITHIN its own store/folds; any figure or claim joining scale7 cells with n1m cells on one x-axis is superseded by the within-store dense ladder"
+  },
+  "evidence": [
+    "task #1901 events.jsonl epm:progress 2026-08-25T03:18:29Z (G1 FAIL note)",
+    "tasks/<status>/1901/artifacts/mlpdense-smoke-r3-g1fail.log"
+  ],
+  "replacement_artifact": "eval_results/issue_1901/paper_densify/mlp_scaling_dense_L19.json (all 8 fresh rungs within-store n1m lmsys draws; plan v15 \u00a74/\u00a710)",
+  "consumers": [
+    "docs/paper_context_answer_map/claims.md (C1 main row)",
+    "scripts/issue1901_body_figures.py (fig_paper_c1_scaling; reads all three)",
+    "docs/posters/mats_2026/make_plot1_scaling.py (reads scaling_ladder_L19.json)",
+    "docs/posters/mats_2026/csls_rescore.py (validates vs scaling_ladder_L19.json)",
+    "scripts/issue1901_boundary_token_control.py (banked ladder/bign inputs)",
+    "docs/methodology/issue_1901.md (names the draw convention)"
+  ],
+  "consumer_resolution": "grep -rl over the three banked filenames across the repo at implementation time (2026-08-25); producers issue1901_paper_densify{,_mlp}.py and tasks/** excluded",
+  "recorded_utc": "2026-08-25T06:28:57Z",
+  "provenance": {
+    "git_commit": "22d0b98fdd60f033e74292c34c5f6642848985ec",
+    "git_dirty": false,
+    "phase": "c5-supersession-record",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue1901_paper_densify_mlp.py"
+  }
+}

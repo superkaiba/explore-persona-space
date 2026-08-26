@@ -144,6 +144,8 @@ from pathlib import Path
 
 import torch
 
+from explore_persona_space.atomic_io import atomic_replace
+
 m = int(os.environ["EPM_PROBE_M"])
 dev_req = os.environ["EPM_PROBE_DEV"]
 out_path = Path(os.environ["EPM_PROBE_OUT"])
@@ -180,10 +182,8 @@ result = {
 
 
 def _write() -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out_path.parent / (out_path.name + ".tmp")
-    tmp.write_text(json.dumps(result, indent=1))
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(result, indent=1))
 
 
 try:
@@ -467,6 +467,8 @@ import os
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 smoke = os.environ["EPM_SMOKE"] == "1"
 probe_path = Path(os.environ["EPM_PROBE_JSON"])
 potrf_probe = json.loads(probe_path.read_text()) if probe_path.exists() else None
@@ -530,10 +532,8 @@ sentinel = {
     "note": json.dumps(note),
 }
 dest = Path(os.environ["EPM_SENTINEL_PATH"])
-dest.parent.mkdir(parents=True, exist_ok=True)
-tmp = dest.parent / (dest.name + ".tmp")
-tmp.write_text(json.dumps(sentinel, indent=1))
-os.replace(tmp, dest)
+with atomic_replace(dest) as tmp:
+    tmp.write_text(json.dumps(sentinel, indent=1))
 print(f"sentinel written: {dest} kind={sentinel['kind']}")
 PY
 

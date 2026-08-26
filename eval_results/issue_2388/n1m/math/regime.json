@@ -1,0 +1,21 @@
+{
+ "arm": "arm_n1m",
+ "parent_pin": "06a4b66fba3551b8ffe831a3e88a8276205a853f",
+ "layers": [
+  14,
+  19,
+  26
+ ],
+ "dof_cap": 0.9,
+ "eval_names": [
+  "dev",
+  "rung0"
+ ],
+ "hidden_dim": 3584,
+ "labeling_sha": "71f84f214f46",
+ "n1m_payload_sha12": {
+  "L14": "5a085dc6bbbf",
+  "L19": "188486f8afd9",
+  "L26": "f2c7a4d0e6f5"
+ }
+}

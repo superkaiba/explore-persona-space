@@ -400,6 +400,42 @@ def test_reconciler_md_uses_only_canonical_reconcile_marker():
     )
 
 
+def test_workflow_surface_reconcile_kinds_within_allowed_set():
+    """Workflow-surface sweep (#2342 acceptance criterion 5): no ``.md`` in
+    ``.claude/agents/`` or ``.claude/skills/issue/`` (SKILL.md, steps/,
+    markers.md, templates/) names a reconcile-family ``epm:`` kind outside
+    the allowed set — the canonical marker-mode kind, the in-context stdout
+    tag, and the registered documentation alias (whose own registry entry
+    says the reconciler posts the ONE canonical kind). Sibling of the
+    reconciler.md pin above: that test pins ONE file to a 2-kind set; this
+    sweeps the whole /issue workflow surface. The runtime side of the same
+    invariant is the `task.py post-marker` reconcile-kind guard
+    (``scripts/task.py::_reconcile_kind_violation``)."""
+    import re
+
+    allowed = {
+        "epm:review-reconcile",
+        "epm:plan-critique-reconcile",
+        "epm:followup-value-critique-reconcile",
+    }
+    md_files = sorted((REPO_ROOT / ".claude" / "agents").glob("*.md")) + sorted(
+        (REPO_ROOT / ".claude" / "skills" / "issue").rglob("*.md")
+    )
+    assert len(md_files) > 10, "sweep surface unexpectedly small — glob roots moved?"
+    offenders: dict[str, list[str]] = {}
+    for path in md_files:
+        found = set(re.findall(r"epm:[a-z-]*reconcil[a-z-]*", path.read_text()))
+        bad = found - allowed
+        if bad:
+            offenders[str(path.relative_to(REPO_ROOT))] = sorted(bad)
+    assert not offenders, (
+        f"workflow-surface files name non-canonical reconcile-family epm: kinds: {offenders}; "
+        "marker mode uses the LITERAL kind epm:review-reconcile (role in the body's "
+        "**Role under adjudication:** field); phrase hypothetical deviants as "
+        "placeholders (e.g. epm:<role>-reconcile), never literal epm: strings"
+    )
+
+
 def test_reviewer_pairs_reconciler_marker_is_canonical():
     """The reviewer_pairs.reconciler.marker AND every marker-mode
     doubled_steps[*].reconcile_marker resolve to the single canonical

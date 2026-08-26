@@ -1,0 +1,26 @@
+{
+  "items": [
+    "The ferry office smelled of diesel and wet rope. Marisol had been stamping tickets since dawn, and the queue had thinned to a single fisherman who kept glancing at the harbor board. He leaned on the counter at last. \"Is the night crossing still running when the fog comes in like this?\" Marisol replied: \"It runs, but the captain waits for the horn from the lighthouse before he casts off.\" The fisherman nodded and went back to watching the board.",
+    "Teodor was repairing the greenhouse hinge when his niece appeared between the tomato rows, holding a jar with something green inside it. She turned the jar over twice before speaking. \"Teodor, why do the caterpillars stop eating before they change?\" Teodor replied: \"They are not stopping, little one -- they are getting ready. Everything in them is being taken apart and built again.\" She held the jar up to the light and said nothing for a long while.",
+    "The archive basement flooded every spring, and Priya had learned to keep the oldest boxes on the highest shelves. The new clerk found her there among the ledgers, a pencil behind his ear. \"Which of these years am I allowed to lend out to the law students?\" Priya replied: \"Nothing before 1962 leaves this room. Everything after, you photograph first and lend second.\" He wrote it on his wrist like a schoolboy.",
+    "Snow had closed the pass, and the relay station's stove was down to its last good log. Halvard sat nearest the heat, mending a strap, when the courier stamped in and shook the ice from her coat. \"How long before the plows reach the summit road?\" Halvard replied: \"Two days if the wind turns, four if it doesn't. Either way you sleep here tonight.\" She dropped her satchel by the door as if she had already decided the same.",
+    "The rehearsal had gone badly, and Cesária stayed behind to re-mark the chalk lines on the stage floor. The youngest dancer lingered in the wings, still in her practice shoes. \"Cesária, do you think I should take the solo or give it back?\" Cesária replied: \"Keep it. You fell because you were counting, not because you can't do it. Stop counting.\" The girl laughed once, shakily, and the theater felt warmer.",
+    "By noon the market had eaten through Okonkwo's first basket of yams and half the second. A stranger in a dusty suit stopped at his stall, weighing a yam in each hand like a judge. \"What makes these worth twice what the next stall is asking?\" Okonkwo replied: \"Mine come out of river soil, not roadside sand. Cook one of each tonight and come tell me tomorrow which was worth the walk.\" The stranger paid for two of each without another word.",
+    "The observatory dome had jammed a quarter-turn from open, and Yuki was on the catwalk with a headlamp and a wrench older than she was. Below, the visiting student cupped his hands and called up through the cold. \"Can we still get the comet tonight, or have we lost the window?\" Yuki replied: \"We have an hour of margin. Hand me the long spanner and start the coffee -- we'll make it.\" The gears groaned, then gave.",
+    "Ilse kept the border inn's guestbook the way her mother had, one line per traveler, no questions asked. The customs officer came in out of the rain anyway, cap under his arm, polite as a knife. \"Did a man with a grey coat and a limp sign your book this week?\" Ilse replied: \"People sign what they like in my book, and I pour soup for whoever pays. You may read it, but I won't read it for you.\" He read, found nothing, and left into the weather."
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-19T10:19:01-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_gen.py",
+      "--phase",
+      "build_banks"
+    ],
+    "git_commit": "43cf955d",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}
