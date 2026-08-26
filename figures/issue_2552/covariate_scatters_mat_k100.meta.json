@@ -1,7 +1,7 @@
 {
-  "commit": "33529ec2+dirty",
-  "render_id": "5fac832391ab4d48",
-  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "commit": "6b2ece5f+dirty",
+  "render_id": "b313e50e3c25408a",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
   "git_dirty": true,
   "git_dirty_paths": [
     "figures/issue_2552/category_activity_heatmap.meta.json",
@@ -16,6 +16,12 @@
     "figures/issue_2552/category_status_groups.meta.json",
     "figures/issue_2552/category_status_groups.pdf",
     "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_mat_k200.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k200.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k200.png",
     "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
     "figures/issue_2552/covariate_scatters_rep_ta.pdf",
     "figures/issue_2552/covariate_scatters_rep_ta.png",
@@ -25,6 +31,9 @@
     "figures/issue_2552/embedding_coverage.meta.json",
     "figures/issue_2552/embedding_coverage.pdf",
     "figures/issue_2552/embedding_coverage.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
     "figures/issue_2552/ladder_hero.meta.json",
     "figures/issue_2552/ladder_hero.pdf",
     "figures/issue_2552/ladder_hero.png",
@@ -45,15 +54,11 @@
     "figures/issue_2552/pairwise_win_matrix.png",
     "figures/issue_2552/reconstruction_fve.meta.json",
     "figures/issue_2552/reconstruction_fve.pdf",
-    "figures/issue_2552/reconstruction_fve.png",
-    "figures/issue_2552/w7_calibration.meta.json",
-    "figures/issue_2552/w7_calibration.pdf",
-    "figures/issue_2552/w7_calibration.png",
-    "scripts/issue2552_ladder.py"
+    "... 5 more"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-26T00:21:44Z",
+  "created": "2026-08-26T01:23:45Z",
   "figsize": [
     12.0,
     7.199999999999999
@@ -12064,7 +12069,7 @@
   "total_points": 23760,
   "data_truncated": true,
   "text": {
-    "suptitle": "mat_k100: per-feature R\u00b2 vs covariate (z) \u2014 decile medians",
+    "suptitle": "mat_k100 (matryoshka k=100): per-feature R\u00b2 vs covariate (z), decile medians",
     "fig_texts": [],
     "axes": [
       {

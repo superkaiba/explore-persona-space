@@ -1,12 +1,33 @@
 {
-  "commit": "33529ec2+dirty",
-  "render_id": "3c1f38c0e5fc4b7a",
-  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "commit": "6b2ece5f+dirty",
+  "render_id": "aebdae90a3a148a1",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
     "figures/issue_2552/category_ranking.meta.json",
     "figures/issue_2552/category_ranking.pdf",
     "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_mat_k200.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k200.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k200.png",
+    "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
+    "figures/issue_2552/covariate_scatters_rep_ta.pdf",
+    "figures/issue_2552/covariate_scatters_rep_ta.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
     "figures/issue_2552/ladder_hero.meta.json",
     "figures/issue_2552/ladder_hero.pdf",
     "figures/issue_2552/ladder_hero.png",
@@ -20,7 +41,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-26T00:21:04Z",
+  "created": "2026-08-26T01:23:09Z",
   "figsize": [
     13.200000000000001,
     3.2
@@ -124,7 +145,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "rep_ta shadow ranking (status groups grey-family)",
+        "title_left": "rep_ta (replication turn-avg): shadow ranking\n(status groups grey-family)",
         "xticklabels": [
           "Voice",
           "Meta",
@@ -133,20 +154,16 @@
           "Content"
         ],
         "yticklabels": [
-          "\u22120.125",
-          "\u22120.100",
-          "\u22120.075",
-          "\u22120.050",
-          "\u22120.025",
-          "0.000",
-          "0.025",
-          "0.050",
-          "0.075",
-          "0.100"
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
         ]
       },
       {
-        "title_left": "mat_k100 shadow ranking (status groups grey-family)",
+        "title_left": "mat_k100 (matryoshka k=100): shadow ranking\n(status groups grey-family)",
         "xticklabels": [
           "Voice",
           "Form",
@@ -155,19 +172,15 @@
           "Content"
         ],
         "yticklabels": [
-          "\u22120.100",
-          "\u22120.075",
-          "\u22120.050",
-          "\u22120.025",
-          "0.000",
-          "0.025",
-          "0.050",
-          "0.075",
-          "0.100"
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
         ]
       },
       {
-        "title_left": "mat_k200 shadow ranking (status groups grey-family)",
+        "title_left": "mat_k200 (matryoshka k=200): shadow ranking\n(status groups grey-family)",
         "xticklabels": [
           "Voice",
           "Form",

@@ -105,6 +105,13 @@ CFG_TICK = {  # MF-E: compact per-config bundle attribution for figure tick labe
     "mat_k100": "mat_k100\n(#2476 matryoshka, 65k)",
     "mat_k200": "mat_k200\n(#2476 matryoshka, 65k)",
 }
+CFG_GLOSS = {  # short plain-English gloss per config slug (r3 c2: panel titles + pair ticks)
+    "pt_max": "per-token max",
+    "pt_sum": "per-token sum",
+    "rep_ta": "replication turn-avg",
+    "mat_k100": "matryoshka k=100",
+    "mat_k200": "matryoshka k=200",
+}
 COVARIATE_LABEL = {  # ONE display-name map — every rendered covariate label decodes here (r2)
     "act_mean_when_active": "mean activation when active",
     "act_var": "activation variance",
@@ -1542,7 +1549,7 @@ def phase_figures(args) -> None:
             if np.isfinite(bv):
                 ax.hlines(bv, xi - 0.4, xi + 0.4, color=cols[3], lw=1.6)
         ax.set_xticks(x, labels, rotation=45, ha="right", fontsize=6)
-        ax.set_title(f"{fam} (n={run['n']})")
+        ax.set_title(f"{fam} ({CFG_GLOSS[fam]}), n={run['n']}", fontsize=8)
         ax.set_ylabel("overall R² (base) / increment")
     fig.suptitle("Forward-selection partial ladder — bars vs within-quintile null p95")
     fig.tight_layout()
@@ -1563,7 +1570,7 @@ def phase_figures(args) -> None:
         prim_cat.append(got[0] if got else 0.0)
     ax.bar(xs - 0.2, prim_cat, width=0.4, color=cols[1], label="category at selection")
     ax.bar(xs + 0.2, forced, width=0.4, color=cols[2], label="category forced last")
-    ax.set_xticks(xs, fams)
+    ax.set_xticks(xs, [f"{f}\n({CFG_GLOSS[f]})" for f in fams], fontsize=7)
     ax.set_ylabel("partial R²")
     ax.legend()
     ax.set_title("Category increment: as-selected vs forced-last")
@@ -1586,7 +1593,7 @@ def phase_figures(args) -> None:
         ax.set_ylim(-0.5, 2.5)
         ax.set_yticks([0, 1, 2], ["primary", "half 1", "half 2"])
         ax.set_xlabel("step")
-        ax.set_title(fam)
+        ax.set_title(f"{fam} ({CFG_GLOSS[fam]})")
     fig.suptitle("Split-half selection stability")
     fig.tight_layout()
     save(fig, "ladder_splithalf", dir=io.figs)
@@ -1620,7 +1627,7 @@ def phase_figures(args) -> None:
             yerr = np.abs(ci.T - v[None, :])
             ax.bar(x, v, color=cols[:5], yerr=yerr, capsize=2)
             ax.set_xticks(x, names, rotation=30, ha="right", fontsize=7)
-            ax.set_title(f"{fam} — {title}", fontsize=8)
+            ax.set_title(f"{fam} ({CFG_GLOSS[fam]}), {title}", fontsize=7)
     fig.tight_layout()
     save(fig, "category_ranking", dir=io.figs)
     plt.close(fig)
@@ -1637,7 +1644,9 @@ def phase_figures(args) -> None:
         colors = [cols[0] if c in CATEGORIES else cols[6] for c in names]
         ax.bar(np.arange(len(names)), vals, color=colors)
         ax.set_xticks(np.arange(len(names)), names, rotation=40, ha="right", fontsize=6)
-        ax.set_title(f"{fam} shadow ranking (status groups grey-family)", fontsize=8)
+        ax.set_title(
+            f"{fam} ({CFG_GLOSS[fam]}): shadow ranking\n(status groups grey-family)", fontsize=7
+        )
     fig.tight_layout()
     save(fig, "category_status_groups", dir=io.figs)
     plt.close(fig)
@@ -1658,7 +1667,7 @@ def phase_figures(args) -> None:
         im = ax.imshow(mat, aspect="auto", cmap="RdBu_r")
         ax.set_yticks(range(5), CATEGORIES, fontsize=7)
         ax.set_xticks(range(N_QUINT), [f"Q{q + 1}" for q in range(N_QUINT)])
-        ax.set_title(fam, fontsize=8)
+        ax.set_title(f"{fam} ({CFG_GLOSS[fam]})", fontsize=8)
         fig.colorbar(im, ax=ax, shrink=0.8)
     save(fig, "category_activity_heatmap", dir=io.figs)
     plt.close(fig)
@@ -1675,7 +1684,7 @@ def phase_figures(args) -> None:
             [d[g] / max(n_panel, 1) for g in groups],
             width=width,
             color=cols[k],
-            label=fam,
+            label=f"{fam} ({CFG_GLOSS[fam]})",
         )
     ax.set_xticks(np.arange(len(groups)) + 0.4, groups, fontsize=7)
     ax.set_ylabel("fraction of panel")
@@ -1905,7 +1914,7 @@ def phase_figures(args) -> None:
             ax.set_title(COVARIATE_LABEL.get(name, name), fontsize=6.5)
         for ax in axf[len(names) :]:
             ax.axis("off")
-        fig.suptitle(f"{fam}: per-feature R² vs covariate (z) — decile medians")
+        fig.suptitle(f"{fam} ({CFG_GLOSS[fam]}): per-feature R² vs covariate (z), decile medians")
         fig.tight_layout()
         save(fig, f"covariate_scatters_{fam}", dir=io.figs)
         plt.close(fig)
@@ -1914,7 +1923,7 @@ def phase_figures(args) -> None:
     # slot for the headline pair; per-pair turn-averaged win rate by presentation order
     match_rows = json.loads((io.dere_out / "matching_perturn.json").read_text())["rows"]
     pair_rows = json.loads((io.dere_out / "pairwise_perturn.json").read_text())["rows"]
-    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(9.4, 3.2))
+    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(10.8, 3.3))
     slots = [chr(ord("A") + i) for i in range(10)]
     for cfg in ("rep_ta", "pt_max"):
         acc = []
@@ -1949,12 +1958,12 @@ def phase_figures(args) -> None:
                     w2 += r["winner"] == a
             firsts.append(w1 / n1 if n1 else np.nan)
             seconds.append(w2 / n2 if n2 else np.nan)
-            ticks.append(f"{a}\nvs {b}")
+            ticks.append(f"{CFG_GLOSS[a]}\nvs {CFG_GLOSS[b]}")  # r3 c2: glossed pair ticks
     xr = np.arange(len(ticks))
     ax_r.bar(xr - 0.2, firsts, width=0.4, color=cols[5], label="listed first")
     ax_r.bar(xr + 0.2, seconds, width=0.4, color=cols[6], label="listed second")
     ax_r.axhline(0.5, color="grey", ls=":", lw=1)
-    ax_r.set_xticks(xr, ticks, fontsize=6)
+    ax_r.set_xticks(xr, ticks, fontsize=5.5, rotation=15, ha="center")
     ax_r.set_ylabel("turn-averaged win rate")
     ax_r.legend(fontsize=6)
     ax_r.set_title("pairwise coverage by presentation order", fontsize=8)

@@ -1,7 +1,7 @@
 {
-  "commit": "33529ec2+dirty",
-  "render_id": "4cb8a717db4a46b0",
-  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "commit": "6b2ece5f+dirty",
+  "render_id": "b32e3614bfe74602",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
   "git_dirty": true,
   "git_dirty_paths": [
     "figures/issue_2552/category_activity_heatmap.meta.json",
@@ -31,6 +31,9 @@
     "figures/issue_2552/embedding_coverage.meta.json",
     "figures/issue_2552/embedding_coverage.pdf",
     "figures/issue_2552/embedding_coverage.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
     "figures/issue_2552/ladder_hero.meta.json",
     "figures/issue_2552/ladder_hero.pdf",
     "figures/issue_2552/ladder_hero.png",
@@ -51,17 +54,14 @@
     "figures/issue_2552/pairwise_win_matrix.png",
     "figures/issue_2552/reconstruction_fve.meta.json",
     "figures/issue_2552/reconstruction_fve.pdf",
-    "figures/issue_2552/reconstruction_fve.png",
-    "figures/issue_2552/w7_calibration.meta.json",
-    "figures/issue_2552/w7_calibration.pdf",
-    "... 2 more"
+    "... 5 more"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-26T00:22:00Z",
+  "created": "2026-08-26T01:23:57Z",
   "figsize": [
-    9.4,
-    3.2
+    10.8,
+    3.3
   ],
   "points": [
     {
@@ -320,12 +320,12 @@
           "listed second"
         ],
         "xticklabels": [
-          "rep_ta\nvs pt_max",
-          "rep_ta\nvs pt_sum",
-          "mat_k100\nvs pt_max",
-          "mat_k100\nvs pt_sum",
-          "mat_k200\nvs pt_max",
-          "mat_k200\nvs pt_sum"
+          "replication turn-avg\nvs per-token max",
+          "replication turn-avg\nvs per-token sum",
+          "matryoshka k=100\nvs per-token max",
+          "matryoshka k=100\nvs per-token sum",
+          "matryoshka k=200\nvs per-token max",
+          "matryoshka k=200\nvs per-token sum"
         ],
         "yticklabels": [
           "0.0",

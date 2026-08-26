@@ -1,14 +1,47 @@
 {
-  "commit": "33529ec2+dirty",
-  "render_id": "004a7fb6a4df461e",
-  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "commit": "6b2ece5f+dirty",
+  "render_id": "7a6aee749b25405a",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_mat_k200.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k200.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k200.png",
+    "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
+    "figures/issue_2552/covariate_scatters_rep_ta.pdf",
+    "figures/issue_2552/covariate_scatters_rep_ta.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
     "scripts/issue2552_ladder.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-26T00:20:54Z",
+  "created": "2026-08-26T01:22:59Z",
   "figsize": [
     12.600000000000001,
     3.4
@@ -148,7 +181,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "rep_ta (n=2974)",
+        "title_left": "rep_ta (replication turn-avg), n=2974",
         "ylabel": "overall R\u00b2 (base) / increment",
         "xticklabels": [
           "activity\n(step 0)",
@@ -169,7 +202,7 @@
         ]
       },
       {
-        "title_left": "mat_k100 (n=2149)",
+        "title_left": "mat_k100 (matryoshka k=100), n=2149",
         "ylabel": "overall R\u00b2 (base) / increment",
         "xticklabels": [
           "activity\n(step 0)",
@@ -189,7 +222,7 @@
         ]
       },
       {
-        "title_left": "mat_k200 (n=2658)",
+        "title_left": "mat_k200 (matryoshka k=200), n=2658",
         "ylabel": "overall R\u00b2 (base) / increment",
         "xticklabels": [
           "activity\n(step 0)",

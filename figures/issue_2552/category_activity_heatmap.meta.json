@@ -1,15 +1,33 @@
 {
-  "commit": "33529ec2+dirty",
-  "render_id": "03da649cff2741ce",
-  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "commit": "6b2ece5f+dirty",
+  "render_id": "a42a121b4add49d4",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
   "git_dirty": true,
   "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
     "figures/issue_2552/category_ranking.meta.json",
     "figures/issue_2552/category_ranking.pdf",
     "figures/issue_2552/category_ranking.png",
     "figures/issue_2552/category_status_groups.meta.json",
     "figures/issue_2552/category_status_groups.pdf",
     "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_mat_k200.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k200.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k200.png",
+    "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
+    "figures/issue_2552/covariate_scatters_rep_ta.pdf",
+    "figures/issue_2552/covariate_scatters_rep_ta.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
     "figures/issue_2552/ladder_hero.meta.json",
     "figures/issue_2552/ladder_hero.pdf",
     "figures/issue_2552/ladder_hero.png",
@@ -23,7 +41,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-26T00:21:07Z",
+  "created": "2026-08-26T01:23:12Z",
   "figsize": [
     12.0,
     3.0
@@ -33,7 +51,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "rep_ta",
+        "title_left": "rep_ta (replication turn-avg)",
         "xticklabels": [
           "Q1",
           "Q2",
@@ -50,7 +68,7 @@
         ]
       },
       {
-        "title_left": "mat_k100",
+        "title_left": "mat_k100 (matryoshka k=100)",
         "xticklabels": [
           "Q1",
           "Q2",
@@ -67,7 +85,7 @@
         ]
       },
       {
-        "title_left": "mat_k200",
+        "title_left": "mat_k200 (matryoshka k=200)",
         "xticklabels": [
           "Q1",
           "Q2",
