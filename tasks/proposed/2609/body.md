@@ -15,6 +15,12 @@ workflow: v1
 ---
 # `_hf_routing_exempt_spans` row indices use a different line model than its caller — a form feed can UNDER-flag a real HF call
 
+## Provenance
+
+workflow_fix_target: scripts/workflow_lint.py
+
+Filed by the /issue 2351 session after #2351 was superseded on landing by #2355.
+
 **Surfaced by:** task #2351's round-2 code-review ensemble (blocker B1), 2026-08-25. #2351 built a parallel implementation of the same string-awareness feature and was superseded on landing by #2355, which reached `main` first. This bug is #2355's, is DISTINCT from the docstring false-positive both tasks fixed, and is the one finding of #2351 worth keeping.
 
 ## Gap
