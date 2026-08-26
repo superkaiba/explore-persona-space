@@ -286,14 +286,35 @@ def _issue_of_path(path: str) -> int | None:
 
 
 # --- Cross-issue cone derivation (#2608) ------------------------------------
-# Cone-dir head of a Channel-A candidate: unlike _ISSUE_DIR_RE this accepts a
+# Cone-dir head of a cone-scope candidate: unlike _ISSUE_DIR_RE this accepts a
 # bare dir citation with NO trailing slash (`eval_results/issue_1482`), since
 # a dir/no-ext candidate is still a dependency declaration for cone purposes.
 _CONE_HEAD_RE = re.compile(r"^((?:ood_)?eval_results)/issue_(\d+)(?:/|$)")
-# figures/issue_<M> is NOT in _PATH_RE's alternation (Channel A never fires on
-# it), so cone derivation scans the plan text directly. Same left guard as
-# _PATH_RE so HF-repo / nested (`.../figures/issue_5`) forms never match.
-_FIGURES_ISSUE_RE = re.compile(r"(?<![\w/\-.])figures/issue_(\d+)(?!\d)")
+# figures/issue_<M> head of a cone-scope candidate. Matched against EXPANDED
+# candidates (never raw plan text), so `$` is a real citation boundary: the
+# `(?:/|$)` right guard rejects suffix-named sibling trees
+# (`figures/issue_2476-old/...`) and files directly under figures/
+# (`figures/issue_2476.png`), which are not the `figures/issue_2476` cone
+# (#2608 round-2 boundary fix; the eval head above already carries it).
+_FIGURES_ISSUE_RE = re.compile(r"^figures/issue_(\d+)(?:/|$)")
+# Cone-scope candidate scan (#2608 round 2). Like _PATH_RE but (a) scoped to
+# the three cone families (figures/ is NOT in _PATH_RE's alternation), and
+# (b) tolerant of `{...}` brace groups WITH commas: the brace-grouped citation
+# `eval_results/issue_{1482,2476}/...` is the notation many persisted plans
+# use, and _PATH_RE's char class carries `{}` but NOT `,`, so gate-mode
+# extraction truncates such a candidate at the first comma
+# (`eval_results/issue_{1482`) and _CONE_HEAD_RE derives nothing (round-1
+# reconciler blocker). Candidates are brace-expanded via _expand_braces
+# BEFORE the cone-head regexes above. Gate-mode _PATH_RE and its
+# classification semantics are deliberately untouched: widening its raw char
+# class with `,` would glom comma-separated prose citations into one
+# candidate. Same left guard as _PATH_RE so HF-repo / nested
+# (`.../figures/issue_5`) forms never match.
+_CONE_CAND_RE = re.compile(
+    r"(?<![\w/\-.])"
+    r"(?P<path>(?:eval_results|ood_eval_results|figures)/"
+    r"[A-Za-z0-9](?:[\w.\-/*?\[\]<>]|\{[^{}\n]*\})*)"
+)
 
 
 def extra_cones_for_plan(plan_text: str, issue: int) -> list[str]:
@@ -306,22 +327,29 @@ def extra_cones_for_plan(plan_text: str, issue: int) -> list[str]:
     the pod's cone sparse-checkout (incident: #2569's first launch died on
     BOTH pods because the cross-issue cones were hidden).
 
-    Derives from ALL Channel-A regex matches INCLUDING skip-classed
-    candidates (glob ``eval_results/issue_M/*.json``, trailing-``/`` dir,
-    no-ext forms): those skip reasons exist for the GATE's never-block
-    contract, but for cone derivation they are real dependency declarations —
-    filtering to classify-eligible candidates only would recreate a blind
-    path for plans that cite only globs/dirs. Own-issue paths are never
-    returned.
+    Derives from a cone-scope scan of the plan text (``_CONE_CAND_RE``) that
+    covers every Channel-A form INCLUDING skip-classed candidates (glob
+    ``eval_results/issue_M/*.json``, trailing-``/`` dir, no-ext forms): the
+    gate's skip reasons exist for its never-block contract, but for cone
+    derivation they are real dependency declarations — filtering to
+    classify-eligible candidates only would recreate a blind path for plans
+    that cite only globs/dirs. Brace-grouped citations
+    (``eval_results/issue_{1482,2476}/...``) are expanded via
+    ``_expand_braces`` before the cone-head regexes, so every group member
+    derives its cone (pre-fix they derived NOTHING — ``_PATH_RE`` truncates
+    the candidate at the first comma; round-1 reconciler blocker). Own-issue
+    paths are never returned.
     """
     cones: set[str] = set()
-    for cand in extract_candidate_paths(plan_text):
-        m = _CONE_HEAD_RE.match(cand["path"])
-        if m and int(m.group(2)) != issue:
-            cones.add(f"{m.group(1)}/issue_{m.group(2)}")
-    for m in _FIGURES_ISSUE_RE.finditer(plan_text):
-        if int(m.group(1)) != issue:
-            cones.add(f"figures/issue_{m.group(1)}")
+    for m in _CONE_CAND_RE.finditer(plan_text):
+        raw = m.group("path").rstrip(_TRAIL_PUNCT)
+        for cand in _expand_braces(raw):
+            em = _CONE_HEAD_RE.match(cand)
+            if em and int(em.group(2)) != issue:
+                cones.add(f"{em.group(1)}/issue_{em.group(2)}")
+            fm = _FIGURES_ISSUE_RE.match(cand)
+            if fm and int(fm.group(1)) != issue:
+                cones.add(f"figures/issue_{fm.group(1)}")
     return sorted(cones)
 
 

@@ -2667,6 +2667,65 @@ def test_extra_cones_for_plan_left_guard_blocks_hf_and_nested_forms() -> None:
     assert vci.extra_cones_for_plan(plan, 1) == []
 
 
+def test_extra_cones_for_plan_brace_grouped_citations() -> None:
+    """Brace-grouped Channel-A citations derive a cone PER group member (#2608 r2).
+
+    The `eval_results/issue_{A,B}/...` notation appears in many persisted
+    plans (#2608's own plan v3 included); gate-mode _PATH_RE's char class has
+    no `,`, so extraction truncates the candidate at the first comma and
+    pre-fix these citations derived ZERO cones (round-1 reconciler blocker).
+    """
+    # The reconciler's live repro, verbatim, as a passing assertion.
+    assert vci.extra_cones_for_plan("eval_results/issue_{1,2}/x.json", 9) == [
+        "eval_results/issue_1",
+        "eval_results/issue_2",
+    ]
+    # The incident form quoted in plan v3's Requirement (4 members, deep tail).
+    plan = "Reads eval_results/issue_{1482,2476,1979,779}/raw_completions/*.json in bulk."
+    assert vci.extra_cones_for_plan(plan, 2608) == [
+        "eval_results/issue_1482",
+        "eval_results/issue_1979",
+        "eval_results/issue_2476",
+        "eval_results/issue_779",
+    ]
+
+
+def test_extra_cones_for_plan_brace_grouped_ood_and_figures_forms() -> None:
+    """ood_eval_results and figures brace groups expand the same way (#2608 r2)."""
+    plan = "Uses ood_eval_results/issue_{779,1482}/y.jsonl and figures/issue_{2476,1979}/z.png too."
+    assert vci.extra_cones_for_plan(plan, 2608) == [
+        "figures/issue_1979",
+        "figures/issue_2476",
+        "ood_eval_results/issue_1482",
+        "ood_eval_results/issue_779",
+    ]
+
+
+def test_extra_cones_for_plan_brace_group_excludes_own_issue_member() -> None:
+    """An own-issue member INSIDE a brace group is excluded; siblings survive."""
+    assert vci.extra_cones_for_plan("eval_results/issue_{2,9}/x.json", 9) == [
+        "eval_results/issue_2"
+    ]
+    assert vci.extra_cones_for_plan("figures/issue_{9,12}/p.png", 9) == ["figures/issue_12"]
+
+
+def test_extra_cones_for_plan_figures_right_boundary_rejects_suffix_named_trees() -> None:
+    """`figures/issue_2476-old/...` is NOT the figures/issue_2476 cone (#2608 r2).
+
+    Same for a file directly under figures/ (`figures/issue_2476.png`). The
+    eval cone head already carried the `(?:/|$)` boundary — pinned here too.
+    """
+    assert vci.extra_cones_for_plan("see figures/issue_2476-old/x.png", 1) == []
+    assert vci.extra_cones_for_plan("see figures/issue_2476.png", 1) == []
+    assert vci.extra_cones_for_plan("see eval_results/issue_2476-old/x.json", 1) == []
+    # Bare dir citations (no trailing slash) still derive — the `$` arm, after
+    # trailing-punctuation strip.
+    assert vci.extra_cones_for_plan("see figures/issue_2476 and eval_results/issue_779.", 1) == [
+        "eval_results/issue_779",
+        "figures/issue_2476",
+    ]
+
+
 def test_print_extra_cones_cli_with_plan(tmp_path: Path, capsys) -> None:
     """--print-extra-cones on an explicit tmp plan: space-joined set, exit 0."""
     plan = _plan(
