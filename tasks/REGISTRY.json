@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2608,
+  "highest_id": 2609,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12405,6 +12405,13 @@
       "path": "tasks/running/2608",
       "status": "running",
       "title": "Pod bootstrap cone sparse-checkout omits CROSS-ISSUE artifact cones, so drivers reading prior issues' committed eval_results/figures crash at launch"
+    },
+    "2609": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2609",
+      "status": "proposed",
+      "title": "workflow_lint _hf_routing_exempt_spans row indices use a different line model than its caller \u2014 a form feed can UNDER-flag a real HF call"
     },
     "261": {
       "has_clean_result": false,
