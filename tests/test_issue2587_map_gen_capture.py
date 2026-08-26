@@ -752,6 +752,7 @@ _PHASE_ORDER = [
     "[phase=p5_battery_gen]",
     "[phase=p6_battery_capture]",
     "[phase=p8_matched7b]",
+    "[phase=leak_caphit_harvest]",
     "[phase=results_push]",
     "[phase=done]",
 ]
@@ -848,6 +849,31 @@ def test_launcher_dryrun_covers_all_six_splits(launcher_dryrun):
         assert f"--split {split} " in out, f"split {split} missing from the production waves"
 
 
+def test_launcher_dryrun_leak_caphit_harvest(launcher_dryrun):
+    """r2 concern `leak-caphit-manifests-not-in-harvest-set`: the workload
+    itself PRODUCES the per-split cap-hit aggregates (plan §4.3/§4.4) and
+    harvests them + the battery gen done-manifests into
+    eval_results/issue_2587/leak_caphit/, BEFORE results_push — and the
+    harvested JSONs join the results_push verification set."""
+    out = launcher_dryrun
+    assert "[phase=leak_caphit_harvest]" in out
+    assert "[dryrun] leak_caphit_harvest: cp " in out  # gen done-manifest copies
+    agg = [ln for ln in out.splitlines() if "--aggregate-cap-hit" in ln]
+    assert len(agg) == len(M.SPLIT_TO_MANIFEST), agg
+    for split in sorted(M.SPLIT_TO_MANIFEST):
+        matches = [ln for ln in agg if f"--split {split} " in ln]
+        assert len(matches) == 1, (split, matches)
+        (ln,) = matches
+        assert "--cap-hit-out" in ln and f"cap_hit_{split}.json" in ln, ln
+        assert " > " in ln, f"aggregate command not log-redirected: {ln}"
+    # Static: the harvested leak_caphit/*.json files ride the results_push
+    # commit+push verification set (the #1205 contract).
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    leak_block = text[text.index('LEAK_DIR="') :]
+    assert 'find "$LEAK_DIR" -maxdepth 1 -type f -name' in leak_block
+    assert "RESULT_JSONS+=" in leak_block
+
+
 def test_launcher_dryrun_p1_legs_present(launcher_dryrun):
     out = launcher_dryrun
     # (a) the driver-documented 500-row smoke shard, both sub-phases.
@@ -879,6 +905,10 @@ def test_launcher_dryrun_every_command_log_redirected(launcher_dryrun):
                 "[dryrun] results_push",
                 "[dryrun] hf_mirror",
                 "[dryrun] epm_results",
+                # r2: inline manifest-copy echo (an in-phase file copy like
+                # assert_file/write_sentinel, NOT a run_logged command); the
+                # phase's per-split aggregate commands stay redirect-asserted.
+                "[dryrun] leak_caphit_harvest: cp",
             )
         )
     ]

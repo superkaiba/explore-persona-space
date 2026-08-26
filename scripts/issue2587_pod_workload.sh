@@ -30,9 +30,15 @@
 #   p6_battery_capture  capture 2 shards + single-GPU embed (repo venv,
 #                    vLLM 0.11.0 — §4.4 instrument-version parity DEFAULT)
 #   p8_matched7b     matched-capacity 7B arm (repo venv, single GPU)
-#   results_push     commit + push pod-side eval JSONs (#1205 verification),
-#                    HF mirror to issue2587_q35_map/manifests/, epm:results
-#                    sentinel, then the single terminal [phase=done]
+#   leak_caphit_harvest  copy battery gen done-manifests + aggregate per-split
+#                    cap-hit JSONs into eval_results/issue_2587/leak_caphit/
+#                    (CPU-only, repo venv; feeds think_leak_cap_hit_table's
+#                    VM default --leak-caphit-dir — r2 concern
+#                    leak-caphit-manifests-not-in-harvest-set)
+#   results_push     commit + push pod-side eval JSONs incl. the harvested
+#                    leak_caphit/ set (#1205 verification), HF mirror to
+#                    issue2587_q35_map/manifests/, epm:results sentinel,
+#                    then the single terminal [phase=done]
 #
 # P1 enforcement (round-2 blocker `compat-gate-not-enforced`): every
 # production wave entry calls require_p1 (fail-loud assert that
@@ -463,6 +469,64 @@ run_logged "$LOGS_DIR/issue-2587-p8-matched7b.log" \
   --upload hf --sentinel-path "$OUT_ROOT/matched7b_done.json" -v
 assert_file "$OUT_ROOT/matched7b_done.json" "P8 matched7b"
 
+# ── leak/cap-hit harvest (r2 concern leak-caphit-manifests-not-in-harvest-set)
+# think_leak_cap_hit_table (issue2587_figures.py) rglobs anchors_*.done.json +
+# cap_hit_*.json under the VM default --leak-caphit-dir
+# (eval_results/issue_2587). The think-leak and per-split cap-hit fractions
+# are plan-§4.3/§4.4 reportable run facts, so they belong in the harvested
+# results: copy the battery gen done-manifests (pod-side under
+# $BATTERY_ROOT/{,shard*/}manifests/) and AGGREGATE the per-split cap-hit
+# fractions into eval_results/issue_2587/leak_caphit/, then ride them through
+# the results_push commit + HF mirror below (CPU-only; repo venv, like the
+# P1 apply-probe leg — --aggregate-cap-hit reads the P2 chunks from HF).
+phase leak_caphit_harvest
+LEAK_DIR="$REPO_ROOT/eval_results/issue_2587/leak_caphit"
+if [ -n "$DRYRUN" ]; then
+  printf '[dryrun] leak_caphit_harvest: cp %s/{,shard*/}manifests/anchors_*.done.json -> %s\n' \
+    "$BATTERY_ROOT" "$LEAK_DIR"
+  for split in "${SPLITS[@]}"; do
+    printf '[dryrun] uv run python %s --aggregate-cap-hit --split %s --hf-prefix %s --split-ids %s --out-dir %s --cap-hit-out %s/cap_hit_%s.json -v > %s\n' \
+      "$MAP" "$split" "$HF_PREFIX" "$SPLIT_IDS" "$OUT_ROOT" \
+      "$LEAK_DIR" "$split" "$LOGS_DIR/issue-2587-caphit-$split.log"
+  done
+else
+  mkdir -p "$LEAK_DIR"
+  shopt -s nullglob
+  GEN_MANIFESTS=(
+    "$BATTERY_ROOT"/manifests/anchors_*.done.json
+    "$BATTERY_ROOT"/shard*/manifests/anchors_*.done.json
+  )
+  shopt -u nullglob
+  if [ "${#GEN_MANIFESTS[@]}" -eq 0 ]; then
+    echo "[leak-caphit] FATAL: no anchors_*.done.json under $BATTERY_ROOT{,/shard*}/manifests" >&2
+    exit 6
+  fi
+  for m in "${GEN_MANIFESTS[@]}"; do
+    dest="$LEAK_DIR/$(basename "$m")"
+    if [ -e "$dest" ] && ! cmp -s "$m" "$dest"; then
+      echo "[leak-caphit] FATAL: done-manifest basename collision with differing content:" \
+        "$m vs $dest (shards must own disjoint axes)" >&2
+      exit 6
+    fi
+    cp -f "$m" "$dest"
+  done
+  echo "[leak-caphit] harvested ${#GEN_MANIFESTS[@]} battery gen done-manifests -> $LEAK_DIR"
+  for split in "${SPLITS[@]}"; do
+    run_logged "$LOGS_DIR/issue-2587-caphit-$split.log" \
+      uv run python "$MAP" --aggregate-cap-hit --split "$split" \
+      --hf-prefix "$HF_PREFIX" --split-ids "$SPLIT_IDS" \
+      --out-dir "$OUT_ROOT" --cap-hit-out "$LEAK_DIR/cap_hit_$split.json" -v
+    assert_file "$LEAK_DIR/cap_hit_$split.json" "cap-hit aggregate ($split)"
+  done
+fi
+# Extend the results_push set with the harvested repo-relative paths so the
+# leak/cap-hit inputs land on the branch + the HF manifests mirror.
+if [ -d "$LEAK_DIR" ]; then
+  while IFS= read -r f; do
+    RESULT_JSONS+=("${f#"$REPO_ROOT/"}")
+  done < <(find "$LEAK_DIR" -maxdepth 1 -type f -name '*.json' | sort)
+fi
+
 # ── results push + HF mirror + epm:results sentinel ─────────────────────────
 phase results_push
 for f in "${RESULT_JSONS[@]}"; do
@@ -558,7 +622,7 @@ path = os.path.join(logs_dir, "issue-2587-epm_results-%d.json" % int(time.time()
 write_json_atomic(path, payload)
 print("[sentinel] wrote", path)' \
     "$LOGS_DIR" \
-    "pod workload complete: P0b gates + P1 compat smoke (compat_smoke_done PASS) + P2/P3 map gen+capture (6 splits x 2 shards) + P4 fits/finalize + P5/P6 battery gen+capture+embed + P8 matched7b; eval JSONs pushed to $BRANCH + mirrored to issue2587_q35_map/manifests/"
+    "pod workload complete: P0b gates + P1 compat smoke (compat_smoke_done PASS) + P2/P3 map gen+capture (6 splits x 2 shards) + P4 fits/finalize + P5/P6 battery gen+capture+embed + P8 matched7b + leak/cap-hit harvest (eval_results/issue_2587/leak_caphit/); eval JSONs pushed to $BRANCH + mirrored to issue2587_q35_map/manifests/"
 fi
 
 phase done
