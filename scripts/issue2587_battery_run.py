@@ -15,14 +15,31 @@ phase sentinel) is transcribed from ``scripts/issue2564_langow_pilot_run.py``
 never import; the same convention ``bank2587`` records). The pilot wall-time
 gate is a port of ``scripts/issue2215_run.py::run_pilot_gate`` (§9 P5 row).
 
-Phase registry (``PHASES``): ``gen`` (THIS unit) | ``capture`` + ``embed``
-(unit 3b — P6 all-layer fp32 capture via the pinned
+Phase registry (``PHASES``): ``gen`` (unit 3a) | ``capture`` + ``embed``
+(unit 3b, implemented here). ``capture`` (P6) runs the pinned
 ``issue2162_run.capture_answer_states(..., tail_inclusive=True,
-return_boundaries=True)`` and the Qwen3-Embedding-8B third space; both raise
-``NotImplementedError`` here, never a silent no-op). Unit 3b drops in by
-implementing ``phase_capture`` / ``phase_embed`` and extending ``main``'s
-dispatch; the pinned-module accessor ``_r()`` already imports the exact blob
-capture needs.
+return_boundaries=True)`` via ``_r()`` at capture batch 8 over ALL 32 blocks
+with fp32 stores (fp16 stores overflow Qwen3-era massive activations — the
+#2330 convention; the pin's two terminal fp16 output casts are neutralized by
+a forwarding torch proxy swapped into the pinned module's globals around the
+call, with post-call dtype + isfinite asserts), the #2330 ``hook_probe`` GATE
+at blocks {16, 22, 30} BEFORE the production wave, the gate-4 EXACT boundary
+compare against the gen rows' span fields (mismatch halts loud, never
+degrades), v_C context-end states per unique context, and per-axis verified
+upload THEN local delete (bounds the §9 disk high-water). ``embed`` embeds
+every battery answer text with Qwen3-Embedding-8B under a STRUCTURAL
+engine-parity gate: the realized vLLM must equal ``EXPECTED_EMBED_ENGINE``
+(0.11.0 — the repo uv.lock pin; the DEFAULT route is running the phase under
+the repo venv) or carry a PASSING ``--parity-report`` from
+``run_engine_parity_probe`` (``--parity-probe-out`` mode); the realized engine
+version is recorded inside every chunk npz, the perdraw/means npz, meta.json,
+and the sentinel, and is part of the chunk-resume fingerprint, so 0.11.0- and
+0.27.1-produced vectors can never silently mix (plan v3 §4.4, consistency
+WARN-1). The embed machinery (chunked fp-keyed npz checkpoints, lazy engine,
+first-chunk pilot gate, engine reap, token-length precheck that raises rather
+than truncates) is transcribed from the pinned parent embed leg
+``8265bcd:scripts/issue2564_embed.py`` — itself the
+``scripts/issue2215_sepcmp_qwen_embed.py::embed_texts`` (line 52) port.
 
 Sharding (plan §9: "P5 by axis halves"): ``--num-shards 2 --shard-index k``
 deterministically splits the bank's axes (context ``cell`` key) across
@@ -36,11 +53,16 @@ carriers, K=2 — production model, production loaders; no substituted
 implementation exists in this driver).
 
 Exit convention (plan §4.7): one python process, explicit terminals — rc 0 on
-sentinel write, ``EXIT_PILOT_REFUSE`` (7) on a pilot-gate refusal (report JSON
-at ``manifests/pilot_gate_report.json``), any crash = the process's own
+sentinel write, ``EXIT_PILOT_REFUSE`` (7) on a pilot-gate refusal (gen report
+at ``manifests/pilot_gate_report.json``; embed report at
+``manifests/embed_pilot_gate_report.json``), ``EXIT_PARITY_MISS`` (8) when a
+``--parity-probe-out`` run measures a below-bar cosine (the report is still
+written — a miss forces the 0.11.0 route), any crash = the process's own
 non-zero exit observed by the poller. Rollout TEXT uploads unconditionally to
 ``{hf_prefix}/raw_completions/anchors/`` at end of shard, BEFORE any capture
-consumes it (#779; upload mode is part of the resume fingerprint).
+consumes it (#779; upload mode is part of the resume fingerprint). Phase
+sentinels: ``battery_gen_done.json`` / ``battery_capture_done.json`` (per
+shard out-root) / ``battery_embed_done.json`` (embed is single-process).
 """
 
 from __future__ import annotations
@@ -67,13 +89,28 @@ for _p in (str(SCRIPT_DIR), str(REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 import issue2587_common as cm2587  # noqa: E402
-from explore_persona_space.atomic_io import write_json_atomic, write_jsonl_atomic  # noqa: E402
+from explore_persona_space.analysis.extraction import (  # noqa: E402
+    _logits_to_keep_kwargs,
+    extract_layer_activations,
+)
+from explore_persona_space.atomic_io import (  # noqa: E402
+    atomic_replace,
+    write_json_atomic,
+    write_jsonl_atomic,
+)
 from explore_persona_space.experiments.issue1415.steering import generate_batch  # noqa: E402
 from explore_persona_space.experiments.issue2587 import bank2587 as B  # noqa: E402
 from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded  # noqa: E402
+
+# #628: vLLM reads this at import; --phase embed tokenizes with transformers
+# BEFORE LLM(), so the default fork() would poison the EngineCore subprocess.
+# Every vllm import in this driver is lazy (inside the embed phase), so this
+# module-level setdefault always precedes it.
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 logger = logging.getLogger("issue2587_battery_run")
 
@@ -95,6 +132,31 @@ GEN_BATCH = 16
 # shard's pending rows, refuse loud above the ceiling (row ceiling = 6 h).
 PILOT_CEILING_H = 6.0
 EXIT_PILOT_REFUSE = 7
+
+# §4.4 Capture pins (P6): capture batch 8, ALL 32 blocks, fp32 stores; the
+# #2330 hook_probe GATE at blocks {16, 22, 30} runs BEFORE the production
+# wave (rel tol = the plan §7 / #2330 parity bar). Probe layers deliberately
+# avoid block 31 (pre- vs post-final-RMSNorm divergence, extraction.py).
+CAPTURE_BATCH = 8
+CAPTURE_LAYERS = tuple(range(cm2587.N_LAYERS))
+HOOK_PROBE_LAYERS = (16, 22, 30)
+HOOK_PROBE_ROWS = 4
+HOOK_REL_TOL = 1e-5
+
+# §4.4 Embedding third space (the binding v3 requirement closing consistency
+# WARN-1): Qwen3-Embedding-8B under the PARENT's engine. Constants transcribed
+# from the pinned parent embed leg (8265bcd:scripts/issue2564_embed.py, itself
+# the issue2215_sepcmp_qwen_embed.py::embed_texts port). EXPECTED_EMBED_ENGINE
+# is the repo uv.lock vllm pin — the engine that produced the parent's banked
+# vectors (tests/test_issue2587_battery_run.py pins it against uv.lock).
+EMBED_MODEL = "Qwen/Qwen3-Embedding-8B"
+EMBED_DIM = 4096
+EMBED_CHUNK = 2500
+EMBED_MAX_MODEL_LEN = 8192
+EMBED_PILOT_CEILING_H = 2.0
+EXPECTED_EMBED_ENGINE = "0.11.0"
+PARITY_COS_MIN = 0.995
+EXIT_PARITY_MISS = 8
 
 # Pinned #2564-branch issue2162_run blob (same PIN the langow pilot + bank2587
 # use). Gen needs eot_tail_ids + cap_hit; unit 3b's capture phase reuses this
@@ -158,6 +220,14 @@ class Cfg:
     hf_prefix: str
     bank_values_sha: str
     pilot_ceiling_h: float
+    # unit 3b knobs (defaulted so unit 3a call sites stay valid)
+    capture_batch: int = CAPTURE_BATCH
+    capture_dtype: str = "float32"
+    embed_chunk: int = EMBED_CHUNK
+    embed_max_model_len: int = EMBED_MAX_MODEL_LEN
+    embed_pilot_ceiling_h: float = EMBED_PILOT_CEILING_H
+    parity_report: Path | None = None
+    anchors_roots: tuple[Path, ...] = ()
 
     @property
     def anchors_dir(self) -> Path:
@@ -170,6 +240,18 @@ class Cfg:
     @property
     def quarantine_dir(self) -> Path:
         return self.out_root / "quarantine"
+
+    @property
+    def va_dir(self) -> Path:
+        return self.out_root / "capture" / "va2587"
+
+    @property
+    def vc_dir(self) -> Path:
+        return self.out_root / "capture" / "vc2587"
+
+    @property
+    def embed_root(self) -> Path:
+        return self.out_root / "embed"
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -197,6 +279,39 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--upload", choices=("hf", "none"), default="hf")
     ap.add_argument("--hf-prefix", default=HF_PREFIX)
     ap.add_argument("--pilot-ceiling-h", type=float, default=PILOT_CEILING_H)
+    # unit 3b: capture knobs (plan §4.4 — batch 8, fp32; bfloat16 is an
+    # explicit debug opt-down, never the production route)
+    ap.add_argument("--capture-batch", type=int, default=CAPTURE_BATCH)
+    ap.add_argument("--capture-dtype", choices=("float32", "bfloat16"), default="float32")
+    # unit 3b: embed knobs + the engine-parity contingency surface
+    ap.add_argument("--embed-chunk", type=int, default=EMBED_CHUNK)
+    ap.add_argument("--embed-max-model-len", type=int, default=EMBED_MAX_MODEL_LEN)
+    ap.add_argument("--embed-pilot-ceiling-h", type=float, default=EMBED_PILOT_CEILING_H)
+    ap.add_argument(
+        "--parity-report",
+        default=None,
+        help="PASSING engine-parity probe report JSON — required to run --phase embed "
+        "under a vLLM other than the 0.11.0 parity reference (plan §4.4)",
+    )
+    ap.add_argument(
+        "--anchors-root",
+        action="append",
+        default=None,
+        help="root(s) holding the gen phase's anchors/ for --phase embed "
+        "(default: the out-root itself plus its shard* subdirs)",
+    )
+    # --parity-probe-out MODE (plan §4.4 contingency): re-embed banked parent
+    # anchor texts under the CURRENT engine vs the banked 0.11.0 vectors,
+    # write the report, exit 0 on pass / EXIT_PARITY_MISS on a miss.
+    ap.add_argument("--parity-probe-out", default=None)
+    ap.add_argument(
+        "--parity-anchor-texts", default=None, help="parent anchors JSONL (probe inputs)"
+    )
+    ap.add_argument(
+        "--parity-banked-npz", default=None, help="banked perdraw npz (0.11.0 reference vectors)"
+    )
+    ap.add_argument("--parity-n-anchors", type=int, default=10)
+    ap.add_argument("--parity-cos-min", type=float, default=PARITY_COS_MIN)
     ap.add_argument(
         "--import-check",
         action="store_true",
@@ -243,6 +358,13 @@ def build_cfg(
         hf_prefix=args.hf_prefix,
         bank_values_sha=bank_values_sha,
         pilot_ceiling_h=args.pilot_ceiling_h,
+        capture_batch=args.capture_batch,
+        capture_dtype=args.capture_dtype,
+        embed_chunk=args.embed_chunk,
+        embed_max_model_len=args.embed_max_model_len,
+        embed_pilot_ceiling_h=args.embed_pilot_ceiling_h,
+        parity_report=Path(args.parity_report) if args.parity_report else None,
+        anchors_roots=tuple(Path(p) for p in (args.anchors_root or ())),
     )
 
 
@@ -263,9 +385,11 @@ def _import_check() -> None:
             {"n", "hook", "max_new_tokens", "temperature", "seed_base", "render_fn", "ids_fn"},
         ),
         (
-            r.capture_answer_states,  # unit 3b's seam — the branch-only kwarg exists at the pin
+            r.capture_answer_states,  # the branch-only kwargs exist at the pin
             {"payloads", "positions", "tail_inclusive", "return_boundaries"},
         ),
+        (r._right_pad, {"rows", "pad_id", "device"}),
+        (extract_layer_activations, {"attention_mask", "return_logits", "detach_to_cpu"}),
         (upload_dir_sharded, {"shard_glob", "resume_skip", "delete_local"}),
     ):
         params = set(inspect.signature(fn).parameters)
@@ -273,6 +397,7 @@ def _import_check() -> None:
         assert not missing, (getattr(fn, "__name__", fn), sorted(missing))
     for name in ("eot_tail_ids", "cap_hit"):
         assert callable(getattr(r, name)), name
+    assert callable(_logits_to_keep_kwargs) and callable(atomic_replace)
     for name in (
         "render_context_q35",
         "context_token_ids_q35",
@@ -751,26 +876,1004 @@ def phase_gen(cfg: Cfg, bank: dict, model, tok) -> int:
     return 0
 
 
-# ── unit 3b seams (P6 capture + embed) — hard NotImplementedError, never a
-#    silent no-op. Unit 3b implements these + extends main()'s dispatch. ────
+# ── phase: capture (P6 — unit 3b) ─────────────────────────────────────────
+
+
+@dataclass
+class _PinCaptureCfg:
+    """Exactly the four fields the pinned ``capture_answer_states`` reads off
+    its ``cfg`` argument (``layers`` / ``hidden`` / ``capture_batch`` /
+    ``device`` — verified against the sha-pinned blob)."""
+
+    layers: list[int]
+    hidden: int
+    capture_batch: int
+    device: str
+
+
+class _Fp32Torch:
+    """Forwarding torch proxy: ``.float16`` resolves to ``torch.float32``;
+    every other attribute forwards to the real torch. Swapped into the
+    sha-pinned issue2162 module's globals ONLY around the
+    ``capture_answer_states`` call — the blob's sole in-body ``float16``
+    references are its two terminal output casts (blob lines 1670/1676), so
+    the pinned body executes verbatim while the fp32-store mandate (plan
+    §4.4; fp16 overflows Qwen3-era massive activations, #2330) holds."""
+
+    float16 = torch.float32
+
+    def __getattr__(self, name):
+        return getattr(torch, name)
+
+
+def _capture_answer_states_fp32(
+    pin_cfg: _PinCaptureCfg,
+    model,
+    tok,
+    ctx_ids_by_row: list[list[int]],
+    completions: list[str],
+    eot_ids: list[int],
+) -> dict:
+    """Run the pinned ``capture_answer_states(..., tail_inclusive=True,
+    return_boundaries=True)`` with fp32 output stores.
+
+    Boundaries stay derived from the pin's OWN tokenization state
+    (load-bearing for gate-4). Post-call asserts make a shim failure loud:
+    non-fp32 or non-finite outputs raise, never persist."""
+    r = _r()
+    real_torch = r.torch
+    r.torch = _Fp32Torch()
+    try:
+        out = r.capture_answer_states(
+            pin_cfg,
+            model,
+            tok,
+            ctx_ids_by_row,
+            completions,
+            eot_ids,
+            tail_inclusive=True,
+            return_boundaries=True,
+        )
+    finally:
+        r.torch = real_torch
+    for key in ("va_span", "va_tail_incl"):
+        t = out[key]
+        if t.dtype != torch.float32:
+            raise RuntimeError(f"[capture] {key} dtype {t.dtype} != float32 — fp32 shim inactive")
+        if not torch.isfinite(t).all():
+            raise RuntimeError(f"[capture] non-finite values in {key} (fp32 store, plan §4.4)")
+    return out
+
+
+def _model_hidden(model) -> int:
+    """hidden_size off the model config (text_config fallback for multimodal
+    wrappers); fail loud when unresolvable."""
+    c = getattr(model, "config", None)
+    h = getattr(c, "hidden_size", None)
+    if not isinstance(h, int):
+        h = getattr(getattr(c, "text_config", None), "hidden_size", None)
+    if not isinstance(h, int) or h <= 0:
+        raise RuntimeError(f"could not resolve hidden_size from {type(model).__name__}.config")
+    return int(h)
+
+
+def _model_max_positions(model) -> int:
+    """max_position_embeddings off the model config (text_config fallback);
+    fail loud when unresolvable — the capture-capacity floor reads this."""
+    c = getattr(model, "config", None)
+    m = getattr(c, "max_position_embeddings", None)
+    if not isinstance(m, int):
+        m = getattr(getattr(c, "text_config", None), "max_position_embeddings", None)
+    if not isinstance(m, int) or m <= 0:
+        raise RuntimeError(
+            f"could not resolve max_position_embeddings from {type(model).__name__}.config"
+        )
+    return int(m)
+
+
+def _capture_cell_fp(cfg: Cfg, cell: str) -> str:
+    """Capture resume fingerprint = the gen regime base + capture knobs."""
+    return _regime_fp(
+        cfg,
+        {
+            "phase": "capture",
+            "cell": cell,
+            "capture_batch": cfg.capture_batch,
+            "capture_dtype": cfg.capture_dtype,
+            "layers": list(CAPTURE_LAYERS),
+        },
+    )
+
+
+def _hook_probe(cfg: Cfg, model, tok, probe_rows_ids: list[list[int]]) -> dict:
+    """#2330 ``gate_hook_probe`` port (plan §4.4/§7) — a GATE, not a
+    diagnostic: the production capture path (``extract_layer_activations``
+    forward hooks) vs a second ``output_hidden_states=True`` forward at
+    blocks {16, 22, 30} (block L's hook == ``hidden_states[L+1]``; the probe
+    set avoids block 31's pre/post-final-RMSNorm caveat). Per-layer
+    rel = ||a-b|| / (||a|| + 1e-30) <= HOOK_REL_TOL; a miss persists the
+    report and halts LOUD before the production wave."""
+    r = _r()
+    ids, mask = r._right_pad(probe_rows_ids, tok.pad_token_id, cfg.device)
+    layers = list(HOOK_PROBE_LAYERS)
+    captured = extract_layer_activations(model, ids, layers, attention_mask=mask)
+    with torch.no_grad():
+        fwd = model(
+            input_ids=ids,
+            attention_mask=mask,
+            output_hidden_states=True,
+            **_logits_to_keep_kwargs(model, False),
+        )
+    hs = fwd.hidden_states
+    blocks = cm2587.resolve_q35_decoder_blocks(model)  # 32-block assert, fail loud
+    assert len(hs) == len(blocks) + 1, (len(hs), len(blocks))
+    per_layer: dict[int, float] = {}
+    for lyr in layers:
+        a = captured[lyr].float()
+        b = hs[lyr + 1].float()
+        assert a.shape == b.shape, (lyr, a.shape, b.shape)
+        per_layer[lyr] = float((a - b).norm() / (a.norm() + 1e-30))
+    report = {
+        "probe_layers": layers,
+        "layer_index_mapping": {str(lyr): lyr + 1 for lyr in layers},
+        "per_layer_rel": {str(lyr): per_layer[lyr] for lyr in layers},
+        "rel_tol": HOOK_REL_TOL,
+        "n_probe_rows": len(probe_rows_ids),
+        "hidden_states_tuple_len": len(hs),
+        "verdict": "pass" if all(v <= HOOK_REL_TOL for v in per_layer.values()) else "fail",
+        "repro": _repro(cfg, "capture-hook-probe"),
+    }
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    write_json_atomic(cfg.manifest_dir / "hook_probe_report.json", report)
+    if report["verdict"] != "pass":
+        raise RuntimeError(
+            f"[capture] hook probe FAILED: per-layer rel {per_layer} > tol {HOOK_REL_TOL} "
+            "(#2330 gate) — report at manifests/hook_probe_report.json"
+        )
+    print(f"[capture] hook probe pass: max rel {max(per_layer.values()):.2e}", flush=True)
+    return report
+
+
+GATE4_FIELDS = ("ctx_len", "n_completion_tokens", "span_start", "span_end", "tail_end")
+
+
+def _gate4_exact_compare(cell: str, gen_rows: list[dict], boundaries: list[dict]) -> None:
+    """Plan §4.4 gate 4: EXACT integer-equality comparison of the capture
+    path's OWN per-row boundary records against the gen rows' span fields.
+    Exact means exact — any mismatch halts loud, never degrades."""
+    if len(gen_rows) != len(boundaries):
+        raise RuntimeError(
+            f"[gate-4:{cell}] row-count mismatch: {len(gen_rows)} gen rows vs "
+            f"{len(boundaries)} capture boundaries"
+        )
+    bad = []
+    for i, (g, bnd) in enumerate(zip(gen_rows, boundaries, strict=True)):
+        gen_rec = {
+            "ctx_len": g["ctx_len"],
+            "n_completion_tokens": g["n_completion_tokens_gen"],
+            "span_start": g["span_start"],
+            "span_end": g["span_end"],
+            "tail_end": g["tail_end"],
+        }
+        cap_rec = {k: bnd[k] for k in GATE4_FIELDS}
+        if gen_rec != cap_rec:
+            bad.append((i, g["context_id"], g["draw"], gen_rec, cap_rec))
+    if bad:
+        i, cid, draw, gen_rec, cap_rec = bad[0]
+        raise RuntimeError(
+            f"[gate-4:{cell}] EXACT boundary compare FAILED on {len(bad)}/{len(gen_rows)} rows; "
+            f"first: row {i} ({cid} d{draw}) gen={gen_rec} capture={cap_rec}"
+        )
+
+
+def _load_gen_axis(cfg: Cfg, cell: str, ctxs: list[dict]) -> tuple[dict, list[dict]]:
+    """Load + validate one axis's gen outputs (fail loud): done manifest whose
+    regime_fp matches THIS invocation's gen fingerprint (same bank, draws,
+    seeds, caps, revision), full (context_id, draw) grid; rows re-sorted to
+    (context_id, draw) — the capture row order."""
+    man = _read_json(cfg.manifest_dir / f"anchors_{cell}.done.json")
+    if man is None:
+        raise RuntimeError(f"[capture:{cell}] gen done manifest missing — run --phase gen first")
+    if man.get("regime_fp") != _cell_fp(cfg, "gen", cell):
+        raise RuntimeError(
+            f"[capture:{cell}] gen manifest regime_fp mismatch — the anchors were generated "
+            "under a different regime than this capture invocation's args"
+        )
+    rows = _read_jsonl(cfg.anchors_dir / f"anchors_{cell}.jsonl")
+    expected = {(c["id"], d) for c in ctxs for d in range(cfg.draws)}
+    got = {(r["context_id"], int(r["draw"])) for r in rows}
+    if got != expected or len(rows) != len(expected):
+        raise RuntimeError(
+            f"[capture:{cell}] anchors row grid mismatch: {len(rows)} rows, "
+            f"{len(got ^ expected)} symmetric-difference keys"
+        )
+    rows.sort(key=lambda r: (r["context_id"], int(r["draw"])))
+    return man, rows
+
+
+def _capture_context_end(cfg: Cfg, model, tok, ctx_ids_list: list[list[int]], hidden: int):
+    """v_C context-end states: right-padded chunked forwards over the axis's
+    unique contexts; per row the layer-stacked block output at position
+    ctx_len - 1 (the pinned ``capture_bank`` v_ce pattern), fp32, ALL 32
+    blocks."""
+    r = _r()
+    layers = list(CAPTURE_LAYERS)
+    vc = torch.zeros((len(ctx_ids_list), len(layers), hidden), dtype=torch.float32)
+    for start in range(0, len(ctx_ids_list), cfg.capture_batch):
+        batch = ctx_ids_list[start : start + cfg.capture_batch]
+        ids, mask = r._right_pad(batch, tok.pad_token_id, cfg.device)
+        captured = extract_layer_activations(model, ids, layers, attention_mask=mask)
+        for j, row_ids in enumerate(batch):
+            vc[start + j] = torch.stack(
+                [captured[lyr][j, len(row_ids) - 1].float() for lyr in layers]
+            ).cpu()
+        del captured
+    if not torch.isfinite(vc).all():
+        raise RuntimeError("[capture] non-finite values in v_C store")
+    return vc
+
+
+def _torch_save_atomic(obj: dict, path: Path) -> None:
+    """Atomic torch.save via the process-unique-temp helper (#2336)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with atomic_replace(path) as tmp:
+        torch.save(obj, tmp)
+
+
+def _capture_cell_complete(cfg: Cfg, cell: str) -> bool:
+    """Per-axis capture resume predicate: done manifest at the CURRENT capture
+    fingerprint; upload=hf trusts the manifest's verified-upload record (the
+    stores are deleted locally after the verified upload); upload=none
+    requires the local stores on disk."""
+    m = _read_json(cfg.manifest_dir / f"capture_{cell}.done.json")
+    if m is None or m.get("regime_fp") != _capture_cell_fp(cfg, cell):
+        return False
+    if cfg.upload == "hf":
+        return bool(m.get("uploaded"))
+    return (cfg.va_dir / f"{cell}.pt").is_file() and (cfg.vc_dir / f"{cell}.pt").is_file()
+
+
+def _capture_cell(
+    cfg: Cfg,
+    model,
+    tok,
+    eot_ids: list[int],
+    cell: str,
+    ctxs: list[dict],
+    man: dict,
+    rows: list[dict],
+    hidden: int,
+) -> dict:
+    """One axis: fp32-shimmed pinned capture (both v_A pooling twins) ->
+    gate-4 EXACT boundary compare -> per-row floor check -> v_C context-end
+    capture -> fp32 .pt stores -> per-axis verified upload + local delete
+    (upload=hf) -> done manifest."""
+    t0 = time.time()
+    ctx_by_id = {c["id"]: c for c in ctxs}
+    ctx_ids_by_row = [IDS_FN(tok, ctx_by_id[r["context_id"]]) for r in rows]
+    completions = [r["text"] for r in rows]
+    pin_cfg = _PinCaptureCfg(
+        layers=list(CAPTURE_LAYERS),
+        hidden=hidden,
+        capture_batch=cfg.capture_batch,
+        device=cfg.device,
+    )
+    print(f"[capture:{cell}] v_A wave: {len(rows)} rows batch={cfg.capture_batch}", flush=True)
+    out = _capture_answer_states_fp32(pin_cfg, model, tok, ctx_ids_by_row, completions, eot_ids)
+    _gate4_exact_compare(cell, rows, out["boundaries"])
+    floor = int(man["capture_max_model_len_floor"])
+    max_tail = max(b["tail_end"] for b in out["boundaries"])
+    assert max_tail <= floor, (cell, max_tail, floor)
+    ctx_ids_list = [IDS_FN(tok, c) for c in ctxs]
+    row_by_key = {(r["context_id"], int(r["draw"])): r for r in rows}
+    for j, c in enumerate(ctxs):
+        # gen recorded ctx_len from the SAME ids_fn — cross-check per context.
+        g = row_by_key[(c["id"], 0)]
+        assert len(ctx_ids_list[j]) == g["ctx_len"], (c["id"], len(ctx_ids_list[j]), g["ctx_len"])
+    print(f"[capture:{cell}] v_C wave: {len(ctxs)} contexts", flush=True)
+    vc = _capture_context_end(cfg, model, tok, ctx_ids_list, hidden)
+    row_meta = [
+        {
+            "context_id": r["context_id"],
+            "cell": r["cell"],
+            "draw": int(r["draw"]),
+            "think_leak": bool(r["think_leak"]),
+            "cap_hit": bool(r["cap_hit"]),
+            "ctx_len": r["ctx_len"],
+            "n_completion_tokens": r["n_completion_tokens_gen"],
+            "span_start": r["span_start"],
+            "span_end": r["span_end"],
+            "tail_end": r["tail_end"],
+        }
+        for r in rows
+    ]
+    store_common = {
+        "cell": cell,
+        "layers": list(CAPTURE_LAYERS),
+        "hidden": hidden,
+        "dtype": "float32",
+        "layer_convention": (
+            "decoder-block outputs via forward hooks (analysis/extraction.py): captured[L] == "
+            "hidden_states[L+1]; block 31 is the RAW pre-final-RMSNorm output"
+        ),
+        "regime_fp": _capture_cell_fp(cfg, cell),
+        "repro": _repro(cfg, "capture"),
+    }
+    va_path = cfg.va_dir / f"{cell}.pt"
+    vc_path = cfg.vc_dir / f"{cell}.pt"
+    _torch_save_atomic(
+        {
+            **store_common,
+            "va_tail_incl": out["va_tail_incl"],
+            "va_span": out["va_span"],
+            "pooling": out["pooling"],
+            "n_completion_tokens": out["n_completion_tokens"],
+            "empty_rows": out["empty_rows"],
+            "boundaries": out["boundaries"],
+            "rows": row_meta,
+        },
+        va_path,
+    )
+    _torch_save_atomic(
+        {
+            **store_common,
+            "vc": vc,
+            "pooling": {"vc": "context-end state at position ctx_len-1 (capture_bank v_ce)"},
+            "context_ids": [c["id"] for c in ctxs],
+            "ctx_lens": [len(x) for x in ctx_ids_list],
+        },
+        vc_path,
+    )
+    upload: dict = {"mode": cfg.upload}
+    if cfg.upload == "hf":
+        # Per-axis verified upload THEN local delete — bounds the §9 disk
+        # high-water (upload_dir_sharded verifies before deleting;
+        # resume_skip=False: same-size different-bytes false-skip risk).
+        for sub, path in (("va2587", va_path), ("vc2587", vc_path)):
+            res = upload_dir_sharded(
+                path.parent,
+                cfg.hf_repo,
+                f"{cfg.hf_prefix}/analysis_tensors/{sub}",
+                shard_glob=path.name,
+                resume_skip=False,
+                delete_local=True,
+            )
+            upload[sub] = {
+                "repo_id": res.repo_id,
+                "uploaded": len(res.uploaded),
+                "deleted": len(res.deleted),
+                "rerouted": len(res.rerouted),
+            }
+    manifest = {
+        "cell": cell,
+        "regime_fp": _capture_cell_fp(cfg, cell),
+        "gen_regime_fp": man["regime_fp"],
+        "n_contexts": len(ctxs),
+        "n_rows": len(rows),
+        "n_empty_rows": len(out["empty_rows"]),
+        "max_tail_end": max_tail,
+        "capture_max_model_len_floor": floor,
+        "capture_batch": cfg.capture_batch,
+        "layers": list(CAPTURE_LAYERS),
+        "hidden": hidden,
+        "dtype": "float32",
+        "uploaded": cfg.upload == "hf",
+        "upload": upload,
+        "elapsed_s": round(time.time() - t0, 1),
+        "repro": _repro(cfg, "capture"),
+    }
+    write_json_atomic(cfg.manifest_dir / f"capture_{cell}.done.json", manifest)
+    print(f"[capture] unit {cell} rows={len(rows)} elapsed={time.time() - t0:.1f}s", flush=True)
+    return manifest
 
 
 def phase_capture(cfg: Cfg, bank: dict, model, tok) -> int:
-    """UNIT 3b: P6 all-layer fp32 battery capture (pinned
-    ``issue2162_run.capture_answer_states(..., tail_inclusive=True,
-    return_boundaries=True)`` via ``_r()``; gate-4 boundary compare against
-    the gen rows' span fields)."""
-    raise NotImplementedError(
-        "--phase capture is unit 3b (P6 all-layer fp32 capture) — not implemented in unit 3a"
+    """P6 all-layer fp32 battery capture for THIS shard's axes (plan §4.4):
+    verify every assigned axis's gen outputs -> max_model_len-floor capacity
+    assert -> hook probe (a gate, BEFORE the production wave) -> per-axis
+    fp32-shimmed pinned capture + gate-4 + v_C + upload-then-delete -> shard
+    sentinel ``battery_capture_done.json``."""
+    print(
+        f"[phase=capture] start shard={cfg.shard_index}/{cfg.num_shards} axes={','.join(cfg.axes)}",
+        flush=True,
     )
+    by_cell = group_contexts_by_cell(bank)
+    unknown = [a for a in cfg.axes if a not in by_cell]
+    if unknown:
+        raise RuntimeError(f"unknown axes {unknown}; bank has {sorted(by_cell)}")
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    ctxs_by_axis = {a: apply_max_carriers(by_cell[a], cfg.max_carriers) for a in cfg.axes}
+    sentinel = cfg.out_root / "battery_capture_done.json"
+    sent_fp = _regime_fp(
+        cfg,
+        {
+            "phase": "capture",
+            "axes": sorted(cfg.axes),
+            "capture_batch": cfg.capture_batch,
+            "capture_dtype": cfg.capture_dtype,
+        },
+    )
+    pending = [a for a in cfg.axes if not _capture_cell_complete(cfg, a)]
+    s = _read_json(sentinel)
+    if not pending and s is not None and s.get("regime_fp") == sent_fp:
+        logger.info("[capture] all axes complete + sentinel present — skipping")
+        return 0
+    hidden = _model_hidden(model)
+    if cfg.model_id == B.MODEL_ID:
+        assert hidden == cm2587.HIDDEN, (hidden, cm2587.HIDDEN)
+    # Every assigned axis's gen outputs load + validate up front (fail loud
+    # before any GPU wave), and the model must have capacity for the floor
+    # recorded by gen (capture_max_model_len_floor = max_ctx + 2*max_new).
+    gen_data = {a: _load_gen_axis(cfg, a, ctxs_by_axis[a]) for a in cfg.axes}
+    floor = max(int(m["capture_max_model_len_floor"]) for m, _ in gen_data.values())
+    max_pos = _model_max_positions(model)
+    if max_pos < floor:
+        raise RuntimeError(
+            f"[capture] model max_position_embeddings {max_pos} < required floor {floor} "
+            "(gen manifests' capture_max_model_len_floor) — capture cannot proceed"
+        )
+    eot_ids = _r().eot_tail_ids(tok)
+    if pending:
+        # Hook probe on REAL rows of the first pending axis, BEFORE the wave.
+        probe_axis = pending[0]
+        _man, rows = gen_data[probe_axis]
+        ctx_by_id = {c["id"]: c for c in ctxs_by_axis[probe_axis]}
+        probe_rows = [r for r in rows if str(r["text"]).strip()][:HOOK_PROBE_ROWS]
+        if not probe_rows:
+            raise RuntimeError(f"[capture:{probe_axis}] no non-empty rows for the hook probe")
+        probe_ids = [
+            IDS_FN(tok, ctx_by_id[r["context_id"]])
+            + tok(r["text"], add_special_tokens=False)["input_ids"]
+            + eot_ids
+            for r in probe_rows
+        ]
+        _hook_probe(cfg, model, tok, probe_ids)
+    for a in cfg.axes:
+        if _capture_cell_complete(cfg, a):
+            logger.info("[capture:%s] done manifest present — skipping", a)
+            continue
+        man, rows = gen_data[a]
+        _capture_cell(cfg, model, tok, eot_ids, a, ctxs_by_axis[a], man, rows, hidden)
+    write_json_atomic(
+        sentinel,
+        {
+            "issue": ISSUE,
+            "regime_fp": sent_fp,
+            "shard_index": cfg.shard_index,
+            "num_shards": cfg.num_shards,
+            "axes": sorted(cfg.axes),
+            "cells": {a: _read_json(cfg.manifest_dir / f"capture_{a}.done.json") for a in cfg.axes},
+            "hook_probe": _read_json(cfg.manifest_dir / "hook_probe_report.json"),
+            "repro": _repro(cfg, "capture"),
+        },
+    )
+    print("[phase=capture] sentinel written", flush=True)
+    return 0
+
+
+# ── phase: embed (Qwen3-Embedding-8B third space — unit 3b) ───────────────
+
+
+def _realized_vllm_version() -> str:
+    """The CURRENT interpreter's vLLM version — the engine-parity gate input."""
+    import vllm
+
+    return str(vllm.__version__)
+
+
+def _assert_engine_parity(realized: str, parity_report: Path | None) -> dict:
+    """Plan §4.4 instrument-version parity gate (structural, fail loud).
+
+    DEFAULT route: run the phase under the repo venv, whose uv.lock pins
+    vLLM == EXPECTED_EMBED_ENGINE (0.11.0) — the engine that produced the
+    parent's banked embeddings, so parity holds by construction. Any OTHER
+    realized engine requires a PASSING --parity-report (produced by
+    ``run_engine_parity_probe``); a probe miss forces the 0.11.0 route.
+    0.11.0-produced 7B vectors are never compared against
+    differently-versioned 9B vectors unprobed."""
+    if realized == EXPECTED_EMBED_ENGINE:
+        return {
+            "vllm_version": realized,
+            "parity_mode": "repo-pin",
+            "reference_engine": EXPECTED_EMBED_ENGINE,
+        }
+    if parity_report is None:
+        raise RuntimeError(
+            f"[embed] engine vLLM=={realized} != parity reference {EXPECTED_EMBED_ENGINE} "
+            "(the parent's banked vectors are 0.11.0-produced; plan §4.4). Run this phase "
+            "under the repo venv (uv run python), or pass --parity-report from a PASSING "
+            "--parity-probe-out run."
+        )
+    rep = _read_json(parity_report)
+    if rep is None:
+        raise RuntimeError(f"[embed] --parity-report {parity_report} missing or unparseable")
+    for key, want in (
+        ("parity_pass", True),
+        ("reference_engine", EXPECTED_EMBED_ENGINE),
+        ("engine", realized),
+    ):
+        if rep.get(key) != want:
+            raise RuntimeError(
+                f"[embed] parity report {parity_report}: {key}={rep.get(key)!r} != {want!r} "
+                f"— a probe miss forces the {EXPECTED_EMBED_ENGINE} route (plan §4.4)"
+            )
+    return {
+        "vllm_version": realized,
+        "parity_mode": "parity-probe",
+        "reference_engine": EXPECTED_EMBED_ENGINE,
+        "parity_report": rep,
+    }
+
+
+def _resolve_embed_revision() -> str:
+    """Pin the embed model's main -> resolved sha ONCE, BEFORE any loader init
+    (tokenizer + LLM both take ``revision=``; provenance label == loaded
+    bytes; #2061)."""
+    from huggingface_hub import HfApi
+
+    sha = HfApi().model_info(EMBED_MODEL).sha
+    assert sha, f"could not resolve model revision for {EMBED_MODEL}"
+    return str(sha)
+
+
+def _load_embed_tokenizer(revision: str):
+    """Embed-model tokenizer for the token-length precheck (network seam)."""
+    from transformers import AutoTokenizer
+
+    return AutoTokenizer.from_pretrained(EMBED_MODEL, revision=revision)
+
+
+def _make_embed_llm(revision: str, max_model_len: int):
+    """vLLM pooling-runner engine ctor — the ONLY engine-construction seam
+    (transcribed from the pinned parent embed leg)."""
+    from vllm import LLM
+
+    return LLM(
+        model=EMBED_MODEL,
+        revision=revision,
+        runner="pooling",
+        dtype="bfloat16",
+        max_model_len=max_model_len,
+        gpu_memory_utilization=0.90,
+    )
+
+
+def _reap_engine(llm: object) -> None:
+    """Reap the vLLM engine before return (gotchas.md vLLM v1 reaping recipe;
+    transcribed from the pinned parent embed leg — best-effort teardown with
+    logged warnings; the caller's terminal follows)."""
+    import gc
+
+    try:
+        core = getattr(getattr(llm, "llm_engine", None), "engine_core", None)
+        if core is not None and hasattr(core, "shutdown"):
+            core.shutdown()
+        else:
+            executor = getattr(getattr(llm, "llm_engine", None), "model_executor", None)
+            if executor is not None and hasattr(executor, "shutdown"):
+                executor.shutdown()
+    except Exception as e:
+        logger.warning("[embed] engine reap warning: %s: %s", type(e).__name__, e)
+    try:
+        if torch.distributed.is_available() and torch.distributed.is_initialized():
+            torch.distributed.destroy_process_group()
+    except Exception as e:
+        logger.warning("[embed] destroy_process_group warning: %s: %s", type(e).__name__, e)
+    del llm
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    time.sleep(1.0)  # subprocess teardown is async
+
+
+def _embed_regime_fp(
+    rows: list[dict], chunk: int, max_model_len: int, revision: str, engine_version: str
+) -> str:
+    """Chunk-resume fingerprint: generating params + file-read row identities
+    (bit-exact inputs — safe to hash; never recomputed floats, #1336) + the
+    RESOLVED embed-model revision + the realized ENGINE version (a chunk
+    embedded under a different vLLM must never satisfy this run's resume —
+    the parity rule made structural)."""
+    ids = [
+        (
+            r["context_id"],
+            int(r["draw"]),
+            hashlib.sha256(r["text"].encode("utf-8")).hexdigest()[:16],
+        )
+        for r in rows
+    ]
+    payload = json.dumps(
+        [EMBED_MODEL, revision, engine_version, EMBED_DIM, max_model_len, chunk, ids],
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+class EmbedPilotRefuse(RuntimeError):
+    """First-computed-chunk pilot projection exceeded the ceiling (a designed
+    halt — ``phase_embed`` maps it to EXIT_PILOT_REFUSE; report on disk)."""
+
+
+def _embed_rows(
+    texts: list[str],
+    *,
+    chunks_dir: Path,
+    fp: str,
+    chunk: int,
+    max_model_len: int,
+    revision: str,
+    engine_version: str,
+    pilot_ceiling_h: float,
+    pilot_report_path: Path,
+) -> np.ndarray:
+    """Chunked embed with per-chunk atomic npz checkpoints + fp-gated resume +
+    a first-computed-chunk pilot gate (transcribed from the pinned parent
+    embed leg ``8265bcd:scripts/issue2564_embed.py::embed_rows``, itself the
+    ``issue2215_sepcmp_qwen_embed.py::embed_texts`` port). Returns the raw
+    (n, EMBED_DIM) float32 matrix; the engine is created lazily on the first
+    PENDING chunk (an all-resumed invocation never loads it) and reaped
+    before return."""
+    n = len(texts)
+    n_chunks = (n + chunk - 1) // chunk
+    chunks_dir.mkdir(parents=True, exist_ok=True)
+    out = np.zeros((n, EMBED_DIM), dtype=np.float32)
+    llm = None
+    pilot_done = False
+    try:
+        for k in range(n_chunks):
+            lo, hi = k * chunk, min((k + 1) * chunk, n)
+            ck_path = chunks_dir / f"chunk_{k:03d}.npz"
+            if ck_path.is_file():
+                z = np.load(ck_path, allow_pickle=False)
+                if (
+                    str(z["fp"]) == fp
+                    and int(z["lo"]) == lo
+                    and int(z["hi"]) == hi
+                    and z["emb"].shape == (hi - lo, EMBED_DIM)
+                ):
+                    out[lo:hi] = z["emb"].astype(np.float32)
+                    print(
+                        f"[embed] unit {k + 1}/{n_chunks} chunk_{k:03d} resumed rows={hi - lo}",
+                        flush=True,
+                    )
+                    continue
+                print(
+                    f"[embed] chunk_{k:03d} checkpoint stale (regime changed) — recomputing",
+                    flush=True,
+                )
+            if llm is None:
+                print(f"[embed] loading {EMBED_MODEL}@{revision} (pooling runner)", flush=True)
+                llm = _make_embed_llm(revision, max_model_len)
+            t0 = time.monotonic()
+            res = llm.embed(texts[lo:hi], use_tqdm=False)
+            arr = np.array([r.outputs.embedding for r in res], dtype=np.float32)
+            assert arr.shape == (hi - lo, EMBED_DIM), arr.shape
+            elapsed = time.monotonic() - t0
+            # np.savez appends .npz to path-named non-.npz targets — hand it
+            # an OPEN handle inside the process-unique atomic replace
+            # (#2336/#1092). The realized engine version rides EVERY chunk.
+            with atomic_replace(ck_path) as tmp:
+                with open(tmp, "wb") as fh:
+                    np.savez(
+                        fh,
+                        emb=arr.astype(np.float16),
+                        lo=lo,
+                        hi=hi,
+                        fp=fp,
+                        vllm_version=engine_version,
+                    )
+            out[lo:hi] = arr
+            print(
+                f"[embed] unit {k + 1}/{n_chunks} chunk_{k:03d} rows={hi - lo} "
+                f"elapsed={elapsed:.1f}s",
+                flush=True,
+            )
+            if not pilot_done:
+                pilot_done = True
+                projected_h = elapsed * n_chunks / 3600.0
+                write_json_atomic(
+                    pilot_report_path,
+                    {
+                        "issue": ISSUE,
+                        "phase": "embed-pilot",
+                        "first_chunk_rows": hi - lo,
+                        "first_chunk_elapsed_s": round(elapsed, 2),
+                        "n_chunks": n_chunks,
+                        "projected_wall_h": round(projected_h, 4),
+                        "ceiling_h": pilot_ceiling_h,
+                        "verdict": "pass" if projected_h <= pilot_ceiling_h else "refuse",
+                    },
+                )
+                if projected_h > pilot_ceiling_h:
+                    raise EmbedPilotRefuse(
+                        f"projected {projected_h:.2f}h > ceiling {pilot_ceiling_h}h — "
+                        f"report at {pilot_report_path}"
+                    )
+    finally:
+        if llm is not None:
+            _reap_engine(llm)
+    return out
+
+
+def _anchor_roots(cfg: Cfg) -> list[Path]:
+    """Roots that may hold the gen phase's outputs: --anchors-root overrides;
+    default = the out-root itself plus its shard* subdirs (gen's per-leg
+    out-roots under --num-shards > 1)."""
+    if cfg.anchors_roots:
+        roots = list(cfg.anchors_roots)
+    else:
+        roots = [cfg.out_root, *sorted(p for p in cfg.out_root.glob("shard*") if p.is_dir())]
+    found = [r for r in roots if (r / "anchors").is_dir()]
+    if not found:
+        raise RuntimeError(
+            f"[embed] no anchors/ dir under any root {[str(r) for r in roots]} — "
+            "run --phase gen first (or pass --anchors-root)"
+        )
+    return found
+
+
+def _collect_anchor_rows(cfg: Cfg, by_cell: dict[str, list[dict]]) -> tuple[list[dict], int]:
+    """Discover + validate every assigned axis's gen rows across the anchor
+    roots (fail loud: exactly ONE root per axis, gen done manifest present,
+    full (context_id, draw) grid); returns rows sorted (cell, context_id,
+    draw) plus the count of empty-text rows skipped (recorded — the #2215
+    port's convention)."""
+    roots = _anchor_roots(cfg)
+    rows: list[dict] = []
+    n_empty = 0
+    for cell in cfg.axes:
+        ctxs = apply_max_carriers(by_cell[cell], cfg.max_carriers)
+        hits = [r for r in roots if (r / "anchors" / f"anchors_{cell}.jsonl").is_file()]
+        if len(hits) != 1:
+            raise RuntimeError(
+                f"[embed] axis {cell!r}: {len(hits)} anchor roots hold anchors_{cell}.jsonl "
+                f"({[str(h) for h in hits]}) — need exactly one"
+            )
+        root = hits[0]
+        if not (root / "manifests" / f"anchors_{cell}.done.json").is_file():
+            raise RuntimeError(
+                f"[embed] axis {cell!r}: anchors present but gen done manifest missing "
+                f"under {root} — gen did not complete this axis"
+            )
+        cell_rows = _read_jsonl(root / "anchors" / f"anchors_{cell}.jsonl")
+        expected = {(c["id"], d) for c in ctxs for d in range(cfg.draws)}
+        got = {(r["context_id"], int(r["draw"])) for r in cell_rows}
+        if got != expected or len(cell_rows) != len(expected):
+            raise RuntimeError(
+                f"[embed] axis {cell!r}: anchors row grid mismatch under {root} "
+                f"({len(cell_rows)} rows vs expected {len(expected)})"
+            )
+        for r in cell_rows:
+            if not str(r.get("text", "")).strip():
+                n_empty += 1
+                continue
+            rows.append(r)
+    if not rows:
+        raise RuntimeError("[embed] empty anchor selection after load — nothing to embed")
+    rows.sort(key=lambda r: (r["cell"], r["context_id"], int(r["draw"])))
+    return rows, n_empty
+
+
+def run_engine_parity_probe(
+    anchor_texts_jsonl: Path,
+    banked_npz: Path,
+    out_path: Path,
+    *,
+    n_anchors: int = 10,
+    cos_min: float = PARITY_COS_MIN,
+    max_model_len: int = EMBED_MAX_MODEL_LEN,
+) -> dict:
+    """Plan §4.4 contingency: re-embed ~``n_anchors`` PARENT anchor texts
+    under the CURRENT engine and compare against the banked reference-engine
+    vectors (per-row cosine). Writes a report consumable via --parity-report;
+    a miss (min cosine below ``cos_min``) sets parity_pass=false — the caller
+    exits EXIT_PARITY_MISS and the 0.11.0 route is forced."""
+    realized = _realized_vllm_version()
+    rows = [r for r in _read_jsonl(Path(anchor_texts_jsonl)) if str(r.get("text", "")).strip()]
+    if not rows:
+        raise RuntimeError(f"[parity-probe] no non-empty rows in {anchor_texts_jsonl}")
+    z = np.load(banked_npz, allow_pickle=False)
+    banked_emb = z["emb"].astype(np.float64)
+    banked_key = {
+        (str(c), int(d)): i
+        for i, (c, d) in enumerate(zip(z["context_ids"].tolist(), z["draws"].tolist()))
+    }
+    rows.sort(key=lambda r: (str(r["context_id"]), int(r["draw"])))
+    picked = [r for r in rows if (str(r["context_id"]), int(r["draw"])) in banked_key][:n_anchors]
+    if len(picked) < n_anchors:
+        raise RuntimeError(
+            f"[parity-probe] only {len(picked)} anchor rows match the banked npz (need {n_anchors})"
+        )
+    revision = _resolve_embed_revision()
+    llm = _make_embed_llm(revision, max_model_len)
+    try:
+        res = llm.embed([r["text"] for r in picked], use_tqdm=False)
+        arr = np.array([r.outputs.embedding for r in res], dtype=np.float64)
+    finally:
+        _reap_engine(llm)
+    assert arr.shape == (len(picked), EMBED_DIM), arr.shape
+    norms = np.linalg.norm(arr, axis=1)
+    if (norms == 0.0).any():
+        raise RuntimeError("[parity-probe] zero-norm probe embedding")
+    unit = arr / norms[:, None]
+    per_row = []
+    for j, r in enumerate(picked):
+        i = banked_key[(str(r["context_id"]), int(r["draw"]))]
+        ref = banked_emb[i]
+        ref_n = float(np.linalg.norm(ref))
+        if ref_n == 0.0:
+            raise RuntimeError(f"[parity-probe] zero-norm banked vector at index {i}")
+        cos = float(np.dot(unit[j], ref / ref_n))
+        per_row.append({"context_id": str(r["context_id"]), "draw": int(r["draw"]), "cos": cos})
+    min_cos = min(p["cos"] for p in per_row)
+    report = {
+        "parity_pass": bool(min_cos >= cos_min),
+        "engine": realized,
+        "reference_engine": EXPECTED_EMBED_ENGINE,
+        "embed_model": EMBED_MODEL,
+        "embed_revision": revision,
+        "n_anchors": len(picked),
+        "cos_min_bar": cos_min,
+        "min_cos": min_cos,
+        "max_cos_deviation": 1.0 - min_cos,
+        "per_row": per_row,
+    }
+    write_json_atomic(Path(out_path), report)
+    print(
+        f"[parity-probe] engine={realized} min_cos={min_cos:.6f} bar={cos_min} -> "
+        f"{'PASS' if report['parity_pass'] else 'MISS'} (report {out_path})",
+        flush=True,
+    )
+    return report
 
 
 def phase_embed(cfg: Cfg, bank: dict, model, tok) -> int:
-    """UNIT 3b: Qwen3-Embedding-8B third-space embedding of the 10,800 answer
-    texts (plan §4.4 Embedding paragraph — instrument-version parity)."""
-    raise NotImplementedError(
-        "--phase embed is unit 3b (Qwen3-Embedding-8B third space) — not implemented in unit 3a"
+    """Qwen3-Embedding-8B third space over ALL battery answer texts (plan
+    §4.4 Embedding paragraph — the binding v3 requirement closing consistency
+    WARN-1). ``model``/``tok`` are unused (no q35 load on this phase); the
+    embed model + tokenizer load HERE, pinned to a resolved revision.
+
+    Engine parity is STRUCTURAL: the realized vLLM version must equal the
+    parity reference (EXPECTED_EMBED_ENGINE — the repo uv.lock pin; the
+    DEFAULT route is running this phase under the repo venv) or carry a
+    PASSING --parity-report; the realized version is recorded inside every
+    chunk npz, the perdraw/means npz, meta.json, and the sentinel, and keys
+    the chunk-resume fingerprint, so unit 5's analysis can ASSERT vector
+    provenance before comparing against the parent's banked 0.11.0 vectors."""
+    del model, tok  # embed loads its own instrument; q35 is never loaded here
+    print(f"[phase=embed] start out_root={cfg.out_root} n_axes={len(cfg.axes)}", flush=True)
+    engine_version = _realized_vllm_version()
+    engine_meta = _assert_engine_parity(engine_version, cfg.parity_report)
+    print(f"[embed] engine vLLM=={engine_version} mode={engine_meta['parity_mode']}", flush=True)
+    by_cell = group_contexts_by_cell(bank)
+    unknown = [a for a in cfg.axes if a not in by_cell]
+    if unknown:
+        raise RuntimeError(f"unknown axes {unknown}; bank has {sorted(by_cell)}")
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    rows, n_empty = _collect_anchor_rows(cfg, by_cell)
+    texts = [r["text"] for r in rows]
+    print(
+        f"[embed] {len(rows)} rows across {len(cfg.axes)} axes (skipped_empty={n_empty})",
+        flush=True,
     )
+    revision = _resolve_embed_revision()
+    fp = _embed_regime_fp(rows, cfg.embed_chunk, cfg.embed_max_model_len, revision, engine_version)
+    sent_fp = _sha16({"embed_fp": fp, "upload": cfg.upload})
+    sentinel = cfg.out_root / "battery_embed_done.json"
+    s = _read_json(sentinel)
+    if s is not None and s.get("regime_fp") == sent_fp:
+        logger.info("[embed] sentinel present with matching regime_fp — skipping")
+        return 0
+    # Token-length precheck with the EMBED model's own tokenizer — raise the
+    # flag, never truncate (the #2215 port's contract).
+    etok = _load_embed_tokenizer(revision)
+    lens = [len(etok.encode(t, add_special_tokens=True)) for t in texts]
+    max_len = max(lens)
+    print(f"[embed] token lens: max={max_len} mean={sum(lens) / len(lens):.1f}", flush=True)
+    if max_len >= cfg.embed_max_model_len:
+        raise RuntimeError(
+            f"[embed] longest text is {max_len} tokens >= --embed-max-model-len "
+            f"{cfg.embed_max_model_len}; raise the flag — inputs are never truncated"
+        )
+    try:
+        emb = _embed_rows(
+            texts,
+            chunks_dir=cfg.embed_root / "chunks",
+            fp=fp,
+            chunk=cfg.embed_chunk,
+            max_model_len=cfg.embed_max_model_len,
+            revision=revision,
+            engine_version=engine_version,
+            pilot_ceiling_h=cfg.embed_pilot_ceiling_h,
+            pilot_report_path=cfg.manifest_dir / "embed_pilot_gate_report.json",
+        )
+    except EmbedPilotRefuse as e:
+        print(f"[phase=embed] pilot refuse: {e}", flush=True)
+        return EXIT_PILOT_REFUSE
+    norms = np.linalg.norm(emb.astype(np.float64), axis=1)
+    zero_idx = np.flatnonzero(norms == 0.0)
+    if zero_idx.size:
+        raise RuntimeError(f"[embed] zero-norm embeddings at row indices {zero_idx[:10].tolist()}")
+    unit = (emb.astype(np.float64) / norms[:, None]).astype(np.float32)
+    cids = np.array([r["context_id"] for r in rows])
+    draws = np.array([int(r["draw"]) for r in rows], dtype=np.int32)
+    cell_arr = np.array([r["cell"] for r in rows])
+    leak_arr = np.array([bool(r.get("think_leak", False)) for r in rows])
+    # Per-context mean of the L2-NORMALIZED per-draw embeddings (NOT
+    # re-normalized; documented in meta — the parent layout, consumed
+    # symmetrically by unit 5's cross-model analysis).
+    uniq_cids = sorted(set(cids.tolist()))
+    cid_index = {c: i for i, c in enumerate(uniq_cids)}
+    sums = np.zeros((len(uniq_cids), EMBED_DIM), dtype=np.float64)
+    counts = np.zeros(len(uniq_cids), dtype=np.int32)
+    idx = np.array([cid_index[c] for c in cids.tolist()])
+    np.add.at(sums, idx, unit.astype(np.float64))
+    np.add.at(counts, idx, 1)
+    means = (sums / counts[:, None]).astype(np.float16)
+    emb_dir = cfg.embed_root / "embeddings_qwen3_8b"
+    emb_dir.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        emb_dir / "perdraw_anchors.npz",
+        emb=unit.astype(np.float16),
+        context_ids=cids,
+        draws=draws,
+        cells=cell_arr,
+        think_leak=leak_arr,
+        vllm_version=engine_version,
+    )
+    np.savez(
+        emb_dir / "means_anchors.npz",
+        emb_mean=means,
+        context_ids=np.array(uniq_cids),
+        n_draws=counts,
+        vllm_version=engine_version,
+    )
+    meta = {
+        "issue": ISSUE,
+        "model": EMBED_MODEL,
+        "model_revision": revision,
+        "engine": engine_meta,
+        "pooling": "model_default_last_token",
+        "normalized": "l2_float64_divide_fp16_store",
+        "means": "mean of L2-normalized per-draw embeddings, NOT re-normalized",
+        "embed_dim": EMBED_DIM,
+        "max_model_len": cfg.embed_max_model_len,
+        "chunk": cfg.embed_chunk,
+        "n_rows": len(rows),
+        "n_contexts": len(uniq_cids),
+        "n_skipped_empty": n_empty,
+        "axes": sorted(cfg.axes),
+        "regime_fp": fp,
+        "repro": _repro(cfg, "embed"),
+    }
+    write_json_atomic(emb_dir / "meta.json", meta)
+    upload: dict = {"mode": cfg.upload}
+    if cfg.upload == "hf":
+        dest_prefix = f"{cfg.hf_prefix}/analysis_tensors/embeddings_qwen3_8b"
+        res = upload_dir_sharded(
+            emb_dir,
+            cfg.hf_repo,
+            dest_prefix,
+            shard_glob="*",
+            resume_skip=False,
+            delete_local=False,
+        )
+        upload["embeddings"] = {
+            "repo_id": res.repo_id,
+            "dest_prefix": dest_prefix,
+            "uploaded": len(res.uploaded),
+            "rerouted": len(res.rerouted),
+            "skipped_existing": len(res.skipped_existing),
+        }
+    # meta FIRST: it carries its own regime_fp (the chunk fp) — the sentinel's
+    # regime_fp must stay the upload-mode-keyed sent_fp (idempotency key).
+    write_json_atomic(
+        sentinel,
+        {**meta, "regime_fp": sent_fp, "embed_fp": fp, "upload": upload},
+    )
+    print("[phase=embed] sentinel written", flush=True)
+    return 0
 
 
 PHASE_FNS = {"gen": phase_gen, "capture": phase_capture, "embed": phase_embed}
@@ -798,21 +1901,54 @@ def main() -> int:
     if args.import_check:
         _import_check()
         return 0
+    if args.parity_probe_out:
+        # Engine-parity probe MODE (plan §4.4 contingency): no bank, no q35 —
+        # embeds banked parent anchor texts under the CURRENT engine.
+        if not (args.parity_anchor_texts and args.parity_banked_npz):
+            ap.error("--parity-probe-out requires --parity-anchor-texts and --parity-banked-npz")
+        report = run_engine_parity_probe(
+            Path(args.parity_anchor_texts),
+            Path(args.parity_banked_npz),
+            Path(args.parity_probe_out),
+            n_anchors=args.parity_n_anchors,
+            cos_min=args.parity_cos_min,
+            max_model_len=args.embed_max_model_len,
+        )
+        return 0 if report["parity_pass"] else EXIT_PARITY_MISS
     if args.axes and args.num_shards != 1:
         ap.error("--axes is mutually exclusive with --num-shards > 1")
     if not (0 <= args.shard_index < args.num_shards):
         ap.error(
             f"--shard-index {args.shard_index} out of range for --num-shards {args.num_shards}"
         )
-    if args.phase != "gen":
-        # Unit 3b seam: fail loud BEFORE any model load — never a silent no-op.
-        raise NotImplementedError(
-            f"--phase {args.phase} is unit 3b (P6 capture + Qwen3-Embedding-8B) — "
-            "only --phase gen is implemented in unit 3a"
+    if args.phase == "embed":
+        if args.num_shards != 1:
+            ap.error("--phase embed is single-process (plan §9 P6: embed runs on one GPU)")
+        # No q35 load: the embed model is the instrument. Bank STRINGS suffice
+        # (string gates run; token gates belong to the q35-tokenizer phases).
+        bank = B.build_bank_strings()
+        print(f"[bank] {bank['n_contexts']} contexts / {bank['n_pairs']} pairs", flush=True)
+        by_cell = group_contexts_by_cell(bank)
+        axes = resolve_axes(args, by_cell)
+        assert axes, "embed resolved no axes"
+        cfg = build_cfg(
+            args,
+            bank_values_sha=bank["values_sha256"],
+            axes=axes,
+            model_revision="n/a-embed-phase",
         )
+        cfg.out_root.mkdir(parents=True, exist_ok=True)
+        return phase_embed(cfg, bank, None, None)
     model_revision = _resolve_model_revision()
     device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    model, tok = cm2587.load_q35_model_and_tokenizer(device=device, revision=model_revision)
+    dtype = None
+    if args.phase == "capture":
+        # Plan §4.4: fp32 capture (fp16/bf16 stores overflow Qwen3-era massive
+        # activations, #2330); bfloat16 is an explicit debug opt-down.
+        dtype = {"float32": torch.float32, "bfloat16": torch.bfloat16}[args.capture_dtype]
+    model, tok = cm2587.load_q35_model_and_tokenizer(
+        device=device, revision=model_revision, dtype=dtype
+    )
     bank = B.build_bank(tok)  # P0a string gates + P0b token gates, fail-loud
     print(f"[bank] {bank['n_contexts']} contexts / {bank['n_pairs']} pairs", flush=True)
     by_cell = group_contexts_by_cell(bank)
