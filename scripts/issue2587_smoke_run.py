@@ -173,6 +173,8 @@ def _mk_preds(rng: np.random.Generator, ids: list[str], layer: int, quality: flo
 def build_analysis_world(root: Path) -> list[str]:
     """Write the tiny world; return the analysis CLI argv tail (all local)."""
     import issue2587_analysis as AN
+
+    # PROD_IMPORT_LINT_EXEMPT: in-repo tests/ module (tiny-world builders), not a third-party dist
     import test_issue2587_analysis as TW  # tests/ tiny-world builders (module docstring)
 
     rng = _rng()

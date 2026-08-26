@@ -867,7 +867,7 @@ def _matched7b_completion_gaps(prior: dict, args, sentinel: Path) -> list[str]:
     if sentinel.is_file():
         try:
             sdoc = json.loads(sentinel.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             sdoc = {}
         sentinel_ok = bool(sdoc.get("done")) and sdoc.get("regime_key") == prior.get("regime_key")
     if not sentinel_ok:
