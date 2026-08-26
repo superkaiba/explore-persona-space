@@ -37,3 +37,22 @@ claim hides a real exit-code collision.
 **How to apply:** every compose that re-derives pin-sweep hits or verifies a
 "literal X is free/unique" marker claim — `grep -F` per fragment, diff the
 hit-file set against the printed list, pre-triage residuals both ways.
+
+**#2607 r1 (2026-08-26) sharpening — recount changed-path fragments at THREE
+grains:** a marker's changed-path hit set may be reproducible ONLY under a
+fragment grain it never states. On #2607 the full-path form
+(`scripts/verify_task_body.py`) missed most claimed hits; the BASENAME form
+(`verify_task_body.py`) reproduced the run-set coverage; the BARE MODULE
+token (`verify_task_body`) surfaced one extra NOT-RUN file whose sole hit
+was a prose comment (test_workflow_followup_labels.py:1260) — handed as an
+adjudication with the pre-read that a comment pins nothing. Run all three
+grains, attribute each extra to its grain, and pre-triage: (i) round-NEW
+literals with zero tests/ hits can have NO stale pins — say so, so the twin
+never hunts them; (ii) a GENERIC single-token fragment (bare `REFUSED`, 26
+files) is a form artifact — name the do-not-promote rule explicitly; (iii)
+an unreproducible claimed hit file that WAS run anyway = at most Minor
+report-accuracy. Same round validated: brief-ordered plan inlining on an
+identical worktree copy (truthful belt-and-braces envelope), origin_prompt-arm
+wf-fix floor detection with the #2306 plan-verify-at-v2/plan-now-v3 dual
+attest, and the disclosed round-1-pin-FAIL-fixed-by-refactor-commit shape
+composed as verify-the-fix-commit, not a #1672 finding.
