@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2605,
+  "highest_id": 2606,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12384,6 +12384,13 @@
       "path": "tasks/proposed/2605",
       "status": "proposed",
       "title": "poll_pipeline.py log-freshness globs miss the <out_root>/logs/ worker-log layout, causing false stalled verdicts"
+    },
+    "2606": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2606",
+      "status": "proposed",
+      "title": "pod.py provision exits 0 with BOOTSTRAP-OK while its own preflight reports PREFLIGHT-FAILED rc=2 \u2014 fail loud instead"
     },
     "261": {
       "has_clean_result": false,
