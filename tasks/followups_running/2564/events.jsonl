@@ -333,3 +333,4 @@
 {"ts": "2026-08-26T04:48:27Z", "kind": "epm:progress", "version": 72, "by": "poll_pipeline", "note": "phase transition: done -> ffr_pilot", "phase": "ffr_pilot", "pod": "pod-2564"}
 {"ts": "2026-08-26T04:58:09Z", "kind": "epm:progress", "version": 73, "by": "poll_pipeline", "note": "phase transition: ffr_pilot -> pa_generate", "phase": "pa_generate", "pod": "pod-2564"}
 {"ts": "2026-08-26T04:58:42Z", "kind": "epm:progress", "version": 74, "by": "unknown", "note": "[long-phase-heartbeat] ffr run healthy on pod-2564: smoke PASSed, pilot gate verdict=proceed (per_row_s=0.583, projected 0.45h vs 7.0h ceiling), now generating (GPU ~78%, log fresh). pid=3074 log=/workspace/logs/issue-2564.log; poll chain live at 540s; owner=cmt7ucvl1cv5wz80ulaxdfeky"}
+{"ts": "2026-08-26T05:31:19Z", "kind": "epm:progress", "version": 75, "by": "poll_pipeline", "note": "phase transition: unknown -> done", "phase": "done", "pod": "pod-2564"}
