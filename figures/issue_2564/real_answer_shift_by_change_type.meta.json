@@ -1,0 +1,146 @@
+{
+  "commit": "4cddcdd6+dirty",
+  "render_id": "3cb8c35b141f4f42",
+  "git_commit": "4cddcdd6a8f0502d63d9b31c889ec9587a59e97c",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_type_reads_plot.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2564_type_reads_plot.py",
+  "created": "2026-08-25T16:23:20Z",
+  "figsize": [
+    7.4,
+    4.96
+  ],
+  "points": [
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 4.467316384717808,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 8.979145573325141,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 13.304008136329148,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 20.423941204391333,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 20.43511996289614,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 32.148951057995035,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 38.15012143594861,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 47.18375212363655,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 4.4220484326129545,
+      "y": 0.0,
+      "series": "median noise floor",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)": 4.4220484326129545,
+      "y": 1.0,
+      "series": "median noise floor",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How much does the REAL answer vector move between the two contexts? (#2564)",
+        "xlabel": "real answer-vector shift  \u2016observed \u0394\u2016  (layer-19 residual-stream units)",
+        "legend_labels": [
+          "median noise floor"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ],
+        "yticklabels": [
+          "user fact",
+          "lexical marker",
+          "user profile",
+          "format",
+          "content constraint",
+          "query content",
+          "persona",
+          "register"
+        ]
+      }
+    ],
+    "series": [
+      "median noise floor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

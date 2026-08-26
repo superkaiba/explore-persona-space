@@ -1,0 +1,562 @@
+{
+  "commit": "6a764e1d+dirty",
+  "render_id": "541c4b4c5c5f4f5e",
+  "git_commit": "6a764e1d066dfb5a8990c58690d2f7ab78245366",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1979_whiten_csls_fig.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1979_whiten_csls_fig.py",
+  "created": "2026-08-25T19:21:57Z",
+  "figsize": [
+    9.4,
+    3.0
+  ],
+  "points": [
+    {
+      "median within-arm Spearman $\\rho$": 0.29408039604441455,
+      "y": 4.76,
+      "series": "centered cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.4546999726934974,
+      "y": 3.76,
+      "series": "centered cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.223726860253208,
+      "y": 2.76,
+      "series": "centered cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.5132008500064447,
+      "y": 1.76,
+      "series": "centered cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.28863385460427315,
+      "y": 0.76,
+      "series": "centered cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.47861356233190505,
+      "y": -0.24,
+      "series": "centered cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.32354133062637347,
+      "y": 4.92,
+      "series": "whitened",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.45059431256565763,
+      "y": 3.92,
+      "series": "whitened",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.31081592121908846,
+      "y": 2.92,
+      "series": "whitened",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.5127923915755858,
+      "y": 1.92,
+      "series": "whitened",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.4823992722630414,
+      "y": 0.92,
+      "series": "whitened",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.36912861008600295,
+      "y": -0.08,
+      "series": "whitened",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3132848328593967,
+      "y": 5.08,
+      "series": "CSLS",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.42627229159788904,
+      "y": 4.08,
+      "series": "CSLS",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.25575644080459026,
+      "y": 3.08,
+      "series": "CSLS",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.49231172217213887,
+      "y": 2.08,
+      "series": "CSLS",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.30114448642196456,
+      "y": 1.08,
+      "series": "CSLS",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.4813266942610276,
+      "y": 0.08,
+      "series": "CSLS",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.33474993406849396,
+      "y": 5.24,
+      "series": "whitened + CSLS",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.43385931257625043,
+      "y": 4.24,
+      "series": "whitened + CSLS",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.316962549865204,
+      "y": 3.24,
+      "series": "whitened + CSLS",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.47511997186405847,
+      "y": 2.24,
+      "series": "whitened + CSLS",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.38409451264905975,
+      "y": 1.24,
+      "series": "whitened + CSLS",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.37455461337445717,
+      "y": 0.24,
+      "series": "whitened + CSLS",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2509063843792685,
+      "y": 4.76,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3010804321728691,
+      "y": 3.76,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.21369315183595133,
+      "y": 2.76,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.41021393082486146,
+      "y": 1.76,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.24442310177368426,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3247539015606242,
+      "y": -0.24,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2604624361479717,
+      "y": 4.92,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3064585834333733,
+      "y": 3.92,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.26375183085227405,
+      "y": 2.92,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3722298255532822,
+      "y": 1.92,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.31859002211976273,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2632412965186074,
+      "y": -0.08,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2791423564395575,
+      "y": 5.08,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2726050420168067,
+      "y": 4.08,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.22862493703917652,
+      "y": 3.08,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3632019977516932,
+      "y": 2.08,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2498499237602107,
+      "y": 1.08,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3516926770708283,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2925880574206474,
+      "y": 5.24,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.28374549819927974,
+      "y": 4.24,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.26869792799888936,
+      "y": 3.24,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3310283561183708,
+      "y": 2.24,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.34855688582231503,
+      "y": 1.24,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2908043217286914,
+      "y": 0.24,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.15623424336420097,
+      "y": 4.76,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.37176470588235294,
+      "y": 3.76,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median within-arm Spearman $\\rho$": -0.016783116046039107,
+      "y": 2.76,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median within-arm Spearman $\\rho$": -0.011164733850369368,
+      "y": 1.76,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.4281186247689377,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2845618247298919,
+      "y": -0.24,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.16869552695203258,
+      "y": 4.92,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.41704681872749094,
+      "y": 3.92,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.26250330147545864,
+      "y": 2.92,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.23328291202191126,
+      "y": 1.92,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.33996062203584576,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3067466986794718,
+      "y": -0.08,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.1156090182570505,
+      "y": 5.08,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.23500600240096037,
+      "y": 4.08,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.00405772047465037,
+      "y": 3.08,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median within-arm Spearman $\\rho$": -0.029364450535487592,
+      "y": 2.08,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.44468724056850956,
+      "y": 1.08,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.3011284513805522,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.12955893302493135,
+      "y": 5.24,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.2754861944777911,
+      "y": 4.24,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.1807726476546902,
+      "y": 3.24,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.029340440355164227,
+      "y": 2.24,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.5629832422836868,
+      "y": 1.24,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "median within-arm Spearman $\\rho$": 0.38866746698679466,
+      "y": 0.24,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "casual + impoliteness (8 arms)",
+        "xlabel": "median within-arm Spearman $\\rho$",
+        "legend_labels": [
+          "centered cosine",
+          "whitened",
+          "CSLS",
+          "whitened + CSLS"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ],
+        "yticklabels": [
+          "context similarity",
+          "answer similarity",
+          "through-map context sim",
+          "through-map predicted-answer sim",
+          "nearest training rows (context)",
+          "nearest training rows (answer)"
+        ]
+      },
+      {
+        "title": "all content (12 arms)",
+        "xlabel": "median within-arm Spearman $\\rho$",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title": "marker (6 arms)",
+        "xlabel": "median within-arm Spearman $\\rho$",
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "centered cosine",
+      "whitened",
+      "CSLS",
+      "whitened + CSLS"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

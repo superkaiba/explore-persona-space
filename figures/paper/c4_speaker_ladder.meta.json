@@ -1,0 +1,261 @@
+{
+  "commit": "45754bb9+dirty",
+  "render_id": "0c2d84ecb9a04701",
+  "git_commit": "45754bb99f766f45311a80d6871f417d04119764",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.meta.json",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.pdf",
+    "figures/issue_1901/avgtarget_plots/c1_layer_profile.png",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.meta.json",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.pdf",
+    "figures/issue_1901/avgtarget_plots/c1_scaling_train_pool.png",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
+    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c3_persona_direction_spectrum.meta.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2054_paper_r2_figs.py",
+    "scripts/issue2474_n1m_map.py",
+    "scripts/issue779_plot3_redesign.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2568/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2054_paper_r2_figs.py",
+  "created": "2026-08-25T17:21:22Z",
+  "figsize": [
+    5.5,
+    4.7299999999999995
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.20736087733279018,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.2254487936181569,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.27988210680548775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.26435334458909887,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.27919295858458054,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.2185863641514155,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.5796996369279679,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.38985271917718867,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.36960715629310803,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.3559185425108692,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.3609899231388926,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": 0.2962172010567693,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -1.0164627183325465,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.7303550581969958,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6781967605260142,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6902511251920581,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.5319566685059043,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.8422278162310233,
+      "series": "identity + bias baseline",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.8400497253129029,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -1.5096405941662412,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6427885531940452,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.6850771881940597,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.5145396609602718,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.8233364601594321,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.028103851491912357,
+      "series": "shuffled answers (null)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)": -0.028103851491912357,
+      "series": "shuffled answers (null)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$ (context $\\rightarrow$ answer, layer 19)",
+        "legend_labels": [
+          "base",
+          "instruct",
+          "identity + bias baseline",
+          "shuffled answers (null)"
+        ],
+        "xticklabels": [
+          "Assistant\nchat template",
+          "Assistant\nplain text",
+          "HELIOS\nship AI",
+          "Wren\nhelpful",
+          "Dana\nordinary",
+          "Vex\nvillain"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "identity + bias baseline",
+      "shuffled answers (null)",
+      "base",
+      "instruct"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

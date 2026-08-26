@@ -1,0 +1,2267 @@
+{
+  "commit": "33122705+dirty",
+  "render_id": "732d2c82bf2c4944",
+  "git_commit": "331227053adad1f47a128a1264c607c03636eefd",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_2afc.py",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_langow_pilot_reads.py",
+  "created": "2026-08-25T20:43:16Z",
+  "figsize": [
+    9.0,
+    3.0
+  ],
+  "points": [
+    {
+      "||observed delta||": 5.547313042427818,
+      "||predicted delta||": 11.62066211416595,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.378325540108364,
+      "||predicted delta||": 23.84785118684478,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.62553033189537,
+      "||predicted delta||": 26.265507763669266,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.265158239563345,
+      "||predicted delta||": 23.040538807826724,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.62305106833744,
+      "||predicted delta||": 26.15536433358904,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.05200964012626,
+      "||predicted delta||": 27.004136317986767,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 5.098123266038684,
+      "||predicted delta||": 12.384958199570946,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.334056644127283,
+      "||predicted delta||": 25.09345096326835,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.577016578989998,
+      "||predicted delta||": 27.967038750833645,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.84640354118814,
+      "||predicted delta||": 24.05899245320055,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.357201674348982,
+      "||predicted delta||": 27.237507048544355,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.393327490726094,
+      "||predicted delta||": 28.004789321514018,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 10.798585234636533,
+      "||predicted delta||": 10.212205434861703,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.76131602179008,
+      "||predicted delta||": 21.171979750739307,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.858152029914724,
+      "||predicted delta||": 24.99135408461638,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.38752570041103,
+      "||predicted delta||": 20.259055135069467,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.04956588023841,
+      "||predicted delta||": 24.758956793889016,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.023881270846395,
+      "||predicted delta||": 27.276363675619585,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 12.442252084439149,
+      "||predicted delta||": 11.173149286180742,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.37458634623495,
+      "||predicted delta||": 25.147285604670568,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.46243726984003,
+      "||predicted delta||": 29.94519036855398,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.68546912671193,
+      "||predicted delta||": 22.38315342384136,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 32.315308885518775,
+      "||predicted delta||": 27.920819608232314,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 34.527606082675135,
+      "||predicted delta||": 26.589008439792945,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 6.210834908823748,
+      "||predicted delta||": 13.199394529947279,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.059015376325405,
+      "||predicted delta||": 24.052749517956713,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.960553492976523,
+      "||predicted delta||": 29.732451568527118,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.42752396880067,
+      "||predicted delta||": 23.300762948919953,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.76911714475076,
+      "||predicted delta||": 29.020432226504685,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.5147736607429,
+      "||predicted delta||": 29.215615671022288,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 11.270883097634455,
+      "||predicted delta||": 11.364866908107937,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.233233401741526,
+      "||predicted delta||": 23.344486955959947,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.693632714719172,
+      "||predicted delta||": 26.96114267383729,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.101294551640027,
+      "||predicted delta||": 21.32949297505928,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.431852680759373,
+      "||predicted delta||": 26.160192918185714,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.57328757962315,
+      "||predicted delta||": 28.131147288455033,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 7.113475467180171,
+      "||predicted delta||": 11.085214085766376,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.787262731120556,
+      "||predicted delta||": 22.729505825668177,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 32.65950009920664,
+      "||predicted delta||": 25.94409376877827,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.440375924426924,
+      "||predicted delta||": 22.691356980239576,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.81702865586335,
+      "||predicted delta||": 26.325321602490703,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 32.68708151703083,
+      "||predicted delta||": 26.5378773742287,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 5.458277989683604,
+      "||predicted delta||": 9.78202423930877,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.931812933908507,
+      "||predicted delta||": 22.728645430913293,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.814001939318064,
+      "||predicted delta||": 28.142235504100253,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.82961642768377,
+      "||predicted delta||": 21.91979816707726,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.657422109781596,
+      "||predicted delta||": 26.775387260960404,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 32.66098409981363,
+      "||predicted delta||": 27.00189706329232,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 11.842083835897453,
+      "||predicted delta||": 11.277686785390902,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.891171233644528,
+      "||predicted delta||": 23.337411819837552,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.24923526204805,
+      "||predicted delta||": 27.879313639861344,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.086561404413775,
+      "||predicted delta||": 22.49553077151473,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 29.708126219883717,
+      "||predicted delta||": 27.212380839170535,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 33.87457343832693,
+      "||predicted delta||": 30.5025289253027,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 5.348182116393398,
+      "||predicted delta||": 12.164958465477518,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.86086381086584,
+      "||predicted delta||": 21.95195809256806,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 31.02751010787896,
+      "||predicted delta||": 26.21909010842462,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.736096925205604,
+      "||predicted delta||": 21.603145860845412,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.916083319160634,
+      "||predicted delta||": 26.327640149397066,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 31.31104842611652,
+      "||predicted delta||": 27.22174951860174,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 3.684604354730181,
+      "||predicted delta||": 10.297312554907405,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.751752262531912,
+      "||predicted delta||": 23.770166354003127,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.19618591247755,
+      "||predicted delta||": 28.537626727335017,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.518446452513267,
+      "||predicted delta||": 22.743430496217236,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 30.069311948822687,
+      "||predicted delta||": 27.739211746471216,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 31.20302678147221,
+      "||predicted delta||": 28.324073385160712,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 5.027356987650266,
+      "||predicted delta||": 12.297372118550783,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.980551276125986,
+      "||predicted delta||": 24.82762293801253,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 28.039396132097224,
+      "||predicted delta||": 26.89072614908097,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.008773324393445,
+      "||predicted delta||": 23.350163537831975,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.290976035457227,
+      "||predicted delta||": 26.175773021632057,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 27.450499328987792,
+      "||predicted delta||": 27.474046537305487,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "||observed delta||": 10.034424321423995,
+      "||predicted delta||": 6.036640705830559,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 7.331640263426557,
+      "||predicted delta||": 5.126999061723824,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 13.89901476474159,
+      "||predicted delta||": 9.198083004848051,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 12.399941552322668,
+      "||predicted delta||": 11.031805235634359,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 10.774333805776271,
+      "||predicted delta||": 5.945891809988967,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 14.809358607395719,
+      "||predicted delta||": 8.457544975050784,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 18.452592381467646,
+      "||predicted delta||": 13.096310330265247,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 24.316997556985367,
+      "||predicted delta||": 15.247410051253794,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 11.833915624259184,
+      "||predicted delta||": 9.838774125192352,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 13.734655689274511,
+      "||predicted delta||": 14.340491351674475,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 24.988530631486597,
+      "||predicted delta||": 13.323660909923323,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 14.341379850494201,
+      "||predicted delta||": 11.12234695853224,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 16.170298713563827,
+      "||predicted delta||": 8.170065706277589,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 19.130086831410654,
+      "||predicted delta||": 9.795224222553456,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 23.168329443074267,
+      "||predicted delta||": 17.142435606399488,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 21.182503327160713,
+      "||predicted delta||": 14.669083858556885,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 19.837799555237073,
+      "||predicted delta||": 10.851861744714155,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 20.590363263910728,
+      "||predicted delta||": 12.670953624232911,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 18.447094337748805,
+      "||predicted delta||": 12.399150533043304,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 12.556467086575555,
+      "||predicted delta||": 8.109951106605996,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 20.98730225658518,
+      "||predicted delta||": 15.752313669434972,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 6.774948210422795,
+      "||predicted delta||": 4.496285156959027,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 9.546658616693364,
+      "||predicted delta||": 8.154529388245528,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 9.859365341557245,
+      "||predicted delta||": 8.68846220692053,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "||observed delta||": 0.0,
+      "||predicted delta||": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 5.17914091240127,
+      "||predicted delta||": 4.363856186512564,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 10.35828182480254,
+      "||predicted delta||": 8.727712373025128,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 15.537422737203812,
+      "||predicted delta||": 13.091568559537691,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 20.71656364960508,
+      "||predicted delta||": 17.455424746050255,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 25.89570456200635,
+      "||predicted delta||": 21.81928093256282,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 31.074845474407624,
+      "||predicted delta||": 26.183137119075383,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 36.25398638680889,
+      "||predicted delta||": 30.546993305587943,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "||observed delta||": 5.547313042427818,
+      "y": 9.312346142325964,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.378325540108364,
+      "y": 22.967502540441743,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.62553033189537,
+      "y": 25.674982052368115,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.265158239563345,
+      "y": 22.657378533076397,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.62305106833744,
+      "y": 26.111648252363576,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.05200964012626,
+      "y": 27.580913328803817,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 5.098123266038684,
+      "y": 10.66686466504653,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.334056644127283,
+      "y": 25.533703999860137,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.577016578989998,
+      "y": 27.294155727504684,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.84640354118814,
+      "y": 24.827309369116513,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.357201674348982,
+      "y": 27.311616924441736,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.393327490726094,
+      "y": 28.460388798672525,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 10.798585234636533,
+      "y": 9.025087810541008,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.76131602179008,
+      "y": 22.488979934293557,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.858152029914724,
+      "y": 23.600970138912277,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.38752570041103,
+      "y": 21.837815660599713,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.04956588023841,
+      "y": 24.28461063774233,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.023881270846395,
+      "y": 28.751530701213785,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 12.442252084439149,
+      "y": 9.526526562548082,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.37458634623495,
+      "y": 25.058307503303915,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.46243726984003,
+      "y": 28.63978562448231,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.68546912671193,
+      "y": 23.769427272851274,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 32.315308885518775,
+      "y": 28.029995773085616,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 34.527606082675135,
+      "y": 27.725441372211264,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 6.210834908823748,
+      "y": 10.824193915263853,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.059015376325405,
+      "y": 23.677226310026207,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.960553492976523,
+      "y": 28.660134202110914,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.42752396880067,
+      "y": 23.780287218357604,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.76911714475076,
+      "y": 28.821240854216224,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.5147736607429,
+      "y": 29.820137257037203,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 11.270883097634455,
+      "y": 9.133514688863862,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.233233401741526,
+      "y": 22.967716289840887,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.693632714719172,
+      "y": 26.56159439132948,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.101294551640027,
+      "y": 22.46045437016133,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.431852680759373,
+      "y": 26.990837826417188,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.57328757962315,
+      "y": 29.33388330770733,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 7.113475467180171,
+      "y": 8.977830010352903,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.787262731120556,
+      "y": 22.292453658418147,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 32.65950009920664,
+      "y": 25.31497491876161,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.440375924426924,
+      "y": 22.687876690989338,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.81702865586335,
+      "y": 25.62972827175488,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 32.68708151703083,
+      "y": 26.465504615717148,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 5.458277989683604,
+      "y": 8.062043169516224,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.931812933908507,
+      "y": 22.99033820714504,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.814001939318064,
+      "y": 27.139256059364705,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.82961642768377,
+      "y": 22.125616465200142,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.657422109781596,
+      "y": 26.41690890664083,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 32.66098409981363,
+      "y": 27.738167533776615,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 11.842083835897453,
+      "y": 9.22657655937549,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.891171233644528,
+      "y": 24.240070668681877,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.24923526204805,
+      "y": 27.580176257681448,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.086561404413775,
+      "y": 23.75756051412224,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 29.708126219883717,
+      "y": 27.831740363636456,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 33.87457343832693,
+      "y": 32.78170460062002,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 5.348182116393398,
+      "y": 9.767373242388578,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.86086381086584,
+      "y": 23.679804382859086,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 31.02751010787896,
+      "y": 26.472715575219663,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.736096925205604,
+      "y": 23.132750497627566,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.916083319160634,
+      "y": 26.445545579013807,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 31.31104842611652,
+      "y": 28.261632114231197,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 3.684604354730181,
+      "y": 8.954328961795474,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.751752262531912,
+      "y": 24.71146237348618,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.19618591247755,
+      "y": 27.969716784915494,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.518446452513267,
+      "y": 24.56136070170308,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 30.069311948822687,
+      "y": 28.028740062048126,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 31.20302678147221,
+      "y": 28.939764021080645,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 5.027356987650266,
+      "y": 10.156187966740296,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.980551276125986,
+      "y": 24.43844239132397,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 28.039396132097224,
+      "y": 25.914703256551963,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.008773324393445,
+      "y": 24.033093810978855,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.290976035457227,
+      "y": 26.080403202462286,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 27.450499328987792,
+      "y": 28.230400146913304,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "||observed delta||": 10.034424321423995,
+      "y": 5.476210136868,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 7.331640263426557,
+      "y": 4.677462994452504,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 13.89901476474159,
+      "y": 8.672983065233003,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 12.399941552322668,
+      "y": 9.544612138762886,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 10.774333805776271,
+      "y": 5.852953600502014,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 14.809358607395719,
+      "y": 7.459102629312803,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 18.452592381467646,
+      "y": 12.404987663184796,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 24.316997556985367,
+      "y": 15.000135910191386,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 11.833915624259184,
+      "y": 9.538679238296364,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 13.734655689274511,
+      "y": 13.863734857658885,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 24.988530631486597,
+      "y": 12.160758447713578,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 14.341379850494201,
+      "y": 10.239299646421552,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 16.170298713563827,
+      "y": 7.401496976805302,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 19.130086831410654,
+      "y": 8.589380100253454,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 23.168329443074267,
+      "y": 15.69084298987176,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 21.182503327160713,
+      "y": 14.15095554726031,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 19.837799555237073,
+      "y": 10.306749416379256,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 20.590363263910728,
+      "y": 12.028738018211202,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 18.447094337748805,
+      "y": 11.03884390317035,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 12.556467086575555,
+      "y": 7.37716510034924,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 20.98730225658518,
+      "y": 14.310979653813256,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 6.774948210422795,
+      "y": 4.160935411174089,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 9.546658616693364,
+      "y": 8.27474893343244,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 9.859365341557245,
+      "y": 7.613749899848116,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "||observed delta||": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 5.17914091240127,
+      "y": 4.364299715012257,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 10.35828182480254,
+      "y": 8.728599430024515,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 15.537422737203812,
+      "y": 13.092899145036775,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 20.71656364960508,
+      "y": 17.45719886004903,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 25.89570456200635,
+      "y": 21.821498575061288,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 31.074845474407624,
+      "y": 26.18579829007355,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 36.25398638680889,
+      "y": 30.5500980050858,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "||observed delta||": 5.547313042427818,
+      "y": 26.105898351415178,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.378325540108364,
+      "y": 48.422323257473906,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.62553033189537,
+      "y": 47.665711178673874,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.265158239563345,
+      "y": 43.66631785932835,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.62305106833744,
+      "y": 41.650065785043516,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.05200964012626,
+      "y": 41.30835687646069,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 5.098123266038684,
+      "y": 27.0156963489753,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.334056644127283,
+      "y": 51.084993794742715,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.577016578989998,
+      "y": 49.578405745807615,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.84640354118814,
+      "y": 45.650618528968145,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.357201674348982,
+      "y": 42.565403255975006,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.393327490726094,
+      "y": 43.08638258741523,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 10.798585234636533,
+      "y": 27.290390025666998,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.76131602179008,
+      "y": 49.17116638735699,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.858152029914724,
+      "y": 49.153539515264534,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.38752570041103,
+      "y": 39.93585217354017,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.04956588023841,
+      "y": 39.00898109545864,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.023881270846395,
+      "y": 40.9969069549949,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 12.442252084439149,
+      "y": 27.410203459844997,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.37458634623495,
+      "y": 49.801765329624935,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.46243726984003,
+      "y": 50.14748713772222,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.68546912671193,
+      "y": 43.41609894217969,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 32.315308885518775,
+      "y": 42.310722806260394,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 34.527606082675135,
+      "y": 41.82142783454278,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 6.210834908823748,
+      "y": 27.254378600781976,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.059015376325405,
+      "y": 49.80184820661299,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.960553492976523,
+      "y": 50.908275526629346,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.42752396880067,
+      "y": 43.29398327376777,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.76911714475076,
+      "y": 43.145108123521524,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.5147736607429,
+      "y": 43.765709874718766,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 11.270883097634455,
+      "y": 27.318811822181246,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.233233401741526,
+      "y": 49.74885524712864,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.693632714719172,
+      "y": 50.730693271328406,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.101294551640027,
+      "y": 41.47784928277298,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.431852680759373,
+      "y": 41.30198785746071,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.57328757962315,
+      "y": 42.9808780148318,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 7.113475467180171,
+      "y": 24.4379791300602,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.787262731120556,
+      "y": 48.71248412716886,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 32.65950009920664,
+      "y": 46.57124856808987,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.440375924426924,
+      "y": 43.90308228363787,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.81702865586335,
+      "y": 40.774208762144696,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 32.68708151703083,
+      "y": 39.55605070826691,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 5.458277989683604,
+      "y": 23.95241916282799,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.931812933908507,
+      "y": 46.977030565439705,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.814001939318064,
+      "y": 46.50477425123868,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.82961642768377,
+      "y": 40.63718344905739,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.657422109781596,
+      "y": 39.06513684839375,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 32.66098409981363,
+      "y": 40.21105684957187,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 11.842083835897453,
+      "y": 28.181593993929145,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.891171233644528,
+      "y": 49.01320140906971,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.24923526204805,
+      "y": 51.8237813167868,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.086561404413775,
+      "y": 41.716999908102146,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 29.708126219883717,
+      "y": 43.2430036406185,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 33.87457343832693,
+      "y": 45.5466860593865,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 5.348182116393398,
+      "y": 25.24190529658839,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.86086381086584,
+      "y": 48.07517539368398,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 31.02751010787896,
+      "y": 47.626392464606276,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.736096925205604,
+      "y": 42.89720272349103,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.916083319160634,
+      "y": 41.70537785743415,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 31.31104842611652,
+      "y": 42.7942000101844,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 3.684604354730181,
+      "y": 24.74508042763531,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.751752262531912,
+      "y": 51.25528679683331,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.19618591247755,
+      "y": 49.68822807192448,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.518446452513267,
+      "y": 45.00557837745987,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 30.069311948822687,
+      "y": 41.6930839253206,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 31.20302678147221,
+      "y": 42.37743953311928,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 5.027356987650266,
+      "y": 25.071266180323775,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.980551276125986,
+      "y": 52.869797494659096,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 28.039396132097224,
+      "y": 50.586789895649055,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.008773324393445,
+      "y": 45.693182909649835,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.290976035457227,
+      "y": 42.75304796604248,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 27.450499328987792,
+      "y": 42.6677594349557,
+      "series": "answer_language",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "||observed delta||": 10.034424321423995,
+      "y": 10.243981943274285,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 7.331640263426557,
+      "y": 14.240162554810803,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 13.89901476474159,
+      "y": 21.279759374181754,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 12.399941552322668,
+      "y": 25.714717844400308,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 10.774333805776271,
+      "y": 11.649610189980118,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 14.809358607395719,
+      "y": 16.671317669715116,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 18.452592381467646,
+      "y": 22.882255484030033,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 24.316997556985367,
+      "y": 19.308379984638375,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 11.833915624259184,
+      "y": 16.925852058684235,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 13.734655689274511,
+      "y": 37.271269311963096,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 24.988530631486597,
+      "y": 22.718117267059952,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 14.341379850494201,
+      "y": 14.974710389255923,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 16.170298713563827,
+      "y": 15.163100398040292,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 19.130086831410654,
+      "y": 20.287387232403148,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 23.168329443074267,
+      "y": 37.99669845568904,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 21.182503327160713,
+      "y": 27.683067031485134,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 19.837799555237073,
+      "y": 18.956027029696383,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 20.590363263910728,
+      "y": 23.78369625902623,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 18.447094337748805,
+      "y": 19.929660587374865,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 12.556467086575555,
+      "y": 18.313152505951717,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 20.98730225658518,
+      "y": 38.648274303029645,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 6.774948210422795,
+      "y": 9.007610408107363,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 9.546658616693364,
+      "y": 20.38630493520319,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 9.859365341557245,
+      "y": 18.582408392188153,
+      "series": "query_content_oneword",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "||observed delta||": 0.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 5.17914091240127,
+      "y": 7.772201108132539,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 10.35828182480254,
+      "y": 15.544402216265079,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 15.537422737203812,
+      "y": 23.31660332439762,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 20.71656364960508,
+      "y": 31.088804432530157,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 25.89570456200635,
+      "y": 38.861005540662696,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 31.074845474407624,
+      "y": 46.63320664879524,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "||observed delta||": 36.25398638680889,
+      "y": 54.40540775692777,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 312,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "ridge #779 (single-turn)\nslope=0.843",
+        "xlabel": "||observed delta||",
+        "ylabel": "||predicted delta||",
+        "legend_labels": [
+          "answer_language",
+          "query_content_oneword"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "ridge #1738 (multi-turn)\nslope=0.843",
+        "xlabel": "||observed delta||",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ]
+      },
+      {
+        "title_left": "identity (raw v_C delta)\nslope=1.501",
+        "xlabel": "||observed delta||",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ]
+      }
+    ],
+    "series": [
+      "answer_language",
+      "query_content_oneword"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

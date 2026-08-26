@@ -4,9 +4,9 @@
 <!-- living-docs-changelog:begin -->
 ## Changelog
 
+- **2026-08-25** — Folded #2564 (minimal-pair direction recovery through the frozen context-to-answer map) into q:spec-context-as-vector's belief trailer; confidence LOW -> MODERATE.
 - **2026-06-05** — Updated 3.1 (q:leak-predictor) and 3.4b (q:fact-teach-persona-transfer) with the #444 fact-leakage predictor result: teacher-referenced distance (cosine/JS, any probe slice) predicts fact leakage backwards, while the bystander's teacher-independent base prior on the fact predicts positively. Candidate unification of the marker (distance-predicts) and fact (prior-predicts) lines, to be tested by #500.
-- **2026-06-02** — Added open question 1.7 (q:spec-role-header): does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly? Seeded by #464.
-<!-- living-docs-changelog:end -->
+- **2026-06-02** — Added open question 1.7 (q:spec-role-header): does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly? Seeded by #464.<!-- living-docs-changelog:end -->
 
 **Central question:** when we train on data exhibiting a behavior B in a context C, can we find a simple predictor — measurable before training — for whether the model will also exhibit a behavior B′ in a context C′?
 
@@ -38,7 +38,7 @@ How do we measure a distance between contexts $C$ — a trained-in marker's log-
 
 **1.1 Can a context be treated as a vector or a compact code?** <!-- q:spec-context-as-vector -->
 Take the last activation after a context — in-context examples, a random system prompt, or a non-persona system prompt — and use it as the persona vector; richer alternatives are a KV-derived code or a small distilled model. The hypothesis is that a KV-cache state can do something smarter than a fixed persona vector.
-> **Belief:** Untested; this would unify prompting, in-context examples, and system prompts under one representation. **Confidence:** LOW. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415, #1072, #1426, #1482, #1489, #1491, #1738, #1739, #1774, #1775, #1773, #1769, #1776, #1900, #1901, #1946, #1945, #1895, #1979, #2054, #2091, #2094, #2162, #2163, #2202, #2203, #2215, #2222, #2224, #2223, #2329, #2330, #2333, #2356, #2389, #2546, #2552, #2564, #2569.
+> **Belief:** First direct support at context-end: a frozen linear map from the context-end last-token state recovers the direction of instruction- and query-driven answer-state shifts on all 8 token-matched minimal-pair axes that passed a behavioral compliance gate, beating identity pass-through on every axis (per-axis mean cosines 0.17 to 0.90, all above shuffled-pair nulls; recovery tracks the observed shift's split-half reliability; stance, persona, and hedging failed the compliance floor and are untested), and the state carries purely formal query information that barely surfaces in emitted text (a query-form flip moves the state at paraphrase scale, 0.97, while changing answer text less than a paraphrase, 0.66) (#2564; single model, constructed token-matched pairs). Caveats: an identity-plus-bias baseline still captures most raw pair discrimination at context-end (#2215), the map-vs-identity retrieval margin is metric-dependent (#2564), and the richer KV-derived code and the non-prompt inducers (in-context examples, steering, SDF) remain untested. **Confidence:** MODERATE. **Evidence:** #685, #823, #841, #922, #923, #928, #952, #958, #1073, #1092, #1005, #1415, #1072, #1426, #1482, #1489, #1491, #1738, #1739, #1774, #1775, #1773, #1769, #1776, #1900, #1901, #1946, #1945, #1895, #1979, #2054, #2091, #2094, #2162, #2163, #2202, #2203, #2215, #2222, #2224, #2223, #2329, #2330, #2333, #2356, #2389, #2546, #2552, #2564, #2569.
 
 **1.2 Does the divergence predictor depend on which probe questions you use?** <!-- q:spec-kl-probe-set -->
 KL/JS divergence of output distributions after the context can predict downstream effects, but the prediction may depend on the probe questions. Can we find a probe set that is a good predictor?

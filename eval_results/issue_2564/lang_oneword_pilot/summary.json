@@ -1,0 +1,228 @@
+{
+  "issue": 2564,
+  "n_contexts": 96,
+  "n_pairs": 96,
+  "n_pairs_by_class": {
+    "install": 36,
+    "swap": 36,
+    "query_content_oneword": 24
+  },
+  "k_draws": 10,
+  "layer_used": 19,
+  "arms": [
+    "arm_779ce",
+    "arm_1738ce",
+    "arm_iddelta"
+  ],
+  "ridge_paths": {
+    "arm_779ce": "issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+    "arm_1738ce": "issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt"
+  },
+  "cos_median_by_axis_arm": {
+    "arm_779ce": {
+      "answer_language": 0.7936346186812651,
+      "query_content_oneword": 0.5473863949705886
+    },
+    "arm_1738ce": {
+      "answer_language": 0.8133580449436958,
+      "query_content_oneword": 0.5319299725886643
+    },
+    "arm_iddelta": {
+      "answer_language": 0.445288221033484,
+      "query_content_oneword": 0.271633122094435
+    }
+  },
+  "retrieval_per_context": {
+    "arm_779ce": {
+      "per_context": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.8125
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.9010416666666666
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.78125
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8819444444444443
+        }
+      },
+      "chance_at_1": 0.010416666666666666,
+      "n_pool": 96
+    },
+    "arm_1738ce": {
+      "per_context": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.7708333333333334
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8701388888888889
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.7395833333333334
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8562499999999998
+        }
+      },
+      "chance_at_1": 0.010416666666666666,
+      "n_pool": 96
+    }
+  },
+  "retrieval_pair_rank": {
+    "arm_779ce": {
+      "acc_at_1": 0.46875,
+      "median_rank": 2.0,
+      "chance_at_1": 0.010416666666666666,
+      "by_axis": {
+        "answer_language": {
+          "acc_at_1": 0.3055555555555556,
+          "median_rank": 3.0,
+          "n": 72
+        },
+        "query_content_oneword": {
+          "acc_at_1": 0.9583333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        }
+      }
+    },
+    "arm_1738ce": {
+      "acc_at_1": 0.375,
+      "median_rank": 2.0,
+      "chance_at_1": 0.010416666666666666,
+      "by_axis": {
+        "answer_language": {
+          "acc_at_1": 0.18055555555555555,
+          "median_rank": 4.0,
+          "n": 72
+        },
+        "query_content_oneword": {
+          "acc_at_1": 0.9583333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        }
+      }
+    },
+    "arm_iddelta": {
+      "acc_at_1": 0.3958333333333333,
+      "median_rank": 3.0,
+      "chance_at_1": 0.010416666666666666,
+      "by_axis": {
+        "answer_language": {
+          "acc_at_1": 0.20833333333333334,
+          "median_rank": 4.5,
+          "n": 72
+        },
+        "query_content_oneword": {
+          "acc_at_1": 0.9583333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        }
+      }
+    }
+  },
+  "calibration_slope": {
+    "arm_779ce": {
+      "answer_language": 0.864133410851435,
+      "query_content_oneword": 0.6629054865662586,
+      "all": 0.8425830191380705
+    },
+    "arm_1738ce": {
+      "answer_language": 0.8697656572616626,
+      "query_content_oneword": 0.6167459781131298,
+      "all": 0.8426686566032787
+    },
+    "arm_iddelta": {
+      "answer_language": 1.5264985896645487,
+      "query_content_oneword": 1.2853583100592678,
+      "all": 1.5006738066389114
+    }
+  },
+  "language_read": {
+    "rule": "zh if CJK-codepoint fraction of alnum chars > 0.2; else es if (has Spanish diacritic [áéíóúñü¿¡] or Spanish-stopword fraction > English-stopword fraction over whitespace tokens); else en. fired = fraction of a context's valid draws classified as the instructed language; threshold 0.7.",
+    "report_only": true,
+    "fired_by_value": {
+      "chinese": {
+        "mean_fired_frac": 1.0,
+        "n_contexts": 12,
+        "frac_ge_70": 1.0
+      },
+      "english": {
+        "mean_fired_frac": 0.9833333333333334,
+        "n_contexts": 12,
+        "frac_ge_70": 1.0
+      },
+      "spanish": {
+        "mean_fired_frac": 0.9500000000000001,
+        "n_contexts": 12,
+        "frac_ge_70": 0.9166666666666666
+      }
+    }
+  },
+  "notes": {
+    "norm_text": "null in perpair — parent's text-embedding leg out of pilot scope",
+    "orientation": "as-authored (no sign randomization in pilot)"
+  },
+  "repro": {
+    "git_commit": "8e3c56ede11f4cd0fd36203d1f6a842059a7a0b5",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
+      "eval_results/issue_2474/n1m_map_arms.json",
+      "figures/issue_2356/flippair_2afc.meta.json",
+      "figures/issue_2356/flippair_2afc.pdf",
+      "figures/issue_2356/flippair_2afc.png",
+      "scripts/issue2356_flippair_2afc.py",
+      "scripts/issue2356_flippair_figures.py",
+      "scripts/issue2474_n1m_map.py",
+      "tasks/completed/2214/body.md",
+      "tasks/completed/2214/comments.jsonl",
+      "tasks/completed/2214/concerns.jsonl",
+      "tasks/completed/2214/events.jsonl",
+      "tasks/completed/2214/plans/plan.md",
+      "tasks/completed/2214/plans/v1.md",
+      "tasks/completed/2214/plans/v2.md",
+      "tasks/completed/2214/plans/v3.md",
+      "tasks/proposed/2416/body.md",
+      "tasks/proposed/2416/comments.jsonl",
+      "tasks/proposed/2416/events.jsonl",
+      "tasks/running/2544/events.jsonl",
+      "tests/test_issue2094_rev_butler.py"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2564_langow_pilot_reads.py",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "timestamp": "2026-08-25T20:43:10.423235+00:00"
+  }
+}

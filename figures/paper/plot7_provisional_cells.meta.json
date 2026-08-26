@@ -1,0 +1,112 @@
+{
+  "commit": "9a8d045b+dirty",
+  "render_id": "8b39532025cc49e1",
+  "git_commit": "9a8d045be63d10390f460b6e8c1e39ace2b8e264",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/paper_plot7_provisional.py",
+    ".claude/agent-memory/reconciler/MEMORY.md",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1901_avgtarget_plots.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/paper_plot7_provisional.py",
+  "created": "2026-08-25T17:36:09Z",
+  "figsize": [
+    6.4,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "held-out skill (R$^2$ over mean)": 0.7912448259947918,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "held-out skill (R$^2$ over mean)": 0.772714691275247,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.9,
+      "held-out skill (R$^2$ over mean)": 0.8067960097972003,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.1,
+      "held-out skill (R$^2$ over mean)": 0.788704463331112,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.3,
+      "held-out skill (R$^2$ over mean)": 0.8196903159930158,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out skill (R$^2$ over mean)",
+        "legend_labels": [
+          "context to answer",
+          "context to CoT",
+          "context to CoT + answer",
+          "CoT to answer"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B-Instruct\n(before CoT training)",
+          "OpenThinker2-7B\n(CoT-trained)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "context to answer",
+      "context to CoT",
+      "context to CoT + answer",
+      "CoT to answer"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "arms": {
+    "casual writing": {
+      "arm_id": "cas-pers-po-lr1e5-s42",
+      "kind": "content",
+      "layer": 19,
+      "pos": "last_prompt",
+      "dv": "dv_change",
+      "source_prefix": "persona_software_engineer",
+      "source_ix": 0,
+      "rho": {
+        "p1_ps": 0.456097385422831,
+        "p1_tc": 0.37234987645489914,
+        "p2_ps": 0.43827130852340934,
+        "p3a_ps": 0.35074071416386166,
+        "p2_tc": 0.7079471788715486,
+        "p3b_tc": 0.7775456795921751
+      },
+      "rho_drop_source": {
+        "p1_ps": 0.4286333836441593,
+        "p1_tc": 0.34322304151580285,
+        "p2_ps": 0.41051020408163263,
+        "p3a_ps": 0.31883466425334506,
+        "p2_tc": 0.6929591836734693,
+        "p3b_tc": 0.768642057445454
+      },
+      "n": {
+        "p1_ps": 50,
+        "p1_tc": 50,
+        "p2_ps": 50,
+        "p3a_ps": 50,
+        "p2_tc": 50,
+        "p3b_tc": 50
+      },
+      "band": 0.4023227433715171,
+      "k_candidates": 33,
+      "band_enlarged_committed": 0.40104716190112416
+    },
+    "impoliteness": {
+      "arm_id": "imp-pers-po-lr1e5-s42",
+      "kind": "content",
+      "layer": 19,
+      "pos": "last_prompt",
+      "dv": "dv_change",
+      "source_prefix": "persona_software_engineer",
+      "source_ix": 0,
+      "rho": {
+        "p1_ps": 0.6227760572277,
+        "p1_tc": 0.41753703582349083,
+        "p2_ps": 0.5727250900360145,
+        "p3a_ps": 0.5241422364592757,
+        "p2_tc": 0.7423289315726291,
+        "p3b_tc": 0.7267881583885605
+      },
+      "rho_drop_source": {
+        "p1_ps": 0.6106278223370192,
+        "p1_tc": 0.3955202940137511,
+        "p2_ps": 0.5589795918367346,
+        "p3a_ps": 0.5088905330873521,
+        "p2_tc": 0.7330612244897958,
+        "p3b_tc": 0.7149161970743911
+      },
+      "n": {
+        "p1_ps": 50,
+        "p1_tc": 50,
+        "p2_ps": 50,
+        "p3a_ps": 50,
+        "p2_tc": 50,
+        "p3b_tc": 50
+      },
+      "band": 0.39899183613797984,
+      "k_candidates": 33,
+      "band_enlarged_committed": 0.3969382165842986
+    },
+    "marker token": {
+      "arm_id": "mk-pers-po-lr5e6-s42",
+      "kind": "marker",
+      "layer": 25,
+      "pos": "last_prompt",
+      "dv": "dv_dlogp",
+      "source_prefix": "persona_software_engineer",
+      "source_ix": 0,
+      "rho": {
+        "p1_ps": 0.6291147448330711,
+        "p1_tc": 0.053254579957245696,
+        "p2_ps": 0.6386074429771909,
+        "p3a_ps": 0.4945616943008777,
+        "p2_tc": 0.5760864345738295,
+        "p3b_tc": 0.07851328965743616
+      },
+      "rho_drop_source": {
+        "p1_ps": 0.6099135184004618,
+        "p1_tc": 0.011530906404425664,
+        "p2_ps": 0.6206122448979591,
+        "p3a_ps": 0.46888951264014095,
+        "p2_tc": 0.5648979591836734,
+        "p3b_tc": 0.08234903954311072
+      },
+      "n": {
+        "p1_ps": 50,
+        "p1_tc": 50,
+        "p2_ps": 50,
+        "p3a_ps": 50,
+        "p2_tc": 50,
+        "p3b_tc": 50
+      },
+      "band": 0.40850660264099914,
+      "k_candidates": 31,
+      "band_enlarged_committed": 0.4069630293981682
+    }
+  },
+  "preds": [
+    "p1_ps",
+    "p1_tc",
+    "p2_ps",
+    "p3a_ps",
+    "p2_tc",
+    "p3b_tc"
+  ]
+}

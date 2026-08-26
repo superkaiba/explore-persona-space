@@ -1,0 +1,113 @@
+{
+  "commit": "33122705+dirty",
+  "render_id": "81f99d4625574190",
+  "git_commit": "331227053adad1f47a128a1264c607c03636eefd",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_2afc.py",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_langow_pilot_reads.py",
+  "created": "2026-08-25T20:43:17Z",
+  "figsize": [
+    4.2,
+    2.8
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "fraction": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "fraction": 0.9833333333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "fraction": 0.9500000000000001,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "fraction": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "fraction": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "fraction": 0.9166666666666666,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "fraction",
+        "legend_labels": [
+          "mean fired fraction",
+          "contexts >= 0.7"
+        ],
+        "xticklabels": [
+          "chinese",
+          "english",
+          "spanish"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "mean fired fraction",
+      "contexts >= 0.7"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,3418 @@
+{
+  "commit": "b259ac85",
+  "render_id": "6f255a66732b4c2f",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:28Z",
+  "figsize": [
+    5.0,
+    4.6
+  ],
+  "points": [
+    {
+      "direction cosine, single-turn frozen map": 0.3319886210185261,
+      "direction cosine, multi-turn frozen map": 0.3450237397053736,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3040196358738909,
+      "direction cosine, multi-turn frozen map": 0.31860098820063165,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37427647939936903,
+      "direction cosine, multi-turn frozen map": 0.4335520432215776,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3717711186447202,
+      "direction cosine, multi-turn frozen map": 0.2861678515097326,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2851164012110093,
+      "direction cosine, multi-turn frozen map": 0.3650848601302053,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.24712671446534987,
+      "direction cosine, multi-turn frozen map": 0.37495375028568473,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.44933328265426353,
+      "direction cosine, multi-turn frozen map": 0.4794908790003097,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.08301928382722483,
+      "direction cosine, multi-turn frozen map": 0.12198220246642716,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4308038917363612,
+      "direction cosine, multi-turn frozen map": 0.437840755373111,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.506125712868484,
+      "direction cosine, multi-turn frozen map": 0.49535754900079176,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2685672318598933,
+      "direction cosine, multi-turn frozen map": 0.2570398888231295,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.39179216413580153,
+      "direction cosine, multi-turn frozen map": 0.3144844578673961,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4853150262347223,
+      "direction cosine, multi-turn frozen map": 0.43723604654699644,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.47198492383484664,
+      "direction cosine, multi-turn frozen map": 0.438027176960234,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.43538726632934843,
+      "direction cosine, multi-turn frozen map": 0.39049253445467497,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5242456436141139,
+      "direction cosine, multi-turn frozen map": 0.525123450558939,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2322349780801613,
+      "direction cosine, multi-turn frozen map": 0.2916437503988774,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.17677287675052186,
+      "direction cosine, multi-turn frozen map": 0.2649547417741837,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4828601901190653,
+      "direction cosine, multi-turn frozen map": 0.5174150704240985,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4874593745013788,
+      "direction cosine, multi-turn frozen map": 0.5112778929850228,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7832072785733191,
+      "direction cosine, multi-turn frozen map": 0.7961282092892293,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.15706058511360216,
+      "direction cosine, multi-turn frozen map": 0.12918405993437732,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7004703141325835,
+      "direction cosine, multi-turn frozen map": 0.7266156320916267,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5829851000039232,
+      "direction cosine, multi-turn frozen map": 0.6490325102853697,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7831873021539025,
+      "direction cosine, multi-turn frozen map": 0.812893493444863,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.43621364664473317,
+      "direction cosine, multi-turn frozen map": 0.4910591187896457,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.791115801620415,
+      "direction cosine, multi-turn frozen map": 0.8081095357436099,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.45003496413903177,
+      "direction cosine, multi-turn frozen map": 0.4553418229079391,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6997357746350621,
+      "direction cosine, multi-turn frozen map": 0.7311135144228958,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3516662656438817,
+      "direction cosine, multi-turn frozen map": 0.43631561898339993,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8311098855672087,
+      "direction cosine, multi-turn frozen map": 0.8292178518852511,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.80212103351444,
+      "direction cosine, multi-turn frozen map": 0.7926933518782932,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8398371024314275,
+      "direction cosine, multi-turn frozen map": 0.8477697775509038,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8581889753150704,
+      "direction cosine, multi-turn frozen map": 0.8510608113836989,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8126843181019273,
+      "direction cosine, multi-turn frozen map": 0.8303731509937812,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.795381728353848,
+      "direction cosine, multi-turn frozen map": 0.8150295525729313,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7733850864538655,
+      "direction cosine, multi-turn frozen map": 0.7839890005758684,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7842775116981408,
+      "direction cosine, multi-turn frozen map": 0.7930974184334049,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8460974031481111,
+      "direction cosine, multi-turn frozen map": 0.8558252284201386,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8377294271314168,
+      "direction cosine, multi-turn frozen map": 0.8342047674221545,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8171752201652289,
+      "direction cosine, multi-turn frozen map": 0.8324215216983684,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7976688779716194,
+      "direction cosine, multi-turn frozen map": 0.8044906960320252,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7487758525126973,
+      "direction cosine, multi-turn frozen map": 0.7563642859360651,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7725631742040311,
+      "direction cosine, multi-turn frozen map": 0.7805917764143432,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7833216307787507,
+      "direction cosine, multi-turn frozen map": 0.7800842264932623,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7851011830732261,
+      "direction cosine, multi-turn frozen map": 0.7833289075293525,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.822534945664653,
+      "direction cosine, multi-turn frozen map": 0.8133990489325837,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8193134936275991,
+      "direction cosine, multi-turn frozen map": 0.8000933489292643,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6927463038070535,
+      "direction cosine, multi-turn frozen map": 0.6960260289008243,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6203059231653008,
+      "direction cosine, multi-turn frozen map": 0.6379167735023942,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7387196687596036,
+      "direction cosine, multi-turn frozen map": 0.7553430086256427,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.30312052065689654,
+      "direction cosine, multi-turn frozen map": 0.3061060945205062,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4367065823694157,
+      "direction cosine, multi-turn frozen map": 0.5142678818925859,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.33129283115084424,
+      "direction cosine, multi-turn frozen map": 0.358705309023795,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.74429642307216,
+      "direction cosine, multi-turn frozen map": 0.7495662275092573,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6964423580542755,
+      "direction cosine, multi-turn frozen map": 0.6789618011584703,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.31845006709745677,
+      "direction cosine, multi-turn frozen map": 0.3065583117299793,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.31448867557372057,
+      "direction cosine, multi-turn frozen map": 0.38886348245576424,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.17659641620611927,
+      "direction cosine, multi-turn frozen map": 0.1839563076406679,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.1668657527480708,
+      "direction cosine, multi-turn frozen map": 0.15300996500193664,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.327380484972349,
+      "direction cosine, multi-turn frozen map": 0.3010509134553848,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.346801322326632,
+      "direction cosine, multi-turn frozen map": 0.3999340582686307,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4027718737953405,
+      "direction cosine, multi-turn frozen map": 0.4160230824282326,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.22841312226352284,
+      "direction cosine, multi-turn frozen map": 0.20066980015047786,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.30583702765880866,
+      "direction cosine, multi-turn frozen map": 0.3277580676899178,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4304354981913901,
+      "direction cosine, multi-turn frozen map": 0.4480750745191163,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2788987664900401,
+      "direction cosine, multi-turn frozen map": 0.24892112097913416,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.35331255277340046,
+      "direction cosine, multi-turn frozen map": 0.3526447935525383,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3892907102041386,
+      "direction cosine, multi-turn frozen map": 0.3119978445902613,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.44748076900948147,
+      "direction cosine, multi-turn frozen map": 0.4386978477815341,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.26029465253678913,
+      "direction cosine, multi-turn frozen map": 0.2169423688372178,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.49299790346822464,
+      "direction cosine, multi-turn frozen map": 0.47046678042526424,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.18940839213582666,
+      "direction cosine, multi-turn frozen map": 0.2378546538405635,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21822307205937158,
+      "direction cosine, multi-turn frozen map": 0.2843161263182713,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5068632340878302,
+      "direction cosine, multi-turn frozen map": 0.5049163875298652,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5577639270900705,
+      "direction cosine, multi-turn frozen map": 0.562700659408347,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7911203848874707,
+      "direction cosine, multi-turn frozen map": 0.7850289848312512,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2508413138047677,
+      "direction cosine, multi-turn frozen map": 0.26863671616961843,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.757283603106912,
+      "direction cosine, multi-turn frozen map": 0.7446112976473755,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.60106380382018,
+      "direction cosine, multi-turn frozen map": 0.5895051965393279,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7890261618234758,
+      "direction cosine, multi-turn frozen map": 0.7954701021959205,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.26419608111384857,
+      "direction cosine, multi-turn frozen map": 0.28516844104451505,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8046452895772679,
+      "direction cosine, multi-turn frozen map": 0.7867920491061812,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3953188660042813,
+      "direction cosine, multi-turn frozen map": 0.4251832684022869,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7210292354140323,
+      "direction cosine, multi-turn frozen map": 0.7200041642859157,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.22634621503274027,
+      "direction cosine, multi-turn frozen map": 0.26794309464580374,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8118263250229343,
+      "direction cosine, multi-turn frozen map": 0.797755472770727,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7931892416031942,
+      "direction cosine, multi-turn frozen map": 0.7557220579569717,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8049758347933703,
+      "direction cosine, multi-turn frozen map": 0.8142557710733643,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8420635090754592,
+      "direction cosine, multi-turn frozen map": 0.8320910988869299,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7961555674751444,
+      "direction cosine, multi-turn frozen map": 0.8162754733463622,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7718266520258625,
+      "direction cosine, multi-turn frozen map": 0.784223247412563,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7540615089593782,
+      "direction cosine, multi-turn frozen map": 0.7747884885748664,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.735294908113045,
+      "direction cosine, multi-turn frozen map": 0.7333620607911031,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8288699760441687,
+      "direction cosine, multi-turn frozen map": 0.8289671756696946,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.834917661672464,
+      "direction cosine, multi-turn frozen map": 0.8298484718358115,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8146674811817184,
+      "direction cosine, multi-turn frozen map": 0.8189561132517645,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7954247787004038,
+      "direction cosine, multi-turn frozen map": 0.8049159262812993,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7521016647049078,
+      "direction cosine, multi-turn frozen map": 0.7604217566843836,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7732212129553808,
+      "direction cosine, multi-turn frozen map": 0.7845395834342695,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7460916851349019,
+      "direction cosine, multi-turn frozen map": 0.730089811572923,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7859805732448214,
+      "direction cosine, multi-turn frozen map": 0.7816623253968116,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8017728881315751,
+      "direction cosine, multi-turn frozen map": 0.7790579998901563,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7925816485034686,
+      "direction cosine, multi-turn frozen map": 0.7619506447010098,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7015719962299379,
+      "direction cosine, multi-turn frozen map": 0.7013164664033725,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6538238317708353,
+      "direction cosine, multi-turn frozen map": 0.6570853377162149,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.725193354176563,
+      "direction cosine, multi-turn frozen map": 0.6839578360643143,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.15803824338953928,
+      "direction cosine, multi-turn frozen map": 0.12261418384001022,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.502803725133899,
+      "direction cosine, multi-turn frozen map": 0.49827652740159206,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2773563086195178,
+      "direction cosine, multi-turn frozen map": 0.34216481843941465,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7562289453376819,
+      "direction cosine, multi-turn frozen map": 0.7330526286186091,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6892089303423435,
+      "direction cosine, multi-turn frozen map": 0.6649560999521619,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3678692322155308,
+      "direction cosine, multi-turn frozen map": 0.31970247417722075,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.31679774886181533,
+      "direction cosine, multi-turn frozen map": 0.34171116950007996,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5424475951919494,
+      "direction cosine, multi-turn frozen map": 0.5252836538418733,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.15392133781355097,
+      "direction cosine, multi-turn frozen map": 0.11722467740313053,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4030771475663761,
+      "direction cosine, multi-turn frozen map": 0.3852105634129104,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.309955836813647,
+      "direction cosine, multi-turn frozen map": 0.34577428669880006,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6041354173140072,
+      "direction cosine, multi-turn frozen map": 0.6029487229150352,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23996546305218802,
+      "direction cosine, multi-turn frozen map": 0.24960971011402272,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3499809738528002,
+      "direction cosine, multi-turn frozen map": 0.34077712604075533,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.46433836595143585,
+      "direction cosine, multi-turn frozen map": 0.5033023177606641,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.1502639666650952,
+      "direction cosine, multi-turn frozen map": 0.11007484933353971,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.27150501403442784,
+      "direction cosine, multi-turn frozen map": 0.27513510531053786,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28339418200620325,
+      "direction cosine, multi-turn frozen map": 0.198610392540356,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.45425760152622185,
+      "direction cosine, multi-turn frozen map": 0.4539836895649746,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37942888811004294,
+      "direction cosine, multi-turn frozen map": 0.4027701738562447,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.43977881389011586,
+      "direction cosine, multi-turn frozen map": 0.49807374859550746,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.16449456805683169,
+      "direction cosine, multi-turn frozen map": 0.12622180903545893,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2588163968444652,
+      "direction cosine, multi-turn frozen map": 0.3202972531063793,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.518556293853543,
+      "direction cosine, multi-turn frozen map": 0.5289680522990864,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5243167410664352,
+      "direction cosine, multi-turn frozen map": 0.54064432274101,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.833922296708444,
+      "direction cosine, multi-turn frozen map": 0.8439344031017066,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.17731541760993264,
+      "direction cosine, multi-turn frozen map": 0.2509164240627746,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7428286062034614,
+      "direction cosine, multi-turn frozen map": 0.7683212661878642,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6642190604376847,
+      "direction cosine, multi-turn frozen map": 0.6728405148975213,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8082263202618222,
+      "direction cosine, multi-turn frozen map": 0.8421140208697002,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5056666627913144,
+      "direction cosine, multi-turn frozen map": 0.549929435582729,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7605928419934288,
+      "direction cosine, multi-turn frozen map": 0.8143005674338529,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38753299151932846,
+      "direction cosine, multi-turn frozen map": 0.3707968662644344,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6828610279428023,
+      "direction cosine, multi-turn frozen map": 0.7316933593654183,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28941553394456626,
+      "direction cosine, multi-turn frozen map": 0.2760060387463706,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8417975068398094,
+      "direction cosine, multi-turn frozen map": 0.8370384227037885,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8326691175184037,
+      "direction cosine, multi-turn frozen map": 0.8232052807475679,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.846955235738544,
+      "direction cosine, multi-turn frozen map": 0.8418631929296017,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8509583327426713,
+      "direction cosine, multi-turn frozen map": 0.8455509426845469,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8029766282566825,
+      "direction cosine, multi-turn frozen map": 0.8320634076055843,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7958265940346952,
+      "direction cosine, multi-turn frozen map": 0.815907428020715,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7948402487554161,
+      "direction cosine, multi-turn frozen map": 0.7992556783562825,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7935772911627271,
+      "direction cosine, multi-turn frozen map": 0.7852729208712673,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8656202245085558,
+      "direction cosine, multi-turn frozen map": 0.862822777176884,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.873562365275263,
+      "direction cosine, multi-turn frozen map": 0.8760719534309854,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8470304011256844,
+      "direction cosine, multi-turn frozen map": 0.8619274877141017,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8669373183440914,
+      "direction cosine, multi-turn frozen map": 0.8720428741726189,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7757684881024242,
+      "direction cosine, multi-turn frozen map": 0.7861581289729477,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8124589154062457,
+      "direction cosine, multi-turn frozen map": 0.8260490731049496,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7701800808189331,
+      "direction cosine, multi-turn frozen map": 0.768923561666084,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7728178210165717,
+      "direction cosine, multi-turn frozen map": 0.7860696626804591,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8202522970404047,
+      "direction cosine, multi-turn frozen map": 0.8003631986170066,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8257600503911497,
+      "direction cosine, multi-turn frozen map": 0.8048164959821046,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6992671314249811,
+      "direction cosine, multi-turn frozen map": 0.7216335404829786,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6079956275408519,
+      "direction cosine, multi-turn frozen map": 0.6173913299391431,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6283071966620466,
+      "direction cosine, multi-turn frozen map": 0.5952010789642311,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.25169033505415545,
+      "direction cosine, multi-turn frozen map": 0.2517917551373684,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5963471907730583,
+      "direction cosine, multi-turn frozen map": 0.6101467958558827,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.31947354745084044,
+      "direction cosine, multi-turn frozen map": 0.239438741673086,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7003286106695205,
+      "direction cosine, multi-turn frozen map": 0.6854829261048293,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6962755855960164,
+      "direction cosine, multi-turn frozen map": 0.7038123207850576,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.22247039277357392,
+      "direction cosine, multi-turn frozen map": 0.22187919022121047,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37768444079825586,
+      "direction cosine, multi-turn frozen map": 0.40475193232199586,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5256569746681774,
+      "direction cosine, multi-turn frozen map": 0.5082721099464874,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.208754065410279,
+      "direction cosine, multi-turn frozen map": 0.13769803793527163,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38274377036826546,
+      "direction cosine, multi-turn frozen map": 0.37583070403237395,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37544585064050645,
+      "direction cosine, multi-turn frozen map": 0.398118334240236,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.39623420047810404,
+      "direction cosine, multi-turn frozen map": 0.36224817691182487,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2881483280752159,
+      "direction cosine, multi-turn frozen map": 0.2461862413916224,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5154008120959688,
+      "direction cosine, multi-turn frozen map": 0.5183496452674213,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6533313744710357,
+      "direction cosine, multi-turn frozen map": 0.6312143668260567,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3956684388396034,
+      "direction cosine, multi-turn frozen map": 0.41758952870144417,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5657045967445985,
+      "direction cosine, multi-turn frozen map": 0.5059284203257819,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.48296368038833903,
+      "direction cosine, multi-turn frozen map": 0.3832624289576446,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5755852926187512,
+      "direction cosine, multi-turn frozen map": 0.48269721400810467,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4535525220113378,
+      "direction cosine, multi-turn frozen map": 0.4426142952501407,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5568100041027954,
+      "direction cosine, multi-turn frozen map": 0.5590282703037773,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2790470932375997,
+      "direction cosine, multi-turn frozen map": 0.3439693549652117,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.24229062687406958,
+      "direction cosine, multi-turn frozen map": 0.2920415343677123,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4951124114251393,
+      "direction cosine, multi-turn frozen map": 0.5346825084033147,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5678042365624217,
+      "direction cosine, multi-turn frozen map": 0.540636439809442,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7800436256031175,
+      "direction cosine, multi-turn frozen map": 0.7934441866338197,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.17440143966355004,
+      "direction cosine, multi-turn frozen map": 0.2159432909967849,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.727778499163158,
+      "direction cosine, multi-turn frozen map": 0.732133068661241,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6515999854136428,
+      "direction cosine, multi-turn frozen map": 0.6005705723875229,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8220934966081964,
+      "direction cosine, multi-turn frozen map": 0.8377992538975195,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2708459188209471,
+      "direction cosine, multi-turn frozen map": 0.31547384866130734,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8271497528516916,
+      "direction cosine, multi-turn frozen map": 0.8347950317797819,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.22470187744590284,
+      "direction cosine, multi-turn frozen map": 0.19998315262277705,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7606047820656786,
+      "direction cosine, multi-turn frozen map": 0.7752096437848186,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2948398944831706,
+      "direction cosine, multi-turn frozen map": 0.2905941135551981,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7568044458226192,
+      "direction cosine, multi-turn frozen map": 0.7516377628829448,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7475949617811738,
+      "direction cosine, multi-turn frozen map": 0.7119875455022212,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7286355371127917,
+      "direction cosine, multi-turn frozen map": 0.7563610247076048,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8104182689679063,
+      "direction cosine, multi-turn frozen map": 0.8152625725669753,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7284779451134665,
+      "direction cosine, multi-turn frozen map": 0.7808348198219572,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7809273508958423,
+      "direction cosine, multi-turn frozen map": 0.8044374908911218,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.72600695865434,
+      "direction cosine, multi-turn frozen map": 0.7519098197798906,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7474183355679398,
+      "direction cosine, multi-turn frozen map": 0.7365788153253929,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7761521358553622,
+      "direction cosine, multi-turn frozen map": 0.79463748365047,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7941218472275416,
+      "direction cosine, multi-turn frozen map": 0.7914286416667613,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.748370821051979,
+      "direction cosine, multi-turn frozen map": 0.7657469633361316,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7646356492502189,
+      "direction cosine, multi-turn frozen map": 0.7707424984906662,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.640184576435425,
+      "direction cosine, multi-turn frozen map": 0.6468306327206533,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.692759073990669,
+      "direction cosine, multi-turn frozen map": 0.6910909127090326,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7181647600351229,
+      "direction cosine, multi-turn frozen map": 0.6751972918356924,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7479244744478224,
+      "direction cosine, multi-turn frozen map": 0.7203814334850608,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7727518309050204,
+      "direction cosine, multi-turn frozen map": 0.752505675336672,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7566668688880589,
+      "direction cosine, multi-turn frozen map": 0.7254991641994373,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6960852906427086,
+      "direction cosine, multi-turn frozen map": 0.7070092905444724,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6529473226221284,
+      "direction cosine, multi-turn frozen map": 0.6602062804033719,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7778305997785702,
+      "direction cosine, multi-turn frozen map": 0.7591552761821416,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.39573181593785306,
+      "direction cosine, multi-turn frozen map": 0.4503242296241957,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4937394929228725,
+      "direction cosine, multi-turn frozen map": 0.5346609269534442,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3765326553185652,
+      "direction cosine, multi-turn frozen map": 0.38789639682670035,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7686592326356595,
+      "direction cosine, multi-turn frozen map": 0.7576222940973318,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.734565631383104,
+      "direction cosine, multi-turn frozen map": 0.7092055623195912,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4011114337845623,
+      "direction cosine, multi-turn frozen map": 0.2744443287059534,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.39416503648988094,
+      "direction cosine, multi-turn frozen map": 0.4508987120991269,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.31989012663937494,
+      "direction cosine, multi-turn frozen map": 0.3640696349704215,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.15928775264144562,
+      "direction cosine, multi-turn frozen map": 0.1770751289914636,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.35581998133538406,
+      "direction cosine, multi-turn frozen map": 0.31670738560802403,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.19578004719229414,
+      "direction cosine, multi-turn frozen map": 0.2537737048682242,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4448644589614683,
+      "direction cosine, multi-turn frozen map": 0.40904950427039405,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.238643649556194,
+      "direction cosine, multi-turn frozen map": 0.25017857985900654,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3834916806399318,
+      "direction cosine, multi-turn frozen map": 0.3224489826490243,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.45858270980520793,
+      "direction cosine, multi-turn frozen map": 0.44228362374890706,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.26638322654259733,
+      "direction cosine, multi-turn frozen map": 0.19014182302329186,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.27862105361198264,
+      "direction cosine, multi-turn frozen map": 0.22380098965972195,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.42549390717915614,
+      "direction cosine, multi-turn frozen map": 0.2634218494543971,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4806469028219091,
+      "direction cosine, multi-turn frozen map": 0.42840827764930983,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2850432605629496,
+      "direction cosine, multi-turn frozen map": 0.29476897638237914,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.47228750270405545,
+      "direction cosine, multi-turn frozen map": 0.464251451079257,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3261009541517284,
+      "direction cosine, multi-turn frozen map": 0.33679285622822547,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.29255182075896013,
+      "direction cosine, multi-turn frozen map": 0.32046537383667334,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4962471317306496,
+      "direction cosine, multi-turn frozen map": 0.5213594180858862,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5344220427726157,
+      "direction cosine, multi-turn frozen map": 0.549934503714961,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8056864183204503,
+      "direction cosine, multi-turn frozen map": 0.7894961261551695,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2684339428421479,
+      "direction cosine, multi-turn frozen map": 0.31199828093793097,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7256434279482996,
+      "direction cosine, multi-turn frozen map": 0.7206443910581987,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6663813058656854,
+      "direction cosine, multi-turn frozen map": 0.685331025305832,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8168907321425435,
+      "direction cosine, multi-turn frozen map": 0.8275098186758487,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4257462800096714,
+      "direction cosine, multi-turn frozen map": 0.46985790144122785,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8102563520308791,
+      "direction cosine, multi-turn frozen map": 0.804897481190701,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.30709545362352264,
+      "direction cosine, multi-turn frozen map": 0.3200992138410999,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.761097725163382,
+      "direction cosine, multi-turn frozen map": 0.7593424282303326,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2816406084139536,
+      "direction cosine, multi-turn frozen map": 0.3243477543086699,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8079205273853827,
+      "direction cosine, multi-turn frozen map": 0.8097551666530372,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8171074937095041,
+      "direction cosine, multi-turn frozen map": 0.7880514377993751,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7755574138729158,
+      "direction cosine, multi-turn frozen map": 0.7990237012566217,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.792203812529834,
+      "direction cosine, multi-turn frozen map": 0.8009961256282145,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7298169610719569,
+      "direction cosine, multi-turn frozen map": 0.7817281488565225,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7248341173671223,
+      "direction cosine, multi-turn frozen map": 0.7817405168891847,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7302307423930908,
+      "direction cosine, multi-turn frozen map": 0.7627384450729708,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7259983050455309,
+      "direction cosine, multi-turn frozen map": 0.7365265643148127,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7890377118030388,
+      "direction cosine, multi-turn frozen map": 0.8067917259853421,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8197706566511234,
+      "direction cosine, multi-turn frozen map": 0.8179657834079203,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7402886597919126,
+      "direction cosine, multi-turn frozen map": 0.7855295880020995,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7884647190338251,
+      "direction cosine, multi-turn frozen map": 0.801518000430314,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6792831368965921,
+      "direction cosine, multi-turn frozen map": 0.7247654602297107,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7762481166235068,
+      "direction cosine, multi-turn frozen map": 0.7895147708251501,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7536279907842154,
+      "direction cosine, multi-turn frozen map": 0.7422920315898991,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7501488827496479,
+      "direction cosine, multi-turn frozen map": 0.750322043610352,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8030780363902273,
+      "direction cosine, multi-turn frozen map": 0.7844373472712646,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7610207714053472,
+      "direction cosine, multi-turn frozen map": 0.7322484700628312,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.683955855984519,
+      "direction cosine, multi-turn frozen map": 0.6810330653863366,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5772379832148792,
+      "direction cosine, multi-turn frozen map": 0.6045052713102034,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6953643750916031,
+      "direction cosine, multi-turn frozen map": 0.6245244332464833,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3012414851657979,
+      "direction cosine, multi-turn frozen map": 0.2902882222865173,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.49374142392855197,
+      "direction cosine, multi-turn frozen map": 0.49349741706414973,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.343276454939986,
+      "direction cosine, multi-turn frozen map": 0.38480944129308287,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7163027767448015,
+      "direction cosine, multi-turn frozen map": 0.6827762917317659,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7305295807092633,
+      "direction cosine, multi-turn frozen map": 0.6882528082438473,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4244439893565262,
+      "direction cosine, multi-turn frozen map": 0.34881760675321005,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.33876480675847087,
+      "direction cosine, multi-turn frozen map": 0.31960264389859544,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5648455314674636,
+      "direction cosine, multi-turn frozen map": 0.5622605858434009,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.25354449255096867,
+      "direction cosine, multi-turn frozen map": 0.20730818671755083,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.41256742919029393,
+      "direction cosine, multi-turn frozen map": 0.3746550132406003,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.32706325959735916,
+      "direction cosine, multi-turn frozen map": 0.36048828041581943,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6069114385774881,
+      "direction cosine, multi-turn frozen map": 0.567761243425382,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.12756070056532895,
+      "direction cosine, multi-turn frozen map": 0.12079161686804321,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.43093963216821585,
+      "direction cosine, multi-turn frozen map": 0.43015812912184914,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5199021986704404,
+      "direction cosine, multi-turn frozen map": 0.5261763275690007,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.15125790761062144,
+      "direction cosine, multi-turn frozen map": 0.06830620167026479,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.18494613898974188,
+      "direction cosine, multi-turn frozen map": 0.10697577469828924,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4304364288262229,
+      "direction cosine, multi-turn frozen map": 0.35456518757129546,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.48484075525392367,
+      "direction cosine, multi-turn frozen map": 0.42377658861530415,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.30508356174719387,
+      "direction cosine, multi-turn frozen map": 0.32890180738064895,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3789950530135402,
+      "direction cosine, multi-turn frozen map": 0.4320335241459142,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2920452638317916,
+      "direction cosine, multi-turn frozen map": 0.24686826620929067,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2486709508256775,
+      "direction cosine, multi-turn frozen map": 0.3083694597027262,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4886996395282817,
+      "direction cosine, multi-turn frozen map": 0.47700859928392686,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5162443255501321,
+      "direction cosine, multi-turn frozen map": 0.5307232107717021,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8080066204478269,
+      "direction cosine, multi-turn frozen map": 0.8211771201323846,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.08863380893650949,
+      "direction cosine, multi-turn frozen map": 0.17165895235474035,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7139225617427083,
+      "direction cosine, multi-turn frozen map": 0.7158810723989275,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.619718534727458,
+      "direction cosine, multi-turn frozen map": 0.6010336552333075,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8288124237812918,
+      "direction cosine, multi-turn frozen map": 0.8489016520269339,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.48456845059019343,
+      "direction cosine, multi-turn frozen map": 0.47051181486090876,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7918434519892916,
+      "direction cosine, multi-turn frozen map": 0.8073639154021888,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3136341813252549,
+      "direction cosine, multi-turn frozen map": 0.2882311702581612,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6913298108788604,
+      "direction cosine, multi-turn frozen map": 0.684535440326547,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4619990263695944,
+      "direction cosine, multi-turn frozen map": 0.4736542739683737,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8380905552503141,
+      "direction cosine, multi-turn frozen map": 0.8253541075532987,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8238272879502248,
+      "direction cosine, multi-turn frozen map": 0.802723261062132,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8273397523328216,
+      "direction cosine, multi-turn frozen map": 0.8279171634493829,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8452127694711242,
+      "direction cosine, multi-turn frozen map": 0.8411245233898014,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.806319301553173,
+      "direction cosine, multi-turn frozen map": 0.8201949157998291,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7636263232226542,
+      "direction cosine, multi-turn frozen map": 0.8017978139905378,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7894132179939762,
+      "direction cosine, multi-turn frozen map": 0.7787773166739261,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7567180263627037,
+      "direction cosine, multi-turn frozen map": 0.7667607532204324,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8524106050583199,
+      "direction cosine, multi-turn frozen map": 0.848360709711173,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8540862655370092,
+      "direction cosine, multi-turn frozen map": 0.8474081659689813,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8264471824289793,
+      "direction cosine, multi-turn frozen map": 0.8395844124191458,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8158950068988338,
+      "direction cosine, multi-turn frozen map": 0.823635671116708,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7597501156274418,
+      "direction cosine, multi-turn frozen map": 0.7449812288194174,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7884994093902409,
+      "direction cosine, multi-turn frozen map": 0.7875942959578504,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7639808926285948,
+      "direction cosine, multi-turn frozen map": 0.7563384870075752,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7818876080383951,
+      "direction cosine, multi-turn frozen map": 0.7748088333298391,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8039329211476246,
+      "direction cosine, multi-turn frozen map": 0.7896020880661305,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.797368061812271,
+      "direction cosine, multi-turn frozen map": 0.7824479092512988,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6872320975128035,
+      "direction cosine, multi-turn frozen map": 0.7083233147555096,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6536863292106415,
+      "direction cosine, multi-turn frozen map": 0.6740647312648365,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6008230028192068,
+      "direction cosine, multi-turn frozen map": 0.5845686486330848,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4226069814708553,
+      "direction cosine, multi-turn frozen map": 0.4341465543064518,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5655868829409587,
+      "direction cosine, multi-turn frozen map": 0.5597834659515313,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3865215441088816,
+      "direction cosine, multi-turn frozen map": 0.4255520308335942,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6584757831600305,
+      "direction cosine, multi-turn frozen map": 0.6440250981221413,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6716363146240018,
+      "direction cosine, multi-turn frozen map": 0.6336594921818108,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38067855745321405,
+      "direction cosine, multi-turn frozen map": 0.4039116665982819,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3470648886807296,
+      "direction cosine, multi-turn frozen map": 0.37687637026577403,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.413381391491309,
+      "direction cosine, multi-turn frozen map": 0.4477491952859462,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.307857843384296,
+      "direction cosine, multi-turn frozen map": 0.26269993255041957,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3667174981652182,
+      "direction cosine, multi-turn frozen map": 0.38803439118807054,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.27053605845944456,
+      "direction cosine, multi-turn frozen map": 0.30187056002287094,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5419153485778732,
+      "direction cosine, multi-turn frozen map": 0.554558989963161,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2545260254467259,
+      "direction cosine, multi-turn frozen map": 0.14746790870492388,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.36985169573984944,
+      "direction cosine, multi-turn frozen map": 0.40267676436650923,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.47393770186579065,
+      "direction cosine, multi-turn frozen map": 0.4832645186270512,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.35048836837106084,
+      "direction cosine, multi-turn frozen map": 0.31894319148300654,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.25294566970291055,
+      "direction cosine, multi-turn frozen map": 0.2661485825216688,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38662934061323573,
+      "direction cosine, multi-turn frozen map": 0.3074302480586983,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.484336751813084,
+      "direction cosine, multi-turn frozen map": 0.4841041194819847,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4872086086374903,
+      "direction cosine, multi-turn frozen map": 0.466590006740494,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5482926754246945,
+      "direction cosine, multi-turn frozen map": 0.5577193447168787,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.36273947162842113,
+      "direction cosine, multi-turn frozen map": 0.3940039441357027,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2601555211754613,
+      "direction cosine, multi-turn frozen map": 0.3852042121673341,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6230325570771424,
+      "direction cosine, multi-turn frozen map": 0.5963929493417855,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6030860633903061,
+      "direction cosine, multi-turn frozen map": 0.618365953621779,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8138981150967957,
+      "direction cosine, multi-turn frozen map": 0.811791068534922,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2743927075389816,
+      "direction cosine, multi-turn frozen map": 0.28863859128617303,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.722214891879823,
+      "direction cosine, multi-turn frozen map": 0.7416766780239447,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.582633911823821,
+      "direction cosine, multi-turn frozen map": 0.5951171138234386,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7820815087701055,
+      "direction cosine, multi-turn frozen map": 0.8037745116220214,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.47157925170561577,
+      "direction cosine, multi-turn frozen map": 0.47089607875063255,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8226858975627364,
+      "direction cosine, multi-turn frozen map": 0.833586604914419,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.48738792395872343,
+      "direction cosine, multi-turn frozen map": 0.5137625359094803,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.731999275059772,
+      "direction cosine, multi-turn frozen map": 0.7681004054338694,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38748395997881396,
+      "direction cosine, multi-turn frozen map": 0.31154393986180756,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8085254820280191,
+      "direction cosine, multi-turn frozen map": 0.7999272684139137,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7798725978267114,
+      "direction cosine, multi-turn frozen map": 0.7435448652393843,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7816543628864143,
+      "direction cosine, multi-turn frozen map": 0.8021844084290025,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8405072869570963,
+      "direction cosine, multi-turn frozen map": 0.8312866854504585,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7917245540801009,
+      "direction cosine, multi-turn frozen map": 0.8221936529773436,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.789649629459676,
+      "direction cosine, multi-turn frozen map": 0.808918013282201,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.785259016754596,
+      "direction cosine, multi-turn frozen map": 0.7927476231459948,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.774736528787083,
+      "direction cosine, multi-turn frozen map": 0.7616179559181854,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8025475003681585,
+      "direction cosine, multi-turn frozen map": 0.8096063081661147,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8227283959765789,
+      "direction cosine, multi-turn frozen map": 0.8170189698784421,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8053820923872849,
+      "direction cosine, multi-turn frozen map": 0.8222042728381658,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8065337915919446,
+      "direction cosine, multi-turn frozen map": 0.8139741021693591,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7584888133380319,
+      "direction cosine, multi-turn frozen map": 0.7680369711706129,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7665531454996866,
+      "direction cosine, multi-turn frozen map": 0.755997189680199,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7707273228450355,
+      "direction cosine, multi-turn frozen map": 0.7558151705739956,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.781091781325043,
+      "direction cosine, multi-turn frozen map": 0.7818447823745777,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7939730367803626,
+      "direction cosine, multi-turn frozen map": 0.7820646859791687,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.757702917534037,
+      "direction cosine, multi-turn frozen map": 0.725677116144227,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7366699286145842,
+      "direction cosine, multi-turn frozen map": 0.742729824067044,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6508256378811457,
+      "direction cosine, multi-turn frozen map": 0.654355859412064,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7775736909962926,
+      "direction cosine, multi-turn frozen map": 0.7859122527248897,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38655258319521746,
+      "direction cosine, multi-turn frozen map": 0.4199466455754876,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4982794100336259,
+      "direction cosine, multi-turn frozen map": 0.517177889095878,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.44000710095739554,
+      "direction cosine, multi-turn frozen map": 0.37597170582246964,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7822021348247217,
+      "direction cosine, multi-turn frozen map": 0.7911194528108273,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7343640582445139,
+      "direction cosine, multi-turn frozen map": 0.720347923960393,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.44360116239974773,
+      "direction cosine, multi-turn frozen map": 0.4789316710277605,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3247251827396482,
+      "direction cosine, multi-turn frozen map": 0.37658197498616575,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4838154440952431,
+      "direction cosine, multi-turn frozen map": 0.48553498390478766,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21898061696102053,
+      "direction cosine, multi-turn frozen map": 0.22417360781514215,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.43987045791044316,
+      "direction cosine, multi-turn frozen map": 0.45475634529356285,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23493320615578822,
+      "direction cosine, multi-turn frozen map": 0.2985618006186989,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.50847893150723,
+      "direction cosine, multi-turn frozen map": 0.5201491992788114,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2507977847970405,
+      "direction cosine, multi-turn frozen map": 0.24456577417427305,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.454615053920652,
+      "direction cosine, multi-turn frozen map": 0.4570147646514392,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5994757827586189,
+      "direction cosine, multi-turn frozen map": 0.5926619389690458,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.333702385880426,
+      "direction cosine, multi-turn frozen map": 0.3796992503527667,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3347557365604289,
+      "direction cosine, multi-turn frozen map": 0.301671222026452,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4613611842028706,
+      "direction cosine, multi-turn frozen map": 0.4225759822432948,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.49509835978787486,
+      "direction cosine, multi-turn frozen map": 0.4245962090610774,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.40150302565797286,
+      "direction cosine, multi-turn frozen map": 0.36967836857776676,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5598667528292363,
+      "direction cosine, multi-turn frozen map": 0.5892546877311172,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28085755840621185,
+      "direction cosine, multi-turn frozen map": 0.2536858737698606,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3612157796924003,
+      "direction cosine, multi-turn frozen map": 0.35476403654309013,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5067837074828069,
+      "direction cosine, multi-turn frozen map": 0.5481991202104222,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.49795892361910826,
+      "direction cosine, multi-turn frozen map": 0.4987034495440376,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8499767037839253,
+      "direction cosine, multi-turn frozen map": 0.8464727785694145,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2575699793221941,
+      "direction cosine, multi-turn frozen map": 0.32313323036913405,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7660815463517864,
+      "direction cosine, multi-turn frozen map": 0.7671672752007846,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6223098403039639,
+      "direction cosine, multi-turn frozen map": 0.6053524869020805,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8359712145925836,
+      "direction cosine, multi-turn frozen map": 0.8576678608446491,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.46101348906502415,
+      "direction cosine, multi-turn frozen map": 0.532775650031241,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8386184905639475,
+      "direction cosine, multi-turn frozen map": 0.8458630681900237,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.41369366236060917,
+      "direction cosine, multi-turn frozen map": 0.4335370146508413,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7821500222262154,
+      "direction cosine, multi-turn frozen map": 0.7963719992961383,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38901881229627183,
+      "direction cosine, multi-turn frozen map": 0.4164133044175712,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7970956381863173,
+      "direction cosine, multi-turn frozen map": 0.8042803582565935,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8037851864443456,
+      "direction cosine, multi-turn frozen map": 0.7923202775538004,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7853681738831567,
+      "direction cosine, multi-turn frozen map": 0.8051676199719425,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8246022772438456,
+      "direction cosine, multi-turn frozen map": 0.8238178071220901,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7793442537981693,
+      "direction cosine, multi-turn frozen map": 0.8242200875374485,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.747108974250076,
+      "direction cosine, multi-turn frozen map": 0.7935318691128204,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7095270422616585,
+      "direction cosine, multi-turn frozen map": 0.7465618825047433,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7320299523639313,
+      "direction cosine, multi-turn frozen map": 0.7472457482708474,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8142898976298591,
+      "direction cosine, multi-turn frozen map": 0.8214256206406702,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8264491788151338,
+      "direction cosine, multi-turn frozen map": 0.8226937093374126,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7855291347842009,
+      "direction cosine, multi-turn frozen map": 0.8209015152053648,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7785440650862566,
+      "direction cosine, multi-turn frozen map": 0.7933078484134324,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7358308952803024,
+      "direction cosine, multi-turn frozen map": 0.7430979699176683,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7674772451842793,
+      "direction cosine, multi-turn frozen map": 0.7834867131699096,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.75015342676818,
+      "direction cosine, multi-turn frozen map": 0.7407007840409635,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7368129558386288,
+      "direction cosine, multi-turn frozen map": 0.7336694998537248,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7943678952652657,
+      "direction cosine, multi-turn frozen map": 0.7846417242821836,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7776225008046127,
+      "direction cosine, multi-turn frozen map": 0.7585506462437005,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6516336515255622,
+      "direction cosine, multi-turn frozen map": 0.6652056433613933,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5035697465429028,
+      "direction cosine, multi-turn frozen map": 0.5587437414928289,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7762134218065275,
+      "direction cosine, multi-turn frozen map": 0.757634128364377,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4000913586534135,
+      "direction cosine, multi-turn frozen map": 0.42026346843203766,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5653541886354853,
+      "direction cosine, multi-turn frozen map": 0.5897335073227906,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.33582068874558807,
+      "direction cosine, multi-turn frozen map": 0.38107266851725785,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7762024246607856,
+      "direction cosine, multi-turn frozen map": 0.7635851163206793,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7516485316478527,
+      "direction cosine, multi-turn frozen map": 0.725691321404257,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.392739189024102,
+      "direction cosine, multi-turn frozen map": 0.2881335035988299,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28271926634702493,
+      "direction cosine, multi-turn frozen map": 0.2508946517328861,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4203227951857276,
+      "direction cosine, multi-turn frozen map": 0.3921909291704986,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2206266762778834,
+      "direction cosine, multi-turn frozen map": 0.17924948663704462,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.36054631632909107,
+      "direction cosine, multi-turn frozen map": 0.3120969921625308,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.24712496969068468,
+      "direction cosine, multi-turn frozen map": 0.28964210501427295,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5265011094262666,
+      "direction cosine, multi-turn frozen map": 0.4813537934331201,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.29696080750847537,
+      "direction cosine, multi-turn frozen map": 0.2772351317571123,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4172138448315079,
+      "direction cosine, multi-turn frozen map": 0.4119551109189806,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4570516821498023,
+      "direction cosine, multi-turn frozen map": 0.47289439201063477,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.24136857017020097,
+      "direction cosine, multi-turn frozen map": 0.15333223895038742,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21462437509313978,
+      "direction cosine, multi-turn frozen map": 0.2564721953571157,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.48732725247494113,
+      "direction cosine, multi-turn frozen map": 0.4068907058836714,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.46046439536562134,
+      "direction cosine, multi-turn frozen map": 0.4414380895837635,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2065627493393187,
+      "direction cosine, multi-turn frozen map": 0.23423652351922833,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2959895903330372,
+      "direction cosine, multi-turn frozen map": 0.35637140591440974,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23679802666427094,
+      "direction cosine, multi-turn frozen map": 0.1981456675347691,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.29472124653330894,
+      "direction cosine, multi-turn frozen map": 0.300698552256492,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4404941170660555,
+      "direction cosine, multi-turn frozen map": 0.4417605722694762,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.45605805470689853,
+      "direction cosine, multi-turn frozen map": 0.4625607590411043,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8029208878626727,
+      "direction cosine, multi-turn frozen map": 0.8141874711172715,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.17296087442804295,
+      "direction cosine, multi-turn frozen map": 0.11261685961788893,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7637201388796131,
+      "direction cosine, multi-turn frozen map": 0.7612699355723587,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6434418295408705,
+      "direction cosine, multi-turn frozen map": 0.6741651976423507,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8117040971993049,
+      "direction cosine, multi-turn frozen map": 0.834176305292503,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.49359518701371596,
+      "direction cosine, multi-turn frozen map": 0.5176439888120731,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7922500128813301,
+      "direction cosine, multi-turn frozen map": 0.7923936174519386,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2629418329815545,
+      "direction cosine, multi-turn frozen map": 0.2459410856175415,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7052755643518592,
+      "direction cosine, multi-turn frozen map": 0.7215967192220915,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.27766477631344716,
+      "direction cosine, multi-turn frozen map": 0.23127371781118847,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8184355293112919,
+      "direction cosine, multi-turn frozen map": 0.8244338362504039,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.807253481310599,
+      "direction cosine, multi-turn frozen map": 0.7860712479925767,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8256817446030431,
+      "direction cosine, multi-turn frozen map": 0.8404127111779564,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8178943477784747,
+      "direction cosine, multi-turn frozen map": 0.8191992500282556,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7968318110992779,
+      "direction cosine, multi-turn frozen map": 0.8250513109956839,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7702974855164306,
+      "direction cosine, multi-turn frozen map": 0.7789848814839223,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7532648060126821,
+      "direction cosine, multi-turn frozen map": 0.7772257158908572,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7438212118447445,
+      "direction cosine, multi-turn frozen map": 0.7480448812722937,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.825495461069671,
+      "direction cosine, multi-turn frozen map": 0.8330784088822377,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8462220622350526,
+      "direction cosine, multi-turn frozen map": 0.8431780890773223,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8039534628377004,
+      "direction cosine, multi-turn frozen map": 0.8215312687896293,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8222736355845883,
+      "direction cosine, multi-turn frozen map": 0.8241084608271285,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7416223275080591,
+      "direction cosine, multi-turn frozen map": 0.7456311675369881,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7783139177656567,
+      "direction cosine, multi-turn frozen map": 0.7708269794087494,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7734901911780282,
+      "direction cosine, multi-turn frozen map": 0.7503329389626295,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.743281773691344,
+      "direction cosine, multi-turn frozen map": 0.7186990444588984,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8093324034620792,
+      "direction cosine, multi-turn frozen map": 0.7953160747675144,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7730794351495108,
+      "direction cosine, multi-turn frozen map": 0.7546161319607815,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7136353984360401,
+      "direction cosine, multi-turn frozen map": 0.7182795168073739,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7112629027486643,
+      "direction cosine, multi-turn frozen map": 0.7387814974904927,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6785482145743589,
+      "direction cosine, multi-turn frozen map": 0.6341525630715416,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23685487547799447,
+      "direction cosine, multi-turn frozen map": 0.24402278857093468,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.51937470955212,
+      "direction cosine, multi-turn frozen map": 0.5658393329229701,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37303792774372907,
+      "direction cosine, multi-turn frozen map": 0.42779259133960584,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7220859370400874,
+      "direction cosine, multi-turn frozen map": 0.6860681797230765,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7178248735594236,
+      "direction cosine, multi-turn frozen map": 0.6904849720842331,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3993513449059939,
+      "direction cosine, multi-turn frozen map": 0.38527399569664605,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4400180192834626,
+      "direction cosine, multi-turn frozen map": 0.47308814989734127,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3159018741775311,
+      "direction cosine, multi-turn frozen map": 0.3593873519886912,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.283879260335031,
+      "direction cosine, multi-turn frozen map": 0.2189302831521238,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4690262431672106,
+      "direction cosine, multi-turn frozen map": 0.46421585400807897,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28436182775369717,
+      "direction cosine, multi-turn frozen map": 0.28983080081733154,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5307127215870574,
+      "direction cosine, multi-turn frozen map": 0.5305062410686263,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.295467302697533,
+      "direction cosine, multi-turn frozen map": 0.31416236078175963,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38366355701918453,
+      "direction cosine, multi-turn frozen map": 0.4346533269906609,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5220052994816143,
+      "direction cosine, multi-turn frozen map": 0.5355465875794266,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.34698068203261034,
+      "direction cosine, multi-turn frozen map": 0.3156377125801051,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4441212982103732,
+      "direction cosine, multi-turn frozen map": 0.40491080752398756,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4716222697736594,
+      "direction cosine, multi-turn frozen map": 0.3487549406309589,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5949641530193567,
+      "direction cosine, multi-turn frozen map": 0.561119969890249,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4205702601093799,
+      "direction cosine, multi-turn frozen map": 0.3941210741627755,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5311437941854056,
+      "direction cosine, multi-turn frozen map": 0.5159671686473378,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3251884616775594,
+      "direction cosine, multi-turn frozen map": 0.36788121876777596,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2647798288284894,
+      "direction cosine, multi-turn frozen map": 0.34643656149782426,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5710107339912235,
+      "direction cosine, multi-turn frozen map": 0.6004998329182852,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5533442078495876,
+      "direction cosine, multi-turn frozen map": 0.5919996735162004,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8180859081952678,
+      "direction cosine, multi-turn frozen map": 0.8376232122909838,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.1828304125493331,
+      "direction cosine, multi-turn frozen map": 0.2606666467041847,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7494897274489692,
+      "direction cosine, multi-turn frozen map": 0.7672787932015419,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6256978361845751,
+      "direction cosine, multi-turn frozen map": 0.6645668077568337,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7716131577743988,
+      "direction cosine, multi-turn frozen map": 0.8270855393552694,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3958835396781093,
+      "direction cosine, multi-turn frozen map": 0.43634241593588785,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.800092246872784,
+      "direction cosine, multi-turn frozen map": 0.8245178905160125,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5459255755572144,
+      "direction cosine, multi-turn frozen map": 0.5158875516657017,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7407661435923298,
+      "direction cosine, multi-turn frozen map": 0.7735994939020151,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37046472472436337,
+      "direction cosine, multi-turn frozen map": 0.3475162465789587,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8299483484900496,
+      "direction cosine, multi-turn frozen map": 0.8235745459447081,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.807394558749162,
+      "direction cosine, multi-turn frozen map": 0.7895073796883626,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7502893307855343,
+      "direction cosine, multi-turn frozen map": 0.7868967233111103,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8257907882515041,
+      "direction cosine, multi-turn frozen map": 0.8304052022092447,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7645013162697784,
+      "direction cosine, multi-turn frozen map": 0.8106844255728641,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7813587812401732,
+      "direction cosine, multi-turn frozen map": 0.8088111554309585,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7490577298656492,
+      "direction cosine, multi-turn frozen map": 0.7789617995973324,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7551494089067877,
+      "direction cosine, multi-turn frozen map": 0.7564107477205814,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7889796692900439,
+      "direction cosine, multi-turn frozen map": 0.8131255969988677,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8297882437579877,
+      "direction cosine, multi-turn frozen map": 0.8314272991791061,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7826915076033242,
+      "direction cosine, multi-turn frozen map": 0.8125579156070338,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.81243239827349,
+      "direction cosine, multi-turn frozen map": 0.8276031422757869,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7354530533822715,
+      "direction cosine, multi-turn frozen map": 0.7486732478045199,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7729312779195142,
+      "direction cosine, multi-turn frozen map": 0.7833591231884577,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7590603677779431,
+      "direction cosine, multi-turn frozen map": 0.7391680035480909,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7926758901690465,
+      "direction cosine, multi-turn frozen map": 0.7657910930196987,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7641391914082935,
+      "direction cosine, multi-turn frozen map": 0.7415984324617427,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7638228515951038,
+      "direction cosine, multi-turn frozen map": 0.7272392666229676,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6881369453003047,
+      "direction cosine, multi-turn frozen map": 0.7032933379271226,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6746919729398647,
+      "direction cosine, multi-turn frozen map": 0.6899477845675157,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7580215601826282,
+      "direction cosine, multi-turn frozen map": 0.7404501404271623,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.22421622869273072,
+      "direction cosine, multi-turn frozen map": 0.1787079354631366,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5428872489584894,
+      "direction cosine, multi-turn frozen map": 0.5490298948381567,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3563184668101036,
+      "direction cosine, multi-turn frozen map": 0.33330342817006947,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7704980385540939,
+      "direction cosine, multi-turn frozen map": 0.7415210794782575,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7431083389081529,
+      "direction cosine, multi-turn frozen map": 0.7059618114920863,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3433287335756254,
+      "direction cosine, multi-turn frozen map": 0.36539438150428294,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.37248262262261933,
+      "direction cosine, multi-turn frozen map": 0.38129711831581165,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3352381360928341,
+      "direction cosine, multi-turn frozen map": 0.3514435648081564,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.2510696416706951,
+      "direction cosine, multi-turn frozen map": 0.19518002521902403,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4006154279198682,
+      "direction cosine, multi-turn frozen map": 0.41557467157448125,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.347477499222287,
+      "direction cosine, multi-turn frozen map": 0.40820024104862007,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.45207539102115757,
+      "direction cosine, multi-turn frozen map": 0.4428747995132128,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3532944079701888,
+      "direction cosine, multi-turn frozen map": 0.32599382145064815,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3976059864857727,
+      "direction cosine, multi-turn frozen map": 0.42046008396637774,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.543665133194393,
+      "direction cosine, multi-turn frozen map": 0.5567940259814989,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23674416776233967,
+      "direction cosine, multi-turn frozen map": 0.20694650821856894,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.45322280748154875,
+      "direction cosine, multi-turn frozen map": 0.3886685134338186,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3937960997042327,
+      "direction cosine, multi-turn frozen map": 0.3162215200413164,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5206351866092231,
+      "direction cosine, multi-turn frozen map": 0.4863195562421981,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21254475961507974,
+      "direction cosine, multi-turn frozen map": 0.21667725887492825,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.39563481711379667,
+      "direction cosine, multi-turn frozen map": 0.38524700295687014,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.16050145209904512,
+      "direction cosine, multi-turn frozen map": 0.18457887427738726,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21986055061437298,
+      "direction cosine, multi-turn frozen map": 0.2915778668965861,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4842569459866242,
+      "direction cosine, multi-turn frozen map": 0.5263748174916988,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5531113770614945,
+      "direction cosine, multi-turn frozen map": 0.5575853072683085,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8141405935927619,
+      "direction cosine, multi-turn frozen map": 0.8199639466493807,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21444220831663963,
+      "direction cosine, multi-turn frozen map": 0.2771934204595615,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7413707627066634,
+      "direction cosine, multi-turn frozen map": 0.7660186028714654,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6615648102749432,
+      "direction cosine, multi-turn frozen map": 0.6938705701964926,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8047028889655566,
+      "direction cosine, multi-turn frozen map": 0.8329001129417494,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.29834458696067656,
+      "direction cosine, multi-turn frozen map": 0.25779641906349177,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8120694292849515,
+      "direction cosine, multi-turn frozen map": 0.8283491377540451,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4694300939564739,
+      "direction cosine, multi-turn frozen map": 0.4813895935965124,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7472907358197135,
+      "direction cosine, multi-turn frozen map": 0.7865580325278435,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38941132397103506,
+      "direction cosine, multi-turn frozen map": 0.40476650374988915,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8196980925549597,
+      "direction cosine, multi-turn frozen map": 0.8130368224585813,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8310276069166864,
+      "direction cosine, multi-turn frozen map": 0.7960175994378775,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.795078094160447,
+      "direction cosine, multi-turn frozen map": 0.8005777671244269,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8512059597710048,
+      "direction cosine, multi-turn frozen map": 0.8460064759685914,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7743305286093548,
+      "direction cosine, multi-turn frozen map": 0.8044447028266714,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7846821868473426,
+      "direction cosine, multi-turn frozen map": 0.7986821650791327,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7511977521190883,
+      "direction cosine, multi-turn frozen map": 0.7682892376799894,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7544450054462591,
+      "direction cosine, multi-turn frozen map": 0.7337140052011134,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7997854921239393,
+      "direction cosine, multi-turn frozen map": 0.8064676259618127,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8464016087205577,
+      "direction cosine, multi-turn frozen map": 0.8447249164979594,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7841691739741136,
+      "direction cosine, multi-turn frozen map": 0.8064648670638122,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8158735185303543,
+      "direction cosine, multi-turn frozen map": 0.8312750858586573,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7229468399314195,
+      "direction cosine, multi-turn frozen map": 0.7453828344856075,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7806592723054911,
+      "direction cosine, multi-turn frozen map": 0.7937653888225736,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.747811558563893,
+      "direction cosine, multi-turn frozen map": 0.7292146619166882,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7741872692713838,
+      "direction cosine, multi-turn frozen map": 0.7610781374778498,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7904348830454629,
+      "direction cosine, multi-turn frozen map": 0.7677804954952326,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7830607145601816,
+      "direction cosine, multi-turn frozen map": 0.7553344755188174,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7177849156348092,
+      "direction cosine, multi-turn frozen map": 0.7282319844200353,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6846329331629764,
+      "direction cosine, multi-turn frozen map": 0.6943472483235871,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7871933506179892,
+      "direction cosine, multi-turn frozen map": 0.7715343306085699,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3669746893553045,
+      "direction cosine, multi-turn frozen map": 0.3691861036757741,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5012039681803663,
+      "direction cosine, multi-turn frozen map": 0.5163378631279405,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38984016787082126,
+      "direction cosine, multi-turn frozen map": 0.4222643354118234,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7623816187590527,
+      "direction cosine, multi-turn frozen map": 0.7511129109683574,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7278354774157204,
+      "direction cosine, multi-turn frozen map": 0.6924584333684731,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.38927650901687605,
+      "direction cosine, multi-turn frozen map": 0.3897592557353388,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4267201533730669,
+      "direction cosine, multi-turn frozen map": 0.47893845433766347,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.33710219900520244,
+      "direction cosine, multi-turn frozen map": 0.3371257343988903,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.26008589694748985,
+      "direction cosine, multi-turn frozen map": 0.21598919223065915,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.30948122351709917,
+      "direction cosine, multi-turn frozen map": 0.3177428848901063,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.25618754362418966,
+      "direction cosine, multi-turn frozen map": 0.30143224551909564,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4920926551781091,
+      "direction cosine, multi-turn frozen map": 0.47509233949646257,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28134116567796275,
+      "direction cosine, multi-turn frozen map": 0.24535991837037902,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3025908839823247,
+      "direction cosine, multi-turn frozen map": 0.37253010068930764,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.44627334115376527,
+      "direction cosine, multi-turn frozen map": 0.489287586041547,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23887251770466814,
+      "direction cosine, multi-turn frozen map": 0.26361678786993403,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28404920981147674,
+      "direction cosine, multi-turn frozen map": 0.2744533996391454,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4058596830945168,
+      "direction cosine, multi-turn frozen map": 0.37296358934964285,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.48443208063327053,
+      "direction cosine, multi-turn frozen map": 0.46752425466737113,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.34588645574223403,
+      "direction cosine, multi-turn frozen map": 0.3468092539089037,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.5152518165580487,
+      "direction cosine, multi-turn frozen map": 0.5678163840152229,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.28051673269996685,
+      "direction cosine, multi-turn frozen map": 0.3099111911108262,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.31129227601534415,
+      "direction cosine, multi-turn frozen map": 0.39551847697689496,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4905764786996975,
+      "direction cosine, multi-turn frozen map": 0.5100449894292748,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.508465447618631,
+      "direction cosine, multi-turn frozen map": 0.5473506008196812,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7959458424965927,
+      "direction cosine, multi-turn frozen map": 0.8037724572276169,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.23508340992209448,
+      "direction cosine, multi-turn frozen map": 0.17787048125248275,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.715236269054352,
+      "direction cosine, multi-turn frozen map": 0.7401568614982268,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6580668675107301,
+      "direction cosine, multi-turn frozen map": 0.667638291541531,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7996953510098957,
+      "direction cosine, multi-turn frozen map": 0.8140587393252596,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.4013732380326226,
+      "direction cosine, multi-turn frozen map": 0.4636872625409808,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8088183405583056,
+      "direction cosine, multi-turn frozen map": 0.8195443119267634,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.39333447176949793,
+      "direction cosine, multi-turn frozen map": 0.4273142264177455,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7460122435181552,
+      "direction cosine, multi-turn frozen map": 0.7512790146362929,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.21849050725799202,
+      "direction cosine, multi-turn frozen map": 0.32654843494252683,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7931824609238605,
+      "direction cosine, multi-turn frozen map": 0.7844216142793419,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8129383440512703,
+      "direction cosine, multi-turn frozen map": 0.7926542821200288,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8127645323939355,
+      "direction cosine, multi-turn frozen map": 0.8218112147893474,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8457767693412295,
+      "direction cosine, multi-turn frozen map": 0.8378199265704458,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7778418204979008,
+      "direction cosine, multi-turn frozen map": 0.8165249191944662,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7835329519999354,
+      "direction cosine, multi-turn frozen map": 0.8165768356287174,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7200534664343962,
+      "direction cosine, multi-turn frozen map": 0.7409343419107453,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7734045431019421,
+      "direction cosine, multi-turn frozen map": 0.7874380492518853,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.8291762693360493,
+      "direction cosine, multi-turn frozen map": 0.8329900632188028,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.847501023299366,
+      "direction cosine, multi-turn frozen map": 0.8447620742436251,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7943499982311203,
+      "direction cosine, multi-turn frozen map": 0.8190032219690878,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7920202369362297,
+      "direction cosine, multi-turn frozen map": 0.8066192887100718,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7207538100499231,
+      "direction cosine, multi-turn frozen map": 0.728490874178808,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7793727682766418,
+      "direction cosine, multi-turn frozen map": 0.8009172863897496,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7442981480540158,
+      "direction cosine, multi-turn frozen map": 0.7364295820505159,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.786391415682359,
+      "direction cosine, multi-turn frozen map": 0.7724049699550113,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7640359576008344,
+      "direction cosine, multi-turn frozen map": 0.7436646553028502,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7972470125746143,
+      "direction cosine, multi-turn frozen map": 0.7630291451896418,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.6647657319046739,
+      "direction cosine, multi-turn frozen map": 0.6793865378747492,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.645824315668364,
+      "direction cosine, multi-turn frozen map": 0.6559331848706711,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7232161248171958,
+      "direction cosine, multi-turn frozen map": 0.6895202848324913,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.0961084136137296,
+      "direction cosine, multi-turn frozen map": 0.06384618329651397,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.533333813541238,
+      "direction cosine, multi-turn frozen map": 0.5193727611273545,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.3085381971750376,
+      "direction cosine, multi-turn frozen map": 0.32684335357084676,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.7486094921483192,
+      "direction cosine, multi-turn frozen map": 0.727592748248686,
+      "_kind": "scatter"
+    },
+    {
+      "direction cosine, single-turn frozen map": 0.680874325496947,
+      "direction cosine, multi-turn frozen map": 0.6508244702857591,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 672,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map agreement per pair",
+        "xlabel": "direction cosine, single-turn frozen map",
+        "ylabel": "direction cosine, multi-turn frozen map",
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

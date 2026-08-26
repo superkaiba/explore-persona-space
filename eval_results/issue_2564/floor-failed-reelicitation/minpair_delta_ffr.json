@@ -1,0 +1,3379 @@
+{
+  "axes": {
+    "hedging": {
+      "answer_length": {
+        "famswap": {
+          "mean_abs_delta_tokens": 288.8333333333333,
+          "mean_delta_tokens": -288.8333333333333
+        },
+        "install": {
+          "mean_abs_delta_tokens": 211.1833333333333,
+          "mean_delta_tokens": 177.44999999999996
+        },
+        "paraphrase": {
+          "mean_abs_delta_tokens": 51.291666666666664,
+          "mean_delta_tokens": 49.39166666666667
+        },
+        "primary": {
+          "mean_abs_delta_tokens": 382.5333333333333,
+          "mean_delta_tokens": -382.5333333333333
+        }
+      },
+      "axis": "hedging",
+      "calibration": {
+        "arm_1738ce": {
+          "axis_slope": 0.6955546360769137,
+          "axis_slope_all_values": 0.6955546360769137,
+          "axis_slope_ci95": [
+            0.66673449783824,
+            0.7346530990296393
+          ],
+          "axis_slope_ci95_all_values": [
+            0.66673449783824,
+            0.7346530990296393
+          ],
+          "global_slope_parent_frozen": 0.9746799192232769,
+          "global_slope_round_pooled": 0.9639011090154925,
+          "global_slope_round_swap": 0.9972280146382139,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.7136236443972311,
+          "ratio_to_parent_global_all_values": 0.7136236443972311,
+          "ratio_to_parent_global_ci95": [
+            0.6840548211658667,
+            0.7537378010363492
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.6840548211658667,
+            0.7537378010363492
+          ],
+          "ratio_to_round_pooled": 0.7216037304774324,
+          "ratio_to_round_pooled_all_values": 0.7216037304774324,
+          "ratio_to_round_pooled_ci95": [
+            0.6920798620966082,
+            0.7563995861598898
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.6920798620966082,
+            0.7563995861598898
+          ],
+          "ratio_to_round_swap": 0.697488062776952,
+          "ratio_to_round_swap_all_values": 0.697488062776952,
+          "ratio_to_round_swap_ci95": [
+            0.6696689595118998,
+            0.7303970883936588
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.6696689595118998,
+            0.7303970883936588
+          ]
+        },
+        "arm_779ce": {
+          "axis_slope": 0.7278565496793965,
+          "axis_slope_all_values": 0.7278565496793965,
+          "axis_slope_ci95": [
+            0.6992489395198803,
+            0.7659161306397296
+          ],
+          "axis_slope_ci95_all_values": [
+            0.6992489395198803,
+            0.7659161306397296
+          ],
+          "global_slope_parent_frozen": 1.0136696325596286,
+          "global_slope_round_pooled": 1.0196392233095655,
+          "global_slope_round_swap": 1.0436719131531007,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.7180411904433575,
+          "ratio_to_parent_global_all_values": 0.7180411904433575,
+          "ratio_to_parent_global_ci95": [
+            0.6898193623046582,
+            0.7555875267819815
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.6898193623046582,
+            0.7555875267819815
+          ],
+          "ratio_to_round_pooled": 0.7138373387764597,
+          "ratio_to_round_pooled_all_values": 0.7138373387764597,
+          "ratio_to_round_pooled_ci95": [
+            0.6830172823831447,
+            0.7502055364369988
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.6830172823831447,
+            0.7502055364369988
+          ],
+          "ratio_to_round_swap": 0.6973997675959535,
+          "ratio_to_round_swap_all_values": 0.6973997675959535,
+          "ratio_to_round_swap_ci95": [
+            0.6678355785448389,
+            0.7316948565740772
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.6678355785448389,
+            0.7316948565740772
+          ]
+        },
+        "arm_iddelta": {
+          "axis_slope": 1.4532824255955301,
+          "axis_slope_all_values": 1.4532824255955301,
+          "axis_slope_ci95": [
+            1.3822368035715702,
+            1.5507882900483478
+          ],
+          "axis_slope_ci95_all_values": [
+            1.3822368035715702,
+            1.5507882900483478
+          ],
+          "global_slope_parent_frozen": 2.0672297728432754,
+          "global_slope_round_pooled": 1.9733213922046617,
+          "global_slope_round_swap": 1.9202760066880808,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.7030096241293391,
+          "ratio_to_parent_global_all_values": 0.7030096241293391,
+          "ratio_to_parent_global_ci95": [
+            0.6686420743981626,
+            0.7501770293852665
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.6686420743981626,
+            0.7501770293852665
+          ],
+          "ratio_to_round_pooled": 0.7364651451793535,
+          "ratio_to_round_pooled_all_values": 0.7364651451793535,
+          "ratio_to_round_pooled_ci95": [
+            0.6975998524414821,
+            0.7859757872502794
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.6975998524414821,
+            0.7859757872502794
+          ],
+          "ratio_to_round_swap": 0.7568091360481146,
+          "ratio_to_round_swap_all_values": 0.7568091360481146,
+          "ratio_to_round_swap_ci95": [
+            0.717753719677514,
+            0.8069192598353749
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.717753719677514,
+            0.8069192598353749
+          ]
+        }
+      },
+      "cross_family": {
+        "arm_1738ce": {
+          "median": 0.9020102512104434,
+          "median_all_values": 0.9020102512104434,
+          "median_ci95": [
+            0.8945199816491325,
+            0.9070038096484538
+          ],
+          "median_ci95_all_values": [
+            0.8945199816491325,
+            0.9070038096484538
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.006855277909199375,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.9020102512104434,
+            "q97_5": 0.9020102512104434,
+            "scheme": "sign_randomization_2value (single vp \u2014 derangement undefined)"
+          },
+          "per_vp_cos": {
+            "h1c-h2a": 0.9020102512104434
+          },
+          "per_vp_fired70_both_families": {
+            "h1c-h2a": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.9149467143323552,
+          "median_all_values": 0.9149467143323552,
+          "median_ci95": [
+            0.9069684401996583,
+            0.9198176124233202
+          ],
+          "median_ci95_all_values": [
+            0.9069684401996583,
+            0.9198176124233202
+          ],
+          "null": {
+            "b": 10000,
+            "mean": -0.009515445829056496,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.9149467143323552,
+            "q97_5": 0.9149467143323552,
+            "scheme": "sign_randomization_2value (single vp \u2014 derangement undefined)"
+          },
+          "per_vp_cos": {
+            "h1c-h2a": 0.9149467143323552
+          },
+          "per_vp_fired70_both_families": {
+            "h1c-h2a": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.8792742328592011,
+          "median_all_values": 0.8792742328592011,
+          "median_ci95": [
+            0.8752568576386659,
+            0.8824127507922797
+          ],
+          "median_ci95_all_values": [
+            0.8752568576386659,
+            0.8824127507922797
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.020047452509189788,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.8792742328592011,
+            "q97_5": 0.8792742328592011,
+            "scheme": "sign_randomization_2value (single vp \u2014 derangement undefined)"
+          },
+          "per_vp_cos": {
+            "h1c-h2a": 0.8792742328592011
+          },
+          "per_vp_fired70_both_families": {
+            "h1c-h2a": true
+          }
+        },
+        "observed": {
+          "median": 0.9500539739242988,
+          "median_all_values": 0.9500539739242988,
+          "median_ci95": [
+            0.9229821240877321,
+            0.9599048812926311
+          ],
+          "median_ci95_all_values": [
+            0.9229821240877321,
+            0.9599048812926311
+          ],
+          "null": {
+            "b": 10000,
+            "mean": -0.0165309391462828,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.9500539739242988,
+            "q97_5": 0.9500539739242988,
+            "scheme": "sign_randomization_2value (single vp \u2014 derangement undefined)"
+          },
+          "per_vp_cos": {
+            "h1c-h2a": 0.9500539739242988
+          },
+          "per_vp_fired70_both_families": {
+            "h1c-h2a": true
+          }
+        }
+      },
+      "direction": {
+        "arm_1738ce": {
+          "ceiling_normalized_cos": 0.7317698941386797,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.702411640272942,
+            0.7479780910660045
+          ],
+          "ci95_all_values": [
+            0.702411640272942,
+            0.7479780910660045
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.6732356787845011,
+                0.7029426135143549
+              ],
+              "mean_cos": 0.6887180847696784,
+              "n_pairs": 12
+            },
+            "install": {
+              "ci95": [
+                0.5992627884062955,
+                0.6372030098715362
+              ],
+              "mean_cos": 0.6187532602208002,
+              "n_pairs": 24
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.2869978272005159,
+                0.3734016967874933
+              ],
+              "mean_cos": 0.3315441244021116,
+              "n_pairs": 24
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.35454401899401095,
+              0.39563272104911695
+            ],
+            "ci95_all_values": [
+              0.35454401899401095,
+              0.39563272104911695
+            ],
+            "mean_cos_gap_all_values": 0.37579476507692106,
+            "mean_cos_gap_headline": 0.37579476507692106,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.7261270794778182,
+          "mean_cos_headline": 0.7261270794778182,
+          "null": {
+            "b": 10000,
+            "mean": 0.0012176825669945046,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.37393725850297077,
+            "q97_5": 0.37961470418844684,
+            "scheme": "sign_randomization_2value \u2014 NAMED orientation/sign-randomization null (value-pair derangement undefined at C(2,2)=1 swap pair per carrier; never a silent cross-carrier fallback)",
+            "seed": [
+              21620,
+              0
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.7261270794778182,
+            "70": 0.7261270794778182,
+            "90": null
+          }
+        },
+        "arm_779ce": {
+          "ceiling_normalized_cos": 0.7479569206535438,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.7214545115934545,
+            0.7601045296126026
+          ],
+          "ci95_all_values": [
+            0.7214545115934545,
+            0.7601045296126026
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.7000630064725674,
+                0.728493403948851
+              ],
+              "mean_cos": 0.7145261671651345,
+              "n_pairs": 12
+            },
+            "install": {
+              "ci95": [
+                0.6069736125715306,
+                0.6364135624097933
+              ],
+              "mean_cos": 0.6215151332188611,
+              "n_pairs": 24
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.285726827761271,
+                0.3602894645566732
+              ],
+              "mean_cos": 0.32421847589811664,
+              "n_pairs": 24
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.3771149281268956,
+              0.40568403209315196
+            ],
+            "ci95_all_values": [
+              0.3771149281268956,
+              0.40568403209315196
+            ],
+            "mean_cos_gap_all_values": 0.391856970399679,
+            "mean_cos_gap_headline": 0.391856970399679,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.7421892848005761,
+          "mean_cos_headline": 0.7421892848005761,
+          "null": {
+            "b": 10000,
+            "mean": -0.0018522380759911016,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.3813379789868074,
+            "q97_5": 0.38062295213636577,
+            "scheme": "sign_randomization_2value \u2014 NAMED orientation/sign-randomization null (value-pair derangement undefined at C(2,2)=1 swap pair per carrier; never a silent cross-carrier fallback)",
+            "seed": [
+              21620,
+              0
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.7421892848005761,
+            "70": 0.7421892848005761,
+            "90": null
+          }
+        },
+        "arm_iddelta": {
+          "ceiling_normalized_cos": 0.3530547859568355,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.3334183774393937,
+            0.364541816915862
+          ],
+          "ci95_all_values": [
+            0.3334183774393937,
+            0.364541816915862
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.3297349765498167,
+                0.3835835083791602
+              ],
+              "mean_cos": 0.35662547061488814,
+              "n_pairs": 12
+            },
+            "install": {
+              "ci95": [
+                0.28856408007683276,
+                0.31951435032658904
+              ],
+              "mean_cos": 0.3044169905611764,
+              "n_pairs": 24
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.31080562012362983,
+                0.39677419037192513
+              ],
+              "mean_cos": 0.35437430279642035,
+              "n_pairs": 24
+            }
+          },
+          "mean_cos_all_values": 0.3503323144008972,
+          "mean_cos_headline": 0.3503323144008972,
+          "null": {
+            "b": 10000,
+            "mean": 0.0009803513922113374,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.18369110185065138,
+            "q97_5": 0.18434147991838593,
+            "scheme": "sign_randomization_2value \u2014 NAMED orientation/sign-randomization null (value-pair derangement undefined at C(2,2)=1 swap pair per carrier; never a silent cross-carrier fallback)",
+            "seed": [
+              21620,
+              0
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.3503323144008972,
+            "70": 0.3503323144008972,
+            "90": null
+          }
+        }
+      },
+      "fire": {
+        "axis_row": {
+          "axis": "hedging",
+          "floor": 2,
+          "floor_met": true,
+          "n_fired_base": 2,
+          "n_fired_para": 2,
+          "n_not_fired_base": 0,
+          "n_undetermined_base": 0,
+          "parent_width": 2,
+          "pilot_survives": true,
+          "sensitivity": {
+            "50": {
+              "floor_met": true,
+              "n_fired_base": 2
+            },
+            "90": {
+              "floor_met": false,
+              "n_fired_base": 1
+            }
+          },
+          "width": 2
+        },
+        "compliance_limited": false,
+        "fired_pair_counts": {
+          "50": 12,
+          "70": 12,
+          "90": 0
+        },
+        "floor_met": true,
+        "headline_ok": true,
+        "n_headline_pairs_fired70": 12,
+        "n_primary_pairs": 12,
+        "no_fired_pairs": false
+      },
+      "identity": {
+        "arm_1738ce": {
+          "median": 0.824082828535275,
+          "median_all_values": 0.824082828535275,
+          "median_ci95": [
+            0.7962105570481119,
+            0.8280812705685733
+          ],
+          "median_ci95_all_values": [
+            0.7962105570481119,
+            0.8280812705685733
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.40897792326659516,
+              0.4547265593770068
+            ],
+            "gap": 0.4412522163270858,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.40897792326659516,
+              0.4547265593770068
+            ],
+            "gap": 0.4412522163270858,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": null,
+          "per_vp_cos": {
+            "h1c-h2a": 0.824082828535275
+          },
+          "per_vp_fired70": {
+            "h1c-h2a": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.844445719189688,
+          "median_all_values": 0.844445719189688,
+          "median_ci95": [
+            0.8196316122981515,
+            0.8449458566411806
+          ],
+          "median_ci95_all_values": [
+            0.8196316122981515,
+            0.8449458566411806
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.4358026815907655,
+              0.4689915222570614
+            ],
+            "gap": 0.46161510698149877,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.4358026815907655,
+              0.4689915222570614
+            ],
+            "gap": 0.46161510698149877,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": null,
+          "per_vp_cos": {
+            "h1c-h2a": 0.844445719189688
+          },
+          "per_vp_fired70": {
+            "h1c-h2a": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.38283061220818926,
+          "median_all_values": 0.38283061220818926,
+          "median_ci95": [
+            0.3642955991179387,
+            0.3933409844291666
+          ],
+          "median_ci95_all_values": [
+            0.3642955991179387,
+            0.3933409844291666
+          ],
+          "pc1_identity_cos_exploratory": null,
+          "per_vp_cos": {
+            "h1c-h2a": 0.38283061220818926
+          },
+          "per_vp_fired70": {
+            "h1c-h2a": true
+          }
+        }
+      },
+      "layer_twins": {
+        "14": {
+          "arm_iddelta_mean_cos_all_values": 0.11970848363804448,
+          "arm_iddelta_mean_cos_headline": 0.11970848363804448,
+          "arm_iddelta_ratio_to_global": 0.7275111239254491,
+          "arm_iddelta_ratio_to_global_all_values": 0.7275111239254491,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        },
+        "26": {
+          "arm_iddelta_mean_cos_all_values": 0.2102811427818211,
+          "arm_iddelta_mean_cos_headline": 0.2102811427818211,
+          "arm_iddelta_ratio_to_global": 0.7443708003198719,
+          "arm_iddelta_ratio_to_global_all_values": 0.7443708003198719,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        }
+      },
+      "n_primary_pairs": 12,
+      "para_class": "instruction_paraphrase",
+      "pooling_twin_span": {
+        "arm_1738ce": {
+          "axis_slope": 0.665154643839299,
+          "axis_slope_all_values": 0.665154643839299,
+          "mean_cos_all_values": 0.6354759490699312,
+          "mean_cos_headline": 0.6354759490699312
+        },
+        "arm_779ce": {
+          "axis_slope": 0.6963256010620604,
+          "axis_slope_all_values": 0.6963256010620604,
+          "mean_cos_all_values": 0.6657055494151797,
+          "mean_cos_headline": 0.6657055494151797
+        },
+        "arm_iddelta": {
+          "axis_slope": 1.3903586791260742,
+          "axis_slope_all_values": 1.3903586791260742,
+          "mean_cos_all_values": 0.38302027993527643,
+          "mean_cos_headline": 0.38302027993527643
+        }
+      },
+      "primary_class": "swap",
+      "reliability": {
+        "noise_norm_mean": 4.236753817876595,
+        "r10_ci95": [
+          0.9887440621097788,
+          0.9951917671942303
+        ],
+        "r10_ci95_all_values": [
+          0.9887440621097788,
+          0.9951917671942303
+        ],
+        "r10_mean": 0.9922888127728959,
+        "r10_mean_all_values": 0.9922888127728959,
+        "r_half_mean": 0.9847588404272712,
+        "spearman_brown": "r10 = 2*r5 / (1 + r5)"
+      },
+      "surface": {
+        "arm_1738ce": {
+          "edit_dose_ols": {
+            "intercept": 37.6180689707997,
+            "n": 672,
+            "slope": -1.1238728007662933
+          },
+          "flip_norm_ci95": [
+            33.916236699743855,
+            37.37354861589624
+          ],
+          "flip_norm_ci95_all_values": [
+            33.916236699743855,
+            37.37354861589624
+          ],
+          "flip_norm_mean": 35.67097901310019,
+          "flip_norm_mean_all_values": 35.67097901310019,
+          "gap": 24.346741939919774,
+          "gap_all_values": 24.346741939919774,
+          "gap_ci95": [
+            22.742698288481307,
+            25.890696833348027
+          ],
+          "gap_ci95_all_values": [
+            22.742698288481307,
+            25.890696833348027
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            11.089864626552433,
+            11.577596932462138
+          ],
+          "para_norm_ci95_all_values": [
+            11.089864626552433,
+            11.577596932462138
+          ],
+          "para_norm_mean": 11.324237073180411,
+          "para_norm_mean_all_values": 11.324237073180411,
+          "residualized_gap": 26.59448754145236,
+          "residualized_gap_all_values": 26.59448754145236
+        },
+        "arm_779ce": {
+          "edit_dose_ols": {
+            "intercept": 39.08892830278503,
+            "n": 672,
+            "slope": -1.1150068352909812
+          },
+          "flip_norm_ci95": [
+            36.10950816773333,
+            38.64144576869726
+          ],
+          "flip_norm_ci95_all_values": [
+            36.10950816773333,
+            38.64144576869726
+          ],
+          "flip_norm_mean": 37.375634622816314,
+          "flip_norm_mean_all_values": 37.375634622816314,
+          "gap": 25.234343866719314,
+          "gap_all_values": 25.234343866719314,
+          "gap_ci95": [
+            24.04914201211128,
+            26.422288222697603
+          ],
+          "gap_ci95_all_values": [
+            24.04914201211128,
+            26.422288222697603
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            11.916454007065777,
+            12.386607090056394
+          ],
+          "para_norm_ci95_all_values": [
+            11.916454007065777,
+            12.386607090056394
+          ],
+          "para_norm_mean": 12.141290756097,
+          "para_norm_mean_all_values": 12.141290756097,
+          "residualized_gap": 27.464357537301268,
+          "residualized_gap_all_values": 27.464357537301268
+        },
+        "arm_iddelta": {
+          "edit_dose_ols": {
+            "intercept": 52.69911847883263,
+            "n": 672,
+            "slope": -0.12721713480725008
+          },
+          "flip_norm_ci95": [
+            73.58530104535457,
+            76.15569764223528
+          ],
+          "flip_norm_ci95_all_values": [
+            73.58530104535457,
+            76.15569764223528
+          ],
+          "flip_norm_mean": 74.88628858765237,
+          "flip_norm_mean_all_values": 74.88628858765237,
+          "gap": 46.12384099486822,
+          "gap_all_values": 46.12384099486822,
+          "gap_ci95": [
+            44.856727713307414,
+            47.409523749667976
+          ],
+          "gap_ci95_all_values": [
+            44.856727713307414,
+            47.409523749667976
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            28.248929104279075,
+            29.288776724580792
+          ],
+          "para_norm_ci95_all_values": [
+            28.248929104279075,
+            29.288776724580792
+          ],
+          "para_norm_mean": 28.762447592784156,
+          "para_norm_mean_all_values": 28.762447592784156,
+          "residualized_gap": 46.378275264482724,
+          "residualized_gap_all_values": 46.378275264482724
+        },
+        "observed": {
+          "edit_dose_ols": {
+            "intercept": 29.877492524934368,
+            "n": 672,
+            "slope": -0.531937276753474
+          },
+          "flip_norm_ci95": [
+            47.245234867274284,
+            54.37345684032012
+          ],
+          "flip_norm_ci95_all_values": [
+            47.245234867274284,
+            54.37345684032012
+          ],
+          "flip_norm_mean": 50.87895392666406,
+          "flip_norm_mean_all_values": 50.87895392666406,
+          "gap": 37.34281295307932,
+          "gap_all_values": 37.34281295307932,
+          "gap_ci95": [
+            32.3626992185097,
+            42.13610567752566
+          ],
+          "gap_ci95_all_values": [
+            32.3626992185097,
+            42.13610567752566
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            11.55845487661882,
+            15.68826018248604
+          ],
+          "para_norm_ci95_all_values": [
+            11.55845487661882,
+            15.68826018248604
+          ],
+          "para_norm_mean": 13.536140973584743,
+          "para_norm_mean_all_values": 13.536140973584743,
+          "residualized_gap": 38.406687506586266,
+          "residualized_gap_all_values": 38.406687506586266
+        }
+      },
+      "text_space": {
+        "note": "ffr round collects no Qwen3-Embedding-8B answer embeddings; text third-space reads are not_collected by design (plan v7 \u00a75)",
+        "status": "not_collected"
+      }
+    },
+    "persona": {
+      "answer_length": {
+        "famswap": {
+          "mean_abs_delta_tokens": 25.89,
+          "mean_delta_tokens": 1.6533333333333338
+        },
+        "install": {
+          "mean_abs_delta_tokens": 140.3716666666667,
+          "mean_delta_tokens": 140.3716666666667
+        },
+        "paraphrase": {
+          "mean_abs_delta_tokens": 22.511666666666667,
+          "mean_delta_tokens": -12.271666666666667
+        },
+        "primary": {
+          "mean_abs_delta_tokens": 24.503333333333337,
+          "mean_delta_tokens": 6.354999999999996
+        }
+      },
+      "axis": "persona",
+      "calibration": {
+        "arm_1738ce": {
+          "axis_slope": 1.1082109815141068,
+          "axis_slope_all_values": 1.1082109815141068,
+          "axis_slope_ci95": [
+            1.0662743047676362,
+            1.1553186950479744
+          ],
+          "axis_slope_ci95_all_values": [
+            1.0662743047676362,
+            1.1553186950479744
+          ],
+          "global_slope_parent_frozen": 0.9746799192232769,
+          "global_slope_round_pooled": 0.9639011090154925,
+          "global_slope_round_swap": 0.9972280146382139,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.136999911106449,
+          "ratio_to_parent_global_all_values": 1.136999911106449,
+          "ratio_to_parent_global_ci95": [
+            1.0939738100045715,
+            1.185331381371485
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.0939738100045715,
+            1.185331381371485
+          ],
+          "ratio_to_round_pooled": 1.1497143961645704,
+          "ratio_to_round_pooled_all_values": 1.1497143961645704,
+          "ratio_to_round_pooled_ci95": [
+            1.1280839976675083,
+            1.1784050053172428
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.1280839976675083,
+            1.1784050053172428
+          ],
+          "ratio_to_round_swap": 1.1112914651882866,
+          "ratio_to_round_swap_all_values": 1.1112914651882866,
+          "ratio_to_round_swap_ci95": [
+            1.0928998785476192,
+            1.1338437759766968
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            1.0928998785476192,
+            1.1338437759766968
+          ]
+        },
+        "arm_779ce": {
+          "axis_slope": 1.145679180744482,
+          "axis_slope_all_values": 1.145679180744482,
+          "axis_slope_ci95": [
+            1.1065513814569188,
+            1.190896271979975
+          ],
+          "axis_slope_ci95_all_values": [
+            1.1065513814569188,
+            1.190896271979975
+          ],
+          "global_slope_parent_frozen": 1.0136696325596286,
+          "global_slope_round_pooled": 1.0196392233095655,
+          "global_slope_round_swap": 1.0436719131531007,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.130229360675938,
+          "ratio_to_parent_global_all_values": 1.130229360675938,
+          "ratio_to_parent_global_ci95": [
+            1.0916292112478043,
+            1.174836686162561
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.0916292112478043,
+            1.174836686162561
+          ],
+          "ratio_to_round_pooled": 1.1236123077197966,
+          "ratio_to_round_pooled_all_values": 1.1236123077197966,
+          "ratio_to_round_pooled_ci95": [
+            1.1029489286276901,
+            1.1514318775240429
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.1029489286276901,
+            1.1514318775240429
+          ],
+          "ratio_to_round_swap": 1.097738826067668,
+          "ratio_to_round_swap_all_values": 1.097738826067668,
+          "ratio_to_round_swap_ci95": [
+            1.0787013750137457,
+            1.1220019618684667
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            1.0787013750137457,
+            1.1220019618684667
+          ]
+        },
+        "arm_iddelta": {
+          "axis_slope": 1.8504046829139644,
+          "axis_slope_all_values": 1.8504046829139644,
+          "axis_slope_ci95": [
+            1.7691915150641941,
+            1.939153987387912
+          ],
+          "axis_slope_ci95_all_values": [
+            1.7691915150641941,
+            1.939153987387912
+          ],
+          "global_slope_parent_frozen": 2.0672297728432754,
+          "global_slope_round_pooled": 1.9733213922046617,
+          "global_slope_round_swap": 1.9202760066880808,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.8951132124847985,
+          "ratio_to_parent_global_all_values": 0.8951132124847985,
+          "ratio_to_parent_global_ci95": [
+            0.8558272226462963,
+            0.938044726745974
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.8558272226462963,
+            0.938044726745974
+          ],
+          "ratio_to_round_pooled": 0.937710750120957,
+          "ratio_to_round_pooled_all_values": 0.937710750120957,
+          "ratio_to_round_pooled_ci95": [
+            0.9197207988337579,
+            0.9579258798641013
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.9197207988337579,
+            0.9579258798641013
+          ],
+          "ratio_to_round_swap": 0.9636139161606126,
+          "ratio_to_round_swap_all_values": 0.9636139161606126,
+          "ratio_to_round_swap_ci95": [
+            0.9466479339590826,
+            0.9843955942420907
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.9466479339590826,
+            0.9843955942420907
+          ]
+        }
+      },
+      "cross_family": {
+        "arm_1738ce": {
+          "median": 0.9571701535145248,
+          "median_all_values": 0.9571701535145248,
+          "median_ci95": [
+            0.9543870273305197,
+            0.9593760400973765
+          ],
+          "median_ci95_all_values": [
+            0.9543870273305197,
+            0.9593760400973765
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.16075180386226107,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.2053954239237278,
+            "q97_5": 0.4246616733710083,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "p2-p3": 0.9490604595698244,
+            "p2-p5": 0.9796084641801294,
+            "p2-p6": 0.9558771968821809,
+            "p2-p7": 0.9584631101468688,
+            "p3-p5": 0.9633280231400639,
+            "p3-p6": 0.9684586250136714,
+            "p3-p7": 0.9461480856335143,
+            "p5-p6": 0.937246822598029,
+            "p5-p7": 0.9733637220805873,
+            "p6-p7": 0.8814268148887899
+          },
+          "per_vp_fired70_both_families": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.9546517953906805,
+          "median_all_values": 0.9546517953906805,
+          "median_ci95": [
+            0.9517506980745739,
+            0.9562495797511255
+          ],
+          "median_ci95_all_values": [
+            0.9517506980745739,
+            0.9562495797511255
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.1539802667771688,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.2020819633907864,
+            "q97_5": 0.42869827720225595,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "p2-p3": 0.9442265438234413,
+            "p2-p5": 0.9763488524960201,
+            "p2-p6": 0.9520609779331419,
+            "p2-p7": 0.958723485916512,
+            "p3-p5": 0.957242612848219,
+            "p3-p6": 0.9681243866311923,
+            "p3-p7": 0.9380355462556896,
+            "p5-p6": 0.9290743587942818,
+            "p5-p7": 0.972565341531948,
+            "p6-p7": 0.8884742466762262
+          },
+          "per_vp_fired70_both_families": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.9269157534663124,
+          "median_all_values": 0.9269157534663124,
+          "median_ci95": [
+            0.9222669022151813,
+            0.9301523298740875
+          ],
+          "median_ci95_all_values": [
+            0.9222669022151813,
+            0.9301523298740875
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.16745321077997108,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.15655500858872737,
+            "q97_5": 0.3954038193422805,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "p2-p3": 0.907074147548816,
+            "p2-p5": 0.9614355854194286,
+            "p2-p6": 0.9273100713215044,
+            "p2-p7": 0.9204432387692647,
+            "p3-p5": 0.9365440407221337,
+            "p3-p6": 0.9433168816793946,
+            "p3-p7": 0.8990687776927007,
+            "p5-p6": 0.9265214356111204,
+            "p5-p7": 0.9480394291774387,
+            "p6-p7": 0.8174999158951026
+          },
+          "per_vp_fired70_both_families": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        },
+        "observed": {
+          "median": 0.9587760911833464,
+          "median_all_values": 0.9587760911833464,
+          "median_ci95": [
+            0.9477777717815877,
+            0.9616183708055674
+          ],
+          "median_ci95_all_values": [
+            0.9477777717815877,
+            0.9616183708055674
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.11047158525073869,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.3488614922754901,
+            "q97_5": 0.5202110754714635,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "p2-p3": 0.9116243280523887,
+            "p2-p5": 0.9867109475217444,
+            "p2-p6": 0.9830961141200808,
+            "p2-p7": 0.9707814325478872,
+            "p3-p5": 0.9322362103809575,
+            "p3-p6": 0.9501024652192536,
+            "p3-p7": 0.9238404580686642,
+            "p5-p6": 0.950297789138894,
+            "p5-p7": 0.9672543932277988,
+            "p6-p7": 0.9716890716348491
+          },
+          "per_vp_fired70_both_families": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        }
+      },
+      "direction": {
+        "arm_1738ce": {
+          "ceiling_normalized_cos": 0.8123887948430808,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.7707036966578659,
+            0.7913767357269204
+          ],
+          "ci95_all_values": [
+            0.7707036966578659,
+            0.7913767357269204
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.7674660540162292,
+                0.785787791160111
+              ],
+              "mean_cos": 0.7769281084779567,
+              "n_pairs": 120
+            },
+            "install": {
+              "ci95": [
+                0.7824200959268045,
+                0.7998231744427611
+              ],
+              "mean_cos": 0.7908177279380442,
+              "n_pairs": 60
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.3857784010918786,
+                0.4290096311090417
+              ],
+              "mean_cos": 0.40888356359826966,
+              "n_pairs": 60
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.13891700554066605,
+              0.14959044929802393
+            ],
+            "ci95_all_values": [
+              0.13891700554066605,
+              0.14959044929802393
+            ],
+            "mean_cos_gap_all_values": 0.14416649137560228,
+            "mean_cos_gap_headline": 0.14416649137560228,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.7814724302545181,
+          "mean_cos_headline": 0.7814724302545181,
+          "null": {
+            "b": 10000,
+            "mean": 0.07513289970457217,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": 0.00901653285591987,
+            "q97_5": 0.14119345517423387,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              1
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.7814724302545181,
+            "70": 0.7814724302545181,
+            "90": 0.8032608020137167
+          }
+        },
+        "arm_779ce": {
+          "ceiling_normalized_cos": 0.8041040037584374,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.7611046527263419,
+            0.7853304780812873
+          ],
+          "ci95_all_values": [
+            0.7611046527263419,
+            0.7853304780812873
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.7674403456898156,
+                0.7862634242892411
+              ],
+              "mean_cos": 0.7771743379693411,
+              "n_pairs": 120
+            },
+            "install": {
+              "ci95": [
+                0.7692691823369042,
+                0.7854824402932474
+              ],
+              "mean_cos": 0.7767881654620824,
+              "n_pairs": 60
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.373113662631609,
+                0.4095854946210835
+              ],
+              "mean_cos": 0.3922024810242162,
+              "n_pairs": 60
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.13086338306196818,
+              0.14102922179361138
+            ],
+            "ci95_all_values": [
+              0.13086338306196818,
+              0.14102922179361138
+            ],
+            "mean_cos_gap_all_values": 0.13619698728573132,
+            "mean_cos_gap_headline": 0.13619698728573132,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.7735029261646471,
+          "mean_cos_headline": 0.7735029261646471,
+          "null": {
+            "b": 10000,
+            "mean": 0.06702461963808895,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": 0.0021419766689819235,
+            "q97_5": 0.13248911899699922,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              1
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.7735029261646471,
+            "70": 0.7735029261646471,
+            "90": 0.7935972563259756
+          }
+        },
+        "arm_iddelta": {
+          "ceiling_normalized_cos": 0.6625188344309951,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.62459293711648,
+            0.6492270295848029
+          ],
+          "ci95_all_values": [
+            0.62459293711648,
+            0.6492270295848029
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.6418767170588808,
+                0.6625824097886724
+              ],
+              "mean_cos": 0.6525384410233609,
+              "n_pairs": 120
+            },
+            "install": {
+              "ci95": [
+                0.4851300260100949,
+                0.5142597384802279
+              ],
+              "mean_cos": 0.49998409713780917,
+              "n_pairs": 60
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.2884323427123645,
+                0.3173131107315571
+              ],
+              "mean_cos": 0.3024276431676147,
+              "n_pairs": 60
+            }
+          },
+          "mean_cos_all_values": 0.6373059388789157,
+          "mean_cos_headline": 0.6373059388789157,
+          "null": {
+            "b": 10000,
+            "mean": 0.0675572922424857,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": 0.016509132365648115,
+            "q97_5": 0.11856525086454338,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              1
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.6373059388789157,
+            "70": 0.6373059388789157,
+            "90": 0.663809629860179
+          }
+        }
+      },
+      "fire": {
+        "axis_row": {
+          "axis": "persona",
+          "floor": 3,
+          "floor_met": true,
+          "n_fired_base": 5,
+          "n_fired_para": 5,
+          "n_not_fired_base": 0,
+          "n_undetermined_base": 0,
+          "parent_width": 5,
+          "pilot_survives": true,
+          "sensitivity": {
+            "50": {
+              "floor_met": true,
+              "n_fired_base": 5
+            },
+            "90": {
+              "floor_met": true,
+              "n_fired_base": 4
+            }
+          },
+          "width": 5
+        },
+        "compliance_limited": false,
+        "fired_pair_counts": {
+          "50": 120,
+          "70": 120,
+          "90": 72
+        },
+        "floor_met": true,
+        "headline_ok": true,
+        "n_headline_pairs_fired70": 120,
+        "n_primary_pairs": 120,
+        "no_fired_pairs": false
+      },
+      "identity": {
+        "arm_1738ce": {
+          "median": 0.8372679465996798,
+          "median_all_values": 0.8372679465996798,
+          "median_ci95": [
+            0.8178007913734566,
+            0.8451590339548484
+          ],
+          "median_ci95_all_values": [
+            0.8178007913734566,
+            0.8451590339548484
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.1347357468660941,
+              0.14972561604054663
+            ],
+            "gap": 0.14099887804099875,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.1347357468660941,
+              0.14972561604054663
+            ],
+            "gap": 0.14099887804099875,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.8195908521315575,
+          "per_vp_cos": {
+            "p2-p3": 0.8579570381320315,
+            "p2-p5": 0.84979803255119,
+            "p2-p6": 0.8541386182959914,
+            "p2-p7": 0.8162457258732779,
+            "p3-p5": 0.8672739283395782,
+            "p3-p6": 0.8609618608551789,
+            "p3-p7": 0.8050502265274789,
+            "p5-p6": 0.8018503405625824,
+            "p5-p7": 0.8247378606481697,
+            "p6-p7": 0.7757802321030227
+          },
+          "per_vp_fired70": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.8276755267025041,
+          "median_all_values": 0.8276755267025041,
+          "median_ci95": [
+            0.8063685895288083,
+            0.8379334127075485
+          ],
+          "median_ci95_all_values": [
+            0.8063685895288083,
+            0.8379334127075485
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.1241878460772331,
+              0.14039108882113918
+            ],
+            "gap": 0.131406458143823,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.1241878460772331,
+              0.14039108882113918
+            ],
+            "gap": 0.131406458143823,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.7995368723591851,
+          "per_vp_cos": {
+            "p2-p3": 0.8611166550776872,
+            "p2-p5": 0.8359795466206701,
+            "p2-p6": 0.8193715067843381,
+            "p2-p7": 0.7980746870557135,
+            "p3-p5": 0.8591173991159551,
+            "p3-p6": 0.8391015037405737,
+            "p3-p7": 0.793889198040334,
+            "p5-p6": 0.816361744446252,
+            "p5-p7": 0.8431504291816649,
+            "p6-p7": 0.7662302846892763
+          },
+          "per_vp_fired70": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.6962690685586811,
+          "median_all_values": 0.6962690685586811,
+          "median_ci95": [
+            0.674940622612118,
+            0.7029593189662149
+          ],
+          "median_ci95_all_values": [
+            0.674940622612118,
+            0.7029593189662149
+          ],
+          "pc1_identity_cos_exploratory": 0.681048803463619,
+          "per_vp_cos": {
+            "p2-p3": 0.731115583283851,
+            "p2-p5": 0.7138007005852861,
+            "p2-p6": 0.7064471377594541,
+            "p2-p7": 0.7011598458537025,
+            "p3-p5": 0.7009198996767538,
+            "p3-p6": 0.6861305832496968,
+            "p3-p7": 0.674681723384918,
+            "p5-p6": 0.6916182374406084,
+            "p5-p7": 0.6640623215140723,
+            "p6-p7": 0.5476963457329198
+          },
+          "per_vp_fired70": {
+            "p2-p3": true,
+            "p2-p5": true,
+            "p2-p6": true,
+            "p2-p7": true,
+            "p3-p5": true,
+            "p3-p6": true,
+            "p3-p7": true,
+            "p5-p6": true,
+            "p5-p7": true,
+            "p6-p7": true
+          }
+        }
+      },
+      "layer_twins": {
+        "14": {
+          "arm_iddelta_mean_cos_all_values": 0.33158946292748614,
+          "arm_iddelta_mean_cos_headline": 0.33158946292748614,
+          "arm_iddelta_ratio_to_global": 0.9134163410771101,
+          "arm_iddelta_ratio_to_global_all_values": 0.9134163410771101,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        },
+        "26": {
+          "arm_iddelta_mean_cos_all_values": 0.5490867568823347,
+          "arm_iddelta_mean_cos_headline": 0.5490867568823347,
+          "arm_iddelta_ratio_to_global": 0.9830714999648873,
+          "arm_iddelta_ratio_to_global_all_values": 0.9830714999648873,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        }
+      },
+      "n_primary_pairs": 120,
+      "para_class": "instruction_paraphrase",
+      "pooling_twin_span": {
+        "arm_1738ce": {
+          "axis_slope": 1.0993369767366896,
+          "axis_slope_all_values": 1.0993369767366896,
+          "mean_cos_all_values": 0.7813751853994136,
+          "mean_cos_headline": 0.7813751853994136
+        },
+        "arm_779ce": {
+          "axis_slope": 1.1365060129903213,
+          "axis_slope_all_values": 1.1365060129903213,
+          "mean_cos_all_values": 0.7734442257489972,
+          "mean_cos_headline": 0.7734442257489972
+        },
+        "arm_iddelta": {
+          "axis_slope": 1.8355961248690378,
+          "axis_slope_all_values": 1.8355961248690378,
+          "mean_cos_all_values": 0.6369868761671132,
+          "mean_cos_headline": 0.6369868761671132
+        }
+      },
+      "primary_class": "swap",
+      "reliability": {
+        "noise_norm_mean": 4.983326460373919,
+        "r10_ci95": [
+          0.9592007619411296,
+          0.9648769737089583
+        ],
+        "r10_ci95_all_values": [
+          0.9592007619411296,
+          0.9648769737089583
+        ],
+        "r10_mean": 0.9619438810766285,
+        "r10_mean_all_values": 0.9619438810766285,
+        "r_half_mean": 0.9272489161449449,
+        "spearman_brown": "r10 = 2*r5 / (1 + r5)"
+      },
+      "surface": {
+        "arm_1738ce": {
+          "edit_dose_ols": {
+            "intercept": 37.6180689707997,
+            "n": 672,
+            "slope": -1.1238728007662933
+          },
+          "flip_norm_ci95": [
+            30.218538274412605,
+            31.095270818508162
+          ],
+          "flip_norm_ci95_all_values": [
+            30.218538274412605,
+            31.095270818508162
+          ],
+          "flip_norm_mean": 30.647577027261924,
+          "flip_norm_mean_all_values": 30.647577027261924,
+          "gap": 22.025299522531043,
+          "gap_all_values": 22.025299522531043,
+          "gap_ci95": [
+            21.62363320785434,
+            22.42610576623001
+          ],
+          "gap_ci95_all_values": [
+            21.62363320785434,
+            22.42610576623001
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.46838483323386,
+            8.77315991848335
+          ],
+          "para_norm_ci95_all_values": [
+            8.46838483323386,
+            8.77315991848335
+          ],
+          "para_norm_mean": 8.622277504730882,
+          "para_norm_mean_all_values": 8.622277504730882,
+          "residualized_gap": 13.034317116400697,
+          "residualized_gap_all_values": 13.034317116400697
+        },
+        "arm_779ce": {
+          "edit_dose_ols": {
+            "intercept": 39.08892830278503,
+            "n": 672,
+            "slope": -1.1150068352909812
+          },
+          "flip_norm_ci95": [
+            31.291268619495515,
+            32.02956393099933
+          ],
+          "flip_norm_ci95_all_values": [
+            31.291268619495515,
+            32.02956393099933
+          ],
+          "flip_norm_mean": 31.654249303474543,
+          "flip_norm_mean_all_values": 31.654249303474543,
+          "gap": 22.10989843357942,
+          "gap_all_values": 22.10989843357942,
+          "gap_ci95": [
+            21.76006027561194,
+            22.453964232271346
+          ],
+          "gap_ci95_all_values": [
+            21.76006027561194,
+            22.453964232271346
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            9.36877229059483,
+            9.73629647262599
+          ],
+          "para_norm_ci95_all_values": [
+            9.36877229059483,
+            9.73629647262599
+          ],
+          "para_norm_mean": 9.544350869895123,
+          "para_norm_mean_all_values": 9.544350869895123,
+          "residualized_gap": 13.189843751251573,
+          "residualized_gap_all_values": 13.189843751251573
+        },
+        "arm_iddelta": {
+          "edit_dose_ols": {
+            "intercept": 52.69911847883263,
+            "n": 672,
+            "slope": -0.12721713480725008
+          },
+          "flip_norm_ci95": [
+            50.448077346059854,
+            52.115656418243226
+          ],
+          "flip_norm_ci95_all_values": [
+            50.448077346059854,
+            52.115656418243226
+          ],
+          "flip_norm_mean": 51.28688092843822,
+          "flip_norm_mean_all_values": 51.28688092843822,
+          "gap": 31.96912234588782,
+          "gap_all_values": 31.96912234588782,
+          "gap_ci95": [
+            31.33431395548501,
+            32.568029541133996
+          ],
+          "gap_ci95_all_values": [
+            31.33431395548501,
+            32.568029541133996
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            18.882054112111497,
+            19.738987463835816
+          ],
+          "para_norm_ci95_all_values": [
+            18.882054112111497,
+            19.738987463835816
+          ],
+          "para_norm_mean": 19.317758582550404,
+          "para_norm_mean_all_values": 19.317758582550404,
+          "residualized_gap": 30.951385267429817,
+          "residualized_gap_all_values": 30.951385267429817
+        },
+        "observed": {
+          "edit_dose_ols": {
+            "intercept": 29.877492524934368,
+            "n": 672,
+            "slope": -0.531937276753474
+          },
+          "flip_norm_ci95": [
+            26.332331158689502,
+            28.19963354561422
+          ],
+          "flip_norm_ci95_all_values": [
+            26.332331158689502,
+            28.19963354561422
+          ],
+          "flip_norm_mean": 27.269307665869935,
+          "flip_norm_mean_all_values": 27.269307665869935,
+          "gap": 18.928985245539753,
+          "gap_all_values": 18.928985245539753,
+          "gap_ci95": [
+            18.021450784103287,
+            19.82345012237558
+          ],
+          "gap_ci95_all_values": [
+            18.021450784103287,
+            19.82345012237558
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.036013183649368,
+            8.59161356110179
+          ],
+          "para_norm_ci95_all_values": [
+            8.036013183649368,
+            8.59161356110179
+          ],
+          "para_norm_mean": 8.340322420330182,
+          "para_norm_mean_all_values": 8.340322420330182,
+          "residualized_gap": 14.673487031511964,
+          "residualized_gap_all_values": 14.673487031511964
+        }
+      },
+      "text_space": {
+        "note": "ffr round collects no Qwen3-Embedding-8B answer embeddings; text third-space reads are not_collected by design (plan v7 \u00a75)",
+        "status": "not_collected"
+      }
+    },
+    "stance": {
+      "answer_length": {
+        "famswap": {
+          "mean_abs_delta_tokens": 222.6819444444444,
+          "mean_delta_tokens": -97.08749999999999
+        },
+        "install": {
+          "mean_abs_delta_tokens": 137.09583333333333,
+          "mean_delta_tokens": -40.40833333333334
+        },
+        "paraphrase": {
+          "mean_abs_delta_tokens": 95.99375000000002,
+          "mean_delta_tokens": 64.48125
+        },
+        "primary": {
+          "mean_abs_delta_tokens": 221.68611111111113,
+          "mean_delta_tokens": -155.06944444444446
+        }
+      },
+      "axis": "stance",
+      "calibration": {
+        "arm_1738ce": {
+          "axis_slope": 0.9549054553278538,
+          "axis_slope_all_values": 0.9549054553278538,
+          "axis_slope_ci95": [
+            0.8766238725053157,
+            1.0498807508459578
+          ],
+          "axis_slope_ci95_all_values": [
+            0.8766238725053157,
+            1.0498807508459578
+          ],
+          "global_slope_parent_frozen": 0.9746799192232769,
+          "global_slope_round_pooled": 0.9639011090154925,
+          "global_slope_round_swap": 0.9972280146382139,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.9797118382092231,
+          "ratio_to_parent_global_all_values": 0.9797118382092231,
+          "ratio_to_parent_global_ci95": [
+            0.899396668809898,
+            1.0771543869320794
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.899396668809898,
+            1.0771543869320794
+          ],
+          "ratio_to_round_pooled": 0.9906674516674986,
+          "ratio_to_round_pooled_all_values": 0.9906674516674986,
+          "ratio_to_round_pooled_ci95": [
+            0.927534281126993,
+            1.0706656035407351
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.927534281126993,
+            1.0706656035407351
+          ],
+          "ratio_to_round_swap": 0.9575597970683621,
+          "ratio_to_round_swap_all_values": 0.9575597970683621,
+          "ratio_to_round_swap_ci95": [
+            0.8970517021920668,
+            1.0342736440952986
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.8970517021920668,
+            1.0342736440952986
+          ]
+        },
+        "arm_779ce": {
+          "axis_slope": 1.0619376638863836,
+          "axis_slope_all_values": 1.0619376638863836,
+          "axis_slope_ci95": [
+            0.982183961448062,
+            1.1588789189164106
+          ],
+          "axis_slope_ci95_all_values": [
+            0.982183961448062,
+            1.1588789189164106
+          ],
+          "global_slope_parent_frozen": 1.0136696325596286,
+          "global_slope_round_pooled": 1.0196392233095655,
+          "global_slope_round_swap": 1.0436719131531007,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.0476171227551454,
+          "ratio_to_parent_global_all_values": 1.0476171227551454,
+          "ratio_to_parent_global_ci95": [
+            0.9689389224060488,
+            1.143251096503811
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.9689389224060488,
+            1.143251096503811
+          ],
+          "ratio_to_round_pooled": 1.0414837322945707,
+          "ratio_to_round_pooled_all_values": 1.0414837322945707,
+          "ratio_to_round_pooled_ci95": [
+            0.9775246938196843,
+            1.1213075136623607
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.9775246938196843,
+            1.1213075136623607
+          ],
+          "ratio_to_round_swap": 1.0175014298105418,
+          "ratio_to_round_swap_all_values": 1.0175014298105418,
+          "ratio_to_round_swap_ci95": [
+            0.9561920441742076,
+            1.0939540693070593
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.9561920441742076,
+            1.0939540693070593
+          ]
+        },
+        "arm_iddelta": {
+          "axis_slope": 2.9213193364487324,
+          "axis_slope_all_values": 2.9213193364487324,
+          "axis_slope_ci95": [
+            2.661332904197841,
+            3.2302715486633673
+          ],
+          "axis_slope_ci95_all_values": [
+            2.661332904197841,
+            3.2302715486633673
+          ],
+          "global_slope_parent_frozen": 2.0672297728432754,
+          "global_slope_round_pooled": 1.9733213922046617,
+          "global_slope_round_swap": 1.9202760066880808,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.4131565706074072,
+          "ratio_to_parent_global_all_values": 1.4131565706074072,
+          "ratio_to_parent_global_ci95": [
+            1.287390951484524,
+            1.562608855144554
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.287390951484524,
+            1.562608855144554
+          ],
+          "ratio_to_round_pooled": 1.48040727070056,
+          "ratio_to_round_pooled_all_values": 1.48040727070056,
+          "ratio_to_round_pooled_ci95": [
+            1.3756174445924756,
+            1.6093857796540838
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.3756174445924756,
+            1.6093857796540838
+          ],
+          "ratio_to_round_swap": 1.521301795301375,
+          "ratio_to_round_swap_all_values": 1.521301795301375,
+          "ratio_to_round_swap_ci95": [
+            1.4196141718364277,
+            1.650955753296333
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            1.4196141718364277,
+            1.650955753296333
+          ]
+        }
+      },
+      "cross_family": {
+        "arm_1738ce": {
+          "median": 0.7956532083791453,
+          "median_all_values": 0.7393608116232293,
+          "median_ci95": [
+            0.7791679797761865,
+            0.808562028689853
+          ],
+          "median_ci95_all_values": [
+            0.7271300670463162,
+            0.7509783842809866
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.10665522355261141,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.30632602549960497,
+            "q97_5": 0.35650211239834373,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "s1b-s2a": 0.7308518680178782,
+            "s1b-s3a": 0.6332820693964145,
+            "s1b-s4a": 0.6632076204069659,
+            "s2a-s3a": 0.8460635999189102,
+            "s2a-s4a": 0.7478697552285803,
+            "s3a-s4a": 0.7956532083791453
+          },
+          "per_vp_fired70_both_families": {
+            "s1b-s2a": false,
+            "s1b-s3a": false,
+            "s1b-s4a": false,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.7739966124176949,
+          "median_all_values": 0.7181354087621278,
+          "median_ci95": [
+            0.7539351493525271,
+            0.7890316884656826
+          ],
+          "median_ci95_all_values": [
+            0.704697761498303,
+            0.7295373837457997
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.07463292618011358,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.33827410133388564,
+            "q97_5": 0.36583523150482034,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "s1b-s2a": 0.7164846780973803,
+            "s1b-s3a": 0.6075161262703686,
+            "s1b-s4a": 0.664677413227372,
+            "s2a-s3a": 0.8129106784491255,
+            "s2a-s4a": 0.7197861394268753,
+            "s3a-s4a": 0.7739966124176949
+          },
+          "per_vp_fired70_both_families": {
+            "s1b-s2a": false,
+            "s1b-s3a": false,
+            "s1b-s4a": false,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.7612002790757509,
+          "median_all_values": 0.7539346961444444,
+          "median_ci95": [
+            0.7489578457594632,
+            0.7692385152824711
+          ],
+          "median_ci95_all_values": [
+            0.738715692566515,
+            0.7657132294135583
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.12364387906636459,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.2410544339892244,
+            "q97_5": 0.41045637969898446,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "s1b-s2a": 0.7705816423368933,
+            "s1b-s3a": 0.6455002996291381,
+            "s1b-s4a": 0.7178746010861436,
+            "s2a-s3a": 0.767561265919729,
+            "s2a-s4a": 0.7466691132131378,
+            "s3a-s4a": 0.7612002790757509
+          },
+          "per_vp_fired70_both_families": {
+            "s1b-s2a": false,
+            "s1b-s3a": false,
+            "s1b-s4a": false,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        },
+        "observed": {
+          "median": 0.9183497353962279,
+          "median_all_values": 0.8400142535762941,
+          "median_ci95": [
+            0.8958509595471178,
+            0.9320781860509422
+          ],
+          "median_ci95_all_values": [
+            0.801240253349539,
+            0.863184397986326
+          ],
+          "null": {
+            "b": 10000,
+            "mean": 0.008019669330170988,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.48692534414705757,
+            "q97_5": 0.37841003765257614,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "s1b-s2a": 0.7664454358253495,
+            "s1b-s3a": 0.5412099031370147,
+            "s1b-s4a": 0.7330726943475931,
+            "s2a-s3a": 0.9135830713272387,
+            "s2a-s4a": 0.9183497353962279,
+            "s3a-s4a": 0.9457239055813754
+          },
+          "per_vp_fired70_both_families": {
+            "s1b-s2a": false,
+            "s1b-s3a": false,
+            "s1b-s4a": false,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        }
+      },
+      "direction": {
+        "arm_1738ce": {
+          "ceiling_normalized_cos": 0.3778268104390178,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.3273314908681334,
+            0.38535634822093456
+          ],
+          "ci95_all_values": [
+            0.3273314908681334,
+            0.38535634822093456
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.41919973527078735,
+                0.46036954471499564
+              ],
+              "mean_cos": 0.4399628576643411,
+              "n_pairs": 72
+            },
+            "install": {
+              "ci95": [
+                0.3733615739606377,
+                0.4328890918053779
+              ],
+              "mean_cos": 0.4039932035661748,
+              "n_pairs": 48
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.27185787339922446,
+                0.2996164031671313
+              ],
+              "mean_cos": 0.2854915678558816,
+              "n_pairs": 48
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.18276942766716897,
+              0.2375926614612078
+            ],
+            "ci95_all_values": [
+              0.18276942766716897,
+              0.2375926614612078
+            ],
+            "mean_cos_gap_all_values": 0.2097932258980877,
+            "mean_cos_gap_headline": 0.2097932258980877,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.3560359043817491,
+          "mean_cos_headline": 0.3560359043817491,
+          "null": {
+            "b": 10000,
+            "mean": -0.021973349274653105,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.07120204403906065,
+            "q97_5": 0.028468133205424476,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              2
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.3560359043817491,
+            "70": 0.3560359043817491,
+            "90": null
+          }
+        },
+        "arm_779ce": {
+          "ceiling_normalized_cos": 0.39105631783253436,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.3436923169688123,
+            0.39360287111179154
+          ],
+          "ci95_all_values": [
+            0.3436923169688123,
+            0.39360287111179154
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.4111172542449813,
+                0.4595227239817156
+              ],
+              "mean_cos": 0.43444628647227723,
+              "n_pairs": 72
+            },
+            "install": {
+              "ci95": [
+                0.38018897102955884,
+                0.4396802108845974
+              ],
+              "mean_cos": 0.4102869459786043,
+              "n_pairs": 48
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.26468110657063876,
+                0.29818048934488484
+              ],
+              "mean_cos": 0.28077556479515664,
+              "n_pairs": 48
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.19782221325708782,
+              0.24637774610889443
+            ],
+            "ci95_all_values": [
+              0.19782221325708782,
+              0.24637774610889443
+            ],
+            "mean_cos_gap_all_values": 0.22225973038966337,
+            "mean_cos_gap_headline": 0.22225973038966337,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.36850240887332475,
+          "mean_cos_headline": 0.36850240887332475,
+          "null": {
+            "b": 10000,
+            "mean": -0.0013762172019658417,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.04823388799474143,
+            "q97_5": 0.04634702890557223,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              2
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.36850240887332475,
+            "70": 0.36850240887332475,
+            "90": null
+          }
+        },
+        "arm_iddelta": {
+          "ceiling_normalized_cos": 0.15519335011307073,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.13665163095819574,
+            0.15573889938646177
+          ],
+          "ci95_all_values": [
+            0.13665163095819574,
+            0.15573889938646177
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.1583290404388744,
+                0.18218409016780424
+              ],
+              "mean_cos": 0.1713550432288754,
+              "n_pairs": 72
+            },
+            "install": {
+              "ci95": [
+                0.2018398196542228,
+                0.22696043463219587
+              ],
+              "mean_cos": 0.21330903831084305,
+              "n_pairs": 48
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.13544034170912594,
+                0.16350114997290954
+              ],
+              "mean_cos": 0.14911941938700543,
+              "n_pairs": 48
+            }
+          },
+          "mean_cos_all_values": 0.1462426784836614,
+          "mean_cos_headline": 0.1462426784836614,
+          "null": {
+            "b": 10000,
+            "mean": 0.006224903332203916,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.011227323332536067,
+            "q97_5": 0.024683827764888693,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              2
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.1462426784836614,
+            "70": 0.1462426784836614,
+            "90": null
+          }
+        }
+      },
+      "fire": {
+        "axis_row": {
+          "axis": "stance",
+          "floor": 3,
+          "floor_met": true,
+          "n_fired_base": 4,
+          "n_fired_para": 3,
+          "n_not_fired_base": 0,
+          "n_undetermined_base": 0,
+          "parent_width": 5,
+          "pilot_survives": true,
+          "sensitivity": {
+            "50": {
+              "floor_met": true,
+              "n_fired_base": 4
+            },
+            "90": {
+              "floor_met": false,
+              "n_fired_base": 1
+            }
+          },
+          "width": 4
+        },
+        "compliance_limited": false,
+        "fired_pair_counts": {
+          "50": 72,
+          "70": 72,
+          "90": 0
+        },
+        "floor_met": true,
+        "headline_ok": true,
+        "n_headline_pairs_fired70": 72,
+        "n_primary_pairs": 72,
+        "no_fired_pairs": false
+      },
+      "identity": {
+        "arm_1738ce": {
+          "median": 0.4304888636340657,
+          "median_all_values": 0.4304888636340657,
+          "median_ci95": [
+            0.3760582653950139,
+            0.456954890480577
+          ],
+          "median_ci95_all_values": [
+            0.3760582653950139,
+            0.456954890480577
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.21582636757759896,
+              0.28831295255919087
+            ],
+            "gap": 0.2594405095221298,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.21582636757759896,
+              0.28831295255919087
+            ],
+            "gap": 0.2594405095221298,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.33858029861330874,
+          "per_vp_cos": {
+            "s1b-s2a": 0.5110243439611508,
+            "s1b-s3a": 0.3334459999215118,
+            "s1b-s4a": 0.40770862220728576,
+            "s2a-s3a": 0.45326910506084567,
+            "s2a-s4a": 0.3502881353807438,
+            "s3a-s4a": 0.6150229287572747
+          },
+          "per_vp_fired70": {
+            "s1b-s2a": true,
+            "s1b-s3a": true,
+            "s1b-s4a": true,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.4709437994823133,
+          "median_all_values": 0.4709437994823133,
+          "median_ci95": [
+            0.41700928957139977,
+            0.4960407582408725
+          ],
+          "median_ci95_all_values": [
+            0.41700928957139977,
+            0.4960407582408725
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.2553369444343251,
+              0.32980596072972934
+            ],
+            "gap": 0.2998954453703775,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.2553369444343251,
+              0.32980596072972934
+            ],
+            "gap": 0.2998954453703775,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.22862501088860937,
+          "per_vp_cos": {
+            "s1b-s2a": 0.4767734326055117,
+            "s1b-s3a": 0.38823380811702873,
+            "s1b-s4a": 0.5364521676758617,
+            "s2a-s3a": 0.4651141663591149,
+            "s2a-s4a": 0.33008048679046764,
+            "s3a-s4a": 0.6090616065744565
+          },
+          "per_vp_fired70": {
+            "s1b-s2a": true,
+            "s1b-s3a": true,
+            "s1b-s4a": true,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.17104835411193584,
+          "median_all_values": 0.17104835411193584,
+          "median_ci95": [
+            0.14724851207668932,
+            0.1769274836142101
+          ],
+          "median_ci95_all_values": [
+            0.14724851207668932,
+            0.1769274836142101
+          ],
+          "pc1_identity_cos_exploratory": 0.08532074956478469,
+          "per_vp_cos": {
+            "s1b-s2a": 0.17414282508241724,
+            "s1b-s3a": 0.2670865294349068,
+            "s1b-s4a": 0.13817278868682206,
+            "s2a-s3a": 0.17360234125412624,
+            "s2a-s4a": 0.12457606688760549,
+            "s3a-s4a": 0.16849436696974543
+          },
+          "per_vp_fired70": {
+            "s1b-s2a": true,
+            "s1b-s3a": true,
+            "s1b-s4a": true,
+            "s2a-s3a": true,
+            "s2a-s4a": true,
+            "s3a-s4a": true
+          }
+        }
+      },
+      "layer_twins": {
+        "14": {
+          "arm_iddelta_mean_cos_all_values": 0.13145923816646088,
+          "arm_iddelta_mean_cos_headline": 0.13145923816646088,
+          "arm_iddelta_ratio_to_global": 1.2799708065439084,
+          "arm_iddelta_ratio_to_global_all_values": 1.2799708065439084,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        },
+        "26": {
+          "arm_iddelta_mean_cos_all_values": 0.14375726286024962,
+          "arm_iddelta_mean_cos_headline": 0.14375726286024962,
+          "arm_iddelta_ratio_to_global": 1.6351821740382921,
+          "arm_iddelta_ratio_to_global_all_values": 1.6351821740382921,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        }
+      },
+      "n_primary_pairs": 72,
+      "para_class": "instruction_paraphrase",
+      "pooling_twin_span": {
+        "arm_1738ce": {
+          "axis_slope": 0.9504530189318636,
+          "axis_slope_all_values": 0.9504530189318636,
+          "mean_cos_all_values": 0.35399073108190127,
+          "mean_cos_headline": 0.35399073108190127
+        },
+        "arm_779ce": {
+          "axis_slope": 1.0569317205879847,
+          "axis_slope_all_values": 1.0569317205879847,
+          "mean_cos_all_values": 0.3663663942779094,
+          "mean_cos_headline": 0.3663663942779094
+        },
+        "arm_iddelta": {
+          "axis_slope": 2.9073148885742843,
+          "axis_slope_all_values": 2.9073148885742843,
+          "mean_cos_all_values": 0.14602190418246125,
+          "mean_cos_headline": 0.14602190418246125
+        }
+      },
+      "primary_class": "swap",
+      "reliability": {
+        "noise_norm_mean": 3.8682927944945464,
+        "r10_ci95": [
+          0.93442513690062,
+          0.9499099553625221
+        ],
+        "r10_ci95_all_values": [
+          0.93442513690062,
+          0.9499099553625221
+        ],
+        "r10_mean": 0.9423256755338547,
+        "r10_mean_all_values": 0.9423256755338547,
+        "r_half_mean": 0.8921786404007912,
+        "spearman_brown": "r10 = 2*r5 / (1 + r5)"
+      },
+      "surface": {
+        "arm_1738ce": {
+          "edit_dose_ols": {
+            "intercept": 37.6180689707997,
+            "n": 672,
+            "slope": -1.1238728007662933
+          },
+          "flip_norm_ci95": [
+            16.297123461463084,
+            17.190036549034016
+          ],
+          "flip_norm_ci95_all_values": [
+            16.297123461463084,
+            17.190036549034016
+          ],
+          "flip_norm_mean": 16.734478860277427,
+          "flip_norm_mean_all_values": 16.734478860277427,
+          "gap": 8.321803110498784,
+          "gap_all_values": 7.178979176950898,
+          "gap_ci95": [
+            7.856524508886703,
+            8.781788694050105
+          ],
+          "gap_ci95_all_values": [
+            6.733210711310915,
+            7.617085933015418
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.279665781175297,
+            8.559885706843925
+          ],
+          "para_norm_ci95_all_values": [
+            9.319566349817585,
+            9.803097920944412
+          ],
+          "para_norm_mean": 8.412675749778643,
+          "para_norm_mean_all_values": 9.555499683326529,
+          "residualized_gap": 12.068045779719759,
+          "residualized_gap_all_values": 10.550597579249773
+        },
+        "arm_779ce": {
+          "edit_dose_ols": {
+            "intercept": 39.08892830278503,
+            "n": 672,
+            "slope": -1.1150068352909812
+          },
+          "flip_norm_ci95": [
+            18.255738225199043,
+            18.90648849741729
+          ],
+          "flip_norm_ci95_all_values": [
+            18.255738225199043,
+            18.90648849741729
+          ],
+          "flip_norm_mean": 18.5796516861734,
+          "flip_norm_mean_all_values": 18.5796516861734,
+          "gap": 8.698310572798775,
+          "gap_all_values": 7.602735989902923,
+          "gap_ci95": [
+            8.336031423663268,
+            9.066884090831188
+          ],
+          "gap_ci95_all_values": [
+            7.24854734773115,
+            7.9333592358487195
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            9.687862762608214,
+            10.080167198510805
+          ],
+          "para_norm_ci95_all_values": [
+            10.7545429842512,
+            11.22369931761844
+          ],
+          "para_norm_mean": 9.881341113374624,
+          "para_norm_mean_all_values": 10.976915696270476,
+          "residualized_gap": 12.415000023768712,
+          "residualized_gap_all_values": 10.947756495775867
+        },
+        "arm_iddelta": {
+          "edit_dose_ols": {
+            "intercept": 52.69911847883263,
+            "n": 672,
+            "slope": -0.12721713480725008
+          },
+          "flip_norm_ci95": [
+            50.38903201875748,
+            52.07228805787861
+          ],
+          "flip_norm_ci95_all_values": [
+            50.38903201875748,
+            52.07228805787861
+          ],
+          "flip_norm_mean": 51.28652965147707,
+          "flip_norm_mean_all_values": 51.28652965147707,
+          "gap": 26.26303910354334,
+          "gap_all_values": 23.865461727194255,
+          "gap_ci95": [
+            25.499335065832184,
+            27.05215791271054
+          ],
+          "gap_ci95_all_values": [
+            23.13333461655234,
+            24.565703405179192
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            24.589810617080985,
+            25.467127644803284
+          ],
+          "para_norm_ci95_all_values": [
+            26.831414222403104,
+            28.03973147334106
+          ],
+          "para_norm_mean": 25.02349054793373,
+          "para_norm_mean_all_values": 27.421067924282813,
+          "residualized_gap": 26.687096219567504,
+          "residualized_gap_all_values": 24.24711313161601
+        },
+        "observed": {
+          "edit_dose_ols": {
+            "intercept": 29.877492524934368,
+            "n": 672,
+            "slope": -0.531937276753474
+          },
+          "flip_norm_ci95": [
+            15.465218449234035,
+            18.286451475143103
+          ],
+          "flip_norm_ci95_all_values": [
+            15.465218449234035,
+            18.286451475143103
+          ],
+          "flip_norm_mean": 16.82396160974236,
+          "flip_norm_mean_all_values": 16.82396160974236,
+          "gap": 10.940710754177779,
+          "gap_all_values": 8.881797622281411,
+          "gap_ci95": [
+            9.442280294045043,
+            12.451615024394348
+          ],
+          "gap_ci95_all_values": [
+            7.544473681880974,
+            10.266051180559773
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            5.487410860447575,
+            6.269660423458116
+          ],
+          "para_norm_ci95_all_values": [
+            7.341006061918805,
+            8.562465401912245
+          ],
+          "para_norm_mean": 5.88325085556458,
+          "para_norm_mean_all_values": 7.942163987460948,
+          "residualized_gap": 12.713835010022695,
+          "residualized_gap_all_values": 10.47760945254183
+        }
+      },
+      "text_space": {
+        "note": "ffr round collects no Qwen3-Embedding-8B answer embeddings; text third-space reads are not_collected by design (plan v7 \u00a75)",
+        "status": "not_collected"
+      }
+    }
+  },
+  "contract": {
+    "bootstrap": {
+      "B": 10000,
+      "gsmall_caveat": "G=12 clusters \u2014 percentile CIs undercover (plan \u00a76 convention 8)",
+      "query_content": "query_content pairs are carrier DYADS: the bootstrap resamples the 12 carrier VERTICES with replacement and weights each edge by the product of its sampled endpoint multiplicities (edges with an unsampled endpoint get weight 0); single-carrier pairs weight by their carrier multiplicity",
+      "scheme": "carrier-clustered (resample the 12 carrier clusters with replacement)",
+      "seed": 2215
+    },
+    "compliance": {
+      "headline_threshold_pct": 70,
+      "rule": "headline per-axis reads are FLOOR-GATED: an axis whose manipulation-check floor verdict (axis_row.floor_met, n_fired_base >= ceil(0.6 x width)) is not met is compliance-limited and reports NULL headline fields; on floor-met axes the headline uses pairs whose BOTH endpoint values fired at 70; non-fired values stay in the artifact (hollow) via *_all_values companions, excluded from the headline",
+      "sensitivity_pcts": [
+        50,
+        90
+      ]
+    },
+    "draw_to_pair_aggregation": "Delta = difference of the two contexts' K=10-draw mean answer vectors (tail-inclusive L19 primary; empty-completion draws excluded from the mean, per-context valid-draw counts recorded per pair)",
+    "null": {
+      "B": 10000,
+      "seed": 21620
+    },
+    "null_scheme": {
+      "hedging": "sign_randomization_2value \u2014 NAMED orientation/sign-randomization null (value-pair derangement undefined at C(2,2)=1 swap pair per carrier; never a silent cross-carrier fallback)",
+      "persona": "carrier- and class-preserving value-pair derangement",
+      "stance": "carrier- and class-preserving value-pair derangement"
+    },
+    "orientation_conventions": {
+      "famswap": "para(value_i) -> para(value_j), same value-index order",
+      "install": "E -> value (a = bare-E query context, b = value context)",
+      "instruction_paraphrase": "value -> its paraphrase",
+      "query_content": "carrier_i -> carrier_j by carrier-index order (i < j)",
+      "query_form": "form_i -> form_j by form-index order E < imp < stmt",
+      "query_paraphrase": "E question -> reworded question",
+      "swap": "value_i -> value_j by plan-listed value-index order (i < j)"
+    },
+    "primary_pair_classes": {
+      "axis_identity": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "cross_family_consistency": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "direction_fidelity": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "knn_delta_retrieval": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "magnitude_calibration": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "reliability_ceiling": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "surface_sensitivity": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "text_third_space": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      }
+    },
+    "split_half": {
+      "n_pairs_insufficient_draws": 0,
+      "n_splits": 20,
+      "seed": 2564,
+      "step_up": "Spearman-Brown r10 = 2*r5/(1+r5)"
+    }
+  },
+  "meta": {
+    "arms": [
+      "arm_779ce",
+      "arm_1738ce",
+      "arm_iddelta"
+    ],
+    "carriers": [
+      "c01",
+      "c02",
+      "c03",
+      "c04",
+      "c05",
+      "c06",
+      "c07",
+      "c08",
+      "c09",
+      "c10",
+      "c11",
+      "c12"
+    ],
+    "cells": [
+      "hedging",
+      "persona",
+      "query",
+      "stance"
+    ],
+    "elapsed_s": 764.5,
+    "frozen_global_slope": {
+      "note": "parent's realized per-arm global slope (global_slope_all2778), the PRIMARY ratio denominator for this round (plan v7 \u00a75)",
+      "per_arm": {
+        "arm_1738ce": 0.9746799192232769,
+        "arm_779ce": 1.0136696325596286,
+        "arm_iddelta": 2.0672297728432754
+      },
+      "source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/minpair_delta.json"
+    },
+    "git_argv0_path": "scripts/issue2564_analysis.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+    "git_dirty": false,
+    "identity_cancellation_assert": {
+      "max_abs_err": 3.552713678800501e-15,
+      "n_pairs_checked": 32,
+      "statement": "identity_bias_predict(x_A) - identity_bias_predict(x_B) == x_A - x_B",
+      "tol": 1.4375e-07
+    },
+    "input_files": {
+      "bank2564_ffr_manifest.json": {
+        "bytes": 286889,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/manifests/floor_failed_reelicitation/bank2564_ffr_manifest.json",
+        "sha256": "cf481c80f31fa3def29468dd4a1e53771518b43a858f2fff23ec516550d925ac"
+      },
+      "manipulation_check_ffr.json": {
+        "bytes": 11892,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/floor-failed-reelicitation/manipulation_check_ffr.json"
+      },
+      "parent_minpair_delta.json": {
+        "bytes": 355924,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/minpair_delta.json",
+        "sha256": "28d6344569ddba846a44a46ad4227c7596d38e3f7b63b1f998ff4d83c250fe2d"
+      },
+      "va2564_hedging.pt": {
+        "bytes": 20685733,
+        "n_rows_ctx_absent_from_vc": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/analysis_tensors/floor_failed_reelicitation/va2564/va2564_hedging.pt"
+      },
+      "va2564_persona.pt": {
+        "bytes": 51709733,
+        "n_rows_ctx_absent_from_vc": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/analysis_tensors/floor_failed_reelicitation/va2564/va2564_persona.pt"
+      },
+      "va2564_query.pt": {
+        "bytes": 5172757,
+        "n_rows_ctx_absent_from_vc": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/analysis_tensors/floor_failed_reelicitation/va2564/va2564_query.pt"
+      },
+      "va2564_stance.pt": {
+        "bytes": 41367901,
+        "n_rows_ctx_absent_from_vc": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/analysis_tensors/floor_failed_reelicitation/va2564/va2564_stance.pt"
+      },
+      "vc2564_bank.pt": {
+        "bytes": 11879548,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/analysis_tensors/floor_failed_reelicitation/vc2564/vc2564_bank.pt"
+      }
+    },
+    "issue": 2564,
+    "layer_primary": 19,
+    "layers": [
+      14,
+      19,
+      26
+    ],
+    "manip_check_meta": {
+      "fire_threshold_pct": 70,
+      "floor_rule": "n_fired_base >= ceil(0.6 * width); undetermined counts as not-fired",
+      "judged_denominator": 24
+    },
+    "n_contexts": 276,
+    "n_pairs": 672,
+    "phase": "pe-analysis",
+    "pooling_primary": "tail_inclusive_mean",
+    "pooling_twin": "span_mean",
+    "ridge_payloads": {
+      "arm_1738ce": {
+        "bytes": 51425847,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/frozen_maps/issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt",
+        "sha256": "1916bed192f36dfe9dc57a3c712d3ea56d3767199504693c0c0f33bcde27bda4"
+      },
+      "arm_779ce": {
+        "bytes": 51425703,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_ffr/frozen_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+        "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+      }
+    },
+    "round": "ffr",
+    "smoke": false,
+    "timestamp_utc": "2026-08-26T07:44:24.992918+00:00"
+  },
+  "retrieval": {
+    "global": {
+      "arm_1738ce": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.23363095238095238,
+            "5": 0.5372023809523809,
+            "10": 0.71875
+          },
+          "chance_at_k": {
+            "1": 0.001488095238095238,
+            "5": 0.00744047619047619,
+            "10": 0.01488095238095238
+          },
+          "median_rank": 5.0,
+          "metric": "cosine",
+          "mrr": 0.37624013939200573,
+          "n": 672,
+          "n_pool": 672
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.15029761904761904,
+            "5": 0.3913690476190476,
+            "10": 0.5446428571428571
+          },
+          "chance_at_k": {
+            "1": 0.001488095238095238,
+            "5": 0.00744047619047619,
+            "10": 0.01488095238095238
+          },
+          "median_rank": 8.0,
+          "metric": "euclidean",
+          "mrr": 0.26862034548525043,
+          "n": 672,
+          "n_pool": 672
+        }
+      },
+      "arm_779ce": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.25744047619047616,
+            "5": 0.5773809523809523,
+            "10": 0.7410714285714286
+          },
+          "chance_at_k": {
+            "1": 0.001488095238095238,
+            "5": 0.00744047619047619,
+            "10": 0.01488095238095238
+          },
+          "median_rank": 4.0,
+          "metric": "cosine",
+          "mrr": 0.3993963688685324,
+          "n": 672,
+          "n_pool": 672
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.19196428571428573,
+            "5": 0.44047619047619047,
+            "10": 0.5967261904761905
+          },
+          "chance_at_k": {
+            "1": 0.001488095238095238,
+            "5": 0.00744047619047619,
+            "10": 0.01488095238095238
+          },
+          "median_rank": 7.0,
+          "metric": "euclidean",
+          "mrr": 0.31291846957253516,
+          "n": 672,
+          "n_pool": 672
+        }
+      },
+      "arm_iddelta": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.20684523809523808,
+            "5": 0.5148809523809523,
+            "10": 0.7276785714285714
+          },
+          "chance_at_k": {
+            "1": 0.001488095238095238,
+            "5": 0.00744047619047619,
+            "10": 0.01488095238095238
+          },
+          "median_rank": 5.0,
+          "metric": "cosine",
+          "mrr": 0.3567145343461422,
+          "n": 672,
+          "n_pool": 672
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.16517857142857142,
+            "5": 0.43601190476190477,
+            "10": 0.6383928571428571
+          },
+          "chance_at_k": {
+            "1": 0.001488095238095238,
+            "5": 0.00744047619047619,
+            "10": 0.01488095238095238
+          },
+          "median_rank": 7.0,
+          "metric": "euclidean",
+          "mrr": 0.2972506023499852,
+          "n": 672,
+          "n_pool": 672
+        }
+      }
+    },
+    "per_axis": {
+      "hedging": {
+        "arm_1738ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.3333333333333333,
+              "5": 0.8333333333333334,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.08333333333333333,
+              "5": 0.4166666666666667,
+              "10": 0.8333333333333334
+            },
+            "median_rank": 2.0,
+            "metric": "cosine",
+            "mrr": 0.5502314814814815,
+            "n": 12,
+            "n_pool": 12
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.16666666666666666,
+              "5": 0.5,
+              "10": 0.9166666666666666
+            },
+            "chance_at_k": {
+              "1": 0.08333333333333333,
+              "5": 0.4166666666666667,
+              "10": 0.8333333333333334
+            },
+            "median_rank": 5.5,
+            "metric": "euclidean",
+            "mrr": 0.3486471861471861,
+            "n": 12,
+            "n_pool": 12
+          }
+        },
+        "arm_779ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.3333333333333333,
+              "5": 0.8333333333333334,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.08333333333333333,
+              "5": 0.4166666666666667,
+              "10": 0.8333333333333334
+            },
+            "median_rank": 2.0,
+            "metric": "cosine",
+            "mrr": 0.5891203703703703,
+            "n": 12,
+            "n_pool": 12
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.16666666666666666,
+              "5": 0.5833333333333334,
+              "10": 0.9166666666666666
+            },
+            "chance_at_k": {
+              "1": 0.08333333333333333,
+              "5": 0.4166666666666667,
+              "10": 0.8333333333333334
+            },
+            "median_rank": 5.0,
+            "metric": "euclidean",
+            "mrr": 0.3522516835016835,
+            "n": 12,
+            "n_pool": 12
+          }
+        },
+        "arm_iddelta": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.5,
+              "5": 0.75,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.08333333333333333,
+              "5": 0.4166666666666667,
+              "10": 0.8333333333333334
+            },
+            "median_rank": 1.5,
+            "metric": "cosine",
+            "mrr": 0.6403769841269841,
+            "n": 12,
+            "n_pool": 12
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.16666666666666666,
+              "5": 0.75,
+              "10": 0.9166666666666666
+            },
+            "chance_at_k": {
+              "1": 0.08333333333333333,
+              "5": 0.4166666666666667,
+              "10": 0.8333333333333334
+            },
+            "median_rank": 4.5,
+            "metric": "euclidean",
+            "mrr": 0.3628306878306879,
+            "n": 12,
+            "n_pool": 12
+          }
+        }
+      },
+      "persona": {
+        "arm_1738ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.15833333333333333,
+              "5": 0.575,
+              "10": 0.9
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 4.5,
+            "metric": "cosine",
+            "mrr": 0.3549934515967125,
+            "n": 120,
+            "n_pool": 120
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.10833333333333334,
+              "5": 0.6083333333333333,
+              "10": 0.875
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 5.0,
+            "metric": "euclidean",
+            "mrr": 0.3208868711626065,
+            "n": 120,
+            "n_pool": 120
+          }
+        },
+        "arm_779ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.15833333333333333,
+              "5": 0.5916666666666667,
+              "10": 0.8916666666666667
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 4.0,
+            "metric": "cosine",
+            "mrr": 0.36292055897319053,
+            "n": 120,
+            "n_pool": 120
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.15,
+              "5": 0.5833333333333334,
+              "10": 0.8666666666666667
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 4.0,
+            "metric": "euclidean",
+            "mrr": 0.3497733285233285,
+            "n": 120,
+            "n_pool": 120
+          }
+        },
+        "arm_iddelta": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.25,
+              "5": 0.6333333333333333,
+              "10": 0.8833333333333333
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 4.0,
+            "metric": "cosine",
+            "mrr": 0.4167395451770452,
+            "n": 120,
+            "n_pool": 120
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.18333333333333332,
+              "5": 0.5833333333333334,
+              "10": 0.8916666666666667
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 5.0,
+            "metric": "euclidean",
+            "mrr": 0.36074693824693826,
+            "n": 120,
+            "n_pool": 120
+          }
+        }
+      },
+      "stance": {
+        "arm_1738ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.3055555555555556,
+              "5": 0.6527777777777778,
+              "10": 0.8333333333333334
+            },
+            "chance_at_k": {
+              "1": 0.013888888888888888,
+              "5": 0.06944444444444445,
+              "10": 0.1388888888888889
+            },
+            "median_rank": 4.0,
+            "metric": "cosine",
+            "mrr": 0.4547043125003651,
+            "n": 72,
+            "n_pool": 72
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.16666666666666666,
+              "5": 0.4305555555555556,
+              "10": 0.5694444444444444
+            },
+            "chance_at_k": {
+              "1": 0.013888888888888888,
+              "5": 0.06944444444444445,
+              "10": 0.1388888888888889
+            },
+            "median_rank": 7.5,
+            "metric": "euclidean",
+            "mrr": 0.2937841749403314,
+            "n": 72,
+            "n_pool": 72
+          }
+        },
+        "arm_779ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.25,
+              "5": 0.6527777777777778,
+              "10": 0.8472222222222222
+            },
+            "chance_at_k": {
+              "1": 0.013888888888888888,
+              "5": 0.06944444444444445,
+              "10": 0.1388888888888889
+            },
+            "median_rank": 3.5,
+            "metric": "cosine",
+            "mrr": 0.43164060657933206,
+            "n": 72,
+            "n_pool": 72
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.18055555555555555,
+              "5": 0.3888888888888889,
+              "10": 0.6388888888888888
+            },
+            "chance_at_k": {
+              "1": 0.013888888888888888,
+              "5": 0.06944444444444445,
+              "10": 0.1388888888888889
+            },
+            "median_rank": 7.5,
+            "metric": "euclidean",
+            "mrr": 0.31007154687059874,
+            "n": 72,
+            "n_pool": 72
+          }
+        },
+        "arm_iddelta": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.2916666666666667,
+              "5": 0.625,
+              "10": 0.8472222222222222
+            },
+            "chance_at_k": {
+              "1": 0.013888888888888888,
+              "5": 0.06944444444444445,
+              "10": 0.1388888888888889
+            },
+            "median_rank": 4.0,
+            "metric": "cosine",
+            "mrr": 0.4365357320165303,
+            "n": 72,
+            "n_pool": 72
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.1388888888888889,
+              "5": 0.4861111111111111,
+              "10": 0.6388888888888888
+            },
+            "chance_at_k": {
+              "1": 0.013888888888888888,
+              "5": 0.06944444444444445,
+              "10": 0.1388888888888889
+            },
+            "median_rank": 6.0,
+            "metric": "euclidean",
+            "mrr": 0.30154544501022207,
+            "n": 72,
+            "n_pool": 72
+          }
+        }
+      }
+    }
+  }
+}

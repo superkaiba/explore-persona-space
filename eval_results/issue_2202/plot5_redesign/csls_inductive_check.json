@@ -1,0 +1,134 @@
+{
+ "convention": "Inductive-CSLS robustness check on the whitened-cosine read (train-fit whitening unchanged): transductive = banked convention, r_j = mean top-10 similarity of pool column j over ALL evaluation queries; crossfit = evaluation queries split into two seeded halves (rng 2202), each half scored with r_j from the OTHER half only; poolside = r_j = mean top-10 pool-to-pool similarity (self excluded), no queries used. Penalty weight 0.5 and k=10 unchanged. Regimes: single-draw targets over all 9,941; operating point = draw-averaged covered pool rows, ranked on the 1,988 kresample-covered rows.",
+ "single_draw_9941": {
+  "transductive": {
+   "acc1": 0.9761593401066291,
+   "n_fail": 237
+  },
+  "crossfit": {
+   "acc1": 0.971330852026959,
+   "n_fail": 285
+  },
+  "poolside": {
+   "acc1": 0.9542299567447943,
+   "n_fail": 455
+  }
+ },
+ "single_draw_failset_vs_transductive": {
+  "crossfit": {
+   "overlap": 233,
+   "new": 52,
+   "fixed": 4
+  },
+  "poolside": {
+   "overlap": 222,
+   "new": 233,
+   "fixed": 15
+  }
+ },
+ "oppoint_covered_1988": {
+  "transductive": {
+   "acc1_covered": 0.994466800804829,
+   "n_fail_covered": 11,
+   "fail_cis": [
+    12765,
+    18697,
+    23945,
+    25708,
+    27413,
+    51000,
+    57671,
+    67184,
+    72669,
+    72816,
+    93209
+   ]
+  },
+  "crossfit": {
+   "acc1_covered": 0.9934607645875252,
+   "n_fail_covered": 13,
+   "fail_cis": [
+    11815,
+    12765,
+    18697,
+    23945,
+    25708,
+    27413,
+    51000,
+    57671,
+    67184,
+    72669,
+    72816,
+    84451,
+    93209
+   ]
+  },
+  "poolside": {
+   "acc1_covered": 0.9813883299798792,
+   "n_fail_covered": 37,
+   "fail_cis": [
+    549,
+    9802,
+    11815,
+    12765,
+    13930,
+    14014,
+    14492,
+    15607,
+    18697,
+    19808,
+    21415,
+    23945,
+    24751,
+    25708,
+    25770,
+    27413,
+    30109,
+    30272,
+    34664,
+    38484,
+    43774,
+    51000,
+    57671,
+    61498,
+    64747,
+    67184,
+    67529,
+    72296,
+    72669,
+    72816,
+    74599,
+    79897,
+    83167,
+    83376,
+    84451,
+    87281,
+    93209
+   ]
+  }
+ },
+ "meta": {
+  "generated_utc": "2026-08-25T19:07:13.036246+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "dd7dab266e454e618d89ea5f20f1cbc11c4970f5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2474/n1m_map_arms.json",
+   "scripts/issue2474_n1m_map.py",
+   "tasks/completed/2214/body.md",
+   "tasks/completed/2214/comments.jsonl",
+   "tasks/completed/2214/concerns.jsonl",
+   "tasks/completed/2214/events.jsonl",
+   "tasks/completed/2214/plans/plan.md",
+   "tasks/completed/2214/plans/v1.md",
+   "tasks/completed/2214/plans/v2.md",
+   "tasks/completed/2214/plans/v3.md",
+   "tasks/proposed/2416/body.md",
+   "tasks/proposed/2416/comments.jsonl",
+   "tasks/proposed/2416/events.jsonl",
+   "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": null
+ }
+}
