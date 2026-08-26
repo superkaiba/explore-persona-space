@@ -456,20 +456,40 @@ def test_cross_arm_shared_factor_criterion(tmp_path):
     assert crit["n_shared_above_null_same_behavior"] >= 1
     assert crit["met"] is True and summary["criterion_met_any_cell"] is True
     assert any(p.startswith("armA~armB") for p in crit["pairs_above_null_same_behavior"])
+    # The criterion band is SELECTION-SYMMETRIC; the per-comparison read rides labeled.
+    assert "SELECTION-SYMMETRIC" in crit["shared_factor_definition"]
+    assert "UNCORRECTED" in crit["per_comparison_uncorrected"]["label"]
+    assert crit["n_same_behavior_pairs_tested"] == 1  # A~B (C is beh2)
     # Statistic-class labels ride next to the numbers (unit-5 atlas convention).
     sc = cell["statistic_classes"]
     assert "direction-aware" in sc["cross_arm_factor_cosine"]
-    assert "rotation" in sc["rotation_null"]
+    assert "selection-symmetric" in sc["symmetric_null"]
+    assert "rotation" in sc["rotation_null_percomparison"]
     assert "min(|cos_context|, |cos_shift|)" in cell["matching_rule"]
-    band = cell["rotation_null_bands"][str(d)]
+    band = cell["rotation_null_bands_percomparison"][str(d)]
     assert band["shared_across_pairs"] is True and band["n_draws"] == 50
-    # Both floors reported per match: rotation null AND within-arm split-half agreement.
+    # Symmetric band: per-draw same-selection, aggregation asserted, matrix persisted.
+    assert cell["assertions"]["null_aggregation_matches_observed"] is True
     ab = next(p for p in cell["pairs"] if p["arm_a"] == "armA" and p["arm_b"] == "armB")
     assert ab["admissible"] is True
+    assert ab["null_aggregation_matches_observed"] is True
+    sym = cell["symmetric_null_bands"][ab["symmetric_null_key"]]
+    assert sym["null_aggregation"] == L6.CROSS_NULL_AGGREGATION
+    assert len(sym["draws_max_matched"]) == 50
+    assert len(sym["draws_matched_cos"]) == 50  # per-draw x per-slot matrix persisted
+    assert ab["max_matched_cos"] > sym["p95_max_matched"]
+    # All three statistics reported per match: symmetric + per-comparison nulls AND the
+    # within-arm split-half agreement (noise floor).
     m0 = ab["matches"][0]
-    assert {"cos_context", "cos_shift", "above_rotation_null", "splithalf_floor"} <= set(m0)
+    assert {
+        "cos_context",
+        "cos_shift",
+        "above_symmetric_null",
+        "above_rotation_null_percomparison",
+        "splithalf_floor",
+    } <= set(m0)
     # The shared factor is the top-sigma factor in both arms and agrees on BOTH sides.
-    assert m0["factor_a"] == 0 and m0["above_rotation_null"] is True
+    assert m0["factor_a"] == 0 and m0["above_symmetric_null"] is True
     assert abs(m0["cos_context"]) > 0.8 and abs(m0["cos_shift"]) > 0.8
 
 
@@ -512,3 +532,116 @@ def test_cross_arm_refuses_basis_mismatched_pair(tmp_path):
     assert "matches" not in pair
     assert cell["criterion"]["n_shared_above_null_same_behavior"] == 0
     assert cell_summary["criterion_met_any_cell"] is False
+
+
+def test_symmetric_null_band_controls_rank_multiplicity():
+    """Blocker discrimination (leg6-crossarm-null-not-selection-symmetric): at rank k=8
+    the PER-COMPARISON band fires on pure noise far above 0.05 (P(>=1|H0) ~ 1-(0.95)^8,
+    inflated further by the greedy argmax), while the selection-symmetric max-matched
+    band holds the per-pair false-positive rate at ~0.05 by construction."""
+    d, r = 64, 8
+    band = L6.symmetric_null_band(d, d, r, r, n_draws=400, seed=1, cache={})
+    # Reproducible independent of call order (derived seed from the shape key).
+    band2 = L6.symmetric_null_band(d, d, r, r, n_draws=400, seed=1, cache={})
+    assert band["p95_max_matched"] == band2["p95_max_matched"]
+    assert band["null_aggregation"] == L6.CROSS_NULL_AGGREGATION
+    assert len(band["draws_matched_cos"]) == 400 and len(band["draws_matched_cos"][0]) == r
+    # The multiplicity correction is real: the max-matched band exceeds even the
+    # single-SIDE p95 of |cos| (~1.96/sqrt(d) — the loosest per-comparison threshold;
+    # the honest per-slot band for the min-of-two-sides statistic is lower still).
+    per_comparison_p95 = 1.96 / np.sqrt(d)
+    assert band["p95_max_matched"] > per_comparison_p95 + 0.005
+    # Empirical H0 rates over independent null "observed" pairs run through the SAME
+    # selection the production read uses (_greedy_match_stat). Measured 2026-08-25 at
+    # n=500: per-comparison 0.096 (~2x nominal at k=8; grows with k), symmetric 0.054.
+    rng = np.random.default_rng(7)
+    n_pairs, above_sym, above_pc = 300, 0, 0
+    for _ in range(n_pairs):
+        fa_c = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        fb_c = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        fa_s = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        fb_s = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        matches, t_obs = L6._greedy_match_stat(np.abs(fa_c.T @ fb_c), np.abs(fa_s.T @ fb_s))
+        if t_obs > band["p95_max_matched"]:
+            above_sym += 1
+        if any(v > per_comparison_p95 for _, _, v in matches):
+            above_pc += 1
+    # The pre-fix criterion shape (any match above a per-comparison band) fires on noise
+    # well above nominal:
+    assert above_pc / n_pairs > 0.07, above_pc
+    # The symmetric band controls the per-pair rate at ~0.05:
+    assert above_sym / n_pairs <= 0.085, above_sym
+
+
+def _fake_leg6_tree(root):
+    """A minimal on-disk leg6 tree exercising every leaf class run_upload must cover."""
+    files = [
+        "leg6/summary.json",
+        "leg6/armA/guard.json",
+        "leg6/armA/L19_last_prompt.json",
+        "leg6/armA/L19_last_prompt_factors.npz",
+        "leg6/armA/operator_factors.pt",
+        "leg6/pooled/armA/L19_last_prompt.json",
+        "leg6/cross_arm/L19_last_prompt.json",
+        "leg6/cross_arm/summary.json",
+    ]
+    for f in files:
+        p = root / f
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("{}")
+    return files
+
+
+def test_run_upload_enumerates_all_leaves_and_verifies(tmp_path, monkeypatch):
+    """Blocker discrimination (leg6-artifacts-no-upload-coverage): run_upload uploads
+    EVERY leaf leg6 writes (root summary, per-arm, pooled, cross_arm) preserving the tree
+    layout, exact-set-verifies each leaf, raises on a Hub-missing file, and skips LOUDLY
+    (no Hub calls) under --skip-upload. Fakes only at the network boundary (autospec)."""
+    from types import SimpleNamespace
+    from unittest import mock
+
+    import explore_persona_space.orchestrate.hub as hub_mod
+    import explore_persona_space.orchestrate.upload_sharded as us
+
+    _fake_leg6_tree(tmp_path)
+    leaves = L6.leg6_upload_leaves(tmp_path)
+    assert {rel for _, rel in leaves} == {"", "armA", "cross_arm", "pooled/armA"}
+
+    fake_upload = mock.create_autospec(
+        us.upload_dir_sharded, return_value=SimpleNamespace(rerouted=False)
+    )
+    fake_verify = mock.create_autospec(hub_mod.verify_repo_paths_uploaded, return_value=[])
+    monkeypatch.setattr(us, "upload_dir_sharded", fake_upload)
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", fake_verify)
+
+    L6.run_upload(tmp_path, hf_prefix="issue2569_test/analysis_tensors", skip=False)
+    assert fake_upload.call_count == 4
+    prefixes = [c.args[2] for c in fake_upload.call_args_list]
+    assert prefixes == [
+        "issue2569_test/analysis_tensors/leg6",
+        "issue2569_test/analysis_tensors/leg6/armA",
+        "issue2569_test/analysis_tensors/leg6/cross_arm",
+        "issue2569_test/analysis_tensors/leg6/pooled/armA",
+    ]
+    for c in fake_upload.call_args_list:
+        assert c.args[1] == "superkaiba1/explore-persona-space-data"
+        assert c.kwargs["delete_local"] is False and c.kwargs["resume_skip"] is False
+        assert c.kwargs["repo_type"] == "dataset"
+    # Exact-set verify per leaf: the arm leaf's expected set names all four files.
+    arm_expected = next(
+        c.args[2] for c in fake_verify.call_args_list if c.kwargs["path_in_repo"].endswith("armA")
+    )
+    assert arm_expected == [
+        "issue2569_test/analysis_tensors/leg6/armA/L19_last_prompt.json",
+        "issue2569_test/analysis_tensors/leg6/armA/L19_last_prompt_factors.npz",
+        "issue2569_test/analysis_tensors/leg6/armA/guard.json",
+        "issue2569_test/analysis_tensors/leg6/armA/operator_factors.pt",
+    ]
+    # Decoy discrimination: a file missing on the Hub must raise, never pass silently.
+    fake_verify.return_value = ["issue2569_test/analysis_tensors/leg6/armA/operator_factors.pt"]
+    with pytest.raises(AssertionError, match="missing on Hub"):
+        L6.run_upload(tmp_path, hf_prefix="issue2569_test/analysis_tensors", skip=False)
+    # Loud skip: no Hub calls at all.
+    n_before = fake_upload.call_count
+    L6.run_upload(tmp_path, hf_prefix="issue2569_test/analysis_tensors", skip=True)
+    assert fake_upload.call_count == n_before

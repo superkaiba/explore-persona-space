@@ -59,16 +59,32 @@ context matrix C, with:
   leg6-cross-arm-shared-factor-no-producer — plan leg 6 step 4 / H6 / the leg-6 success
   criterion):** per (layer, convention) cell, pairwise cross-arm factor cosines over each
   arm's DENOISED half-1 factors, greedily matched by min(|cos_context|, |cos_shift|) (the
-  within-arm/unit-7c |cos| convention), against the RANDOM-ROTATION null via the REUSED
-  ``issue1345_operator_comparison.raw_cosine_with_rotation_null`` (never reimplemented; the
-  band is computed ONCE per vector dimension d on canonical basis-vector probes and shared
-  across pairs — for vector-shaped inputs a Haar rotation maps any unit vector to a uniform
-  direction, so the null distribution depends only on d). Both floors are reported side by
-  side: the rotation null AND the within-arm split-half agreement (noise floor). A pair
-  whose recorded factor bases differ is REFUSED with a recorded reason — never a fabricated
+  within-arm/unit-7c |cos| convention). The CRITERION band is the SELECTION-SYMMETRIC
+  max-matched rotation null (option 1 of selection-symmetric-nulls.md, the leg-5
+  dv3_max_matched_null shape): every null draw undergoes the IDENTICAL greedy matching over
+  the same (r_a, r_b) factor grid via the SHARED ``_greedy_match_stat``, then the same
+  max-over-matched reduction — p95 of the max distribution controls FWER at 0.05 per pair at
+  ANY denoised rank k (the per-comparison band's false-positive rate is 1-(0.95)^k instead:
+  0.79 at the registered range's k=30). The per-draw x per-match-slot matrix persists in the
+  cell JSON so the band is recomputable post-hoc. The per-comparison #1345 band (REUSED
+  ``issue1345_operator_comparison.raw_cosine_with_rotation_null``, computed ONCE per vector
+  dimension on canonical basis-vector probes — a Haar rotation maps any unit vector to a
+  uniform direction, so that null depends only on d) rides labeled UNCORRECTED for the
+  record, and the within-arm split-half agreement rides as the NOISE FLOOR. A pair whose
+  recorded factor bases differ is REFUSED with a recorded reason — never a fabricated
   cosine. Emits ``cross_arm/L{layer}_{conv}.json`` + ``cross_arm/summary.json`` carrying the
   registered-criterion verdict input: the count of cross-arm shared factors above the
-  rotation null over same-behavior arm pairs, with the pairs named.
+  SYMMETRIC null over same-behavior arm pairs, with the pairs named.
+- **Terminal HF upload (``run_upload``, LAST — after ``summary.json``):** the FULL leg6
+  tree (per-arm unit JSONs + factor ``.npz`` + ``operator_factors.pt``, ``pooled/``,
+  ``cross_arm/``, ``summary.json``) uploads per leaf dir to
+  ``<--hf-prefix>/leg6/...`` on the HF data repo via ``upload_dir_sharded`` with fail-loud
+  exact-set ``hub.verify_repo_paths_uploaded`` per leaf (leaves enumerated FROM DISK —
+  every prefix the run wrote, never only the current phase's, #1773). Tensors cannot ride
+  ``eval_results/`` (JSON/text only; ``*.npz`` is gitignored repo-wide) and
+  ``operator_factors.pt`` is a plan-referenced downstream input (the atlas globs it) — an
+  unuploaded sidecar makes leg 7's atlas rows drop on every cross-machine read (#521
+  class). ``--skip-upload`` skips LOUDLY for smoke / local runs.
 
 Context conventions: PRIMARY ``last_prompt`` (the plan-wide v_C = last-prompt-token state,
 plan §6 pooling-convention row); companions ``last_ctx`` (the context-segment last token) and
@@ -140,6 +156,21 @@ STAT_CLASS_SPLITHALF_FLOOR = (
 STAT_CLASS_OPERATOR_FLOOR = (
     "direction-aware (raw operator vec-cosine between the two independent half-fit maps; "
     "raw read of issue1345_operator_comparison.raw_cosine_with_rotation_null at n_draws=0)"
+)
+# Selection-symmetric max-matched null (.claude/rules/selection-symmetric-nulls.md option 1;
+# mirrors leg 5's dv3_max_matched_null in issue650_analyze.py / issue2569_dw_fleet.py):
+# every draw undergoes the IDENTICAL greedy matching over the same (r_a, r_b) factor grid,
+# then the same max-over-matched reduction, so observed and null get the same number of
+# chances. The p95 of the max-matched null distribution is the FWER-controlling band —
+# under H0, P(any match above the band) = 0.05 per pair REGARDLESS of the denoised rank k
+# (the per-comparison band's false-positive rate grows as 1-(0.95)^k instead: 0.40 at k=10,
+# 0.79 at k=30 — the registered rank range's upper end).
+CROSS_NULL_AGGREGATION = "greedy_min_side_match_then_max_over_matched"
+STAT_CLASS_SYMMETRIC_NULL = (
+    "selection-symmetric max-matched rotation null (per draw: independent Haar frames per "
+    "side, the IDENTICAL greedy min-side matching over the same (r_a, r_b) grid, then max "
+    "over matched pairs; p95 of the max distribution is the FWER-controlling band; the "
+    "matched point estimate stays winner's-curse-inflated — never a corrected magnitude)"
 )
 FACTOR_ORIENTATION = (
     "row-vector map: pred = (context - mu_c) @ M + mu_d; M = U diag(s) V^T; context factors "
@@ -989,6 +1020,102 @@ def rotation_null_band(d: int, *, n_draws: int, seed: int, cache: dict) -> dict:
     return band
 
 
+def _greedy_match_stat(
+    cos_ctx_mat: np.ndarray, cos_shf_mat: np.ndarray
+) -> tuple[list[tuple[int, int, float]], float]:
+    """The SHARED cross-arm selection: greedy min-side matching, then max over matches.
+
+    Used by BOTH the observed read and every symmetric-null draw (option 1 of
+    .claude/rules/selection-symmetric-nulls.md: the null inherits the IDENTICAL
+    selection), so ``null_aggregation_matches_observed`` holds by construction — the
+    same function computes both sides. Inputs are |cos| matrices (r_a x r_b); rows are
+    iterated in descending-sigma order (the SVD order), each taking the best unmatched
+    column by min(|cos_context|, |cos_shift|). Returns (matches [(i, j, comb)], t_max).
+    """
+    comb = np.minimum(cos_ctx_mat, cos_shf_mat)
+    taken: set[int] = set()
+    matches: list[tuple[int, int, float]] = []
+    for i in range(comb.shape[0]):
+        order = np.argsort(-comb[i])
+        j = next((int(x) for x in order if int(x) not in taken), None)
+        if j is None:
+            break
+        taken.add(j)
+        matches.append((i, int(j), float(comb[i, j])))
+    t_max = max((v for _, _, v in matches), default=0.0)
+    return matches, t_max
+
+
+def symmetric_null_band(
+    d_ctx: int, d_shf: int, r_a: int, r_b: int, *, n_draws: int, seed: int, cache: dict
+) -> dict:
+    """Selection-symmetric (max-matched) null band, cached per (d_ctx, d_shf, r_a, r_b).
+
+    Per draw: sample ONE independent uniform orthonormal r_b-frame per side (batched
+    torch QR of Gaussian (n_draws, d, r_b); Haar-rotating arm-b's factor frame U_b by R
+    gives R @ U_b == a uniform Stiefel frame, and for orthonormal U_a the read
+    |U_a^T F| =d= |F[:r_a, :]| — complete U_a^T to an orthogonal matrix and use the
+    frame distribution's left-invariance — so the band depends only on
+    (d_ctx, d_shf, r_a, r_b) and is SHARED across pairs; QR column-sign non-uniformity
+    is inert because the statistic uses |cos|), then the IDENTICAL ``_greedy_match_stat``
+    selection and max-over-matched reduction the observed read uses. Persists the full
+    per-draw x per-match-slot matrix (``draws_matched_cos``) so the band is recomputable
+    post-hoc (the rule's persistence clause). ``n_draws=0`` returns a NaN band (every
+    ``above_symmetric_null`` comparison is then False — no fabricated verdict).
+    """
+    key = (int(d_ctx), int(d_shf), int(r_a), int(r_b), int(n_draws))
+    if key in cache:
+        return cache[key]
+    blob = json.dumps({"seed": seed, "key": list(key)}, sort_keys=True)
+    derived_seed = int(hashlib.sha256(blob.encode()).hexdigest()[:8], 16)
+    t0 = time.time()
+    draws_max: list[float] = []
+    draws_matrix: list[list[float]] = []
+    n_slots = min(r_a, r_b)
+    if n_draws > 0:
+        gen = torch.Generator().manual_seed(derived_seed)
+        g_ctx = torch.randn(n_draws, d_ctx, r_b, generator=gen, dtype=torch.float64)
+        g_shf = torch.randn(n_draws, d_shf, r_b, generator=gen, dtype=torch.float64)
+        f_ctx = torch.linalg.qr(g_ctx, mode="reduced")[0]  # (B, d_ctx, r_b) uniform frames
+        f_shf = torch.linalg.qr(g_shf, mode="reduced")[0]
+        cos_ctx = f_ctx[:, :r_a, :].abs().numpy()  # |U_a^T F| == |F[:r_a, :]| in law
+        cos_shf = f_shf[:, :r_a, :].abs().numpy()
+        for b in range(n_draws):
+            matches, t_max = _greedy_match_stat(cos_ctx[b], cos_shf[b])
+            draws_max.append(float(t_max))
+            row = [float("nan")] * n_slots
+            for slot, (_, _, v) in enumerate(matches):
+                row[slot] = float(v)
+            draws_matrix.append(row)
+    band = {
+        "d_ctx": int(d_ctx),
+        "d_shf": int(d_shf),
+        "r_a": int(r_a),
+        "r_b": int(r_b),
+        "n_draws": int(n_draws),
+        "seed": int(seed),
+        "derived_seed": int(derived_seed),
+        "p95_max_matched": (
+            float(np.percentile(np.asarray(draws_max), 95.0)) if draws_max else float("nan")
+        ),
+        "mean_max_matched": float(np.mean(draws_max)) if draws_max else float("nan"),
+        "draws_max_matched": draws_max,
+        # Per-draw x per-match-slot |cos| matrix — the honest band (or any alternative
+        # aggregation) is a pure re-reduction of this, no re-run needed.
+        "draws_matched_cos": draws_matrix,
+        "null_aggregation": CROSS_NULL_AGGREGATION,
+        "statistic_class": STAT_CLASS_SYMMETRIC_NULL,
+        "sharing_justification": (
+            "for orthonormal factor frames the null |cos| matrices depend only on "
+            "(d_ctx, d_shf, r_a, r_b) — Haar-rotated frames are uniform Stiefel frames and "
+            "|U_a^T F| =d= |F[:r_a, :]| — so one band per shape tuple is shared across pairs"
+        ),
+        "wall_s": round(time.time() - t0, 2),
+    }
+    cache[key] = band
+    return band
+
+
 def cross_regime_key(
     *, layer: int, convention: str, n_null_draws: int, null_seed: int, arm_unit_keys: dict
 ) -> str:
@@ -1000,7 +1127,8 @@ def cross_regime_key(
             "convention": convention,
             "n_null_draws": n_null_draws,
             "null_seed": null_seed,
-            "matching": "greedy-min-both-sides-abs-v1",
+            "matching": "greedy-min-both-sides-abs-v2-symmetric-null",
+            "null_aggregation": CROSS_NULL_AGGREGATION,
             "arm_unit_keys": dict(sorted(arm_unit_keys.items())),
             "store_revisions": dict(sorted(STORE_REVISIONS.items())),
         },
@@ -1329,11 +1457,14 @@ def run_cross_arm(
     Per (layer, convention) cell: load each arm's per-arm unit JSON + factor sidecar, keep
     the leading DENOISED half-1 factors, refuse basis-mismatched pairs (recorded reason,
     never a fabricated cosine), greedily match factors across every arm pair by
-    min(|cos_context|, |cos_shift|), and read each match against BOTH statistics — the
-    rotation null (reused #1345 band, shared per dimension) and the within-arm split-half
-    factor agreement as the NOISE FLOOR. The criterion input counts same-behavior pairs'
-    matches above the rotation null (H6 scopes the shared-factor claim to same-behavior
-    arms); all-pairs counts ride as labeled companions.
+    min(|cos_context|, |cos_shift|), and read each match against THREE statistics — the
+    SELECTION-SYMMETRIC max-matched rotation null (the criterion band: every draw runs the
+    IDENTICAL greedy matching, then max-over-matched; FWER 0.05 per pair at any rank k),
+    the per-comparison rotation null (reused #1345 band, kept labeled UNCORRECTED for the
+    record), and the within-arm split-half factor agreement as the NOISE FLOOR. The
+    criterion input counts same-behavior pairs' matches above the SYMMETRIC band (H6
+    scopes the shared-factor claim to same-behavior arms); all-pairs counts ride as
+    labeled companions.
     """
     cross_dir = out_root / "leg6" / "cross_arm"
     beh = {a["arm_id"]: a.get("beh_key", "") for a in arms}
@@ -1372,9 +1503,11 @@ def run_cross_arm(
                     log.info("[leg6-crossarm] cell L%d/%s resume-skip", layer, conv)
                     continue
             pairs: list[dict] = []
-            n_same = n_all = 0
-            shared_same: list[str] = []
+            n_same_sym = n_all_sym = n_same_pc = n_all_pc = 0
+            n_pairs_same_beh = 0
+            shared_same_sym: list[str] = []
             bands_used: dict[str, dict] = {}
+            sym_bands_used: dict[str, dict] = {}
             for a, b in combinations(sorted(entries), 2):
                 ea, eb = entries[a], entries[b]
                 same_beh = beh[a] == beh[b]
@@ -1394,6 +1527,8 @@ def run_cross_arm(
                     pairs.append(pair)
                     continue
                 pair["admissible"] = True
+                if same_beh:
+                    n_pairs_same_beh += 1
                 d_ctx = int(ea["ctx"].shape[0])
                 d_shf = int(ea["shf"].shape[0])
                 band_ctx = rotation_null_band(
@@ -1404,19 +1539,26 @@ def run_cross_arm(
                 )
                 bands_used[str(d_ctx)] = band_ctx
                 bands_used[str(d_shf)] = band_shf
-                # |cos| matrices as the matching heuristic (columns are unit vectors from
-                # the SVD); recorded per-match values come from the reused reference fn.
+                sym_band = symmetric_null_band(
+                    d_ctx,
+                    d_shf,
+                    int(ea["r"]),
+                    int(eb["r"]),
+                    n_draws=n_null_draws,
+                    seed=CROSS_NULL_SEED,
+                    cache=band_cache,
+                )
+                sym_key = f"{d_ctx}x{d_shf}|ra{ea['r']}|rb{eb['r']}"
+                sym_bands_used[sym_key] = sym_band
+                sym_p95 = float(sym_band["p95_max_matched"])
+                # |cos| matrices; the SHARED selection function computes the matching for
+                # the observed read exactly as it does inside every null draw; recorded
+                # per-match values come from the reused reference fn.
                 cos_ctx_mat = np.abs(ea["ctx"].T @ eb["ctx"])
                 cos_shf_mat = np.abs(ea["shf"].T @ eb["shf"])
-                comb_mat = np.minimum(cos_ctx_mat, cos_shf_mat)
-                taken: set[int] = set()
+                sel_matches, t_obs = _greedy_match_stat(cos_ctx_mat, cos_shf_mat)
                 matches: list[dict] = []
-                for i in range(comb_mat.shape[0]):
-                    order = np.argsort(-comb_mat[i])
-                    j = next((int(x) for x in order if int(x) not in taken), None)
-                    if j is None:
-                        break
-                    taken.add(j)
+                for i, j, _comb in sel_matches:
                     rc = float(
                         oc.raw_cosine_with_rotation_null(
                             torch.as_tensor(ea["ctx"][:, i : i + 1]),
@@ -1434,10 +1576,13 @@ def run_cross_arm(
                         )["raw_cosine"]
                     )
                     fcos = float(min(abs(rc), abs(rs)))
-                    above_null = bool(
+                    above_pc = bool(
                         abs(rc) > float(band_ctx["null_p975"])
                         and abs(rs) > float(band_shf["null_p975"])
                     )
+                    # Max-statistic band: any match above the p95 of the MAX-matched null
+                    # is FWER-controlled at 0.05 per pair regardless of the rank k.
+                    above_sym = bool(fcos > sym_p95)
                     wa = ea["within"].get(i)
                     wb = eb["within"].get(j)
                     present = [x for x in (wa, wb) if x is not None]
@@ -1449,7 +1594,8 @@ def run_cross_arm(
                             "cos_context": rc,
                             "cos_shift": rs,
                             "factor_cos": fcos,
-                            "above_rotation_null": above_null,
+                            "above_symmetric_null": above_sym,
+                            "above_rotation_null_percomparison": above_pc,
                             "within_agreement_a": wa,
                             "within_agreement_b": wb,
                             "splithalf_floor": floor,
@@ -1458,12 +1604,37 @@ def run_cross_arm(
                             "sigma_b": float(eb["sig"][j]),
                         }
                     )
-                    if above_null:
-                        n_all += 1
+                    if above_sym:
+                        n_all_sym += 1
                         if same_beh:
-                            n_same += 1
-                            shared_same.append(f"{a}~{b}:f{i}~f{j}")
+                            n_same_sym += 1
+                            shared_same_sym.append(f"{a}~{b}:f{i}~f{j}")
+                    if above_pc:
+                        n_all_pc += 1
+                        if same_beh:
+                            n_same_pc += 1
+                # Selection-symmetry assertion (the leg-5 dv3 shape): the observed max the
+                # criterion compares to the band must equal the max over the recorded
+                # matches — both sides of the comparison go through _greedy_match_stat.
+                # Tolerance = fp32 factor-storage grain: the reference fn norm-divides
+                # while the persisted columns are unit only to fp32 (~1e-7); a genuine
+                # aggregation divergence is orders of magnitude larger.
+                t_recorded = max((m["factor_cos"] for m in matches), default=0.0)
+                if abs(t_obs - t_recorded) > 1e-6:
+                    raise AssertionError(
+                        f"cross-arm {a}~{b}: observed aggregation diverged from the null's "
+                        f"({t_obs} vs {t_recorded}) — selection symmetry broken"
+                    )
                 pair["matches"] = matches
+                pair["max_matched_cos"] = float(t_obs)
+                pair["max_matched_cos_note"] = (
+                    "winner's-curse-inflated point estimate (max over greedy matches); the "
+                    "symmetric band equalizes the CHANCES, not the magnitude — never a "
+                    "corrected estimate"
+                )
+                pair["symmetric_null_key"] = sym_key
+                pair["above_symmetric_null_any"] = bool(t_obs > sym_p95)
+                pair["null_aggregation_matches_observed"] = True
                 pairs.append(pair)
             cell = {
                 "layer": int(layer),
@@ -1473,15 +1644,19 @@ def run_cross_arm(
                     "greedy by min(|cos_context|, |cos_shift|): arm-a factors in "
                     "descending-sigma order each take the best unmatched arm-b factor "
                     "(the within-arm greedy_factor_match |cos| convention); only factors "
-                    "inside each arm's denoised rank are compared"
+                    "inside each arm's denoised rank are compared; the SAME selection runs "
+                    "inside every symmetric-null draw (_greedy_match_stat)"
                 ),
                 "factor_orientation": FACTOR_ORIENTATION,
                 "statistic_classes": {
                     "cross_arm_factor_cosine": STAT_CLASS_CROSS_COS,
-                    "rotation_null": STAT_CLASS_ROTATION_NULL,
+                    "symmetric_null": STAT_CLASS_SYMMETRIC_NULL,
+                    "rotation_null_percomparison": STAT_CLASS_ROTATION_NULL,
                     "splithalf_floor": STAT_CLASS_SPLITHALF_FLOOR,
                 },
-                "rotation_null_bands": bands_used,
+                "rotation_null_bands_percomparison": bands_used,
+                "symmetric_null_bands": sym_bands_used,
+                "assertions": {"null_aggregation_matches_observed": True},
                 "n_null_draws": int(n_null_draws),
                 "null_seed": CROSS_NULL_SEED,
                 "arms": {
@@ -1500,14 +1675,31 @@ def run_cross_arm(
                         "(H6 scopes the shared-factor claim to same-behavior arms)"
                     ),
                     "shared_factor_definition": (
-                        "a greedily matched cross-arm factor pair whose context-side AND "
-                        "shift-side |cos| BOTH exceed the rotation-null band (signed "
-                        "p97.5 == p95 of |cos| by symmetry)"
+                        "a greedily matched cross-arm factor pair whose "
+                        "min(|cos_context|, |cos_shift|) exceeds the SELECTION-SYMMETRIC "
+                        "max-matched rotation-null band (p95 of the per-draw same-selection "
+                        "max; FWER 0.05 per pair at any rank k)"
                     ),
-                    "n_shared_above_null_same_behavior": int(n_same),
-                    "n_shared_above_null_all_pairs": int(n_all),
-                    "pairs_above_null_same_behavior": shared_same,
-                    "met": bool(n_same >= 1),
+                    "n_shared_above_null_same_behavior": int(n_same_sym),
+                    "n_shared_above_null_all_pairs": int(n_all_sym),
+                    "pairs_above_null_same_behavior": shared_same_sym,
+                    "met": bool(n_same_sym >= 1),
+                    "n_same_behavior_pairs_tested": int(n_pairs_same_beh),
+                    "pair_multiplicity_note": (
+                        "the band controls false positives PER PAIR at 0.05; across "
+                        f"{n_pairs_same_beh} same-behavior pairs the any-pair criterion "
+                        "retains pair-level multiplicity (reader may Bonferroni)"
+                    ),
+                    "per_comparison_uncorrected": {
+                        "label": (
+                            "UNCORRECTED per-comparison read (single-comparison p97.5 band "
+                            "vs k greedy matches — multiplicity-inflated: P(>=1|H0) = "
+                            "1-(0.95)^k, e.g. 0.79 at k=30; kept for the record, NOT the "
+                            "criterion input)"
+                        ),
+                        "n_shared_above_percomparison_null_same_behavior": int(n_same_pc),
+                        "n_shared_above_percomparison_null_all_pairs": int(n_all_pc),
+                    },
                 },
                 "regime_key": rk,
                 "metadata": _meta(),
@@ -1517,7 +1709,8 @@ def run_cross_arm(
             print(
                 f"[leg6-crossarm] cell {cell_i}/{n_cells} L{layer}/{conv} "
                 f"arms={len(entries)} pairs={len(pairs)} "
-                f"shared_above_null_same_beh={n_same} elapsed={time.time() - t0:.0f}s",
+                f"shared_above_sym_null_same_beh={n_same_sym} "
+                f"(percomparison={n_same_pc}) elapsed={time.time() - t0:.0f}s",
                 flush=True,
             )
     summary = {
@@ -1538,6 +1731,88 @@ def run_cross_arm(
     }
     _atomic_json(cross_dir / "summary.json", summary)
     return summary
+
+
+def leg6_upload_leaves(out_root: Path) -> list[tuple[Path, str]]:
+    """Enumerate EVERY leaf directory the leg-6 battery writes (fail-loud on none).
+
+    A leaf = any directory under ``<out_root>/leg6`` (the root itself included, for
+    ``summary.json``) holding >=1 direct file: per-arm dirs (unit JSONs + factor .npz +
+    operator_factors.pt), ``pooled/<arm>/`` dirs, and ``cross_arm/``. Enumerated FROM DISK
+    at upload time so a per-issue verify covers every prefix the run wrote — never only
+    the current phase's (#1773). Returns ``(local_dir, rel_prefix)`` with ``rel_prefix``
+    relative to ``leg6`` ("" for the root), sorted for determinism.
+    """
+    leg6 = out_root / "leg6"
+    if not leg6.is_dir():
+        raise RuntimeError(f"[leg6-upload] nothing to upload: {leg6} missing — run phases first")
+    leaves: list[tuple[Path, str]] = []
+    for d in sorted([leg6, *(p for p in leg6.rglob("*") if p.is_dir())]):
+        if any(f.is_file() for f in d.iterdir()):
+            leaves.append((d, "" if d == leg6 else d.relative_to(leg6).as_posix()))
+    if not leaves:
+        raise RuntimeError(f"[leg6-upload] no files under {leg6} — run the phases first")
+    return leaves
+
+
+def run_upload(out_root: Path, *, hf_prefix: str, skip: bool) -> None:
+    """Production HF upload of the FULL leg6 tree with fail-loud exact-set verify.
+
+    Mirrors ``issue2569_weights.phase_upload``: ``--skip-upload`` SKIPS LOUDLY (smoke /
+    local runs must never clobber the production prefix); one ``upload_dir_sharded``
+    call per leaf (hub-routed, overflow-aware, non-recursive by design) preserving the
+    ``leg6/...`` relative layout under ``<hf_prefix>/leg6/...`` — one staging download of
+    that prefix reproduces the exact local tree, so the atlas step-(5)
+    ``*/operator_factors.pt`` glob works on the staged mirror unchanged. Tensors (.npz /
+    .pt) land under the issue-owned ``analysis_tensors`` prefix per the Upload Policy;
+    the JSONs ride the same tree (non-LFS) for pod-side durability — the VM-side harvest
+    commits them to ``eval_results/`` in git. When not rerouted to the overflow repo,
+    every leaf is verified by exact per-file set via ``hub.verify_repo_paths_uploaded``.
+    """
+    if skip:
+        log.warning("[leg6-upload] --skip-upload: HF upload SKIPPED (loud)")
+        return
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+    script_dir = str(Path(__file__).resolve().parent)
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+    import issue779_common as i779
+
+    api = HfApi()
+    leaves = leg6_upload_leaves(out_root)
+    for local, rel in leaves:
+        prefix = f"{hf_prefix}/leg6/{rel}".rstrip("/")
+        files = sorted(p.name for p in local.iterdir() if p.is_file())
+        res = upload_dir_sharded(
+            local,
+            i779.HF_DATA_REPO,
+            prefix,
+            repo_type="dataset",
+            shard_glob="*",
+            verify=True,
+            delete_local=False,
+            resume_skip=False,
+        )
+        if not res.rerouted:
+            expected = [f"{prefix}/{n}" for n in files]
+            missing = hub.verify_repo_paths_uploaded(
+                api, i779.HF_DATA_REPO, expected, path_in_repo=prefix
+            )
+            assert not missing, f"[leg6-upload] verify FAILED — missing on Hub: {missing}"
+        log.info(
+            "[leg6-upload] %s -> %s (%d files, rerouted=%s)",
+            local,
+            prefix,
+            len(files),
+            res.rerouted,
+        )
+    print(
+        f"[leg6-upload] uploaded+verified {len(leaves)} leaves under {hf_prefix}/leg6", flush=True
+    )
 
 
 def load_arms(arms_json: Path, *, kind: str = "content") -> list[dict]:
@@ -1576,6 +1851,16 @@ def main(argv: list[str] | None = None) -> int:
         help="rotation-null draws per unique dimension for the cross-arm band",
     )
     ap.add_argument("--no-resume", action="store_true", help="recompute even if units exist")
+    ap.add_argument(
+        "--skip-upload",
+        action="store_true",
+        help="skip the terminal HF upload phase LOUDLY (smoke / local runs)",
+    )
+    ap.add_argument(
+        "--hf-prefix",
+        default="issue2569_theory/analysis_tensors",
+        help="HF data-repo destination prefix (issue-owned; never a parent's prefix)",
+    )
     ap.add_argument("--import-check", action="store_true", help="static arg/bind check, exit 0")
     args = ap.parse_args(argv)
 
@@ -1661,6 +1946,9 @@ def main(argv: list[str] | None = None) -> int:
             "metadata": _meta(),
         },
     )
+    # Terminal phase LAST (after summary.json so the summary itself uploads): full-tree
+    # HF persistence with fail-loud exact-set verify (mirrors issue2569_weights).
+    run_upload(out_root, hf_prefix=args.hf_prefix, skip=args.skip_upload)
     log.info("[leg6] done: %d arms, %d halted", len(results), len(halted))
     sys.stdout.flush()
     sys.stderr.flush()
