@@ -466,25 +466,31 @@ def resolve_input(cfg: CfgPE, rel: str) -> Path:
     """``<in_root>/<rel>`` when present, else stage ``<hf_prefix>/<rel>`` from
     the HF data repo (retried, atomic, idempotent via hub.stage_hub_file).
 
-    Under ``--round ffr`` every kind-rooted rel (``analysis_tensors/...``,
-    ``manifests/...``) is nested under the round segment, mirroring run.py's
-    ``hf_round_prefix`` upload layout (frozen ridge payloads resolve via
-    resolve_ridge and are round-independent)."""
+    Under ``--round ffr`` the HUB rel nests every kind-rooted rel
+    (``analysis_tensors/...``, ``manifests/...``) under the round segment,
+    mirroring run.py's ``hf_round_prefix`` upload layout — but the PRODUCER's
+    local out-root is NOT round-nested (run.py isolates the ffr round via a
+    SEPARATE out-root, ``/workspace/eps2564ffr``), so an ``--in-root`` pointed
+    at the pod out-root is probed at the producer layout FIRST, then at the
+    HF-mirror (nested) layout (r1 blocker ffr-analysis-artifact-path-drift).
+    Frozen ridge payloads resolve via resolve_ridge and are round-independent."""
+    hub_rel = rel
     if cfg.is_ffr:
         kind, _, rest = rel.partition("/")
         assert rest, f"kind-rooted rel expected, got {rel!r}"
-        rel = f"{kind}/{FFR_ROUND_SEG}/{rest}"
+        hub_rel = f"{kind}/{FFR_ROUND_SEG}/{rest}"
     if cfg.in_root is not None:
-        cand = cfg.in_root / rel
-        if cand.exists():
-            return cand
-    target = cfg.stage_dir / rel
+        for cand_rel in dict.fromkeys((rel, hub_rel)):
+            cand = cfg.in_root / cand_rel
+            if cand.exists():
+                return cand
+    target = cfg.stage_dir / hub_rel
     if target.exists():
         return target
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
-    logger.info("[pe] staging %s/%s from %s", cfg.hf_prefix, rel, HF_DATA_REPO)
-    return Path(stage_hub_file(HF_DATA_REPO, f"{cfg.hf_prefix}/{rel}", target))
+    logger.info("[pe] staging %s/%s from %s", cfg.hf_prefix, hub_rel, HF_DATA_REPO)
+    return Path(stage_hub_file(HF_DATA_REPO, f"{cfg.hf_prefix}/{hub_rel}", target))
 
 
 def resolve_ridge(cfg: CfgPE, local: Path | None, repo_path: str) -> Path:
@@ -787,6 +793,57 @@ def load_fire(manip_path: Path) -> dict:
             fired[t][key] = r["sensitivity"][str(t)] == "fired"
     axis_rows = {r["axis"]: r for r in doc.get("axis_rows", [])}
     return {"fired": fired, "value_rows": rows, "axis_rows": axis_rows, "meta": doc.get("meta", {})}
+
+
+def validate_fire_coverage_ffr(bank: dict, fire: dict) -> None:
+    """FFR production fire-gate coverage — fail loud BEFORE any tensor load.
+
+    ``pair_fired_mask``'s no-row default (fired) and the axis-floor
+    ``axis_rows.get`` default (floor met) are the PARENT's sanctioned
+    unchecked-axis semantics; under ffr an incomplete / wrong-round /
+    schema-drifted ``manipulation_check_ffr.json`` must never silently admit
+    unchecked values (r1 blocker ffr-fire-gate-fails-open). Required coverage
+    is derived from the bank's OWN selection: every selected wording (base +
+    paraphrase) on every surviving axis has exactly one value row, and every
+    surviving axis has a floor-verdict-bearing axis row. The install-side
+    bare anchor ``E`` (and query values generally) is the only value
+    legitimately without a fire row — it never enters the required set.
+    """
+    selected = bank.get("selected")
+    if not isinstance(selected, dict) or not selected:
+        raise RuntimeError(
+            "ffr bank manifest missing a non-empty 'selected' map — not a "
+            "production ffr bank (all-axes-fail rounds never reach analysis)"
+        )
+    if fire["meta"].get("round") != "ffr":
+        raise RuntimeError(
+            "manipulation check is not an ffr document "
+            f"(meta.round={fire['meta'].get('round')!r}) — wrong-round "
+            "manipulation_check_ffr.json?"
+        )
+    required: set[tuple[str, str]] = set()
+    for axis, vids in selected.items():
+        for vid in vids:
+            required.add((axis, vid))
+            required.add((axis, f"{vid}p"))
+    present = set(fire["value_rows"])
+    missing = sorted(required - present)
+    extra = sorted(present - required)
+    if missing or extra:
+        raise RuntimeError(
+            "ffr manipulation-check value-row coverage mismatch: "
+            f"{len(missing)} missing {missing[:6]}, {len(extra)} extra {extra[:6]} "
+            "— incomplete or wrong-round manipulation_check_ffr.json"
+        )
+    bad_axes = sorted(
+        axis for axis in selected if "floor_met" not in fire["axis_rows"].get(axis, {})
+    )
+    if bad_axes:
+        raise RuntimeError(
+            "ffr manipulation-check axis rows missing floor verdicts for "
+            f"surviving axes: {bad_axes} — incomplete or wrong-round "
+            "manipulation_check_ffr.json"
+        )
 
 
 def load_parent_frozen_slopes(path: Path) -> dict[str, float]:
@@ -1373,7 +1430,18 @@ def compute_all(
 
         # family 2: calibration (headline floor-gated; *_all_values companions
         # for the ratio + CI reads too — r3 concern all-values-companions-incomplete —
-        # under the SAME carrier-clustered bootstrap draws)
+        # under the SAME carrier-clustered bootstrap draws).
+        # Pool-size-honest key names under ffr (r1 codex nit
+        # ffr-round-pooled-legacy-labels): the parent keys embed the PARENT
+        # pool sizes (2,778 all-pairs / 864 swaps) which the ffr round never
+        # has (<=792 / <=252), so the ffr round-pooled keys are named
+        # *_round_pooled / *_round_swap instead. Parent keys byte-unchanged.
+        if cfg.is_ffr:
+            k_pool_slope, k_pool_ratio = "global_slope_round_pooled", "ratio_to_round_pooled"
+            k_swap_slope, k_swap_ratio = "global_slope_round_swap", "ratio_to_round_swap"
+        else:
+            k_pool_slope, k_pool_ratio = "global_slope_all2778", "ratio_to_global"
+            k_swap_slope, k_swap_ratio = "global_slope_swap864", "ratio_to_global_swap864"
         calibration = {}
         for arm in ARMS:
             ax_pt = through_origin_slope(norm_pred[arm][head], norm_obs[PRIMARY_LAYER][head])
@@ -1390,29 +1458,30 @@ def compute_all(
                 "axis_slope_ci95": _ci(ax_draws),
                 "axis_slope_all_values": ax_all_pt,
                 "axis_slope_ci95_all_values": _ci(ax_all_draws),
-                "global_slope_all2778": global_slope[arm],
-                "ratio_to_global": ax_pt / global_slope[arm] if global_slope[arm] else float("nan"),
-                "ratio_to_global_ci95": _ci(ratio_draws),
-                "ratio_to_global_all_values": (
+                k_pool_slope: global_slope[arm],
+                k_pool_ratio: ax_pt / global_slope[arm] if global_slope[arm] else float("nan"),
+                f"{k_pool_ratio}_ci95": _ci(ratio_draws),
+                f"{k_pool_ratio}_all_values": (
                     ax_all_pt / global_slope[arm] if global_slope[arm] else float("nan")
                 ),
-                "ratio_to_global_ci95_all_values": _ci(ratio_all_draws),
-                "global_slope_swap864": global_slope_swap[arm],
-                "ratio_to_global_swap864": (
+                f"{k_pool_ratio}_ci95_all_values": _ci(ratio_all_draws),
+                k_swap_slope: global_slope_swap[arm],
+                k_swap_ratio: (
                     ax_pt / global_slope_swap[arm] if global_slope_swap[arm] else float("nan")
                 ),
-                "ratio_to_global_swap864_ci95": _ci(ratio_swap_draws),
-                "ratio_to_global_swap864_all_values": (
+                f"{k_swap_ratio}_ci95": _ci(ratio_swap_draws),
+                f"{k_swap_ratio}_all_values": (
                     ax_all_pt / global_slope_swap[arm] if global_slope_swap[arm] else float("nan")
                 ),
-                "ratio_to_global_swap864_ci95_all_values": _ci(ratio_swap_all_draws),
+                f"{k_swap_ratio}_ci95_all_values": _ci(ratio_swap_all_draws),
             }
             if frozen_global is not None:
                 # ffr (plan v7 §5): the PRIMARY ratio denominator is the
                 # parent's FROZEN per-arm global slope; the round-pooled
-                # global_slope_all2778 keys above (round pool, <=792 pairs)
-                # stay populated as the companion. The denominator is a fixed
-                # constant, so the CI comes from the axis-slope draws alone.
+                # global_slope_round_pooled keys above (round pool, <=792
+                # pairs) stay populated as the companion. The denominator is a
+                # fixed constant, so the CI comes from the axis-slope draws
+                # alone.
                 fg = frozen_global[arm]
                 with np.errstate(invalid="ignore", divide="ignore"):
                     ratio_frozen_draws = ax_draws / fg
@@ -1428,7 +1497,7 @@ def compute_all(
                         "ratio_to_parent_global_ci95_all_values": _ci(ratio_frozen_all_draws),
                         "primary_denominator": "global_slope_parent_frozen "
                         "(parent's realized global slope; round-pooled "
-                        "global_slope_all2778 is the companion)",
+                        "global_slope_round_pooled is the companion)",
                     }
                 )
 
@@ -2008,12 +2077,22 @@ def main(argv: list[str] | None = None) -> int:
         )
         frozen_global = load_parent_frozen_slopes(cfg.parent_delta)
         logger.info("[pe] frozen parent global slopes: %s", frozen_global)
-    bank_path = resolve_input(cfg, "manifests/bank2564_manifest.json")
+    # producer↔consumer name parity (r1 blocker ffr-bank-manifest-name-mismatch):
+    # the ffr basename is the SHARED BK constant run.py writes/uploads; pinned
+    # by tests/test_issue2564_ffr.py::test_ffr_bank_manifest_name_parity.
+    bank_rel = (
+        f"manifests/{BK.FFR_BANK_MANIFEST_FILENAME}"
+        if cfg.is_ffr
+        else "manifests/bank2564_manifest.json"
+    )
+    bank_path = resolve_input(cfg, bank_rel)
     bank = load_bank_manifest(bank_path, is_ffr=cfg.is_ffr)
     assert cfg.manip_check.exists(), f"manipulation check missing: {cfg.manip_check}"
     fire = load_fire(cfg.manip_check)
+    if cfg.is_ffr:
+        validate_fire_coverage_ffr(bank, fire)
     st = load_stores(cfg, bank)
-    st.input_files["bank2564_manifest.json"] = {
+    st.input_files[Path(bank_rel).name] = {
         "path": str(bank_path),
         "bytes": bank_path.stat().st_size,
         "sha256": _sha256(bank_path),

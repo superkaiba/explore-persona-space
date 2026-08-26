@@ -747,6 +747,13 @@ def write_bank_manifest(bank: dict, out_path: Path) -> None:
 # untouched parent values file, sha-pinned.
 
 FFR_VALUES_FILENAME = "bank2564_ffr_values.json"
+# Single source for the ffr bank-manifest basename: BOTH the producer
+# (issue2564_run.py write + upload) and the consumer (issue2564_analysis.py
+# resolve_input rel) import this constant, so the r1 blocker
+# ffr-bank-manifest-name-mismatch (producer wrote bank2564_ffr_manifest.json,
+# consumer staged bank2564_manifest.json -> production F8 404) cannot recur.
+# Name-parity pinned by tests/test_issue2564_ffr.py.
+FFR_BANK_MANIFEST_FILENAME = "bank2564_ffr_manifest.json"
 FFR_ROUND = "floor-failed-reelicitation"
 FFR_AXES: tuple[str, ...] = ("stance", "persona", "hedging")
 FFR_PAIR_CLASSES: tuple[str, ...] = ("install", "swap", "famswap", "instruction_paraphrase")
@@ -843,6 +850,11 @@ def select_ffr_values(
     axis survives iff its selected width >= ffr_slot_floor(parent_width).
     All-axes-fail is a VALID outcome (empty ``surviving_axes``).
     """
+    if denom <= 0 or not (0 < threshold_pct <= 100):
+        raise BankGateError(
+            f"ffr selection: impossible denom/threshold (denom={denom}, "
+            f"threshold_pct={threshold_pct})"
+        )
     axes_out: dict[str, dict] = {}
     surviving: list[str] = []
     for axis in FFR_AXES:
@@ -857,6 +869,14 @@ def select_ffr_values(
                 if vid not in comply:
                     raise BankGateError(f"ffr selection: missing comply count for {axis}:{vid}")
                 n = int(comply[vid])
+                if not 0 <= n <= denom:
+                    # fail loud on impossible persisted counts (r1 codex minor):
+                    # a count outside [0, denom] means a corrupt/wrong-round
+                    # comply map, never a selection input.
+                    raise BankGateError(
+                        f"ffr selection: impossible comply count for {axis}:{vid}: "
+                        f"{n} not in [0, {denom}]"
+                    )
                 clears = n * 100 >= threshold_pct * denom
                 per_slot[slot]["candidates"][vid] = {"n_comply": n, "clears": clears}
                 if clears and (best is None or n > best[1]):

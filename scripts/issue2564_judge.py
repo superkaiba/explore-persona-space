@@ -101,6 +101,11 @@ SMOKE_ROOT = "/tmp/issue2564_pd_smoke"
 # ── FFR round (plan v7 §5): --round ffr judges the re-elicitation anchors ──
 # Path segment mirrors issue2564_run.py's FFR_ROUND_SEG (hf_round_prefix).
 FFR_ROUND_SEG = "floor_failed_reelicitation"
+# rule-28 sync-reissue budget for retriable judge-draw classes (api-classifier
+# refusals + residual transport losses) on the ffr paths — shared by this
+# script's ffr Batch wave and issue2564_run.py's pilot sync wave (r1 blocker
+# ffr-api-refusal-censoring; #1739: 0 re-refusals in 14,887 sync re-issues).
+FFR_JUDGE_REISSUE_ROUNDS = 2
 DEFAULT_OUT_FFR = "eval_results/issue_2564/floor-failed-reelicitation/manipulation_check_ffr.json"
 DEFAULT_WORK_ROOT_FFR = "data/issue_2564/judge_work_ffr"
 SMOKE_ROOT_FFR = "/tmp/issue2564_pd_smoke_ffr"
@@ -707,6 +712,45 @@ def main() -> None:
             threshold_base=0,  # FORCE the Batch API path (plan §6 pin; 1,392 < sync crossover)
             dry_run=args.dry_run,
         )
+        n_reissue_rounds = 0
+        if is_ffr and not args.dry_run:
+            # rule-28 SYNC reissue (r1 blocker ffr-api-refusal-censoring):
+            # api-classifier refusals + residual transport losses are RETRIABLE
+            # classes, never fire evidence — a censored check must not read
+            # incomplete -> undetermined -> not-fired. The judge cache stores
+            # NEITHER class, so a force_sync re-call re-dispatches ONLY those
+            # rows (kept + content-dropped rows are cache-served) and save_raw
+            # re-lands the full merged state (#1739: 0 re-refusals in 14,887
+            # sync re-issues of the identical instrument). ffr-gated: the
+            # parent's realized incomplete->undetermined convention stays
+            # byte-unchanged at default flags.
+            for _ in range(FFR_JUDGE_REISSUE_ROUNDS):
+                if not (res.n_api_refusal_draws or res.n_transport_lost_draws):
+                    break
+                n_reissue_rounds += 1
+                log(
+                    f"[pd_judge] rule-28 sync reissue round {n_reissue_rounds}: "
+                    f"api_refusal={res.n_api_refusal_draws} "
+                    f"transport_lost={res.n_transport_lost_draws}"
+                )
+                res = judge_graded(
+                    items,
+                    EVAL_PROMPT,
+                    n_draws=1,
+                    cache_dir=work_root / "judge_cache",
+                    save_raw=save_raw,
+                    judge_model=JUDGE_MODEL,
+                    max_tokens=JUDGE_MAX_TOKENS,
+                    force_sync=True,  # rule-28 remediation: targeted SYNC re-issue
+                )
+            if res.n_api_refusal_draws or res.n_transport_lost_draws:
+                raise SystemExit(
+                    f"[pd_judge] {res.n_api_refusal_draws} api-refusal + "
+                    f"{res.n_transport_lost_draws} transport-lost draws persist after "
+                    f"{n_reissue_rounds} sync reissue rounds — retriable classes are "
+                    "never persisted as drops/undetermined (rules 24/28); re-run to "
+                    "re-issue them (cache serves every kept draw)"
+                )
         if not args.dry_run:
             scores = dict(res.scores)
             judge_stats = {
@@ -720,6 +764,9 @@ def main() -> None:
                 "stop_reason_tally": res.stop_reason_tally,
                 "frac_items_complete": res.frac_items_complete if res.scores else None,
             }
+            if is_ffr:
+                # ffr-only key: parent-mode judge_stats stay byte-unchanged.
+                judge_stats["n_reissue_rounds"] = n_reissue_rounds
         else:
             judge_stats = {"dispatched": False, "dry_run": True}
 

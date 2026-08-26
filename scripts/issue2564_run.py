@@ -863,6 +863,38 @@ def _ffr_smoke_selection(values: dict, denom: int) -> dict:
     }
 
 
+def _pilot_selection_fp(pcfg: Cfg2564) -> str:
+    """Regime fingerprint of the pilot judge+selection leg.
+
+    Beyond the generating parameters, the fingerprint pins the JUDGE
+    INSTRUMENT (model, rubric sha, max_tokens, n_draws), the TRANSPORT
+    (force_sync), the selection thresholds, and the upload destination
+    (r1 codex concern ffr-selection-sentinel-fingerprint): a corrective
+    round that changes any of these invalidates the sentinel skip without
+    --force, and a prior --upload none completion cannot satisfy a later
+    --upload hf run.
+    """
+    # Deferred sibling-script import (scripts/ is on sys.path at module top).
+    import issue2564_judge as JD
+
+    return _regime_fp(
+        pcfg,
+        {
+            "phase": "pilot",
+            "leg": "selection",
+            "judge_model": JD.JUDGE_MODEL,
+            "judge_max_tokens": JD.JUDGE_MAX_TOKENS,
+            "judge_rubric_sha": hashlib.sha256(JD.EVAL_PROMPT.encode("utf-8")).hexdigest()[:16],
+            "judge_n_draws": 1,
+            "judge_force_sync": True,
+            "score_threshold": 50.0,
+            "comply_threshold_pct": BK.FFR_COMPLY_THRESHOLD_PCT,
+            "pilot_denom": BK.FFR_PILOT_DENOM,
+            "upload": pcfg.upload,
+        },
+    )
+
+
 def phase_pilot(cfg: Cfg2564, tok, values: dict) -> int:
     """FFR pilot: K=2 compliance rollouts per candidate wording → pod-side
     sync judge → deterministic selection → pilot_selection.json (plan v7 §3b).
@@ -954,7 +986,7 @@ def phase_pilot(cfg: Cfg2564, tok, values: dict) -> int:
     # ── judge + selection leg ──────────────────────────────────────────────
     sel_sent = cfg.out_root / "ffr_pilot_selection_done.json"
     sel_path = cfg.manifest_dir / "pilot_selection.json"
-    sel_fp = _regime_fp(pcfg, {"phase": "pilot", "leg": "selection"})
+    sel_fp = _pilot_selection_fp(pcfg)
     if sel_sent.is_file() and sel_path.is_file():
         s = _read_json(sel_sent)
         if s is not None and s.get("regime_fp") == sel_fp:
@@ -1010,22 +1042,52 @@ def phase_pilot(cfg: Cfg2564, tok, values: dict) -> int:
 
     judge_dir = cfg.out_root / "pilot_judge"
     judge_dir.mkdir(parents=True, exist_ok=True)
-    res = judge_graded(
-        items,
-        JD.EVAL_PROMPT,
-        n_draws=1,
-        cache_dir=cfg.out_root / "pilot_judge_cache",
-        save_raw=judge_dir / "pilot_judge_raw.json",
-        judge_model=JD.JUDGE_MODEL,
-        max_tokens=JD.JUDGE_MAX_TOKENS,
-        force_sync=True,  # pod-side sync judge (plan v7 §3b; 552 calls << batch crossover)
-    )
+
+    def _pilot_judge():
+        return judge_graded(
+            items,
+            JD.EVAL_PROMPT,
+            n_draws=1,
+            cache_dir=cfg.out_root / "pilot_judge_cache",
+            save_raw=judge_dir / "pilot_judge_raw.json",
+            judge_model=JD.JUDGE_MODEL,
+            max_tokens=JD.JUDGE_MAX_TOKENS,
+            force_sync=True,  # pod-side sync judge (plan v7 §3b; 552 calls << batch crossover)
+        )
+
+    res = _pilot_judge()
+    # rules 24/28: transport-lost AND api-classifier-refused draws are
+    # RETRIABLE classes, never compliance evidence (r1 blocker
+    # ffr-api-refusal-censoring). The judge cache stores neither class, so a
+    # re-call re-dispatches ONLY those draws (kept + content-dropped draws are
+    # cache-served) and save_raw re-lands the full merged state. #1739
+    # precedent: 0 re-refusals in 14,887 sync re-issues of the same instrument.
+    n_reissue_rounds = 0
+    for _ in range(JD.FFR_JUDGE_REISSUE_ROUNDS):
+        if not (res.n_transport_lost_draws or res.n_api_refusal_draws):
+            break
+        n_reissue_rounds += 1
+        logger.warning(
+            "[ffr-pilot] judge reissue round %d: transport_lost=%d api_refusal=%d",
+            n_reissue_rounds,
+            res.n_transport_lost_draws,
+            res.n_api_refusal_draws,
+        )
+        res = _pilot_judge()
     if res.n_transport_lost_draws:
         # rule 24: transport losses are re-judged, never persisted as drops —
         # fail loud; the re-run re-judges only the lost draws (cache serves kept).
         raise RuntimeError(
-            f"ffr pilot judge: {res.n_transport_lost_draws} transport-lost draws — "
-            "re-run --phase pilot to re-judge them"
+            f"ffr pilot judge: {res.n_transport_lost_draws} transport-lost draws after "
+            f"{n_reissue_rounds} reissue rounds — re-run --phase pilot to re-judge them"
+        )
+    if res.n_api_refusal_draws:
+        # rule 28: an api-classifier refusal is NEVER counted as noncompliance
+        # or a content drop — fail loud after the reissue budget.
+        raise RuntimeError(
+            f"ffr pilot judge: {res.n_api_refusal_draws} api-refusal draws after "
+            f"{n_reissue_rounds} reissue rounds — retriable class, never compliance "
+            "evidence (rule 28); re-run --phase pilot to re-issue them"
         )
     comply: dict[str, int] = {vid: 0 for axis in BK.FFR_AXES for vid in BK.value_ids(values, axis)}
     n_dropped = 0
@@ -1056,8 +1118,17 @@ def phase_pilot(cfg: Cfg2564, tok, values: dict) -> int:
             "max_tokens": JD.JUDGE_MAX_TOKENS,
             "n_draws": 1,
             "force_sync": True,
+            # rules 9/24/28 drop-class accounting (plan v7 §3b): content drops,
+            # transport losses, and api-classifier refusals reported SEPARATELY
+            # (the latter two are zero here by the fail-loud guards above).
             "n_content_dropped_draws": res.n_dropped_draws,
+            "n_instructed_refusal_draws": res.n_refusal_draws,
+            "n_truncation_dropped_draws": res.n_truncation_dropped_draws,
             "n_transport_lost_draws": res.n_transport_lost_draws,
+            "n_api_refusal_draws": res.n_api_refusal_draws,
+            "n_reissue_rounds": n_reissue_rounds,
+            "stop_reason_tally": res.stop_reason_tally,
+            "frac_items_complete": res.frac_items_complete,
         },
         "repro": _repro(cfg, "ffr-pilot-selection"),
     }
@@ -1667,10 +1738,49 @@ def main(argv: list[str] | None = None) -> int:
                 f"ffr phase {cfg.phase!r} needs {sel_path} — run --round ffr --phase pilot first"
             )
         selection = sel_doc["selection"]
+        if not selection.get("surviving_axes"):
+            # plan v7 §6: ALL 3 axes failing the pilot floor is a VALID,
+            # complete outcome — the round folds in as a pure refusal-boundary
+            # result and phases A/B (F3–F7) are skipped. Never a BankGateError
+            # crash on a registered outcome (r1 blocker ffr-all-axes-fail-crash);
+            # the durable record below is what analysis/fold-in reads.
+            outcome = {
+                "round": BK.FFR_ROUND,
+                "outcome": "refusal_boundary_all_axes_failed",
+                "surviving_axes": [],
+                "axes": {
+                    a: {
+                        "width": selection["axes"][a]["width"],
+                        "floor": selection["axes"][a]["floor"],
+                        "survives": selection["axes"][a]["survives"],
+                    }
+                    for a in BK.FFR_AXES
+                },
+                "selection_file": "pilot_selection.json",
+                "phases_skipped": ["A", "B"],
+                "repro": _repro(cfg, "ffr-refusal-boundary"),
+            }
+            write_json_atomic(cfg.manifest_dir / "ffr_refusal_boundary.json", outcome)
+            if cfg.upload == "hf":
+                res_rb = upload_dir_sharded(
+                    cfg.manifest_dir,
+                    HF_DATA_REPO,
+                    cfg.hf_round_prefix("manifests"),
+                    shard_glob="ffr_refusal_boundary.json",
+                    resume_skip=False,
+                    delete_local=False,
+                )
+                logger.info("[ffr] refusal-boundary record uploaded: %s", _upload_summary(res_rb))
+            logger.info(
+                "[ffr] all axes below pilot floor — refusal-boundary outcome; "
+                "phases A/B skipped (plan v7 §6)"
+            )
+            print("[phase=done]", flush=True)
+            return RC_OK
         # F0 (plan v7): bank gates run at FULL selected grain regardless of --smoke;
         # smoke slicing (carriers) applies AFTER the gates, to execution only.
         bank = BK.build_bank_ffr(tok, selection, values=values)
-        BK.write_bank_manifest(bank, cfg.manifest_dir / "bank2564_ffr_manifest.json")
+        BK.write_bank_manifest(bank, cfg.manifest_dir / BK.FFR_BANK_MANIFEST_FILENAME)
         bank = _filter_bank(bank, cfg.cells, cfg.carriers)
         logger.info(
             "ffr bank: %d contexts / %d pairs after filter (surviving_axes=%s)",

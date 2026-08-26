@@ -381,9 +381,14 @@ def fig_norm_scatter(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
     ncol = min(4, len(axes_names))
     nrow = math.ceil(len(axes_names) / ncol)
     fig, axs = plt.subplots(nrow, ncol, figsize=(3.2 * ncol, 3.0 * nrow), squeeze=False)
-    slope = _finite(
-        _get(doc, "axes", axes_names[0], "calibration", "arm_779ce", "global_slope_all2778")
+    # ffr docs carry pool-size-honest key names (global_slope_round_pooled,
+    # <=792 pairs) instead of the parent's global_slope_all2778.
+    slope_key = (
+        "global_slope_round_pooled"
+        if _get(doc, "meta", "round") == "ffr"
+        else "global_slope_all2778"
     )
+    slope = _finite(_get(doc, "axes", axes_names[0], "calibration", "arm_779ce", slope_key))
     col = _arm_colors()["arm_779ce"]
     neutral = paper_palette_role("neutral")
     for j, name in enumerate(axes_names):
@@ -1218,9 +1223,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     is_ffr = args.round == "ffr"
-    if is_ffr:
-        global _ACTIVE_STEM_PREFIX
-        _ACTIVE_STEM_PREFIX = f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}"
+    # Assigned on EVERY invocation (r1 codex minor): a prior ffr main() in the
+    # same process must not leak its stem prefix into a later parent call.
+    global _ACTIVE_STEM_PREFIX
+    _ACTIVE_STEM_PREFIX = f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}" if is_ffr else STEM_PREFIX
 
     results_dir = args.results_dir
     if args.results_dir == DEFAULT_RESULTS_DIR:

@@ -273,3 +273,55 @@ def test_gate_v_ffr_pilot_bank_must_have_no_pairs(values, bank):
     pilot_contexts = B.build_contexts_pilot_ffr(values)
     with pytest.raises(B.BankGateError, match=r"gate\(v-ffr\)"):
         B.gate_grid_complete_ffr(values, pilot_contexts, bank["pairs"][:1], pilot=True)
+
+
+# ── r2 pins: producer↔consumer name parity + fail-loud selection bounds ─
+
+
+def _script_src(name: str) -> str:
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    return (root / "scripts" / name).read_text(encoding="utf-8")
+
+
+def test_ffr_bank_manifest_name_parity():
+    """r1 blocker ffr-bank-manifest-name-mismatch: the producer (run.py) and
+    the consumer (analysis.py) must share the ONE BK constant — a stray
+    literal on either side is the drift the blocker shipped."""
+    assert B.FFR_BANK_MANIFEST_FILENAME == "bank2564_ffr_manifest.json"
+    run_src = _script_src("issue2564_run.py")
+    ana_src = _script_src("issue2564_analysis.py")
+    assert "BK.FFR_BANK_MANIFEST_FILENAME" in run_src, "producer must use the shared constant"
+    assert "BK.FFR_BANK_MANIFEST_FILENAME" in ana_src, "consumer must use the shared constant"
+    assert "bank2564_ffr_manifest.json" not in run_src, "stray ffr manifest literal in run.py"
+    assert "bank2564_ffr_manifest.json" not in ana_src, "stray ffr manifest literal in analysis.py"
+
+
+def test_ffr_round_pooled_key_parity():
+    """r1 codex nit ffr-round-pooled-legacy-labels: the pool-size-honest ffr
+    key is emitted by analysis.py AND read round-aware by figures.py."""
+    ana_src = _script_src("issue2564_analysis.py")
+    fig_src = _script_src("issue2564_figures.py")
+    assert "global_slope_round_pooled" in ana_src
+    assert "global_slope_round_swap" in ana_src
+    assert "global_slope_round_pooled" in fig_src
+
+
+def test_selection_impossible_comply_count_raises(values):
+    comply = _comply(values, B.FFR_PILOT_DENOM)
+    vid = B.value_ids(values, "stance")[0]
+    comply[vid] = B.FFR_PILOT_DENOM + 1
+    with pytest.raises(B.BankGateError, match="impossible comply count"):
+        B.select_ffr_values(values, comply)
+    comply[vid] = -1
+    with pytest.raises(B.BankGateError, match="impossible comply count"):
+        B.select_ffr_values(values, comply)
+
+
+def test_selection_impossible_denom_or_threshold_raises(values):
+    comply = _comply(values, B.FFR_PILOT_DENOM)
+    with pytest.raises(B.BankGateError, match="impossible denom/threshold"):
+        B.select_ffr_values(values, comply, denom=0)
+    with pytest.raises(B.BankGateError, match="impossible denom/threshold"):
+        B.select_ffr_values(values, comply, threshold_pct=0)
