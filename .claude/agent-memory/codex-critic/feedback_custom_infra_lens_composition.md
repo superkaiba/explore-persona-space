@@ -2715,3 +2715,58 @@ Related: [[plan-path-missing-read-from-main]],
   clarify + lensitems + targets + empty prior; scaffold digit-free —
   decimal/teens section refs confined to span files; "v1.md"/"A2"/"A7"
   atom-free under both-sides guards).
+
+- **verify_plan check-ADDITION plan, standard alternatives lens +
+  orchestrator-numbered hypotheses AND a mandated "sharpest criticism"
+  (#2590 round one, jq-probe dry-run FAIL + judge-wave pilot WARN +
+  cap-repin arm — extends the #2228 alternatives shape + item 51-B): map
+  the brief's numbered hypotheses to lettered press points 1:1 tagged
+  "(orchestrator-named)" and give the sharpest criticism its OWN lettered
+  point** framed as one-sided calibration (a post-freeze corpus scan
+  measures FPs only, never TP recall on unseen incidents) with a
+  multi-incident-recall probe (the plan cites an incident FAMILY for one
+  check — direct the twin to test whether the OTHER cited incidents' plans
+  satisfy the drafted conjunction, i.e. would the arm have fired on THEM)
+  plus the mutation move (perturb a passing fixture into a minimal
+  NON-founding offender) as the named cheapest TP evidence. Probes earned
+  here: (i) TOCTOU/era-drift press for an EXECUTING check re-run at every
+  verifier invocation against moving HEAD — the plan's own corpus-era-drift
+  honesty note extends to ACTIVE plans mid-lifecycle (a probe correct at
+  approval hard-FAILs after its target is legitimately regenerated); (ii)
+  the #2261 clean-baseline ambiguity applied to a NARROWED RECOGNIZER
+  (all-pilot-lines-reject presented as precision is equally consistent with
+  inertness; separating evidence = real-corpus positive registrations from
+  OUTSIDE the recognizer's own authorship — the plan's qualifying probes
+  were self-authored fixtures; also ask whether the calibration scan CAN
+  measure FP-on-properly-piloted plans at all — few true pilot-gated waves
+  in the corpus makes a clean scan evidence of rarity, not precision);
+  (iii) satisfier-too-narrow inversion: a disclosed-FN framing on a
+  SATISFIER flips into an undisclosed-FP problem when most COMPLIANT
+  phrasings miss the alternation. Fact-check-revision plans get the
+  two-sided FACT-CHECK STATUS block with the inference-layer carve-out
+  pointed at the brief's own one-artifact-fit question. Settled-list
+  nuance: fence only the must-ask reversion (bare-token recognizer) while
+  explicitly opening plan-allowed micro-tuning as in-bounds finding space.
+  Numcheck PASS first try at ~99 KB (spans = plan + lensitems + brief +
+  empty prior; scaffold fully digit-free; "c71"/"c72"/"T17"/"V5" atom-free
+  letter-prefixed).
+  Methodology-lens sibling round on the same plan (deltas only — the entry
+  above carries the shared moves): (i) for any check that EXECUTES
+  extracted probes with a stated expectation arm, press the POST-RUN
+  EXPECTATION class as its own lead — a healthy plan's verification recipe
+  states values its OWN run will create, executed against today's committed
+  bytes (the approval-time twin of the era-drift press; walk whether either
+  escape phrase is TRUTHFUL for such a plan); (ii) satisfier GRANULARITY
+  inversion of the too-narrow probe: a whole-plan `re.search` satisfier
+  guarding a line-local defect (the re-pin regex's "dedicated…engine"
+  alternative) lets an unrelated sentence suppress the WARN plan-wide —
+  press coarse and narrow both; (iii) the concrete hole probe for
+  stdin-only jq execution claims: jq's include/import module system
+  consults filesystem search paths even with no file argument — ask what
+  VERDICT such a filter draws, not just whether the claim is overstated;
+  (iv) when the plan version exists BECAUSE a prior trace was
+  reasoned-not-executed, mandate the twin REPLAY the revision's measured
+  traces itself (quote-the-command grounding) — "measured this session" is
+  a claim class, not a settled fact. Numcheck PASS first try at ~169 KB
+  (spans = brief-inputs + lensitems + plan + empty prior; version-suffixed
+  workspace; run from repo root for the registry leg).

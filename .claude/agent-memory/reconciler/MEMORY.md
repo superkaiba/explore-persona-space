@@ -113,6 +113,8 @@
 
 ## Clean-result-critic + interp-critic calibration
 
+- [Claude interp verifies fix PROSE, not the H3 heading/caption](feedback_claude_interp_verifies_fix_prose_not_heading.md) — heading overclaimed "three reverse"; caption argmax check (#2552 r2)
+
 - [Lens 10 capsule cap not binding; Lens 11 same-H3 + Lens 2 generator-naming ARE](feedback_lens10_capsule_cap_not_binding_lens11_same_h3_binding.md) — #2564 crc r2; SPEC wins both directions
 - [Superlative rank claims + closure location requirements](feedback_superlative_rank_claims_and_closure_location_requirements.md) — compute both headroom definitions; uphold disposition-claims-not-landed, reject invented location demands (#2564 r2)
 - [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidates
