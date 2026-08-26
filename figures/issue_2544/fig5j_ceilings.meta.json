@@ -1,0 +1,384 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "949137a92df140ff",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:38:11Z",
+  "figsize": [
+    8.0,
+    4.0
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "Spearman\u2013Brown split-half reliability": 0.9773688523777182,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "Spearman\u2013Brown split-half reliability": 0.17133700583369263,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "Spearman\u2013Brown split-half reliability": 0.04052523566437064,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "Spearman\u2013Brown split-half reliability": 0.13853784079010206,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "Spearman\u2013Brown split-half reliability": 0.3145583238448297,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "Spearman\u2013Brown split-half reliability": 0.453273427096187,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "Spearman\u2013Brown split-half reliability": 0.30426018382853665,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "Spearman\u2013Brown split-half reliability": 0.2177767993405721,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "Spearman\u2013Brown split-half reliability": 0.1749802864172647,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "Spearman\u2013Brown split-half reliability": 0.36343016116194704,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "Spearman\u2013Brown split-half reliability": 0.39905682027035394,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "Spearman\u2013Brown split-half reliability": 0.5259434930776523,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "Spearman\u2013Brown split-half reliability": 0.4604858531705426,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "Spearman\u2013Brown split-half reliability": 0.8546660951528249,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "Spearman\u2013Brown split-half reliability": 0.8555549422693373,
+      "series": "0-shot ceiling",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "Spearman\u2013Brown split-half reliability": 0.9477545731200164,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "Spearman\u2013Brown split-half reliability": -0.010867260820824108,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "Spearman\u2013Brown split-half reliability": 0.05830039294103431,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "Spearman\u2013Brown split-half reliability": 0.2706042494549564,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "Spearman\u2013Brown split-half reliability": 0.21473051777173294,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "Spearman\u2013Brown split-half reliability": 0.610559630623686,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "Spearman\u2013Brown split-half reliability": 0.5487777135820212,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "Spearman\u2013Brown split-half reliability": 0.5675340288206367,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "Spearman\u2013Brown split-half reliability": 0.42826565993471744,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "Spearman\u2013Brown split-half reliability": 0.61562341681215,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "Spearman\u2013Brown split-half reliability": 0.6101258021132211,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "Spearman\u2013Brown split-half reliability": 0.6313774931684017,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "Spearman\u2013Brown split-half reliability": 0.6318799146938084,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "Spearman\u2013Brown split-half reliability": 0.8942674381879223,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "Spearman\u2013Brown split-half reliability": 0.8956882631403528,
+      "series": "4-shot ceiling",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "Spearman\u2013Brown split-half reliability": 0.9760804664307863,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "Spearman\u2013Brown split-half reliability": -0.019047722438646848,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "Spearman\u2013Brown split-half reliability": -0.029453917762516907,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "Spearman\u2013Brown split-half reliability": 0.12216846328857095,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "Spearman\u2013Brown split-half reliability": 0.1875106317946454,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "Spearman\u2013Brown split-half reliability": 0.4867045096584286,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "Spearman\u2013Brown split-half reliability": 0.35872166869215744,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "Spearman\u2013Brown split-half reliability": 0.2877010624689977,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "Spearman\u2013Brown split-half reliability": 0.2764512497448588,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "Spearman\u2013Brown split-half reliability": 0.4847747028864324,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "Spearman\u2013Brown split-half reliability": 0.06577686729668726,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "Spearman\u2013Brown split-half reliability": 0.21459359941895054,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "Spearman\u2013Brown split-half reliability": 0.2250931082743579,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "Spearman\u2013Brown split-half reliability": 0.5344273824547439,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "Spearman\u2013Brown split-half reliability": 0.7058763835899136,
+      "series": "paired \u0394 ceiling",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 45,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "repeat-generation ceilings per rung",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "Spearman\u2013Brown split-half reliability",
+        "legend_labels": [
+          "0-shot ceiling",
+          "4-shot ceiling",
+          "paired \u0394 ceiling"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "0-shot ceiling",
+      "4-shot ceiling",
+      "paired \u0394 ceiling"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

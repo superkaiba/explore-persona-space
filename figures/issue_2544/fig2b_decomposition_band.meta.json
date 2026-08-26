@@ -1,0 +1,610 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "707e0037993d4665",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:24Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.22146438933658952,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.21630990039061604,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.21938920368559134,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.22212419323658084,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.21644643763424187,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.21930017877772545,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.2218188243398025,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.23143598627119832,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.24926398492823754,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.24637356676416722,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2483807733276474,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.26704997861893953,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.4705814446338593,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.4700245079042086,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.46998504393382057,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.3060629425266579,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.3054265925230438,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.30467927208418877,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.2699506288135747,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.27134545219158046,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2734246109625753,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.2435488835565448,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2446174097566185,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.24438311671211554,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.254261386037659,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2649425695185247,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2745741049497257,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.241234587027215,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.24927153242932953,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.26288517730257777,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.24263503063437175,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2530344396613625,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2655940956875532,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.23414800769027366,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2450515343835259,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2631741377644965,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.22839946472141592,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.23072007154223295,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.24907028400911013,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.23585811415669478,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.23868326236518767,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2643935505296018,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.31180958117720625,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.30037079871225303,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.3063959459472626,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.3161572085758443,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.30907189103317134,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.31286787784924563,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.2434123307491174,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.24505190272316912,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2562890959529103,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.24035982155809632,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.24019055726863303,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.253972525455165,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.11615834047686058,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.07720836518317564,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.06912027542028232,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.13632141433103528,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.16825478969326202,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.19811541082869044,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.1534920208634014,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.18494508308325552,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.22205083456440167,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.20757593063863,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.24526884815219419,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2881597743151386,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.2288696971882871,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2633269985925114,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.3029007226353948,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.18261065963968437,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.21347477317017294,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.25456651683896714,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.1978776497968222,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.2275483561954844,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2563326392888784,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.21135643029755036,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.24091566649862928,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.2734093060255892,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.21968180120762126,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.24520340794824824,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.27690824799447344,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 28.0,
+      "pooled OOF R\u00b2": 0.18356729741993005,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 30.0,
+      "pooled OOF R\u00b2": 0.21178214621716418,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.24794467874470505,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 0.0,
+      "series": "layer* = 31",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "layer (dotted grey = full-attention layers in B6)": 31.0,
+      "pooled OOF R\u00b2": 1.0,
+      "series": "layer* = 31",
+      "_kind": "line",
+      "_group": 28
+    }
+  ],
+  "n_series": 29,
+  "total_points": 86,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "cross cells across the B6 band",
+        "xlabel": "layer (dotted grey = full-attention layers in B6)",
+        "ylabel": "pooled OOF R\u00b2",
+        "legend_labels": [
+          "layer* = 31"
+        ],
+        "annotations": [
+          "colC:D",
+          "colC:R",
+          "colC:S",
+          "colC:mid",
+          "colC:r0",
+          "colC:r1",
+          "colC:r2",
+          "colC:r3",
+          "colC:r4",
+          "colC:r5",
+          "colC:r6",
+          "colC:r7",
+          "colC:r8",
+          "colC:r9",
+          "rowR:D",
+          "rowR:R",
+          "rowR:S",
+          "rowR:mid",
+          "rowR:r0",
+          "rowR:r1",
+          "rowR:r2",
+          "rowR:r3",
+          "rowR:r4",
+          "rowR:r5",
+          "rowR:r6",
+          "rowR:r7",
+          "rowR:r8",
+          "rowR:r9"
+        ],
+        "xticklabels": [
+          "27.5",
+          "28.0",
+          "28.5",
+          "29.0",
+          "29.5",
+          "30.0",
+          "30.5",
+          "31.0",
+          "31.5"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      }
+    ],
+    "series": [
+      "layer* = 31"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

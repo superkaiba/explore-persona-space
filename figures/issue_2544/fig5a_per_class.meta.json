@@ -1,0 +1,491 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "3f974f9a29f245dc",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:44Z",
+  "figsize": [
+    8.5,
+    4.2
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3393355749265117,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.22206926065180344,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-class pooled OOF R\u00b2 at layer*": 0.19176150444545093,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2596238787149563,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-class pooled OOF R\u00b2 at layer*": 0.30425328071348723,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-class pooled OOF R\u00b2 at layer*": 0.23545315891600394,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-class pooled OOF R\u00b2 at layer*": 0.24538898759910244,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2430429601376406,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-class pooled OOF R\u00b2 at layer*": 0.24044524218579177,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.22709552880147488,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.25334516521984685,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.26368890926331034,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2414049737416728,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2634780080242918,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.27236583098768974,
+      "series": "generic",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3257682737599008,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.16952870845175783,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-class pooled OOF R\u00b2 at layer*": 0.16291811019211744,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3275034510424141,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-class pooled OOF R\u00b2 at layer*": 0.22372692190710697,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-class pooled OOF R\u00b2 at layer*": 0.23734351562286804,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-class pooled OOF R\u00b2 at layer*": 0.19835239988651654,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2103949917910839,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-class pooled OOF R\u00b2 at layer*": 0.21993375095486156,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.1396480168912393,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.6044978113207636,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.4103457240932862,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.30570990239906415,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.38870670437226273,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.40229958822328493,
+      "series": "gsm8k",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3857856163935135,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3417882266801755,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2532112263186088,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-class pooled OOF R\u00b2 at layer*": 0.28869936277397024,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-class pooled OOF R\u00b2 at layer*": 0.28992912260750725,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-class pooled OOF R\u00b2 at layer*": 0.23502939763003783,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3201583817269712,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-class pooled OOF R\u00b2 at layer*": 0.27583835304370097,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2444130941715823,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3082048627958186,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.21159280282769366,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.1749354620107968,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.1824757009019291,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.14837830646139105,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.11855477962037508,
+      "series": "mathcode",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.30825075594744966,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2882159795613859,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-class pooled OOF R\u00b2 at layer*": 0.2819976495572253,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-class pooled OOF R\u00b2 at layer*": 0.5937817118062025,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-class pooled OOF R\u00b2 at layer*": 0.5976963205141745,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-class pooled OOF R\u00b2 at layer*": 0.4344675559351011,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-class pooled OOF R\u00b2 at layer*": 0.4165523075286839,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-class pooled OOF R\u00b2 at layer*": 0.5304879051801842,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-class pooled OOF R\u00b2 at layer*": 0.24441506427276083,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.5565049428341642,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.6023772655514159,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-class pooled OOF R\u00b2 at layer*": 0.45592244473161014,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-class pooled OOF R\u00b2 at layer*": 0.4600235921141477,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.36778026144896436,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-class pooled OOF R\u00b2 at layer*": 0.3259011807472739,
+      "series": "mbpp",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-class formation curves D_c(T)",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "per-class pooled OOF R\u00b2 at layer*",
+        "legend_labels": [
+          "generic",
+          "gsm8k",
+          "mathcode",
+          "mbpp"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "generic",
+      "gsm8k",
+      "mathcode",
+      "mbpp"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

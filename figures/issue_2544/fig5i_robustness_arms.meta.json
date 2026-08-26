@@ -1,0 +1,981 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "dcd8627164fb4ffb",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:38:09Z",
+  "figsize": [
+    20.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.002343747773074223,
+      "error": 0.003455002813668341,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.02342436178284435,
+      "error": 0.004912807957131192,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.00516627372486389,
+      "error": 0.015097669906690876,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.024047174867168564,
+      "error": 0.01668202786061478,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010783825630893973,
+      "error": 0.009977238281746095,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.011805315328416888,
+      "error": 0.012420028917261473,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0001605343646702284,
+      "error": 0.01326630284227222,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010902783502628077,
+      "error": 0.020213983455283503,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0023163398444756567,
+      "error": 0.012913278081043408,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.011204614440863625,
+      "error": 0.01013277750327744,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.021779332566826626,
+      "error": 0.012212925351274037,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.009241553547757353,
+      "error": 0.018005999183616922,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0003359101099467132,
+      "error": 0.008602972628404468,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.008734581259609575,
+      "error": 0.012645410893690295,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.007154458965584531,
+      "error": 0.015727464642561865,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.03793506212428588,
+      "error": 0.014684112380823459,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.021267481360110696,
+      "error": 0.007659104316851234,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010359597060419112,
+      "error": 0.012352362635430509,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.012551755215162164,
+      "error": 0.01181369654579199,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.029734494363846786,
+      "error": 0.012659268263293794,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.008963540858525021,
+      "error": 0.00936230809355784,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0029595857375068757,
+      "error": 0.01367363707995726,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0051422798596492125,
+      "error": 0.010777332636224279,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.00221585463847751,
+      "error": 0.013315155925655384,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.007481014989045076,
+      "error": 0.0077288872392787065,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.012481244127122926,
+      "error": 0.009545543390439693,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.00025171214868524583,
+      "error": 0.005700976259847906,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0025162587781849544,
+      "error": 0.010027445204626388,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 28.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0029896357541778773,
+      "error": 0.019656432602861658,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 29.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.00920113950622492,
+      "error": 0.023161613475279567,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 30.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0017398725785083835,
+      "error": 0.0063421028400170824,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 31.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.03626014578914871,
+      "error": 0.03521513588279641,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 32.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.008288125659742573,
+      "error": 0.006090376921885073,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 33.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.009695336566679202,
+      "error": 0.0062187013096086634,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 34.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.005226285778354267,
+      "error": 0.007224398717241059,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 35.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.02379903733414912,
+      "error": 0.010933791644306072,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.002343747773074223,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.02342436178284435,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.00516627372486389,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.024047174867168564,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010783825630893973,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.011805315328416888,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0001605343646702284,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010902783502628077,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0023163398444756567,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.011204614440863625,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.021779332566826626,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.009241553547757353,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0003359101099467132,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.008734581259609575,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.007154458965584531,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.03793506212428588,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.021267481360110696,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010359597060419112,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.012551755215162164,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.029734494363846786,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.008963540858525021,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0029595857375068757,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0051422798596492125,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.00221585463847751,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.007481014989045076,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.012481244127122926,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.00025171214868524583,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0025162587781849544,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 28.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0029896357541778773,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 29.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.00920113950622492,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0017398725785083835,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 31.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.03626014578914871,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.008288125659742573,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 33.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.009695336566679202,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 34.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.005226285778354267,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 35.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.02379903733414912,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0010345380354680163,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.02871035096818043,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.020065155967929356,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0410507121927954,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.021080265443158778,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.024158930781222054,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.013622188537780766,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.030734651391827864,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.014808645598818134,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.02135280865319183,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.03478633895636274,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.027139082953397193,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.008807074613964435,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0033287745498099767,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.022550765647358924,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.024277265444275796,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.028958151537172083,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.022860297898897538,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.024484887890142394,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.04257836346786151,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.018481658070646795,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0159841300882834,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.015332659003486303,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010293402706304829,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.015365851483173302,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.021987033715081965,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0053435908811309074,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.012468068748400899,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 28.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.020473899492782766,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 29.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.012017760289737132,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 30.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.007933020577031649,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 31.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.07881263632645158,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 32.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.014400673225511538,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 33.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.015832229074205673,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 34.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0129131317434693,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 35.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.03498035748050665,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.005875467591868666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.018884735053918047,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.010130183845452395,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.007686656471565842,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0011257888796665887,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0006811270533008916,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.012910417146763673,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.009693315518739143,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.011017910563268682,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0010872536466369521,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.010360488253814665,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.008872915413836651,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0083988706428445,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.021962047237570614,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.008904163637764806,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.05364549020592271,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.013639942903469614,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0018444273719634783,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0008574947985584142,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.01725982694127392,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0002429581164688846,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 21.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.01136314407163112,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 22.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.006222006268962252,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 23.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.016336909145005938,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 24.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 9.192299538411056e-05,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.00289594693420258,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.006058361638564905,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 27.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.007586821660851877,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 28.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.018838965712940553,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 29.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.034305466660822,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 30.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.004751185103002517,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 31.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.008382364560858765,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 32.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.00221991938174139,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 33.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.0033948264549883457,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 34.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": 0.0015356656910128184,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 35.0,
+      "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k": -0.013112774191894506,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 144,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "order/set exemplar robustness (subset-vs-subset)",
+        "ylabel": "R\u00b2(arm) \u2212 R\u00b2(O1 companion), matched 6k",
+        "xticklabels": [
+          "r0\no2",
+          "r0\no3",
+          "r1\no2",
+          "r1\no3",
+          "r2\no2",
+          "r2\no3",
+          "r2\ns2",
+          "r2\ns3",
+          "r3\no2",
+          "r3\no3",
+          "r4\no2",
+          "r4\no3",
+          "r5\no2",
+          "r5\no3",
+          "r5\ns2",
+          "r5\ns3",
+          "r6\no2",
+          "r6\no3",
+          "r7\no2",
+          "r7\no3",
+          "r8\no2",
+          "r8\no3",
+          "r9\no2",
+          "r9\no3",
+          "mid\no2",
+          "mid\no3",
+          "main\no2",
+          "main\no3",
+          "main\ns2",
+          "main\ns3",
+          "S\no2",
+          "S\no3",
+          "D\no2",
+          "D\no3",
+          "R\no2",
+          "R\no3"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

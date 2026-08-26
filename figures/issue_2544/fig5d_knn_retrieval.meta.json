@@ -1,0 +1,280 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "6ae9a1077cfb4a10",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:55Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "retrieval acc@1 (held-out pool)": 0.7917308281731082,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "retrieval acc@1 (held-out pool)": 0.013351675599496687,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "retrieval acc@1 (held-out pool)": 0.020795363911809906,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "retrieval acc@1 (held-out pool)": 0.04561806054057097,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "retrieval acc@1 (held-out pool)": 0.046737052351491275,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "retrieval acc@1 (held-out pool)": 0.02123687622147943,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "retrieval acc@1 (held-out pool)": 0.030193723851429655,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "retrieval acc@1 (held-out pool)": 0.04166264223071653,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "retrieval acc@1 (held-out pool)": 0.05209098886098068,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "retrieval acc@1 (held-out pool)": 0.024968847444242197,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "retrieval acc@1 (held-out pool)": 0.13503921277617578,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "retrieval acc@1 (held-out pool)": 0.1243119815282081,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "retrieval acc@1 (held-out pool)": 0.1129735277532639,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "retrieval acc@1 (held-out pool)": 0.15556696626497288,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "retrieval acc@1 (held-out pool)": 0.16192774350513942,
+      "series": "kNN acc@1 (euclidean)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "retrieval acc@1 (held-out pool)": 0.8062511935057263,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "retrieval acc@1 (held-out pool)": 0.019617571208996796,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "retrieval acc@1 (held-out pool)": 0.031668118130286006,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "retrieval acc@1 (held-out pool)": 0.07399551568531215,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "retrieval acc@1 (held-out pool)": 0.07415380758355773,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "retrieval acc@1 (held-out pool)": 0.03168434472157002,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "retrieval acc@1 (held-out pool)": 0.05321132307762424,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "retrieval acc@1 (held-out pool)": 0.05899429176430348,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "retrieval acc@1 (held-out pool)": 0.0649081182418265,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "retrieval acc@1 (held-out pool)": 0.045477657254010206,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "retrieval acc@1 (held-out pool)": 0.18771875296743143,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "retrieval acc@1 (held-out pool)": 0.16305378715718524,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "retrieval acc@1 (held-out pool)": 0.21116987599518722,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "retrieval acc@1 (held-out pool)": 0.3145733280811412,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "retrieval acc@1 (held-out pool)": 0.32792820506201625,
+      "series": "kNN acc@1 (cosine)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "kNN retrieval of the true target",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "retrieval acc@1 (held-out pool)",
+        "legend_labels": [
+          "kNN acc@1 (euclidean)",
+          "kNN acc@1 (cosine)"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "kNN acc@1 (euclidean)",
+      "kNN acc@1 (cosine)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

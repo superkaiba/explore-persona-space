@@ -1,0 +1,393 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "a5d0f90db20c44db",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:38:04Z",
+  "figsize": [
+    8.5,
+    4.2
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.3406656508223148,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.22935952979361207,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.1957314761795269,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.26966692134350345,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.3057984905140483,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.23925589598807173,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2514490396915948,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.24973859931558695,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.24024205225368034,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2344602665433283,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2614545676735103,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.26471063743880174,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.24267376435018462,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.2628870027530944,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.27020532398684804,
+      "series": "headline (shared intersection)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.34061705186524005,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.22123939914302904,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.18647077292607472,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.2729455430628537,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.3066136343560032,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.24070215754973479,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2522333142123273,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2515247149883566,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.24025169457899265,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2352474378365217,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2624710309780339,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2652329893515316,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.24358026452427484,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.26118103433968254,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.2671720829077874,
+      "series": "trained-rungs-only intersection",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.01483816445151287,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": -0.1756720298002079,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": -0.1159804038450194,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.050410002489849726,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.0032528097234384434,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": -0.09785288418510985,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": -0.0451597376714854,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": -0.21628865834470234,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": -0.2588321299206877,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": -0.20357893416257067,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": -0.04945247775105388,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "pooled OOF R\u00b2 at layer*": -0.09295888958444043,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": -0.046495353947966,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": -0.24485652868293273,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": -0.22447225631383771,
+      "series": "identity+bias (trained-only rows)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.25248241849258946,
+      "series": "D(main), full unflagged rows",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 46,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "intersection-denominator sensitivity",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "pooled OOF R\u00b2 at layer*",
+        "legend_labels": [
+          "headline (shared intersection)",
+          "trained-rungs-only intersection",
+          "identity+bias (trained-only rows)",
+          "D(main), full unflagged rows"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ],
+    "series": [
+      "headline (shared intersection)",
+      "trained-rungs-only intersection",
+      "identity+bias (trained-only rows)",
+      "D(main), full unflagged rows"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

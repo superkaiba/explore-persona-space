@@ -1,0 +1,89 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "a9d7d28c13d4465f",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:38:06Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "pooled OOF R\u00b2 at layer*": 0.2586218855539376,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "pooled OOF R\u00b2 at layer*": 0.2341005014712444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.825,
+      "pooled OOF R\u00b2 at layer*": 0.2338222513389705,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "pooled OOF R\u00b2 at layer*": 0.15689681501189479,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "pooled OOF R\u00b2 at layer*": 0.17931078485883334,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.175,
+      "pooled OOF R\u00b2 at layer*": 0.18902437166072694,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "native-gen vs plain-render (matched rows)",
+        "ylabel": "pooled OOF R\u00b2 at layer*",
+        "legend_labels": [
+          "native chat render",
+          "plain render (matched 2k rows)"
+        ],
+        "xticklabels": [
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "native chat render",
+      "plain render (matched 2k rows)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

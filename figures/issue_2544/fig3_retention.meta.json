@@ -1,0 +1,1793 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "65fa6a69c9fd410c",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:28Z",
+  "figsize": [
+    11.5,
+    4.2
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -57.00136414842281,
+      "error": 3.3083189493112997,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -255.18945137382994,
+      "error": 3.165214600670371,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -474.00993584607477,
+      "error": 2.6373709245295256,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -166.5528680001899,
+      "error": 2.056684410022555,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -32.22400631823667,
+      "error": 0.35457161787578206,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -10.398864322571052,
+      "error": 0.2070463668846866,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -6.277248330414572,
+      "error": 0.11834001140027668,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -5.344678511865414,
+      "error": 0.11465299761810406,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.998599100355544,
+      "error": 0.09553674023745551,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.7746528756288852,
+      "error": 0.09477765716860229,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6521247810997338,
+      "error": 0.056926679963128834,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.3440943116116104,
+      "error": 0.10048482320954741,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.3172042092535463,
+      "error": 0.057198437343263325,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.1790506408005847,
+      "error": 0.057189844863272915,
+      "series": "\u03c1 direct(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.07097438749739485,
+      "error": 3.3083189493112997,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.6268238089917628,
+      "error": 3.165214600670371,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.5408863290646732,
+      "error": 2.6373709245295256,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.18270805014145,
+      "error": 2.056684410022555,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.190230880090952,
+      "error": 0.35457161787578206,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.0166065373962718,
+      "error": 0.2070463668846866,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.34040113392540977,
+      "error": 0.11834001140027668,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.9307365741837055,
+      "error": 0.11465299761810406,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.2169859849844955,
+      "error": 0.09553674023745551,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.27616249351573025,
+      "error": 0.09477765716860229,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.847283401619407,
+      "error": 0.056926679963128834,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.7572711882620902,
+      "error": 0.10048482320954741,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6568883668321555,
+      "error": 0.057198437343263325,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6627853005337235,
+      "error": 0.057189844863272915,
+      "series": "\u03c1 gl(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -45.192894797298706,
+      "error": 3.3083189493112997,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -42.58695035047616,
+      "error": 3.165214600670371,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -34.04380119505955,
+      "error": 2.6373709245295256,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -23.679860002396303,
+      "error": 2.056684410022555,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.4800324837374066,
+      "error": 0.35457161787578206,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.5968089720347733,
+      "error": 0.2070463668846866,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.025279278936212866,
+      "error": 0.11834001140027668,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.1929204143076582,
+      "error": 0.11465299761810406,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.20305996980143873,
+      "error": 0.09553674023745551,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.13510387182341657,
+      "error": 0.09477765716860229,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.8264962681299637,
+      "error": 0.056926679963128834,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5202089627966409,
+      "error": 0.10048482320954741,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.468499316218409,
+      "error": 0.057198437343263325,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.4893779449042211,
+      "error": 0.057189844863272915,
+      "series": "\u03c1 orth(i\u2192main)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -57.00136414842281,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -255.18945137382994,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -474.00993584607477,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -166.5528680001899,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -32.22400631823667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -10.398864322571052,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -6.277248330414572,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -5.344678511865414,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.998599100355544,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.7746528756288852,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6521247810997338,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.3440943116116104,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.3172042092535463,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.1790506408005847,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -61.59595466499986,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -275.8829392653291,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -513.4027637775728,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -181.0282616980093,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -35.01391460302708,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -11.504744772250138,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -6.8525442973825434,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -5.87965125876099,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -4.391953726698388,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.8689815939172092,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5873152349719025,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.7296937998597968,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.685380604382623,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.5476936402768366,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -53.070632538298945,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -237.37053278336901,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -440.30208431250975,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -154.2034479264227,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -29.715883458233616,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -9.4226072423957,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -5.790265554598816,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -4.893460271049822,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -3.6484778742951653,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.6962729624880017,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.7033592937841804,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.993979204587877,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.9704105395632476,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.836920660657457,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.07097438749739485,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.6268238089917628,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.5408863290646732,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.18270805014145,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.190230880090952,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.0166065373962718,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.34040113392540977,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.9307365741837055,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.2169859849844955,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.27616249351573025,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.847283401619407,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.7572711882620902,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6568883668321555,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6627853005337235,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.18213740095118494,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.7783352178034092,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.6722888128335793,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.4385068652541593,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.4740676877401155,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.2395204426169313,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.5803829388598915,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.2186326518943411,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.4729768010452866,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.4796583851971269,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.7580795026435804,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6649327052725881,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5959191734153905,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5984981589036219,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.036075828196719006,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.48189934935281437,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.41927089056122757,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.9661807790325148,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.9409964501833922,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.8264294169072602,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.13253504372949776,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.681753983935541,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.0032662658214657,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.11102272714162534,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.912863778064487,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.8243964853611706,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.7205562225303668,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.7312387413333868,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -45.192894797298706,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -42.58695035047616,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -34.04380119505955,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -23.679860002396303,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.4800324837374066,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.5968089720347733,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.025279278936212866,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.1929204143076582,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.20305996980143873,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.13510387182341657,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.8264962681299637,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5202089627966409,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.468499316218409,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.4893779449042211,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -48.771106220254374,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -45.93383008178317,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -36.86012050750711,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -25.866686710015546,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.863474112474714,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.8249819118091387,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.10061414323023163,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.3144645655124689,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.30438992051471175,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.031544782975112304,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.761878967079448,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.4021067757771954,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.4119342709318305,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.43205574609261704,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -42.154468321631775,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -39.60340088044243,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -31.58537865844806,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -21.753317889970436,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -2.15433087672315,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.4108891780397655,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.13606587957032173,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.08515857027626075,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.11331644003980075,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.2211000973123169,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.8757323270057057,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.6030764221962902,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5263311456183571,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.5464354358191629,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.017127584746378367,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.03689098281736832,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.020269065868204993,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.011949336384173963,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.012789156228941941,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.008589879471213922,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.0022374562301565354,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.016989143307635693,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.011115579608951591,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.011533288513790705,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.002763646863641505,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.008282938857598428,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.020622133184337574,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.0066110172395616425,
+      "series": "shuffled_correspondence null (max)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.22409072524184956,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.6687433930271868,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.7122174091913855,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.282418468376083,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.2795221134389552,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.2264665202822835,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.7240327334565814,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.1386767961434767,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -1.346885680153771,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.6395117089027215,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.2014963400111593,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.08773247501088068,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.012935281165479703,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": -0.010942566102938416,
+      "series": "spectrum_matched null (max)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 0.0,
+      "series": "T_c = mid (\u03c1_orth \u2265 0.8 suffix)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03c1 = transfer R\u00b2 / Q(main, main)": 1.0,
+      "series": "T_c = mid (\u03c1_orth \u2265 0.8 suffix)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "\u03c1 gl": -2.313206698875946,
+      "error": 0.6472329154863603,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "\u03c1 gl": 0.05748022773361567,
+      "error": 0.06383074296788194,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "\u03c1 gl": 0.34276580576438126,
+      "error": 0.04872241352586304,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "\u03c1 gl": 0.6964264248983147,
+      "error": 0.05298912665848943,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "\u03c1 gl": 0.8165114480402307,
+      "error": 0.025922311346260607,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 5.0,
+      "\u03c1 gl": 0.6382655600107778,
+      "error": 0.08608687609211446,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "\u03c1 gl": 0.5790527240723118,
+      "error": 0.08978270856071358,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 7.0,
+      "\u03c1 gl": 0.622349063477279,
+      "error": 0.07892721635864175,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "\u03c1 gl": 0.5251203049882511,
+      "error": 0.06572516617752558,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 9.0,
+      "\u03c1 gl": -0.09861130006199528,
+      "error": 0.16119431792067765,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "\u03c1 gl": 0.847283401619407,
+      "error": 0.07739213771045333,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 11.0,
+      "\u03c1 gl": 0.778539842788277,
+      "error": 0.112869954689303,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 12.0,
+      "\u03c1 gl": 0.758470736924397,
+      "error": 0.05748327234402156,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 13.0,
+      "\u03c1 gl": 0.9661459782739631,
+      "error": 0.022822852438282193,
+      "series": "\u03c1 gl (adjacent)",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "\u03c1 gl": -2.313206698875946,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "\u03c1 gl": 0.05748022773361567,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "\u03c1 gl": 0.34276580576438126,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "\u03c1 gl": 0.6964264248983147,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "\u03c1 gl": 0.8165114480402307,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "\u03c1 gl": 0.6382655600107778,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "\u03c1 gl": 0.5790527240723118,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "\u03c1 gl": 0.622349063477279,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "\u03c1 gl": 0.5251203049882511,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 9.0,
+      "\u03c1 gl": -0.09861130006199528,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 10.0,
+      "\u03c1 gl": 0.847283401619407,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 11.0,
+      "\u03c1 gl": 0.778539842788277,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 12.0,
+      "\u03c1 gl": 0.758470736924397,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 13.0,
+      "\u03c1 gl": 0.9661459782739631,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "\u03c1 gl": -3.0375973813403743,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "\u03c1 gl": -0.0062890314079026635,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "\u03c1 gl": 0.2944652809519658,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "\u03c1 gl": 0.6383938421012794,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "\u03c1 gl": 0.7896875042287069,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "\u03c1 gl": 0.5505919357056602,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "\u03c1 gl": 0.4808394017643245,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "\u03c1 gl": 0.5316335364849984,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "\u03c1 gl": 0.45731018123549744,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 9.0,
+      "\u03c1 gl": -0.27515576723451257,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 10.0,
+      "\u03c1 gl": 0.7580795026435804,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 11.0,
+      "\u03c1 gl": 0.6570679197344627,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 12.0,
+      "\u03c1 gl": 0.698033102940525,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 13.0,
+      "\u03c1 gl": 0.9434938556752357,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "\u03c1 gl": -1.7431315503676537,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "\u03c1 gl": 0.12137245452786122,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "\u03c1 gl": 0.39191010800369186,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "\u03c1 gl": 0.7443720954182582,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "\u03c1 gl": 0.8415321269212281,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "\u03c1 gl": 0.7227656878898892,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "\u03c1 gl": 0.6604048188857516,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "\u03c1 gl": 0.689487969202282,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "\u03c1 gl": 0.5887605135905486,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 9.0,
+      "\u03c1 gl": 0.047232868606842726,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 10.0,
+      "\u03c1 gl": 0.912863778064487,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 11.0,
+      "\u03c1 gl": 0.8828078291130687,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 12.0,
+      "\u03c1 gl": 0.8129996476285681,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 13.0,
+      "\u03c1 gl": 0.9891395605518001,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "\u03c1 gl": 0.893,
+      "series": "#1902 median adjacent (0.893)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "\u03c1 gl": 0.893,
+      "series": "#1902 median adjacent (0.893)",
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 256,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "retention onto the final base map",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "\u03c1 = transfer R\u00b2 / Q(main, main)",
+        "legend_labels": [
+          "shuffled_correspondence null (max)",
+          "spectrum_matched null (max)",
+          "T_c = mid (\u03c1_orth \u2265 0.8 suffix)",
+          "\u03c1 direct(i\u2192main)",
+          "\u03c1 gl(i\u2192main)",
+          "\u03c1 orth(i\u2192main)"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "\u2212600",
+          "\u2212500",
+          "\u2212400",
+          "\u2212300",
+          "\u2212200",
+          "\u2212100",
+          "0",
+          "100"
+        ]
+      },
+      {
+        "title_left": "adjacent-transition retention",
+        "ylabel": "\u03c1 gl",
+        "legend_labels": [
+          "#1902 median adjacent (0.893)",
+          "\u03c1 gl (adjacent)"
+        ],
+        "xticklabels": [
+          "r0\u2192r1",
+          "r1\u2192r2",
+          "r2\u2192r3",
+          "r3\u2192r4",
+          "r4\u2192r5",
+          "r5\u2192r6",
+          "r6\u2192r7",
+          "r7\u2192r8",
+          "r8\u2192r9",
+          "r9\u2192mid",
+          "mid\u2192main",
+          "main\u2192S",
+          "S\u2192D",
+          "D\u2192R"
+        ],
+        "yticklabels": [
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      }
+    ],
+    "series": [
+      "shuffled_correspondence null (max)",
+      "spectrum_matched null (max)",
+      "T_c = mid (\u03c1_orth \u2265 0.8 suffix)",
+      "\u03c1 direct(i\u2192main)",
+      "\u03c1 gl(i\u2192main)",
+      "\u03c1 orth(i\u2192main)",
+      "#1902 median adjacent (0.893)",
+      "\u03c1 gl (adjacent)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,1196 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "6a3e017c44c84b83",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:31Z",
+  "figsize": [
+    16.560000000000002,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.9499860849906987,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.3851150927441415,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -3.3172042092535463,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.9762653042517563,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -3.1790506408005847,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.2421003964058006,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -3.3440943116116104,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -6.50030764324756,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -6.150714286649332,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -4.986932477664422,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5218852566567852,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.4237489061648545,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -9.683992737316531,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -21.817821007324447,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -12.612342875957948,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -8.065249996934547,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -14.155424401687977,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -13.179459362883637,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -10.236077824758759,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -8.400968277937139,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.7432196907328632,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6521247810997338,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.7968782798758447,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -57.00136414842281,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -11.035263607494691,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -255.18945137382994,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -3.888760273239394,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -21.902349855568957,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 28.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -474.00993584607477,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 29.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -18.493703118663895,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 30.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -7.896076471964485,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 31.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -166.5528680001899,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 32.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -6.409676568256721,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 33.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -25.515668457788177,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 34.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -32.22400631823667,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 35.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -7.0458763504642885,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 36.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -16.74108786509084,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 37.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -10.398864322571052,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 38.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -2.0892090901247946,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 39.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -3.2955038041364237,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 40.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -6.277248330414572,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 41.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -2.640013546887895,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 42.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -5.671379876551109,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 43.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -5.344678511865414,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 44.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -4.774773060468959,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 45.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -8.43698017119085,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 46.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -3.998599100355544,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 47.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -9.673853771270089,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 48.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -5.664312106057894,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 49.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.7746528756288852,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 50.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.9114608865408702,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 51.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -6.9077675638157885,
+      "series": "direct",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.9661459782739631,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.83952326235549,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6568883668321555,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.9946691377204081,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6627853005337235,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.758470736924397,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7572711882620902,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7031480879852331,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7175936832499331,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.778539842788277,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.8973746612076691,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.19338042804539302,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.7320749594346947,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.7893839877007768,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.5544346396932052,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.0034038276720286757,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.37508186726230813,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.1251983966267431,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.3275066654526932,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.47161217146918305,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.06847181141067754,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.847283401619407,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.053188081369742325,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.07097438749739485,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -2.313206698875946,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.6268238089917628,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.1109046081882632,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.05748022773361567,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 28.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.5408863290646732,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 29.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.06164889111955175,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 30.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.34276580576438126,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 31.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.18270805014145,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 32.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.18240228042339085,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 33.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6964264248983147,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 34.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.190230880090952,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 35.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7397049976810738,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 36.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.8165114480402307,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 37.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.0166065373962718,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 38.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7112290480851462,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 39.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6382655600107778,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 40.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.34040113392540977,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 41.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7234707455036259,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 42.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5790527240723118,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 43.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.9307365741837055,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 44.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.7011132624979246,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 45.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.622349063477279,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 46.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.2169859849844955,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 47.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6779044265573928,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 48.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5251203049882511,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 49.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.27616249351573025,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 50.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.09861130006199528,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 51.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5704270053851573,
+      "series": "gl",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.9676645382973832,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.8129772071792507,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.468499316218409,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.9942981556824853,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.4893779449042211,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.6960489349204511,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5202089627966409,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.3730628210407075,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.4164873335615479,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5625126454863993,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.8663635605548211,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.5623329759589217,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.2019484663117284,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -1.1976647183183997,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.7740350973950021,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.2742285148491156,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.7149288754179476,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.12566031805319033,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.5506106231188679,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.7916480945643106,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.3126706134264768,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.8264962681299637,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.23112496978329503,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -45.192894797298706,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -4.375054108484559,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -42.58695035047616,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.8440877392876288,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.972871807074461,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 28.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -34.04380119505955,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 29.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.5671586727686231,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 30.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.0265572947756895,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 31.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -23.679860002396303,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 32.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.14958600461034222,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 33.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -2.3981115871869747,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 34.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -2.4800324837374066,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 35.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.01729843245726213,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 36.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.15307575546059454,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 37.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.5968089720347733,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 38.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5574049912603138,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 39.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5027876174862386,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 40.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.025279278936212866,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 41.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5519413523595338,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 42.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.43112407657074026,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 43.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.1929204143076582,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 44.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5492189985423778,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 45.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5450982474287109,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 46.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": -0.20305996980143873,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 47.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5871048546313724,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 48.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5127789620513371,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 49.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.13510387182341657,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 50.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.10496643847776056,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 51.0,
+      "\u03c1 = transfer R\u00b2 / Q(j, j)": 0.5786429372659925,
+      "series": "orth",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 156,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-pair retention (all fitted pairs)",
+        "ylabel": "\u03c1 = transfer R\u00b2 / Q(j, j)",
+        "legend_labels": [
+          "direct",
+          "gl",
+          "orth"
+        ],
+        "xticklabels": [
+          "D\u2192R",
+          "D\u2192S",
+          "D\u2192main",
+          "R\u2192D",
+          "R\u2192main",
+          "S\u2192D",
+          "S\u2192main",
+          "main\u2192D",
+          "main\u2192R",
+          "main\u2192S",
+          "main\u2192mid",
+          "main\u2192r0",
+          "main\u2192r1",
+          "main\u2192r2",
+          "main\u2192r3",
+          "main\u2192r4",
+          "main\u2192r5",
+          "main\u2192r6",
+          "main\u2192r7",
+          "main\u2192r8",
+          "main\u2192r9",
+          "mid\u2192main",
+          "mid\u2192r9",
+          "r0\u2192main",
+          "r0\u2192r1",
+          "r1\u2192main",
+          "r1\u2192r0",
+          "r1\u2192r2",
+          "r2\u2192main",
+          "r2\u2192r1",
+          "r2\u2192r3",
+          "r3\u2192main",
+          "r3\u2192r2",
+          "r3\u2192r4",
+          "r4\u2192main",
+          "r4\u2192r3",
+          "r4\u2192r5",
+          "r5\u2192main",
+          "r5\u2192r4",
+          "r5\u2192r6",
+          "r6\u2192main",
+          "r6\u2192r5",
+          "r6\u2192r7",
+          "r7\u2192main",
+          "r7\u2192r6",
+          "r7\u2192r8",
+          "r8\u2192main",
+          "r8\u2192r7",
+          "r8\u2192r9",
+          "r9\u2192main",
+          "r9\u2192mid",
+          "r9\u2192r8"
+        ],
+        "yticklabels": [
+          "\u2212500",
+          "\u2212400",
+          "\u2212300",
+          "\u2212200",
+          "\u2212100",
+          "0",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "direct",
+      "gl",
+      "orth"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

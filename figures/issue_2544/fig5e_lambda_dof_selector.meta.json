@@ -1,0 +1,1167 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "f9b7331dd8af4793",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:59Z",
+  "figsize": [
+    10.5,
+    4.0
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03bb* per fold": 3162.2776601683795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03bb* per fold": 3162.2776601683795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03bb* per fold": 3162.2776601683795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03bb* per fold": 3162.2776601683795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03bb* per fold": 3162.2776601683795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "\u03bb* per fold": 3162.2776601683795,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "\u03bb* per fold": 10000.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "dof per fold": 1485.4004038119833,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "dof per fold": 1469.4423153949806,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "dof per fold": 1492.9606524207588,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "dof per fold": 1498.9173941361596,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "dof per fold": 1484.0400749329137,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "dof per fold": 1475.2466340246644,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "dof per fold": 464.04012339697067,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "dof per fold": 461.11647777578514,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "dof per fold": 466.8466380032106,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "dof per fold": 471.9925263146732,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "dof per fold": 475.42418375162623,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "dof per fold": 463.0894578439995,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "dof per fold": 718.9713399846689,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "dof per fold": 714.9724744575876,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "dof per fold": 729.4117752961205,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "dof per fold": 732.320554537134,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "dof per fold": 735.1103558525272,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "dof per fold": 720.2001348170414,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "dof per fold": 840.0249200962298,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "dof per fold": 836.6959502395002,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "dof per fold": 854.9426520134064,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "dof per fold": 858.8158350490719,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "dof per fold": 864.3351840501473,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "dof per fold": 843.2912424076125,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "dof per fold": 887.0490034802534,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "dof per fold": 880.9382954459325,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "dof per fold": 902.8185740486564,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "dof per fold": 904.1935510672599,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "dof per fold": 911.8437052810727,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "dof per fold": 888.5082335039028,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "dof per fold": 903.389705404307,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "dof per fold": 898.4221483149433,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "dof per fold": 918.4738225517849,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "dof per fold": 920.576673744167,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "dof per fold": 928.83705546529,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "dof per fold": 905.3293378169401,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "dof per fold": 904.3127496127834,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "dof per fold": 902.269235537799,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "dof per fold": 921.3481269289641,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "dof per fold": 925.785936522198,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "dof per fold": 931.5698833577437,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "dof per fold": 909.3492784935785,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "dof per fold": 902.7091913216002,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "dof per fold": 900.8573470620378,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "dof per fold": 919.7142322435006,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "dof per fold": 922.4937460515155,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "dof per fold": 932.3181096224166,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "dof per fold": 908.5284646010075,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "dof per fold": 896.7642759950429,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "dof per fold": 893.6656084867682,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "dof per fold": 913.1612837028241,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "dof per fold": 916.9715225163945,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "dof per fold": 923.9513236713473,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "dof per fold": 901.1528458008204,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "dof per fold": 853.0018607520814,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "dof per fold": 850.6911963450952,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "dof per fold": 868.4488939865088,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "dof per fold": 871.797607601125,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "dof per fold": 880.8001686182183,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "dof per fold": 858.2535693056337,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "dof per fold": 878.7236149670711,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "dof per fold": 878.2158903204274,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "dof per fold": 894.5022791000965,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "dof per fold": 898.0804753451703,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "dof per fold": 902.6612750174305,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "dof per fold": 885.6700134753347,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "dof per fold": 899.5048294107673,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "dof per fold": 897.319272260286,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "dof per fold": 918.200638537478,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "dof per fold": 919.967674620955,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "dof per fold": 924.8216721901582,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "dof per fold": 908.0417483928643,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "dof per fold": 922.1334237894957,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "dof per fold": 922.4140419550573,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "dof per fold": 935.9559838663256,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "dof per fold": 944.3220130388906,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "dof per fold": 943.5086113404541,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "dof per fold": 932.6702880233757,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "dof per fold": 953.651387893133,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "dof per fold": 954.1361850742228,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "dof per fold": 967.6396057339136,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "dof per fold": 976.9651464979165,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "dof per fold": 975.3807935029288,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "dof per fold": 964.3357174130582,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "dof per fold": 951.0436647305595,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "dof per fold": 951.6623449812178,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "dof per fold": 965.0625464002292,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "dof per fold": 974.2061308029288,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "dof per fold": 973.2082055210142,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "dof per fold": 961.7337118789391,
+      "_kind": "scatter",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 180,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "selected ridge \u03bb*",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "\u03bb* per fold",
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$"
+        ]
+      },
+      {
+        "title_left": "effective dof (cap 0.9\u00b7n)",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "dof per fold",
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "400",
+          "600",
+          "800",
+          "1000",
+          "1200",
+          "1400",
+          "1600"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,549 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "44fee20a8b0144db",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:38:02Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "D_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "R_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "S_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "main_k1",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "main_k16",
+      "fraction over window": 5.555555555555556e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "main_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mid_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r0_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r1_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r2_k1",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r2_k16",
+      "fraction over window": 5.555555555555556e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r2_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r3_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r4_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r5_k1",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r5_k16",
+      "fraction over window": 0.00016666666666666666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r5_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r6_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r7_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r8_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "r9_k4",
+      "fraction over window": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "tokens": 816.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "tokens": 774.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "tokens": 678.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "tokens": 337.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "tokens": 1958.5,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "tokens": 703.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "tokens": 679.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "tokens": 1524.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "tokens": 896.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "tokens": 268.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "tokens": 1894.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "tokens": 577.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "tokens": 708.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "tokens": 680.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "tokens": 301.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "tokens": 1981.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "tokens": 707.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "tokens": 662.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "tokens": 683.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "tokens": 676.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "tokens": 685.0,
+      "series": "p50 prompt+answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "tokens": 1520.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "tokens": 1499.1000000000004,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "tokens": 1034.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "tokens": 808.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "tokens": 2373.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "tokens": 1174.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "tokens": 1114.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "tokens": 1765.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "tokens": 1594.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "tokens": 1144.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "tokens": 2520.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "tokens": 1163.2000000000007,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "tokens": 1068.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "tokens": 1077.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "tokens": 980.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "tokens": 2454.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "tokens": 1340.1000000000004,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "tokens": 1041.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "tokens": 1096.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "tokens": 1076.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "tokens": 1200.0,
+      "series": "p90",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "tokens": 4096.0,
+      "series": "sliding window",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "tokens": 4096.0,
+      "series": "sliding window",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 65,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "over-window fraction per (rung, k), window=4096",
+        "ylabel": "fraction over window",
+        "xticklabels": [
+          "D_k4",
+          "R_k4",
+          "S_k4",
+          "main_k1",
+          "main_k16",
+          "main_k4",
+          "mid_k4",
+          "r0_k4",
+          "r1_k4",
+          "r2_k1",
+          "r2_k16",
+          "r2_k4",
+          "r3_k4",
+          "r4_k4",
+          "r5_k1",
+          "r5_k16",
+          "r5_k4",
+          "r6_k4",
+          "r7_k4",
+          "r8_k4",
+          "r9_k4"
+        ],
+        "yticklabels": [
+          "0.00000",
+          "0.00002",
+          "0.00004",
+          "0.00006",
+          "0.00008",
+          "0.00010",
+          "0.00012",
+          "0.00014",
+          "0.00016",
+          "0.00018"
+        ]
+      },
+      {
+        "title_left": "sequence-length percentiles",
+        "ylabel": "tokens",
+        "legend_labels": [
+          "p50 prompt+answer tokens",
+          "p90",
+          "sliding window"
+        ],
+        "xticklabels": [
+          "D_k4",
+          "R_k4",
+          "S_k4",
+          "main_k1",
+          "main_k16",
+          "main_k4",
+          "mid_k4",
+          "r0_k4",
+          "r1_k4",
+          "r2_k1",
+          "r2_k16",
+          "r2_k4",
+          "r3_k4",
+          "r4_k4",
+          "r5_k1",
+          "r5_k16",
+          "r5_k4",
+          "r6_k4",
+          "r7_k4",
+          "r8_k4",
+          "r9_k4"
+        ],
+        "yticklabels": [
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000",
+          "3500",
+          "4000",
+          "4500"
+        ]
+      }
+    ],
+    "series": [
+      "p50 prompt+answer tokens",
+      "p90",
+      "sliding window"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

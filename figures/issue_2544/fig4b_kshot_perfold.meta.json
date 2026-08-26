@@ -1,0 +1,691 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "c4e77676b32e475e",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:41Z",
+  "figsize": [
+    8.5,
+    4.0
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07046932293712171,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.124437260879942,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06401817588409753,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.13624471331844434,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0852679518660846,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.12725937466753756,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": -0.04775601935949236,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": -0.06893559494303114,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": -0.03939555091354385,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.01024516172565737,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": 0.012878225029908208,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "per-fold \u0394 R\u00b2 at layer*": -0.025412609762473393,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-fold \u0394 R\u00b2 at layer*": 0.11414517024377657,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-fold \u0394 R\u00b2 at layer*": 0.11169355068614484,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-fold \u0394 R\u00b2 at layer*": 0.12681924285918633,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-fold \u0394 R\u00b2 at layer*": 0.04101052547190154,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-fold \u0394 R\u00b2 at layer*": 0.01968099395600542,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "per-fold \u0394 R\u00b2 at layer*": 0.09214069477958586,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-fold \u0394 R\u00b2 at layer*": 0.03351063085930439,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-fold \u0394 R\u00b2 at layer*": 0.04279448868594249,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-fold \u0394 R\u00b2 at layer*": 0.012159827314602523,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-fold \u0394 R\u00b2 at layer*": 0.03538847727429828,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-fold \u0394 R\u00b2 at layer*": 0.03386997139675274,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "per-fold \u0394 R\u00b2 at layer*": 0.03589829661430355,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-fold \u0394 R\u00b2 at layer*": 0.03301461250713156,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-fold \u0394 R\u00b2 at layer*": 0.02651584840665866,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-fold \u0394 R\u00b2 at layer*": 0.000607710641782333,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0033778020221991722,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-fold \u0394 R\u00b2 at layer*": -0.0017362405892995536,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "per-fold \u0394 R\u00b2 at layer*": 0.024206065057067683,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-fold \u0394 R\u00b2 at layer*": 0.05091473568425964,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-fold \u0394 R\u00b2 at layer*": 0.08543820200664265,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-fold \u0394 R\u00b2 at layer*": 0.04957575138287085,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-fold \u0394 R\u00b2 at layer*": 0.09813003777453622,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-fold \u0394 R\u00b2 at layer*": 0.05570716534449571,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07280361776235222,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06900438784079488,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06986908245290102,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-fold \u0394 R\u00b2 at layer*": 0.08191254776470036,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07483283647659489,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-fold \u0394 R\u00b2 at layer*": 0.055708403349110425,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "per-fold \u0394 R\u00b2 at layer*": 0.05665019364748225,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-fold \u0394 R\u00b2 at layer*": 0.08916981870094709,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0689219275413876,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-fold \u0394 R\u00b2 at layer*": 0.10556738965042445,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-fold \u0394 R\u00b2 at layer*": 0.09501680987938033,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0585286715919453,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06538069463621954,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-fold \u0394 R\u00b2 at layer*": 0.04522719534839492,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-fold \u0394 R\u00b2 at layer*": 0.05817579908030557,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-fold \u0394 R\u00b2 at layer*": 0.04384428642093263,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-fold \u0394 R\u00b2 at layer*": 0.10647562137468136,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-fold \u0394 R\u00b2 at layer*": 0.025259273723042597,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0723096023466473,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.11849384159943932,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0958785903733711,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07314417522979899,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.1129751765098409,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.09298956196718966,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.11335082559001408,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.11148641890137878,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0677464646084629,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.08889925924357389,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.18913292144193083,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0896550360185644,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07292524493454255,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.13364949590109643,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.09406364904849651,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06462685170588767,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.11464640170480622,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.05371818999926947,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "per-fold \u0394 R\u00b2 at layer*": 0.10593194314111143,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06939424281101003,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06556855095165215,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06856902211990934,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.12422874469523071,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.09454016332638893,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06528393247926034,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.058343103042269195,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07641670620705177,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.00045217347103110317,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0653504549181203,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.03269456045192287,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.08801019859999182,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.0380614450653467,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.06468638343178779,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": -0.019402990151245914,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.04800557621855617,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.02434914775268071,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "per-fold \u0394 R\u00b2 at layer*": 0.07566217055316982,
+      "_kind": "scatter",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 90,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "per-fold \u0394 (4-shot \u2212 0-shot)",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "per-fold \u0394 R\u00b2 at layer*",
+        "annotations": [
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5",
+          "f0",
+          "f1",
+          "f2",
+          "f3",
+          "f4",
+          "f5"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

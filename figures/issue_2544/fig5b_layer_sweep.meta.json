@@ -1,0 +1,1890 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "4594b296810f4e9a",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:48Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.20927455135911346,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.30983474187795595,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.33001196853389014,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.33933445454804106,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.34516649018436296,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.34732044265647,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.3480073430523466,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.34780713899665516,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.3473607787766069,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.34618472760498087,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.34533199661241254,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.34388560229432374,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.3435147897952625,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.34246404462750474,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.3417507950464129,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.34071170503008746,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.34058468511023804,
+      "series": "r0",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.12593849115748557,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.18078582866564255,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.17042195420173564,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.1619767046936331,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.15797579309262008,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.15968949637282315,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.16126591623404865,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.17480754473824792,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.18910225597593905,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.2033727742841407,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.20906193800831713,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.212837163853002,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.2163455207783458,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.21898089120218903,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.22279025006878433,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.22694530821710682,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.22882497402352658,
+      "series": "r1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.12564339801571825,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.12877739118235912,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.11548649269109239,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.12021270216439922,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.11859170994353195,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.11529865406926712,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.12146794020375888,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.12060007089909221,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.1218430822976193,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.14588035908124464,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.15616902231636434,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.1679891438972433,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.16973912251308057,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.1750690088807023,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.18133740471179488,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.18997352726359512,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.19578191670789524,
+      "series": "r2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.11563513912622023,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.12035067059249915,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.11754724528066884,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.13544750387830434,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.1405074046242119,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.14323102849604116,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.16235880189951993,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.1637452078688612,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.17469438996056041,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.19372341183999103,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.2125261242891446,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.2289504936740599,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.23353731912876907,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.24225304170069747,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.25541133912073954,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.2632611910662372,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.2691274514558836,
+      "series": "r3",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.07269530267606672,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.10874292003946096,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.12449606024292131,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.15053918614329811,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.16362792491258704,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.17605216869072687,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.19440775514674663,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.19387355370543616,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.20146967301361782,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.21850090702965094,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.22474919043597716,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.2345349131022701,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.23746004909263746,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.25106191182450593,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.2771553351900738,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.29717779296306596,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.3053968688786851,
+      "series": "r4",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.030026526591125483,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.07550682974530229,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.0963449039596632,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.1213243205816422,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.1408415036506599,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.14542378449995147,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.15523384109399124,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.15889487724045295,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.1661182691154372,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.18103191766569765,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.18052754307132374,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.18600381044115316,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.1841602443620587,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.18802387036028223,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.1998772671326291,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.21960154628200323,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.23871603618943676,
+      "series": "r5",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.04701752680671671,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.0809570320213607,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.11053277930808694,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.14004618165149083,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.1550595822837559,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.16451793698596356,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.17044012030900574,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.17164743419199088,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.17957932840118832,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.200311779159053,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.201994166984634,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.20623305669504377,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.20396887212797934,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.20552275317876983,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.21211557981794218,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.2349413040280244,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.25148465470326525,
+      "series": "r6",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.054972794033262384,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.08587312513193972,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.11966801005740912,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.1566966193991843,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.18288585191004,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.19706128333851408,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.20904406843916978,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.201458794308242,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.2084056287469212,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.22892511592599668,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.23162355746748134,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.23200006083938413,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.2224015002234901,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.21632161529182267,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.21452330359157398,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.23207861085351664,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.24932089360715204,
+      "series": "r7",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.07398089164576924,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.10632904213933683,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.13951228767706672,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.16647606048222408,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.19607409050415592,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.20881443700725766,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.22004869328727328,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.21778377475455368,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.22369175173218644,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.24641455701416917,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.2492523343955958,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.24609163976129192,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.2348564250019668,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.22653574067638074,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.2212067434589816,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.22879156453714597,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.23985128907674527,
+      "series": "r8",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.07052698894966,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.09136376641528897,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.12192331724371684,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.14497206732761855,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.15952999871939066,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.173774345787184,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.17767072214765073,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.1784831763009833,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.18799117998310558,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.2071598962217223,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.20808740322794556,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.2054636282329116,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.19928590146988706,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.19288552742084522,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.18862483305473707,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.1991918059025351,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.2339745891589849,
+      "series": "r9",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.10751903576714404,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.13651258963456708,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.1655939451180633,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.19452699149346384,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.1994797265375489,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.20888449922636565,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.2132780946203962,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.19627069511271764,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.17488613308760403,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.19040399894135432,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.1912665655808426,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.20941292967034741,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.215948792946015,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.22141533648221948,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.2243876108223141,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.23746421949996155,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.2615938065381933,
+      "series": "mid",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.1064341525483355,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.1433897809828262,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.17853060354852818,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.21994500724697333,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.22421792542291466,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.23772159433285456,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.24338067907590966,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.25769779529427717,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.2642714580412125,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.2838478181598012,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.2729920062226409,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.2744995830882981,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.2677276947633809,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.26346006228876784,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.2549478460337537,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.251295804405462,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.26482164797020463,
+      "series": "main",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.0946678993293006,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.1349062058537937,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.16684430786401375,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.1990515956551132,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.19908634483911974,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.21029642746852822,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.20828219279060348,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.21900219677585822,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.22150308743731376,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.2422809123472563,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.2386318728710122,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.24093401482687882,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.22922234864002505,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.22806420151216888,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.2238484444688599,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.23018684378699705,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.24312521079639257,
+      "series": "S",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.11383299711178572,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.1684278560000599,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.21125984143446744,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.25628480704475104,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.26364116511627106,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.28514180277446555,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.2912784801610336,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.30878557656831573,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.31244524523917433,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.33058072961650237,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.3174167077402437,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.3154710554585696,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.2972919816610121,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.28931686655294436,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.27397979653026594,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.2653569485093443,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.26324187903073415,
+      "series": "D",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 0.0,
+      "mean bootstrap R\u00b2": 0.11847031373747292,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 2.0,
+      "mean bootstrap R\u00b2": 0.1693206750535523,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 4.0,
+      "mean bootstrap R\u00b2": 0.21044965548526873,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 6.0,
+      "mean bootstrap R\u00b2": 0.2600661204940454,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 8.0,
+      "mean bootstrap R\u00b2": 0.2677529178593052,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 10.0,
+      "mean bootstrap R\u00b2": 0.29174694096386045,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 12.0,
+      "mean bootstrap R\u00b2": 0.2990541784802018,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 14.0,
+      "mean bootstrap R\u00b2": 0.31787772587972973,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 16.0,
+      "mean bootstrap R\u00b2": 0.32219782240282374,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 18.0,
+      "mean bootstrap R\u00b2": 0.3400400287668194,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 20.0,
+      "mean bootstrap R\u00b2": 0.3253274650999016,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 22.0,
+      "mean bootstrap R\u00b2": 0.32320211502696744,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 24.0,
+      "mean bootstrap R\u00b2": 0.3048718338606171,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 26.0,
+      "mean bootstrap R\u00b2": 0.29649855269219355,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 28.0,
+      "mean bootstrap R\u00b2": 0.2808826799494464,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 30.0,
+      "mean bootstrap R\u00b2": 0.2717207603600268,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.270373665705525,
+      "series": "R",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 0.0,
+      "series": "layer* = 31",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer (dotted grey = full-attention layers)": 31.0,
+      "mean bootstrap R\u00b2": 1.0,
+      "series": "layer* = 31",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 257,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "17-layer diagonal sweep per rung",
+        "xlabel": "layer (dotted grey = full-attention layers)",
+        "ylabel": "mean bootstrap R\u00b2",
+        "legend_labels": [
+          "r0",
+          "r1",
+          "r2",
+          "r3",
+          "r4",
+          "r5",
+          "r6",
+          "r7",
+          "r8",
+          "r9",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R",
+          "layer* = 31"
+        ],
+        "legend_title": "rung",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "r0",
+      "r1",
+      "r2",
+      "r3",
+      "r4",
+      "r5",
+      "r6",
+      "r7",
+      "r8",
+      "r9",
+      "mid",
+      "main",
+      "S",
+      "D",
+      "R",
+      "layer* = 31"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

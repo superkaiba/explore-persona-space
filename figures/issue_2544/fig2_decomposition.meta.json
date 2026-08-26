@@ -1,0 +1,901 @@
+{
+  "commit": "9edd6fae",
+  "render_id": "6bdb7d8fe4e342f2",
+  "git_commit": "9edd6fae44dccb9f49b7188b9d24b25871a5b4e0",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2544_figures.py",
+  "created": "2026-08-26T03:37:21Z",
+  "figsize": [
+    8.5,
+    4.2
+  ],
+  "points": [
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.46998504393382057,
+      "error": 0.011353943206447586,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.30467927208418877,
+      "error": 0.02618467551530311,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.2734246109625753,
+      "error": 0.017601577394024015,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.24438311671211554,
+      "error": 0.01533738887006933,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.2745741049497257,
+      "error": 0.01972349826035316,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.26288517730257777,
+      "error": 0.018400952633641915,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2655940956875532,
+      "error": 0.01749505681590835,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2631741377644965,
+      "error": 0.016739184112044253,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.24907028400911013,
+      "error": 0.021385289278293917,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2643935505296018,
+      "error": 0.025048367145335496,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.26704997861893953,
+      "error": 0.04387939649355606,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.24926398492823754,
+      "error": 0.03917530760642811,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.21938920368559134,
+      "error": 0.03410680278814654,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.21930017877772545,
+      "error": 0.03357120325215729,
+      "series": "fixed answer text (column, s = main): representation change",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.06912027542028232,
+      "error": 0.011353943206447586,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.19811541082869044,
+      "error": 0.02618467551530311,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.22205083456440167,
+      "error": 0.017601577394024015,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.2881597743151386,
+      "error": 0.01533738887006933,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.3029007226353948,
+      "error": 0.01972349826035316,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.25456651683896714,
+      "error": 0.018400952633641915,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2563326392888784,
+      "error": 0.01749505681590835,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2734093060255892,
+      "error": 0.016739184112044253,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.27690824799447344,
+      "error": 0.021385289278293917,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.24794467874470505,
+      "error": 0.025048367145335496,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.253972525455165,
+      "error": 0.04387939649355606,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2562890959529103,
+      "error": 0.03917530760642811,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.3063959459472626,
+      "error": 0.03410680278814654,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.31286787784924563,
+      "error": 0.03357120325215729,
+      "series": "fixed weights (row, m = main): answer-distribution change",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.3406656508223148,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.22935952979361207,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.1957314761795269,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.26966692134350345,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.3057984905140483,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.23925589598807173,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2514490396915948,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.24973859931558695,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.24024205225368034,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2344602665433283,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2614545676735103,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 14.373052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.26471063743880174,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.24267376435018462,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.2628870027530944,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.27020532398684804,
+      "series": "diagonal (m = s)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.46998504393382057,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.30467927208418877,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.2734246109625753,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.24438311671211554,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.2745741049497257,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.26288517730257777,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2655940956875532,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2631741377644965,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.24907028400911013,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2643935505296018,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.26704997861893953,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.24926398492823754,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.21938920368559134,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.21930017877772545,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.4481661694106174,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.2783967348673733,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.24984119536575278,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.21806485728218225,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.25173785814104704,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.23373373115465257,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.24549649469592627,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2403312908150869,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.23030851613680312,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.24491618088503572,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.24558757700416836,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.23194463935981205,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.2005317150252654,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.20045404864672695,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.49210797606025763,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.3318337960165065,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.29737724058181,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.27402101510955273,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.29997670643671537,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.29034335756362767,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.28807048389526757,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2880136929910379,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.2702430748421277,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2861916075181485,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2911722009427546,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.26808253677729904,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.23999626484093875,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.23984295933609195,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.06912027542028232,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.19811541082869044,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.22205083456440167,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.2881597743151386,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.3029007226353948,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.25456651683896714,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.2563326392888784,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.2734093060255892,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.27690824799447344,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.24794467874470505,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.253972525455165,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2562890959529103,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.3063959459472626,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.31286787784924563,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.058407015714971366,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.1733545007109161,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.204764988403425,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.2735604868259432,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.28406981601645,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.237222661432825,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.23826376948985056,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.25674774884075785,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.25683698410211026,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.22361027312864842,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.20798838049361543,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2159819443708326,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.2698255896784009,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.2743361310429044,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 8.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.08111490212786654,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 9.622659904607586,
+      "pooled OOF R\u00b2 at layer*": 0.22572385174152232,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.321629908943605,
+      "pooled OOF R\u00b2 at layer*": 0.23996814319147303,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 10.944879199341505,
+      "pooled OOF R\u00b2 at layer*": 0.30423526456608185,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.40081115499123,
+      "pooled OOF R\u00b2 at layer*": 0.3235168125371563,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 11.777995942072648,
+      "pooled OOF R\u00b2 at layer*": 0.27402456670010883,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.07902593773663,
+      "pooled OOF R\u00b2 at layer*": 0.27325388312166726,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.39794041105229,
+      "pooled OOF R\u00b2 at layer*": 0.29022611706484636,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.602208279311682,
+      "pooled OOF R\u00b2 at layer*": 0.2996075626586981,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 12.773052182465221,
+      "pooled OOF R\u00b2 at layer*": 0.2737070074193194,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 13.573052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.29574717348072754,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.173052182465222,
+      "pooled OOF R\u00b2 at layer*": 0.2943325595836888,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 15.97305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.338039195254694,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "checkpoint (pretraining tokens where published)": 16.77305218246522,
+      "pooled OOF R\u00b2 at layer*": 0.34147853754721896,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 127,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "decomposition: representation vs answer-distribution change",
+        "xlabel": "checkpoint (pretraining tokens where published)",
+        "ylabel": "pooled OOF R\u00b2 at layer*",
+        "legend_labels": [
+          "diagonal (m = s)",
+          "fixed answer text (column, s = main): representation change",
+          "fixed weights (row, m = main): answer-distribution change"
+        ],
+        "xticklabels": [
+          "r0\n(init)",
+          "r1\n4.2B",
+          "r2\n21B",
+          "r3\n88B",
+          "r4\n2.5e+02B",
+          "r5\n6e+02B",
+          "r6\n1.2T",
+          "r7\n2.5T",
+          "r8\n4T",
+          "r9\n5.9T",
+          "mid",
+          "main",
+          "S",
+          "D",
+          "R"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "diagonal (m = s)",
+      "fixed answer text (column, s = main): representation change",
+      "fixed weights (row, m = main): answer-distribution change"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
