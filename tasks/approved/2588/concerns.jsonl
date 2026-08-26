@@ -1,0 +1,1 @@
+{"ts": "2026-08-26T00:32:42Z", "event": "raised", "concern_id": "capture-helper-return-shape", "severity": "BLOCKER", "summary": "Capture treats `(blocks, depth)` as a layer list, so every real capture crashes.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
