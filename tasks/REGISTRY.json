@@ -12304,8 +12304,8 @@
     "2596": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2596",
-      "status": "planning",
+      "path": "tasks/approved/2596",
+      "status": "approved",
       "title": "test_no_new_torch_before_dotenv_vm_entrypoints red on main: 4 scripts missing load_dotenv, reds Step 9c gates fleet-wide"
     },
     "26": {
