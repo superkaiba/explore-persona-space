@@ -72,6 +72,7 @@ import json
 import logging
 import math
 import os
+import subprocess
 import sys
 import time
 import warnings
@@ -549,6 +550,42 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return build_parser().parse_args(argv)
 
 
+def _resolve_ref7b_default_commit(path: Path) -> str:
+    """Resolve the EXACT commit for the DEFAULT committed ref7b-parent JSON.
+
+    Plan §4.5 requires the parent commit RECORDED in every consuming artifact;
+    an ``UNRECORDED`` sentinel must never reach production metadata (r1 g7).
+    The default path is a git-tracked artifact, so its provenance is the last
+    commit touching it — valid only while the working copy is CLEAN. Any
+    failure (outside the repo, gitless tree, untracked/dirty file, git error)
+    HALTS with instructions to pass ``--ref7b-parent-commit`` explicitly."""
+    try:
+        rel = str(Path(path).resolve().relative_to(_REPO_ROOT))
+    except ValueError:
+        raise SystemExit(
+            f"--ref7b-parent-commit is REQUIRED: ref7b parent {path} resolves outside the "
+            f"repo root {_REPO_ROOT}, so its commit cannot be derived (plan §4.5)."
+        ) from None
+
+    def _git(*argv: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["git", "-C", str(_REPO_ROOT), *argv], capture_output=True, text=True, check=False
+        )
+
+    dirty = _git("status", "--porcelain", "--", rel)
+    log = _git("log", "-n", "1", "--format=%H", "--", rel)
+    commit = log.stdout.strip()
+    if dirty.returncode != 0 or log.returncode != 0 or not commit or dirty.stdout.strip():
+        raise SystemExit(
+            "--ref7b-parent-commit is REQUIRED: no clean committed state resolvable for the "
+            f"default ref7b parent {rel} (git rc log={log.returncode} status="
+            f"{dirty.returncode}, commit={commit!r}, dirty={dirty.stdout.strip()!r}). "
+            "Plan §4.5 records the EXACT parent commit — never an UNRECORDED sentinel; "
+            "materialize the file and pass --ref7b-parent + --ref7b-parent-commit."
+        )
+    return commit
+
+
 def build_config(args: argparse.Namespace) -> CfgX:
     """Resolve the CLI namespace. Smoke rebinds out-dir/B, never inputs, and
     REQUIRES explicit --manip-9b/--manip-7b (the parent's [g5] convention: a
@@ -603,7 +640,7 @@ def build_config(args: argparse.Namespace) -> CfgX:
         preds_9b=Path(args.preds_9b) if args.preds_9b else None,
         preds7b_dir=Path(args.preds7b_dir) if args.preds7b_dir else None,
         ref7b_parent=ref7b,
-        ref7b_parent_commit=args.ref7b_parent_commit or "UNRECORDED — pass --ref7b-parent-commit",
+        ref7b_parent_commit=args.ref7b_parent_commit or _resolve_ref7b_default_commit(ref7b),
         embed_parity_report=Path(args.embed_parity_report) if args.embed_parity_report else None,
         smoke=smoke,
         b_boot=int(args.b_boot) if args.b_boot is not None else (100 if smoke else B_BOOT_DEFAULT),
@@ -1177,9 +1214,11 @@ def build_pair_arrays(bank: dict, st: Stores, spec: SideSpec, smoke: bool) -> Pa
 
 
 def load_fire(manip_path: Path) -> dict:
-    """Per-(axis, value_id) fire verdicts + per-axis summary rows. Special
-    axis rows (``not_in_slice`` / ``no_manipulation_check_query_class``) carry
-    no floor_met — those axes are UNFILTERED (floor defaults True)."""
+    """Per-(axis, value_id) fire verdicts + per-axis summary rows. A PRESENT
+    special axis row (``not_in_slice`` / ``no_manipulation_check_query_class``)
+    carries no floor_met — those axes are UNFILTERED. A fire-filtered value
+    with NO row at all is NOT fired (plan §4.6; missing metadata never
+    defaults permissive — r1 concern missing-fire-defaults-true)."""
     doc = json.loads(Path(manip_path).read_text())
     fired: dict = {t: {} for t in FIRE_THRESHOLDS}
     rows = {}
@@ -1193,29 +1232,42 @@ def load_fire(manip_path: Path) -> dict:
     return {"fired": fired, "value_rows": rows, "axis_rows": axis_rows, "meta": doc.get("meta", {})}
 
 
-def pair_fired_mask(pa: PairArrays, fire: dict, threshold: int) -> tuple[np.ndarray, np.ndarray]:
-    """(fired_a, fired_b); values with NO fire row count FIRED (unfiltered).
-    Gridless query classes (dyads + oneword) are never fire-filtered."""
+# Endpoints the manipulation check NEVER covers (observed on the committed
+# origin/issue-2564 manipulation_check.json: value rows exist for BOTH
+# instruction families v1..v5 + v1p..v5p, but NOT for query classes and NOT
+# for the bare/unmanipulated install endpoints): the fire gate quantifies
+# over MANIPULATED values only — these stay unfiltered, never "missing".
+UNCHECKED_CLASSES = ("query_paraphrase", *GRIDLESS_CLASSES)
+BARE_VALUE_IDS = ("E", "bare")  # parent install a-side / pilot install b-side
+
+
+def pair_fired_mask(
+    pa: PairArrays, fire: dict, threshold: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """(fired_a, fired_b, missing_a, missing_b). A fire-CHECKED value with
+    NO fire row is NOT FIRED (plan §4.6: it drops from BOTH sides of its
+    contrast; the missing_* masks let callers COUNT and report those drops —
+    r1 fix of missing-fire-defaults-true, which silently treated missing rows
+    as fired). Never fire-filtered (fired=True, missing=False): query classes
+    (no manipulation check by design) and the bare install endpoints (nothing
+    is manipulated there — see UNCHECKED_CLASSES / BARE_VALUE_IDS)."""
     fmap = fire["fired"][threshold]
 
-    def _ok(axis: str, vid: str) -> bool:
-        return fmap.get((axis, vid), True)
+    def _lookup(axis: str, vid: str, cl: str) -> tuple[bool, bool]:
+        if cl in UNCHECKED_CLASSES or vid in BARE_VALUE_IDS:
+            return True, False
+        key = (axis, vid)
+        if key in fmap:
+            return bool(fmap[key]), False
+        return False, True  # missing fire row => NOT fired; counted, never permissive
 
-    fa = np.array(
-        [
-            _ok(ax, va) if cl not in GRIDLESS_CLASSES else True
-            for ax, va, cl in zip(pa.axis, pa.value_a, pa.cls)
-        ],
-        dtype=bool,
-    )
-    fb = np.array(
-        [
-            _ok(ax, vb) if cl not in GRIDLESS_CLASSES else True
-            for ax, vb, cl in zip(pa.axis, pa.value_b, pa.cls)
-        ],
-        dtype=bool,
-    )
-    return fa, fb
+    a_rows = [_lookup(ax, va, cl) for ax, va, cl in zip(pa.axis, pa.value_a, pa.cls)]
+    b_rows = [_lookup(ax, vb, cl) for ax, vb, cl in zip(pa.axis, pa.value_b, pa.cls)]
+    fa = np.array([f for f, _ in a_rows], dtype=bool)
+    ma = np.array([m for _, m in a_rows], dtype=bool)
+    fb = np.array([f for f, _ in b_rows], dtype=bool)
+    mb = np.array([m for _, m in b_rows], dtype=bool)
+    return fa, fb, ma, mb
 
 
 # ── reliability (seeded split halves; ported) ──────────────────────────
@@ -1531,6 +1583,7 @@ class SideRun:
     pa: PairArrays
     views: dict
     fired: dict  # threshold -> pair-level both-endpoint fired
+    fire_missing: np.ndarray  # per pair: EITHER endpoint lacked a fire row (counted drops)
     rel: dict
     r10: np.ndarray
     cos_arm: dict
@@ -1599,10 +1652,14 @@ def compute_side(
 
     fired = {}
     fa_fb = {}
+    fire_missing: np.ndarray | None = None
     for t in FIRE_THRESHOLDS:
-        fa, fb = pair_fired_mask(pa, fire, t)
+        fa, fb, ma, mb = pair_fired_mask(pa, fire, t)
         fa_fb[t] = (fa, fb)
         fired[t] = fa & fb
+        if fire_missing is None:
+            fire_missing = ma | mb  # fire-row MEMBERSHIP is threshold-independent
+    assert fire_missing is not None
 
     # edit-dose pooled OLS + residuals + tie report (convention 19)
     dose = pa.changed.astype(np.float64)
@@ -1677,10 +1734,17 @@ def compute_side(
         prim = view.primary_idx
         hmask = fired[70][prim]
         ar = fire["axis_rows"].get(axis)
-        # special rows (not_in_slice / no_manipulation_check_query_class) carry
-        # no floor_met -> unfiltered (the parent's absent-axis convention).
-        floor_met = bool(ar.get("floor_met", True)) if ar is not None else True
-        compliance_limited = ar is not None and "floor_met" in ar and not floor_met
+        # A PRESENT special row without floor_met (not_in_slice /
+        # no_manipulation_check_query_class) is unfiltered (the parent's
+        # convention). A MISSING axis row on a fire-FILTERED axis is NOT
+        # floor-cleared (missing metadata never defaults permissive — r1
+        # bug-class sweep); gridless query classes carry no manipulation
+        # check, so an absent row there stays unfiltered.
+        axis_row_missing = ar is None and axis not in GRIDLESS_CLASSES
+        floor_met = bool(ar.get("floor_met", True)) if ar is not None else not axis_row_missing
+        compliance_limited = axis_row_missing or (
+            ar is not None and "floor_met" in ar and not floor_met
+        )
         no_fired_pairs = not bool(hmask.any())
         headline_ok = not compliance_limited and not no_fired_pairs
         head = prim[hmask] if headline_ok else np.array([], dtype=np.int64)
@@ -1695,8 +1759,10 @@ def compute_side(
 
         fire_summary = {
             "axis_row": ar,
+            "axis_row_missing": axis_row_missing,
             "n_primary_pairs": int(prim.size),
             "n_headline_pairs_fired70": int(hmask.sum()),
+            "n_missing_fire_rows": int(fire_missing[prim].sum()),
             "floor_met": floor_met if ar is not None else None,
             "compliance_limited": compliance_limited,
             "no_fired_pairs": no_fired_pairs,
@@ -2132,6 +2198,7 @@ def compute_side(
     for i in range(pa.n):
         perpair.append(
             {
+                "primary_h2_7b_arm": PRIMARY_H2_7B_ARM,  # plan §3: every artifact row
                 "model_tag": spec.name,
                 "pair_id": pa.ids[i],
                 "pair_class": pa.cls[i],
@@ -2170,6 +2237,7 @@ def compute_side(
         pa=pa,
         views=views,
         fired=fired,
+        fire_missing=fire_missing,
         rel=rel,
         r10=r10,
         cos_arm=cos_arm,
@@ -2303,6 +2371,7 @@ def compute_h1(
     doc = {
         "definition": "Delta_map = R2_9B(L*) - R2_7B(L19), pooled R2 on the realized shared "
         "test-row intersection; layer pair FROZEN (L* read from unit 4's freeze)",
+        "primary_h2_7b_arm": PRIMARY_H2_7B_ARM,  # plan §3: EVERY artifact's metadata
         "layer_pair": {"qwen35_9b": int(lstar), "qwen25_7b": L19},
         "n_test_rows": n,
         "r2_9b_lstar": r2_9,
@@ -2373,7 +2442,17 @@ def resolve_primary_h2_arm(candidate_7b_arms: list) -> str:
 
 def _ref7b_stat(ref_axes: dict, axis: str, stat: str) -> float:
     """Point extraction of a scale-free statistic from the parent's committed
-    minpair_delta.json (arm_779ce = the parent's primary frozen map)."""
+    minpair_delta.json (arm_779ce = the parent's primary frozen map).
+
+    An axis ABSENT from the parent doc is a recorded sensitivity absence
+    (NaN — e.g. an axis-name mismatch on the sensitivity-only read). Within
+    a PRESENT axis, a missing key is SCHEMA DRIFT and fails loud (r1 g7: the
+    old ``except (KeyError, TypeError) -> NaN`` silently absorbed it); an
+    explicit null LEAF in the parent artifact stays NaN via ``_f`` (observed
+    schema — probed on the committed origin/issue-2564 artifact: all 11 axes
+    carry every path this function reads for the (axis, stat) combos the
+    caller reaches; compliance-limited axes carry null leaves). An unknown
+    ``stat`` name is a programming error (ValueError)."""
 
     def _f(v) -> float:
         return float(v) if v is not None and np.isfinite(float(v)) else float("nan")
@@ -2381,26 +2460,23 @@ def _ref7b_stat(ref_axes: dict, axis: str, stat: str) -> float:
     ax = ref_axes.get(axis)
     if ax is None:
         return float("nan")
-    try:
-        if stat == "direction_cos":
-            return _f(ax["direction"]["arm_779ce"]["mean_cos_headline"])
-        if stat == "calibration_ratio_to_global":
-            return _f(ax["calibration"]["arm_779ce"]["ratio_to_global"])
-        if stat == "crossfam_cos_observed":
-            return _f(ax["cross_family"]["observed"]["median"])
-        if stat == "crossfam_cos_maparm":
-            return _f(ax["cross_family"]["arm_779ce"]["median"])
-        if stat == "obs_separation_snr":
-            flip = ax["surface"]["observed"]["flip_norm_mean"]
-            noise = ax["reliability"]["noise_norm_mean"]
-            if flip is None or noise is None or not noise:
-                return float("nan")
-            return _f(float(flip) / float(noise))
-        if stat == "axis_identity_cos":
-            return _f(ax["identity"]["arm_779ce"]["median"])
-    except (KeyError, TypeError):
-        return float("nan")
-    return float("nan")
+    if stat == "direction_cos":
+        return _f(ax["direction"]["arm_779ce"]["mean_cos_headline"])
+    if stat == "calibration_ratio_to_global":
+        return _f(ax["calibration"]["arm_779ce"]["ratio_to_global"])
+    if stat == "crossfam_cos_observed":
+        return _f(ax["cross_family"]["observed"]["median"])
+    if stat == "crossfam_cos_maparm":
+        return _f(ax["cross_family"]["arm_779ce"]["median"])
+    if stat == "obs_separation_snr":
+        flip = ax["surface"]["observed"]["flip_norm_mean"]
+        noise = ax["reliability"]["noise_norm_mean"]
+        if flip is None or noise is None or not noise:
+            return float("nan")
+        return _f(float(flip) / float(noise))
+    if stat == "axis_identity_cos":
+        return _f(ax["identity"]["arm_779ce"]["median"])
+    raise ValueError(f"unknown ref7b stat {stat!r}")
 
 
 def crossmodel_contrasts(
@@ -2450,6 +2526,10 @@ def crossmodel_contrasts(
             "n_symmetric_fired": int(sym.sum()),
             "n_dropped_9b_only": int((run7.fired[70][i7] & ~run9.fired[70][i9]).sum()),
             "n_dropped_7b_only": int((run9.fired[70][i9] & ~run7.fired[70][i7]).sum()),
+            # missing-fire-row drops (plan §4.6: NO row => NOT fired, both
+            # sides; counted per side so the exclusion is reported, never silent)
+            "n_missing_fire_rows_9b": int(run9.fire_missing[i9].sum()),
+            "n_missing_fire_rows_7b": int(run7.fire_missing[i7].sum()),
         }
 
     # changed_tokens per axis, per tokenizer (convention 16 covariates)
@@ -2528,7 +2608,10 @@ def crossmodel_contrasts(
 
     stats_def = {
         "direction_cos": "map-arm mean direction cos over symmetric-fired shared primary pairs",
-        "calibration_ratio_to_global": "map-arm axis/global through-origin norm-slope ratio",
+        "calibration_ratio_to_global": "map-arm axis/global through-origin norm-slope ratio "
+        "(each side's global slope pools ALL of its OWN pairs — the 9B global includes the "
+        "pilot pairs that have no 7B counterpart; compositional asymmetry disclosed, not "
+        "corrected)",
         "crossfam_cos_observed": "observed-space cross-family consistency median "
         "(instruction axes only)",
         "crossfam_cos_maparm": "map-arm predicted-space cross-family consistency median "
@@ -2603,6 +2686,8 @@ def crossmodel_contrasts(
                             "n_symmetric_fired",
                             "n_dropped_9b_only",
                             "n_dropped_7b_only",
+                            "n_missing_fire_rows_9b",
+                            "n_missing_fire_rows_7b",
                         )
                     },
                     "ceiling_cleared": bool(
@@ -2707,8 +2792,9 @@ def crossmodel_contrasts(
             "arm": "arm_779ce (the parent's primary frozen map)",
         },
         "fire_gating": "symmetric: a pair (or vp) non-fired on EITHER model drops from BOTH "
-        "sides; axes where either side is compliance-limited fall back to all shared primary "
-        "pairs (symmetric_headline=false recorded per axis)",
+        "sides; a value with NO fire row is NOT fired (plan §4.6 — missing-row drops counted "
+        "per axis as n_missing_fire_rows_*); axes where either side is compliance-limited "
+        "fall back to all shared primary pairs (symmetric_headline=false recorded per axis)",
         "bootstrap": {
             "scheme": "ONE shared 12-carrier resample per draw, BOTH models evaluated on it",
             "B": int(mult.shape[0]),
@@ -2747,6 +2833,14 @@ def _write_json_atomic(path: Path, obj: dict) -> None:
         tmp.write_text(json.dumps(obj, indent=2, sort_keys=True, allow_nan=True))
 
 
+def _savez_with_meta(path: Path, **arrays) -> None:
+    """np.savez carrying the plan-§3 metadata key EVERY artifact must assert:
+    ``primary_h2_7b_arm`` rides each perdraw npz as a 0-d string array (r1 g7:
+    the intermediate artifacts lacked it)."""
+    assert "primary_h2_7b_arm" not in arrays
+    np.savez(path, primary_h2_7b_arm=np.array(PRIMARY_H2_7B_ARM), **arrays)
+
+
 def _json_sanitize(obj):
     """NaN/inf -> None recursively (JSON round-trip safety)."""
     if isinstance(obj, dict):
@@ -2765,6 +2859,7 @@ def _json_sanitize(obj):
 
 def side_meta(run: SideRun) -> dict:
     return {
+        "primary_h2_7b_arm": PRIMARY_H2_7B_ARM,  # plan §3: EVERY artifact's metadata
         "model_tag": run.spec.name,
         "d": run.spec.d,
         "primary_layer": run.spec.primary_layer,
@@ -2809,7 +2904,9 @@ def base_contract(cfg: CfgX, run9: SideRun, run7: SideRun) -> dict:
             "sensitivity_pcts": [50, 90],
             "rule": "headline per-axis reads are FLOOR-GATED (axis_row.floor_met); "
             "compliance-limited axes report NULL headline fields; *_all_values companions "
-            "always populated; special axis rows without floor_met are unfiltered",
+            "always populated; PRESENT special axis rows without floor_met are unfiltered; "
+            "a MISSING axis row on a fire-filtered axis is NOT floor-cleared and a value "
+            "with NO fire row is NOT fired (drops counted; plan §4.6)",
         },
         "port_source": {
             "script": "scripts/issue2564_analysis.py",
@@ -2964,7 +3061,7 @@ def main(argv: list[str] | None = None) -> int:
         preds9, preds7, lstar, cfg.b_boot, np.random.default_rng(list(H1_BOOT_SEED))
     )
     _write_json_atomic(cfg.ckpt_dir / "h1.json", _json_sanitize(h1_doc))
-    np.savez(
+    _savez_with_meta(
         cfg.perdraw_dir / "h1_delta_draws.npz",
         delta_draws=h1_draws["delta_draws"],
         r9_draws=h1_draws["r9_draws"],
@@ -2978,7 +3075,7 @@ def main(argv: list[str] | None = None) -> int:
         run9, run7, lstar, mult, ref7b, cfg.ref7b_parent_commit, cfg
     )
     for stat, blk in cm_perdraw.items():
-        np.savez(
+        _savez_with_meta(
             cfg.perdraw_dir / f"{stat}.npz",
             axes=np.array([str(a) for a in blk["axes"]]),
             draws_9b=blk["draws_9b"],

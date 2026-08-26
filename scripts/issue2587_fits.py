@@ -86,7 +86,6 @@ import argparse  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
-import os  # noqa: E402
 import time  # noqa: E402
 
 import numpy as np  # noqa: E402
@@ -96,6 +95,7 @@ from huggingface_hub import hf_hub_download  # noqa: E402
 import issue779_ffc_n1m_fits as F  # noqa: E402
 import issue1491_ladder_fits as LF  # noqa: E402
 import issue2330_matched_fits as MF  # noqa: E402
+from explore_persona_space.atomic_io import save_pt_atomic  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded  # noqa: E402
 
@@ -196,12 +196,12 @@ def _verify_split_sha(ids, recorded_sha: str, split: str) -> None:
 
 
 def _torch_save_atomic(obj: dict, path: Path) -> None:
-    """torch.save via same-dir tmp + os.replace; the tmp name ``<name>.tmp``
-    never matches the ``L*.pt`` / ``*.pt`` upload globs (#2336)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    torch.save(obj, tmp)
-    os.replace(tmp, path)
+    """torch.save via ``atomic_io.save_pt_atomic`` — PROCESS-UNIQUE same-dir
+    temp (pid + uuid fragment) + os.replace, so concurrent writers of one
+    destination never collide (#2336; the old fixed ``<name>.tmp`` was the
+    process-shared temp-name class). The temp still never matches the
+    ``L*.pt`` / ``*.pt`` upload globs (suffix ``.tmp``)."""
+    save_pt_atomic(path, obj)
 
 
 def _parse_layers(spec: str) -> list[int]:
@@ -291,6 +291,21 @@ def _fit_floors_robust(X, Y, tr, val, te, dev, block):
     except torch.linalg.LinAlgError:
         print(f"[p4-fits] cuSOLVER LinAlgError in floors on {dev} — retrying on CPU", flush=True)
         return LF._fit_floors(X, Y, tr, val, te, torch.device("cpu"), block)
+
+
+def _edge_selected_layers(per_layer: dict[int, dict]) -> dict[int, str]:
+    """Layers whose PERSISTED ridge meta records a non-null lambda_grid_edge.
+
+    Only producible under ``--no-edge-extension`` (with extension enabled the
+    fit either resolves the edge or raises past MAX_GRID_EXTENSIONS), so any
+    hit here is a diagnostic-only fit that must never be FROZEN into L* /
+    the merged sweep (r1 g5: --no-edge-extension had no finalize backstop)."""
+    out: dict[int, str] = {}
+    for li, row in per_layer.items():
+        edge = ((row.get("ridge") or {}).get("meta") or {}).get("lambda_grid_edge")
+        if edge is not None:
+            out[int(li)] = str(edge)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -687,6 +702,14 @@ def run_finalize(args) -> int:
             "a resume must never mix regimes (#722)."
         )
     rk = next(iter(rks))
+    edges = _edge_selected_layers(per_layer)
+    if edges:
+        raise RuntimeError(
+            f"finalize: EDGE-SELECTED ridge fits at layers {sorted(edges)} "
+            f"(lambda_grid_edge={edges}) — --no-edge-extension fits are diagnostic-only and "
+            "must never be frozen into L*; re-run --phase fits WITHOUT --no-edge-extension "
+            "for these layers (#2330 disposition)."
+        )
     lstar_block = compute_lstar(per_layer)
     lstar = int(lstar_block["lstar"])
     ceil_layers = sorted({lstar, *_parse_layers(args.ceiling_twins)})
@@ -796,12 +819,112 @@ def run_finalize(args) -> int:
 # ---------------------------------------------------------------------------
 
 
+_MATCHED7B_ARM_FILES = (
+    f"payload_{ARM_7B_MATCHED}_L{L19}.pt",
+    f"mapped_vc2564_{ARM_7B_MATCHED}_L{L19}.pt",
+    f"test_preds_{ARM_7B_MATCHED}_L{L19}.pt",
+)
+
+
+def _matched7b_sentinel_path(args, out_root: Path) -> Path:
+    """ONE sentinel-path derivation shared by the terminal write, the resume
+    predicate, and the repair path (a drifted duplicate derivation would make
+    the completion predicate check a DIFFERENT file than the writer writes)."""
+    return Path(args.sentinel_path) if args.sentinel_path else out_root / "matched7b_done.json"
+
+
+def _write_matched7b_sentinel(sentinel: Path, rk: str, anchor_out: Path) -> None:
+    MF._write_json_atomic(
+        sentinel,
+        {
+            "issue": ISSUE,
+            "phase": "matched7b",
+            "done": True,
+            "regime_key": rk,
+            "anchor_out": str(anchor_out),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "repro": MF._repro_meta(),
+        },
+    )
+
+
+def _matched7b_completion_gaps(prior: dict, args, sentinel: Path) -> list[str]:
+    """Gaps between the PRIOR complete record and THIS invocation's completion
+    contract; empty => a resume skip is safe, non-empty => idempotent repair.
+
+    The completion predicate includes the REQUESTED upload contract (mode +
+    destination prefix) AND the sentinel write (r1 matched7b-resume-contract:
+    the old skip keyed on ``complete`` alone, so a crash between the record
+    write and the sentinel write skipped the sentinel forever, and a rerun
+    with a changed ``--upload`` silently honored the STALE recorded mode)."""
+    gaps: list[str] = []
+    rec_up = prior.get("upload") or {}
+    if args.upload == "hf" and not (
+        rec_up.get("mode") == "hf" and rec_up.get("preds7b_prefix") == args.preds7b_prefix
+    ):
+        gaps.append("upload")
+    sentinel_ok = False
+    if sentinel.is_file():
+        try:
+            sdoc = json.loads(sentinel.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            sdoc = {}
+        sentinel_ok = bool(sdoc.get("done")) and sdoc.get("regime_key") == prior.get("regime_key")
+    if not sentinel_ok:
+        gaps.append("sentinel")
+    return gaps
+
+
+def _matched7b_repair(
+    prior: dict, rk: str, args, anchor_out: Path, sentinel: Path, preds7b_dir: Path
+) -> int:
+    """Idempotent completion repair from the PERSISTED matched-arm files: run
+    the requested-but-unrecorded upload, update the record's upload block, and
+    (re)write the sentinel — never re-fitting, never skipping past either."""
+    missing = [n for n in _MATCHED7B_ARM_FILES if not (preds7b_dir / n).is_file()]
+    if missing:
+        raise RuntimeError(
+            f"matched7b repair impossible: record at {anchor_out} claims complete but the "
+            f"persisted arm files are missing: {missing} — quarantine the record or pass a "
+            "fresh --anchor-out/--out-root for a full re-run (never a silent skip)."
+        )
+    rec_up = dict(prior.get("upload") or {})
+    if args.upload == "hf" and not (
+        rec_up.get("mode") == "hf" and rec_up.get("preds7b_prefix") == args.preds7b_prefix
+    ):
+        if not args.preds7b_prefix:
+            raise RuntimeError(
+                "--upload hf requires an explicit --preds7b-prefix (no defaults — "
+                "the #1005 upload-prefix clobber shape)."
+            )
+        MF._phase("upload")
+        upload_dir_sharded(
+            preds7b_dir,
+            HF_DATA_REPO,
+            args.preds7b_prefix,
+            shard_glob="*.pt",
+            resume_skip=False,
+            delete_local=False,
+        )
+        rec_up = {
+            "mode": "hf",
+            "preds7b_prefix": args.preds7b_prefix,
+            "n_files": len(sorted(preds7b_dir.glob("*.pt"))),
+            "repaired": True,
+        }
+        MF._write_json_atomic(anchor_out, {**prior, "upload": rec_up})
+    _write_matched7b_sentinel(sentinel, rk, anchor_out)
+    MF._phase("done")
+    return 0
+
+
 def run_matched7b(args) -> int:
     dev = MF._resolve_device(args.device)
     split_ids = _load_and_verify_split_ids(args)
     out_root = Path(args.out_root)
     preds7b_dir = out_root / "preds7b"
     anchor_out = Path(args.anchor_out)
+    sentinel = _matched7b_sentinel_path(args, out_root)
     rk = regime_key(
         store_prefix=f"{args.hf_prefix_7b}@{args.revision_7b}",
         split_sha=split_ids["sha256"],
@@ -812,15 +935,27 @@ def run_matched7b(args) -> int:
     )
     if anchor_out.is_file():
         prior = json.loads(anchor_out.read_text(encoding="utf-8"))
-        if prior.get("complete") and prior.get("regime_key") == rk:
-            print(f"[p4-fits] matched7b already complete at {anchor_out} (resume skip)", flush=True)
-            return 0
         if prior.get("complete") and prior.get("regime_key") not in (None, rk):
             raise RuntimeError(
                 f"matched7b resume regime mismatch at {anchor_out}: record regime_key="
                 f"{prior.get('regime_key')} vs current {rk} — a resume must never mix regimes "
                 "(#722); quarantine the record or pass a fresh --anchor-out."
             )
+        if prior.get("complete") and prior.get("regime_key") == rk:
+            gaps = _matched7b_completion_gaps(prior, args, sentinel)
+            if not gaps:
+                print(
+                    f"[p4-fits] matched7b already complete at {anchor_out} "
+                    "(record + upload contract + sentinel — resume skip)",
+                    flush=True,
+                )
+                return 0
+            print(
+                f"[p4-fits] matched7b record complete at {anchor_out} but "
+                f"{'/'.join(gaps)} unsatisfied — idempotent repair (no re-fit)",
+                flush=True,
+            )
+            return _matched7b_repair(prior, rk, args, anchor_out, sentinel, preds7b_dir)
 
     MF._phase("stream_7b")
     banked: dict[str, tuple] = {}
@@ -913,6 +1048,13 @@ def run_matched7b(args) -> int:
     pred_te, meta, payload = fit_ridge_edge_extended_weights(
         Xm, Ym, tr, val, te, dev, extend=not args.no_edge_extension
     )
+    if meta.get("lambda_grid_edge") is not None:
+        raise RuntimeError(
+            f"matched7b: EDGE-SELECTED ridge fit (lambda_grid_edge={meta['lambda_grid_edge']}) "
+            "— --no-edge-extension is diagnostic-only; refusing to persist a complete "
+            "matched-arm record on an edge-selected fit. Re-run WITHOUT --no-edge-extension "
+            "(#2330 disposition)."
+        )
     test_r2 = float(LF._pooled_r2(pred_te, Ym[te]))
     floors = _fit_floors_robust(Xm, Ym, tr, val, te, dev, int(LF.RIDGE_BLOCK))
     knn = LF._knn_reads(
@@ -1073,19 +1215,7 @@ def run_matched7b(args) -> int:
         "repro": MF._repro_meta(),
     }
     MF._write_json_atomic(anchor_out, record)
-    sentinel = Path(args.sentinel_path) if args.sentinel_path else out_root / "matched7b_done.json"
-    MF._write_json_atomic(
-        sentinel,
-        {
-            "issue": ISSUE,
-            "phase": "matched7b",
-            "done": True,
-            "regime_key": rk,
-            "anchor_out": str(anchor_out),
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "repro": MF._repro_meta(),
-        },
-    )
+    _write_matched7b_sentinel(sentinel, rk, anchor_out)
     MF._phase("done")
     return 0
 

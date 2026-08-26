@@ -449,11 +449,17 @@ def test_regime_key_generating_params_stable_and_sensitive():
 
 
 def test_torch_save_atomic_tmp_never_matches_upload_glob(tmp_path):
+    import os
+
     p = tmp_path / "L5.pt"
     I._torch_save_atomic({"a": 1}, p)
     assert p.is_file()
-    assert not list(tmp_path.glob("*.tmp"))
-    assert not fnmatch.fnmatch("L5.pt.tmp", "L*.pt")  # #2336: tmp invisible to upload glob
+    assert not list(tmp_path.glob("*.tmp"))  # no residue after the atomic replace
+    # #2336: the atomic_io temp is PROCESS-UNIQUE (pid + uuid fragment) and its
+    # name stays invisible to the L*.pt upload glob
+    assert not fnmatch.fnmatch(f"L5.pt.{os.getpid()}.deadbeef.tmp", "L*.pt")
+    src = (REPO / "scripts" / "issue2587_fits.py").read_text(encoding="utf-8")
+    assert 'path.name + ".tmp"' not in src  # the process-SHARED temp-name shape is gone
 
 
 def test_parse_layers():
@@ -501,6 +507,229 @@ def test_smoke_mode_end_to_end(tmp_path):
     assert rc == 0
     out = json.loads(out_json.read_text(encoding="utf-8"))
     assert set(out["per_layer"]) == {"3", "7"}
+
+
+# ---------------------------------------------------------------------------
+# matched7b resume/repair contract (r1 matched7b-resume-contract) + edge backstop
+# ---------------------------------------------------------------------------
+
+
+def _split_ids_file(tmp_path: Path) -> Path:
+    ids = {s: list(range(k * 10, k * 10 + 4)) for k, s in enumerate(I.SPLITS)}
+    payload = {
+        "splits": ids,
+        "counts": {s: len(v) for s, v in ids.items()},
+        "sha256": {s: I._sha_ids(v) for s, v in ids.items()},
+        "dropped_overlength": [],
+    }
+    p = tmp_path / "split_ids.json"
+    p.write_text(json.dumps(payload), encoding="utf-8")
+    return p
+
+
+def _matched7b_args(tmp_path: Path, upload: str, prefix: str | None):
+    import argparse
+
+    out_root = tmp_path / "out"
+    out_root.mkdir(exist_ok=True)
+    return argparse.Namespace(
+        device="cpu",
+        split_ids=str(_split_ids_file(tmp_path)),
+        out_root=str(out_root),
+        anchor_out=str(out_root / "matched7b_anchor.json"),
+        sentinel_path=None,
+        hf_prefix_7b="issue1491_scale_ladder/scale7_refit",
+        revision_7b="deadbeef",
+        cache_dir=str(tmp_path / "cache"),
+        upload=upload,
+        preds7b_prefix=prefix,
+        no_edge_extension=False,
+        vc2564=None,
+        bank_manifest=None,
+    )
+
+
+def _matched7b_rk(args) -> str:
+    payload = json.loads(Path(args.split_ids).read_text(encoding="utf-8"))
+    return I.regime_key(
+        store_prefix=f"{args.hf_prefix_7b}@{args.revision_7b}",
+        split_sha=payload["sha256"],
+        h_dim=I.H_DIM_7B,
+        selector="val_r2",
+        ridge_block=int(I.LF.RIDGE_BLOCK),
+        device=str(args.device),
+    )
+
+
+def _seed_matched7b_state(args, rk: str, upload_rec: dict, with_arm_files: bool = True) -> Path:
+    out_root = Path(args.out_root)
+    preds7b = out_root / "preds7b"
+    preds7b.mkdir(parents=True, exist_ok=True)
+    if with_arm_files:
+        for name in I._MATCHED7B_ARM_FILES:
+            torch.save({"stub": name}, preds7b / name)
+    record = {
+        "issue": I.ISSUE,
+        "regime_key": rk,
+        "upload": upload_rec,
+        "complete": True,
+        "repro": {},
+    }
+    Path(args.anchor_out).write_text(json.dumps(record), encoding="utf-8")
+    return preds7b
+
+
+def test_matched7b_completion_gaps_predicate(tmp_path):
+    import argparse
+
+    sentinel = tmp_path / "matched7b_done.json"
+    prior = {"complete": True, "regime_key": "rk1", "upload": {"mode": "none"}}
+    args_none = argparse.Namespace(upload="none", preds7b_prefix=None)
+    args_hf = argparse.Namespace(upload="hf", preds7b_prefix="p/x")
+    # no sentinel: never a clean skip, whatever the upload mode
+    assert I._matched7b_completion_gaps(prior, args_none, sentinel) == ["sentinel"]
+    assert I._matched7b_completion_gaps(prior, args_hf, sentinel) == ["upload", "sentinel"]
+    # sentinel present + matching regime: upload-none contract is satisfied
+    sentinel.write_text(json.dumps({"done": True, "regime_key": "rk1"}), encoding="utf-8")
+    assert I._matched7b_completion_gaps(prior, args_none, sentinel) == []
+    # a requested hf upload is NOT satisfied by a recorded mode=none...
+    assert I._matched7b_completion_gaps(prior, args_hf, sentinel) == ["upload"]
+    # ...nor by a recorded hf upload to a DIFFERENT prefix
+    prior_hf = {**prior, "upload": {"mode": "hf", "preds7b_prefix": "p/other"}}
+    assert I._matched7b_completion_gaps(prior_hf, args_hf, sentinel) == ["upload"]
+    prior_match = {**prior, "upload": {"mode": "hf", "preds7b_prefix": "p/x"}}
+    assert I._matched7b_completion_gaps(prior_match, args_hf, sentinel) == []
+    # a stale sentinel from ANOTHER regime never satisfies
+    sentinel.write_text(json.dumps({"done": True, "regime_key": "rkOLD"}), encoding="utf-8")
+    assert I._matched7b_completion_gaps(prior, args_none, sentinel) == ["sentinel"]
+
+
+def test_matched7b_rerun_with_changed_upload_repairs_and_writes_sentinel(tmp_path, monkeypatch):
+    """The Codex-named mechanizable case: prior record complete with
+    upload.mode=none and NO sentinel; rerun with --upload hf executes the
+    upload + sentinel through the PRODUCTION entrypoint (no re-fit, no
+    streaming) instead of silently skipping past both."""
+    from unittest.mock import create_autospec
+
+    args = _matched7b_args(tmp_path, upload="hf", prefix="issue2587_minpair/preds7b_test")
+    rk = _matched7b_rk(args)
+    preds7b = _seed_matched7b_state(args, rk, {"mode": "none"})
+    fake_upload = create_autospec(I.upload_dir_sharded)
+    monkeypatch.setattr(I, "upload_dir_sharded", fake_upload)
+    rc = I.run_matched7b(args)
+    assert rc == 0
+    fake_upload.assert_called_once_with(
+        preds7b,
+        I.HF_DATA_REPO,
+        args.preds7b_prefix,
+        shard_glob="*.pt",
+        resume_skip=False,
+        delete_local=False,
+    )
+    record = json.loads(Path(args.anchor_out).read_text(encoding="utf-8"))
+    assert record["upload"]["mode"] == "hf"
+    assert record["upload"]["preds7b_prefix"] == args.preds7b_prefix
+    assert record["upload"]["repaired"] is True
+    sentinel = Path(args.out_root) / "matched7b_done.json"
+    sdoc = json.loads(sentinel.read_text(encoding="utf-8"))
+    assert sdoc["done"] is True and sdoc["regime_key"] == rk
+
+
+def test_matched7b_crash_between_record_and_sentinel_repairs_sentinel(tmp_path, monkeypatch):
+    """A crash AFTER the complete record but BEFORE the sentinel write must
+    not skip the sentinel forever: the rerun (same upload contract) rewrites
+    it idempotently without any upload."""
+    from unittest.mock import create_autospec
+
+    args = _matched7b_args(tmp_path, upload="none", prefix=None)
+    rk = _matched7b_rk(args)
+    _seed_matched7b_state(args, rk, {"mode": "none"})
+    fake_upload = create_autospec(I.upload_dir_sharded)
+    monkeypatch.setattr(I, "upload_dir_sharded", fake_upload)
+    assert I.run_matched7b(args) == 0
+    fake_upload.assert_not_called()
+    sdoc = json.loads((Path(args.out_root) / "matched7b_done.json").read_text(encoding="utf-8"))
+    assert sdoc["done"] is True and sdoc["regime_key"] == rk
+
+
+def test_matched7b_genuine_complete_skips_without_upload(tmp_path, monkeypatch):
+    from unittest.mock import create_autospec
+
+    args = _matched7b_args(tmp_path, upload="hf", prefix="p/x")
+    rk = _matched7b_rk(args)
+    _seed_matched7b_state(args, rk, {"mode": "hf", "preds7b_prefix": "p/x"})
+    I._write_matched7b_sentinel(
+        Path(args.out_root) / "matched7b_done.json", rk, Path(args.anchor_out)
+    )
+    before = Path(args.anchor_out).read_text(encoding="utf-8")
+    fake_upload = create_autospec(I.upload_dir_sharded)
+    monkeypatch.setattr(I, "upload_dir_sharded", fake_upload)
+    assert I.run_matched7b(args) == 0
+    fake_upload.assert_not_called()
+    assert Path(args.anchor_out).read_text(encoding="utf-8") == before  # untouched
+
+
+def test_matched7b_repair_impossible_without_arm_files(tmp_path, monkeypatch):
+    from unittest.mock import create_autospec
+
+    args = _matched7b_args(tmp_path, upload="hf", prefix="p/x")
+    rk = _matched7b_rk(args)
+    _seed_matched7b_state(args, rk, {"mode": "none"}, with_arm_files=False)
+    monkeypatch.setattr(I, "upload_dir_sharded", create_autospec(I.upload_dir_sharded))
+    with pytest.raises(RuntimeError, match="repair impossible"):
+        I.run_matched7b(args)
+
+
+def test_matched7b_regime_mismatch_still_halts(tmp_path):
+    args = _matched7b_args(tmp_path, upload="none", prefix=None)
+    _seed_matched7b_state(args, "0123456789abcdef", {"mode": "none"})
+    with pytest.raises(RuntimeError, match="regime mismatch"):
+        I.run_matched7b(args)
+
+
+def test_edge_selected_layers_helper():
+    per_layer = {
+        0: {"ridge": {"meta": {"lambda_grid_edge": None}}},
+        5: {"ridge": {"meta": {"lambda_grid_edge": "high"}}},
+        7: {"ridge": {"meta": {}}},
+    }
+    assert I._edge_selected_layers(per_layer) == {5: "high"}
+    assert I._edge_selected_layers({0: {"ridge": {"meta": {"lambda_grid_edge": None}}}}) == {}
+
+
+def test_finalize_refuses_edge_selected_rows(tmp_path):
+    """r1 g5 Minor 2: a --no-edge-extension fits pass persists an
+    edge-selected per-layer row; finalize must REFUSE to freeze L* over it."""
+    import argparse
+
+    split_ids = _split_ids_file(tmp_path)
+    out_root = tmp_path / "out"
+    percell = out_root / "percell"
+    percell.mkdir(parents=True)
+    rk = "feedcafe00000000"
+    for li in range(I.N_LAYERS_9B):
+        edge = "high" if li == 3 else None
+        row = {
+            "regime_key": rk,
+            "ridge": {"meta": {"val_r2_at_selected": 0.5, "lambda_grid_edge": edge}},
+        }
+        (percell / f"L{li}.json").write_text(json.dumps(row), encoding="utf-8")
+    args = argparse.Namespace(
+        split_ids=str(split_ids),
+        out_root=str(out_root),
+        ceiling_twins="16,30",
+        out_json=str(tmp_path / "sweep.json"),
+        sentinel_path=None,
+        upload="none",
+        payloads_prefix=None,
+        preds_prefix=None,
+        store_prefix="x",
+        h_dim=I.H_DIM_9B,
+        cache_dir=str(tmp_path / "cache"),
+        local_dir=None,
+    )
+    with pytest.raises(RuntimeError, match="EDGE-SELECTED"):
+        I.run_finalize(args)
 
 
 def test_import_check_subprocess_exits_zero():

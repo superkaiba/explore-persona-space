@@ -213,7 +213,13 @@ def _spec7(d: int = 16) -> AN.SideSpec:
     return replace(base, d=d, store_layers=(AN.L19,), expected_contexts=None, expected_pairs=None)
 
 
-def _fire_doc(pilots: bool, not_fired: str) -> dict:
+def _fire_doc(
+    pilots: bool,
+    not_fired: str,
+    *,
+    omit_value: str | None = None,
+    omit_axis_row: str | None = None,
+) -> dict:
     def vrow(axis: str, vid: str, fired: bool) -> dict:
         verdict = "fired" if fired else "not_fired"
         return {
@@ -223,14 +229,21 @@ def _fire_doc(pilots: bool, not_fired: str) -> dict:
             "sensitivity": {"50": "fired", "90": verdict},
         }
 
-    value_rows = [vrow("toneX", v, v != not_fired) for v in VALS]
+    value_rows = [vrow("toneX", v, v != not_fired) for v in VALS if v != omit_value]
+    # the real manipulation-check doc carries rows for BOTH instruction
+    # families (v1..v5 AND v1p..v5p — probed on origin/issue-2564); the
+    # paraphrase family fires throughout so the world masks stay stable
+    value_rows += [vrow("toneX", f"{v}p", True) for v in VALS if f"{v}p" != omit_value]
     axis_rows = [{"axis": "toneX", "floor_met": True}]
     if pilots:
-        value_rows += [vrow("answer_language", lang, lang != not_fired) for lang in LANGS]
+        value_rows += [
+            vrow("answer_language", lang, lang != not_fired) for lang in LANGS if lang != omit_value
+        ]
         axis_rows += [
             {"axis": "answer_language", "floor_met": True},
             {"axis": "query_content_oneword", "verdict": "no_manipulation_check_query_class"},
         ]
+    axis_rows = [r for r in axis_rows if r["axis"] != omit_axis_row]
     return {"value_rows": value_rows, "axis_rows": axis_rows, "meta": {}}
 
 
@@ -262,9 +275,9 @@ def _cfg(tmp_path: Path, b: int = 40) -> AN.CfgX:
     )
 
 
-def _fire(tmp_path: Path, name: str, pilots: bool, not_fired: str) -> dict:
+def _fire(tmp_path: Path, name: str, pilots: bool, not_fired: str, **doc_kwargs) -> dict:
     p = tmp_path / name
-    p.write_text(json.dumps(_fire_doc(pilots, not_fired)))
+    p.write_text(json.dumps(_fire_doc(pilots, not_fired, **doc_kwargs)))
     return AN.load_fire(p)
 
 
@@ -720,3 +733,274 @@ def test_ref7b_stat_extraction_shapes() -> None:
     assert AN._ref7b_stat(ref_axes, "toneX", "obs_separation_snr") == pytest.approx(4.0)
     assert np.isnan(AN._ref7b_stat(ref_axes, "missing", "direction_cos"))
     assert np.isnan(AN._ref7b_stat({}, "toneX", "axis_identity_cos"))
+
+
+def test_ref7b_stat_schema_drift_fails_loud() -> None:
+    """r1 g7 Minor 2: a PRESENT axis with a missing key is schema drift and
+    RAISES (the old except-(KeyError, TypeError)->NaN silently absorbed it);
+    explicit null LEAVES in the parent artifact stay NaN; an unknown stat
+    name raises ValueError."""
+    ax_missing_arm = {"toneX": {"direction": {}}}  # no arm_779ce under a PRESENT axis
+    with pytest.raises(KeyError):
+        AN._ref7b_stat(ax_missing_arm, "toneX", "direction_cos")
+    ax_none_family = {"toneX": {"direction": None}}  # a null FAMILY is drift too
+    with pytest.raises(TypeError):
+        AN._ref7b_stat(ax_none_family, "toneX", "direction_cos")
+    # observed parent schema: compliance-limited axes carry null LEAVES -> NaN
+    ax_null_leaf = {
+        "toneX": {
+            "direction": {"arm_779ce": {"mean_cos_headline": None}},
+            "surface": {"observed": {"flip_norm_mean": None}},
+            "reliability": {"noise_norm_mean": 0.5},
+        }
+    }
+    assert np.isnan(AN._ref7b_stat(ax_null_leaf, "toneX", "direction_cos"))
+    assert np.isnan(AN._ref7b_stat(ax_null_leaf, "toneX", "obs_separation_snr"))
+    with pytest.raises(ValueError, match="unknown ref7b stat"):
+        AN._ref7b_stat({"toneX": {}}, "toneX", "nonexistent_stat")
+
+
+# ── missing fire rows / missing axis rows (r1 fix round 2) ─────────────
+
+
+def test_pair_fired_mask_missing_row_drops_both_sides_and_counts(tmp_path: Path) -> None:
+    """Plan §4.6 (r1 concern missing-fire-defaults-true): a fire-filtered
+    value with NO fire row is NOT fired — the pair drops from BOTH endpoint
+    masks — and the missing masks COUNT it; present-and-fired values keep
+    their verdicts; gridless classes stay unfiltered and never 'missing'."""
+    bank9, _ = _banks()
+    spec9 = _spec9()
+    st9 = _stores(bank9, spec9.store_layers, spec9.d, spec9.primary_layer, "0.11.0", seed=7)
+    fire = _fire(tmp_path, "m9.json", pilots=True, not_fired="v2", omit_value="v3")
+    pa = AN.build_pair_arrays(bank9, st9, spec9, smoke=True)
+    fa, fb, ma, mb = AN.pair_fired_mask(pa, fire, 70)
+    touches_v3_a = np.array(
+        [pa.cls[i] not in AN.GRIDLESS_CLASSES and pa.value_a[i] == "v3" for i in range(pa.n)]
+    )
+    touches_v3_b = np.array(
+        [pa.cls[i] not in AN.GRIDLESS_CLASSES and pa.value_b[i] == "v3" for i in range(pa.n)]
+    )
+    assert touches_v3_a.any() and touches_v3_b.any()
+    # missing row => NOT fired on that endpoint => the PAIR drops from fa & fb
+    assert not fa[touches_v3_a].any() and ma[touches_v3_a].all()
+    assert not fb[touches_v3_b].any() and mb[touches_v3_b].all()
+    assert not (fa & fb)[touches_v3_a | touches_v3_b].any()
+    # present rows keep their semantics: v1 fired, v2 explicitly not_fired
+    v1_a = np.array(
+        [pa.cls[i] not in AN.GRIDLESS_CLASSES and pa.value_a[i] == "v1" for i in range(pa.n)]
+    )
+    v2_a = np.array(
+        [pa.cls[i] not in AN.GRIDLESS_CLASSES and pa.value_a[i] == "v2" for i in range(pa.n)]
+    )
+    assert fa[v1_a].all() and not ma[v1_a].any()
+    assert not fa[v2_a].any() and not ma[v2_a].any()  # not_fired is NOT 'missing'
+    # gridless classes: unfiltered, never missing
+    gridless = np.array([pa.cls[i] in AN.GRIDLESS_CLASSES for i in range(pa.n)])
+    assert fa[gridless].all() and fb[gridless].all()
+    assert not ma[gridless].any() and not mb[gridless].any()
+    # unmanipulated install endpoints (parent "E" a-side, pilot "bare" b-side)
+    # carry NO fire rows in the real doc and are EXEMPT — never dropped/missing
+    bare_a = np.array([pa.cls[i] == "install" and pa.value_a[i] == "E" for i in range(pa.n)])
+    bare_b = np.array([pa.cls[i] == "install" and pa.value_b[i] == "bare" for i in range(pa.n)])
+    assert bare_a.any() and fa[bare_a].all() and not ma[bare_a].any()
+    assert bare_b.any() and fb[bare_b].all() and not mb[bare_b].any()
+    # query_paraphrase (E/Ep — no manipulation check by design): exempt too
+    qp = np.array([pa.cls[i] == "query_paraphrase" for i in range(pa.n)])
+    assert qp.any() and fa[qp].all() and fb[qp].all()
+    assert not ma[qp].any() and not mb[qp].any()
+
+
+@pytest.fixture(scope="module")
+def world_missing(tmp_path_factory) -> dict:
+    """world variant: the 9B fire doc OMITS v3's rows entirely (missing, not
+    not_fired) — pins the drop-counted-and-reported surface end to end."""
+    tmp_path = tmp_path_factory.mktemp("an2587miss")
+    bank9, bank7 = _banks()
+    spec9 = _spec9()
+    spec7 = _spec7()
+    st9 = _stores(bank9, spec9.store_layers, spec9.d, spec9.primary_layer, "0.11.0", seed=7)
+    st7 = _stores(bank7, spec7.store_layers, spec7.d, spec7.primary_layer, None, seed=11)
+    cfg = _cfg(tmp_path)
+    # 9B: every PRESENT row fires; v3's rows are OMITTED (missing != not_fired).
+    # 7B: all rows present; v2 explicitly not_fired. With 3 values this keeps
+    # each side's fired set non-empty while the two drop MECHANISMS differ.
+    fire9 = _fire(tmp_path, "manip9.json", pilots=True, not_fired="<none>", omit_value="v3")
+    fire7 = _fire(tmp_path, "manip7.json", pilots=False, not_fired="v2")
+    rng = np.random.default_rng([AN.BOOT_SEED])
+    n_car = len(st9.carriers)
+    idx_draws = rng.integers(0, n_car, size=(cfg.b_boot, n_car))
+    mult = AN.carrier_multiplicities(idx_draws, n_car)
+    rng9 = np.random.default_rng(1)
+    mapped9 = {
+        AN.ARM_FRESH9B: rng9.standard_normal((len(st9.ctx_ids), spec9.d)),
+        AN.ARM_IDD9B: st9.vc[spec9.primary_layer],
+    }
+    mapped7 = {
+        AN.ARM_7B_MATCHED: rng9.standard_normal((len(st7.ctx_ids), spec7.d)),
+        AN.ARM_IDD7B: st7.vc[AN.L19],
+    }
+    run9 = AN.compute_side(cfg, spec9, bank9, st9, fire9, mapped9, mult, idx_draws)
+    run7 = AN.compute_side(cfg, spec7, bank7, st7, fire7, mapped7, mult, idx_draws)
+    cm_doc, _ = AN.crossmodel_contrasts(
+        run9, run7, spec9.primary_layer, mult, {"axes": {}}, "testcommit", cfg
+    )
+    return {"run9": run9, "run7": run7, "cm_doc": cm_doc}
+
+
+def test_compute_side_reports_missing_fire_row_drops(world_missing: dict) -> None:
+    f9 = world_missing["run9"].axes_out["toneX"]["fire"]
+    assert f9["n_missing_fire_rows"] > 0  # v3's rows are MISSING, counted per axis
+    assert f9["axis_row_missing"] is False  # the toneX AXIS row is present
+    # the missing endpoint drops shrink the headline exactly like a not-fired verdict
+    assert 0 < f9["n_headline_pairs_fired70"] < f9["n_primary_pairs"]
+    # the 7B side (all rows present) reports zero missing
+    f7 = world_missing["run7"].axes_out["toneX"]["fire"]
+    assert f7["n_missing_fire_rows"] == 0
+
+
+def test_crossmodel_missing_fire_rows_drop_both_sides_and_counted(world_missing: dict) -> None:
+    rows = {r["axis"]: r for r in world_missing["cm_doc"]["stats"]["direction_cos"]["axes"]}
+    f = rows["toneX"]["fire"]
+    assert f["n_missing_fire_rows_9b"] > 0  # counted + reported (plan §4.6)
+    assert f["n_missing_fire_rows_7b"] == 0
+    # dropped from BOTH sides of the contrast: the symmetric-fired subset excludes them
+    assert f["n_symmetric_fired"] < f["n_shared_primary"]
+    # v3 pairs: fired on 7B, MISSING->not-fired on 9B (drops attributed to 9B)
+    assert f["n_dropped_9b_only"] > 0
+    # v2 pairs: fired on 9B, explicitly not_fired on 7B (the other direction)
+    assert f["n_dropped_7b_only"] > 0
+
+
+def test_world_all_rows_present_reports_zero_missing(world: dict) -> None:
+    f = world["run9"].axes_out["toneX"]["fire"]
+    assert f["n_missing_fire_rows"] == 0 and f["axis_row_missing"] is False
+    rows = {r["axis"]: r for r in world["cm_doc"]["stats"]["direction_cos"]["axes"]}
+    assert rows["toneX"]["fire"]["n_missing_fire_rows_9b"] == 0
+    assert rows["toneX"]["fire"]["n_missing_fire_rows_7b"] == 0
+
+
+def test_missing_axis_row_is_not_floor_cleared(tmp_path: Path) -> None:
+    """r1 bug-class sweep sibling (analysis.py:1679-1683): a MISSING axis row
+    on a fire-FILTERED axis is NOT floor-cleared (compliance-limited +
+    reported), while gridless query classes with no row stay unfiltered."""
+    bank9, _ = _banks()
+    spec9 = _spec9()
+    st9 = _stores(bank9, spec9.store_layers, spec9.d, spec9.primary_layer, "0.11.0", seed=7)
+    cfg = _cfg(tmp_path)
+    fire9 = _fire(tmp_path, "m9.json", pilots=True, not_fired="v3", omit_axis_row="toneX")
+    rng = np.random.default_rng([AN.BOOT_SEED])
+    n_car = len(st9.carriers)
+    idx_draws = rng.integers(0, n_car, size=(cfg.b_boot, n_car))
+    mult = AN.carrier_multiplicities(idx_draws, n_car)
+    rng9 = np.random.default_rng(1)
+    mapped9 = {
+        AN.ARM_FRESH9B: rng9.standard_normal((len(st9.ctx_ids), spec9.d)),
+        AN.ARM_IDD9B: st9.vc[spec9.primary_layer],
+    }
+    run9 = AN.compute_side(cfg, spec9, bank9, st9, fire9, mapped9, mult, idx_draws)
+    ftx = run9.axes_out["toneX"]["fire"]
+    assert ftx["axis_row_missing"] is True
+    assert ftx["compliance_limited"] is True and ftx["headline_ok"] is False
+    assert ftx["floor_met"] is None  # no recorded floor — never silently True
+    # gridless axes carry no manipulation check: absent row stays unfiltered
+    fqc = run9.axes_out["query_content"]["fire"]
+    assert fqc["axis_row_missing"] is False and fqc["headline_ok"] is True
+
+
+# ── plan-§3 metadata on every artifact (r1 g7 Minor 3) ─────────────────
+
+
+def test_side_meta_and_perpair_carry_primary_h2_arm(world: dict) -> None:
+    assert AN.side_meta(world["run9"])["primary_h2_7b_arm"] == AN.PRIMARY_H2_7B_ARM
+    assert AN.side_meta(world["run7"])["primary_h2_7b_arm"] == AN.PRIMARY_H2_7B_ARM
+    for run in (world["run9"], world["run7"]):
+        assert all(r["primary_h2_7b_arm"] == AN.PRIMARY_H2_7B_ARM for r in run.perpair)
+
+
+def test_compute_h1_doc_carries_primary_h2_arm() -> None:
+    rng = np.random.default_rng(4)
+    p9 = _mk_preds(rng, 30, 4, 2, quality=1.0)
+    p7 = _mk_preds(rng, 30, 4, 19, quality=0.5)
+    doc, _ = AN.compute_h1(p9, p7, lstar=2, b_boot=50, rng=np.random.default_rng(0))
+    assert doc["primary_h2_7b_arm"] == AN.PRIMARY_H2_7B_ARM
+
+
+def test_savez_with_meta_roundtrip(tmp_path: Path) -> None:
+    p = tmp_path / "stat.npz"
+    AN._savez_with_meta(p, delta_draws=np.arange(4.0))
+    with np.load(p) as z:
+        assert str(z["primary_h2_7b_arm"]) == AN.PRIMARY_H2_7B_ARM
+        np.testing.assert_allclose(z["delta_draws"], np.arange(4.0))
+
+
+# ── ref7b parent commit is RECORDED, never a sentinel (r1 g7 Minor 1) ──
+
+
+def test_resolve_ref7b_default_commit_tracked_clean_and_failure_modes(
+    tmp_path: Path, monkeypatch
+) -> None:
+    import subprocess
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def git(*argv: str) -> str:
+        out = subprocess.run(
+            ["git", "-C", str(repo), *argv], capture_output=True, text=True, check=True
+        )
+        return out.stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "t@example.com")
+    git("config", "user.name", "t")
+    ref = repo / "eval_results" / "issue_2564" / "minpair_delta.json"
+    ref.parent.mkdir(parents=True)
+    ref.write_text("{}")
+    git("add", str(ref.relative_to(repo)))
+    git("commit", "-q", "-m", "add parent artifact")
+    monkeypatch.setattr(AN, "_REPO_ROOT", repo)
+    commit = AN._resolve_ref7b_default_commit(ref)
+    assert commit == git("log", "-n", "1", "--format=%H", "--", str(ref.relative_to(repo)))
+    assert len(commit) == 40 and "UNRECORDED" not in commit
+    # dirty working copy: the tracked commit no longer describes the bytes -> halt
+    ref.write_text("{drift}")
+    with pytest.raises(SystemExit, match="ref7b-parent-commit is REQUIRED"):
+        AN._resolve_ref7b_default_commit(ref)
+    git("checkout", "-q", "--", str(ref.relative_to(repo)))
+    # untracked file: no committed provenance -> halt
+    other = repo / "eval_results" / "issue_2564" / "untracked.json"
+    other.write_text("{}")
+    with pytest.raises(SystemExit, match="ref7b-parent-commit is REQUIRED"):
+        AN._resolve_ref7b_default_commit(other)
+    # outside the repo root -> halt
+    outside = tmp_path / "elsewhere.json"
+    outside.write_text("{}")
+    with pytest.raises(SystemExit, match="outside the repo root"):
+        AN._resolve_ref7b_default_commit(outside)
+
+
+def test_build_config_default_ref7b_commit_routes_through_resolver(monkeypatch) -> None:
+    seen: dict = {}
+
+    def fake_resolve(path: Path) -> str:
+        seen["path"] = Path(path)
+        return "a" * 40
+
+    monkeypatch.setattr(AN, "_resolve_ref7b_default_commit", fake_resolve)
+    args = AN.parse_args(["--smoke", "--manip-9b", "/tmp/m9.json", "--manip-7b", "/tmp/m7.json"])
+    cfg = AN.build_config(args)
+    assert cfg.ref7b_parent_commit == "a" * 40
+    assert seen["path"] == cfg.ref7b_parent
+    # an explicit commit wins (the resolver is the DEFAULT-path fallback only)
+    args2 = AN.parse_args(
+        [
+            "--smoke",
+            "--manip-9b",
+            "/tmp/m9.json",
+            "--manip-7b",
+            "/tmp/m7.json",
+            "--ref7b-parent-commit",
+            "b" * 40,
+        ]
+    )
+    assert AN.build_config(args2).ref7b_parent_commit == "b" * 40
