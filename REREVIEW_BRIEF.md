@@ -137,7 +137,22 @@ scans `main`, where a branch-only file is absent and the check trivially passes.
 ## Verdict
 
 End with `PASS` or `FAIL`. On FAIL, one blocker per finding, each with the file,
-the line, the failure scenario (concrete inputs → wrong output), and a
-machine-readable `CONCERN:: <slug> | <severity> | <one-line summary>` row. Tag any
-blocker that is purely a mechanical contract (`marker-shape`, `smoke-run-missing`,
-`git-provenance`) as such; everything else is substantive and will not be stripped.
+the line, and the failure scenario (concrete inputs → wrong output), plus a
+machine-readable row in EXACTLY this shape:
+
+```
+CONCERN:: <SEVERITY> <kebab-case-id> <one-line summary>
+```
+
+Severity FIRST, then the id, then the summary — space-delimited, no pipes.
+`<SEVERITY>` is one of `BLOCKER` / `CONCERN` / `NIT`; the id must match
+`^[a-z0-9][a-z0-9-]{1,79}$`. This is the format
+`scripts/persist_verdict_concerns.py` parses (token 1 = severity, token 2 = id,
+remainder = summary), and it rejects anything else as MALFORMED — an earlier
+version of this brief specified a pipe-delimited id-first row, every row of a
+real verdict was refused, and the orchestrator had to translate them by hand.
+When there is nothing to persist, emit the single literal row `CONCERN:: none`.
+
+Tag any blocker that is purely a mechanical contract (`marker-shape`,
+`smoke-run-missing`, `git-provenance`) as such; everything else is substantive
+and will not be stripped.
