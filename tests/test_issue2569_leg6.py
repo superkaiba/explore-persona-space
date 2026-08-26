@@ -17,6 +17,7 @@ factorizations stay out of every test path.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -264,3 +265,250 @@ def test_context_matrix_conventions_resolve():
     assert float(L6.context_matrix("span_mean", lt, pb, layer)[0, 0]) == 3.0
     with pytest.raises(ValueError, match="unknown context convention"):
         L6.context_matrix("nope", lt, pb, layer)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Factor-vector persistence + cross-arm shared-factor phase (leg-6 criterion producer)
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_factor_roles_reconstruct_half_map_and_role_swap_fails():
+    """Role naming is load-bearing: context factors (input side, U) with shift factors
+    (output side, V) reconstruct the half-1 map as U diag(s) V^T; the role-SWAPPED
+    product V diag(s) U^T must NOT reconstruct it — the in-test decoy that would catch a
+    writer persisting the sides under swapped names."""
+    c, delta, shas = _rank_k_data(n=600, d=32, k=3, noise=0.5)
+    rec, factors = L6.fit_split_half(c, delta, shas, return_factors=True)
+    m1 = np.asarray(factors["map_half1"].numpy(), dtype=np.float64)
+    u = factors["context_factors_half1"].astype(np.float64)
+    v = factors["shift_factors_half1"].astype(np.float64)
+    s = np.asarray(factors["singular_values_half1"], dtype=np.float64)
+    assert u.shape == (32, 32) and v.shape == (32, 32)  # d=32 < FACTOR_K_PERSIST cap
+    denom = float(np.linalg.norm(m1))
+    err_correct = float(np.linalg.norm((u * s[None, :]) @ v.T - m1)) / denom
+    err_swapped = float(np.linalg.norm((v * s[None, :]) @ u.T - m1)) / denom
+    assert err_correct < 1e-4, err_correct  # fp32 storage grain only
+    assert err_swapped > 0.1, err_swapped  # decoy discrimination: swapped roles fail
+    # New rec keys ride the unit JSON: operator floor with its statistic-class label.
+    assert -1.0 <= rec["operator_splithalf_cosine"] <= 1.0
+    assert rec["operator_splithalf_cosine_class"] == L6.STAT_CLASS_OPERATOR_FLOOR
+    assert "pred = (context - mu_c) @ M + mu_d" in rec["factor_orientation"]
+    # Backward compatibility: the default return shape is unchanged (dict, not tuple).
+    rec_only = L6.fit_split_half(c, delta, shas)
+    assert isinstance(rec_only, dict)
+
+
+def _orth_cols(d: int, k: int, seed: int) -> np.ndarray:
+    """k orthonormal columns in R^d (planted factor directions)."""
+    return np.linalg.qr(np.random.default_rng(seed).normal(size=(d, k)))[0]
+
+
+def _stage_leg6_fixture(
+    root: Path,
+    arm_gs: dict[str, np.ndarray],
+    *,
+    layer: int = 19,
+    n: int = 240,
+    d: int = 24,
+    noise: float = 0.3,
+    seed: int = 7,
+) -> None:
+    """Write a tiny staged store mirror in the arm_store_paths layout with planted maps.
+
+    One shared base unit (pooled.pt + lasttoken.pt under ``base_content``) and, per arm,
+    pooled_tf.pt with response shift ``C @ G_arm + noise`` plus an exact banked tbar.
+    """
+    rng = np.random.default_rng(seed)
+    c_np = rng.normal(size=(n, d))
+    c_lp = torch.tensor(c_np, dtype=torch.float32)
+    base_resp = torch.tensor(0.1 * rng.normal(size=(n, d)), dtype=torch.float32)
+    ms_root = root / L6.MAPSHIFT_PREFIX
+    pb_dir = ms_root / "corpus_capture" / "base_content"
+    pb_dir.mkdir(parents=True, exist_ok=True)
+    base_arms = {"context": {layer: c_lp.clone()}, "response": {layer: base_resp}}
+    torch.save(_store(n, d, base_arms), pb_dir / "pooled.pt")
+    lt_dir = ms_root / "lasttoken_ctx" / "base_content"
+    lt_dir.mkdir(parents=True, exist_ok=True)
+    lt_arms = {"last_prompt": {layer: c_lp}, "last_ctx": {layer: c_lp.clone()}}
+    torch.save(_store(n, d, lt_arms), lt_dir / "lasttoken.pt")
+    for aid, g in arm_gs.items():
+        delta = c_np @ g + noise * rng.normal(size=(n, d))
+        tf_resp = base_resp + torch.tensor(delta, dtype=torch.float32)
+        tf_dir = ms_root / "corpus_capture_tf" / aid
+        tf_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(_store(n, d, {"response": {layer: tf_resp}}), tf_dir / "pooled_tf.pt")
+        tb_dir = ms_root / "delta_tf" / aid
+        tb_dir.mkdir(parents=True, exist_ok=True)
+        banked = (tf_resp.to(torch.float64) - base_resp.to(torch.float64)).mean(dim=0)
+        torch.save(
+            {"tbar": {layer: banked}, "n_rows": n, "meta": {"n_rows": n, "pos_path": "synth"}},
+            tb_dir / "tbar.pt",
+        )
+
+
+def _arm(aid: str, beh: str) -> dict:
+    """Minimal arms.json-shaped arm record."""
+    return {"arm_id": aid, "kind": "content", "beh_key": beh, "base_unit": "base_content"}
+
+
+def test_run_arm_persists_factor_and_operator_sidecars(tmp_path):
+    """run_arm writes the role-named .npz factor sidecar + the atlas-contract
+    operator_factors.pt (keys u/s/v/split_half_floor — issue2569_atlas.py step (5) glob),
+    and resume-skips both on a second run."""
+    d, layer = 24, 19
+    q, r = _orth_cols(d, 2, 11), _orth_cols(d, 2, 12)
+    g = 2.0 * np.outer(q[:, 0], r[:, 0]) + 1.4 * np.outer(q[:, 1], r[:, 1])
+    _stage_leg6_fixture(tmp_path, {"armA": g}, layer=layer, d=d)
+    out_root = tmp_path / "out"
+    res = L6.run_arm(
+        _arm("armA", "beh1"),
+        tmp_path,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        raw_rows_dir=None,
+        resume=True,
+    )
+    assert res["halt"] is False and res["units_done"] == 1
+    arm_dir = out_root / "leg6" / "armA"
+    unit = json.loads((arm_dir / f"L{layer}_last_prompt.json").read_text())
+    assert unit["factor_vectors_file"] == f"L{layer}_last_prompt_factors.npz"
+    assert unit["factor_bases"]["context"]["dim"] == d
+    assert unit["factor_bases"]["shift"]["summary"] == "span_mean"
+    npz_path = arm_dir / unit["factor_vectors_file"]
+    npz = np.load(npz_path, allow_pickle=False)
+    role_keys = {
+        "context_factors_half1",
+        "shift_factors_half1",
+        "singular_values_half1",
+        "context_factors_half2",
+        "shift_factors_half2",
+        "singular_values_half2",
+        "schema_json",
+    }
+    assert role_keys <= set(npz.files)
+    assert not {"u", "v", "map_half1"} & set(npz.files)  # bare-letter/map keys never persist
+    k = unit["factor_vectors_k"]
+    assert npz["context_factors_half1"].shape == (d, k)
+    schema = json.loads(str(npz["schema_json"]))
+    assert schema["factor_bases"] == unit["factor_bases"]
+    # Atlas sidecar contract (issue2569_atlas.py step (5)): u/s/v/split_half_floor.
+    op_path = arm_dir / "operator_factors.pt"
+    op = torch.load(op_path, weights_only=False, map_location="cpu")
+    u_op = np.asarray(op["u"], dtype=np.float64)
+    s_op = np.asarray(op["s"], dtype=np.float64)
+    v_op = np.asarray(op["v"], dtype=np.float64)
+    assert u_op.shape == (d, min(d, L6.OPERATOR_K_PERSIST)) and u_op.shape == v_op.shape
+    a_full = (u_op * s_op[None, :]) @ v_op.T
+    assert a_full.shape == (d, d) and np.isfinite(a_full).all()
+    assert op["split_half_floor"] == unit["operator_splithalf_cosine"]
+    assert op["split_half_floor_class"] == L6.STAT_CLASS_OPERATOR_FLOOR
+    assert "context" in op["u_role"] and "shift" in op["v_role"]
+    # Resume: a second run leaves both sidecars untouched (mtime_ns unchanged).
+    stamps = (npz_path.stat().st_mtime_ns, op_path.stat().st_mtime_ns)
+    L6.run_arm(
+        _arm("armA", "beh1"),
+        tmp_path,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        raw_rows_dir=None,
+        resume=True,
+    )
+    assert (npz_path.stat().st_mtime_ns, op_path.stat().st_mtime_ns) == stamps
+
+
+def test_cross_arm_shared_factor_criterion(tmp_path):
+    """The registered-criterion producer: two same-behavior arms sharing one planted
+    factor yield >=1 cross-arm shared factor above the rotation null (pair named); the
+    cell carries both statistics with CLASS labels and the matching rule."""
+    d, layer = 24, 19
+    q, r = _orth_cols(d, 4, 21), _orth_cols(d, 4, 22)
+    shared = 2.0 * np.outer(q[:, 0], r[:, 0])
+    gs = {
+        "armA": shared + 1.4 * np.outer(q[:, 1], r[:, 1]),
+        "armB": shared + 1.4 * np.outer(q[:, 2], r[:, 2]),
+        "armC": 2.0 * np.outer(q[:, 3], r[:, 3]),  # beh2: orthogonal planted factor
+    }
+    _stage_leg6_fixture(tmp_path, gs, layer=layer, d=d)
+    out_root = tmp_path / "out"
+    arms = [_arm("armA", "beh1"), _arm("armB", "beh1"), _arm("armC", "beh2")]
+    for a in arms:
+        L6.run_arm(
+            a,
+            tmp_path,
+            out_root,
+            layers=[layer],
+            conventions=["last_prompt"],
+            raw_rows_dir=None,
+            resume=True,
+        )
+    summary = L6.run_cross_arm(
+        arms,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        n_null_draws=50,
+        resume=True,
+    )
+    cell = json.loads((out_root / "leg6" / "cross_arm" / f"L{layer}_last_prompt.json").read_text())
+    crit = cell["criterion"]
+    assert crit["n_shared_above_null_same_behavior"] >= 1
+    assert crit["met"] is True and summary["criterion_met_any_cell"] is True
+    assert any(p.startswith("armA~armB") for p in crit["pairs_above_null_same_behavior"])
+    # Statistic-class labels ride next to the numbers (unit-5 atlas convention).
+    sc = cell["statistic_classes"]
+    assert "direction-aware" in sc["cross_arm_factor_cosine"]
+    assert "rotation" in sc["rotation_null"]
+    assert "min(|cos_context|, |cos_shift|)" in cell["matching_rule"]
+    band = cell["rotation_null_bands"][str(d)]
+    assert band["shared_across_pairs"] is True and band["n_draws"] == 50
+    # Both floors reported per match: rotation null AND within-arm split-half agreement.
+    ab = next(p for p in cell["pairs"] if p["arm_a"] == "armA" and p["arm_b"] == "armB")
+    assert ab["admissible"] is True
+    m0 = ab["matches"][0]
+    assert {"cos_context", "cos_shift", "above_rotation_null", "splithalf_floor"} <= set(m0)
+    # The shared factor is the top-sigma factor in both arms and agrees on BOTH sides.
+    assert m0["factor_a"] == 0 and m0["above_rotation_null"] is True
+    assert abs(m0["cos_context"]) > 0.8 and abs(m0["cos_shift"]) > 0.8
+
+
+def test_cross_arm_refuses_basis_mismatched_pair(tmp_path):
+    """A pair whose recorded factor bases differ is REFUSED with a recorded reason —
+    no cosine is fabricated and the criterion cannot count it."""
+    d, layer = 24, 19
+    q, r = _orth_cols(d, 1, 31), _orth_cols(d, 1, 32)
+    g = 2.0 * np.outer(q[:, 0], r[:, 0])
+    _stage_leg6_fixture(tmp_path, {"armA": g, "armB": g}, layer=layer, d=d)
+    out_root = tmp_path / "out"
+    arms = [_arm("armA", "beh1"), _arm("armB", "beh1")]
+    for a in arms:
+        L6.run_arm(
+            a,
+            tmp_path,
+            out_root,
+            layers=[layer],
+            conventions=["last_prompt"],
+            raw_rows_dir=None,
+            resume=True,
+        )
+    # Poison arm B's recorded context basis (a re-pinned store) — the pair must refuse.
+    unit_path = out_root / "leg6" / "armB" / f"L{layer}_last_prompt.json"
+    unit = json.loads(unit_path.read_text())
+    unit["factor_bases"]["context"]["store"] = "lasttoken_ctx@deadbeef"
+    unit_path.write_text(json.dumps(unit))
+    cell_summary = L6.run_cross_arm(
+        arms,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        n_null_draws=0,
+        resume=False,
+    )
+    cell = json.loads((out_root / "leg6" / "cross_arm" / f"L{layer}_last_prompt.json").read_text())
+    (pair,) = cell["pairs"]
+    assert pair["admissible"] is False
+    assert "factor_bases mismatch" in pair["refusal_reason"]
+    assert "matches" not in pair
+    assert cell["criterion"]["n_shared_above_null_same_behavior"] == 0
+    assert cell_summary["criterion_met_any_cell"] is False

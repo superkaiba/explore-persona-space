@@ -44,6 +44,31 @@ context matrix C, with:
   scored on the opposite half.
 - **Pooled cross-arm RRR:** fit on the 3 same-behavior sibling content arms, target arm held
   out (the #1979 fit-on-3-siblings construction; realized row counts recorded).
+- **Factor-vector persistence (closes concern leg6-cross-arm-factor-vectors-unpersisted):**
+  every unit ALSO writes ``L{layer}_{conv}_factors.npz`` — the per-half factor VECTORS with
+  role-named arrays (``context_factors_half{1,2}`` = input-side singular vectors in the base
+  context basis; ``shift_factors_half{1,2}`` = output-side singular vectors in the
+  answer-span shift basis; columns ordered by descending sigma) plus an embedded
+  ``schema_json`` carrying the orientation and the explicit basis bookkeeping. Each arm dir
+  additionally gets ``operator_factors.pt`` in the atlas sidecar shape (keys ``u``/``s``/
+  ``v``/``split_half_floor`` — the EXISTING consumer contract in issue2569_atlas.py step (5),
+  concern leg7-atlas-writemap-operators-unpersisted; role-annotation keys ride alongside):
+  an ALL-ROWS ridge refit at the primary unit's selected lambda, truncated to the top 64
+  factors, floor = the raw operator vec-cosine between the two independent half fits.
+- **Cross-arm shared-factor phase (``--cross-arm``; closes concern
+  leg6-cross-arm-shared-factor-no-producer — plan leg 6 step 4 / H6 / the leg-6 success
+  criterion):** per (layer, convention) cell, pairwise cross-arm factor cosines over each
+  arm's DENOISED half-1 factors, greedily matched by min(|cos_context|, |cos_shift|) (the
+  within-arm/unit-7c |cos| convention), against the RANDOM-ROTATION null via the REUSED
+  ``issue1345_operator_comparison.raw_cosine_with_rotation_null`` (never reimplemented; the
+  band is computed ONCE per vector dimension d on canonical basis-vector probes and shared
+  across pairs — for vector-shaped inputs a Haar rotation maps any unit vector to a uniform
+  direction, so the null distribution depends only on d). Both floors are reported side by
+  side: the rotation null AND the within-arm split-half agreement (noise floor). A pair
+  whose recorded factor bases differ is REFUSED with a recorded reason — never a fabricated
+  cosine. Emits ``cross_arm/L{layer}_{conv}.json`` + ``cross_arm/summary.json`` carrying the
+  registered-criterion verdict input: the count of cross-arm shared factors above the
+  rotation null over same-behavior arm pairs, with the pairs named.
 
 Context conventions: PRIMARY ``last_prompt`` (the plan-wide v_C = last-prompt-token state,
 plan §6 pooling-convention row); companions ``last_ctx`` (the context-segment last token) and
@@ -71,6 +96,7 @@ import json
 import logging
 import sys
 import time
+from itertools import combinations
 from pathlib import Path
 
 import numpy as np
@@ -85,9 +111,41 @@ ISSUE = 2569
 SPLIT_SEED = 0  # plan §4 leg 6 step 3: "two disjoint halves by conversation id (seed 0)"
 N_SHUFFLE_DRAWS = 20
 COS_FLOOR = 0.5
+# Cross-arm shared-factor phase (plan leg 6 step 4 / H6): rotation-null draws + seed for the
+# REUSED issue1345_operator_comparison.raw_cosine_with_rotation_null band. Measured basis
+# (2026-08-25, this VM, thread caps 8): ONE ma._random_orthogonal(3584) draw = 2.47 s, so the
+# one-time production band at 200 draws is ~8.3 min per unique vector dim (cached per d).
+CROSS_NULL_SEED = 2569
+N_CROSS_NULL_DRAWS = 200
+FACTOR_K_PERSIST = 32  # per-half factor vectors persisted per unit (matches the [:32] JSON caps)
+OPERATOR_K_PERSIST = 64  # all-rows operator sidecar truncation (the _svd_factors k_cap)
 # Lambda grid GENERATING PARAMETERS (machine-stable resume key — never hash float bytes).
 LAMBDA_GRID_PARAMS = ("logspace", -6.0, 2.0, 17)
 GAVISH_DONOHO_COEF = 4.0 / (3.0**0.5)  # arXiv 1305.5870 — analytic reference ONLY
+
+# Statistic CLASS labels (unit-5 atlas convention: every similarity statistic states its
+# class IN the artifact, next to the number — direction-aware vs rotation-invariant-only).
+STAT_CLASS_CROSS_COS = (
+    "direction-aware (raw factor cosine, |.| for SVD sign ambiguity; NOT rotation-invariant/"
+    "spectrum-only; issue1345_operator_comparison.raw_cosine_with_rotation_null)"
+)
+STAT_CLASS_ROTATION_NULL = (
+    "two-sided random-rotation chance band on the raw cosine (issue1345_operator_comparison."
+    "raw_cosine_with_rotation_null; by symmetry the signed p97.5 equals the p95 of |cos|)"
+)
+STAT_CLASS_SPLITHALF_FLOOR = (
+    "direction-aware within-arm split-half factor agreement (NOISE FLOOR — bounds how well "
+    "any cross-arm estimate of the factor can agree; not itself a cross-arm similarity)"
+)
+STAT_CLASS_OPERATOR_FLOOR = (
+    "direction-aware (raw operator vec-cosine between the two independent half-fit maps; "
+    "raw read of issue1345_operator_comparison.raw_cosine_with_rotation_null at n_draws=0)"
+)
+FACTOR_ORIENTATION = (
+    "row-vector map: pred = (context - mu_c) @ M + mu_d; M = U diag(s) V^T; context factors "
+    "= columns of U (input side), shift factors = columns of V (output side); factor sign is "
+    "arbitrary under SVD"
+)
 
 MAPSHIFT_PREFIX = "issue1768_mapshift"
 STORE_REVISIONS = {
@@ -520,6 +578,21 @@ def denoised_rank(matches: list[dict], thr1: float, thr2: float) -> int:
     return rank
 
 
+def _oc():
+    """Deferred import of the REUSED reference module (heavy sibling-import chain, ~5 s).
+
+    ``scripts/`` is sys.path[0] when this file runs as a script and is inserted by the test
+    file under pytest; this helper self-inserts the script dir so a module-mode importer
+    resolves the sibling too. Returns ``issue1345_operator_comparison``.
+    """
+    script_dir = str(Path(__file__).resolve().parent)
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+    import issue1345_operator_comparison as oc
+
+    return oc
+
+
 def fit_split_half(
     c_all: torch.Tensor,
     d_all: torch.Tensor,
@@ -530,13 +603,20 @@ def fit_split_half(
     n_shuffle: int = N_SHUFFLE_DRAWS,
     cos_floor: float = COS_FLOOR,
     knn_ks: tuple[int, ...] = (1, 5, 10),
-) -> dict:
+    return_factors: bool = False,
+) -> dict | tuple[dict, dict]:
     """The full B2 estimator for one (arm, layer, context-convention) unit.
 
     Returns a JSON-serializable record: selected lambda (+ edge flag), per-half held-out
     R^2, shuffle-calibrated thresholds, factor-match table, denoised rank, the
-    Gavish-Donoho reference count, and mapping baselines (identity+bias R^2 + kNN
-    retrieval, scored on the opposite half).
+    Gavish-Donoho reference count, the operator-level split-half self-agreement (raw
+    vec-cosine between the two half maps — the atlas floor convention), and mapping
+    baselines (identity+bias R^2 + kNN retrieval, scored on the opposite half).
+
+    With ``return_factors=True`` additionally returns the factor-VECTOR arrays (role-named:
+    ``context_factors_half{1,2}`` / ``shift_factors_half{1,2}`` / ``singular_values_half
+    {1,2}``, truncated to ``FACTOR_K_PERSIST``; see ``FACTOR_ORIENTATION``) plus the two
+    fitted half maps (``map_half1``/``map_half2`` — NOT persisted; for tests/diagnostics).
     """
     idx1, idx2 = split_halves_by_conversation(row_shas, seed=seed)
     assert len(np.intersect1d(idx1, idx2)) == 0, "B2: halves must be disjoint"
@@ -591,6 +671,10 @@ def fit_split_half(
     matches = greedy_factor_match(fit1, fit2, cos_floor=cos_floor)
     rank = denoised_rank(matches, thr1, thr2)
 
+    # Operator-level split-half self-agreement (the atlas floor convention): raw vec-cosine
+    # between the two independently fitted half maps, via the REUSED reference formula.
+    op_cos = float(_oc().raw_cosine_with_rotation_null(m1, m2, n_draws=0, seed=0)["raw_cosine"])
+
     # Gavish-Donoho 4/sqrt(3) count — ANALYTIC REFERENCE ONLY (premise does not hold here).
     med1 = float(np.median(s1)) if len(s1) else 0.0
     gd_count = int(np.sum(s1 > GAVISH_DONOHO_COEF * med1)) if med1 > 0 else 0
@@ -608,7 +692,7 @@ def fit_split_half(
     knn = mb.knn_retrieval(ridge_pred2.astype(np.float32), d2n.astype(np.float32), ks=knn_ks)
     knn["chance"] = {int(k): float(k) / float(len(d2n)) for k in knn_ks}
 
-    return {
+    rec = {
         "n_rows": int(c_all.shape[0]),
         "n_half": [n1, n2],
         "d": d_dim,
@@ -628,7 +712,25 @@ def fit_split_half(
         "singular_values_half2": [float(x) for x in s2[:32]],
         "identity_bias_r2": idb_r2,
         "knn_retrieval": knn,
+        "operator_splithalf_cosine": op_cos,
+        "operator_splithalf_cosine_class": STAT_CLASS_OPERATOR_FLOOR,
+        "factor_orientation": FACTOR_ORIENTATION,
     }
+    if not return_factors:
+        return rec
+    k = int(min(FACTOR_K_PERSIST, len(s1), len(s2)))
+    factors = {
+        "context_factors_half1": u1[:, :k].astype(np.float32),
+        "shift_factors_half1": v1[:, :k].astype(np.float32),
+        "singular_values_half1": s1[:k].astype(np.float64),
+        "context_factors_half2": u2[:, :k].astype(np.float32),
+        "shift_factors_half2": v2[:, :k].astype(np.float32),
+        "singular_values_half2": s2[:k].astype(np.float64),
+        # NOT persisted — returned for tests/diagnostics (reconstruction + role checks).
+        "map_half1": m1,
+        "map_half2": m2,
+    }
+    return rec, factors
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -708,6 +810,205 @@ def arm_store_paths(staged_root: Path, arm: dict) -> dict[str, Path]:
     }
 
 
+def factor_bases_for(layer: int, convention: str, d_context: int, d_shift: int) -> dict:
+    """Explicit basis bookkeeping for one unit's factor vectors (the cross-arm admission key).
+
+    Two arms' factors are comparable ONLY when these dicts are EQUAL: the input side lives
+    in the BASE model's residual stream at ``layer`` under ``convention`` pooling (shared
+    across arms by construction — one base store), the output side in the answer-span shift
+    space at ``layer`` (trained pooled_tf minus base pooled, both span-mean). Store pins
+    ride along so a re-pinned producer fails the equality loudly instead of comparing
+    vectors from different snapshots.
+    """
+    ctx_store = (
+        f"lasttoken_ctx@{STORE_REVISIONS['lasttoken_ctx']}"
+        if convention in ("last_prompt", "last_ctx")
+        else f"corpus_capture@{STORE_REVISIONS['corpus_capture']}"
+    )
+    return {
+        "context": {
+            "space": "base-model residual stream",
+            "layer": int(layer),
+            "summary": convention,
+            "store": ctx_store,
+            "dim": int(d_context),
+        },
+        "shift": {
+            "space": "answer-span shift (trained pooled_tf minus base pooled)",
+            "layer": int(layer),
+            "summary": "span_mean",
+            "store": (
+                f"corpus_capture_tf@{STORE_REVISIONS['corpus_capture_tf']}"
+                f" - corpus_capture@{STORE_REVISIONS['corpus_capture']}"
+            ),
+            "dim": int(d_shift),
+        },
+    }
+
+
+def write_factor_sidecar(
+    npz_path: Path,
+    factors: dict,
+    *,
+    bases: dict,
+    arm: str,
+    layer: int,
+    convention: str,
+    rk: str,
+    unit_kind: str,
+) -> None:
+    """Atomically persist one unit's factor VECTORS as a role-named ``.npz`` sidecar.
+
+    Arrays: ``context_factors_half{1,2}`` / ``shift_factors_half{1,2}`` (columns = factors,
+    descending sigma; fp32) + ``singular_values_half{1,2}`` (fp64); ``schema_json`` embeds
+    the orientation, the basis bookkeeping, and provenance so the sidecar is
+    self-describing. Written via ``np.savez`` on an OPEN file object — a path argument
+    would append ``.npz`` to the temp name and break the atomic replace.
+    """
+    schema = {
+        "schema_version": 1,
+        "orientation": FACTOR_ORIENTATION,
+        "factor_bases": bases,
+        "arm": arm,
+        "layer": int(layer),
+        "context_convention": convention,
+        "unit_kind": unit_kind,
+        "regime_key": rk,
+        "k": int(factors["singular_values_half1"].shape[0]),
+        "halves": (
+            "factors from the two independent per-half ridge fits at the shared selected lambda"
+        ),
+    }
+    with atomic_replace(npz_path) as tmp, open(tmp, "wb") as fh:
+        np.savez(
+            fh,
+            schema_json=np.asarray(json.dumps(schema, sort_keys=True)),
+            **{k: v for k, v in factors.items() if not k.startswith("map_half")},
+        )
+
+
+def write_operator_factors(
+    arm_dir: Path,
+    c_mat: torch.Tensor,
+    delta: torch.Tensor,
+    unit_rec: dict,
+    *,
+    arm: str,
+    layer: int,
+    convention: str,
+    rk: str,
+    resume: bool,
+) -> None:
+    """Persist the per-arm ``operator_factors.pt`` atlas sidecar (atlas step (5) contract).
+
+    Keys ``u``/``s``/``v``/``split_half_floor`` are the EXISTING consumer contract
+    (``issue2569_atlas.py`` globs ``<leg6_dir>/*/operator_factors.pt`` and reconstructs
+    ``A = (u * s) @ v.T``; concern leg7-atlas-writemap-operators-unpersisted) — role
+    annotations + basis bookkeeping ride alongside. Factors are the top
+    ``OPERATOR_K_PERSIST`` of an ALL-ROWS ridge refit at the unit-selected lambda (the
+    ``run_pooled`` m_all pattern); the floor is the unit's operator-level split-half
+    self-agreement. Atomic write; resume keyed on the embedded ``regime_key``.
+    """
+    path = arm_dir / "operator_factors.pt"
+    if resume and path.is_file():
+        prior = torch.load(path, weights_only=False, map_location="cpu")
+        if isinstance(prior, dict) and prior.get("regime_key") == rk:
+            log.info("[leg6] %s operator_factors.pt resume-skip", arm)
+            return
+    lam_rel = float(unit_rec["lambda_rel_selected"])
+    all_idx = np.arange(c_mat.shape[0], dtype=np.int64)
+    mu_c, mu_d, scc, scd, _n = half_moments(c_mat, delta, all_idx)
+    del mu_c, mu_d
+    m_all = ridge_map(scc, scd, lam_rel * float(torch.diagonal(scc).mean()))
+    s, u, v = _svd_factors(m_all, k_cap=OPERATOR_K_PERSIST)
+    payload = {
+        "u": torch.as_tensor(u, dtype=torch.float32),
+        "s": torch.as_tensor(s, dtype=torch.float64),
+        "v": torch.as_tensor(v, dtype=torch.float32),
+        "split_half_floor": float(unit_rec["operator_splithalf_cosine"]),
+        "split_half_floor_class": STAT_CLASS_OPERATOR_FLOOR,
+        "u_role": "context (read/input) directions — columns, descending sigma",
+        "v_role": "shift (write/output) directions — columns, descending sigma",
+        "orientation": FACTOR_ORIENTATION,
+        "factor_bases": unit_rec["factor_bases"],
+        "arm": arm,
+        "layer": int(layer),
+        "context_convention": convention,
+        "fit": "all-rows ridge refit at the unit-selected lambda (row-vector convention)",
+        "k": int(len(s)),
+        "regime_key": rk,
+        "metadata": _meta(),
+    }
+    with atomic_replace(path) as tmp:
+        torch.save(payload, tmp)
+    log.info(
+        "[leg6] %s operator_factors.pt written (k=%d, split_half_floor=%.4f)",
+        arm,
+        len(s),
+        payload["split_half_floor"],
+    )
+
+
+def rotation_null_band(d: int, *, n_draws: int, seed: int, cache: dict) -> dict:
+    """Rotation-null chance band for d-dim FACTOR (vector) cosines, cached per dimension.
+
+    REUSES ``issue1345_operator_comparison.raw_cosine_with_rotation_null`` verbatim on
+    canonical basis-vector probes (e_1 both sides, shape (d, 1)): a Haar rotation maps any
+    unit vector to a uniform direction, so for vector-shaped inputs the null distribution
+    depends only on ``d`` — ONE band per dimension is shared across pairs (recorded in the
+    artifact). Matching uses |cos|, so the decision threshold is the SIGNED p97.5 the
+    reference emits, which equals the p95 of |cos| by symmetry.
+    """
+    key = (int(d), int(n_draws), int(seed))
+    if key in cache:
+        return cache[key]
+    e1 = torch.zeros(d, 1, dtype=torch.float64)
+    e1[0, 0] = 1.0
+    t0 = time.time()
+    out = _oc().raw_cosine_with_rotation_null(e1, e1, n_draws=n_draws, seed=seed)
+    band = dict(out["rotation_null"])
+    band.update(
+        {
+            "dim": int(d),
+            "seed": int(seed),
+            "probe": "canonical basis vector e_1 both sides (probe raw_cosine ignored)",
+            "shared_across_pairs": True,
+            "sharing_justification": (
+                "for vector-shaped inputs a Haar rotation maps any unit vector to a "
+                "uniform direction; the null distribution depends only on the dimension"
+            ),
+            "abs_threshold_note": (
+                "matching uses |cos|; the signed p97.5 band equals the p95 of |cos| by "
+                "symmetry and is the decision threshold"
+            ),
+            "statistic_class": STAT_CLASS_ROTATION_NULL,
+            "wall_s": round(time.time() - t0, 2),
+        }
+    )
+    cache[key] = band
+    return band
+
+
+def cross_regime_key(
+    *, layer: int, convention: str, n_null_draws: int, null_seed: int, arm_unit_keys: dict
+) -> str:
+    """Machine-stable cross-arm resume key: generating parameters + the consumed units'
+    own regime keys (an upstream unit re-fit under a new regime invalidates the cell)."""
+    blob = json.dumps(
+        {
+            "layer": layer,
+            "convention": convention,
+            "n_null_draws": n_null_draws,
+            "null_seed": null_seed,
+            "matching": "greedy-min-both-sides-abs-v1",
+            "arm_unit_keys": dict(sorted(arm_unit_keys.items())),
+            "store_revisions": dict(sorted(STORE_REVISIONS.items())),
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
 def run_arm(
     arm: dict,
     staged_root: Path,
@@ -771,6 +1072,7 @@ def run_arm(
 
     row_shas = [k[1] for k in keys_b]
     units = [(layer, conv) for layer in layers for conv in conventions]
+    unit_recs: dict[tuple[int, str], dict] = {}
     done = 0
     for k, (layer, conv) in enumerate(units, start=1):
         rk = regime_key(
@@ -781,30 +1083,51 @@ def run_arm(
             cos_floor=COS_FLOOR,
         )
         unit_path = arm_dir / f"L{layer}_{conv}.json"
-        if resume and unit_path.is_file():
+        npz_path = arm_dir / f"L{layer}_{conv}_factors.npz"
+        # Resume ALSO requires the factor sidecar: a pre-vector-format unit JSON with a
+        # matching regime key would otherwise skip the fit and never gain its vectors.
+        if resume and unit_path.is_file() and npz_path.is_file():
             try:
                 prior = json.loads(unit_path.read_text())
             except json.JSONDecodeError:
                 prior = {}
             if prior.get("regime_key") == rk:
                 log.info("[leg6] unit %d/%d %s/L%d/%s resume-skip", k, len(units), aid, layer, conv)
+                unit_recs[(layer, conv)] = prior
                 done += 1
                 continue
         c_mat = context_matrix(conv, lasttoken, pooled_base, layer)
         if conv in ("last_prompt", "last_ctx") and perm_c is not None:
             c_mat = c_mat[torch.as_tensor(perm_c, dtype=torch.long)]
         c_mat = c_mat.to(torch.float32)
-        rec = fit_split_half(c_mat, delta_by_layer[layer], row_shas)
+        rec, factors = fit_split_half(c_mat, delta_by_layer[layer], row_shas, return_factors=True)
+        bases = factor_bases_for(
+            layer, conv, int(c_mat.shape[1]), int(delta_by_layer[layer].shape[1])
+        )
+        write_factor_sidecar(
+            npz_path,
+            factors,
+            bases=bases,
+            arm=aid,
+            layer=layer,
+            convention=conv,
+            rk=rk,
+            unit_kind="per_arm",
+        )
         rec.update(
             {
                 "arm": aid,
                 "layer": int(layer),
                 "context_convention": conv,
                 "regime_key": rk,
+                "factor_vectors_file": npz_path.name,
+                "factor_vectors_k": int(factors["singular_values_half1"].shape[0]),
+                "factor_bases": bases,
                 "metadata": _meta(),
             }
         )
         _atomic_json(unit_path, rec)
+        unit_recs[(layer, conv)] = rec
         done += 1
         print(
             f"[leg6] unit {k}/{len(units)} {aid}/L{layer}/{conv} "
@@ -812,6 +1135,25 @@ def run_arm(
             f"elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
+    # Atlas operator sidecar (issue2569_atlas.py step (5) glob contract) from the PRIMARY
+    # unit's regime — layer 19 / last_prompt where present (the plan's headline unit).
+    p_layer = 19 if 19 in layers else layers[0]
+    p_conv = "last_prompt" if "last_prompt" in conventions else conventions[0]
+    p_rec = unit_recs[(p_layer, p_conv)]
+    p_c = context_matrix(p_conv, lasttoken, pooled_base, p_layer)
+    if p_conv in ("last_prompt", "last_ctx") and perm_c is not None:
+        p_c = p_c[torch.as_tensor(perm_c, dtype=torch.long)]
+    write_operator_factors(
+        arm_dir,
+        p_c.to(torch.float32),
+        delta_by_layer[p_layer],
+        p_rec,
+        arm=aid,
+        layer=p_layer,
+        convention=p_conv,
+        rk=p_rec["regime_key"],
+        resume=resume,
+    )
     return {"arm": aid, "halt": False, "units_done": done}
 
 
@@ -898,7 +1240,22 @@ def run_pooled(
             d_pool = torch.cat([d[1][layer] for _, d in sib_data], dim=0)
             # Conversation ids prefixed per sibling arm keep cross-arm shas distinct.
             shas = [f"{name}:{s}" for name, d in sib_data for s in d[2]]
-            rec = fit_split_half(c_pool, d_pool, shas)
+            rec, factors = fit_split_half(c_pool, d_pool, shas, return_factors=True)
+            bases = factor_bases_for(layer, conv, int(c_pool.shape[1]), int(d_pool.shape[1]))
+            npz_path = pooled_dir / f"L{layer}_{conv}_factors.npz"
+            write_factor_sidecar(
+                npz_path,
+                factors,
+                bases=bases,
+                arm=aid,
+                layer=layer,
+                convention=conv,
+                rk=rk,
+                unit_kind="pooled",
+            )
+            rec["factor_vectors_file"] = npz_path.name
+            rec["factor_vectors_k"] = int(factors["singular_values_half1"].shape[0])
+            rec["factor_bases"] = bases
             # Target-arm evaluation with a pooled-rows refit at the selected lambda.
             lam_rel = rec["lambda_rel_selected"]
             all_idx = np.arange(c_pool.shape[0], dtype=np.int64)
@@ -926,6 +1283,263 @@ def run_pooled(
     return {"arm": aid, "halt": False}
 
 
+def _load_cross_arm_entry(arm_dir: Path, layer: int, conv: str) -> dict | tuple[None, str]:
+    """Load one arm's denoised half-1 factors + bookkeeping for the cross-arm phase.
+
+    Returns the entry dict, or ``(None, reason)`` when the arm must be skipped (unit not
+    run / halted, factor vectors not persisted, or zero denoised factors) — recorded, never
+    silently dropped.
+    """
+    unit_path = arm_dir / f"L{layer}_{conv}.json"
+    if not unit_path.is_file():
+        return None, "unit JSON missing (arm halted or unit not run)"
+    unit = json.loads(unit_path.read_text())
+    fname = unit.get("factor_vectors_file")
+    if not fname or not (arm_dir / fname).is_file():
+        return None, "factor vectors not persisted (pre-vector unit format)"
+    rank = int(unit["denoised_rank"])
+    if rank <= 0:
+        return None, "denoised_rank=0 — no denoised factors to compare"
+    npz = np.load(arm_dir / fname, allow_pickle=False)
+    r = int(min(rank, npz["context_factors_half1"].shape[1]))
+    return {
+        "ctx": npz["context_factors_half1"][:, :r].astype(np.float64),
+        "shf": npz["shift_factors_half1"][:, :r].astype(np.float64),
+        "sig": np.asarray(npz["singular_values_half1"][:r], dtype=np.float64),
+        # Within-arm split-half factor agreement per half-1 index (the noise floor).
+        "within": {int(m["i1"]): float(m["factor_cos"]) for m in unit["factor_matches"]},
+        "bases": unit["factor_bases"],
+        "rank": rank,
+        "r": r,
+        "unit_rk": unit["regime_key"],
+    }
+
+
+def run_cross_arm(
+    arms: list[dict],
+    out_root: Path,
+    *,
+    layers: list[int],
+    conventions: list[str],
+    n_null_draws: int = N_CROSS_NULL_DRAWS,
+    resume: bool = True,
+) -> dict:
+    """Cross-arm shared-factor phase (plan leg 6 step 4 / H6 / the leg-6 criterion input).
+
+    Per (layer, convention) cell: load each arm's per-arm unit JSON + factor sidecar, keep
+    the leading DENOISED half-1 factors, refuse basis-mismatched pairs (recorded reason,
+    never a fabricated cosine), greedily match factors across every arm pair by
+    min(|cos_context|, |cos_shift|), and read each match against BOTH statistics — the
+    rotation null (reused #1345 band, shared per dimension) and the within-arm split-half
+    factor agreement as the NOISE FLOOR. The criterion input counts same-behavior pairs'
+    matches above the rotation null (H6 scopes the shared-factor claim to same-behavior
+    arms); all-pairs counts ride as labeled companions.
+    """
+    cross_dir = out_root / "leg6" / "cross_arm"
+    beh = {a["arm_id"]: a.get("beh_key", "") for a in arms}
+    band_cache: dict = {}
+    oc = _oc()
+    cells: list[dict] = []
+    t0 = time.time()
+    n_cells = len(layers) * len(conventions)
+    cell_i = 0
+    for layer in layers:
+        for conv in conventions:
+            cell_i += 1
+            entries: dict[str, dict] = {}
+            skipped: list[dict] = []
+            for a in sorted(beh):
+                loaded = _load_cross_arm_entry(out_root / "leg6" / a, layer, conv)
+                if isinstance(loaded, tuple):
+                    skipped.append({"arm": a, "reason": loaded[1]})
+                else:
+                    entries[a] = loaded
+            rk = cross_regime_key(
+                layer=layer,
+                convention=conv,
+                n_null_draws=n_null_draws,
+                null_seed=CROSS_NULL_SEED,
+                arm_unit_keys={a: e["unit_rk"] for a, e in entries.items()},
+            )
+            cell_path = cross_dir / f"L{layer}_{conv}.json"
+            if resume and cell_path.is_file():
+                try:
+                    prior = json.loads(cell_path.read_text())
+                except json.JSONDecodeError:
+                    prior = {}
+                if prior.get("regime_key") == rk:
+                    cells.append(prior)
+                    log.info("[leg6-crossarm] cell L%d/%s resume-skip", layer, conv)
+                    continue
+            pairs: list[dict] = []
+            n_same = n_all = 0
+            shared_same: list[str] = []
+            bands_used: dict[str, dict] = {}
+            for a, b in combinations(sorted(entries), 2):
+                ea, eb = entries[a], entries[b]
+                same_beh = beh[a] == beh[b]
+                pair: dict = {"arm_a": a, "arm_b": b, "same_behavior": bool(same_beh)}
+                if ea["bases"] != eb["bases"]:
+                    diff = [
+                        side
+                        for side in ("context", "shift")
+                        if ea["bases"].get(side) != eb["bases"].get(side)
+                    ]
+                    pair["admissible"] = False
+                    pair["refusal_reason"] = (
+                        f"factor_bases mismatch on {diff or ['<top-level>']} — a cosine "
+                        "between vectors in different bases is not a similarity "
+                        "(recorded skip, no number fabricated)"
+                    )
+                    pairs.append(pair)
+                    continue
+                pair["admissible"] = True
+                d_ctx = int(ea["ctx"].shape[0])
+                d_shf = int(ea["shf"].shape[0])
+                band_ctx = rotation_null_band(
+                    d_ctx, n_draws=n_null_draws, seed=CROSS_NULL_SEED, cache=band_cache
+                )
+                band_shf = rotation_null_band(
+                    d_shf, n_draws=n_null_draws, seed=CROSS_NULL_SEED, cache=band_cache
+                )
+                bands_used[str(d_ctx)] = band_ctx
+                bands_used[str(d_shf)] = band_shf
+                # |cos| matrices as the matching heuristic (columns are unit vectors from
+                # the SVD); recorded per-match values come from the reused reference fn.
+                cos_ctx_mat = np.abs(ea["ctx"].T @ eb["ctx"])
+                cos_shf_mat = np.abs(ea["shf"].T @ eb["shf"])
+                comb_mat = np.minimum(cos_ctx_mat, cos_shf_mat)
+                taken: set[int] = set()
+                matches: list[dict] = []
+                for i in range(comb_mat.shape[0]):
+                    order = np.argsort(-comb_mat[i])
+                    j = next((int(x) for x in order if int(x) not in taken), None)
+                    if j is None:
+                        break
+                    taken.add(j)
+                    rc = float(
+                        oc.raw_cosine_with_rotation_null(
+                            torch.as_tensor(ea["ctx"][:, i : i + 1]),
+                            torch.as_tensor(eb["ctx"][:, j : j + 1]),
+                            n_draws=0,
+                            seed=0,
+                        )["raw_cosine"]
+                    )
+                    rs = float(
+                        oc.raw_cosine_with_rotation_null(
+                            torch.as_tensor(ea["shf"][:, i : i + 1]),
+                            torch.as_tensor(eb["shf"][:, j : j + 1]),
+                            n_draws=0,
+                            seed=0,
+                        )["raw_cosine"]
+                    )
+                    fcos = float(min(abs(rc), abs(rs)))
+                    above_null = bool(
+                        abs(rc) > float(band_ctx["null_p975"])
+                        and abs(rs) > float(band_shf["null_p975"])
+                    )
+                    wa = ea["within"].get(i)
+                    wb = eb["within"].get(j)
+                    present = [x for x in (wa, wb) if x is not None]
+                    floor = min(present) if present else None
+                    matches.append(
+                        {
+                            "factor_a": int(i),
+                            "factor_b": int(j),
+                            "cos_context": rc,
+                            "cos_shift": rs,
+                            "factor_cos": fcos,
+                            "above_rotation_null": above_null,
+                            "within_agreement_a": wa,
+                            "within_agreement_b": wb,
+                            "splithalf_floor": floor,
+                            "above_splithalf_floor": bool(floor is not None and fcos >= floor),
+                            "sigma_a": float(ea["sig"][i]),
+                            "sigma_b": float(eb["sig"][j]),
+                        }
+                    )
+                    if above_null:
+                        n_all += 1
+                        if same_beh:
+                            n_same += 1
+                            shared_same.append(f"{a}~{b}:f{i}~f{j}")
+                pair["matches"] = matches
+                pairs.append(pair)
+            cell = {
+                "layer": int(layer),
+                "context_convention": conv,
+                "factor_half": "half1 (leading denoised prefix per arm)",
+                "matching_rule": (
+                    "greedy by min(|cos_context|, |cos_shift|): arm-a factors in "
+                    "descending-sigma order each take the best unmatched arm-b factor "
+                    "(the within-arm greedy_factor_match |cos| convention); only factors "
+                    "inside each arm's denoised rank are compared"
+                ),
+                "factor_orientation": FACTOR_ORIENTATION,
+                "statistic_classes": {
+                    "cross_arm_factor_cosine": STAT_CLASS_CROSS_COS,
+                    "rotation_null": STAT_CLASS_ROTATION_NULL,
+                    "splithalf_floor": STAT_CLASS_SPLITHALF_FLOOR,
+                },
+                "rotation_null_bands": bands_used,
+                "n_null_draws": int(n_null_draws),
+                "null_seed": CROSS_NULL_SEED,
+                "arms": {
+                    a: {
+                        "denoised_rank": e["rank"],
+                        "n_factors_compared": e["r"],
+                        "unit_regime_key": e["unit_rk"],
+                    }
+                    for a, e in entries.items()
+                },
+                "skipped_arms": skipped,
+                "pairs": pairs,
+                "criterion": {
+                    "registered": (
+                        "leg 6: >=1 cross-arm shared factor above the rotation null "
+                        "(H6 scopes the shared-factor claim to same-behavior arms)"
+                    ),
+                    "shared_factor_definition": (
+                        "a greedily matched cross-arm factor pair whose context-side AND "
+                        "shift-side |cos| BOTH exceed the rotation-null band (signed "
+                        "p97.5 == p95 of |cos| by symmetry)"
+                    ),
+                    "n_shared_above_null_same_behavior": int(n_same),
+                    "n_shared_above_null_all_pairs": int(n_all),
+                    "pairs_above_null_same_behavior": shared_same,
+                    "met": bool(n_same >= 1),
+                },
+                "regime_key": rk,
+                "metadata": _meta(),
+            }
+            _atomic_json(cell_path, cell)
+            cells.append(cell)
+            print(
+                f"[leg6-crossarm] cell {cell_i}/{n_cells} L{layer}/{conv} "
+                f"arms={len(entries)} pairs={len(pairs)} "
+                f"shared_above_null_same_beh={n_same} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+    summary = {
+        "cells": [
+            {
+                "layer": c["layer"],
+                "context_convention": c["context_convention"],
+                "n_shared_above_null_same_behavior": (
+                    c["criterion"]["n_shared_above_null_same_behavior"]
+                ),
+                "n_shared_above_null_all_pairs": c["criterion"]["n_shared_above_null_all_pairs"],
+                "met": c["criterion"]["met"],
+            }
+            for c in cells
+        ],
+        "criterion_met_any_cell": bool(any(c["criterion"]["met"] for c in cells)),
+        "metadata": _meta(),
+    }
+    _atomic_json(cross_dir / "summary.json", summary)
+    return summary
+
+
 def load_arms(arms_json: Path, *, kind: str = "content") -> list[dict]:
     """Load arm records from a staged arms.json (fail-loud on an empty selection)."""
     payload = json.loads(arms_json.read_text())
@@ -950,6 +1564,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--context-conventions", default=",".join(CONTEXT_CONVENTIONS))
     ap.add_argument("--raw-rows-dir", default=None, help="key-source rung (iv) staging dir")
     ap.add_argument("--pooled", action="store_true", help="also run the pooled cross-arm fits")
+    ap.add_argument(
+        "--cross-arm",
+        action="store_true",
+        help="also run the cross-arm shared-factor phase (plan leg 6 step 4 / H6)",
+    )
+    ap.add_argument(
+        "--null-draws",
+        type=int,
+        default=N_CROSS_NULL_DRAWS,
+        help="rotation-null draws per unique dimension for the cross-arm band",
+    )
     ap.add_argument("--no-resume", action="store_true", help="recompute even if units exist")
     ap.add_argument("--import-check", action="store_true", help="static arg/bind check, exit 0")
     args = ap.parse_args(argv)
@@ -1016,10 +1641,25 @@ def main(argv: list[str] | None = None) -> int:
                     raw_rows_dir=raw_rows_dir,
                     resume=resume,
                 )
+    cross_summary = None
+    if args.cross_arm:
+        cross_summary = run_cross_arm(
+            arms,
+            out_root,
+            layers=layers,
+            conventions=convs,
+            n_null_draws=args.null_draws,
+            resume=resume,
+        )
     halted = [r["arm"] for r in results if r.get("halt")]
     _atomic_json(
         out_root / "leg6" / "summary.json",
-        {"arms_run": [r["arm"] for r in results], "arms_halted": halted, "metadata": _meta()},
+        {
+            "arms_run": [r["arm"] for r in results],
+            "arms_halted": halted,
+            "cross_arm": cross_summary,
+            "metadata": _meta(),
+        },
     )
     log.info("[leg6] done: %d arms, %d halted", len(results), len(halted))
     sys.stdout.flush()
