@@ -8532,6 +8532,61 @@ def test_file_invocation_managed_main_pin_body_not_refused(tmp_path, monkeypatch
     assert "worktree-frozen" not in captured.out
 
 
+def test_file_invocation_reads_body_after_canonical_root_refresh(tmp_path, monkeypatch, capsys):
+    """#2607 r3 (concern managed-main-pin-false-stale, read-before-resolve
+    ordering): in routed mode `task_workflow.repo_root()` re-pins the
+    managed main-pin worktree to the CURRENT main tip as a side effect of
+    every resolution — the resolver here MUTATES the fixture (body +
+    ledger) to the refreshed snapshot when it first runs, simulating that
+    re-pin. The CLI must read the body AFTER the guard's canonical-root
+    resolution, so verify_text audits the REFRESHED body against the
+    REFRESHED ledger. Pre-fix, `raw` was read BEFORE the guard: the audit
+    ran the STALE body (no acknowledgment) against the refreshed ledger —
+    a mixed snapshot — and Lens 14 false-FAILed the acknowledged concern.
+    (The side-effect-free-lambda CLI test above cannot catch this.)"""
+    pin_root = tmp_path / "main" / ".claude" / "worktrees" / "_task-main-pin"
+    task_dir = pin_root / "tasks" / "reviewing" / "99"
+    task_dir.mkdir(parents=True)
+    # Pre-refresh (stale) snapshot: body without the acknowledgment; a
+    # ledger row that only exists pre-refresh.
+    (task_dir / "body.md").write_text(GOOD_BODY)
+    (task_dir / "concerns.jsonl").write_text(
+        json.dumps({"event": "raised", "concern_id": "stale-ledger-concern", "severity": "CONCERN"})
+        + "\n"
+    )
+    refreshed_body = GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed",
+        "Note: refresh-window-concern is acknowledged; we report the "
+        "conservative estimate. The 17-pt lift holds at every seed",
+    )
+    refreshed_ledger = (
+        json.dumps(
+            {"event": "raised", "concern_id": "refresh-window-concern", "severity": "CONCERN"}
+        )
+        + "\n"
+    )
+
+    def _refreshing_resolver():
+        # Idempotent: repo_root() re-pins on EVERY resolution; the first
+        # call flips the on-disk snapshot from stale to refreshed.
+        (task_dir / "body.md").write_text(refreshed_body)
+        (task_dir / "concerns.jsonl").write_text(refreshed_ledger)
+        return pin_root
+
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", _refreshing_resolver)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(task_dir / "body.md")])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    # Body and ledger from the SAME post-refresh snapshot: the refreshed
+    # body acknowledges the refreshed ledger's one open concern.
+    assert "all 1 open binding concern(s) acknowledged in body" in captured.out
+    assert "unaddressed in body" not in captured.out
+    # The pre-refresh ledger row is gone — the audit never saw it.
+    assert "stale-ledger-concern" not in captured.out
+
+
 def test_worktree_resident_issue_worktree_still_frozen_in_routed_mode(tmp_path, monkeypatch):
     """#2607 r2 scoping pin: with the canonical root routed to the pin
     dir, a SIBLING issue worktree's tasks/ path is STILL worktree-resident
@@ -8545,6 +8600,33 @@ def test_worktree_resident_issue_worktree_still_frozen_in_routed_mode(tmp_path, 
     assert verify_task_body._worktree_resident(sibling)
     # And the pin dir itself is exempt under the same routed root.
     assert not verify_task_body._worktree_resident(pin_root / "tasks" / "reviewing" / "99")
+
+
+def test_canonical_root_unresolvable_fails_closed(tmp_path, monkeypatch):
+    """#2607 r3 (concern canonical-root-oserror-fail-open):
+    `_canonical_root_resolved()` promises None on an unresolvable root.
+    The pre-fix OSError branch returned the UNRESOLVED raw root, silently
+    retaining the lexical-prefix exemption for paths under it. With the
+    fix, an unresolvable root yields None, so `_worktree_resident` falls
+    back to the fail-closed FULL-path component scan: a
+    `.claude/worktrees`-resident path — the routed pin's own tasks tree
+    included — still reads RESIDENT (frozen) when the root cannot be
+    trusted."""
+
+    class _UnresolvablePath(type(Path())):
+        def resolve(self, strict=False):
+            raise OSError("simulated unresolvable canonical root")
+
+    pin_root = tmp_path / "main" / ".claude" / "worktrees" / "_task-main-pin"
+    task_dir = pin_root / "tasks" / "reviewing" / "99"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(
+        verify_task_body, "_resolve_repo_root", lambda: _UnresolvablePath(str(pin_root))
+    )
+    assert verify_task_body._canonical_root_resolved() is None
+    # Fail-closed: with no trustable canonical root the exemption is OFF —
+    # the pin task path scans its full components and reads resident.
+    assert verify_task_body._worktree_resident(task_dir)
 
 
 def test_concerns_audit_stale_marker_warns_alongside_acknowledged_open_concern(tmp_path):

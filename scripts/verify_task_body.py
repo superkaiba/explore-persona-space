@@ -341,6 +341,12 @@ confidence in the H1 title tag only. The checks branch per generation:
   hard-FAILs regardless of `exists()` (a worktree's `tasks/` tree is
   frozen at the branch-cut base commit — silently stale), and the CLI
   `--file` leg refuses a worktree task-layout body outright (exit 2).
+  Exception (#2607 r2): the routed managed main-pin worktree
+  (`.claude/worktrees/_task-main-pin` — `task_workflow.repo_root()`'s
+  canonical root while the primary checkout is off-main) is re-pinned
+  to the current main tip on every resolution, so its `tasks/` tree is
+  CURRENT — `_worktree_resident` exempts it via canonical-root
+  equality (no FAIL, no refusal).
 - **check 14b** (fabricated-deferral detection, inside
   `check_concerns_audit`; generation-agnostic, #2219): a
   `<!-- concern-deferred: <id> -->` comment whose id IS in the ledger
@@ -20417,11 +20423,16 @@ def _worktree_resident(p: Path) -> bool:
     worktree outside ``.claude/worktrees/`` evades arm A; arm B catches
     the scratch case only while the subprocess probe succeeds. In routed
     (off-main) mode the same alias caveat applies to the exemption: a
-    pin-dir path reached via an unresolved alias fails the prefix /
-    equality probe and is conservatively treated as frozen (fail-closed).
-    Neither is a sanctioned caller shape today; the incident channel
-    (#2378 r7 — an issue worktree's frozen ``tasks/`` tree) is fully
-    covered by arm A.
+    pin-dir path reached via an unresolved alias fails arm A's prefix
+    strip and falls to the plain component scan — flagged frozen only
+    when the alias SPELLING itself contains the
+    ``('.claude', 'worktrees')`` pair — and arm B never recovers it:
+    the registered record equal to the canonical root is skipped
+    UNCONDITIONALLY (the ``continue`` below), so a pair-free alias path
+    is treated like any other alias-reached worktree — undetected (NOT
+    conservatively frozen; #2607 r3 wording fix). Neither is a
+    sanctioned caller shape today; the incident channel (#2378 r7 — an
+    issue worktree's frozen ``tasks/`` tree) is fully covered by arm A.
     """
     try:
         resolved = p.resolve()
@@ -20467,18 +20478,24 @@ def _worktree_resident(p: Path) -> bool:
 
 
 def _canonical_root_resolved() -> Path | None:
-    """Resolved canonical ``_resolve_repo_root()`` root, or None
-    (fail-soft: import failure or an unresolvable path). In routed
-    (off-main) mode this is the managed main-pin worktree — the ONE
-    ``.claude/worktrees/`` tree whose ``tasks/`` state is CURRENT
-    (#2607 r2, concern managed-main-pin-false-stale)."""
+    """Resolved canonical ``_resolve_repo_root()`` root, or None on
+    import failure or an unresolvable path. None is FAIL-CLOSED for the
+    caller: ``_worktree_resident`` then scans the FULL path components
+    and the managed main-pin exemption is OFF — an unresolvable root
+    must never anchor an exemption (#2607 r3, concern
+    canonical-root-oserror-fail-open: the old OSError branch returned
+    the UNRESOLVED raw root, silently retaining a lexical-prefix
+    exemption). In routed (off-main) mode the resolved root is the
+    managed main-pin worktree — the ONE ``.claude/worktrees/`` tree
+    whose ``tasks/`` state is CURRENT (#2607 r2, concern
+    managed-main-pin-false-stale)."""
     root = _resolve_repo_root()
     if root is None:
         return None
     try:
         return root.resolve()
     except OSError:
-        return root
+        return None
 
 
 def _scan_parts_below_canonical_root(resolved: Path, canon: Path | None) -> tuple[str, ...]:
@@ -20598,7 +20615,6 @@ def main() -> int:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
     elif args.file:
-        raw = Path(args.file).read_text()
         source = args.file
         body_source_path = Path(args.file).resolve()
         # Worktree-staleness refusal (#2607): an ISSUE worktree's tasks/
@@ -20612,6 +20628,16 @@ def main() -> int:
         # false-PASSed Lens 14 while both CRC twins' main-root runs FAILed
         # on 5 unacknowledged concerns). Non-task-layout worktree paths
         # (e.g. a worktree .claude/cache/ draft) are UNCHANGED.
+        #
+        # ORDERING (#2607 r3, concern managed-main-pin-false-stale): the
+        # guard runs BEFORE the body read. `_worktree_resident`'s
+        # canonical-root resolution calls `task_workflow.repo_root()`,
+        # which in routed (off-main) mode re-pins the managed main-pin
+        # worktree to the CURRENT main tip as a side effect — a body read
+        # BEFORE the guard can carry pre-refresh (stale) bytes that
+        # verify_text then audits against the just-refreshed ledger (a
+        # mixed snapshot). Guard first, then read body + siblings, so
+        # both come from the same post-refresh snapshot.
         if body_source_path.parent.name.isdigit() and _worktree_resident(body_source_path.parent):
             print(
                 f"verify_task_body: REFUSED — {body_source_path} is a worktree-frozen "
@@ -20628,6 +20654,7 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 2
+        raw = body_source_path.read_text()
         concerns_path, plan_path, original_body_path, file_issue = _resolve_file_siblings(
             body_source_path
         )
