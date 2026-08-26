@@ -15,12 +15,16 @@ Steps (each a function; ``--steps`` selects a subset, default all):
   5 provenance         Artifact-reuse item-(j) pairwise provenance probe: banked
                        store/ceiling capture dates at the b99d86de23 pin vs the
                        split_ids/manifest input dates.
-  6 render-probes      24 SideSpec render probes (12 models x 2 arms; arm-less
-                       families assert arm-invariance).
-  7 length-scan        12-tokenizer length scan over every consumed prompt
+  6 banked-schema      C4 schema-from-artifact probe: ONE real chunk per
+                       consumed banked prefix at the pinned revision — payload
+                       dict + non-empty rows + {ci,prompt,response} keys + cis
+                       within the expected split id set (digest-only report).
+  7 render-probes      24 SideSpec render probes (12 models x 2 arms; arm-less
+                       families assert arm-invariance via a-vs-b render equality).
+  8 length-scan        12-tokenizer length scan over every consumed prompt
                        (11,400 generic + 198 GPQA) per registered (model, arm)
                        render; union-drop rule (|D| > 1% of any split -> HALT).
-  8 unit-test          Run the committed arm-b read unit test (MF1) via pytest.
+  9 unit-test          Run the committed arm-b read unit test (MF1) via pytest.
 
 Writes eval_results/issue_2588/p0_preflight.json (atomic; committed to the
 issue branch — pods consume the union-drop set + the frozen GPQA prompts).
@@ -256,6 +260,78 @@ def step_provenance(args) -> dict:
     }
 
 
+def step_banked_schema(args) -> dict:
+    """C4: schema-from-artifact probe — download ONE real chunk per consumed
+    banked prefix at PC.BANKED_REVISION and validate the observed schema the
+    pipeline assumes (payload dict with non-empty "rows"; every probed row
+    carries {ci, prompt, response}; cis within the expected split id set).
+
+    Digest-only by policy: reports counts + key names, never row text."""
+    del args
+    cache = _REPO_ROOT / "data" / "issue_2588" / "hf_dl"
+    cache.mkdir(parents=True, exist_ok=True)
+    split_ids = G._load_split_ids(PC.SPLIT_IDS_PATH)
+
+    jobs: list[tuple[str, str, str]] = []  # (label, sub_prefix, expected_split)
+    for key, prefix in PC.BANKED_CAP2048.items():
+        for split in ("train_10k", "val_400", "test_1000"):
+            sub = f"{prefix}/{G.store_subpath_for_split(split)}/raw_completions"
+            jobs.append((f"{key}/{split}", sub, split))
+    for key, prefix in PC.BANKED_CEILING.items():
+        for seed in PC.CEILING_SEEDS:
+            sub = f"{prefix}/seed{seed}/raw_completions"
+            # Ceiling draws re-render test_1000 (G.SPLIT_TO_MANIFEST) — the id
+            # universe is the test_1000 split id set.
+            jobs.append((f"{key}/ceiling_s{seed}", sub, "test_1000"))
+
+    required_keys = {"ci", "prompt", "response"}
+    out: dict = {}
+    for label, sub, split in jobs:
+        entries = G._remote_index(sub, revision=PC.BANKED_REVISION)
+        names = sorted(n for n in entries if n.endswith(".json"))
+        assert names, f"banked prefix empty at {sub} @ {PC.BANKED_REVISION}"
+        probe_name = names[0]
+        local = G._hub_download(f"{sub}/{probe_name}", cache, revision=PC.BANKED_REVISION)
+        payload = json.loads(Path(local).read_text(encoding="utf-8"))
+        assert isinstance(payload, dict) and payload.get("rows"), (
+            f"banked chunk schema mismatch at {sub}/{probe_name}: expected a dict "
+            f"payload with non-empty 'rows' (got keys "
+            f"{sorted(payload) if isinstance(payload, dict) else type(payload).__name__})"
+        )
+        rows = payload["rows"]
+        row0_keys = sorted(rows[0].keys())
+        missing = required_keys - set(rows[0])
+        assert not missing, f"banked row-0 missing keys {sorted(missing)} at {sub}/{probe_name}"
+        _mk, ids_key, _seed = G.SPLIT_TO_MANIFEST[split]
+        expected = set(split_ids["splits"][ids_key])
+        cis = {int(r["ci"]) for r in rows if "ci" in r}
+        n_bad_key = sum(1 for r in rows if required_keys - set(r))
+        assert n_bad_key == 0, (
+            f"{n_bad_key}/{len(rows)} probed rows missing a required key at {sub}/{probe_name}"
+        )
+        stray = cis - expected
+        assert not stray, (
+            f"banked chunk {sub}/{probe_name} carries {len(stray)} cis outside the "
+            f"expected {split} id set (first 5: {sorted(stray)[:5]})"
+        )
+        out[label] = {
+            "n_files": len(names),
+            "probed_file": probe_name,
+            "n_rows_probed": len(rows),
+            "row0_keys": row0_keys,
+            "n_ci_in_expected": len(cis & expected),
+        }
+        logger.info(
+            "[p0] banked-schema %s: %d files, probed %s (%d rows, keys=%s)",
+            label,
+            len(names),
+            probe_name,
+            len(rows),
+            row0_keys,
+        )
+    return out
+
+
 def step_render_probes(args) -> dict:
     del args
     from transformers import AutoTokenizer
@@ -272,12 +348,16 @@ def step_render_probes(args) -> dict:
         else:
             # Arm-less template families: both arm probes assert the SAME
             # contract + render arm-invariance (24-probe grid, plan §7 G1).
+            # F fix (round 2): probe DIFFERENT arm labels — _template_kwargs
+            # returns {} for arm-less families, so the "a" and "b" renders
+            # must be byte-identical (the prior same-arm double render was
+            # vacuously true).
             probe_arm = m.arms[0]
-            ra = PC.render_probe(tok, m.family, probe_arm)
-            rb = PC.render_probe(tok, m.family, probe_arm)
-            assert ra == rb
+            ra = PC.render_probe(tok, m.family, "a")
+            rb = PC.render_probe(tok, m.family, "b")
+            assert ra == rb, f"{m.key}: arm-less family render differs across arm labels"
             recs[probe_arm] = PC.assert_template_sidespec(tok, m.family, probe_arm)
-            recs[f"{probe_arm}_invariance"] = "render arm-invariant"
+            recs[f"{probe_arm}_invariance"] = "render arm-invariant (a-vs-b render equal)"
             n_probes += 2
         out[m.key] = recs
     out["n_probes"] = n_probes
@@ -362,6 +442,7 @@ STEPS = {
     "gpqa-stage": step_gpqa_stage,
     "split-counts": step_split_counts,
     "provenance": step_provenance,
+    "banked-schema": step_banked_schema,
     "render-probes": step_render_probes,
     "length-scan": step_length_scan,
     "unit-test": step_unit_test,

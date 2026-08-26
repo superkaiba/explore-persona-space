@@ -168,16 +168,31 @@ def _load_map(fits_dir: Path, ref: MapRef) -> dict | None:
     if not fits_p.exists():
         return None
     rec = {"fits": json.loads(fits_p.read_text(encoding="utf-8"))}
-    for kind in ("nulls", "perrow", "gpqa_transfer", "resid"):
+    for kind in ("nulls", "perrow", "gpqa_transfer", "gpqa_perrow", "resid"):
         p = cell_dir / f"{kind}_{ref.pos}.json"
+        rec[kind] = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    # Cell-level judge-fallback artifacts (B5): pending rows written pod-side;
+    # verdicts written by --judge-fallback on the VM.
+    for kind, name in (
+        ("judge_pending", "gpqa_judge_pending.json"),
+        ("judge_verdicts", "gpqa_judge_verdicts.json"),
+    ):
+        p = cell_dir / name
         rec[kind] = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
     return rec
 
 
+def _acc_at_1(knn_read: dict) -> float:
+    """acc@1 accessor tolerant of JSON-round-tripped int keys ("1" vs 1)."""
+    acc = knn_read["acc_at_k"]
+    v = acc.get("1", acc.get(1))
+    assert v is not None, f"acc_at_k lacks k=1: {acc!r}"
+    return float(v)
+
+
 def _acc1_at_star(fits: dict) -> float:
     star = str(fits["layer_star"])
-    acc = fits["layers"][star]["knn_test"]["ridge"]["cosine"]["acc_at_k"]
-    return float(acc.get("1", acc.get(1)))
+    return _acc_at_1(fits["layers"][star]["knn_test"]["ridge"]["cosine"])
 
 
 def _calibrated(rec: dict) -> dict:
@@ -186,6 +201,14 @@ def _calibrated(rec: dict) -> dict:
     mu = float(nulls["null_mean_acc1_cos"]) if nulls else None
     sd = float(nulls["null_sd_acc1_cos"]) if nulls else None
     n_draws = int(nulls["perm_draws"]) if nulls else None
+    # SR1 (B3, review round 2): repeat-draw retrieval-ceiling normalization —
+    # (map − null) / (ceiling − null), where the ceiling is the REGISTERED
+    # seed-43→seed-44 cosine retrieval acc@1 at the selected layer.
+    ceil_retr = rec["fits"].get("ceiling_retrieval_at_star")
+    sr1 = None
+    if ceil_retr is not None and mu is not None:
+        denom = float(ceil_retr["ceiling_acc1_cos"]) - mu
+        sr1 = float((obs - mu) / denom) if denom > 1e-12 else None
     return {
         "acc1_cos_at_star": obs,
         "null_mean": mu,
@@ -194,6 +217,9 @@ def _calibrated(rec: dict) -> dict:
         "acc1_cos_calibrated": (obs - mu) if mu is not None else None,
         "layer_star": int(rec["fits"]["layer_star"]),
         "ceiling_two_draw": rec["fits"].get("ceiling_two_draw_at_star"),
+        "ceiling_retrieval": ceil_retr,
+        "acc1_cos_ceiling_normalized": sr1,
+        "participation_ratio_x_at_star": rec["fits"].get("participation_ratio_x_at_star"),
     }
 
 
@@ -205,6 +231,13 @@ def _perrow_by_ci(rec: dict) -> dict[str, int]:
     }
 
 
+def _gpqa_perrow_by_id(rec: dict) -> dict[str, int]:
+    """GPQA per-row same-question hits keyed by row_id = "<qid>_s<seed>" (B4)."""
+    gp = rec["gpqa_perrow"]
+    assert gp is not None, "gpqa_perrow hits missing — the H2 surface contrast needs them"
+    return {str(r): int(h) for r, h in zip(gp["row_ids"], gp["same_q_hit"], strict=True)}
+
+
 # ---------------------------------------------------------------------------
 # Paired bootstrap (one shared resample matrix; plan §4.4)
 # ---------------------------------------------------------------------------
@@ -214,6 +247,28 @@ def _shared_resample_matrix(universe: list[str], draws: int, seed: int) -> np.nd
     rng = np.random.default_rng(seed)
     n = len(universe)
     return rng.integers(0, n, size=(draws, n))
+
+
+def _boot_means(diff: np.ndarray, in_shared: np.ndarray, matrix: np.ndarray) -> np.ndarray:
+    """Vectorized per-draw means of ``diff`` over the shared-row subset of each
+    resample draw (one shared matrix; per-draw restriction to shared rows)."""
+    keep = in_shared[matrix]  # (draws, n) bool
+    ksum = keep.sum(axis=1)
+    assert (ksum > 0).all(), "bootstrap draw with zero shared rows"
+    return (diff[matrix] * keep).sum(axis=1) / ksum
+
+
+def _paired_gap_boot(
+    hits_b: dict[str, int], hits_a: dict[str, int], universe: list[str], matrix: np.ndarray
+) -> tuple[float, np.ndarray, int]:
+    """Complete-case paired gap (arm b − arm a) over the shared rows of one
+    surface + its per-checkpoint bootstrap draws (B4, review round 2)."""
+    in_shared = np.array([rid in hits_b and rid in hits_a for rid in universe])
+    n_shared = int(in_shared.sum())
+    assert n_shared > 0, "paired gap: zero shared rows after the complete-case intersection"
+    diff = np.array([hits_b.get(rid, 0) - hits_a.get(rid, 0) for rid in universe], dtype=np.float64)
+    gap = float(diff[in_shared].mean())
+    return gap, _boot_means(diff, in_shared, matrix), n_shared
 
 
 def paired_contrast(
@@ -239,12 +294,7 @@ def paired_contrast(
     db = np.array([hits_b.get(ci, 0) for ci in universe], dtype=np.float64)
     diff = da - db
     raw_delta = float(diff[in_shared].mean())
-    boot = np.empty(matrix.shape[0])
-    for i in range(matrix.shape[0]):
-        idx = matrix[i]
-        keep = in_shared[idx]
-        assert keep.any(), "bootstrap draw with zero shared rows"
-        boot[i] = diff[idx][keep].mean()
+    boot = _boot_means(diff, in_shared, matrix)
     cal_a, cal_b = _calibrated(rec_a), _calibrated(rec_b)
     delta_null = cal_a["null_mean"] - cal_b["null_mean"]
     boot_cal = boot - delta_null
@@ -305,66 +355,138 @@ def column_verdicts(maps: dict[str, dict], universe: list[str], matrix: np.ndarr
     return out
 
 
-def h2_reads(maps: dict[str, dict]) -> dict:
+def h2_reads(maps: dict[str, dict], universe: list[str], matrix: np.ndarray) -> dict:
     """H2 (plan §3, both registered reads; OLMo pairs NEVER enter either).
 
-    (a) gap-vs-AA-rank: Spearman between the per-checkpoint CALIBRATED arm gap
-        (arm-b cot_boundary minus arm-a prompt_last, generic surface) and the
-        AA capability pin, over the 7 Qwen thinking checkpoints.
+    Review-round-2 shape (B4 + E4 adjudication):
+
+    - COMPLETE-CASE per-row intersections: the per-checkpoint gap on EACH
+      surface is computed over the rows present in BOTH arms after
+      drops/regens (generic: shared test cis from perrow_*; GPQA: shared
+      "<qid>_s<seed>" rows from gpqa_perrow_*); intersection sizes reported.
+    - PER-CHECKPOINT paired bootstrap: 1,000 draws seed 42, ONE shared
+      resample matrix per surface universe (the generic matrix is the §4.4
+      column matrix; the GPQA matrix is drawn once over the GPQA row
+      universe with the same seed), restricted per draw to the shared rows.
+    - PRIMARY = RAW gaps on both surfaces (E4: no GPQA null battery — raw
+      minus raw subtracts comparable objects); the CALIBRATED generic gap and
+      the length-RESIDUALIZED gaps (generic + GPQA, §6 iii) ride as
+      sensitivity fields.
+    - FAIL LOUD unless all SEVEN registered checkpoint pairs exist (== 7,
+      replacing the round-1 >= 5): a partial H2 read silently changes the
+      registered statistic's n.
+
+    (a) gap-vs-AA-rank: Spearman between the per-checkpoint CALIBRATED arm
+        gap and the AA pin over the 7 checkpoints (registered read).
     (b) surface contrast (2603.05488): Wilcoxon signed-rank over the 7
-        checkpoints of [gap_GPQA - gap_generic] (n=7; minimum attainable
-        two-sided p = 0.0156 — an "unresolved" outcome is calibrated, not
-        surprising). gap_generic uses RAW test acc@1 and gap_GPQA RAW
-        same-question acc@1 so the two surfaces subtract comparable objects
-        (no GPQA null battery is registered); the calibrated-generic-gap
-        variant is reported as a sensitivity field.
+        per-checkpoint [gap_GPQA − gap_generic] raw deltas (min attainable
+        two-sided p at n=7 = 0.0156 — "unresolved" is calibrated, not
+        surprising).
     """
     from scipy.stats import spearmanr, wilcoxon
 
-    detail: dict[str, dict | str] = {}
-    gaps_cal, aa_vals, surface_deltas = [], [], []
+    missing = [
+        key
+        for key in QWEN_THINKING_KEYS
+        if maps.get(MapRef(key, "b", "cot_boundary").map_id) is None
+        or maps.get(MapRef(key, "a", "prompt_last").map_id) is None
+    ]
+    assert not missing, (
+        f"H2 requires ALL 7 registered Qwen thinking checkpoint pairs; missing: {missing} "
+        "(review round 2: == 7 replaces >= 5 — never run H2 on a partial panel)"
+    )
+    # One shared GPQA resample matrix (same seed/draw count as the generic one)
+    # over the UNION of GPQA row ids across the 14 H2 maps.
+    gpqa_universe = sorted(
+        {
+            rid
+            for key in QWEN_THINKING_KEYS
+            for arm, pos in (("b", "cot_boundary"), ("a", "prompt_last"))
+            for rid in _gpqa_perrow_by_id(maps[MapRef(key, arm, pos).map_id])
+        }
+    )
+    # Draw count MATCHES the caller-supplied generic matrix (production:
+    # PC.BOOTSTRAP_DRAWS) — the per-draw surface delta boot_q - boot_g is only
+    # defined at equal draw counts.
+    gpqa_matrix = _shared_resample_matrix(gpqa_universe, int(matrix.shape[0]), PC.BOOTSTRAP_SEED)
+
+    detail: dict[str, dict] = {}
+    gaps_cal, gaps_raw, aa_vals, surface_deltas = [], [], [], []
     for key in QWEN_THINKING_KEYS:
         ref_b, ref_a = MapRef(key, "b", "cot_boundary"), MapRef(key, "a", "prompt_last")
         assert_pair_metadata(ref_b, ref_a)  # same checkpoint id — legal pair
-        rec_b, rec_a = maps.get(ref_b.map_id), maps.get(ref_a.map_id)
-        if rec_b is None or rec_a is None:
-            detail[key] = "missing"
-            continue
+        rec_b, rec_a = maps[ref_b.map_id], maps[ref_a.map_id]
+        # Generic surface: complete-case shared test cis + paired bootstrap.
+        gap_g, boot_g, n_shared_g = _paired_gap_boot(
+            _perrow_by_ci(rec_b), _perrow_by_ci(rec_a), universe, matrix
+        )
+        # GPQA surface: complete-case shared (qid, seed) rows + paired bootstrap.
+        gap_q, boot_q, n_shared_q = _paired_gap_boot(
+            _gpqa_perrow_by_id(rec_b), _gpqa_perrow_by_id(rec_a), gpqa_universe, gpqa_matrix
+        )
+        surface_delta = float(gap_q - gap_g)
+        boot_delta = boot_q - boot_g
         cal_b, cal_a = _calibrated(rec_b), _calibrated(rec_a)
-        gap_cal = cal_b["acc1_cos_calibrated"] - cal_a["acc1_cos_calibrated"]
-        gap_raw = cal_b["acc1_cos_at_star"] - cal_a["acc1_cos_at_star"]
-        rec_entry: dict = {"gap_generic_cal": float(gap_cal), "gap_generic_raw": float(gap_raw)}
-        gpqa_b, gpqa_a = rec_b["gpqa_transfer"], rec_a["gpqa_transfer"]
-        if gpqa_b is not None and gpqa_a is not None:
-            gap_gpqa = gpqa_b["same_question_acc1_cos"] - gpqa_a["same_question_acc1_cos"]
-            rec_entry["gap_gpqa_raw"] = float(gap_gpqa)
-            rec_entry["surface_delta"] = float(gap_gpqa - gap_raw)
-            surface_deltas.append(gap_gpqa - gap_raw)
+        gap_cal = float(cal_b["acc1_cos_calibrated"] - cal_a["acc1_cos_calibrated"])
+        rec_entry: dict = {
+            "gap_generic_raw": gap_g,
+            "gap_generic_raw_ci95": [
+                float(np.percentile(boot_g, 2.5)),
+                float(np.percentile(boot_g, 97.5)),
+            ],
+            "n_shared_generic": n_shared_g,
+            "gap_gpqa_raw": gap_q,
+            "gap_gpqa_raw_ci95": [
+                float(np.percentile(boot_q, 2.5)),
+                float(np.percentile(boot_q, 97.5)),
+            ],
+            "n_shared_gpqa": n_shared_q,
+            "surface_delta": surface_delta,
+            "surface_delta_ci95": [
+                float(np.percentile(boot_delta, 2.5)),
+                float(np.percentile(boot_delta, 97.5)),
+            ],
+            # Sensitivity fields (E4): calibrated generic gap + §6 (iii)
+            # length-residualized gaps on both surfaces.
+            "gap_generic_cal": gap_cal,
+        }
+        resid_b, resid_a = rec_b["resid"], rec_a["resid"]
+        if resid_b is not None and resid_a is not None:
+            rec_entry["gap_generic_resid"] = float(
+                _acc_at_1(resid_b["resid_knn_test"]["ridge_resid"]["cosine"])
+                - _acc_at_1(resid_a["resid_knn_test"]["ridge_resid"]["cosine"])
+            )
+            gq_b, gq_a = resid_b.get("gpqa_resid"), resid_a.get("gpqa_resid")
+            if gq_b is not None and gq_a is not None:
+                rec_entry["gap_gpqa_resid"] = float(
+                    gq_b["same_question_acc1_cos"] - gq_a["same_question_acc1_cos"]
+                )
         gaps_cal.append(gap_cal)
+        gaps_raw.append(gap_g)
+        surface_deltas.append(surface_delta)
         aa_vals.append(PC.AA_PIN[key][0])
         detail[key] = rec_entry
-    out: dict = {"pairs": detail, "n_gap_pairs": len(gaps_cal), "min_two_sided_p_at_n7": 0.015625}
-    if len(gaps_cal) >= 3:
-        rho, p = spearmanr(aa_vals, gaps_cal)
-        out["gap_vs_aa_spearman"] = {"rho": float(rho), "p": float(p), "n": len(gaps_cal)}
-    else:
-        out["gap_vs_aa_spearman"] = None
-    if len(surface_deltas) >= 5:
-        stat, p = wilcoxon(surface_deltas, alternative="two-sided", mode="exact")
-        out["surface_wilcoxon"] = {
+    assert len(surface_deltas) == 7, len(surface_deltas)
+    rho, p = spearmanr(aa_vals, gaps_cal)
+    stat, wp = wilcoxon(surface_deltas, alternative="two-sided", method="exact")
+    return {
+        "pairs": detail,
+        "n_gap_pairs": len(gaps_cal),
+        "min_two_sided_p_at_n7": 0.015625,
+        "gap_vs_aa_spearman": {"rho": float(rho), "p": float(p), "n": len(gaps_cal)},
+        "surface_wilcoxon": {
             "stat": float(stat),
-            "p_two_sided": float(p),
+            "p_two_sided": float(wp),
             "n": len(surface_deltas),
-            "statistic_def": "gap_GPQA - gap_generic (raw gaps)",
-        }
-    else:
-        out["surface_wilcoxon"] = {
-            "stat": None,
-            "p_two_sided": None,
-            "n": len(surface_deltas),
-            "note": "fewer than 5 realized pairs — Wilcoxon not run",
-        }
-    return out
+            "statistic_def": "gap_GPQA - gap_generic (RAW gaps, complete-case shared rows)",
+        },
+        "bootstrap": {
+            "draws": int(matrix.shape[0]),
+            "seed": PC.BOOTSTRAP_SEED,
+            "generic_universe_n": len(universe),
+            "gpqa_universe_n": len(gpqa_universe),
+        },
+    }
 
 
 def olmo_pair_reads(maps: dict[str, dict]) -> dict:
@@ -396,32 +518,44 @@ def olmo_pair_reads(maps: dict[str, dict]) -> dict:
     return out
 
 
+# Registered panel-trend Ns (plan §6): arm (b) = ALL 11 arm-b maps (7 Qwen
+# cot_boundary + the two OLMo-Think checkpoints' pre_think AND cot_boundary
+# companions); arm (a) = 9 (the two OLMo-Think checkpoints have no arm-a cell;
+# the anchor has no AA value). D4 (review round 2): carry ALL registered
+# members or fail loud — a silently smaller N changes the registered statistic.
+SPEARMAN_REGISTERED_N = {"a": 9, "b": 11}
+SPEARMAN_CRITICAL_RHO_ALPHA05 = {"a": 0.68, "b": 0.62}  # two-sided, plan §6
+
+
 def spearman_vs_capability(maps: dict[str, dict]) -> dict:
     from scipy.stats import spearmanr
 
     out: dict = {}
     for arm in ("a", "b"):
         xs, ys, names = [], [], []
-        for m in PC.PANEL.values():
-            if arm not in m.arms:
+        for ref in all_maps():
+            if ref.arm != arm:
                 continue
-            pin = PC.AA_PIN.get(m.key, (None,))[0]
+            pin = PC.AA_PIN.get(ref.model_key, (None,))[0]
             if pin is None:
-                continue  # q25_7b: no AA value (recorded at P0), excluded here
-            pos = _column_pos(arm) if m.thinking or arm == "a" else None
-            if m.family == "olmo_think":
-                pos = "cot_boundary"
-            rec = maps.get(f"{m.key}_{arm}.{pos}")
-            if rec is None:
-                continue
+                continue  # q25_7b anchor: no AA value (registered exclusion, plan §6)
+            rec = maps.get(ref.map_id)
+            assert rec is not None, (
+                f"panel Spearman arm ({arm}): registered map {ref.map_id} missing — carry all "
+                f"N={SPEARMAN_REGISTERED_N[arm]} registered members or fail loud (plan §6, D4)"
+            )
             xs.append(pin)
             ys.append(_calibrated(rec)["acc1_cos_calibrated"])
-            names.append(m.key)
-        if len(xs) >= 3:
-            rho, p = spearmanr(xs, ys)
-            out[arm] = {"n": len(xs), "members": names, "rho": float(rho), "p": float(p)}
-        else:
-            out[arm] = {"n": len(xs), "members": names, "rho": None, "p": None}
+            names.append(ref.map_id)
+        assert len(xs) == SPEARMAN_REGISTERED_N[arm], (arm, len(xs), names)
+        rho, p = spearmanr(xs, ys)
+        out[arm] = {
+            "n": len(xs),
+            "members": names,
+            "rho": float(rho),
+            "p": float(p),
+            "critical_rho_alpha05_two_sided": SPEARMAN_CRITICAL_RHO_ALPHA05[arm],
+        }
     return out
 
 
@@ -430,24 +564,137 @@ def spearman_vs_capability(maps: dict[str, dict]) -> dict:
 # ---------------------------------------------------------------------------
 
 
+JUDGE_PILOT_N = 200  # plan §4.5: ~200-call transport-true pilot at the production instrument
+JUDGE_PILOT_PARSE_FAIL_MAX = 0.02  # per-arm parse-fail gate (< 2%)
+JUDGE_MAX_TRANSPORT_ROUNDS = 3  # transport-class exhaustions re-driven, never persisted
+
+
+def _build_extraction_request(item) -> dict:
+    return {
+        "model": PC.EXTRACTION_JUDGE_MODEL,
+        "max_tokens": PC.EXTRACTION_JUDGE_MAX_TOKENS,
+        "system": PC.EXTRACTION_JUDGE_SYSTEM,
+        "messages": [
+            {
+                "role": "user",
+                "content": PC.format_extraction_judge_user(
+                    item.payload["question"], item.payload["answer"]
+                ),
+            }
+        ],
+    }
+
+
+def _dispatch_judge_round(items: list, checkpoint_dir: Path) -> dict:
+    """One api_dispatch round (Batch API forced — plan §4.5 transport-true).
+
+    The B5 test seam: fakes here must mirror THIS signature (items,
+    checkpoint_dir) -> {item_id: DispatchResult}.
+    """
+    import asyncio
+
+    from explore_persona_space.llm.api_dispatch import dispatch_calls
+
+    return asyncio.run(
+        dispatch_calls(
+            items,
+            model=PC.EXTRACTION_JUDGE_MODEL,
+            build_request=_build_extraction_request,
+            parse_response=PC.parse_extraction_judgment,
+            force_path="batch",
+            checkpoint_dir=checkpoint_dir,
+        )
+    )
+
+
+def _dispatch_wave(items: list, ckpt_root: Path, wave: str) -> dict:
+    """Dispatch + transport RE-DRIVE (B5, review round 2).
+
+    api_dispatch's checkpoint re-serves persisted transport rows on resume
+    (its documented caveat), so every re-drive round gets a FRESH checkpoint
+    dir; rows still transport-failed after JUDGE_MAX_TRANSPORT_ROUNDS raise —
+    transport failures are RETRIED, never persisted as drops (rule 24).
+    """
+    from explore_persona_space.llm.api_dispatch import RESULT_RATE_LIMITED, RESULT_TRANSPORT
+
+    results: dict = {}
+    pending = list(items)
+    for rnd in range(JUDGE_MAX_TRANSPORT_ROUNDS):
+        res = _dispatch_judge_round(pending, ckpt_root / f"{wave}_round{rnd}")
+        redrive = []
+        for it in pending:
+            r = res[it.item_id]
+            if r.category in (RESULT_RATE_LIMITED, RESULT_TRANSPORT):
+                redrive.append(it)
+            else:
+                results[it.item_id] = r
+        if not redrive:
+            return results
+        logger.warning(
+            "[i2588] judge %s round %d: %d transport-class rows re-driven (fresh checkpoint)",
+            wave,
+            rnd,
+            len(redrive),
+        )
+        pending = redrive
+    raise RuntimeError(
+        f"{len(pending)} judge calls still transport-failed after "
+        f"{JUDGE_MAX_TRANSPORT_ROUNDS} re-drive rounds — transport failures are RETRIED, "
+        "never persisted as drops (llm-judging.md rule 24). Re-run --judge-fallback when the "
+        "API recovers; completed rows resume from their round checkpoints."
+    )
+
+
+def _pilot_gate(pilot_results: dict, out_dir: Path) -> dict:
+    """Plan §4.5 registered pilot gates: ZERO stop_reason=="max_tokens" +
+    parse-fail rate < 2%, at the EXACT production instrument (Batch path)."""
+    n = len(pilot_results)
+    n_trunc = sum(1 for r in pilot_results.values() if r.stop_reason == "max_tokens")
+    n_parse_fail = sum(1 for r in pilot_results.values() if not r.error and r.result is None)
+    parse_fail_rate = n_parse_fail / max(1, n)
+    report = {
+        "n_pilot": n,
+        "n_stop_reason_max_tokens": n_trunc,
+        "n_parse_fail": n_parse_fail,
+        "parse_fail_rate": parse_fail_rate,
+        "gates": {
+            "zero_max_tokens": n_trunc == 0,
+            "parse_fail_below_2pct": parse_fail_rate < JUDGE_PILOT_PARSE_FAIL_MAX,
+        },
+    }
+    PC.write_json_atomic(out_dir / "gpqa_judge_pilot.json", report)
+    if n_trunc > 0 or parse_fail_rate >= JUDGE_PILOT_PARSE_FAIL_MAX:
+        raise RuntimeError(
+            f"judge PILOT GATE FAIL (plan §4.5): max_tokens truncations={n_trunc} (must be 0), "
+            f"parse-fail rate={parse_fail_rate:.3f} (must be < {JUDGE_PILOT_PARSE_FAIL_MAX}) "
+            f"over {n} pilot calls — fix the instrument (raise max_tokens / rubric) BEFORE "
+            "the production wave; never dispatch the wave past a failed pilot."
+        )
+    return report
+
+
 def run_judge_fallback(pending_path: Path, parsed_dir: Path, out_path: Path) -> dict:
     """Judge-extract letters for unparseable GPQA rollouts (trigger: >5%
     extraction failure, recorded pod-side in gpqa_judge_pending.json).
 
     Routes through llm/api_dispatch.py (Batch API forced — the wave can reach
     ~19k calls worst-case); judge claude-sonnet-4-5-20250929, reason-then-
-    extract JSON rubric, max_tokens=1024 (llm-judging.md rule 23 floor);
-    malformed judge returns are DROPPED (scored incorrect), never coerced."""
-    import asyncio
+    extract JSON rubric, max_tokens=1024 (llm-judging.md rule 23 floor).
 
-    from explore_persona_space.llm.api_dispatch import DispatchItem, dispatch_calls
-
+    Review-round-2 contract (B5): a ~200-call pilot at the EXACT production
+    instrument gates the wave (zero max_tokens + parse-fail < 2%);
+    stop_reason is captured per verdict; transport-class exhaustions are
+    RE-DRIVEN with fresh checkpoint dirs (never persisted as drops);
+    malformed judge returns are DROPPED + COUNTED (rule 9, never coerced).
+    """
     pending = json.loads(pending_path.read_text(encoding="utf-8"))
     gpqa = json.loads(
         (_REPO_ROOT / "eval_results" / "issue_2588" / "gpqa_prompts.json").read_text(
             encoding="utf-8"
         )
     )
+    from explore_persona_space.llm.api_dispatch import DispatchItem
+
     q_by_id = {q["qid"]: q for q in gpqa["prompts"]}
     rows_by_id: dict[str, dict] = {}
     for f in sorted(parsed_dir.glob("gpqa_s*.jsonl")):
@@ -468,57 +715,97 @@ def run_judge_fallback(pending_path: Path, parsed_dir: Path, out_path: Path) -> 
             )
         )
 
-    def build_request(item: DispatchItem) -> dict:
-        return {
-            "model": PC.EXTRACTION_JUDGE_MODEL,
-            "max_tokens": PC.EXTRACTION_JUDGE_MAX_TOKENS,
-            "system": PC.EXTRACTION_JUDGE_SYSTEM,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": PC.format_extraction_judge_user(
-                        item.payload["question"], item.payload["answer"]
-                    ),
-                }
-            ],
-        }
+    ckpt_root = out_path.parent / "judge_checkpoint"
+    pilot_items = items[: min(JUDGE_PILOT_N, len(items))]
+    pilot_results = _dispatch_wave(pilot_items, ckpt_root, "pilot")
+    pilot_report = _pilot_gate(pilot_results, out_path.parent)
+    rest = items[len(pilot_items) :]
+    wave_results = _dispatch_wave(rest, ckpt_root, "wave") if rest else {}
+    results = {**pilot_results, **wave_results}
 
-    results = asyncio.run(
-        dispatch_calls(
-            items,
-            model=PC.EXTRACTION_JUDGE_MODEL,
-            build_request=build_request,
-            parse_response=PC.parse_extraction_judgment,
-            force_path="batch",
-            checkpoint_dir=out_path.parent / "judge_checkpoint",
-        )
-    )
-    verdicts, n_correct, n_unparseable, n_error = {}, 0, 0, 0
+    verdicts: dict = {}
+    counts = {
+        "n_correct": 0,
+        "n_unparseable": 0,
+        "n_malformed_dropped": 0,
+        "n_truncated": 0,
+        "n_error_dropped": 0,
+    }
     gold_by_id = {p["row_id"]: p["gold"] for p in pending["rows"]}
     for item_id, res in results.items():
-        if res.error or res.result is None:
-            n_error += 1
-            verdicts[item_id] = {"letter": None, "disposition": f"error:{res.reason}"}
-            continue
-        letter = res.result
-        ok = letter == gold_by_id[item_id]
-        n_correct += int(ok)
-        n_unparseable += int(letter == "UNPARSEABLE")
-        verdicts[item_id] = {"letter": letter, "correct": bool(ok)}
+        ent: dict = {"stop_reason": res.stop_reason}
+        if res.error:
+            # Terminal non-transport failures (bad request / empty response):
+            # dropped + counted — transport-class rows can never reach here
+            # (_dispatch_wave re-drives or raises).
+            counts["n_error_dropped"] += 1
+            ent.update(letter=None, disposition=f"{res.category}:dropped ({res.reason})")
+        elif res.result is None:
+            counts["n_malformed_dropped"] += 1
+            counts["n_truncated"] += int(res.stop_reason == "max_tokens")
+            ent.update(letter=None, disposition="malformed:dropped (rule 9, never coerced)")
+        else:
+            letter = res.result
+            ok = letter == gold_by_id[item_id]
+            counts["n_correct"] += int(ok)
+            counts["n_unparseable"] += int(letter == "UNPARSEABLE")
+            ent.update(letter=letter, correct=bool(ok))
+        verdicts[item_id] = ent
     rec = {
         "meta": {
             "issue": PC.TASK_ID,
             "judge_model": PC.EXTRACTION_JUDGE_MODEL,
+            "judge_max_tokens": PC.EXTRACTION_JUDGE_MAX_TOKENS,
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         },
         "n_items": len(items),
-        "n_correct": n_correct,
-        "n_unparseable": n_unparseable,
-        "n_transport_or_error": n_error,
+        **counts,
+        "n_transport_persisted": 0,  # by construction: re-driven or raised
+        "pilot": pilot_report,
         "verdicts": verdicts,
     }
     PC.write_json_atomic(out_path, rec)
     return rec
+
+
+def merged_behavioral(rec: dict, map_id: str) -> dict | None:
+    """Deterministically fold gpqa_judge_verdicts.json into the behavioral
+    metrics (B5): judge-corrected accuracy from INTEGER counts; a
+    flagged-pending map WITHOUT verdicts FAILS LOUD — the trend is never
+    assembled on uncorrected behavioral metrics."""
+    gt = rec["gpqa_transfer"]
+    if gt is None:
+        return None
+    beh = dict(gt["behavioral"])
+    if not beh.get("judge_fallback_flagged"):
+        return beh
+    pend, verd = rec["judge_pending"], rec["judge_verdicts"]
+    assert pend is not None, f"{map_id}: judge_fallback_flagged but gpqa_judge_pending.json absent"
+    if verd is None:
+        raise RuntimeError(
+            f"{map_id}: GPQA judge fallback FLAGGED "
+            f"(frac_unparseable={beh.get('frac_unparseable'):.3f}) but "
+            "gpqa_judge_verdicts.json is ABSENT — run issue2588_trend.py --judge-fallback for "
+            "this cell first (plan §4.5); the trend never assembles on uncorrected metrics."
+        )
+    gold = {r["row_id"]: r["gold"] for r in pend["rows"]}
+    n_extra_correct = sum(
+        1 for rid, v in verd["verdicts"].items() if v.get("letter") == gold.get(rid)
+    )
+    n_still_unparseable = sum(
+        1 for v in verd["verdicts"].values() if v.get("letter") in (None, "UNPARSEABLE")
+    )
+    total = int(beh["n_rollouts"])
+    n_correct0 = int(beh["n_correct"])
+    beh["acc_judge_corrected"] = (n_correct0 + n_extra_correct) / max(1, total)
+    beh["n_judge_corrected"] = n_extra_correct
+    beh["frac_unparseable_after_judge"] = n_still_unparseable / max(1, total)
+    beh["judge_counts"] = {
+        k: verd[k]
+        for k in ("n_items", "n_correct", "n_unparseable", "n_malformed_dropped", "n_error_dropped")
+        if k in verd
+    }
+    return beh
 
 
 # ---------------------------------------------------------------------------
@@ -538,6 +825,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--judge-fallback", action="store_true")
     ap.add_argument("--pending", type=Path, help="gpqa_judge_pending.json (judge fallback)")
     ap.add_argument("--parsed-dir", type=Path, help="parsed rollouts dir (judge fallback)")
+    ap.add_argument(
+        "--harvest",
+        action="store_true",
+        help="C5: stage the fits/nulls HF prefixes (revision-pinned bulk mirror via "
+        "hub.stage_hub_prefix) into <fits-dir parent>/hub_mirror before analysis; "
+        "asserts all 21 registered maps load with full schema",
+    )
+    ap.add_argument(
+        "--harvest-revision",
+        default=None,
+        help="HF data-repo revision pin for --harvest (default: ONE resolved main sha "
+        "for the whole harvest — the stage_hub_prefix coherence contract)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
     if args.import_check:
@@ -547,19 +847,56 @@ def main(argv: list[str] | None = None) -> int:
         from scipy.stats import spearmanr, wilcoxon  # noqa: F401
 
         from explore_persona_space.llm.api_dispatch import (  # noqa: F401
+            RESULT_RATE_LIMITED,
+            RESULT_TRANSPORT,
             DispatchItem,
             dispatch_calls,
         )
+        from explore_persona_space.orchestrate.hub import stage_hub_prefix  # noqa: F401
 
         print("[import-check] OK")
         return 0
     if args.judge_fallback:
         assert args.pending and args.parsed_dir, "--judge-fallback needs --pending + --parsed-dir"
+        # Verdicts land BESIDE the pending file (the harvested cell fits dir),
+        # where the trend assembly's _load_map reads them back (B5).
         rec = run_judge_fallback(
-            args.pending, args.parsed_dir, args.out.parent / "gpqa_judge_verdicts.json"
+            args.pending, args.parsed_dir, args.pending.parent / "gpqa_judge_verdicts.json"
         )
         logger.info("[i2588] judge fallback: %s", {k: v for k, v in rec.items() if k != "verdicts"})
         return 0
+
+    if args.harvest:
+        import shutil
+
+        from explore_persona_space.orchestrate import hub
+
+        mirror = args.fits_dir.parent / "hub_mirror"
+        staged: list[Path] = []
+        for pfx in (f"{PC.PANEL_PREFIX}/fits", f"{PC.PANEL_PREFIX}/nulls"):
+            staged += hub.stage_hub_prefix(
+                PC.HF_DATA_REPO,
+                pfx,
+                mirror,
+                repo_type="dataset",
+                revision=args.harvest_revision,
+            )
+        # Uploads split nulls_* to the nulls/ prefix; _load_map reads ONE cell
+        # dir — fold the nulls mirror into the fits mirror per cell.
+        fits_root = mirror / PC.PANEL_PREFIX / "fits"
+        nulls_root = mirror / PC.PANEL_PREFIX / "nulls"
+        if nulls_root.is_dir():
+            for f in sorted(nulls_root.rglob("*.json")):
+                dest = fits_root / f.relative_to(nulls_root)
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(f, dest)
+        args.fits_dir = fits_root
+        logger.info(
+            "[i2588] harvested %d files (revision pin: %s) -> %s",
+            len(staged),
+            args.harvest_revision or "resolved-main-sha",
+            fits_root,
+        )
 
     maps: dict[str, dict] = {}
     for ref in all_maps():
@@ -568,6 +905,20 @@ def main(argv: list[str] | None = None) -> int:
             maps[ref.map_id] = rec
     logger.info("[i2588] loaded %d/21 maps from %s", len(maps), args.fits_dir)
     assert maps, f"no fit artifacts under {args.fits_dir}"
+    if args.harvest:
+        # C5 schema/count validation: ALL 21 registered maps, each with the
+        # full artifact set the analysis consumes.
+        missing_maps = [r.map_id for r in all_maps() if r.map_id not in maps]
+        assert not missing_maps, (
+            f"--harvest expected all 21 registered maps; missing {missing_maps}"
+        )
+        for mid, rec in maps.items():
+            gaps = [
+                k
+                for k in ("nulls", "perrow", "gpqa_transfer", "gpqa_perrow", "resid")
+                if rec[k] is None
+            ]
+            assert not gaps, f"--harvest: map {mid} missing artifact kinds {gaps}"
 
     # Test-ci universe: union of perrow cis (the frozen test_1000 grid).
     universe = sorted({ci for rec in maps.values() if rec["perrow"] for ci in _perrow_by_ci(rec)})
@@ -578,6 +929,8 @@ def main(argv: list[str] | None = None) -> int:
             "issue": PC.TASK_ID,
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "fits_dir": str(args.fits_dir),
+            "harvest": bool(args.harvest),
+            "harvest_revision": args.harvest_revision,
             "n_maps_loaded": len(maps),
             "bootstrap": {
                 "draws": PC.BOOTSTRAP_DRAWS,
@@ -588,17 +941,29 @@ def main(argv: list[str] | None = None) -> int:
         },
         "per_map": {mid: _calibrated(rec) for mid, rec in maps.items()},
         "gpqa_transfer": {
-            mid: rec["gpqa_transfer"]
+            mid: {**rec["gpqa_transfer"], "behavioral": merged_behavioral(rec, mid)}
             for mid, rec in maps.items()
             if rec["gpqa_transfer"] is not None
         },
         "resid": {
-            mid: {k: rec["resid"][k] for k in ("resid_test_r2", "length_only_test_r2")}
+            mid: {
+                "resid_test_r2": rec["resid"]["resid_test_r2"],
+                "length_only_test_r2": rec["resid"]["length_only_test_r2"],
+                "resid_acc1_cos": _acc_at_1(
+                    rec["resid"]["resid_knn_test"]["ridge_resid"]["cosine"]
+                ),
+                "length_only_acc1_cos": _acc_at_1(
+                    rec["resid"]["length_only_knn_test"]["length_only"]["cosine"]
+                ),
+                "gpqa_resid_same_q_acc1": (rec["resid"].get("gpqa_resid") or {}).get(
+                    "same_question_acc1_cos"
+                ),
+            }
             for mid, rec in maps.items()
             if rec["resid"] is not None
         },
         "column_verdicts": column_verdicts(maps, universe, matrix),
-        "h2_qwen_thinking": h2_reads(maps),
+        "h2_qwen_thinking": h2_reads(maps, universe, matrix),
         "olmo_pairs": olmo_pair_reads(maps),
         "spearman_vs_aa_capability": spearman_vs_capability(maps),
     }

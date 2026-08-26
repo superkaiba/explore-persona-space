@@ -53,6 +53,8 @@ import issue1491_ladder_fits as LF  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
+from explore_persona_space.orchestrate import hub as HUB  # noqa: E402  (guarded+retried uploads)
+
 logger = logging.getLogger("issue2588_run_cell")
 
 _ENGINE_CONSTRUCTED = False  # drives the os._exit(0) terminal (vLLM teardown gotcha)
@@ -109,6 +111,7 @@ def _paths(args, cell: PC.Cell) -> dict[str, Path]:
         "raw": cell_dir / "raw_completions",
         "parsed": cell_dir / "parsed",
         "capture": cell_dir / "capture",
+        "capture_oddlayers": cell_dir / "capture_oddlayers",  # C3: odd pass never overwrites
         "fits": cell_dir / "fits",
         "cache": root / "hf_cache",
         "logs": Path("/workspace/logs") if Path("/workspace").is_dir() else root / "logs",
@@ -119,35 +122,71 @@ def _paths(args, cell: PC.Cell) -> dict[str, Path]:
 
 
 def _upload_dir(local_dir: Path, path_in_repo: str, what: str) -> None:
-    """One bulk upload_folder commit (never a per-file loop; gotchas.md 504-storm)."""
-    from huggingface_hub import HfApi
-
-    def _do():
-        HfApi().upload_folder(
-            folder_path=str(local_dir),
-            path_in_repo=path_in_repo,
-            repo_id=PC.HF_DATA_REPO,
-            repo_type="dataset",
-            commit_message=f"issue2588: {what}",
-        )
-
-    G._retry_transient(_do, what=f"upload_folder {path_in_repo}")
-    logger.info("[i2588] uploaded %s -> %s", local_dir, path_in_repo)
+    """One bulk upload_folder commit via the guarded canonical helper (B6, review
+    round 2): hub._upload carries the transient retry, the dir-filecount guard,
+    the file-count overflow fallback, and the exact-set post-upload verify —
+    never a bare per-file loop (gotchas.md 504-storm) or an unanchored wrap."""
+    url = HUB._upload(local_dir, PC.HF_DATA_REPO, "dataset", path_in_repo, raise_on_error=True)
+    logger.info("[i2588] uploaded %s -> %s (%s: %s)", local_dir, path_in_repo, what, url)
 
 
 def _upload_file(local: Path, path_in_repo: str, what: str) -> None:
-    from huggingface_hub import HfApi
+    """Single-file upload via hub._upload (upload_as_file=True; full destination
+    path — the #595/#1738 contract), retried + verified, fail-loud."""
+    HUB._upload(
+        local, PC.HF_DATA_REPO, "dataset", path_in_repo, upload_as_file=True, raise_on_error=True
+    )
+    logger.info("[i2588] uploaded file %s -> %s (%s)", local, path_in_repo, what)
 
-    def _do():
-        HfApi().upload_file(
-            path_or_fileobj=str(local),
-            path_in_repo=path_in_repo,
-            repo_id=PC.HF_DATA_REPO,
-            repo_type="dataset",
-            commit_message=f"issue2588: {what}",
-        )
 
-    G._retry_transient(_do, what=f"upload_file {path_in_repo}")
+# ---------------------------------------------------------------------------
+# Phase completion sentinels (B1, review round 2): every phase run through the
+# main() loop is idempotent — a completed (phase, layer_set) writes a done
+# sentinel; a re-run skips it unless --force. Smoke and production never
+# collide (distinct cell_dir roots); the odd-layer sensitivity pass carries a
+# distinct sentinel (and distinct artifact names, C3).
+# ---------------------------------------------------------------------------
+
+
+def _phase_done_path(args, paths: dict, name: str) -> Path:
+    suffix = "_odd" if args.layer_set == "odd" else ""
+    return paths["cell"] / "phase_done" / f"{name}{suffix}.json"
+
+
+def _phase_complete(args, paths: dict, name: str) -> bool:
+    return (not args.force) and _phase_done_path(args, paths, name).exists()
+
+
+def _mark_phase_done(args, cell: PC.Cell, paths: dict, name: str) -> None:
+    p = _phase_done_path(args, paths, name)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    PC.write_json_atomic(
+        p,
+        {
+            "meta": _meta(),
+            "cell": cell.key,
+            "phase": name,
+            "layer_set": args.layer_set,
+            "smoke": bool(args.smoke),
+        },
+    )
+
+
+def _run_phases(args, cell: PC.Cell, paths: dict, seq: tuple[str, ...]) -> list[str]:
+    """Run the requested phases with sentinel skip (B1). Returns names RUN."""
+    ran: list[str] = []
+    for name in seq:
+        if _phase_complete(args, paths, name):
+            logger.info(
+                "[i2588] phase %s already complete (sentinel %s) — skipped (--force to re-run)",
+                name,
+                _phase_done_path(args, paths, name),
+            )
+            continue
+        PHASES[name](args, cell, paths)
+        _mark_phase_done(args, cell, paths, name)
+        ran.append(name)
+    return ran
 
 
 # ---------------------------------------------------------------------------
@@ -249,19 +288,30 @@ def _load_gpqa_prompts(args) -> list[dict]:
 
 def phase_stage(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("stage")
+    import fcntl
+
     if args.pod_ordinal > 0:
         wait_s = args.pod_ordinal * 120
         logger.info(
             "[i2588] jittered weight pull: pod_ordinal=%d -> sleep %ds", args.pod_ordinal, wait_s
         )
         time.sleep(wait_s)
-    generic = _load_generic_rows(args, paths["cache"])
-    gpqa = _load_gpqa_prompts(args)
-    logger.info(
-        "[i2588] staged generic=%s gpqa=%d", {k: len(v) for k, v in generic.items()}, len(gpqa)
-    )
-    if not cell.fresh:
-        _stage_banked(args, cell, paths)
+    # Registered staging flock (plan §9 MF6): jitter staggers pods, the flock
+    # SERIALIZES concurrent staging downloads on a shared out-root (review
+    # round 2, F item — jitter alone was implemented).
+    lock_fh = open(paths["root"] / ".staging.lock", "w")  # noqa: SIM115 — lock lifetime object
+    fcntl.flock(lock_fh, fcntl.LOCK_EX)
+    try:
+        generic = _load_generic_rows(args, paths["cache"])
+        gpqa = _load_gpqa_prompts(args)
+        logger.info(
+            "[i2588] staged generic=%s gpqa=%d", {k: len(v) for k, v in generic.items()}, len(gpqa)
+        )
+        if not cell.fresh:
+            _stage_banked(args, cell, paths)
+    finally:
+        fcntl.flock(lock_fh, fcntl.LOCK_UN)
+        lock_fh.close()
 
 
 def _stage_banked(args, cell: PC.Cell, paths: dict) -> None:
@@ -503,6 +553,9 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("gen")
     from transformers import AutoTokenizer
 
+    # D2: raw-text budget (~2 GB, §9) + the model snapshot the engine pulls
+    # into the out-root HF cache (conservative: counted even if already cached).
+    _assert_headroom(paths, 4.0 + _est_model_gb(cell), f"gen:{cell.key}")
     tok = AutoTokenizer.from_pretrained(cell.model.hf_id)
     llm_holder: dict = {"llm": None, "mml": 0}
     gpqa = _load_gpqa_prompts(args)
@@ -578,6 +631,77 @@ def phase_gen(args, cell: PC.Cell, paths: dict) -> None:
 
 def _gpqa_seeds(args) -> tuple[int, ...]:
     return PC.GPQA_ROLLOUT_SEEDS[:SMOKE_GPQA_ROLLOUTS] if args.smoke else PC.GPQA_ROLLOUT_SEEDS
+
+
+# ---------------------------------------------------------------------------
+# C3 (review round 2): odd-layer sensitivity pass artifact separation. The odd
+# pass reads/writes its OWN capture tag dir + "_odd"-suffixed fit artifacts +
+# distinct HF upload prefixes — primary (swept) bytes/destinations untouched.
+# ---------------------------------------------------------------------------
+
+
+def _tag(args) -> str:
+    return "capture" if args.layer_set == "swept" else "capture_oddlayers"
+
+
+def _fits_name(args, kind: str, pos: str) -> str:
+    suffix = "_odd" if args.layer_set == "odd" else ""
+    stem = f"{kind}_{pos}" if pos else kind
+    return f"{stem}{suffix}.json"
+
+
+# ---------------------------------------------------------------------------
+# D2 (review round 2): plan §9 out-root disk-headroom asserts before each
+# write-heavy phase (gen / capture / fits), resume-aware — capture need is
+# scaled to the PENDING stages (a stage with rows.json already on disk costs
+# nothing more).
+# ---------------------------------------------------------------------------
+
+
+def _assert_headroom(paths: dict, need_gb: float, phase: str) -> None:
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
+
+    free = assert_out_root_headroom(paths["root"], need_gb, phase=phase)
+    logger.info("[i2588] disk headroom OK for %s: %.1f GB free >= %.1f GB", phase, free, need_gb)
+
+
+def _est_model_gb(cell: PC.Cell) -> float:
+    """Rough bf16 snapshot size (transformer block params + embeddings), with a
+    1.35x margin — a §9 FLOOR for the headroom assert, not an exact figure."""
+    m = cell.model
+    params = 12 * m.n_layers * m.h_dim**2 + 2 * 152_000 * m.h_dim
+    return 2.0 * params / 1e9 * 1.35
+
+
+def _stage_row_estimates(args, cell: PC.Cell) -> dict[str, tuple[int, int]]:
+    """{stage: (n_rows, n_slots)} for the capture-store size floor (§9 ledger).
+
+    Slots = one x per input position + one y_ans; ceiling stages are y-only.
+    """
+    n_pos = len(cell.input_positions)
+    full_n = {"train_10k": 10_000, "val_400": 400, "test_1000": 1_000}
+    # Banked cells capture the FULL banked row set even under --smoke (the
+    # banked chunks are staged whole); fresh cells slice at generation.
+    slice_generic = args.smoke and cell.fresh
+    gen_n = {s: (SMOKE_SLICE[s] if slice_generic else full_n[s]) for s in GENERIC_SPLITS}
+    gpqa_n = (SMOKE_GPQA_QUESTIONS if args.smoke else PC.GPQA_N_QUESTIONS) * 1  # per seed
+    est: dict[str, tuple[int, int]] = {s: (n, n_pos + 1) for s, n in gen_n.items()}
+    for seed in PC.CEILING_SEEDS:
+        est[f"ceiling_s{seed}"] = (gen_n["test_1000"], 1)  # y-only
+    for seed in _gpqa_seeds(args):
+        est[f"gpqa_s{seed}"] = (gpqa_n, n_pos + 1)
+    return est
+
+
+def _est_capture_need_gb(args, cell: PC.Cell, layers: list[int], paths: dict) -> float:
+    """fp32 capture-store bytes for the PENDING stages only (resume-aware)."""
+    tag_dir = paths[_tag(args)]
+    total_bytes = 0.0
+    for stage, (n_rows, n_slots) in _stage_row_estimates(args, cell).items():
+        if (tag_dir / stage / "rows.json").exists():
+            continue  # stage already captured — costs nothing more
+        total_bytes += n_rows * n_slots * len(layers) * cell.model.h_dim * 4
+    return total_bytes / 1e9 * 1.2 + 1.0  # 20% shard/metadata margin + 1 GB floor
 
 
 # ---------------------------------------------------------------------------
@@ -755,7 +879,15 @@ def _capture_stage(
         )
     assert built, f"capture stage {stage}: zero capturable rows"
 
-    blocks = G._resolve_decoder_blocks(hf)
+    # A1 (review round 2): G._resolve_decoder_blocks returns (blocks, depth) —
+    # its documented failure return is (None, 0); never treat the tuple as the
+    # layer list.
+    blocks, wrap_depth = G._resolve_decoder_blocks(hf)
+    assert blocks is not None and wrap_depth > 0, (
+        f"decoder blocks unresolved for {m.hf_id} (G._resolve_decoder_blocks returned None) — "
+        "the wrapper chain exposes no .layers within depth 4"
+    )
+    assert max(layers) < len(blocks), (max(layers), len(blocks))
     reducer = _CaptureReducer(layers, m.h_dim)
     handles = [blocks[li].register_forward_hook(reducer.hook_for(li)) for li in layers]
     stage_dir = paths[layer_tag] / stage
@@ -847,22 +979,103 @@ def _capture_stage(
     )
 
 
+def _banked_expected_ids(split: str) -> set[int]:
+    """The FULL post-union-drop id set a banked stage must cover (D3/A19)."""
+    split_ids = G._load_split_ids(PC.SPLIT_IDS_PATH)
+    drop = _p0_union_drop()
+    _manifest_key, ids_key, _seed = G.SPLIT_TO_MANIFEST[split]
+    return {int(i) for i in split_ids["splits"][ids_key]} - drop[split]
+
+
+def _validate_capture_inputs(args, cell: PC.Cell, paths: dict) -> dict:
+    """B2 (review round 2): validate EVERY persisted capture input — file
+    presence, schema keys, row counts — BEFORE any tokenizer/model load, so a
+    missing/deformed input fails in seconds instead of after a 7-54 GB load.
+
+    D3/A19: for banked stages this IS the capture-only cell's first action —
+    the full-grain matched-id assert over the banked id set, measured counts
+    reported (plan §12 A19 / §10 reuse attestation).
+    """
+    report: dict = {"stages": {}}
+    for stage in _stage_names(args, cell):
+        if cell.fresh or stage.startswith("gpqa"):
+            p = paths["parsed"] / f"{stage}.jsonl"
+            assert p.exists(), (
+                f"capture input missing: {p} — run --phase parse first "
+                "(B2: inputs validate BEFORE the capture model loads)"
+            )
+            rows = PC.read_jsonl(p)
+            assert rows, f"capture input empty: {p}"
+            need = {"row_id", "prompt", "n_prompt_tokens", "text", "ans_char_span"}
+            missing = need - set(rows[0])
+            assert not missing, f"parsed stage {stage}: row 0 missing keys {sorted(missing)}"
+            report["stages"][stage] = {"kind": "parsed", "n_rows": len(rows)}
+        else:
+            split = "test_1000" if stage.startswith("ceiling_s") else stage
+            split_dir = paths["cell"] / "banked" / stage
+            files = sorted(split_dir.glob("*.json"))
+            assert files, f"banked capture input missing: {split_dir} — run --phase stage first"
+            banked_ids: set[int] = set()
+            n_rows = n_empty = 0
+            for f in files:
+                payload = json.loads(f.read_text(encoding="utf-8"))
+                assert isinstance(payload, dict) and "rows" in payload, (f.name, "no rows key")
+                for r in payload["rows"]:
+                    for k in ("ci", "prompt", "response"):
+                        assert k in r, f"banked row missing key {k!r} ({f.name})"
+                    n_rows += 1
+                    n_empty += int(G._is_empty_response(r["response"]))
+                    banked_ids.add(int(r["ci"]))
+            expected = _banked_expected_ids(split)
+            missing_ids = expected - banked_ids
+            assert not missing_ids, (
+                f"A19 matched-id FAIL [{stage}]: {len(missing_ids)} expected {split} ids absent "
+                f"from the banked rows (first 5: {sorted(missing_ids)[:5]})"
+            )
+            report["stages"][stage] = {
+                "kind": "banked",
+                "n_files": len(files),
+                "n_rows": n_rows,
+                "n_empty_response": n_empty,
+                "n_expected_ids": len(expected),
+                "n_matched": len(expected & banked_ids),
+                "n_extra_banked": len(banked_ids - expected),
+            }
+            logger.info("[i2588] A19 matched-id OK [%s]: %s", stage, report["stages"][stage])
+    PC.write_json_atomic(
+        paths["cell"] / "capture_input_validation.json",
+        {"meta": _meta(), "cell": cell.key, "layer_set": args.layer_set, **report},
+    )
+    return report
+
+
 def phase_capture(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("capture")
-    from transformers import AutoTokenizer
-
     m = cell.model
     layers = _layers_for(args, cell)
+    tag = _tag(args)
+    # B2: every persisted input validated BEFORE any tokenizer/model load.
+    _validate_capture_inputs(args, cell, paths)
+    # D2: pending-stage store bytes + the model snapshot (conservative if cached).
+    _assert_headroom(
+        paths,
+        _est_capture_need_gb(args, cell, layers, paths) + _est_model_gb(cell),
+        f"capture:{cell.key}:{tag}",
+    )
+    from transformers import AutoTokenizer
+
     sem = _acquire_capture_slot(paths["root"])
     try:
         tok = AutoTokenizer.from_pretrained(m.hf_id)
         hf = G._load_capture_model(m.hf_id, args.device, "bfloat16")
         for stage in GENERIC_SPLITS:
-            _capture_stage(args, cell, paths, hf, tok, stage, layers)
+            _capture_stage(args, cell, paths, hf, tok, stage, layers, layer_tag=tag)
         for seed in PC.CEILING_SEEDS:
-            _capture_stage(args, cell, paths, hf, tok, f"ceiling_s{seed}", layers, y_only=True)
+            _capture_stage(
+                args, cell, paths, hf, tok, f"ceiling_s{seed}", layers, y_only=True, layer_tag=tag
+            )
         for seed in _gpqa_seeds(args):
-            _capture_stage(args, cell, paths, hf, tok, f"gpqa_s{seed}", layers)
+            _capture_stage(args, cell, paths, hf, tok, f"gpqa_s{seed}", layers, layer_tag=tag)
         del hf
         torch.cuda.empty_cache() if torch.cuda.is_available() else None
     finally:
@@ -901,9 +1114,11 @@ def phase_upload_raw(args, cell: PC.Cell, paths: dict) -> None:
 def phase_upload_capture(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("upload_capture")
     prefix = _cell_prefix(args, cell)
-    tag = "capture" if args.layer_set == "swept" else "capture_oddlayers"
+    tag = _tag(args)
+    # C3: the odd pass uploads its OWN local dir to its OWN prefix — the
+    # primary capture bytes/destination are untouched.
     _upload_dir(
-        paths["capture"], f"{prefix}/analysis_tensors/{tag}", f"{cell.key} capture tensors ({tag})"
+        paths[tag], f"{prefix}/analysis_tensors/{tag}", f"{cell.key} capture tensors ({tag})"
     )
 
 
@@ -914,7 +1129,16 @@ def phase_upload_capture(args, cell: PC.Cell, paths: dict) -> None:
 
 def phase_g2_anchor(args, cell: PC.Cell, paths: dict) -> None:
     """Anchor refit at tol=1e-6 (plan §7 G2); publishes the HF sentinel every
-    fit stage fail-closes on. Runs the #2330 battery's own store/assembly path."""
+    fit stage fail-closes on. Runs the #2330 battery's own store/assembly path
+    AND (C1, review round 2) re-runs the SAME assembled arrays through the
+    EXACT production fits estimator (_fit_edge_extended_with_val ->
+    F.fit_ridge_with_weights) so the gate certifies the path production
+    actually dispatches — never only the MF sibling.
+
+    Smoke blind-spot enumeration: none — smoke executes every production gate
+    (this phase has no smoke-conditional branch; --smoke changes only the
+    upload prefix of the CELL artifacts, not this gate's math or sentinel).
+    """
     G._phase("g2_anchor")
     dev = MF._resolve_device(args.device)
     mcfg = MF.MODELS["qwen25_7b"]
@@ -925,20 +1149,51 @@ def phase_g2_anchor(args, cell: PC.Cell, paths: dict) -> None:
         paths["cache"],
         mcfg["store_expected_n"],
     )
-    rec = MF._run_anchor_on_store(
-        store,
-        mcfg,
-        dev,
-        lambda X, Y, tr, val, te, d: MF.run_anchor_gate(
+    captured: dict = {}
+
+    def _gate(X, Y, tr, val, te, d):
+        captured.update(X=X, Y=Y, tr=tr, val=val, te=te)
+        return MF.run_anchor_gate(
             X, Y, tr, val, te, d, expected_r2=PC.ANCHOR_EXPECTED_R2, tol=PC.ANCHOR_TOL
-        ),
+        )
+
+    rec = MF._run_anchor_on_store(store, mcfg, dev, _gate)
+    # C1: production-path equivalence leg on the SAME assembled arrays.
+    pred_te, _pred_val, meta_p = _fit_edge_extended_with_val(
+        captured["X"], captured["Y"], captured["tr"], captured["val"], captured["te"], dev
+    )
+    meta_p.pop("W_payload", None)
+    prod_r2 = float(LF._pooled_r2(pred_te, captured["Y"][captured["te"]]))
+    prod_dev = abs(prod_r2 - PC.ANCHOR_EXPECTED_R2)
+    assert prod_dev <= PC.ANCHOR_PROD_EQUIV_TOL, (
+        f"G2 PRODUCTION-PATH equivalence MISS (C1): _fit_edge_extended_with_val R²={prod_r2:.7f} "
+        f"vs pinned {PC.ANCHOR_EXPECTED_R2:.7f} (|Δ|={prod_dev:.3g} > "
+        f"{PC.ANCHOR_PROD_EQUIV_TOL}) — the production fits path diverges from the MF anchor "
+        "reproduction; fix the fitter/assembly seam, never loosen the pin."
+    )
+    logger.info(
+        "[i2588] G2 production-path equivalence PASS: R²=%.7f (|Δ|=%.3g, λ=%.3g)",
+        prod_r2,
+        prod_dev,
+        float(meta_p.get("selected_lambda", float("nan"))),
     )
     sentinel = {
+        **rec,
         "meta": _meta(),
+        "schema_version": PC.G2_SENTINEL_SCHEMA_VERSION,
         "gate": "g2_anchor",
         "status": "PASS",
+        "expected_r2": PC.ANCHOR_EXPECTED_R2,
+        "tol": PC.ANCHOR_TOL,
         "store_revision_pin_recorded": MF.STORE_REVISION_PIN_7B,
-        **rec,
+        "production_path": {
+            "estimator": "_fit_edge_extended_with_val (F.fit_ridge_with_weights, production fits)",
+            "realized_r2": prod_r2,
+            "abs_deviation_vs_pin": prod_dev,
+            "tol": PC.ANCHOR_PROD_EQUIV_TOL,
+            "selected_lambda": float(meta_p.get("selected_lambda", float("nan"))),
+            "grid_extensions": int(meta_p.get("grid_extensions", 0)),
+        },
     }
     out = paths["fits"] / "g2_anchor_pass.json"
     PC.write_json_atomic(out, sentinel)
@@ -946,17 +1201,73 @@ def phase_g2_anchor(args, cell: PC.Cell, paths: dict) -> None:
     logger.info("[i2588] G2 anchor PASS published -> %s", PC.G2_SENTINEL_PATH)
 
 
+def _validate_g2_sentinel(rec: dict) -> None:
+    """C2 (review round 2): fits fail-close on sentinel CONTENT — a stale,
+    status-only, older-pin, or numeric-field-missing sentinel is REFUSED."""
+    assert rec.get("schema_version") == PC.G2_SENTINEL_SCHEMA_VERSION, (
+        f"G2 sentinel schema_version {rec.get('schema_version')!r} != "
+        f"{PC.G2_SENTINEL_SCHEMA_VERSION} — stale/status-only sentinel refused (C2); "
+        "re-run --phase g2-anchor at the current pins"
+    )
+    assert rec.get("status") == "PASS", f"G2 sentinel present but not PASS: {rec.get('status')!r}"
+    assert rec.get("store_revision_pin_recorded") == MF.STORE_REVISION_PIN_7B, (
+        "G2 sentinel store revision pin mismatch",
+        rec.get("store_revision_pin_recorded"),
+        MF.STORE_REVISION_PIN_7B,
+    )
+    assert float(rec.get("expected_r2", float("nan"))) == PC.ANCHOR_EXPECTED_R2, (
+        "G2 sentinel minted against a DIFFERENT anchor pin",
+        rec.get("expected_r2"),
+    )
+    for k in ("realized_r2", "abs_deviation"):
+        v = rec.get(k)
+        assert isinstance(v, (int, float)) and math.isfinite(float(v)), (k, v)
+    assert float(rec["abs_deviation"]) <= PC.ANCHOR_TOL, (
+        "G2 sentinel numeric gate fields fail the pinned tolerance",
+        rec["abs_deviation"],
+        PC.ANCHOR_TOL,
+    )
+    pp = rec.get("production_path")
+    assert isinstance(pp, dict), "G2 sentinel lacks the C1 production-path equivalence record"
+    ppr = float(pp.get("realized_r2", float("nan")))
+    assert math.isfinite(ppr) and float(pp["abs_deviation_vs_pin"]) <= float(pp["tol"]), (
+        "G2 sentinel production-path record fails its tolerance",
+        pp,
+    )
+    meta = rec.get("meta")
+    assert isinstance(meta, dict) and meta.get("git_sha"), (
+        "G2 sentinel carries no run/commit identity (meta.git_sha)"
+    )
+
+
 def _await_g2(args) -> dict:
-    """Fail-closed poll for the G2 sentinel (45-min bound -> hard halt)."""
+    """Fail-closed poll for the G2 sentinel.
+
+    C2 (review round 2): the REGISTERED 45-min bound applies under --smoke too
+    (the wait is part of the production contract the smoke certifies), and the
+    sentinel is validated by CONTENT (_validate_g2_sentinel), never presence.
+    """
     from huggingface_hub import HfApi, hf_hub_download
 
     api = HfApi()
-    deadline = time.time() + (60 if args.smoke else PC.G2_SENTINEL_TIMEOUT_S)
+    deadline = time.time() + PC.G2_SENTINEL_TIMEOUT_S
     while True:
-        if api.file_exists(PC.HF_DATA_REPO, PC.G2_SENTINEL_PATH, repo_type="dataset"):
-            local = hf_hub_download(PC.HF_DATA_REPO, PC.G2_SENTINEL_PATH, repo_type="dataset")
+        exists = HUB.retry_transient(
+            lambda: api.file_exists(PC.HF_DATA_REPO, PC.G2_SENTINEL_PATH, repo_type="dataset"),
+            what="G2 sentinel file_exists probe",
+        )
+        if exists:
+            local = HUB.retry_transient(
+                lambda: hf_hub_download(
+                    PC.HF_DATA_REPO,
+                    PC.G2_SENTINEL_PATH,
+                    repo_type="dataset",
+                    force_download=True,  # never a stale local cache copy (C2)
+                ),
+                what="G2 sentinel download",
+            )
             rec = json.loads(Path(local).read_text(encoding="utf-8"))
-            assert rec.get("status") == "PASS", f"G2 sentinel present but not PASS: {rec}"
+            _validate_g2_sentinel(rec)
             return rec
         if time.time() > deadline:
             raise RuntimeError(
@@ -994,11 +1305,11 @@ def _load_stage_layer(
     return {k: v[order] for k, v in out.items()}
 
 
-def _bundle(paths: dict, layer: int, pos: str) -> dict:
+def _bundle(paths: dict, layer: int, pos: str, *, tag: str = "capture") -> dict:
     """(X, Y, tr, val, te) fp64 bundle for one (layer, input-position)."""
     parts_x, parts_y, idx, n = [], [], {}, 0
     for split, key in (("train_10k", "tr"), ("val_400", "val"), ("test_1000", "te")):
-        d = _load_stage_layer(paths, split, layer)
+        d = _load_stage_layer(paths, split, layer, tag=tag)
         parts_x.append(d[f"x_{pos}"])
         parts_y.append(d["y_ans"])
         idx[key] = np.arange(n, n + d["y_ans"].shape[0], dtype=np.int64)
@@ -1010,6 +1321,14 @@ def _bundle(paths: dict, layer: int, pos: str) -> dict:
         "val": idx["val"],
         "te": idx["te"],
     }
+
+
+def _acc1(knn_read: dict) -> float:
+    """acc@1 accessor tolerant of JSON-round-tripped int keys ("1" vs 1)."""
+    acc = knn_read["acc_at_k"]
+    v = acc.get(1, acc.get("1")) if isinstance(acc, dict) else None
+    assert v is not None, f"acc_at_k lacks k=1: {acc!r}"
+    return float(v)
 
 
 def _fit_edge_extended_with_val(X, Y, tr, val, te, dev) -> tuple[np.ndarray, np.ndarray, dict]:
@@ -1080,27 +1399,81 @@ def _two_draw_ceiling(ya: np.ndarray, yb: np.ndarray) -> dict:
     }
 
 
-def _ceiling_alignment(paths: dict, layer: int) -> dict | None:
-    da = _load_stage_layer(paths, f"ceiling_s{PC.CEILING_SEEDS[0]}", layer)
-    db = _load_stage_layer(paths, f"ceiling_s{PC.CEILING_SEEDS[1]}", layer)
+def _aligned_ceiling_draws(
+    paths: dict, layer: int, *, tag: str = "capture"
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """ci-aligned (seed-43 y_ans, seed-44 y_ans) at one layer, or None (<2 rows)."""
+    da = _load_stage_layer(paths, f"ceiling_s{PC.CEILING_SEEDS[0]}", layer, tag=tag)
+    db = _load_stage_layer(paths, f"ceiling_s{PC.CEILING_SEEDS[1]}", layer, tag=tag)
     # ceiling row_ids carry the seed tag ("ceiling_s43_<ci>"); align on the ci suffix
     ci_a = np.array([str(r).rsplit("_", 1)[1] for r in da["row_ids"]])
     ci_b = np.array([str(r).rsplit("_", 1)[1] for r in db["row_ids"]])
     common, ia, ib = np.intersect1d(ci_a, ci_b, return_indices=True)
     if common.size < 2:
         return None
-    return _two_draw_ceiling(da["y_ans"][ia].astype(np.float64), db["y_ans"][ib].astype(np.float64))
+    return da["y_ans"][ia].astype(np.float64), db["y_ans"][ib].astype(np.float64)
+
+
+def _ceiling_alignment(paths: dict, layer: int, *, tag: str = "capture") -> dict | None:
+    drawn = _aligned_ceiling_draws(paths, layer, tag=tag)
+    if drawn is None:
+        return None
+    return _two_draw_ceiling(*drawn)
+
+
+def _ceiling_retrieval(paths: dict, layer: int, *, tag: str = "capture") -> dict | None:
+    """SR1 (review round 2, B3): the REGISTERED repeat-draw retrieval ceiling —
+    seed-43 ceiling-draw answer vectors RETRIEVING their seed-44 counterparts
+    (cosine, pool = the aligned ceiling rows, chance = 1/pool) at the selected
+    layer. Consumed by P3 as (map − null)/(ceiling − null); the variance-
+    weighted per-dim Pearson (_two_draw_ceiling) stays a SECONDARY diagnostic.
+    """
+    drawn = _aligned_ceiling_draws(paths, layer, tag=tag)
+    if drawn is None:
+        return None
+    ya, yb = drawn
+    hits = _perrow_hits_cos(ya, yb)  # seed-43 vector i retrieving seed-44 target i
+    n = int(ya.shape[0])
+    return {
+        "ceiling_acc1_cos": float(np.mean(hits["hit1"])),
+        "n_pool": n,
+        "chance": 1.0 / n,
+        "seed_pair": list(PC.CEILING_SEEDS),
+        "statistic": "seed-43 answer vectors retrieving seed-44 targets, cosine acc@1 (SR1)",
+        "rank_mean": float(np.mean(hits["rank"])),
+    }
+
+
+def _participation_ratio_x(X_tr: np.ndarray, dev) -> float:
+    """Effective-rank participation ratio of the TRAIN input covariance
+    spectrum: (Σ s²)² / Σ s⁴ over centered singular values (plan §6 per-fit
+    reporting; D5, review round 2)."""
+    xt = torch.as_tensor(X_tr, dtype=torch.float64, device=dev)
+    xt = xt - xt.mean(dim=0)
+    s = torch.linalg.svdvals(xt)
+    s2 = s**2
+    return float((s2.sum() ** 2 / ((s2**2).sum() + 1e-300)).item())
 
 
 def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("fits")
     g2 = _await_g2(args)
+    _assert_headroom(paths, 2.0, f"fits:{cell.key}")  # D2: fit JSONs are small
     dev = MF._resolve_device(args.device)
     layers = _layers_for(args, cell)
+    tag = _tag(args)
     for pos in cell.input_positions:
         per_layer: dict[int, dict] = {}
         for layer in layers:
-            b = _bundle(paths, layer, pos)
+            # Intra-phase resume (B1): a completed per-layer unit is reloaded,
+            # never refit (resume key = the unit filename: pos + layer +
+            # layer_set suffix; smoke lives in a distinct cell_dir root).
+            unit_path = paths["fits"] / _fits_name(args, f"percell_{pos}_L{layer:02d}", pos="")
+            if unit_path.exists() and not args.force:
+                per_layer[layer] = json.loads(unit_path.read_text(encoding="utf-8"))
+                logger.info("[fits] unit L%02d pos=%s resumed from %s", layer, pos, unit_path.name)
+                continue
+            b = _bundle(paths, layer, pos, tag=tag)
             if args.smoke and len(b["tr"]) < b["X"].shape[1]:
                 logger.info(
                     "[i2588] SMOKE under-determined fit (n_train=%d < d=%d) — "
@@ -1129,39 +1502,39 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
                 },
                 "n": {k: int(len(b[k])) for k in ("tr", "val", "te")},
                 "d": int(b["X"].shape[1]),
+                "n_train_over_d": float(len(b["tr"]) / b["X"].shape[1]),
             }
             if layer == layers[0]:
                 logger.info("[i2588] [fits %s pos=%s] first layer done", cell.key, pos)
             # checkpoint-per-unit: persist the per-layer record the moment it lands
-            PC.write_json_atomic(
-                paths["fits"] / f"percell_{pos}_L{layer:02d}.json",
-                {"meta": _meta(), **per_layer[layer]},
-            )
+            PC.write_json_atomic(unit_path, {"meta": _meta(), **per_layer[layer]})
             logger.info(
                 "[fits] unit L%02d/%s pos=%s val_acc1_cos=%.4f test_r2=%.4f",
                 layer,
                 cell.key,
                 pos,
-                knn_val["ridge"]["cosine"]["acc_at_k"][1],
+                _acc1(knn_val["ridge"]["cosine"]),
                 per_layer[layer]["test_r2"],
             )
             # persist the selected-λ payload only at layer_star (below); free here
             del payload
-        star = max(
-            per_layer, key=lambda li: per_layer[li]["knn_val"]["ridge"]["cosine"]["acc_at_k"][1]
-        )
-        ceiling = _ceiling_alignment(paths, star)
+        star = max(per_layer, key=lambda li: _acc1(per_layer[li]["knn_val"]["ridge"]["cosine"]))
+        ceiling = _ceiling_alignment(paths, star, tag=tag)
+        ceiling_retr = _ceiling_retrieval(paths, star, tag=tag)  # SR1 (B3)
         # Per-row TEST hit indicators at layer_star (the P3 paired bootstrap's
         # input — plan §4.4: 1,000 draws seed 42 over paired per-row hits).
-        b_star = _bundle(paths, star, pos)
+        b_star = _bundle(paths, star, pos, tag=tag)
         pred_te_star, _pv, _m = _fit_edge_extended_with_val(
             b_star["X"], b_star["Y"], b_star["tr"], b_star["val"], b_star["te"], dev
         )
         _m.pop("W_payload", None)
-        te_ids = _load_stage_layer(paths, "test_1000", star)["row_ids"]
+        # D5: participation ratio of the TRAIN inputs at layer_star, persisted
+        # per (model, arm, layer_star) in the fits JSON (plan §6).
+        pr_x = _participation_ratio_x(b_star["X"][b_star["tr"]], dev)
+        te_ids = _load_stage_layer(paths, "test_1000", star, tag=tag)["row_ids"]
         hits = _perrow_hits_cos(pred_te_star, b_star["Y"][b_star["te"]])
         PC.write_json_atomic(
-            paths["fits"] / f"perrow_{pos}.json",
+            paths["fits"] / _fits_name(args, "perrow", pos),
             {
                 "meta": _meta(),
                 "cell": cell.key,
@@ -1183,9 +1556,12 @@ def phase_fits(args, cell: PC.Cell, paths: dict) -> None:
             "layer_star": int(star),
             "layer_star_rule": "argmax over swept layers of VAL retrieval acc@1 (cosine)",
             "ceiling_two_draw_at_star": ceiling,
+            "ceiling_retrieval_at_star": ceiling_retr,
+            "participation_ratio_x_at_star": pr_x,
+            "n_train_over_d_at_star": float(len(b_star["tr"]) / b_star["X"].shape[1]),
         }
-        PC.write_json_atomic(paths["fits"] / f"fits_{pos}.json", record)
-        logger.info("[i2588] [fits %s pos=%s] layer_star=%d", cell.key, pos, star)
+        PC.write_json_atomic(paths["fits"] / _fits_name(args, "fits", pos), record)
+        logger.info("[i2588] [fits %s pos=%s] layer_star=%d pr_x=%.1f", cell.key, pos, star, pr_x)
 
 
 # ---------------------------------------------------------------------------
@@ -1242,6 +1618,14 @@ def _null_battery(
                     "acc1_cos": knn["cosine"]["acc_at_k"][1],
                     "acc1_euc": knn["euclidean"]["acc_at_k"][1],
                     "mrr_cos": knn["cosine"]["mrr"],
+                    # Registered per-draw acc@k grid (plan §4.4), not acc@1 only
+                    # (review round 2, F item).
+                    "acc_cos_at_k": {
+                        str(k): float(v) for k, v in knn["cosine"]["acc_at_k"].items()
+                    },
+                    "acc_euc_at_k": {
+                        str(k): float(v) for k, v in knn["euclidean"]["acc_at_k"].items()
+                    },
                 }
             )
         logger.info("[nulls] unit %d/%d draws done", min(d0 + nb, draws), draws)
@@ -1253,9 +1637,11 @@ def phase_nulls(args, cell: PC.Cell, paths: dict) -> None:
     dev = MF._resolve_device(args.device)
     draws = SMOKE_PERM_DRAWS if args.smoke else PC.PERM_DRAWS
     for pos in cell.input_positions:
-        fits = json.loads((paths["fits"] / f"fits_{pos}.json").read_text(encoding="utf-8"))
+        fits = json.loads(
+            (paths["fits"] / _fits_name(args, "fits", pos)).read_text(encoding="utf-8")
+        )
         star = int(fits["layer_star"])
-        b = _bundle(paths, star, pos)
+        b = _bundle(paths, star, pos, tag=_tag(args))
         rows = _null_battery(
             b["X"],
             b["Y"],
@@ -1270,7 +1656,7 @@ def phase_nulls(args, cell: PC.Cell, paths: dict) -> None:
         )
         accs = np.array([r["acc1_cos"] for r in rows])
         PC.write_json_atomic(
-            paths["fits"] / f"nulls_{pos}.json",
+            paths["fits"] / _fits_name(args, "nulls", pos),
             {
                 "meta": _meta(),
                 "cell": cell.key,
@@ -1298,13 +1684,55 @@ def phase_nulls(args, cell: PC.Cell, paths: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _refit_star_payload(paths: dict, pos: str, star: int, dev) -> dict:
-    b = _bundle(paths, star, pos)
+def _refit_star_payload(args, paths: dict, pos: str, star: int, dev) -> dict:
+    b = _bundle(paths, star, pos, tag=_tag(args))
     grid = np.array(LF.LAMBDAS, dtype=np.float64)
     _pred, _meta, payload = F.fit_ridge_with_weights(
         b["X"], b["Y"], b["tr"], b["val"], b["te"], grid, dev, LF.RIDGE_BLOCK
     )
     return payload
+
+
+def _same_question_retrieval(pred: np.ndarray, y_true: np.ndarray, qids: np.ndarray) -> dict:
+    """Same-question retrieval reads + PER-ROW outcomes (B4, review round 2)."""
+    same_q = qids[:, None] == qids[None, :]
+    pn = pred / (np.linalg.norm(pred, axis=1, keepdims=True) + 1e-12)
+    tn = y_true / (np.linalg.norm(y_true, axis=1, keepdims=True) + 1e-12)
+    sim = pn @ tn.T
+    nn = sim.argmax(axis=1)
+    rows = np.arange(len(nn))
+    same_q_hits = same_q[rows, nn].astype(int)
+    return {
+        "same_question_acc1_cos": float(same_q_hits.mean()),
+        "exact_row_acc1_cos": float((nn == rows).mean()),
+        "n_rows": int(y_true.shape[0]),
+        "same_q_hit": [int(h) for h in same_q_hits],
+        "cos_true_pair": [float(sim[i, i]) for i in rows],  # F: per-row cosine persisted
+        "cos_nn": [float(sim[i, nn[i]]) for i in rows],
+    }
+
+
+def _load_gpqa_star(args, paths: dict, pos: str, star: int) -> dict:
+    """Concatenated GPQA captures at layer_star: X, Y, row_ids, qids, stages."""
+    tag = _tag(args)
+    xs, ys, qids, row_ids, stages = [], [], [], [], []
+    for seed in _gpqa_seeds(args):
+        stage = f"gpqa_s{seed}"
+        d = _load_stage_layer(paths, stage, star, tag=tag)
+        rows_meta = json.loads((paths[tag] / stage / "rows.json").read_text(encoding="utf-8"))
+        qid_by_row = {r["row_id"]: r["qid"] for r in rows_meta["rows"]}
+        xs.append(d[f"x_{pos}"])
+        ys.append(d["y_ans"])
+        row_ids.extend(str(r) for r in d["row_ids"])
+        qids.extend(qid_by_row[str(r)] for r in d["row_ids"])
+        stages.extend(stage for _ in d["row_ids"])
+    return {
+        "X": np.concatenate(xs).astype(np.float64),
+        "Y": np.concatenate(ys).astype(np.float64),
+        "row_ids": row_ids,
+        "qids": np.array(qids),
+        "stages": stages,
+    }
 
 
 def phase_gpqa_transfer(args, cell: PC.Cell, paths: dict) -> None:
@@ -1313,34 +1741,34 @@ def phase_gpqa_transfer(args, cell: PC.Cell, paths: dict) -> None:
     seeds = _gpqa_seeds(args)
     behavioral = _gpqa_behavioral(args, cell, paths, seeds)
     for pos in cell.input_positions:
-        fits = json.loads((paths["fits"] / f"fits_{pos}.json").read_text(encoding="utf-8"))
+        fits = json.loads(
+            (paths["fits"] / _fits_name(args, "fits", pos)).read_text(encoding="utf-8")
+        )
         star = int(fits["layer_star"])
-        payload = _refit_star_payload(paths, pos, star, dev)
-        xs, ys, qids = [], [], []
-        for seed in seeds:
-            d = _load_stage_layer(paths, f"gpqa_s{seed}", star)
-            rows_meta = json.loads(
-                (paths["capture"] / f"gpqa_s{seed}" / "rows.json").read_text(encoding="utf-8")
-            )
-            qid_by_row = {r["row_id"]: r["qid"] for r in rows_meta["rows"]}
-            xs.append(d[f"x_{pos}"])
-            ys.append(d["y_ans"])
-            qids.extend(qid_by_row[r] for r in d["row_ids"])
-        Xg = np.concatenate(xs).astype(np.float64)
-        Yg = np.concatenate(ys).astype(np.float64)
-        pred = F.apply_map(payload, Xg, torch.device(dev))
-        qarr = np.array(qids)
-        same_q = qarr[:, None] == qarr[None, :]
-        pn = pred / (np.linalg.norm(pred, axis=1, keepdims=True) + 1e-12)
-        tn = Yg / (np.linalg.norm(Yg, axis=1, keepdims=True) + 1e-12)
-        sim = pn @ tn.T
-        nn = sim.argmax(axis=1)
-        same_q_acc1 = float(same_q[np.arange(len(nn)), nn].mean())
-        exact_acc1 = float((nn == np.arange(len(nn))).mean())
-        n_pool = int(Yg.shape[0])
+        payload = _refit_star_payload(args, paths, pos, star, dev)
+        g = _load_gpqa_star(args, paths, pos, star)
+        pred = F.apply_map(payload, g["X"], torch.device(dev))
+        retr = _same_question_retrieval(pred, g["Y"], g["qids"])
+        n_pool = retr["n_rows"]
         n_per_q = int(len(seeds))
+        # B4: per-row GPQA retrieval outcomes persisted — the H2 complete-case
+        # intersection + per-checkpoint paired bootstrap consume these rows.
         PC.write_json_atomic(
-            paths["fits"] / f"gpqa_transfer_{pos}.json",
+            paths["fits"] / _fits_name(args, "gpqa_perrow", pos),
+            {
+                "meta": _meta(),
+                "cell": cell.key,
+                "input_position": pos,
+                "layer_star": star,
+                "row_ids": g["row_ids"],
+                "qids": [str(q) for q in g["qids"]],
+                "same_q_hit": retr["same_q_hit"],
+                "cos_true_pair": retr["cos_true_pair"],
+                "cos_nn": retr["cos_nn"],
+            },
+        )
+        PC.write_json_atomic(
+            paths["fits"] / _fits_name(args, "gpqa_transfer", pos),
             {
                 "meta": _meta(),
                 "cell": cell.key,
@@ -1348,9 +1776,9 @@ def phase_gpqa_transfer(args, cell: PC.Cell, paths: dict) -> None:
                 "layer_star": star,
                 "transfer_only": True,
                 "n_rows": n_pool,
-                "same_question_acc1_cos": same_q_acc1,
+                "same_question_acc1_cos": retr["same_question_acc1_cos"],
                 "same_question_chance": float(n_per_q / n_pool),
-                "exact_row_acc1_cos": exact_acc1,
+                "exact_row_acc1_cos": retr["exact_row_acc1_cos"],
                 "exact_row_chance": float(1.0 / n_pool),
                 "behavioral": behavioral,
             },
@@ -1359,9 +1787,9 @@ def phase_gpqa_transfer(args, cell: PC.Cell, paths: dict) -> None:
             "[i2588] [gpqa %s pos=%s] same-q acc@1=%.4f (chance %.4f) exact=%.4f",
             cell.key,
             pos,
-            same_q_acc1,
+            retr["same_question_acc1_cos"],
             n_per_q / n_pool,
-            exact_acc1,
+            retr["exact_row_acc1_cos"],
         )
 
 
@@ -1402,6 +1830,10 @@ def _gpqa_behavioral(args, cell: PC.Cell, paths: dict, seeds) -> dict:
         )
     return {
         "n_rollouts": total,
+        # Integer counts persisted so the VM-side judge-verdict merge is
+        # DETERMINISTIC (never reconstructed from a float; B5, review round 2).
+        "n_correct": correct,
+        "n_unparseable": unparseable,
         "acc_exact_match": correct / max(1, total),
         "frac_unparseable": frac_unparseable,
         "judge_fallback_flagged": frac_unparseable > PC.GPQA_EXTRACTION_FAIL_TRIGGER,
@@ -1413,10 +1845,10 @@ def _gpqa_behavioral(args, cell: PC.Cell, paths: dict, seeds) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _length_covariates(paths: dict, stage: str, row_ids: np.ndarray, arm: str) -> np.ndarray:
-    rows_meta = json.loads((paths["capture"] / stage / "rows.json").read_text(encoding="utf-8"))[
-        "rows"
-    ]
+def _length_covariates(
+    paths: dict, stage: str, row_ids: np.ndarray, arm: str, *, tag: str = "capture"
+) -> np.ndarray:
+    rows_meta = json.loads((paths[tag] / stage / "rows.json").read_text(encoding="utf-8"))["rows"]
     by_id = {r["row_id"]: r for r in rows_meta}
     cols = []
     for rid in row_ids:
@@ -1431,14 +1863,17 @@ def _length_covariates(paths: dict, stage: str, row_ids: np.ndarray, arm: str) -
 def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("resid")
     dev = MF._resolve_device(args.device)
+    tag = _tag(args)
     for pos in cell.input_positions:
-        fits = json.loads((paths["fits"] / f"fits_{pos}.json").read_text(encoding="utf-8"))
+        fits = json.loads(
+            (paths["fits"] / _fits_name(args, "fits", pos)).read_text(encoding="utf-8")
+        )
         star = int(fits["layer_star"])
         data, Z = {}, {}
         for split in GENERIC_SPLITS:
-            d = _load_stage_layer(paths, split, star)
+            d = _load_stage_layer(paths, split, star, tag=tag)
             data[split] = d
-            Z[split] = _length_covariates(paths, split, d["row_ids"], cell.arm)
+            Z[split] = _length_covariates(paths, split, d["row_ids"], cell.arm, tag=tag)
 
         def _aug(z: np.ndarray) -> np.ndarray:
             return np.concatenate([np.ones((z.shape[0], 1)), z], axis=1)
@@ -1466,15 +1901,39 @@ def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
         pred_te, _pred_val, meta = _fit_edge_extended_with_val(
             Xr, Yr, idx["tr"], idx["val"], idx["te"], dev
         )
-        meta.pop("W_payload", None)
+        payload_r = meta.pop("W_payload")
         knn = LF._knn_reads({"ridge_resid": pred_te}, Yr[idx["te"]])
         # Length-only floor: predict RAW Y from the covariates alone.
         B_len, *_ = np.linalg.lstsq(Ztr, data["train_10k"]["y_ans"].astype(np.float64), rcond=None)
         pred_len = _aug(Z["test_1000"]) @ B_len
         y_te_raw = data["test_1000"]["y_ans"].astype(np.float64)
         knn_len = LF._knn_reads({"length_only": pred_len}, y_te_raw)
+        # B4/§6 (iii): GPQA-side residualization — the GENERIC-TRAIN length
+        # coefficients applied UNCHANGED to the GPQA captures; the resid-fit
+        # map applied to the residualized GPQA inputs; same-question retrieval
+        # per row (the H2 residualized-gap sensitivity read).
+        g = _load_gpqa_star(args, paths, pos, star)
+        Zg_parts = []
+        for seed in _gpqa_seeds(args):
+            stage = f"gpqa_s{seed}"
+            d = _load_stage_layer(paths, stage, star, tag=tag)
+            Zg_parts.append(_length_covariates(paths, stage, d["row_ids"], cell.arm, tag=tag))
+        Zg = _aug(np.concatenate(Zg_parts))
+        Xg_r = g["X"] - Zg @ coefs["x"]
+        Yg_r = g["Y"] - Zg @ coefs["y"]
+        pred_g = F.apply_map(payload_r, Xg_r, torch.device(dev))
+        retr_g = _same_question_retrieval(pred_g, Yg_r, g["qids"])
+        gpqa_resid = {
+            "same_question_acc1_cos": retr_g["same_question_acc1_cos"],
+            "exact_row_acc1_cos": retr_g["exact_row_acc1_cos"],
+            "n_rows": retr_g["n_rows"],
+            "same_question_chance": float(len(_gpqa_seeds(args)) / max(1, retr_g["n_rows"])),
+            "row_ids": g["row_ids"],
+            "same_q_hit": retr_g["same_q_hit"],
+            "coefficients": "generic-train OLS, applied unchanged (plan §6 iii)",
+        }
         PC.write_json_atomic(
-            paths["fits"] / f"resid_{pos}.json",
+            paths["fits"] / _fits_name(args, "resid", pos),
             {
                 "meta": _meta(),
                 "cell": cell.key,
@@ -1486,6 +1945,7 @@ def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
                 "resid_knn_test": knn,
                 "length_only_test_r2": float(LF._pooled_r2(pred_len, y_te_raw)),
                 "length_only_knn_test": knn_len,
+                "gpqa_resid": gpqa_resid,
                 "fit_meta": {
                     k: v
                     for k, v in meta.items()
@@ -1494,11 +1954,12 @@ def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
             },
         )
         logger.info(
-            "[i2588] [resid %s pos=%s] resid acc1_cos=%.4f length-only=%.4f",
+            "[i2588] [resid %s pos=%s] resid acc1_cos=%.4f length-only=%.4f gpqa_resid=%.4f",
             cell.key,
             pos,
-            knn["ridge_resid"]["cosine"]["acc_at_k"][1],
-            knn_len["length_only"]["cosine"]["acc_at_k"][1],
+            _acc1(knn["ridge_resid"]["cosine"]),
+            _acc1(knn_len["length_only"]["cosine"]),
+            gpqa_resid["same_question_acc1_cos"],
         )
 
 
@@ -1509,40 +1970,49 @@ def phase_resid(args, cell: PC.Cell, paths: dict) -> None:
 
 def phase_upload_fits(args, cell: PC.Cell, paths: dict) -> None:
     G._phase("upload_fits")
-    prefix_fits = f"{PC.PANEL_PREFIX}/{'smoke/' if args.smoke else ''}fits/{cell.key}"
-    prefix_nulls = f"{PC.PANEL_PREFIX}/{'smoke/' if args.smoke else ''}nulls/{cell.key}"
+    smoke_pfx = "smoke/" if args.smoke else ""
+    prefix_fits = f"{PC.PANEL_PREFIX}/{smoke_pfx}fits/{cell.key}"
+    prefix_nulls = f"{PC.PANEL_PREFIX}/{smoke_pfx}nulls/{cell.key}"
+    # C3: odd-layer sensitivity artifacts ("*_odd.json") route to their OWN
+    # prefixes — the primary fits/nulls HF destinations are never overwritten.
+    prefix_fits_odd = f"{PC.PANEL_PREFIX}/{smoke_pfx}fits_oddlayers/{cell.key}"
+    prefix_nulls_odd = f"{PC.PANEL_PREFIX}/{smoke_pfx}nulls_oddlayers/{cell.key}"
     for f in sorted(paths["fits"].glob("*.json")):
-        target = prefix_nulls if f.name.startswith("nulls_") else prefix_fits
+        is_odd = f.stem.endswith("_odd")
+        if f.name.startswith("nulls_"):
+            target = prefix_nulls_odd if is_odd else prefix_nulls
+        else:
+            target = prefix_fits_odd if is_odd else prefix_fits
         _upload_file(f, f"{target}/{f.name}", f"{cell.key} {f.name}")
+    suffix = "-odd" if args.layer_set == "odd" else ""
     sentinel = {
-        "eval_numbers": _sentinel_numbers(cell, paths),
+        "eval_numbers": _sentinel_numbers(args, cell, paths),
         "eval_paths": [str(p) for p in sorted(paths["fits"].glob("*.json"))],
         "reproducibility_card": _meta(),
         "wandb_url": None,
-        "hf_hub_url": f"https://huggingface.co/datasets/{PC.HF_DATA_REPO}/tree/main/{prefix_fits}",
+        "hf_hub_url": f"https://huggingface.co/datasets/{PC.HF_DATA_REPO}/tree/main/"
+        + (prefix_fits_odd if args.layer_set == "odd" else prefix_fits),
         "worktree_path": str(_REPO_ROOT),
         "final_commit_sha": G._git_sha(),
         "gpu_hours_used": None,
         "gpu_hours_budgeted": None,
         "plan_deviations": [],
     }
-    out = paths["logs"] / f"issue-2588-{cell.key}-results.json"
+    out = paths["logs"] / f"issue-2588-{cell.key}{suffix}-results.json"
     PC.write_json_atomic(out, sentinel)
     logger.info("[phase=done] cell %s complete rc=0 (sentinel %s)", cell.key, out)
 
 
-def _sentinel_numbers(cell: PC.Cell, paths: dict) -> dict:
+def _sentinel_numbers(args, cell: PC.Cell, paths: dict) -> dict:
     nums: dict = {}
     for pos in cell.input_positions:
-        f = paths["fits"] / f"fits_{pos}.json"
+        f = paths["fits"] / _fits_name(args, "fits", pos)
         if f.exists():
             rec = json.loads(f.read_text(encoding="utf-8"))
             star = str(rec["layer_star"])
             nums[f"{pos}_layer_star"] = rec["layer_star"]
-            nums[f"{pos}_test_acc1_cos_at_star"] = (
-                rec["layers"][star]["knn_test"]["ridge"]["cosine"]["acc_at_k"]["1"]
-                if "1" in rec["layers"][star]["knn_test"]["ridge"]["cosine"]["acc_at_k"]
-                else rec["layers"][star]["knn_test"]["ridge"]["cosine"]["acc_at_k"][1]
+            nums[f"{pos}_test_acc1_cos_at_star"] = _acc1(
+                rec["layers"][star]["knn_test"]["ridge"]["cosine"]
             )
     return nums
 
@@ -1656,6 +2126,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="production dispatcher at tiny N; uploads to the smoke/ prefix",
     )
     ap.add_argument(
+        "--force",
+        action="store_true",
+        help="re-run phases whose completion sentinels exist (B1 idempotency escape)",
+    )
+    ap.add_argument(
         "--layer-set",
         default="swept",
         choices=["swept", "odd"],
@@ -1689,6 +2164,10 @@ def _run_import_check() -> int:
 
     from explore_persona_space.atomic_io import savez_atomic, write_json_atomic  # noqa: F401
     from explore_persona_space.eval.utils import parse_judge_json  # noqa: F401
+    from explore_persona_space.orchestrate.preflight import assert_out_root_headroom  # noqa: F401
+
+    for name in ("_upload", "retry_transient", "stage_hub_prefix"):
+        assert hasattr(HUB, name), name
 
     try:
         from vllm import LLM, SamplingParams, TokensPrompt  # noqa: F401
@@ -1756,8 +2235,8 @@ def main(argv: list[str] | None = None) -> int:
     seq = _ALL_SEQUENCE if args.phase == "all" else (args.phase,)
     if args.phase == "all" and args.smoke:
         seq = (*seq, "smoke-null-timing")
-    for name in seq:
-        PHASES[name](args, cell, paths)
+    ran = _run_phases(args, cell, paths, seq)
+    logger.info("[i2588] phases run=%s skipped=%s", ran, [s for s in seq if s not in ran])
     return 0
 
 

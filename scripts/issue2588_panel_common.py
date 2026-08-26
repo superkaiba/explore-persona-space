@@ -133,6 +133,18 @@ PERM_DESCOPE_FLOOR = 50
 BOOTSTRAP_DRAWS = 1000
 BOOTSTRAP_SEED = 42
 G2_SENTINEL_TIMEOUT_S = 45 * 60
+# C2 (review round 2): fits fail-close on sentinel CONTENT, not presence — a
+# status-only / stale / older-pin sentinel is refused. Bump on any sentinel
+# field-contract change so pre-change sentinels cannot green-light new runs.
+G2_SENTINEL_SCHEMA_VERSION = 2
+# C1 (review round 2): the anchor ALSO re-runs through the EXACT production
+# fits path (_bundle-shaped arrays -> _fit_edge_extended_with_val ->
+# F.fit_ridge_with_weights). Separate pin from ANCHOR_TOL: the MF gate pins
+# deterministic REPRODUCTION through the parent's own estimator (1e-6), while
+# this leg pins EQUIVALENCE across two fp64 implementations of the same
+# closed form (float reduction order may differ) — 1e-4 still catches any
+# assembly/fitter wiring divergence (a real hollow-gate miss reads >= 1e-2).
+ANCHOR_PROD_EQUIV_TOL = 1e-4
 
 GPQA_N_QUESTIONS = 198
 GPQA_N_ROLLOUTS = 5
@@ -819,6 +831,9 @@ def stage_gpqa_diamond(cache_dir: Path) -> tuple[list[dict], str]:
     from huggingface_hub.errors import GatedRepoError, HfHubHTTPError
 
     try:
+        # A retry wrapper here would delay/mask the registered fallback; a transient
+        # failure correctly falls through to Route B (also ungated HF).
+        # NO_RETRY: GatedRepoError/403 on THIS download is the deterministic Route-B trigger
         csv_path = hf_hub_download(
             "Idavidrein/gpqa", "gpqa_diamond.csv", repo_type="dataset", cache_dir=str(cache_dir)
         )

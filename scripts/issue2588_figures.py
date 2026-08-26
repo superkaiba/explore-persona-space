@@ -38,6 +38,7 @@ import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 
 import issue2588_panel_common as PC  # noqa: E402
 from explore_persona_space.analysis.paper_plots import paper_palette, savefig_paper  # noqa: E402
@@ -73,9 +74,9 @@ def _pos_of(map_id: str) -> str:
     return map_id.split(".", 1)[1]
 
 
-def fig_capability_trend(summary: dict, out_dir: Path) -> None:
-    colors = dict(zip(("a", "b"), paper_palette(2), strict=True))
-    fig, ax = plt.subplots(figsize=(7.0, 4.6))
+def _trend_points(summary: dict) -> list[tuple[str, str, float, dict]]:
+    """(model_key, arm, aa_pin, per_map rec) for every trend-plotted map."""
+    pts = []
     for map_id, rec in summary["per_map"].items():
         if rec["acc1_cos_calibrated"] is None:
             continue
@@ -85,19 +86,83 @@ def fig_capability_trend(summary: dict, out_dir: Path) -> None:
         pin = PC.AA_PIN.get(mk, (None,))[0]
         if pin is None:
             continue
-        ax.scatter(pin, rec["acc1_cos_calibrated"], color=colors[arm], s=36, zorder=3)
+        rec = dict(rec, map_id=map_id)
+        pts.append((mk, arm, float(pin), rec))
+    return pts
+
+
+def _point_label(mk: str, arm: str) -> str:
+    lbl = MODEL_LABEL[mk]
+    if arm == "a" and PC.PANEL[mk].banked_arm_a:
+        lbl += " (banked gen)"  # banked-generation seam marker (plan §6 hero register)
+    return lbl
+
+
+def _scatter_point(ax, x: float, y: float, color, aa_measured: bool) -> None:
+    """One trend point; ESTIMATED-AA models render as open markers."""
+    if aa_measured:
+        ax.scatter(x, y, s=36, color=color, zorder=3)
+    else:
+        ax.scatter(x, y, s=36, facecolors="none", edgecolors=color, linewidths=1.2, zorder=3)
+
+
+def fig_capability_trend(summary: dict, out_dir: Path) -> None:
+    """Hero 1x2: calibrated acc@1 (null band + per-point ceilings) beside the
+    length-residualized read (plan §6 registered elements)."""
+    colors = dict(zip(("a", "b"), paper_palette(2), strict=True))
+    pts = _trend_points(summary)
+    fig, (ax, axr) = plt.subplots(1, 2, figsize=(11.5, 4.6), sharex=True)
+
+    # Left panel: calibrated (excess over the layer-star shuffled null).
+    null_sds = [r["null_sd"] for _, _, _, r in pts if r.get("null_sd") is not None]
+    if null_sds:
+        band = 2.0 * float(np.median(null_sds))
+        ax.axhspan(-band, band, color="grey", alpha=0.15, lw=0, label="null ±2·median SD")
+    ax.axhline(0.0, color="grey", lw=0.8)
+    for mk, arm, pin, rec in pts:
+        aa_measured = PC.AA_PIN[mk][2] == "measured"
+        y = rec["acc1_cos_calibrated"]
+        _scatter_point(ax, pin, y, colors[arm], aa_measured)
+        ceil = rec.get("ceiling_retrieval")
+        if ceil is not None and rec.get("null_mean") is not None:
+            ax.scatter(
+                pin,
+                float(ceil["ceiling_acc1_cos"]) - float(rec["null_mean"]),
+                marker="_",
+                s=110,
+                color=colors[arm],
+                alpha=0.6,
+                zorder=2,
+            )
         ax.annotate(
-            MODEL_LABEL[mk],
-            (pin, rec["acc1_cos_calibrated"]),
+            _point_label(mk, arm), (pin, y), fontsize=7, xytext=(4, 4), textcoords="offset points"
+        )
+    for arm in ("a", "b"):
+        ax.scatter([], [], color=colors[arm], label=ARM_LABEL[arm])
+    ax.scatter([], [], marker="_", s=110, color="grey", label="repeat-draw ceiling (cal.)")
+    ax.scatter([], [], facecolors="none", edgecolors="grey", s=36, label="AA estimated (open)")
+    ax.set_xlabel("Artificial Analysis capability index")
+    ax.set_ylabel("Calibrated retrieval acc@1 (cosine, excess over null)")
+    ax.legend(frameon=False, fontsize=7)
+
+    # Right panel: length-residualized acc@1 (the resid read BESIDE the primary).
+    resid = summary.get("resid", {})
+    for mk, arm, pin, rec in pts:
+        rrec = resid.get(rec["map_id"])
+        if rrec is None or rrec.get("resid_acc1_cos") is None:
+            continue
+        _scatter_point(
+            axr, pin, rrec["resid_acc1_cos"], colors[arm], PC.AA_PIN[mk][2] == "measured"
+        )
+        axr.annotate(
+            _point_label(mk, arm),
+            (pin, rrec["resid_acc1_cos"]),
             fontsize=7,
             xytext=(4, 4),
             textcoords="offset points",
         )
-    for arm in ("a", "b"):
-        ax.scatter([], [], color=colors[arm], label=ARM_LABEL[arm])
-    ax.set_xlabel("Artificial Analysis capability index")
-    ax.set_ylabel("Calibrated retrieval acc@1 (cosine, excess over null)")
-    ax.legend(frameon=False, fontsize=8)
+    axr.set_xlabel("Artificial Analysis capability index")
+    axr.set_ylabel("Length-residualized retrieval acc@1 (cosine)")
     savefig_paper(fig, "c1_capability_trend", dir=out_dir)
     plt.close(fig)
 
@@ -129,16 +194,26 @@ def fig_column_contrasts(summary: dict, out_dir: Path) -> None:
 
 
 def fig_h2_paired_deltas(summary: dict, out_dir: Path) -> None:
+    """H2 per-checkpoint RAW complete-case gaps (E4 primary), both surfaces,
+    shifted 95% paired-bootstrap CIs; calibrated stays a trend.py sensitivity."""
     h2 = summary["h2_qwen_thinking"]
-    pairs = {k: v["gap_generic_cal"] for k, v in h2["pairs"].items() if isinstance(v, dict)}
-    fig, ax = plt.subplots(figsize=(6.8, 4.0))
+    pairs = {k: v for k, v in h2["pairs"].items() if isinstance(v, dict)}
     names = list(pairs)
-    ax.bar(range(len(names)), [pairs[k] for k in names], color=paper_palette(1)[0])
+    surfaces = [("gap_generic_raw", "generic (test_1000)"), ("gap_gpqa_raw", "GPQA transfer")]
+    colors = dict(zip([s for s, _ in surfaces], paper_palette(2), strict=True))
+    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    for j, (field, label) in enumerate(surfaces):
+        xs = [i + (0.18 if j else -0.18) for i in range(len(names))]
+        ys = [pairs[k][field] for k in names]
+        los = [max(0.0, y - pairs[k][f"{field}_ci95"][0]) for y, k in zip(ys, names, strict=True)]
+        his = [max(0.0, pairs[k][f"{field}_ci95"][1] - y) for y, k in zip(ys, names, strict=True)]
+        ax.errorbar(xs, ys, yerr=[los, his], fmt="o", color=colors[field], capsize=3, label=label)
     ax.axhline(0.0, color="grey", lw=0.8)
     ax.set_xticks(
         range(len(names)), [MODEL_LABEL[k] for k in names], rotation=30, ha="right", fontsize=8
     )
-    ax.set_ylabel("Calibrated Δ acc@1 (end-of-CoT − prompt-end)")
+    ax.set_ylabel("Raw Δ acc@1 (end-of-CoT − prompt-end, shared rows)")
+    ax.legend(frameon=False, fontsize=8)
     savefig_paper(fig, "c3_h2_paired_deltas", dir=out_dir)
     plt.close(fig)
 
