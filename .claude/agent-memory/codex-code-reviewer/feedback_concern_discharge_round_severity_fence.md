@@ -188,6 +188,26 @@ adjudication line (comment-accuracy post-fix, at most Minor). Also attest
 stale BLOCKER severities on older rows of a since-downgraded id (the latest
 verified-open CONCERN rows + the binding reconcile govern).
 
+**Scope-ban→mandate inversion (SANCTIONED edit; #2608 r3, 2026-08-26):** when
+the prior reconcile BARRED a file ("must NOT silently expand scope into
+pod.py") and the 5c-ter dispatch note now AUTHORIZES editing exactly that
+file to close the demoted concern, the compose needs an explicit SANCTION
+block ahead of the rubric or the twin predictably FAILs the edit as scope
+creep: (a) frame the reconcile's ban as governing the PRIOR round only,
+superseded by the dispatch (title the reconcile envelope "r2 scope ruling
+superseded by the r3 dispatch"); (b) inline the authorizing `epm:progress`
+decision note VERBATIM in its own envelope — it carries the prescription
+("shared helper called from both env composers") that doubles as the
+closure's acceptance contract, and its recorded assumption (plan AC
+parenthetical states the intent) grounds the plan-adherence read; (c) the
+sanction is BOUNDED — restate the plan's surviving must-ask list (no new
+CLI flags etc.) as substantive-finding territory, quoting the note's own
+boundary line; (d) correctness review of the sanctioned edit stays at the
+FULL ordinary bar (that is the round's highest-yield lens). Fence-wise this
+composed as the DEFAULT CONCERN fence + #2552-r4 re-open rows (all target
+ids latest=addressed; brief had no NOT-ADDRESSED=FAIL clause, reconcile had
+no MUST-address rider — it had offered a file-a-follow-up fork).
+
 **Default fence on a silent brief + out-of-round diverged_on_main (#2564 r3,
 2026-08-25):** a brief framing the round as "the concern-closure round …
 the review verifies the closures + any new defects" WITHOUT a
