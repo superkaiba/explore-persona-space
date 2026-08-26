@@ -109,3 +109,4 @@
 - [Shared Overleaf clone commit race](feedback_shared_overleaf_clone_commit_race.md) — verify landing by blob sha at HEAD, never own commit rc (#1894 sibling)
 - [/tmp script dir shadows stdlib](feedback_tmp_script_dir_shadows_stdlib.md) — rogue /tmp/six.py hijacks imports via sys.path[0] (#2546 r7)
 - [torch.cuda.ipc_collect lazy-inits CUDA](feedback_torch_ipc_collect_lazy_init.md) — gate teardown CUDA calls on is_initialized() (#2546 r12)
+- [Realized provenance from the DISPATCHED module](feedback_realized_estimator_provenance_from_dispatched_module.md) — patches miss import snapshots/literals; SELECTOR_LOG delta (#2546 r16)
