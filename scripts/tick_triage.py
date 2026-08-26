@@ -794,6 +794,7 @@ def proc_start_epoch(pid: int) -> float | None:
     (process dead, permission, malformed)."""
     try:
         btime: float | None = None
+        # JSONL_SPLITLINES_EXEMPT: /proc/stat is a procfs kernel table, not JSONL content
         for line in (_PROC_ROOT / "stat").read_text().splitlines():
             if line.startswith("btime "):
                 btime = float(line.split()[1])
