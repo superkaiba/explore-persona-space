@@ -1,0 +1,218 @@
+{
+  "commit": "5c98e5f6+dirty",
+  "render_id": "1ce868a8a990481f",
+  "git_commit": "5c98e5f68ed1217ac4bc91ff212cfd30377ffdf7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_fold9_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_fold9_figs.py",
+  "created": "2026-08-26T18:53:23Z",
+  "figsize": [
+    6.8,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.05479120971119267,
+      "per-question steered \u2212 null difference": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.012224312049589542,
+      "per-question steered \u2212 null difference": 0.029173433780670166,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.07171958398227649,
+      "per-question steered \u2212 null difference": 0.6024095565080643,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.039473605811872786,
+      "per-question steered \u2212 null difference": -0.01646088995039463,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.0811645304224701,
+      "per-question steered \u2212 null difference": 0.25169408321380615,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.09512447032735119,
+      "per-question steered \u2212 null difference": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.052227940398070605,
+      "per-question steered \u2212 null difference": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.05721286105539078,
+      "per-question steered \u2212 null difference": 0.12795273959636688,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.07437727346489083,
+      "per-question steered \u2212 null difference": 0.16366616636514664,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.009922812420886579,
+      "per-question steered \u2212 null difference": 0.2825745139271021,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": -0.025840395153483756,
+      "per-question steered \u2212 null difference": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.08535299776972036,
+      "per-question steered \u2212 null difference": 0.0,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0287730240161328,
+      "per-question steered \u2212 null difference": 0.40021568536758423,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.064552322654166,
+      "per-question steered \u2212 null difference": -0.039792392402887344,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.9886828397654662,
+      "per-question steered \u2212 null difference": 0.3301588296890259,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.9454477443569553,
+      "per-question steered \u2212 null difference": 0.43918367475271225,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.010916957403167,
+      "per-question steered \u2212 null difference": 0.21220651268959045,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.912763451220835,
+      "per-question steered \u2212 null difference": -0.15232975780963898,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0655262343985163,
+      "per-question steered \u2212 null difference": -0.25806448981165886,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.026332879824413,
+      "per-question steered \u2212 null difference": 0.42137473821640015,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0516175480170749,
+      "per-question steered \u2212 null difference": 0.08419380709528923,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.9709051936259737,
+      "per-question steered \u2212 null difference": 0.14974619448184967,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0941396048789807,
+      "per-question steered \u2212 null difference": -0.3291082829236984,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0786242242644395,
+      "per-question steered \u2212 null difference": -0.005905494559556246,
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-question pairs behind the two intervals",
+        "ylabel": "per-question steered \u2212 null difference",
+        "annotations": [
+          "00",
+          "01",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "00",
+          "01",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "each point = one question (index labeled); black bar = family mean; jitter for legibility"
+        ],
+        "xticklabels": [
+          "original greedy grid (12 pairs)",
+          "fresh confirm (12 pairs)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

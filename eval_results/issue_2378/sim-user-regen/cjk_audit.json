@@ -1,0 +1,20 @@
+{
+ "round": "sim-user-regen",
+ "pattern": "[\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af]",
+ "substrates": {
+  "user_sim_kept_pool": {
+   "n": 9939,
+   "cjk_intruded": 60,
+   "note": "kept on-policy simulated user turns (elicit_rung 1); the majority-non-Latin filter dropped 32 whole-turn rows pre-keep; 60 kept rows carry partial CJK"
+  },
+  "judged_pools": "N/A \u2014 this round has no LLM-judged DV (geometric fits only)"
+ },
+ "drop_counts": {
+  "kept": 9939,
+  "non_english": 32,
+  "len_band": 24,
+  "over_length": 5
+ },
+ "source": "issue2378_xframing/raw_completions/sim_user_regen/user_sim/w1_d137_s0_c00{00..19}.jsonl (HF data repo)",
+ "produced_by": "analyzer fold round v9, 2026-08-26"
+}

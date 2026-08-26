@@ -1,0 +1,303 @@
+{
+  "commit": "5c98e5f6+dirty",
+  "render_id": "b86f9cc7aff14c7e",
+  "git_commit": "5c98e5f68ed1217ac4bc91ff212cfd30377ffdf7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_fold9_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_fold9_figs.py",
+  "created": "2026-08-26T18:53:19Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (context read)": 0.1993207025965399,
+      "series": "real user turns",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (context read)": 0.20474782457266505,
+      "series": "real user turns",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (context read)": 0.2045855138845757,
+      "series": "real user turns",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (context read)": 0.2095329313573543,
+      "series": "real user turns",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (context read)": 0.20554018448618472,
+      "series": "real user turns",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (context read)": 0.21846777740280188,
+      "series": "simulated user turns",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (context read)": 0.21861778216358463,
+      "series": "simulated user turns",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (context read)": 0.21602697051814612,
+      "series": "simulated user turns",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (context read)": 0.22510760761775062,
+      "series": "simulated user turns",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (context read)": 0.22773326676972017,
+      "series": "simulated user turns",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.008751,
+      "draws (of 200)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.009459,
+      "draws (of 200)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.010167,
+      "draws (of 200)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.010876,
+      "draws (of 200)": 6.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.011584,
+      "draws (of 200)": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.012292,
+      "draws (of 200)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.013,
+      "draws (of 200)": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.013708,
+      "draws (of 200)": 13.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.014416,
+      "draws (of 200)": 21.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.015124,
+      "draws (of 200)": 23.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.015832,
+      "draws (of 200)": 20.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.01654,
+      "draws (of 200)": 23.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.017248,
+      "draws (of 200)": 18.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.017957,
+      "draws (of 200)": 10.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.018665,
+      "draws (of 200)": 15.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.019373,
+      "draws (of 200)": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.020081,
+      "draws (of 200)": 7.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.020789,
+      "draws (of 200)": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.021497,
+      "draws (of 200)": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.022205,
+      "draws (of 200)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.022913,
+      "draws (of 200)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.023621,
+      "draws (of 200)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.024329,
+      "draws (of 200)": 2.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each": 0.025037,
+      "draws (of 200)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 34,
+  "text": {
+    "suptitle": "Simulated turns are marginally more predictable in every fold and draw",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-fold paired values (shared folds)",
+        "ylabel": "held-out R\u00b2 (context read)",
+        "legend_labels": [
+          "real user turns",
+          "simulated user turns"
+        ],
+        "annotations": [
+          "+0.019",
+          "+0.014",
+          "+0.011",
+          "+0.016",
+          "+0.022"
+        ],
+        "xticklabels": [
+          "fold 0",
+          "fold 1",
+          "fold 2",
+          "fold 3",
+          "fold 4"
+        ],
+        "yticklabels": [
+          "0.195",
+          "0.200",
+          "0.205",
+          "0.210",
+          "0.215",
+          "0.220",
+          "0.225",
+          "0.230"
+        ]
+      },
+      {
+        "title_left": "Conversation-grouped bootstrap of the delta",
+        "xlabel": "\u0394 pooled R\u00b2 (sim \u2212 real), one bootstrap draw each",
+        "ylabel": "draws (of 200)",
+        "xticklabels": [
+          "\u22120.005",
+          "0.000",
+          "0.005",
+          "0.010",
+          "0.015",
+          "0.020",
+          "0.025",
+          "0.030"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      }
+    ],
+    "series": [
+      "real user turns",
+      "simulated user turns"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+ "round": "dana-behavior-confirm",
+ "pattern": "[\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af]",
+ "substrates": {
+  "confirm_rollouts": {
+   "n": 120,
+   "cjk_intruded": 0,
+   "think_reopen": 0
+  },
+  "anchors_dana_chat": {
+   "n": 120,
+   "cjk_intruded": 1,
+   "think_reopen": 0,
+   "intruded_file": "chat_storyq_dana_04.jsonl"
+  },
+  "anchors_dana_story": {
+   "n": 120,
+   "cjk_intruded": 0,
+   "think_reopen": 7
+  },
+  "anchors_dana_plain": {
+   "n": 120,
+   "cjk_intruded": 3,
+   "think_reopen": 72,
+   "note": "plain anchors are NOT in the chat~story family normalization; counted for completeness"
+  }
+ },
+ "excluded_intrusion_recount": {
+  "method": "drop the one pair (storyq_dana_04) whose chat-anchor denominator carries the intruded draw; recompute paired mean + 10,000-draw pair-clustered bootstrap",
+  "full": {
+   "n_pairs": 12,
+   "mean_diff": 0.1043,
+   "ci": [
+    -0.0418,
+    0.2474
+   ]
+  },
+  "excluded": {
+   "n_pairs": 11,
+   "mean_diff": 0.0945,
+   "ci": [
+    -0.0631,
+    0.2497
+   ]
+  },
+  "verdict": "unchanged \u2014 the interval spans zero with and without the exposed pair"
+ },
+ "source": "data/issue_2378/patch_round_danaconf/{confirm,anchors}/rollouts/*.jsonl (worktree; text also on HF under the round prefix)",
+ "produced_by": "analyzer fold round v9, 2026-08-26"
+}

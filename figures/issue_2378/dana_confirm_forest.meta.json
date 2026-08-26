@@ -1,0 +1,62 @@
+{
+  "commit": "5c98e5f6+dirty",
+  "render_id": "f972e4a1145a472e",
+  "git_commit": "5c98e5f68ed1217ac4bc91ff212cfd30377ffdf7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_fold9_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_fold9_figs.py",
+  "created": "2026-08-26T18:53:21Z",
+  "figsize": [
+    6.8,
+    3.2
+  ],
+  "points": [
+    {
+      "behavior score, steered minus matched null (fraction of anchor contrast)": 0.12008413362006347,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "behavior score, steered minus matched null (fraction of anchor contrast)": 0.10432325206541766,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The nominal story-Dana behavior family does not replicate",
+        "xlabel": "behavior score, steered minus matched null (fraction of anchor contrast)",
+        "annotations": [
+          "+0.120",
+          "+0.104",
+          "story Dana context vector into chat at layer 51; pair-clustered 95% bootstrap intervals"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "Original greedy grid\n(12 pairs, 1 of 20 families)",
+          "Fresh confirmation\n(12 pairs, 5 draws per side)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

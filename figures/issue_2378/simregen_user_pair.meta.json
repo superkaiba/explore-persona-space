@@ -1,0 +1,254 @@
+{
+  "commit": "5c98e5f6+dirty",
+  "render_id": "6c6ddd8f41234a21",
+  "git_commit": "5c98e5f68ed1217ac4bc91ff212cfd30377ffdf7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2378_fold9_figs.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2378_fold9_figs.py",
+  "created": "2026-08-26T18:53:16Z",
+  "figsize": [
+    9.6,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "Real\n(context)",
+      "held-out R\u00b2 of the own map": 0.2052946347440079,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Sim\n(context)",
+      "held-out R\u00b2 of the own map": 0.22165620448082868,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Real\n(prefix)",
+      "held-out R\u00b2 of the own map": 0.2020373670920632,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Sim\n(prefix)",
+      "held-out R\u00b2 of the own map": 0.20810545790238888,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.1993207025965399,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.20474782457266505,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.2045855138845757,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.2095329313573543,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 of the own map": 0.20554018448618472,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.7,
+      "held-out R\u00b2 of the own map": 0.21846777740280188,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.7,
+      "held-out R\u00b2 of the own map": 0.21861778216358463,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.7,
+      "held-out R\u00b2 of the own map": 0.21602697051814612,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.7,
+      "held-out R\u00b2 of the own map": 0.22510760761775062,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.7,
+      "held-out R\u00b2 of the own map": 0.22773326676972017,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.9,
+      "held-out R\u00b2 of the own map": 0.19703438104839777,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9,
+      "held-out R\u00b2 of the own map": 0.20123128243561683,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9,
+      "held-out R\u00b2 of the own map": 0.2010102016307942,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9,
+      "held-out R\u00b2 of the own map": 0.20764235454857427,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9,
+      "held-out R\u00b2 of the own map": 0.20053819537315154,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.6,
+      "held-out R\u00b2 of the own map": 0.20303976304590332,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.6,
+      "held-out R\u00b2 of the own map": 0.2079631818356914,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.6,
+      "held-out R\u00b2 of the own map": 0.20433175990204422,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.6,
+      "held-out R\u00b2 of the own map": 0.21032491816669996,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.6,
+      "held-out R\u00b2 of the own map": 0.21249641431960087,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (reduced basis, n=1,674)": 0.09521310330851329,
+      "error": 0.0038623087676375387,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (reduced basis, n=1,674)": 0.14354423383693826,
+      "error": 0.006141377832597564,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (reduced basis, n=1,674)": 0.09823521927335488,
+      "error": 0.004160961865763417,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (reduced basis, n=1,674)": 0.1067304995645636,
+      "error": 0.003627459009731146,
+      "_kind": "bar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 28,
+  "text": {
+    "suptitle": "Regenerated simulated user turns are as mappable as real ones",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Own maps, full cohort (n=6,601)",
+        "ylabel": "held-out R\u00b2 of the own map",
+        "xticklabels": [
+          "Real\n(context)",
+          "Sim\n(context)",
+          "Real\n(prefix)",
+          "Sim\n(prefix)"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "Length-matched (solid) vs control (pale)",
+        "ylabel": "held-out R\u00b2 (reduced basis, n=1,674)",
+        "xticklabels": [
+          "Real user turns",
+          "Simulated user turns"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "series_annotation": {
+    "panel_A_bars": [
+      "chat_user_real__context",
+      "chat_user_sim__context",
+      "chat_user_real__prefix",
+      "chat_user_sim__prefix"
+    ],
+    "panel_A_lines": "per-bar: 5 open fold points + a dotted shuffled-null p95 tick",
+    "panel_B_bar_groups": {
+      "0": "length-matched (identical histograms, n=1,674): real, sim",
+      "1": "size-matched control (natural lengths, n=1,674): real, sim"
+    }
+  }
+}
