@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2600,
+  "highest_id": 2601,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12349,6 +12349,13 @@
       "path": "tasks/proposed/2600",
       "status": "proposed",
       "title": "poll_pipeline.py log globs miss /workspace/issue<N>/logs/ out-root layout \u2014 worker progress invisible, stall detection loses its log signal"
+    },
+    "2601": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2601",
+      "status": "proposed",
+      "title": "SSH-remote invocations orphan remote processes on local tool timeout; concurrent uv run env-sync guts pod venv into a silent namespace package"
     },
     "261": {
       "has_clean_result": false,
