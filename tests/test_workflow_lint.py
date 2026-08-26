@@ -9428,6 +9428,128 @@ def test_check_live_hf_retry_routing_registered_in_no_flags_default_run():
     )
 
 
+def test_check_live_hf_retry_routing_docstring_only_text_passes(tmp_path):
+    """#2355 acceptance criterion 1: HF-call TEXT inside a module docstring
+    (the Schema-from-artifact probe-command idiom) is text, not a call — a
+    file whose only matches sit in the docstring produces 0 errors."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        '"""Schema probe record.\n'
+        "\n"
+        "    hf_hub_download('org/repo', 'file.pt')\n"
+        "    torch.load(hf_hub_download('org/repo', 'file.pt'))\n"
+        '"""\n'
+        "X = 1\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_docstring_text_plus_real_call_flags_real_line(tmp_path):
+    """#2355 acceptance criterion 2 (the task body's regression pin): the
+    docstring match is exempt while the real bare call still flags, with
+    the error naming the REAL call's line number."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        '"""Doc.\n'
+        "\n"
+        "hf_hub_download('org/repo', 'file.pt')\n"
+        '"""\n'
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:7" in errors[0]
+    assert "live-hf-retry-routing" in errors[0]
+
+
+def test_check_live_hf_retry_routing_same_line_string_then_real_call_still_flags(tmp_path):
+    """#2355 acceptance criterion 3: an EARLIER same-line string-literal
+    match must not shadow a later real call — the per-line selection takes
+    the first NON-exempt match, not ``re.search``'s first match."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    msg = \"see hf_hub_download('o/r', 'x')\";"
+        " out = hf_hub_download('org/repo', 'a.bin')\n"
+        "    return msg, out\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_live_hf_retry_routing_trailing_comment_text_passes(tmp_path):
+    """#2355 acceptance criterion 4: HF-call text inside a TRAILING ``#``
+    comment (the line-leading form is already fast-path-skipped) is exempt
+    via the COMMENT token span — same text-not-a-call class."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "def fetch():\n"
+        "    x = 1  # cached via hf_hub_download('org/repo', 'a.bin')\n"
+        "    return x\n",
+        encoding="utf-8",
+    )
+    assert check_live_hf_retry_routing(repo_root=root) == []
+
+
+def test_check_live_hf_retry_routing_fstring_replacement_field_call_still_flags(tmp_path):
+    """#2355 acceptance criterion 5 (round-1 critic Must-Fix): f-prefixed
+    STRING tokens are NEVER masked — on py3.11 (the repo interpreter) an
+    f-string is ONE STRING token whose replacement fields can carry REAL
+    calls, so a real call inside a replacement field still flags (on
+    py3.12+ the replacement-field expression tokenizes as real NAME/OP
+    tokens outside the masked FSTRING_* literal parts — same verdict)."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    p = f\"{hf_hub_download('org/repo', 'a.bin')}/x\"\n"
+        "    return p\n",
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
+def test_check_live_hf_retry_routing_tokenize_failure_falls_back_and_flags(tmp_path):
+    """#2355 acceptance criterion 6 (fail-loud pin — a pytest.raises-free
+    POSITIVE control): an unterminated triple-quote raises
+    ``tokenize.TokenError``; the span helper returns None and the scan
+    falls back to the pre-#2355 no-exemption behavior — the bare call
+    still emits its error line and the lint does not crash, so the
+    fallback can never silently swallow the file."""
+    from workflow_lint import check_live_hf_retry_routing
+
+    root = _hf_routing_root(tmp_path)
+    (root / "scripts" / "new_tool.py").write_text(
+        "from huggingface_hub import hf_hub_download\n"
+        "def fetch():\n"
+        "    return hf_hub_download('org/repo', 'a.bin')\n"
+        'BROKEN = """unterminated\n',
+        encoding="utf-8",
+    )
+    errors = check_live_hf_retry_routing(repo_root=root)
+    assert len(errors) == 1, errors
+    assert "scripts/new_tool.py:3" in errors[0]
+
+
 # ---------------------------------------------------------------------------
 # --regen-hf-routing-snapshot (#1568): paste-ready snapshot regeneration
 # ---------------------------------------------------------------------------
