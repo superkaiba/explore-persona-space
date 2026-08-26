@@ -1,0 +1,75 @@
+{
+  "n": 30,
+  "n_answered": 30,
+  "n_max_tokens_stops": 0,
+  "n_parse_fail": 0,
+  "parse_fail_rate": 0.0,
+  "classes": {
+    "anchors|assistant": {
+      "n": 6,
+      "n_answered": 6,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "anchors|persona": {
+      "n": 6,
+      "n_answered": 6,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "confirm|assistant": {
+      "n": 6,
+      "n_answered": 6,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "confirm|coherence": {
+      "n": 6,
+      "n_answered": 6,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    },
+    "confirm|persona": {
+      "n": 6,
+      "n_answered": 6,
+      "n_parse_fail": 0,
+      "n_max_tokens_stops": 0
+    }
+  },
+  "vacuous_classes": [],
+  "transport": "sync",
+  "instrument_sha": "7c99b80d00d4997c",
+  "ok": true,
+  "n_items_total": 2724,
+  "item_set_sha": "8b5eb7da01dea7b4",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T05:11:46-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_patch_judge.py",
+      "--patch-root",
+      "data/issue_2378/patch_round_danaconf",
+      "--out-dir",
+      "eval_results/issue_2378/dana-behavior-confirm/judge",
+      "--hf-suffix",
+      "_danaconf",
+      "--cache-dir",
+      "data/issue_2378/patch_judge_cache_danaconf",
+      "--checkpoint-dir",
+      "data/issue_2378/patch_judge_ckpt_danaconf",
+      "--pilot",
+      "30",
+      "--transport",
+      "sync"
+    ],
+    "git_commit": "7846ddbed4838ade5b7352db6c273822703468b6",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_patch_judge.py",
+    "phase": "patch_judge_pilot"
+  }
+}
