@@ -767,8 +767,12 @@ def phase_capture28(args) -> dict:
     parity: dict = {"gate": gate_rec}
 
     def _cosrow(a: np.ndarray, b: np.ndarray) -> np.ndarray:
-        num = (a.astype(np.float64) * b.astype(np.float64)).sum(axis=-1)
-        den = np.linalg.norm(a, axis=-1) * np.linalg.norm(b, axis=-1) + 1e-12
+        # fp64 BEFORE the norm: fp16 inputs overflow in the squared-sum at late
+        # layers (Qwen massive activations; L26 norms ~300 -> inf, cos -> 0).
+        a64 = a.astype(np.float64)
+        b64 = b.astype(np.float64)
+        num = (a64 * b64).sum(axis=-1)
+        den = np.linalg.norm(a64, axis=-1) * np.linalg.norm(b64, axis=-1) + 1e-12
         return num / den
 
     cos_pool = _cosrow(vx28[:, L19, :], y16)
@@ -1571,7 +1575,8 @@ def _fig_plot2(args) -> dict:
         )
     ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
     ax_r2.set_ylabel("held-out $R^2$,\ndraw-averaged target")
-    ax_r2.set_ylim(-1.05, 1.0)
+    # identity_bias reads ~-1.45 on the operating-point rows -- keep it in frame.
+    ax_r2.set_ylim(-1.6, 1.0)
     ax_acc.axhline(1.0 / n_pool, color="black", lw=0.7, ls=":")
     ax_acc.set_ylabel(f"acc@1, draw-averaged target\n(whitened cos + CSLS, pool {n_pool:,})")
     ax_acc.set_ylim(0.0, 1.0)

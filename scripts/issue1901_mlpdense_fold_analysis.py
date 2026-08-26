@@ -21,8 +21,16 @@ import hashlib
 import json
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps BEFORE any heavy import (#847; even credential-free
+# analysis/plot scripts — numpy's BLAS pool freezes at import).
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from explore_persona_space.orchestrate.hub import retry_transient  # noqa: E402
 
 STAGE = Path("/mnt/eps-data/thomasjiralerspong/issue1901_mlpdense_fold")
 REPO = "superkaiba1/explore-persona-space-data"
@@ -42,7 +50,12 @@ MARGIN = 0.01
 def _dl(path_in_repo: str) -> Path:
     from huggingface_hub import hf_hub_download
 
-    return Path(hf_hub_download(REPO, path_in_repo, repo_type="dataset", local_dir=str(STAGE)))
+    return Path(
+        retry_transient(
+            lambda: hf_hub_download(REPO, path_in_repo, repo_type="dataset", local_dir=str(STAGE)),
+            what=f"hf_hub_download({REPO}/{path_in_repo})",
+        )
+    )
 
 
 def _pooled_r2(y: np.ndarray, pred: np.ndarray) -> float:

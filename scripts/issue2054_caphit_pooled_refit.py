@@ -107,15 +107,55 @@ def capped_conv_ids(jsonl: Path) -> tuple[set[str], set[str]]:
 
 def banked_pooled_r2() -> float:
     """The ladder's pooled read for the target cell — the validation target."""
+    return banked_ladder_r2()["pooled"]
+
+
+def banked_ladder_r2() -> dict[str, float]:
+    """The ladder's pooled / bias / gain reads for the target cell (raw rows).
+
+    These are the all-rows values every recomputed all-rows read is gated
+    against, so a rung implementation that has drifted from ``pool_rungs``
+    fails loud before any cap-excluded number is written.
+    """
     payload = json.loads(LADDER.read_text())
     for unit in payload["units"]:
         if unit["arm"] == ARM and unit["cell"] == TARGET_CELL:
-            return float(unit["r2"]["pooled"])
+            return {rung: float(unit["r2"][rung]) for rung in ("pooled", "bias", "gain")}
     raise KeyError(f"no {ARM}-arm unit for {TARGET_CELL} in {LADDER}")
 
 
+def _rung_preds(z_tr, y_tr, z_te):
+    """The two pool_rungs correction rungs, fitted on train and applied to test.
+
+    Mirrors ``issue2054_pool_rungs`` exactly:
+
+    * ``bias`` -- ``z + mean_tr(y - z)``: a constant SHIFT only.
+    * ``gain`` -- ``y_bar + alpha * (z - z_bar)``: recentres onto the target
+      answer mean AND applies a global gain, so it CONTAINS the shift. The two
+      rungs are cumulative, not independent.
+
+    Returns ``({rung: prediction}, alpha)``.
+    """
+    preds = {"bias": z_te + (y_tr - z_tr).mean(axis=0)}
+    z_bar, y_bar = z_tr.mean(axis=0), y_tr.mean(axis=0)
+    zc_tr, yc_tr = z_tr - z_bar, y_tr - y_bar
+    zc_ss = float((zc_tr**2).sum())
+    if zc_ss <= 0.0:
+        # pool_rungs' skip-and-name convention: alpha is undefined on a
+        # constant prediction cloud, so the gain rung degenerates to the shift.
+        return {**preds, "gain": preds["bias"]}, float("nan")
+    alpha = float((zc_tr * yc_tr).sum() / zc_ss)
+    preds["gain"] = y_bar + alpha * (z_te - z_bar)
+    return preds, alpha
+
+
 def evaluate_target(cell, fold_map: dict, pooled_models: dict, kept: set[str]) -> dict:
-    """Per-fold pooled-map R^2 on the target cell, over all rows and kept rows."""
+    """Per-fold pooled-map R^2 on the target cell, over all rows and kept rows.
+
+    Also reports the two correction rungs in BOTH row regimes: the all-rows
+    reads exist to be gated against the banked ladder values, and the kept-row
+    reads are the numbers plot 2 needs for this cell.
+    """
     k = int(fold_map["k"])
     act = load_cell_with_answer(cell)
     j = join_cell(act, fold_map["fold_of"], k, ARM)
@@ -124,6 +164,7 @@ def evaluate_target(cell, fold_map: dict, pooled_models: dict, kept: set[str]) -
     # j["order"] is the joined conv_id order, row-aligned with x_all / y_all.
     keep_mask = np.fromiter((cid in kept for cid in j["order"]), dtype=bool, count=len(j["order"]))
     _log(f"[caphit] target join n={j['n_join']} kept_in_join={int(keep_mask.sum())}")
+    n_rows = len(j["order"])
 
     folds = []
     for f in range(k):
@@ -135,26 +176,54 @@ def evaluate_target(cell, fold_map: dict, pooled_models: dict, kept: set[str]) -
         n_sub = int(sub.sum())
         if n_sub < 2:
             raise RuntimeError(f"fold {f}: only {n_sub} kept rows — restricted R^2 undefined")
-        folds.append(
-            {
-                "fold": f,
-                "n_test": int(len(te)),
-                "n_test_kept": n_sub,
-                "r2_all": reconstruction_metrics(pred, y_te)["r2"],
-                "r2_kept": reconstruction_metrics(pred[sub], y_te[sub])["r2"],
-            }
-        )
+
+        # Train rows of THIS cell = every joined row outside the held-out fold.
+        te_mask = np.zeros(n_rows, dtype=bool)
+        te_mask[te] = True
+        tr = np.flatnonzero(~te_mask)
+        z_tr_all = m0.predict_np(x_all[tr])
+        y_tr_all = y_all[tr]
+        sub_tr = keep_mask[tr]
+        if int(sub_tr.sum()) < 2:
+            raise RuntimeError(f"fold {f}: <2 kept TRAIN rows — rung fit undefined")
+
+        # All-rows rungs (the gate) and kept-row rungs (what plot 2 needs).
+        p_all, alpha_all = _rung_preds(z_tr_all, y_tr_all, pred)
+        p_kept, alpha_kept = _rung_preds(z_tr_all[sub_tr], y_tr_all[sub_tr], pred[sub])
+        row = {
+            "fold": f,
+            "n_test": int(len(te)),
+            "n_test_kept": n_sub,
+            "n_train": int(len(tr)),
+            "n_train_kept": int(sub_tr.sum()),
+            "alpha_all": alpha_all,
+            "alpha_kept": alpha_kept,
+            "r2_all": reconstruction_metrics(pred, y_te)["r2"],
+            "r2_kept": reconstruction_metrics(pred[sub], y_te[sub])["r2"],
+        }
+        for rung in ("bias", "gain"):
+            row[f"r2_all_{rung}"] = reconstruction_metrics(p_all[rung], y_te)["r2"]
+            row[f"r2_kept_{rung}"] = reconstruction_metrics(p_kept[rung], y_te[sub])["r2"]
+        folds.append(row)
         _log(
             f"[caphit] fold {f}: n={len(te)} kept={n_sub} "
-            f"r2_all={folds[-1]['r2_all']:+.4f} r2_kept={folds[-1]['r2_kept']:+.4f}"
+            f"r2_all={row['r2_all']:+.4f} r2_kept={row['r2_kept']:+.4f} "
+            f"kept_bias={row['r2_kept_bias']:+.4f} kept_gain={row['r2_kept_gain']:+.4f} "
+            f"alpha_kept={alpha_kept:+.4f}"
         )
-    return {
+
+    out = {
         "per_fold": folds,
         "r2_all_mean": float(np.mean([r["r2_all"] for r in folds])),
         "r2_kept_mean": float(np.mean([r["r2_kept"] for r in folds])),
         "n_join": j["n_join"],
         "n_kept_in_join": int(keep_mask.sum()),
     }
+    for regime in ("all", "kept"):
+        for rung in ("bias", "gain"):
+            key = f"r2_{regime}_{rung}"
+            out[f"{key}_mean"] = float(np.mean([r[key] for r in folds]))
+    return out
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -215,19 +284,43 @@ def main() -> int:
 
     result = evaluate_target(target[0], fold_map, pooled, kept)
 
-    banked = banked_pooled_r2()
-    delta = abs(result["r2_all_mean"] - banked)
+    # One gate row per read whose all-rows form has a banked counterpart. The
+    # rung rows are what make the cap-excluded rung numbers trustworthy: if this
+    # implementation cannot reproduce pool_rungs on the raw rows, its restricted
+    # reads are not to be believed either.
+    banked_all = banked_ladder_r2()
+    checks = []
+    for rung, recomputed_key in (
+        ("pooled", "r2_all_mean"),
+        ("bias", "r2_all_bias_mean"),
+        ("gain", "r2_all_gain_mean"),
+    ):
+        recomputed = float(result[recomputed_key])
+        delta = abs(recomputed - banked_all[rung])
+        checks.append(
+            {
+                "rung": rung,
+                "banked": banked_all[rung],
+                "recomputed_all_rows": recomputed,
+                "abs_delta": delta,
+                "passed": bool(delta <= args.gate_tol),
+            }
+        )
+        _log(
+            f"[caphit] VALIDATION {rung}: recomputed_all={recomputed:+.5f} "
+            f"banked={banked_all[rung]:+.5f} delta={delta:.2e} tol={args.gate_tol:.0e}"
+        )
     result["validation"] = {
-        "banked_pooled_r2": banked,
+        # Back-compatible keys: the plot-2 generator reads these.
+        "banked_pooled_r2": banked_all["pooled"],
         "recomputed_all_rows_r2": result["r2_all_mean"],
-        "abs_delta": delta,
+        "abs_delta": checks[0]["abs_delta"],
         "tol": args.gate_tol,
-        "passed": bool(delta <= args.gate_tol),
+        "passed": all(c["passed"] for c in checks),
+        "per_rung": checks,
     }
-    _log(
-        f"[caphit] VALIDATION recomputed_all={result['r2_all_mean']:+.5f} "
-        f"banked={banked:+.5f} delta={delta:.2e} tol={args.gate_tol:.0e}"
-    )
+    for rung in ("bias", "gain"):
+        _log(f"[caphit] cap-excluded {rung}: {result[f'r2_kept_{rung}_mean']:+.5f}")
 
     args.out_root.mkdir(parents=True, exist_ok=True)
     payload = {

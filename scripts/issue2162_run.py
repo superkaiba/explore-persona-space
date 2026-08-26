@@ -917,14 +917,25 @@ def _repro(cfg: RunConfig) -> dict:
 def load_model_and_tokenizer(cfg: RunConfig):
     """Production: bf16 Qwen-2.5-7B-Instruct pinned to one device (never
     ``device_map='auto'`` — silent CPU offload, gotchas). Tiny: a from-config
-    same-arch model on CPU over the REAL vocab-id space."""
+    same-arch model on CPU over the REAL vocab-id space.
+
+    Revision pin (#2564 blocker 8): when the caller's cfg carries a RESOLVED
+    ``model_revision`` (a real sha — the ``unresolved*`` sentinels of tiny /
+    import-check modes are filtered to None), it is threaded as ``revision=``
+    into BOTH the tokenizer and the production weight load, so the loaded
+    bytes match the sha recorded in the regime fingerprint / repro metadata.
+    Additive: callers without the attribute (the #2162 lineage) load exactly
+    as before (revision=None == default branch tip)."""
     from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(cfg.model_id)  # loaded ONCE (HF-429 gotcha)
+    rev = getattr(cfg, "model_revision", None)
+    if not rev or str(rev).startswith("unresolved"):
+        rev = None
+    tok = AutoTokenizer.from_pretrained(cfg.model_id, revision=rev)  # loaded ONCE (HF-429 gotcha)
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     if cfg.tiny:
-        mcfg = AutoConfig.from_pretrained(cfg.model_id)
+        mcfg = AutoConfig.from_pretrained(cfg.model_id, revision=rev)
         mcfg.hidden_size = cfg.hidden
         mcfg.intermediate_size = 2 * cfg.hidden
         mcfg.num_hidden_layers = cfg.n_layers
@@ -934,7 +945,9 @@ def load_model_and_tokenizer(cfg: RunConfig):
         model = AutoModelForCausalLM.from_config(mcfg).to(torch.float32)
     else:
         assert torch.cuda.is_available(), "the full grid requires CUDA (use --tiny for CPU smoke)"
-        model = AutoModelForCausalLM.from_pretrained(cfg.model_id, dtype=torch.bfloat16)
+        model = AutoModelForCausalLM.from_pretrained(
+            cfg.model_id, dtype=torch.bfloat16, revision=rev
+        )
     model = model.to(cfg.device)
     assert model.config.hidden_size == cfg.hidden, (model.config.hidden_size, cfg.hidden)
     assert model.config.num_hidden_layers == cfg.n_layers, (
@@ -1562,6 +1575,7 @@ def capture_answer_states(
     payloads: list[torch.Tensor] | None = None,
     positions: list[int] | None = None,
     tail_inclusive: bool = False,
+    return_boundaries: bool = False,
 ) -> dict:
     """Span-mean answer states from teacher-forced re-forwards.
 
@@ -1578,6 +1592,15 @@ def capture_answer_states(
     end-of-turn tail (``eot_ids``) from the SAME captured stack — the #779
     ``v_x`` training-target convention twin. Default ``False`` keeps this
     function byte-identical for every existing caller.
+
+    ``return_boundaries=True`` (issue #2215 dbe round 3 —
+    dbe-gate4-metadata-independence) additionally emits ``boundaries``: one
+    per-row span record (``ctx_len`` / ``n_completion_tokens`` /
+    ``span_start`` / ``span_end`` / ``tail_end``) derived from THIS
+    function's OWN internal tokenization state — never a caller-side
+    reconstruction — so a wrapper-side bookkeeping error is visible as a
+    record mismatch at the gate-4 EXACT comparison. ADDITIVE + default-off:
+    existing callers stay byte-identical.
     """
     assert len(ctx_ids_by_row) == len(completions), (len(ctx_ids_by_row), len(completions))
     hooked = payloads is not None
@@ -1649,6 +1672,22 @@ def capture_answer_states(
         out["pooling"]["va_tail_incl"] = (
             "mean over completion tokens + end-of-turn tail (issue #2215 §4.2 v_x-convention twin)"
         )
+    if return_boundaries:
+        # Per-row span records from this function's OWN state (its ctx-id
+        # lengths, its comp_ids tokenization, its eot tail) — the capture
+        # path's independently-emitted record for the gate-4 EXACT comparison
+        # (issue #2215 dbe-gate4-metadata-independence). Emitted for EVERY
+        # row, empty completions included (n_completion_tokens == 0).
+        out["boundaries"] = [
+            {
+                "ctx_len": len(ctx_ids_by_row[i]),
+                "n_completion_tokens": n_comp_tokens[i],
+                "span_start": len(ctx_ids_by_row[i]),
+                "span_end": len(ctx_ids_by_row[i]) + n_comp_tokens[i],
+                "tail_end": len(ctx_ids_by_row[i]) + n_comp_tokens[i] + len(eot_ids),
+            }
+            for i in range(n)
+        ]
     return out
 
 
