@@ -49,6 +49,19 @@ legacy pins, so the G-E gate here (``run_g0_gate``) pins every estimator
 knob per leg: leg (a) legacy anchor 0.6731 ± 0.01, leg (b) v2-recipe
 identity 0.6935026836671432 ± 1e-6 (#1336 ``gates_v2/g0v2.json``).
 
+Realized estimator provenance (v16): the patch above reaches ONLY the
+sweep/traj routes (``fc.heldout_r2_sweep`` reads ``fc.N_INNER_LAMBDA_FOLDS``
+at call time). Ladder/ood units fit via ``issue825_map_alignment`` (13-pt
+legacy grid; ``ma.N_INNER_LAMBDA_FOLDS`` snapshots fit825's 4 at IMPORT) and
+operator units via ``issue825_crossmodel_map_transfer.fit_primal_beta``
+(13-pt grid; ``N_INNER_LAMBDA_FOLDS = 4`` module literal) — a deliberate,
+review-sanctioned divergence (#1336 battery parity; unification would break
+the plan §11 rationale). Every persisted unit payload therefore records the
+per-unit REALIZED grid / inner-fold count / selector / ``regime`` label,
+derived from the values in effect at the fit call (``_attach_fit_params`` +
+``_RidgeEstimatorRecorder`` / ``_realized_sweep_estimator``), failing loud
+when a value cannot be determined.
+
 CLI contract (pinned by scripts/issue2546_dispatch.sh):
   issue2546_fit_cells.py --arm K [--g0] [--smoke] --out-root <dir>
 Internal fan-out: the parent builds the fitcache + rowsets once (fan-out inputs
@@ -969,6 +982,19 @@ def _repro(phase: str) -> dict:
 
 
 def _fit_params(smoke: bool, null_draws: int, n_boot: int) -> dict:
+    """Run-level fit-regime KEY (fingerprint input) — NOT per-unit provenance.
+
+    The ``lambdas``/``inner_lambda_folds`` keys here describe the P5-PINNED
+    v2 regime and exist for resume KEYING (machine-stable generating params,
+    #1336). Three unit routes (ladder/ood via issue825_map_alignment,
+    operator via issue825_crossmodel_map_transfer.fit_primal_beta) run a
+    DIFFERENT realized regime (13-pt legacy grid, 4 inner folds), so the
+    PERSISTED per-unit ``fit_params`` is composed by ``_attach_fit_params``
+    from this dict + the unit's REALIZED estimator record (v16) — this dict
+    is never stamped verbatim onto a payload. ``fit_params_schema`` is part
+    of the fingerprint by design: any pre-v16 payload (false per-unit
+    provenance) can never resume-skip.
+    """
     return {
         "lambdas": list(LAMBDAS_N1M_PARAMS),
         "n_folds": N_FOLDS,
@@ -978,12 +1004,272 @@ def _fit_params(smoke: bool, null_draws: int, n_boot: int) -> dict:
         "n_boot": n_boot,
         "smoke": bool(smoke),
         "recipe_rev": RECIPE_REV,
+        "fit_params_schema": "v16-realized-estimator",
     }
 
 
 def _fingerprint(unit: Unit, params: dict) -> str:
     body = json.dumps({"unit": unit.unit_id, **params}, sort_keys=True)
     return hashlib.sha1(body.encode()).hexdigest()[:16]
+
+
+# ---------------------------------------------------------------------------
+# Realized estimator provenance (v16). Persisted fit payloads must record the
+# estimator configuration ACTUALLY IN EFFECT at each unit's fit calls — never
+# the driver's own constants re-stamped as if they applied. Three routes
+# diverge from the P5 pin (23-pt grid, fc.N_INNER_LAMBDA_FOLDS=2 patch):
+#   ladder/ood  -> issue825_map_alignment (13-pt legacy grid; 4 inner folds —
+#                  ma.N_INNER_LAMBDA_FOLDS snapshots fit825's at IMPORT, so
+#                  the scoped P5 patch never reaches it),
+#   operator    -> issue825_crossmodel_map_transfer.fit_primal_beta (13-pt
+#                  grid; N_INNER_LAMBDA_FOLDS = 4 as a module LITERAL).
+# FAIL-LOUD contract: a value that cannot be determined at the fit call
+# raises RuntimeError — a plausible stamped guess is worse than a refusal
+# (this session's G-E stale-provenance halt, task markers v88/v89).
+# ---------------------------------------------------------------------------
+
+# The ma/xm legacy grid literal (issue825_crossmodel_map_transfer.py:104);
+# verified against the module's realized values in-process before being
+# recorded as the grid's generating-params identifier.
+_LEGACY_GRID_PARAMS = ("logspace", -2.0, 4.0, 13)
+
+
+def _no_fit_record(regime: str, note: str) -> dict:
+    """Truthful estimator record for a payload that ran NO ridge fit (v16)."""
+    return {
+        "regime": regime,
+        "machinery": None,
+        "lambda_grid_values": None,
+        "lambda_grid_params": None,
+        "n_lambdas": None,
+        "inner_lambda_folds": None,
+        "lambda_selector_requested": None,
+        "selector_realized_counts": None,
+        "note": note,
+    }
+
+
+def _selector_log_snapshot(mod) -> dict[str, dict[str, int]]:
+    """Deep-copied ``mod.SELECTOR_LOG`` counts; fail loud when telemetry is off."""
+    log = getattr(mod, "SELECTOR_LOG", None)
+    if not isinstance(log, dict):
+        raise RuntimeError(
+            f"[p5] {mod.__name__}.SELECTOR_LOG is {type(log).__name__} — selector "
+            "telemetry disabled, so the REALIZED lambda selector cannot be measured; "
+            "refusing to stamp a selector guess (v16)"
+        )
+    return {sel: dict(cnt) for sel, cnt in log.items()}
+
+
+def _selector_log_delta(
+    before: dict[str, dict[str, int]], after: dict[str, dict[str, int]]
+) -> dict[str, dict[str, int]]:
+    """Per-(selector, lambda) count increments between two SELECTOR_LOG snapshots."""
+    delta: dict[str, dict[str, int]] = {}
+    for sel, cnt in after.items():
+        b = before.get(sel, {})
+        d = {k: v - b.get(k, 0) for k, v in cnt.items() if v - b.get(k, 0) > 0}
+        if d:
+            delta[sel] = d
+    return delta
+
+
+class _RidgeEstimatorRecorder:
+    """Realized estimator provenance for ONE unit's ma/xm-machinery ridge fits.
+
+    Reads the estimator knobs IN EFFECT on ``mod`` (the module whose ridge
+    machinery this unit's fit calls dispatch to) at construction time — never
+    the driver's own constants — and measures REALIZED selector usage as the
+    ``mod.SELECTOR_LOG`` delta between construction and ``finish()``. Units
+    run serially within a worker process, so the delta is unit-scoped.
+    """
+
+    def __init__(self, mod, *, regime: str, machinery: str) -> None:
+        self.mod = mod
+        self.regime = regime
+        self.machinery = machinery
+        grid = np.asarray(mod.LAMBDAS, dtype=np.float64)
+        if grid.ndim != 1 or len(grid) == 0:
+            raise RuntimeError(
+                f"[p5] {mod.__name__}.LAMBDAS is not a 1-D non-empty grid "
+                f"(shape {grid.shape}) — realized grid undeterminable (v16)"
+            )
+        selector = mod.LAMBDA_SELECTION
+        if selector not in fc.LAMBDA_SELECTIONS:
+            raise RuntimeError(
+                f"[p5] {mod.__name__}.LAMBDA_SELECTION={selector!r} not in "
+                f"{fc.LAMBDA_SELECTIONS} — realized selector undeterminable (v16)"
+            )
+        folds = mod.N_INNER_LAMBDA_FOLDS
+        if not isinstance(folds, int) or isinstance(folds, bool):
+            raise RuntimeError(
+                f"[p5] {mod.__name__}.N_INNER_LAMBDA_FOLDS={folds!r} is not an int — "
+                "realized inner-fold count undeterminable (v16)"
+            )
+        if selector == "inner-group-cv" and not np.array_equal(
+            grid, np.asarray(fc.LAMBDAS, dtype=np.float64)
+        ):
+            # fit825._inner_cv_rss_curve (lams=None) SCANS fit825.LAMBDAS while
+            # the selected value INDEXES mod.LAMBDAS — under a divergence the
+            # grid "actually used" is ill-defined. Refuse rather than record
+            # either grid as if it were the one in effect.
+            raise RuntimeError(
+                f"[p5] {mod.__name__}.LAMBDAS diverges from issue825_fit_cells.LAMBDAS "
+                "under inner-group-cv (the RSS curve scans fit825's grid, the selection "
+                f"indexes {mod.__name__}'s) — realized grid undeterminable (v16)"
+            )
+        ref = np.logspace(_LEGACY_GRID_PARAMS[1], _LEGACY_GRID_PARAMS[2], _LEGACY_GRID_PARAMS[3])
+        self.grid_params = (
+            list(_LEGACY_GRID_PARAMS)
+            if grid.shape == ref.shape and np.array_equal(grid, ref)
+            else None
+        )
+        self.grid_values = [float(v) for v in grid]
+        self.selector = str(selector)
+        self.folds = int(folds)
+        self.dof_cap = mod.GCV_DOF_CAP
+        self.legacy_gcv = bool(mod.LEGACY_UNGUARDED_GCV)
+        self.log_before = _selector_log_snapshot(mod)
+
+    def finish(self) -> dict:
+        """Selector-log delta -> the realized record; raises when nothing logged."""
+        delta = _selector_log_delta(self.log_before, _selector_log_snapshot(self.mod))
+        if not delta:
+            raise RuntimeError(
+                f"[p5] no lambda selection was logged on {self.mod.__name__}.SELECTOR_LOG "
+                "during this unit's fits — realized selector undeterminable (v16)"
+            )
+        return {
+            "regime": self.regime,
+            "machinery": self.machinery,
+            "lambda_grid_values": self.grid_values,
+            "lambda_grid_params": self.grid_params,
+            "n_lambdas": len(self.grid_values),
+            "inner_lambda_folds": self.folds,
+            "lambda_selector_requested": self.selector,
+            "selector_realized_counts": {sel: sum(c.values()) for sel, c in delta.items()},
+            "lambda_selection_counts": delta,
+            "gcv_dof_cap": (None if self.dof_cap is None else float(self.dof_cap)),
+            "legacy_unguarded_gcv": self.legacy_gcv,
+            "derived_from": (
+                f"{self.mod.__name__} module globals read at this unit's fit calls "
+                "+ SELECTOR_LOG delta over the unit (v16)"
+            ),
+        }
+
+
+def _realized_sweep_estimator(sweep: dict, *, inner_folds_at_call: int) -> dict:
+    """Realized estimator record for a heldout_r2_sweep-routed unit (v16).
+
+    Grid + selector come from the fit call itself: the runner passes
+    ``lambdas=LAMBDAS_N1M`` explicitly, the requested selector is
+    heldout_r2_sweep's own keyword-only default (read from the CALLEE, never
+    re-assumed), and the REALIZED per-(layer, fold) selector table is the
+    sweep's ``lambda_selector`` output. ``inner_folds_at_call`` is
+    ``fc.N_INNER_LAMBDA_FOLDS`` read by the runner immediately before the
+    sweep call (the value the sweep's _prep_inner_lambda consumed).
+    """
+    ref = np.logspace(LAMBDAS_N1M_PARAMS[1], LAMBDAS_N1M_PARAMS[2], LAMBDAS_N1M_PARAMS[3])
+    if not np.array_equal(np.asarray(LAMBDAS_N1M, dtype=np.float64), ref):
+        raise RuntimeError(
+            "[p5] LAMBDAS_N1M diverges from its LAMBDAS_N1M_PARAMS generating params — "
+            "grid identity lost; refusing to record either form (v16)"
+        )
+    kwdefaults = getattr(fc.heldout_r2_sweep, "__kwdefaults__", None) or {}
+    selector = kwdefaults.get("lambda_selection")
+    if selector is None:
+        raise RuntimeError(
+            "[p5] heldout_r2_sweep exposes no lambda_selection keyword default — "
+            "requested selector undeterminable (v16)"
+        )
+    table = sweep.get("lambda_selector")
+    if table is None:
+        raise RuntimeError(
+            "[p5] sweep returned no lambda_selector table (collect_lambdas off?) — "
+            "realized selector undeterminable (v16)"
+        )
+    counts: dict[str, int] = {}
+    for row in table:
+        for s in row:
+            if s is not None:
+                counts[s] = counts.get(s, 0) + 1
+    if not counts:
+        raise RuntimeError(
+            "[p5] sweep lambda_selector table is all-None (no fitted folds) — "
+            "realized selector undeterminable (v16)"
+        )
+    if not isinstance(inner_folds_at_call, int) or isinstance(inner_folds_at_call, bool):
+        raise RuntimeError(
+            f"[p5] inner_folds_at_call={inner_folds_at_call!r} is not an int — "
+            "realized inner-fold count undeterminable (v16)"
+        )
+    return {
+        "regime": "p5_sweep_v2",
+        "machinery": "issue825_fit_cells.heldout_r2_sweep(lambdas=LAMBDAS_N1M)",
+        "lambda_grid_values": [float(v) for v in LAMBDAS_N1M],
+        "lambda_grid_params": list(LAMBDAS_N1M_PARAMS),
+        "n_lambdas": int(len(LAMBDAS_N1M)),
+        "inner_lambda_folds": int(inner_folds_at_call),
+        "lambda_selector_requested": str(selector),
+        "selector_realized_counts": counts,
+        "derived_from": (
+            "explicit lambdas= argument + heldout_r2_sweep keyword default + the sweep's "
+            "realized per-(layer,fold) lambda_selector table + fc.N_INNER_LAMBDA_FOLDS "
+            "read at the sweep call (v16)"
+        ),
+    }
+
+
+def _merge_sweep_estimators(records: list[dict]) -> dict:
+    """Merge per-stratum sweep records into ONE unit record (traj units).
+
+    All strata run the identical call form in one process, so any disagreement
+    on grid/folds/selector is an anomaly — refuse rather than pick one.
+    """
+    if not records:
+        return _no_fit_record("no_fit", "no stratum reached the sweep (all dropped)")
+    base = dict(records[0])
+    for r in records[1:]:
+        for key in ("lambda_grid_params", "inner_lambda_folds", "lambda_selector_requested"):
+            if r[key] != base[key]:
+                raise RuntimeError(
+                    f"[p5] traj strata disagree on realized {key}: "
+                    f"{r[key]!r} != {base[key]!r} (v16)"
+                )
+    counts: dict[str, int] = {}
+    for r in records:
+        for s, n in r["selector_realized_counts"].items():
+            counts[s] = counts.get(s, 0) + n
+    base["selector_realized_counts"] = counts
+    return base
+
+
+def _attach_fit_params(payload: dict, unit_id: str, params: dict) -> None:
+    """Compose the PERSISTED per-unit ``fit_params`` from run params + the
+    unit's realized estimator record (v16).
+
+    Pops the runner-attached ``estimator_realized`` record and overwrites the
+    estimator-describing keys (``lambdas``/``inner_lambda_folds``) with the
+    unit's REALIZED values, so no persisted payload can assert an estimator
+    configuration that was not used. An ok-status payload WITHOUT a record
+    fails loud — run-level defaults are never stamped as fit provenance.
+    ``params`` (the fingerprint input) is never mutated.
+    """
+    realized = payload.pop("estimator_realized", None)
+    if realized is None:
+        if payload.get("status") == "ok":
+            raise RuntimeError(
+                f"[p5] unit {unit_id}: ok payload carries no realized-estimator record; "
+                "refusing to stamp run-level defaults as fit provenance (v16)"
+            )
+        realized = _no_fit_record("no_fit", f"status={payload.get('status')!r}: no fit executed")
+    fp = dict(params)
+    fp["regime"] = realized["regime"]
+    fp["lambdas"] = realized.get("lambda_grid_params") or realized.get("lambda_grid_values")
+    fp["inner_lambda_folds"] = realized.get("inner_lambda_folds")
+    fp["lambda_selector"] = realized.get("lambda_selector_requested")
+    fp["estimator_realized"] = realized
+    payload["fit_params"] = fp
 
 
 def _store_content_key(out_root: Path, prof: LayerProfile, smoke: bool) -> str:
@@ -1146,6 +1432,9 @@ def run_sweep_unit(
     d = X.shape[2]
     conv_ids = np.asarray(rows)
     fl = prof.frozen
+    # v16: the inner-fold count IN EFFECT at this fit call (the sweep reads
+    # fc.N_INNER_LAMBDA_FOLDS per fold internally) — never the driver constant.
+    inner_folds_at_call = fc.N_INNER_LAMBDA_FOLDS
     sweep = fc.heldout_r2_sweep(
         X,
         Y,
@@ -1290,6 +1579,9 @@ def run_sweep_unit(
         "r2_ceiling_normalized": None,
         "ceiling_status": "missing_reliability_capture",
         "preds": preds_manifest,
+        "estimator_realized": _realized_sweep_estimator(
+            sweep, inner_folds_at_call=inner_folds_at_call
+        ),
     }
 
 
@@ -1349,6 +1641,7 @@ def run_traj_unit(
     n_f = len(prof.frozen)
     hl_fi = prof.frozen.index(prof.headline)
     strata_out: dict[str, dict] = {}
+    est_records: list[dict] = []  # v16: one realized-estimator record per fitted stratum
     for stratum in STRATA:
         rows = rowsets["strata"][stratum]
         floor = FLOOR_ROWS[prof.arm]
@@ -1380,6 +1673,8 @@ def run_traj_unit(
             continue
         X27, Y27, short_think = _traj_scatter_fill(rows, corpus_of, post, prof)
         headline_idx = tuple(ti * n_f + hl_fi for ti in range(n_t))
+        # v16: inner-fold count IN EFFECT at this stratum's fit call.
+        inner_folds_at_call = fc.N_INNER_LAMBDA_FOLDS
         sweep = fc.heldout_r2_sweep(
             X27,
             Y27,
@@ -1391,6 +1686,9 @@ def run_traj_unit(
             collect_lambdas=True,
             frozen_layers=headline_idx,
             lambdas=LAMBDAS_N1M,
+        )
+        est_records.append(
+            _realized_sweep_estimator(sweep, inner_folds_at_call=inner_folds_at_call)
         )
         if not smoke:
             # Traj twin of the sweep-unit MF-2 fit-eligibility assert (g3 concern 5):
@@ -1479,6 +1777,7 @@ def run_traj_unit(
         "headline_layer": prof.headline,
         "strata": strata_out,
         "ceiling_status": "missing_reliability_capture",
+        "estimator_realized": _merge_sweep_estimators(est_records),
     }
 
 
@@ -1528,6 +1827,14 @@ def run_ladder_unit(
     _pygc.collect()
     n = len(rows)
     folds = fc._cv_folds(np.asarray(rows), N_FOLDS, FIT_SEED)
+    # v16: every ridge fit below dispatches to issue825_map_alignment — record
+    # THAT module's estimator config in effect at these calls (13-pt legacy
+    # grid, ma.N_INNER_LAMBDA_FOLDS import snapshot), never the P5 pin.
+    est_rec = _RidgeEstimatorRecorder(
+        ma,
+        regime="ma_battery_legacy",
+        machinery="issue825_map_alignment._ridge_prep/_ridge_predict (run_pair core)",
+    )
     tier_res = {t: 0.0 for t in LADDER_TIER_NAMES}
     tier_tot = {t: 0.0 for t in LADDER_TIER_NAMES}
     ss_res: dict[str, float] = {}
@@ -1584,6 +1891,7 @@ def run_ladder_unit(
             tier_res[tname] += float(((y_te - pred) ** 2).sum())
             tier_tot[tname] += float(((y_te - mu) ** 2).sum())
         del preps, orth, reads, preds_t
+    estimator_realized = est_rec.finish()  # v16: after the LAST fold's fits
     battery = ma._assemble_battery(ss_res, ss_tot)
     r2_f = battery["ceilings"]["within_instruct"]
     tiers = {
@@ -1634,6 +1942,7 @@ def run_ladder_unit(
         "battery": battery,
         "gap_f_vs_t8_bootstrap": gap_ci,
         "battery_provenance": "ma._ridge_prep/_orth_fit/_fold_reads/_assemble_battery (run_pair core)",
+        "estimator_realized": estimator_realized,
     }
 
 
@@ -1646,6 +1955,15 @@ def run_operator_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smo
     hl = prof.headline
     Xb, Yb, _ = _load_xy(caches, prof, "p8_G", rows)
     Xi, Yi, _ = _load_xy(caches, prof, "p8_F", rows)
+    # v16: all three ridge fits in this unit (two direct fit_primal_beta calls
+    # + one inside oc.alignment_capacity) dispatch to
+    # issue825_crossmodel_map_transfer — record ITS config in effect (13-pt
+    # grid; N_INNER_LAMBDA_FOLDS module literal 4), never the P5 pin.
+    est_rec = _RidgeEstimatorRecorder(
+        xm,
+        regime="xm_primal_legacy",
+        machinery="issue825_crossmodel_map_transfer.fit_primal_beta",
+    )
     beta_pre, lam_pre = xm.fit_primal_beta(Xb[:, hl, :], Yb[:, hl, :])
     beta_post, lam_post = xm.fit_primal_beta(Xi[:, hl, :], Yi[:, hl, :])
     beta_pre_t = beta_pre.detach().to("cpu", torch.float64)
@@ -1670,6 +1988,7 @@ def run_operator_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smo
         "subset": unit.subset,
         "n_rows": len(rows),
         "headline_layer": hl,
+        "estimator_realized": est_rec.finish(),
         "operators": "M_pre = cell-G full-data primal beta; M_post = cell-F (same rows)",
         "lambda_pre": float(lam_pre),
         "lambda_post": float(lam_post),
@@ -1701,6 +2020,14 @@ def run_ood_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smoke: b
     Xs, Ys, _ = _load_xy(caches, prof, unit.cell, score_rows)
     dev = fc._fit_device()
     dt = torch.float64
+    # v16: this fit dispatches to issue825_map_alignment — record ITS config
+    # in effect at the call (13-pt legacy grid, ma.N_INNER_LAMBDA_FOLDS
+    # import snapshot), never the P5 pin.
+    est_rec = _RidgeEstimatorRecorder(
+        ma,
+        regime="ma_battery_legacy",
+        machinery="issue825_map_alignment._ridge_prep/_ridge_predict",
+    )
     prep = ma._ridge_prep(torch.as_tensor(Xf[:, hl, :], dtype=dt).to(dev))
     pred = (
         ma._ridge_predict(
@@ -1727,6 +2054,7 @@ def run_ood_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict, smoke: b
         "headline_layer": hl,
         "transfer_r2": _pooled_r2_np(pred, true),
         "knn_identity": knn,
+        "estimator_realized": est_rec.finish(),
     }
 
 
@@ -1796,7 +2124,16 @@ def run_reliability_unit(unit: Unit, prof: LayerProfile, caches, rowsets: dict) 
             "ceiling_spearman_brown": (2 * r / (1 + r)) if r > -1.0 else float("nan"),
             "convention": "#779 4-draw split-half (2/2) at the headline layer",
         }
-    return {"status": "ok", "unit_id": unit.unit_id, "arm": prof.arm, "per_stratum": out}
+    return {
+        "status": "ok",
+        "unit_id": unit.unit_id,
+        "arm": prof.arm,
+        "per_stratum": out,
+        # v16: truthful record — this unit runs NO ridge estimator at all.
+        "estimator_realized": _no_fit_record(
+            "no_ridge_fit", "split-half target consistency; no ridge estimator runs here"
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1934,7 +2271,10 @@ def _run_units_inner(
         else:  # pragma: no cover - registry is closed
             raise ValueError(unit.kind)
         payload["fingerprint"] = fp
-        payload["fit_params"] = params
+        # v16: persisted fit_params = run params + the unit's REALIZED
+        # estimator record (fail-loud when an ok payload carries none) — the
+        # shared `params` stays the untouched fingerprint input.
+        _attach_fit_params(payload, unit.unit_id, params)
         payload["repro"] = _repro("p5_fits")
         _atomic_json(dest, payload)
         if payload.get("status") == "dropped_below_floor":
@@ -1988,7 +2328,9 @@ def run_parent(args, prof: LayerProfile) -> int:
     # Parent-log record of the plan §4.2 P5 patch (plan line: "explicit
     # RECORDED module-global patch"): each worker applies + restores it inside
     # its own run_units scope (v15); the RECORDED/RESTORED pair lands in every
-    # slotN.log, and every unit JSON records inner_lambda_folds in fit_params.
+    # slotN.log, and every unit JSON records the REALIZED per-unit estimator
+    # config (grid / inner folds / selector / regime) in fit_params (v16) —
+    # ladder/ood/operator units run the ma/xm legacy regime, not this patch.
     print(
         f"[p5] inner-folds patch (fc.N_INNER_LAMBDA_FOLDS -> {INNER_LAMBDA_FOLDS}) applies "
         f"inside each worker's run_units scope (scoped save/restore, v15)",
@@ -2442,6 +2784,53 @@ def run_g0_gate(ns: SimpleNamespace) -> int:
     return 0 if ok else 3
 
 
+def _selftest_fixture(root: Path, prof: LayerProfile, n: int = 64) -> tuple[dict, dict]:
+    """Synthetic 2-corpus store + rollouts -> (caches, rowsets) through the
+    REAL build_fitcache/load_caches/build_rowsets path.
+
+    Extracted verbatim from run_selftest (v16) so the estimator-provenance
+    pytest rig (tests/test_issue2546_estimator_provenance.py) drives the SAME
+    fixture builder instead of a drifting clone.
+    """
+    corpora: dict[str, list[dict]] = {"gsm8k_train": [], "mmlu": []}
+    for corpus in corpora:
+        for i in range(n):
+            meta = {
+                "corpus": corpus,
+                "side": "post",
+                "k": (5 if i % 2 == 0 else 1) if corpus == "gsm8k_train" else None,
+                "level": None,
+                "short_think": i % 7 == 0,
+            }
+            corpora[corpus].append({"row_id": f"{corpus}-{i:03d}", "meta": meta})
+    for corpus, rows in corpora.items():
+        _selftest_write_stem(root, 1, "post", corpus, rows, prof, post_like=True)
+        _selftest_write_stem(root, 1, "pre", corpus, rows, prof, post_like=False)
+    # Synthetic rollouts through the REAL parse path: post side well-formed
+    # under arm-1's "emergent" mode (one think block), pre side plain "off".
+    for side, stage in (("post", "post_greedy_a1"), ("pre", "pre_greedy_a1")):
+        for corpus, rows in corpora.items():
+            # Resolve via the SAME namespace helper the producer/consumer
+            # use (r2 Major 5): smoke rollouts live under smoke_<stage>/.
+            rdir = root / "rollouts" / g25.stage_dirname(stage, True)
+            rdir.mkdir(parents=True, exist_ok=True)
+            recs = []
+            for i, r in enumerate(rows):
+                if corpus == "gsm8k_train":
+                    ans = f"The answer is \\boxed{{{i % 5}}}."
+                else:
+                    ans = f"The correct option is {'ABCD'[i % 4]}."
+                text = f"<think>step {i} of the argument</think>\n{ans}" if side == "post" else ans
+                recs.append({"row_id": r["row_id"], "text": text, "finish_reason": "stop"})
+            with (rdir / f"{corpus}.jsonl").open("w") as fh:
+                for rec in recs:
+                    fh.write(json.dumps(rec) + "\n")
+    build_fitcache(root, prof, smoke=True, offline=True)
+    caches = load_caches(root, prof, smoke=True)
+    rowsets = build_rowsets(root, prof, caches, smoke=True)
+    return caches, rowsets
+
+
 def run_selftest() -> int:
     import tempfile
 
@@ -2457,45 +2846,7 @@ def run_selftest() -> int:
     )
     with tempfile.TemporaryDirectory(prefix="i2546-fits-selftest-") as td:
         root = Path(td)
-        n = 64
-        corpora = {"gsm8k_train": [], "mmlu": []}
-        for corpus in corpora:
-            for i in range(n):
-                meta = {
-                    "corpus": corpus,
-                    "side": "post",
-                    "k": (5 if i % 2 == 0 else 1) if corpus == "gsm8k_train" else None,
-                    "level": None,
-                    "short_think": i % 7 == 0,
-                }
-                corpora[corpus].append({"row_id": f"{corpus}-{i:03d}", "meta": meta})
-        for corpus, rows in corpora.items():
-            _selftest_write_stem(root, 1, "post", corpus, rows, prof, post_like=True)
-            _selftest_write_stem(root, 1, "pre", corpus, rows, prof, post_like=False)
-        # Synthetic rollouts through the REAL parse path: post side well-formed
-        # under arm-1's "emergent" mode (one think block), pre side plain "off".
-        for side, stage in (("post", "post_greedy_a1"), ("pre", "pre_greedy_a1")):
-            for corpus, rows in corpora.items():
-                # Resolve via the SAME namespace helper the producer/consumer
-                # use (r2 Major 5): smoke rollouts live under smoke_<stage>/.
-                rdir = root / "rollouts" / g25.stage_dirname(stage, True)
-                rdir.mkdir(parents=True, exist_ok=True)
-                recs = []
-                for i, r in enumerate(rows):
-                    if corpus == "gsm8k_train":
-                        ans = f"The answer is \\boxed{{{i % 5}}}."
-                    else:
-                        ans = f"The correct option is {'ABCD'[i % 4]}."
-                    text = (
-                        f"<think>step {i} of the argument</think>\n{ans}" if side == "post" else ans
-                    )
-                    recs.append({"row_id": r["row_id"], "text": text, "finish_reason": "stop"})
-                with (rdir / f"{corpus}.jsonl").open("w") as fh:
-                    for rec in recs:
-                        fh.write(json.dumps(rec) + "\n")
-        build_fitcache(root, prof, smoke=True, offline=True)
-        caches = load_caches(root, prof, smoke=True)
-        rowsets = build_rowsets(root, prof, caches, smoke=True)
+        caches, rowsets = _selftest_fixture(root, prof)
         assert rowsets["strata"]["does"] and rowsets["strata"]["doesnt"]
         # Traj scatter-fill regression (r2 Major 8): an INTERLEAVED-corpus
         # canonical order with row-specific tensors — the corpus-grouped r1
@@ -2610,6 +2961,31 @@ def run_selftest() -> int:
         assert set(lad["tiers_r2"]) == set(LADDER_TIER_NAMES)
         rel = json.loads((root / "out" / "reliability" / "reliability__a1.json").read_text())
         assert rel["status"] == "missing_reliability_capture"
+        # v16 realized-estimator provenance: each persisted payload records the
+        # regime ACTUALLY in effect at ITS fit calls, per route. The ladder /
+        # ood / operator routes run the ma/xm legacy regime (13-pt
+        # logspace(-2,4) grid, 4 inner folds) even while run_units patches
+        # fc.N_INNER_LAMBDA_FOLDS to 2 for the sweep/traj routes.
+        for j, want_regime in (
+            (lad, "ma_battery_legacy"),
+            (ood, "ma_battery_legacy"),
+            (op, "xm_primal_legacy"),
+        ):
+            fp16 = j["fit_params"]
+            assert fp16["regime"] == want_regime, (j["unit_id"], fp16["regime"])
+            assert fp16["inner_lambda_folds"] == 4, (j["unit_id"], fp16["inner_lambda_folds"])
+            assert fp16["lambdas"] == ["logspace", -2.0, 4.0, 13], (j["unit_id"], fp16["lambdas"])
+            er = fp16["estimator_realized"]
+            assert sum(er["selector_realized_counts"].values()) >= 1, er
+        assert (
+            sum(op["fit_params"]["estimator_realized"]["selector_realized_counts"].values()) == 3
+        ), op["fit_params"]["estimator_realized"]  # 2 direct fits + 1 in alignment_capacity
+        for j in (a_json, traj):
+            fp16 = j["fit_params"]
+            assert fp16["regime"] == "p5_sweep_v2", (j["unit_id"], fp16["regime"])
+            assert fp16["inner_lambda_folds"] == INNER_LAMBDA_FOLDS, fp16  # the run_units patch
+            assert fp16["lambdas"] == list(LAMBDAS_N1M_PARAMS), fp16["lambdas"]
+        assert rel["fit_params"]["regime"] == "no_fit", rel["fit_params"]  # non-ok, no fit ran
         # Claim-dir work-conserving walk (r4; r3 blocker
         # claimed-revision-fixtures-absent (b)): a PRE-claimed unit is skipped
         # outright — its deleted out JSON stays ABSENT, so any walk past the
