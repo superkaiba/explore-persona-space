@@ -65,9 +65,14 @@ SMOKE_RESULTS_DIR = P2564.smoke_results_dir()
 DEFAULT_OUT_DIR = P2564.repo_root() / "figures"
 STEM_PREFIX = "issue_2564"
 FFR_RESULTS_DIRNAME = "floor-failed-reelicitation"
-# main() rebinds under --round ffr so every _save lands stems under the round
-# subdir (figures/issue_2564/floor-failed-reelicitation/); parent unchanged.
+K100_RESULTS_DIRNAME = "k100-low-reliability-axes"
+# main() rebinds under --round ffr/k100 so every _save lands stems under the
+# round subdir (figures/issue_2564/<round dir>/); parent unchanged.
 _ACTIVE_STEM_PREFIX = STEM_PREFIX
+# k100 registered-prediction constants for the ladder hero (plan v8 §3b).
+K100_PRED_BAND_UF = (0.35, 0.45)  # reliability-limited prediction band, injected name
+K100_PRED_LOSS_UF = 0.172  # direction-loss prediction (cosine preserved)
+K100_PRED_QF = 0.380  # query-form preserved-ratio expectation
 _SINGLE_CARRIER_RE = re.compile(r"^c\d+$")  # excludes query_content dyads ("c01|c02")
 
 ARMS = ("arm_779ce", "arm_1738ce", "arm_iddelta")
@@ -129,6 +134,11 @@ def _finite(x: object) -> float | None:
     except (TypeError, ValueError):
         return None
     return v if math.isfinite(v) else None
+
+
+def _rel_key(doc: dict) -> str:
+    """Reliability key stem: parent/ffr docs carry r10_*; k100 docs r100_*."""
+    return "r100" if _get(doc, "meta", "round") == "k100" else "r10"
 
 
 def _xerr(v: float, ci: object) -> tuple[list[float], list[float]]:
@@ -222,9 +232,10 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
         # (r2 concern hero-ceiling-suppressed: the old reconstruction via
         # ceiling_normalized_cos vanished exactly on suppressed axes — the
         # rows where seeing the ceiling matters most).
-        r10 = _finite(_get(doc, "axes", name, "reliability", "r10_mean"))
+        rk = _rel_key(doc)
+        r10 = _finite(_get(doc, "axes", name, "reliability", f"{rk}_mean"))
         if r10 is not None:
-            lo_c, hi_c = _xerr(r10, _get(doc, "axes", name, "reliability", "r10_ci95"))
+            lo_c, hi_c = _xerr(r10, _get(doc, "axes", name, "reliability", f"{rk}_ci95"))
             ax.errorbar(
                 [r10],
                 [ys[i]],
@@ -277,11 +288,12 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
     ax.set_xlabel("per-pair direction cosine")
     ax.set_title("per-pair spread", loc="left")
 
-    # Panel 3: calibration ratio to the global slope. Under --round ffr the
-    # PRIMARY ratio uses the parent's FROZEN global slope as denominator
-    # (plan v7 §5); the parent doc keeps the round-pooled ratio_to_global.
-    is_ffr_doc = _get(doc, "meta", "round") == "ffr"
-    ratio_key = "ratio_to_parent_global" if is_ffr_doc else "ratio_to_global"
+    # Panel 3: calibration ratio to the global slope. Under --round ffr/k100
+    # the PRIMARY ratio uses the parent's FROZEN global slope as denominator
+    # (plan v7 §5 / v8 §11); the parent doc keeps ratio_to_global.
+    round_doc = _get(doc, "meta", "round")
+    is_round_doc = round_doc in ("ffr", "k100")
+    ratio_key = "ratio_to_parent_global" if is_round_doc else "ratio_to_global"
     ax = panels[2]
     for i, name in enumerate(axes_names):
         c = _get(doc, "axes", name, "calibration")
@@ -305,7 +317,7 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
             )
     ax.axvline(1.0, color=neutral, lw=0.8, alpha=0.6)
     ax.set_xlabel(
-        "slope ratio, axis / parent global" if is_ffr_doc else "slope ratio, axis / global"
+        "slope ratio, axis / parent global" if is_round_doc else "slope ratio, axis / global"
     )
     ax.set_title("calibration", loc="left")
     ax.xaxis.set_major_locator(plt.MaxNLocator(4))
@@ -381,11 +393,11 @@ def fig_norm_scatter(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
     ncol = min(4, len(axes_names))
     nrow = math.ceil(len(axes_names) / ncol)
     fig, axs = plt.subplots(nrow, ncol, figsize=(3.2 * ncol, 3.0 * nrow), squeeze=False)
-    # ffr docs carry pool-size-honest key names (global_slope_round_pooled,
-    # <=792 pairs) instead of the parent's global_slope_all2778.
+    # ffr/k100 docs carry pool-size-honest key names (global_slope_round_pooled,
+    # <=792 / 474 pairs) instead of the parent's global_slope_all2778.
     slope_key = (
         "global_slope_round_pooled"
-        if _get(doc, "meta", "round") == "ffr"
+        if _get(doc, "meta", "round") in ("ffr", "k100")
         else "global_slope_all2778"
     )
     slope = _finite(_get(doc, "axes", axes_names[0], "calibration", "arm_779ce", slope_key))
@@ -864,7 +876,8 @@ def fig_ceiling_vs_cos(doc: dict, rows: list[dict], out_dir: Path) -> str | None
         # r2 reframe: r10 is NOT an achievable-cosine ceiling — under standard
         # attenuation a perfect predictor reaches ~sqrt(r10) — so the rendered
         # text says "reliability", never "ceiling".
-        r10 = _finite(_get(doc, "axes", name, "reliability", "r10_mean"))
+        rk = _rel_key(doc)
+        r10 = _finite(_get(doc, "axes", name, "reliability", f"{rk}_mean"))
         v = _finite(_get(doc, "axes", name, "direction", "arm_779ce", "mean_cos_headline"))
         if r10 is not None and v is not None:
             pts.append((name, r10, v))
@@ -875,7 +888,7 @@ def fig_ceiling_vs_cos(doc: dict, rows: list[dict], out_dir: Path) -> str | None
     for name, x, y in pts:
         ax.scatter([x], [y], s=26, color=col)
         ax.text(x, y, f" {axis_label(name)}", fontsize=7, va="center")
-    ax.set_xlabel("split-half reliability of the observed shift (Spearman-Brown r10)")
+    ax.set_xlabel(f"split-half reliability of the observed shift (Spearman-Brown {_rel_key(doc)})")
     ax.set_ylabel("direction cosine (single-turn frozen map)")
     ax.set_title("Split-half reliability vs direction recovery", loc="left")
     fig.tight_layout()
@@ -1157,6 +1170,146 @@ def fig_manip_fire_rates(doc: dict, rows: list[dict], out_dir: Path) -> str | No
     return _save(fig, "fig_expl_manip_fire_rates", out_dir)
 
 
+# ── k100 round figures (plan v8 §6; appended by main() under --round k100) ──
+
+
+def fig_k100_ladder(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
+    """HERO (k100): K=10 -> K=100 ladder per target cell — measured direction
+    cosine (single-turn map + identity, CIs + null band) and the reliability
+    bound sqrt(r), at K=10 (committed parent doc) vs K=100 (this round), with
+    the two pre-registered prediction references (plan v8 §3b)."""
+    parent = doc.get("_parent_doc")
+    if not isinstance(doc.get("k100"), dict) or not isinstance(parent, dict):
+        return None
+    colors = _arm_colors()
+    neutral = paper_palette_role("neutral")
+    panels = (("user_fact", "injected name (user_fact)"), ("query_form", "query form"))
+    fig, axs = plt.subplots(1, 2, figsize=(9.0, 4.4), sharey=True)
+    for ax, (axis, title) in zip(axs, panels):
+        for x, src in ((0.0, parent), (1.0, doc)):
+            blk = _get(src, "axes", axis)
+            if not isinstance(blk, dict):
+                continue
+            rk = _rel_key(src)
+            # null band (single-turn map's derangement null, 2.5-97.5%)
+            q_lo = _finite(_get(blk, "direction", "arm_779ce", "null", "q2_5"))
+            q_hi = _finite(_get(blk, "direction", "arm_779ce", "null", "q97_5"))
+            if q_lo is not None and q_hi is not None:
+                ax.fill_between(
+                    [x - 0.28, x + 0.28], [q_lo] * 2, [q_hi] * 2, color=neutral, alpha=0.18, lw=0
+                )
+            for arm, off in (("arm_779ce", -0.10), ("arm_iddelta", 0.10)):
+                v = _finite(_get(blk, "direction", arm, "mean_cos_headline"))
+                if v is None:
+                    continue
+                lo, hi = _xerr(v, _get(blk, "direction", arm, "ci95"))
+                ax.errorbar(
+                    [x + off],
+                    [v],
+                    yerr=[lo, hi],
+                    fmt="o",
+                    ms=6,
+                    color=colors[arm],
+                    ecolor=colors[arm],
+                    elinewidth=1.2,
+                    capsize=2,
+                    zorder=3,
+                )
+            r = _finite(_get(blk, "reliability", f"{rk}_mean"))
+            if r is not None and r > 0:
+                b = math.sqrt(r)
+                ci = _get(blk, "reliability", f"{rk}_ci95")
+                b_lo = b_hi = [0.0]
+                if isinstance(ci, list | tuple) and len(ci) == 2:
+                    lo_r, hi_r = _finite(ci[0]), _finite(ci[1])
+                    if lo_r is not None and hi_r is not None:
+                        b_lo = [max(0.0, b - math.sqrt(max(lo_r, 0.0)))]
+                        b_hi = [max(0.0, math.sqrt(max(hi_r, 0.0)) - b)]
+                ax.errorbar(
+                    [x],
+                    [b],
+                    yerr=[b_lo, b_hi],
+                    marker="D",
+                    ms=7,
+                    mfc="none",
+                    mec=neutral,
+                    mew=1.4,
+                    ls="none",
+                    ecolor=neutral,
+                    elinewidth=1.0,
+                    capsize=2,
+                    zorder=2,
+                )
+        # pre-registered K=100 prediction references (plan v8 §3b)
+        if axis == "user_fact":
+            ax.fill_between(
+                [0.72, 1.28],
+                [K100_PRED_BAND_UF[0]] * 2,
+                [K100_PRED_BAND_UF[1]] * 2,
+                color=colors["arm_779ce"],
+                alpha=0.12,
+                lw=0,
+            )
+            ax.hlines(K100_PRED_LOSS_UF, 0.72, 1.28, color=colors["arm_779ce"], lw=1.0, ls=":")
+        else:
+            ax.hlines(K100_PRED_QF, 0.72, 1.28, color=colors["arm_779ce"], lw=1.0, ls=":")
+        ax.set_xticks([0.0, 1.0])
+        ax.set_xticklabels(["K=10 (parent)", "K=100 (this round)"])
+        ax.set_xlim(-0.55, 1.55)
+        ax.axhline(0.0, color=neutral, lw=0.8, alpha=0.6)
+        ax.set_title(title, loc="left")
+    axs[0].set_ylabel("direction cosine / reliability bound sqrt(r)")
+    handles = [
+        plt.Line2D([], [], marker="o", ls="none", color=colors["arm_779ce"], label="frozen map"),
+        plt.Line2D([], [], marker="o", ls="none", color=colors["arm_iddelta"], label="identity"),
+        plt.Line2D(
+            [],
+            [],
+            marker="D",
+            ls="none",
+            mfc="none",
+            mec=neutral,
+            label="reliability bound sqrt(r)",
+        ),
+        plt.Line2D([], [], ls=":", color=colors["arm_779ce"], label="registered prediction"),
+    ]
+    fig.legend(handles=handles, fontsize=7, loc="lower center", ncol=4, frameon=False)
+    fig.suptitle("Does more sampling resolve the low-reliability axes?", x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0.05, 1, 0.94))
+    return _save(fig, "fig_k100_hero_ladder", out_dir)
+
+
+def fig_k100_r_of_k(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
+    """Exploratory (k100): measured r(K) subsample curve vs the Spearman-Brown
+    projection from the committed parent r10 (plan v8 §3b)."""
+    rk = _get(doc, "k100", "r_of_k")
+    if not isinstance(rk, dict):
+        return None
+    ks = [int(k) for k in rk.get("k_grid", [])]
+    measured = rk.get("measured_r_by_axis") or {}
+    projected = rk.get("projected_from_committed_r10") or {}
+    if not ks or not measured:
+        return None
+    fig, ax = plt.subplots(figsize=(5.8, 4.4))
+    axes_names = sorted(measured)
+    cols = dict(zip(axes_names, paper_palette_blog(len(axes_names))))
+    for axis in axes_names:
+        ys = [_finite(measured[axis].get(str(k))) for k in ks]
+        ax.plot(ks, ys, marker="o", ms=5, color=cols[axis], label=f"{axis_label(axis)} (measured)")
+    for axis in sorted(projected):
+        col = cols.get(axis, paper_palette_role("neutral"))
+        ys = [_finite(projected[axis].get(str(k))) for k in ks]
+        ax.plot(ks, ys, ls="--", lw=1.0, color=col, label=f"{axis_label(axis)} (S-B projection)")
+    ax.set_xlabel("draws pooled per context (K)")
+    ax.set_ylabel("split-half reliability r(K)")
+    ax.set_xticks(ks)
+    ax.set_ylim(bottom=0.0)
+    ax.set_title("Measured r(K) vs the Spearman-Brown projection", loc="left")
+    ax.legend(fontsize=7)
+    fig.tight_layout()
+    return _save(fig, "fig_k100_r_of_k", out_dir)
+
+
 FIGURES = (
     fig_hero_axis_profile,
     fig_manip_fire_rates,
@@ -1197,11 +1350,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--round",
-        choices=("parent", "ffr"),
+        choices=("parent", "ffr", "k100"),
         default="parent",
         help="ffr = floor-failed re-elicitation round: reads minpair_delta_ffr.json "
         "+ perpair_ffr.jsonl from the round results dir; stems land under "
-        f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}/",
+        f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}/. "
+        "k100 = K=100 low-reliability-axes round: reads minpair_delta_k100.json "
+        "+ perpair_k100.jsonl; stems land under "
+        f"{STEM_PREFIX}/{K100_RESULTS_DIRNAME}/ and the K=10->K=100 ladder hero "
+        "+ r(K) curve panels are added",
     )
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument(
@@ -1223,15 +1380,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     is_ffr = args.round == "ffr"
-    # Assigned on EVERY invocation (r1 codex minor): a prior ffr main() in the
+    is_k100 = args.round == "k100"
+    # Assigned on EVERY invocation (r1 codex minor): a prior round main() in the
     # same process must not leak its stem prefix into a later parent call.
     global _ACTIVE_STEM_PREFIX
-    _ACTIVE_STEM_PREFIX = f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}" if is_ffr else STEM_PREFIX
+    if is_ffr:
+        _ACTIVE_STEM_PREFIX = f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}"
+    elif is_k100:
+        _ACTIVE_STEM_PREFIX = f"{STEM_PREFIX}/{K100_RESULTS_DIRNAME}"
+    else:
+        _ACTIVE_STEM_PREFIX = STEM_PREFIX
 
     results_dir = args.results_dir
     if args.results_dir == DEFAULT_RESULTS_DIR:
         base = SMOKE_RESULTS_DIR if args.smoke else DEFAULT_RESULTS_DIR
-        results_dir = base / FFR_RESULTS_DIRNAME if is_ffr else base
+        if is_ffr:
+            results_dir = base / FFR_RESULTS_DIRNAME
+        elif is_k100:
+            results_dir = base / K100_RESULTS_DIRNAME
+        else:
+            results_dir = base
     out_dir = args.out_dir
     if args.smoke:
         if args.out_dir == DEFAULT_OUT_DIR:
@@ -1241,8 +1409,14 @@ def main(argv: list[str] | None = None) -> int:
             # guard missed absolute paths into the committed figures/ tree.
             raise SystemExit("--smoke must not write the committed figures/ tree")
 
-    doc_path = results_dir / ("minpair_delta_ffr.json" if is_ffr else "minpair_delta.json")
-    rows_path = results_dir / ("perpair_ffr.jsonl" if is_ffr else "perpair.jsonl")
+    if is_ffr:
+        doc_name, rows_name = "minpair_delta_ffr.json", "perpair_ffr.jsonl"
+    elif is_k100:
+        doc_name, rows_name = "minpair_delta_k100.json", "perpair_k100.jsonl"
+    else:
+        doc_name, rows_name = "minpair_delta.json", "perpair.jsonl"
+    doc_path = results_dir / doc_name
+    rows_path = results_dir / rows_name
     if not doc_path.is_file():
         raise SystemExit(f"missing {doc_path} — run scripts/issue2564_analysis.py first")
     doc = json.loads(doc_path.read_text())
@@ -1254,13 +1428,23 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[fig] {rows_path.name} missing at {rows_path}; per-pair figures will skip")
 
     doc["_results_dir"] = str(results_dir)  # fig_manip_fire_rates reads a sibling artifact
-    doc["_manip_check_name"] = (
-        "manipulation_check_ffr.json" if is_ffr else "manipulation_check.json"
-    )
+    if is_ffr:
+        doc["_manip_check_name"] = "manipulation_check_ffr.json"
+    elif is_k100:
+        doc["_manip_check_name"] = "manipulation_check_k100.json"
+    else:
+        doc["_manip_check_name"] = "manipulation_check.json"
+    if is_k100:
+        # the ladder hero compares against the COMMITTED parent doc (K=10 side)
+        parent_doc_path = DEFAULT_RESULTS_DIR / "minpair_delta.json"
+        if parent_doc_path.is_file():
+            doc["_parent_doc"] = json.loads(parent_doc_path.read_text())
+        else:
+            print(f"[fig] parent doc missing at {parent_doc_path}; ladder hero will skip")
     set_paper_style("blog")
-    figures = FIGURES
+    figures = FIGURES + ((fig_k100_ladder, fig_k100_r_of_k) if is_k100 else ())
     if args.only:
-        figures = tuple(fn for fn in FIGURES if fn.__name__ == args.only)
+        figures = tuple(fn for fn in figures if fn.__name__ == args.only)
         if not figures:
             raise SystemExit(f"--only {args.only!r} matches no figure function")
     wrote, skipped = [], []

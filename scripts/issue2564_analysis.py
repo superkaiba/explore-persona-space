@@ -42,6 +42,22 @@ per-arm global slope (read from the committed parent ``minpair_delta.json``,
 ``--parent-delta`` override) with the round-pooled slope as companion; text
 third-space reads are emitted ``not_collected`` (no Qwen3 embedding capture
 in this round).
+
+``--round k100`` (K=100 draw-append on the two low-reliability axes, plan v8
+— additive; parent AND ffr paths byte-unchanged at their flags): parent K=10
+draws (ids 0-9) are REUSED at the pinned parent HF revision
+(``--parent-revision``) and pooled with 90 fresh draws (ids 10-99) staged
+from the round-nested ``k100_low_reliability_axes`` prefix, roster-restricted
+to the 168 user_fact + query contexts (474 pairs). Adds: dual-source input
+staging (``resolve_input(..., source="parent")``), the K=10 bridge gate
+(committed-value reproduction to 1e-6), pooled PRIMARY + new-only COMPANION
+reliability with a REGISTERED fallback, provenance checks (a) vc parity /
+(b) cross-provenance split-half / (c) answer length, a fire recompute at the
+realized denominator (12 carriers x 100 draws = 1,200 checks), the r(K)
+subsample curve, K-matched text-space pooling for the query cells, and
+outputs ``minpair_delta_k100.json`` / ``perpair_k100.jsonl`` under
+``eval_results/issue_2564/k100-low-reliability-axes/`` with predictions →
+``issue2564_minpair/analysis_tensors/k100_low_reliability_axes/predictions``.
 """
 
 from __future__ import annotations
@@ -55,7 +71,7 @@ import os
 import sys
 import time
 import warnings
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -96,6 +112,37 @@ HF_PREFIX_SMOKE_FFR = "issue2564_minpair/smoke_ffr"
 # parent's under eval_results/issue_2564/floor-failed-reelicitation/.
 FFR_ROUND_SEG = "floor_failed_reelicitation"
 FFR_RESULTS_DIRNAME = "floor-failed-reelicitation"
+# k100 low-reliability-axes round (plan v8): APPENDS 90 fresh draws (ids
+# 10-99) to the parent's committed K=10 draws on the low-reliability cells
+# (user_fact + query). Dual-source staging: parent rels are fetched at the
+# PINNED parent revision (K100_PARENT_REVISION_DEFAULT); k100 rels live under
+# the round-nested prefix. Results land beside the parent's under
+# eval_results/issue_2564/k100-low-reliability-axes/.
+K100_ROUND_SEG = "k100_low_reliability_axes"
+K100_RESULTS_DIRNAME = "k100-low-reliability-axes"
+HF_PREFIX_SMOKE_K100 = "issue2564_minpair/smoke_k100"
+K100_PARENT_REVISION_DEFAULT = "62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
+K100_CELLS = ("user_fact", "query")
+K100_AXES = ("user_fact", "query_content", "query_form")
+K100_N_CONTEXTS = 168  # 120 user_fact + 48 query (12 E + 24 form + 12 qpara)
+K100_N_PAIRS = 474  # 120 swap + 120 famswap + 60 install + 60 ipara + 36 form + 12 qpara + 66 qc
+K100_DRAWS_TOTAL = 100
+K100_DRAW_OFFSET = 10
+K100_R_OF_K = (10, 20, 50, 100)  # measured r(K) subsample curve (plan §3b)
+# K=10 bridge-gate targets: committed parent reads the restricted-to-draws-0-9
+# pooled loader must reproduce to <=1e-6 absolute (plan v8 §7 gate 3; values
+# from eval_results/issue_2564/minpair_delta.json, single-turn arm_779ce).
+K100_BRIDGE_TOL = 1e-6
+K100_BRIDGE_TARGETS = {
+    "user_fact": {
+        "mean_cos_headline": 0.17208480650441785,
+        "r10_mean": 0.13102069808322983,
+    },
+    "query_form": {
+        "mean_cos_headline": 0.30400866272404437,
+        "r10_mean": 0.5994338960687404,
+    },
+}
 RIDGE_779_PATH = "issue779_monitoring/n1m_readout/weights/L19/ridge.pt"
 RIDGE_1738_PATH = "issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt"
 
@@ -171,6 +218,22 @@ def spearman_brown(r_half: np.ndarray | float) -> np.ndarray | float:
     with np.errstate(invalid="ignore", divide="ignore"):
         out = np.where(r > -1.0, 2.0 * r / (1.0 + r), np.nan)
     return float(out) if np.isscalar(r_half) or out.ndim == 0 else out
+
+
+def sb_project(r_k: np.ndarray | float, k_from: int, k_to: int) -> np.ndarray | float:
+    """General Spearman-Brown projection r_{k_from} -> r_{k_to} via the
+    single-draw reliability r1 = r / (k_from - (k_from-1) r) (plan v8 §3b).
+
+    Used by the k100 round: the new-only COMPANION estimator steps 45/45
+    split-half to r90 (``spearman_brown``) then projects r90 -> r100 here;
+    the pre-registered expectation table projects the committed r10 the same
+    way. NaN-safe, vectorized; a zero/negative denominator -> NaN."""
+    r = np.asarray(r_k, dtype=np.float64)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        denom = k_from - (k_from - 1) * r
+        r1 = np.where(np.abs(denom) > 0, r / denom, np.nan)
+        out = k_to * r1 / (1.0 + (k_to - 1) * r1)
+    return float(out) if np.isscalar(r_k) or out.ndim == 0 else out
 
 
 def suppression_verdict(ceiling_pt: float, ci_lo: float, ci_hi: float) -> bool:
@@ -336,7 +399,8 @@ class CfgPE:
     n_splits: int
     hf_prefix: str
     round: str = "parent"
-    parent_delta: Path | None = None  # ffr only: parent minpair_delta.json (frozen slopes)
+    parent_delta: Path | None = None  # ffr/k100: parent minpair_delta.json (frozen slopes)
+    parent_revision: str = K100_PARENT_REVISION_DEFAULT  # k100: pin for PARENT-source inputs
     seed_base: int = BOOT_SEED
 
     @property
@@ -344,15 +408,23 @@ class CfgPE:
         return self.round == "ffr"
 
     @property
+    def is_k100(self) -> bool:
+        return self.round == "k100"
+
+    @property
     def pred_dir(self) -> Path:
         return self.out_dir / "predictions"
 
     @property
     def delta_name(self) -> str:
+        if self.is_k100:
+            return "minpair_delta_k100.json"
         return "minpair_delta_ffr.json" if self.is_ffr else "minpair_delta.json"
 
     @property
     def perpair_name(self) -> str:
+        if self.is_k100:
+            return "perpair_k100.jsonl"
         return "perpair_ffr.jsonl" if self.is_ffr else "perpair.jsonl"
 
 
@@ -367,17 +439,28 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument(
         "--round",
-        choices=("parent", "ffr"),
+        choices=("parent", "ffr", "k100"),
         default="parent",
         help="ffr = floor-failed re-elicitation round (plan v7): round-nested HF "
-        "rels, ffr out names, frozen parent global-slope denominator",
+        "rels, ffr out names, frozen parent global-slope denominator. "
+        "k100 = K=100 draw-append round (plan v8): dual-source staging (parent "
+        "draws 0-9 at --parent-revision + fresh draws >= 10 at the "
+        "k100_low_reliability_axes round prefix), K=10 bridge gate, pooled + "
+        "new-only reliability, r(K) curve, k100 out names",
     )
     ap.add_argument(
         "--parent-delta",
         type=Path,
         default=None,
-        help="ffr only: parent minpair_delta.json carrying the frozen per-arm "
+        help="ffr/k100 only: parent minpair_delta.json carrying the frozen per-arm "
         "global slopes (default: the committed production copy)",
+    )
+    ap.add_argument(
+        "--parent-revision",
+        type=str,
+        default=K100_PARENT_REVISION_DEFAULT,
+        help="k100 only: pinned HF revision for PARENT-source artifacts "
+        "(vc/va stores, bank manifest, anchors, per-draw embeddings)",
     )
     ap.add_argument("--upload", choices=("hf", "none"), default=None)
     ap.add_argument("--b-boot", type=int, default=None)
@@ -403,23 +486,39 @@ def build_config(args: argparse.Namespace) -> CfgPE:
     smoke = bool(args.smoke)
     rnd = str(getattr(args, "round", "parent"))
     is_ffr = rnd == "ffr"
-    if getattr(args, "parent_delta", None) is not None and not is_ffr:
-        raise SystemExit("--parent-delta is an ffr-only flag (pass --round ffr)")
+    is_k100 = rnd == "k100"
+    if getattr(args, "parent_delta", None) is not None and not (is_ffr or is_k100):
+        raise SystemExit("--parent-delta is an ffr/k100-only flag (pass --round ffr|k100)")
     repo_root = P2564.repo_root()
     if args.out_dir is not None:
         out_dir = Path(args.out_dir)
     else:
         base = P2564.smoke_results_dir() if smoke else P2564.production_results_dir()
-        out_dir = base / FFR_RESULTS_DIRNAME if is_ffr else base
+        if is_ffr:
+            out_dir = base / FFR_RESULTS_DIRNAME
+        elif is_k100:
+            out_dir = base / K100_RESULTS_DIRNAME
+        else:
+            out_dir = base
     stage_leaf = {
-        (False, False): "pe_stage",
-        (True, False): "pe_stage_smoke",
-        (False, True): "pe_stage_ffr",
-        (True, True): "pe_stage_ffr_smoke",
-    }[(smoke, is_ffr)]
+        (False, "parent"): "pe_stage",
+        (True, "parent"): "pe_stage_smoke",
+        (False, "ffr"): "pe_stage_ffr",
+        (True, "ffr"): "pe_stage_ffr_smoke",
+        (False, "k100"): "pe_stage_k100",
+        (True, "k100"): "pe_stage_k100_smoke",
+    }[(smoke, rnd)]
     default_stage = repo_root / "data" / "issue_2564" / "hf_dl" / stage_leaf
     if args.manip_check is not None:
         manip = Path(args.manip_check)
+    elif is_k100:
+        # k100 (plan v8 K6): the PRIMARY fire gate is RECOMPUTED from the round's
+        # anchors at the realized denominator (12 carriers x 100 draws = 1,200
+        # checks); the committed PARENT manipulation_check.json is consumed only
+        # as the 120-check COMPANION + the K=10 bridge gate's fire source (the
+        # exact regime the bridge reproduces), so the r2 [g5] smoke guard below
+        # deliberately does not apply — smoke and production both default to it.
+        manip = P2564.production_results_dir() / "manipulation_check.json"
     elif smoke:
         raise SystemExit(
             "--manip-check is REQUIRED under --smoke: the smoke run must never silently "
@@ -431,14 +530,19 @@ def build_config(args: argparse.Namespace) -> CfgPE:
     else:
         manip = P2564.production_results_dir() / "manipulation_check.json"
     parent_delta: Path | None = None
-    if is_ffr:
+    if is_ffr or is_k100:
         parent_delta = (
             Path(args.parent_delta)
             if args.parent_delta is not None
             else P2564.production_results_dir() / "minpair_delta.json"
         )
     if smoke:
-        hf_prefix = HF_PREFIX_SMOKE_FFR if is_ffr else HF_PREFIX_SMOKE
+        if is_ffr:
+            hf_prefix = HF_PREFIX_SMOKE_FFR
+        elif is_k100:
+            hf_prefix = HF_PREFIX_SMOKE_K100
+        else:
+            hf_prefix = HF_PREFIX_SMOKE
     else:
         hf_prefix = HF_PREFIX_FULL
     return CfgPE(
@@ -456,29 +560,65 @@ def build_config(args: argparse.Namespace) -> CfgPE:
         hf_prefix=hf_prefix,
         round=rnd,
         parent_delta=parent_delta,
+        parent_revision=str(getattr(args, "parent_revision", K100_PARENT_REVISION_DEFAULT)),
     )
 
 
 # ── input resolution (local-first, else HF stage; fail loud) ───────────
 
 
-def resolve_input(cfg: CfgPE, rel: str) -> Path:
+def resolve_input(cfg: CfgPE, rel: str, *, source: str = "round") -> Path:
     """``<in_root>/<rel>`` when present, else stage ``<hf_prefix>/<rel>`` from
     the HF data repo (retried, atomic, idempotent via hub.stage_hub_file).
 
-    Under ``--round ffr`` the HUB rel nests every kind-rooted rel
-    (``analysis_tensors/...``, ``manifests/...``) under the round segment,
-    mirroring run.py's ``hf_round_prefix`` upload layout — but the PRODUCER's
-    local out-root is NOT round-nested (run.py isolates the ffr round via a
-    SEPARATE out-root, ``/workspace/eps2564ffr``), so an ``--in-root`` pointed
-    at the pod out-root is probed at the producer layout FIRST, then at the
-    HF-mirror (nested) layout (r1 blocker ffr-analysis-artifact-path-drift).
+    Under ``--round ffr`` / ``--round k100`` the HUB rel nests every
+    kind-rooted rel (``analysis_tensors/...``, ``manifests/...``) under the
+    round segment, mirroring run.py's ``hf_round_prefix`` upload layout — but
+    the PRODUCER's local out-root is NOT round-nested (run.py isolates each
+    round via a SEPARATE out-root, ``/workspace/eps2564ffr`` /
+    ``/workspace/eps2564k100``), so an ``--in-root`` pointed at the pod
+    out-root is probed at the producer layout FIRST, then at the HF-mirror
+    (nested) layout (r1 blocker ffr-analysis-artifact-path-drift).
+
+    ``source="parent"`` (k100 only, plan v8 K6): stages the PARENT run's copy
+    of ``rel`` from the PRODUCTION prefix at the pinned parent revision
+    (``cfg.parent_revision``) into ``stage_dir/parent_pin/<rel>`` —
+    deliberately NO ``in_root`` probe: the k100 pod out-root carries FRESH
+    k100 artifacts at the same producer-layout rel (e.g. the 168-context
+    parity vc), which must never shadow the parent's committed copy the
+    pooled/bridge reads consume; and under ``--smoke`` the parent files STILL
+    come from the production prefix at the pin (plan v8 A8), never
+    ``cfg.hf_prefix``.
     Frozen ridge payloads resolve via resolve_ridge and are round-independent."""
+    if source == "parent":
+        assert cfg.is_k100, "source='parent' staging is a k100-only path"
+        target = cfg.stage_dir / "parent_pin" / rel
+        if target.exists():
+            return target
+        from explore_persona_space.orchestrate.hub import stage_hub_file
+
+        logger.info(
+            "[pe] staging parent %s/%s@%s from %s",
+            HF_PREFIX_FULL,
+            rel,
+            cfg.parent_revision[:12],
+            HF_DATA_REPO,
+        )
+        return Path(
+            stage_hub_file(
+                HF_DATA_REPO,
+                f"{HF_PREFIX_FULL}/{rel}",
+                target,
+                revision=cfg.parent_revision,
+            )
+        )
+    assert source == "round", f"unknown resolve_input source {source!r}"
     hub_rel = rel
-    if cfg.is_ffr:
+    seg = FFR_ROUND_SEG if cfg.is_ffr else (K100_ROUND_SEG if cfg.is_k100 else None)
+    if seg is not None:
         kind, _, rest = rel.partition("/")
         assert rest, f"kind-rooted rel expected, got {rel!r}"
-        hub_rel = f"{kind}/{FFR_ROUND_SEG}/{rest}"
+        hub_rel = f"{kind}/{seg}/{rest}"
     if cfg.in_root is not None:
         for cand_rel in dict.fromkeys((rel, hub_rel)):
             cand = cfg.in_root / cand_rel
@@ -538,6 +678,18 @@ class Stores:
     emb_mean: np.ndarray | None  # (n_ctx, e) float64; None under ffr (not collected)
     d: int
     input_files: dict = field(default_factory=dict)
+    # k100 (plan v8) — new-only (draws >= K100_DRAW_OFFSET) accumulators + the
+    # roster's rows in the PARENT vc order (bridge split-score reproduction).
+    # All default-None/0 so parent + ffr constructors stay byte-unchanged.
+    va_tail_mean_new: dict[int, np.ndarray] | None = None
+    va_span_mean_new: dict[int, np.ndarray] | None = None
+    ans_len_mean_new: np.ndarray | None = None
+    n_valid_new: np.ndarray | None = None
+    # new-only text-embedding means (query rows new-only pooled; user_fact rows
+    # keep the parent K=10 means — the embed leg is query-only, plan v8 K4).
+    emb_mean_new: np.ndarray | None = None
+    parent_rows: np.ndarray | None = None  # (n_ctx,) int64 rows into the parent 984 grid
+    n_parent_ctx_total: int = 0
 
 
 def _sha256(path: Path) -> str:
@@ -693,6 +845,298 @@ def load_stores(cfg: CfgPE, bank: dict) -> Stores:
     )
 
 
+def load_stores_k100(cfg: CfgPE, bank: dict) -> Stores:
+    """k100 stores (plan v8 K6): parent committed vc (984 contexts at the
+    pinned revision) + DUAL-SOURCE per-cell va stores — parent draws 0-9 at
+    the pin, fresh round draws >= 10 at the k100 round prefix — pooled on the
+    draw axis and roster-restricted to the contexts the ROUND stores carry
+    (168 production / 42 smoke), preserving PARENT vc row order (the bridge
+    gate reproduces the parent's split-score rows via ``parent_rows``).
+
+    Asserts (plan v8 §12): A1 — each parent va store's draw-id set is exactly
+    {0..K100_DRAW_OFFSET-1} and every roster context is present at ALL parent
+    draws; A2 — every round-store draw id is >= K100_DRAW_OFFSET with the
+    minimum exactly K100_DRAW_OFFSET. New-only (draws >= offset) accumulators
+    land in the ``*_new`` Stores fields for the companion estimator + the
+    registered fallback. Query-cell embeddings are K-matched pools of parent
+    (draws 0-9) + round (draws >= 10) per-draw rows; user_fact keeps the
+    parent K=10 means (plan v8 K4/§11 — the embed leg is query-only)."""
+    assert cfg.is_k100
+    files: dict[str, dict] = {}
+    vc_path = resolve_input(cfg, "analysis_tensors/vc2564/vc2564_bank.pt", source="parent")
+    vc_store = torch.load(vc_path, map_location="cpu", weights_only=False)
+    layers = [int(x) for x in vc_store["layers"]]
+    assert tuple(layers) == LAYERS, layers
+    parent_ctx_ids = [str(x) for x in vc_store["context_ids"]]
+    parent_row_of = {cid: i for i, cid in enumerate(parent_ctx_ids)}
+    vc_t = vc_store["vc"].to(torch.float64).numpy()
+    d = vc_t.shape[2]
+    files["vc2564_bank.pt"] = {
+        "path": str(vc_path),
+        "bytes": vc_path.stat().st_size,
+        "source": f"parent@{cfg.parent_revision}",
+    }
+
+    contexts = bank["contexts"]
+    missing_bank = [cid for cid in parent_ctx_ids if cid not in contexts]
+    assert not missing_bank, f"vc contexts absent from bank manifest: {missing_bank[:5]}"
+
+    cells = sorted(K100_CELLS)
+    stores_by: dict[tuple[str, str], dict] = {}
+    for cell in cells:
+        rel = f"analysis_tensors/va2564/va2564_{cell}.pt"
+        for source in ("parent", "round"):
+            p = resolve_input(cfg, rel, source=source)
+            store = torch.load(p, map_location="cpu", weights_only=False)
+            assert [int(x) for x in store["layers"]] == list(LAYERS), store["layers"]
+            key = f"va2564_{cell}.pt" if source == "round" else f"va2564_{cell}.parent.pt"
+            files[key] = {"path": str(p), "bytes": p.stat().st_size, "source": source}
+            stores_by[(cell, source)] = store
+
+    # roster = contexts the ROUND stores carry (K100 cells only), parent order
+    roster_ids: set[str] = set()
+    for cell in cells:
+        for rec in stores_by[(cell, "round")]["index"]:
+            roster_ids.add(str(rec["context_id"]))
+    missing_vc = sorted(cid for cid in roster_ids if cid not in parent_row_of)
+    assert not missing_vc, f"[k100] round-store contexts absent from parent vc: {missing_vc[:5]}"
+    bad_cell = sorted(cid for cid in roster_ids if contexts[cid]["cell"] not in K100_CELLS)
+    assert not bad_cell, f"[k100] round-store contexts outside K100 cells: {bad_cell[:5]}"
+    parent_rows = np.array(
+        [i for i, cid in enumerate(parent_ctx_ids) if cid in roster_ids], dtype=np.int64
+    )
+    ctx_ids = [parent_ctx_ids[i] for i in parent_rows]
+    row_of = {cid: i for i, cid in enumerate(ctx_ids)}
+    carriers = [c for c in BK.CARRIER_IDS if c in {contexts[cid]["carrier"] for cid in ctx_ids}]
+    n_ctx = len(ctx_ids)
+    li = {layer: k for k, layer in enumerate(layers)}
+    vc = {layer: np.ascontiguousarray(vc_t[parent_rows][:, li[layer], :]) for layer in LAYERS}
+
+    tail_sum = {layer: np.zeros((n_ctx, d), dtype=np.float64) for layer in LAYERS}
+    span_sum = {layer: np.zeros((n_ctx, d), dtype=np.float64) for layer in LAYERS}
+    len_sum = np.zeros(n_ctx, dtype=np.float64)
+    cnt = np.zeros(n_ctx, dtype=np.int64)
+    tail_sum_new = {layer: np.zeros((n_ctx, d), dtype=np.float64) for layer in LAYERS}
+    span_sum_new = {layer: np.zeros((n_ctx, d), dtype=np.float64) for layer in LAYERS}
+    len_sum_new = np.zeros(n_ctx, dtype=np.float64)
+    cnt_new = np.zeros(n_ctx, dtype=np.int64)
+    prim_chunks: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+    k_max = 0
+    for cell in cells:
+        cell_roster = [cid for cid in ctx_ids if contexts[cid]["cell"] == cell]
+        for source in ("parent", "round"):
+            store = stores_by[(cell, source)]
+            idx_rows = store["index"]
+            tail = store["va_tail_incl"].to(torch.float64).numpy()
+            span = store["va_span"].to(torch.float64).numpy()
+            assert tail.shape == (len(idx_rows), len(LAYERS), d), (tail.shape, len(idx_rows), d)
+            n_rows = len(idx_rows)
+            ctx_idx = np.array(
+                [row_of.get(str(rec["context_id"]), -1) for rec in idx_rows], dtype=np.int64
+            )
+            n_comp = np.array([int(rec["n_completion_tokens"]) for rec in idx_rows], dtype=np.int64)
+            draw = np.array([int(rec["draw"]) for rec in idx_rows], dtype=np.int64)
+            empty_mask = np.zeros(n_rows, dtype=bool)
+            empty_ids = np.array(
+                sorted(int(i) for i in store.get("empty_rows", [])), dtype=np.int64
+            )
+            if empty_ids.size:
+                empty_mask[empty_ids] = True
+            draw_set = {int(x) for x in draw.tolist()}
+            if source == "parent":
+                # A1: parent stores carry EXACTLY draws {0..offset-1}, and every
+                # roster context is present at ALL parent draws (index presence;
+                # empty-completion rows are still excluded from the means below).
+                assert draw_set == set(range(K100_DRAW_OFFSET)), (cell, sorted(draw_set)[:12])
+                per_ctx: dict[str, set[int]] = {}
+                for rec in idx_rows:
+                    per_ctx.setdefault(str(rec["context_id"]), set()).add(int(rec["draw"]))
+                missing_grain = [
+                    cid
+                    for cid in cell_roster
+                    if per_ctx.get(cid, set()) != set(range(K100_DRAW_OFFSET))
+                ]
+                assert not missing_grain, (
+                    f"[k100] parent va2564_{cell}: roster contexts missing parent draws "
+                    f"(A1 full grain): {missing_grain[:5]}"
+                )
+            else:
+                # A2: every fresh draw id sits at/above the offset, min exactly there.
+                assert draw_set, f"[k100] round va2564_{cell} carries no rows"
+                assert min(draw_set) == K100_DRAW_OFFSET and all(
+                    x >= K100_DRAW_OFFSET for x in draw_set
+                ), (cell, sorted(draw_set)[:5])
+                assert max(draw_set) < K100_DRAWS_TOTAL, (cell, max(draw_set))
+            n_absent = int((ctx_idx < 0).sum())
+            if n_absent:
+                # parent stores legitimately carry non-roster contexts under
+                # --smoke (the roster is the round stores' 3-carrier slice);
+                # counted loudly either way, never silently dropped.
+                logger.warning(
+                    "[pe:k100] va2564_%s (%s): %d/%d rows reference contexts outside "
+                    "the k100 roster (dropped from the join)",
+                    cell,
+                    source,
+                    n_absent,
+                    n_rows,
+                )
+            key = f"va2564_{cell}.pt" if source == "round" else f"va2564_{cell}.parent.pt"
+            files[key]["n_rows_ctx_absent_from_roster"] = n_absent
+            valid = (ctx_idx >= 0) & (n_comp > 0) & ~empty_mask
+            for layer in LAYERS:
+                np.add.at(tail_sum[layer], ctx_idx[valid], tail[valid, li[layer], :])
+                np.add.at(span_sum[layer], ctx_idx[valid], span[valid, li[layer], :])
+            np.add.at(len_sum, ctx_idx[valid], n_comp[valid].astype(np.float64))
+            np.add.at(cnt, ctx_idx[valid], 1)
+            if source == "round":
+                for layer in LAYERS:
+                    np.add.at(tail_sum_new[layer], ctx_idx[valid], tail[valid, li[layer], :])
+                    np.add.at(span_sum_new[layer], ctx_idx[valid], span[valid, li[layer], :])
+                np.add.at(len_sum_new, ctx_idx[valid], n_comp[valid].astype(np.float64))
+                np.add.at(cnt_new, ctx_idx[valid], 1)
+            if valid.any():
+                k_max = max(k_max, int(draw[valid].max()) + 1)
+                prim_chunks.append(
+                    (
+                        ctx_idx[valid],
+                        draw[valid],
+                        tail[valid, li[PRIMARY_LAYER], :].astype(np.float32),
+                    )
+                )
+
+    zero = [ctx_ids[i] for i in range(n_ctx) if cnt[i] == 0]
+    if zero:
+        raise RuntimeError(f"[k100] contexts with ZERO valid (non-empty) draws: {zero[:10]}")
+    zero_new = [ctx_ids[i] for i in range(n_ctx) if cnt_new[i] == 0]
+    if zero_new:
+        raise RuntimeError(f"[k100] contexts with ZERO valid NEW draws: {zero_new[:10]}")
+    assert k_max <= K100_DRAWS_TOTAL, k_max
+    if not cfg.smoke:
+        assert k_max == K100_DRAWS_TOTAL, f"[k100] production pooled k_max {k_max} != 100"
+    va_tail_mean = {layer: tail_sum[layer] / cnt[:, None] for layer in LAYERS}
+    va_span_mean = {layer: span_sum[layer] / cnt[:, None] for layer in LAYERS}
+    ans_len_mean = len_sum / cnt
+    va_tail_mean_new = {layer: tail_sum_new[layer] / cnt_new[:, None] for layer in LAYERS}
+    va_span_mean_new = {layer: span_sum_new[layer] / cnt_new[:, None] for layer in LAYERS}
+    ans_len_mean_new = len_sum_new / cnt_new
+
+    tail_draws = np.zeros((n_ctx, k_max, d), dtype=np.float32)
+    draw_valid = np.zeros((n_ctx, k_max), dtype=bool)
+    for ctx_v, draw_v, rows_v in prim_chunks:
+        key2 = ctx_v * k_max + draw_v
+        assert len(np.unique(key2)) == len(key2), "duplicate (context, draw) slot in a va store"
+        assert not draw_valid[ctx_v, draw_v].any(), "duplicate (context, draw) slot in va stores"
+        tail_draws[ctx_v, draw_v] = rows_v
+        draw_valid[ctx_v, draw_v] = True
+
+    # K-matched text embeddings (plan v8 K4): query contexts pool parent
+    # (draws 0-9) + round (draws >= 10) per-draw L2-normalized rows into a
+    # plain mean (means_anchors convention: NOT re-normalized); user_fact
+    # keeps the parent K=10 means verbatim (the embed leg is query-only).
+    emb_rel = "analysis_tensors/embeddings_qwen3_8b/means_anchors.npz"
+    emb_path = resolve_input(cfg, emb_rel, source="parent")
+    with np.load(emb_path, allow_pickle=False) as z:
+        emb_ids = [str(x) for x in z["context_ids"].tolist()]
+        emb = z["emb_mean"].astype(np.float64)
+    files["means_anchors.parent.npz"] = {
+        "path": str(emb_path),
+        "bytes": emb_path.stat().st_size,
+        "source": "parent",
+    }
+    emb_of = {cid: i for i, cid in enumerate(emb_ids)}
+    missing_emb = [cid for cid in ctx_ids if cid not in emb_of]
+    assert not missing_emb, (
+        f"[k100] contexts missing from parent embedding means: {missing_emb[:5]}"
+    )
+    emb_mean = emb[[emb_of[cid] for cid in ctx_ids]].copy()
+
+    pd_rel = "analysis_tensors/embeddings_qwen3_8b/perdraw_anchors.npz"
+    pooled_counts: dict[str, dict[str, int]] = {}
+    e_dim = emb_mean.shape[1]
+    emb_sum = np.zeros((n_ctx, e_dim), dtype=np.float64)
+    emb_cnt = np.zeros(n_ctx, dtype=np.int64)
+    emb_sum_new = np.zeros((n_ctx, e_dim), dtype=np.float64)
+    emb_cnt_new = np.zeros(n_ctx, dtype=np.int64)
+    query_rows = np.array(
+        [row_of[cid] for cid in ctx_ids if contexts[cid]["cell"] == "query"], dtype=np.int64
+    )
+    for source in ("parent", "round"):
+        p = resolve_input(cfg, pd_rel, source=source)
+        with np.load(p, allow_pickle=False) as z:
+            pd_ids = [str(x) for x in z["context_ids"].tolist()]
+            pd_draws = z["draws"].astype(np.int64)
+            pd_emb = z["emb"].astype(np.float64)
+        files[f"perdraw_anchors.{source}.npz"] = {
+            "path": str(p),
+            "bytes": p.stat().st_size,
+            "source": source,
+        }
+        # draw-id disjointness across provenances (plan v8 K4)
+        if source == "parent":
+            assert pd_draws.size and int(pd_draws.max()) < K100_DRAW_OFFSET, (
+                "[k100] parent perdraw rows carry draw ids >= offset"
+            )
+        else:
+            assert pd_draws.size and int(pd_draws.min()) >= K100_DRAW_OFFSET, (
+                "[k100] round perdraw rows carry parent draw ids"
+            )
+        ridx = np.array(
+            [
+                row_of[cid] if (cid in row_of and contexts[cid]["cell"] == "query") else -1
+                for cid in pd_ids
+            ],
+            dtype=np.int64,
+        )
+        sel = ridx >= 0
+        np.add.at(emb_sum, ridx[sel], pd_emb[sel])
+        np.add.at(emb_cnt, ridx[sel], 1)
+        if source == "round":
+            np.add.at(emb_sum_new, ridx[sel], pd_emb[sel])
+            np.add.at(emb_cnt_new, ridx[sel], 1)
+        pooled_counts[source] = {"n_rows_total": len(pd_ids), "n_rows_query_roster": int(sel.sum())}
+    missing_pool = [ctx_ids[i] for i in query_rows if emb_cnt[i] == 0]
+    assert not missing_pool, (
+        f"[k100] query contexts with ZERO pooled per-draw rows: {missing_pool[:5]}"
+    )
+    missing_pool_new = [ctx_ids[i] for i in query_rows if emb_cnt_new[i] == 0]
+    assert not missing_pool_new, (
+        f"[k100] query contexts with ZERO NEW per-draw embedding rows: {missing_pool_new[:5]}"
+    )
+    emb_mean[query_rows] = emb_sum[query_rows] / emb_cnt[query_rows, None]
+    # new-only twin for the registered fallback (user_fact rows stay parent K=10)
+    emb_mean_new = emb_mean.copy()
+    emb_mean_new[query_rows] = emb_sum_new[query_rows] / emb_cnt_new[query_rows, None]
+    files["emb_pooling_k100"] = {
+        "query": f"pooled per-draw means (parent draws 0-9 + k100 draws >= {K100_DRAW_OFFSET})",
+        "user_fact": "parent K=10 means (embed leg is query-only; plan v8 K4/§11)",
+        "counts": pooled_counts,
+    }
+
+    return Stores(
+        ctx_ids=ctx_ids,
+        row_of=row_of,
+        cells=cells,
+        carriers=carriers,
+        va_tail_mean=va_tail_mean,
+        va_span_mean=va_span_mean,
+        tail_draws=tail_draws,
+        draw_valid=draw_valid,
+        n_valid=cnt,
+        ans_len_mean=ans_len_mean,
+        vc=vc,
+        emb_mean=emb_mean,
+        d=d,
+        input_files=files,
+        va_tail_mean_new=va_tail_mean_new,
+        va_span_mean_new=va_span_mean_new,
+        ans_len_mean_new=ans_len_mean_new,
+        n_valid_new=cnt_new,
+        emb_mean_new=emb_mean_new,
+        parent_rows=parent_rows,
+        n_parent_ctx_total=len(parent_ctx_ids),
+    )
+
+
 # ── pair table ─────────────────────────────────────────────────────────
 
 
@@ -714,10 +1158,14 @@ class PairArrays:
     n: int
 
 
-def build_pair_arrays(bank: dict, st: Stores, smoke: bool, *, is_ffr: bool = False) -> PairArrays:
+def build_pair_arrays(
+    bank: dict, st: Stores, smoke: bool, *, is_ffr: bool = False, is_k100: bool = False
+) -> PairArrays:
     """Restrict the frozen bank's pairs to contexts present in the stores;
     production (non-smoke) asserts FULL coverage — the frozen 2,778/984 grid
-    for the parent, the realized bank's own counts for the ffr round."""
+    for the parent, the realized bank's own counts for the ffr round, and the
+    168-context / 474-pair K100 roster (parent bank restricted to the k100
+    cells' contexts; plan v8 §4) for the k100 round."""
     car_of = {c: i for i, c in enumerate(st.carriers)}
     keep: list[dict] = []
     for p in bank["pairs"]:
@@ -726,8 +1174,12 @@ def build_pair_arrays(bank: dict, st: Stores, smoke: bool, *, is_ffr: bool = Fal
     if not keep:
         raise RuntimeError("empty pair selection: no bank pair has both contexts in the stores")
     if not smoke:
-        exp_ctx = bank["n_contexts"] if is_ffr else BK.N_CONTEXTS
-        exp_pairs = bank["n_pairs"] if is_ffr else BK.N_PAIRS
+        if is_k100:
+            exp_ctx, exp_pairs = K100_N_CONTEXTS, K100_N_PAIRS
+        elif is_ffr:
+            exp_ctx, exp_pairs = bank["n_contexts"], bank["n_pairs"]
+        else:
+            exp_ctx, exp_pairs = BK.N_CONTEXTS, BK.N_PAIRS
         assert len(st.ctx_ids) == exp_ctx, (len(st.ctx_ids), exp_ctx)
         assert len(keep) == exp_pairs, (len(keep), exp_pairs)
 
@@ -777,12 +1229,11 @@ def build_pair_arrays(bank: dict, st: Stores, smoke: bool, *, is_ffr: bool = Fal
 # ── fire table (compliance layering) ───────────────────────────────────
 
 
-def load_fire(manip_path: Path) -> dict:
-    """Per-(axis, value_id) fire verdicts at each threshold + per-axis summary.
-
-    Axes absent from the manipulation-check slice get NO entries — pairs on
-    those axes are unfiltered (fired mask = all; recorded as fire: null)."""
-    doc = json.loads(Path(manip_path).read_text())
+def fire_tables_from_doc(doc: dict) -> dict:
+    """Fire tables from an IN-MEMORY manipulation-check document (the k100
+    fire-recompute path builds its doc at 1,200-draw denominator and never
+    round-trips it through a file). Behavior-preserving extraction of
+    ``load_fire``'s body — the committed-file path is unchanged."""
     fired: dict[int, dict[tuple[str, str], bool]] = {t: {} for t in FIRE_THRESHOLDS}
     rows = {}
     for r in doc.get("value_rows", []):
@@ -793,6 +1244,14 @@ def load_fire(manip_path: Path) -> dict:
             fired[t][key] = r["sensitivity"][str(t)] == "fired"
     axis_rows = {r["axis"]: r for r in doc.get("axis_rows", [])}
     return {"fired": fired, "value_rows": rows, "axis_rows": axis_rows, "meta": doc.get("meta", {})}
+
+
+def load_fire(manip_path: Path) -> dict:
+    """Per-(axis, value_id) fire verdicts at each threshold + per-axis summary.
+
+    Axes absent from the manipulation-check slice get NO entries — pairs on
+    those axes are unfiltered (fired mask = all; recorded as fire: null)."""
+    return fire_tables_from_doc(json.loads(Path(manip_path).read_text()))
 
 
 def validate_fire_coverage_ffr(bank: dict, fire: dict) -> None:
@@ -894,14 +1353,20 @@ def pair_fired_mask(pa: PairArrays, fire: dict, threshold: int) -> tuple[np.ndar
 # ── reliability (20 seeded 5/5 splits) ─────────────────────────────────
 
 
-def split_half_stats(st: Stores, pa: PairArrays, n_splits: int) -> dict:
+def split_half_stats(st: Stores, pa: PairArrays, n_splits: int, *, scores_fn=None) -> dict:
     """Per-pair split-half direction reliability + noise norm at L19 tail.
 
     Per split: the valid draws of every context are randomly partitioned into
     two halves (floor/ceil for odd counts); Delta_h = half-mean(A) - half-mean(B);
     r = cos(Delta_h1, Delta_h2); noise = ||Delta_h1 - Delta_h2|| / 2. Contexts
     with < 2 valid draws make their pairs NaN (counted). Loop is over the
-    n_splits axis only — all pair math is vectorized."""
+    n_splits axis only — all pair math is vectorized.
+
+    ``scores_fn(rng, n_ctx, k_max) -> (n_ctx, k_max) float array`` overrides
+    the default per-split random scores. The k100 bridge gate uses it to
+    reproduce the PARENT round's realized half-assignments: the parent drew
+    scores at the (984, 10) grid, so the bridge draws at that shape from the
+    identical seed stream and slices the roster's parent rows (plan v8 §6)."""
     draws = st.tail_draws.astype(np.float32)
     valid = st.draw_valid
     n_ctx, k_max, _ = draws.shape
@@ -914,7 +1379,11 @@ def split_half_stats(st: Stores, pa: PairArrays, n_splits: int) -> dict:
     n_used = 0
     for s in range(n_splits):
         rng = np.random.default_rng([SPLIT_SEED, s])
-        scores = rng.random((n_ctx, k_max))
+        if scores_fn is None:
+            scores = rng.random((n_ctx, k_max))
+        else:
+            scores = np.array(scores_fn(rng, n_ctx, k_max), dtype=np.float64)
+            assert scores.shape == (n_ctx, k_max), (scores.shape, n_ctx, k_max)
         scores[~valid] = np.inf
         order = np.argsort(scores, axis=1)
         ranks = np.empty_like(order)
@@ -1176,6 +1645,598 @@ def boot_pairmean_cos_median(
     return out
 
 
+# ── k100 round machinery (plan v8) ─────────────────────────────────────
+
+K100_LATTICE_B_FLOOR = 0.55  # r10-CI lower-edge b100 projection, rounded down (plan v8 §3b)
+K100_LATTICE_RATIO = 0.35  # midpoint of the two registered c/b predictions (0.475 vs 0.222)
+K100_DISSOC_G = 0.15  # half the parent's measured dissociation gap (0.97 - 0.66)
+K100_FALLBACK_CRITERION = (
+    "PRE-REGISTERED (plan v8 §4; consistency note 2): the new-only estimator becomes "
+    "PRIMARY iff provenance check (b)'s cross-provenance vs within-new 95% CIs do NOT "
+    "overlap, OR on ANY k100 axis the pooled r100 and the new-only projected r100 95% "
+    "carrier-clustered bootstrap CIs do NOT overlap (all-values primary pairs; "
+    "non-overlap = lo_1 > hi_2 or lo_2 > hi_1); evaluated informationally under --smoke "
+    "(never switches the estimator at smoke n — gate-calibration demotion)"
+)
+
+
+def k100_new_only_stores(st: Stores) -> Stores:
+    """REGISTERED-FALLBACK stores twin (plan v8 §4): every pooled read swaps to
+    the new-only (draws >= K100_DRAW_OFFSET) estimator — per-context means,
+    valid counts, answer lengths, text-embedding means, and the draw axis
+    itself (columns sliced past the offset, so split-half runs on the fresh
+    draws only)."""
+    assert st.va_tail_mean_new is not None and st.n_valid_new is not None
+    return replace(
+        st,
+        va_tail_mean=st.va_tail_mean_new,
+        va_span_mean=st.va_span_mean_new,
+        ans_len_mean=st.ans_len_mean_new,
+        n_valid=st.n_valid_new,
+        emb_mean=st.emb_mean_new,
+        tail_draws=st.tail_draws[:, K100_DRAW_OFFSET:],
+        draw_valid=st.draw_valid[:, K100_DRAW_OFFSET:],
+    )
+
+
+def _k100_parent_only_tail_mean(st: Stores, layer: int) -> np.ndarray:
+    """Parent-draws-only (draws < offset) per-context tail mean at LAYER,
+    reconstructed exactly from the pooled and new-only float64 sums
+    (mean_p = (n*m - n_new*m_new)/n_parent; cancellation error ~1e-12, far
+    inside the 1e-6 bridge tolerance)."""
+    n_all = st.n_valid.astype(np.float64)
+    n_new = st.n_valid_new.astype(np.float64)
+    n_par = n_all - n_new
+    assert (n_par > 0).all(), "[k100] context with zero valid parent draws"
+    num = st.va_tail_mean[layer] * n_all[:, None] - st.va_tail_mean_new[layer] * n_new[:, None]
+    return num / n_par[:, None]
+
+
+def _k100_slot_delta(st: Stores, pa: PairArrays, lo: int, hi: int) -> np.ndarray:
+    """Per-pair delta of masked draw-slot means over ``tail_draws[:, lo:hi]``
+    (L19 primary; a context with zero valid draws in the slot yields NaN)."""
+    hi = min(hi, st.tail_draws.shape[1])
+    if hi <= lo:
+        return np.full((pa.n, st.tail_draws.shape[2]), np.nan)
+    d = st.tail_draws[:, lo:hi].astype(np.float64)
+    w = st.draw_valid[:, lo:hi].astype(np.float64)
+    cnt = w.sum(axis=1)
+    m = np.einsum("ck,ckd->cd", w, d)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        m = m / cnt[:, None]
+    m[cnt == 0] = np.nan
+    return m[pa.a] - m[pa.b]
+
+
+def _ci_overlap(ci1: list[float], ci2: list[float]) -> bool | None:
+    """95% CI overlap predicate (None when either CI is non-finite)."""
+    vals = [*ci1, *ci2]
+    if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in vals):
+        return None
+    return not (ci1[0] > ci2[1] or ci2[0] > ci1[1])
+
+
+def k100_bridge_gate(cfg: CfgPE, bank: dict, st: Stores, pa: PairArrays, fire_parent: dict) -> dict:
+    """K=10 bridge gate (plan v8 §7 gate 3): the dual-source loader restricted
+    to the parent draws 0-9 must reproduce the COMMITTED parent reads.
+
+    Two legs:
+
+    - PER-PAIR parity (binds in BOTH modes — per-pair values are per-context
+      quantities, so the 3-carrier smoke slice reproduces them exactly): the
+      draws-0-9-restricted split-half r10 and the arm_779ce / arm_iddelta
+      direction cosines must match the committed parent ``perpair.jsonl``
+      rows to <= K100_BRIDGE_TOL absolute per pair. The parent's realized
+      half-assignments are reproduced by drawing the split scores at the
+      FULL parent (n_parent_ctx_total, 10) grid and slicing ``parent_rows``.
+    - HEADLINE parity (PRODUCTION only; demoted informational under --smoke,
+      where a carrier slice cannot reproduce 12-carrier means): user_fact /
+      query_form headline mean cos (arm_779ce) + r10 vs K100_BRIDGE_TARGETS.
+
+    A mismatch HALTS the analysis: it means staging or pooling is wrong, not
+    that the science changed (pod artifacts persist; the analysis re-runs
+    after the fix)."""
+    mean_p19 = _k100_parent_only_tail_mean(st, PRIMARY_LAYER)
+    obs = mean_p19[pa.a] - mean_p19[pa.b]
+    ridge_779 = resolve_ridge(cfg, cfg.ridge_779, RIDGE_779_PATH)
+    payload_779 = load_ridge_payload(ridge_779, st.d, "arm_779ce")
+    mapped = N1M.apply_map(payload_779, st.vc[PRIMARY_LAYER], torch.device("cpu"))
+    cos_by_arm = {
+        "arm_779ce": rowwise_cos(mapped[pa.a] - mapped[pa.b], obs),
+        "arm_iddelta": rowwise_cos(st.vc[PRIMARY_LAYER][pa.a] - st.vc[PRIMARY_LAYER][pa.b], obs),
+    }
+    bridge_st = replace(
+        st,
+        tail_draws=st.tail_draws[:, :K100_DRAW_OFFSET],
+        draw_valid=st.draw_valid[:, :K100_DRAW_OFFSET],
+    )
+
+    def _parent_grid_scores(rng: np.random.Generator, n_ctx: int, k_max: int) -> np.ndarray:
+        # the parent run drew rng.random((984, 10)); slice the roster rows so
+        # every context keeps its PARENT-realized half assignment (plan v8 K6)
+        assert n_ctx == len(st.parent_rows) and k_max == K100_DRAW_OFFSET, (n_ctx, k_max)
+        return rng.random((st.n_parent_ctx_total, k_max))[st.parent_rows]
+
+    rel_b = split_half_stats(bridge_st, pa, cfg.n_splits, scores_fn=_parent_grid_scores)
+    r10_b = rel_b["r_full"]
+
+    # per-pair parity vs the committed parent perpair.jsonl (both modes)
+    assert cfg.parent_delta is not None
+    perpair_path = cfg.parent_delta.parent / "perpair.jsonl"
+    assert perpair_path.exists(), f"committed parent perpair.jsonl missing: {perpair_path}"
+    committed: dict[str, dict] = {}
+    for line in perpair_path.open(encoding="utf-8"):
+        if line.strip():
+            row = json.loads(line)
+            committed[row["pair_id"]] = row
+
+    def _nanfloat(v: object) -> float:
+        return float("nan") if v is None else float(v)  # committed NaN -> null (sanitize)
+
+    max_abs: dict[str, float] = {}
+    for name, recomputed, getter in (
+        ("r10", r10_b, lambda row: _nanfloat(row["r10"])),
+        ("cos_arm_779ce", cos_by_arm["arm_779ce"], lambda row: _nanfloat(row["cos"]["arm_779ce"])),
+        (
+            "cos_arm_iddelta",
+            cos_by_arm["arm_iddelta"],
+            lambda row: _nanfloat(row["cos"]["arm_iddelta"]),
+        ),
+    ):
+        worst = 0.0
+        worst_pair = None
+        for i, pid in enumerate(pa.ids):
+            row = committed.get(pid)
+            assert row is not None, f"[k100-bridge] pair {pid!r} absent from parent perpair.jsonl"
+            want, got = getter(row), float(recomputed[i])
+            if math.isnan(want) and math.isnan(got):
+                continue
+            diff = abs(want - got)
+            if not math.isfinite(diff) or diff > worst:
+                worst, worst_pair = (diff if math.isfinite(diff) else float("inf")), pid
+        max_abs[name] = worst
+        if worst > K100_BRIDGE_TOL:
+            raise RuntimeError(
+                f"[k100-bridge] PER-PAIR parity FAILED for {name}: max |diff| {worst:.3e} "
+                f"> {K100_BRIDGE_TOL} at pair {worst_pair!r} — staging or pooling is "
+                "wrong, not the science (plan v8 §7 gate 3)"
+            )
+
+    # headline parity vs the committed axis means (production-binding)
+    views = build_axis_views(pa, len(st.carriers))
+    fa, fb = pair_fired_mask(pa, fire_parent, 70)
+    fired = fa & fb
+    headline: dict[str, dict] = {}
+    headline_ok_all = True
+    for axis, targets in K100_BRIDGE_TARGETS.items():
+        view = views.get(axis)
+        assert view is not None, f"[k100-bridge] axis {axis!r} missing from the roster views"
+        prim = view.primary_idx
+        ar = fire_parent["axis_rows"].get(axis)
+        floor_met = bool(ar["floor_met"]) if ar is not None else True
+        hmask = fired[prim]
+        head = prim[hmask] if (floor_met and hmask.any()) else np.array([], dtype=np.int64)
+        got_cos = float(np.nanmean(cos_by_arm["arm_779ce"][head])) if head.size else float("nan")
+        got_r10 = float(np.nanmean(r10_b[head])) if head.size else float("nan")
+        row = {
+            "n_headline_pairs": int(head.size),
+            "measured": {"mean_cos_headline": got_cos, "r10_mean": got_r10},
+            "committed": dict(targets),
+            "abs_diff": {
+                "mean_cos_headline": abs(got_cos - targets["mean_cos_headline"]),
+                "r10_mean": abs(got_r10 - targets["r10_mean"]),
+            },
+        }
+        row["ok"] = all(math.isfinite(v) and v <= K100_BRIDGE_TOL for v in row["abs_diff"].values())
+        headline_ok_all &= bool(row["ok"])
+        headline[axis] = row
+    if not cfg.smoke and not headline_ok_all:
+        raise RuntimeError(
+            f"[k100-bridge] HEADLINE parity FAILED vs committed targets: {headline} — "
+            "staging or pooling is wrong, not the science (plan v8 §7 gate 3)"
+        )
+    if cfg.smoke and not headline_ok_all:
+        logger.warning(
+            "[k100-bridge] headline parity demoted under --smoke (carrier slice cannot "
+            "reproduce 12-carrier means): %s",
+            headline,
+        )
+    report = {
+        "tolerance_abs": K100_BRIDGE_TOL,
+        "perpair_parity": {
+            "source": str(perpair_path),
+            "n_pairs_compared": int(pa.n),
+            "max_abs_diff": max_abs,
+            "ok": True,
+        },
+        "headline_parity": {
+            "rows": headline,
+            "ok": headline_ok_all,
+            "demoted": bool(cfg.smoke),
+            "note": "binds in production; informational under --smoke (slice arithmetic)",
+        },
+        "verdict": "pass" if (headline_ok_all or cfg.smoke) else "fail",
+    }
+    logger.info(
+        "[k100-bridge] PASS perpair max|diff|=%s headline_ok=%s (smoke=%s)",
+        {k: f"{v:.2e}" for k, v in max_abs.items()},
+        headline_ok_all,
+        cfg.smoke,
+    )
+    return report
+
+
+def k100_provenance_checks(cfg: CfgPE, st: Stores, pa: PairArrays) -> tuple[dict, bool | None]:
+    """Provenance-homogeneity checks (plan v8 K6): (a) pod-side vc parity
+    re-read, (b) cross-provenance split-half exchangeability, (c) per-context
+    answer-length distribution old vs new. Returns ``(block, b_pass)`` —
+    ``b_pass`` is None when (b) is not evaluable (smoke draw counts)."""
+    # (a) — re-read the pod-side k100_vc_parity.json (already asserted in K3)
+    vc_path = resolve_input(cfg, "manifests/k100_vc_parity.json")
+    vc_rep = json.loads(vc_path.read_text())
+    if vc_rep.get("verdict") == "fail" and not vc_rep.get("demoted"):
+        raise RuntimeError(f"[k100] pod-side vc parity report is a FAIL: {vc_rep}")
+    check_a = {
+        "source": str(vc_path),
+        "verdict": vc_rep.get("verdict"),
+        "min_cos": vc_rep.get("min_cos"),
+        "min_cos_context": vc_rep.get("min_cos_context"),
+        "cos_min_bar": vc_rep.get("cos_min_bar"),
+        "demoted": vc_rep.get("demoted"),
+        "parent_revision": vc_rep.get("parent_revision"),
+    }
+
+    # (b) — cross-provenance vs within-new split-half correlation of shifts
+    n_car = len(st.carriers)
+    rng = np.random.default_rng([BOOT_SEED, 100])
+    idx_draws = rng.integers(0, n_car, size=(cfg.b_boot, n_car))
+    mult = carrier_multiplicities(idx_draws, n_car)
+    d_parent = _k100_slot_delta(st, pa, 0, K100_DRAW_OFFSET)
+    d_a = _k100_slot_delta(st, pa, 10, 20)
+    d_b = _k100_slot_delta(st, pa, 20, 30)
+    d_c = _k100_slot_delta(st, pa, 30, 40)
+    cross = rowwise_cos(d_parent, d_a)
+    within = rowwise_cos(d_b, d_c)
+    both = np.isfinite(cross) & np.isfinite(within)
+    if not both.any():
+        check_b = {
+            "status": "not_evaluable",
+            "note": "insufficient new-draw slots (smoke n) — check (b) needs draws "
+            "10-19/20-29/30-39 populated; evaluated in production only",
+        }
+        b_pass: bool | None = None
+    else:
+        sel = np.flatnonzero(both)
+        cr_pt = float(np.nanmean(cross[sel]))
+        wi_pt = float(np.nanmean(within[sel]))
+        cr_ci = _ci(boot_weighted_mean(cross[sel], pa.ca[sel], pa.cb[sel], pa.dyad[sel], mult))
+        wi_ci = _ci(boot_weighted_mean(within[sel], pa.ca[sel], pa.cb[sel], pa.dyad[sel], mult))
+        overlap = _ci_overlap(cr_ci, wi_ci)
+        b_pass = bool(overlap) if overlap is not None else None
+        check_b = {
+            "status": "evaluated",
+            "cross_provenance_mean_cos": cr_pt,
+            "cross_provenance_ci95": cr_ci,
+            "within_new_mean_cos": wi_pt,
+            "within_new_ci95": wi_ci,
+            "slots": {"parent": [0, 10], "new_a": [10, 20], "new_b": [20, 30], "new_c": [30, 40]},
+            "n_pairs_used": int(sel.size),
+            "n_pairs_excluded_nan": int((~both).sum()),
+            "ci_overlap": overlap,
+            "exchangeable": b_pass,
+            "bootstrap": {"B": cfg.b_boot, "seed": [BOOT_SEED, 100], "scheme": "carrier-clustered"},
+        }
+
+    # (c) — answer-length distribution lives in k100_answer_length_check (needs
+    # the bank's context->cell map); assembled by the caller into the same block.
+    return {"check_a_vc_parity": check_a, "check_b_cross_provenance": check_b}, b_pass
+
+
+def k100_reliability_block(cfg: CfgPE, st: Stores, pa: PairArrays, b_pass: bool | None) -> dict:
+    """Pooled PRIMARY vs new-only COMPANION reliability + the registered
+    fallback decision (plan v8 §4). Per-axis means over ALL primary pairs
+    (fire-independent: the estimator comparison is about provenance, not
+    compliance) with 95% carrier-clustered bootstrap CIs under a SHARED
+    resample, so CI non-overlap reads as estimator disagreement."""
+    n_car = len(st.carriers)
+    rng = np.random.default_rng([BOOT_SEED, 101])
+    idx_draws = rng.integers(0, n_car, size=(cfg.b_boot, n_car))
+    mult = carrier_multiplicities(idx_draws, n_car)
+    views = build_axis_views(pa, n_car)
+    rel_pool = split_half_stats(st, pa, cfg.n_splits)
+    new_cols = int(st.tail_draws.shape[1] - K100_DRAW_OFFSET)
+    new_st = replace(
+        st,
+        tail_draws=st.tail_draws[:, K100_DRAW_OFFSET:],
+        draw_valid=st.draw_valid[:, K100_DRAW_OFFSET:],
+    )
+    rel_new = split_half_stats(new_st, pa, cfg.n_splits)
+    r_pool = rel_pool["r_full"]
+    r_new = sb_project(rel_new["r_full"], new_cols, K100_DRAWS_TOTAL)
+    per_axis: dict[str, dict] = {}
+    nonoverlap_axes: list[str] = []
+    for axis, view in sorted(views.items()):
+        prim = view.primary_idx
+        pool_pt = float(np.nanmean(r_pool[prim]))
+        new_pt = float(np.nanmean(r_new[prim]))
+        pool_ci = _ci(
+            boot_weighted_mean(r_pool[prim], pa.ca[prim], pa.cb[prim], pa.dyad[prim], mult)
+        )
+        new_ci = _ci(boot_weighted_mean(r_new[prim], pa.ca[prim], pa.cb[prim], pa.dyad[prim], mult))
+        overlap = _ci_overlap(pool_ci, new_ci)
+        if overlap is False:
+            nonoverlap_axes.append(axis)
+        per_axis[axis] = {
+            "r100_pooled": pool_pt,
+            "r100_pooled_ci95": pool_ci,
+            "r100_new_only_projected": new_pt,
+            "r100_new_only_ci95": new_ci,
+            "ci_overlap": overlap,
+            "n_primary_pairs": int(prim.size),
+        }
+    b_fail = b_pass is False
+    would_fire = b_fail or bool(nonoverlap_axes)
+    fired = would_fire and not cfg.smoke
+    trigger = []
+    if b_fail:
+        trigger.append("provenance_check_b_ci_nonoverlap")
+    if nonoverlap_axes:
+        trigger.append(f"r100_ci_nonoverlap:{','.join(nonoverlap_axes)}")
+    return {
+        "primary_estimator": "new_only" if fired else "pooled",
+        "per_axis": per_axis,
+        "new_only_projection": f"45/45 split-half -> r{new_cols} (2r/(1+r)) -> r100 via r1",
+        "fallback": {
+            "criterion": K100_FALLBACK_CRITERION,
+            "fired": fired,
+            "would_fire": would_fire,
+            "trigger": trigger or None,
+            "smoke_demoted": bool(cfg.smoke and would_fire),
+        },
+        "bootstrap": {"B": cfg.b_boot, "seed": [BOOT_SEED, 101], "scheme": "carrier-clustered"},
+    }
+
+
+def k100_r_of_k(cfg: CfgPE, st: Stores, pa: PairArrays) -> dict:
+    """Measured r(K) subsample curve at K in K100_R_OF_K vs the Spearman-Brown
+    projection from the committed parent r10 (plan v8 §3b, exploratory).
+
+    Per K: a seeded random K-subset of each context's valid draws, split-half
+    + step-up (= the r_K estimate at that pool size); per-axis mean over ALL
+    primary pairs. K > realized valid draws degrades to all valid draws
+    (realized mean pool size reported)."""
+    views = build_axis_views(pa, len(st.carriers))
+    n_ctx, k_max = st.draw_valid.shape
+    measured: dict[str, dict[str, float]] = {axis: {} for axis in views}
+    realized: dict[str, float] = {}
+    for k_target in K100_R_OF_K:
+        rng = np.random.default_rng([SPLIT_SEED, 31337, k_target])
+        scores = rng.random((n_ctx, k_max))
+        scores[~st.draw_valid] = np.inf
+        order = np.argsort(scores, axis=1)
+        ranks = np.empty_like(order)
+        np.put_along_axis(ranks, order, np.broadcast_to(np.arange(k_max), (n_ctx, k_max)).copy(), 1)
+        keep = (ranks < k_target) & st.draw_valid
+        rel_k = split_half_stats(replace(st, draw_valid=keep), pa, cfg.n_splits)
+        realized[str(k_target)] = float(keep.sum(axis=1).mean())
+        for axis, view in views.items():
+            measured[axis][str(k_target)] = float(np.nanmean(rel_k["r_full"][view.primary_idx]))
+    projected = {
+        axis: {str(k): float(sb_project(t["r10_mean"], K100_DRAW_OFFSET, k)) for k in K100_R_OF_K}
+        for axis, t in K100_BRIDGE_TARGETS.items()
+    }
+    return {
+        "k_grid": list(K100_R_OF_K),
+        "measured_r_by_axis": measured,
+        "projected_from_committed_r10": projected,
+        "realized_mean_pool_size": realized,
+        "subsample_seed": [SPLIT_SEED, 31337],
+        "n_splits": cfg.n_splits,
+        "note": "measured = draw-subsampled split-half + step-up over ALL primary pairs; "
+        "projected = Spearman-Brown from the committed parent r10 (plan v8 §3b)",
+    }
+
+
+def k100_fire_recompute(cfg: CfgPE, st: Stores, fire_parent: dict) -> tuple[dict, dict, dict]:
+    """PRIMARY fire gate recomputed from the POOLED anchors at the realized
+    denominator — 12 carriers x 100 draws = 1,200 checks/value in production
+    (plan v8 K6) — via the SHIPPED judge instruments (issue2564_judge). The
+    committed parent 120-check table stays the COMPANION; a fired-set change
+    is REPORTED loudly, never silently applied (plan v8 §4).
+
+    Returns (fire_doc, fire_tables, companion_block); writes
+    ``manipulation_check_k100.json`` beside the round outputs."""
+    import issue2564_judge as JD  # sibling script (sys.path carries scripts/)
+
+    values = BK.load_values()
+    texts: dict[tuple[str, int], str] = {}
+    new_draws: set[int] = set()
+    n_rows_by_source: dict[str, int] = {}
+    for source in ("parent", "round"):
+        p = resolve_input(cfg, "raw_completions/anchors/anchors_user_fact.jsonl", source=source)
+        n_rows = 0
+        for line in p.open(encoding="utf-8"):
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            d = int(r["draw"])
+            if source == "parent":
+                assert d < K100_DRAW_OFFSET, (d, "parent anchors carry draw ids >= offset")
+            else:
+                assert d >= K100_DRAW_OFFSET, (d, "round anchors carry parent draw ids")
+                new_draws.add(d)
+            texts[(r["context_id"], d)] = r["text"]
+            n_rows += 1
+        n_rows_by_source[source] = n_rows
+    draws_re = tuple(range(K100_DRAW_OFFSET)) + tuple(sorted(new_draws))
+    carriers_re = tuple(st.carriers)
+    if not cfg.smoke:
+        assert draws_re == tuple(range(K100_DRAWS_TOTAL)), sorted(new_draws)[:5]
+        assert carriers_re == tuple(BK.CARRIER_IDS), carriers_re
+    specs = [
+        s
+        for s in JD.programmatic_specs(values, carriers=carriers_re, draws=draws_re)
+        if s["axis"] == "user_fact"
+    ]
+    value_rows = JD.programmatic_fire_table(specs, texts, carriers_re, draws_re)
+    axis_rows = [JD.axis_summary(value_rows, "user_fact", BK.N_VALUES_PER_AXIS["user_fact"])]
+    denom = len(carriers_re) * len(draws_re)
+    fire_doc = {
+        "value_rows": value_rows,
+        "axis_rows": axis_rows,
+        "meta": {
+            "round": "k100",
+            "smoke": cfg.smoke,
+            "instrument": "programmatic name containment (issue2564_judge), user_fact only "
+            "— query cells carry no compliance gate (plan v8 §9)",
+            "judged_denominator": None,
+            "programmatic_denominator": denom,
+            "fire_threshold_pct": JD.FIRE_THRESHOLD_PCT,
+            "floor_rule": ">= ceil(0.6 x width) base values fired",
+            "draws": [int(draws_re[0]), int(draws_re[-1])],
+            "carriers": list(carriers_re),
+            "n_anchor_rows": n_rows_by_source,
+            **as_metadata_dict(git_provenance(), phase="pe-analysis"),
+        },
+    }
+    cfg.out_dir.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(cfg.out_dir / "manipulation_check_k100.json", _json_sanitize(fire_doc))
+    # parent 120-check companion + fired-set diff (reported, never silent)
+    changed: list[dict] = []
+    parent_rows = {}
+    for r in value_rows:
+        prow = fire_parent["value_rows"].get(("user_fact", r["value_id"]))
+        pv = prow["verdict"] if prow else None
+        parent_rows[r["value_id"]] = pv
+        if pv != r["verdict"]:
+            changed.append(
+                {"value_id": r["value_id"], "parent_verdict": pv, "k100_verdict": r["verdict"]}
+            )
+    if changed:
+        logger.warning(
+            "[k100-fire] FIRED-SET CHANGE vs the parent 120-check table (reported, "
+            "applied at the round's own K per plan v8 §11): %s",
+            changed,
+        )
+    companion = {
+        "parent_verdicts_120": parent_rows,
+        "k100_verdicts_1200": {r["value_id"]: r["verdict"] for r in value_rows},
+        "fired_set_changes": changed,
+        "denominators": {"parent": 120, "k100": denom},
+    }
+    return fire_doc, fire_tables_from_doc(fire_doc), companion
+
+
+def k100_answer_length_check(bank: dict, st: Stores) -> dict:
+    """Provenance check (c): per-context mean answer length, parent draws vs
+    new draws, summarized per cell (report-only; plan v8 K6)."""
+    contexts = bank["contexts"]
+    n_all = st.n_valid.astype(np.float64)
+    n_new = st.n_valid_new.astype(np.float64)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        len_parent = (st.ans_len_mean * n_all - st.ans_len_mean_new * n_new) / (n_all - n_new)
+    out: dict[str, dict] = {}
+    cells = np.array([contexts[cid]["cell"] for cid in st.ctx_ids])
+    for cell in sorted(set(cells.tolist())):
+        m = cells == cell
+        p = len_parent[m]
+        nw = st.ans_len_mean_new[m]
+        diff = nw - p
+        out[cell] = {
+            "n_contexts": int(m.sum()),
+            "parent_mean_tokens": float(np.nanmean(p)),
+            "new_mean_tokens": float(np.nanmean(nw)),
+            "mean_paired_diff_tokens": float(np.nanmean(diff)),
+            "mean_abs_paired_diff_tokens": float(np.nanmean(np.abs(diff))),
+        }
+    return {"per_cell": out, "note": "report-only (plan v8 §4: not a fallback trigger)"}
+
+
+def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
+    """Registered verdict lattices (plan v8 §3b), computed from the round's
+    own axes block. Point estimates drive the verdicts (the parent's
+    convention); a deciding quantity whose CI straddles its threshold is
+    flagged fragile. Informational under --smoke."""
+    uf = doc["axes"].get("user_fact", {})
+    c = uf.get("direction", {}).get("arm_779ce", {}).get("mean_cos_headline")
+    c_ci = uf.get("direction", {}).get("arm_779ce", {}).get("ci95") or [None, None]
+    r100 = uf.get("reliability", {}).get("r100_mean")
+    r_ci = uf.get("reliability", {}).get("r100_ci95") or [None, None]
+
+    def _fin(v: object) -> float:
+        return float(v) if isinstance(v, (int, float)) and math.isfinite(v) else float("nan")
+
+    c, r100 = _fin(c), _fin(r100)
+    b = math.sqrt(r100) if math.isfinite(r100) and r100 > 0 else float("nan")
+    b_ci = [
+        math.sqrt(max(_fin(r_ci[0]), 0.0)) if math.isfinite(_fin(r_ci[0])) else float("nan"),
+        math.sqrt(max(_fin(r_ci[1]), 0.0)) if math.isfinite(_fin(r_ci[1])) else float("nan"),
+    ]
+    ratio = c / b if math.isfinite(c) and math.isfinite(b) and b > 0 else float("nan")
+    if not (math.isfinite(b) and b >= K100_LATTICE_B_FLOOR) or not math.isfinite(ratio):
+        uf_verdict = "unresolved"
+    elif ratio >= K100_LATTICE_RATIO:
+        uf_verdict = "reliability-limited"
+    else:
+        uf_verdict = "map-direction-loss"
+    fragile_b = (
+        math.isfinite(b_ci[0])
+        and math.isfinite(b_ci[1])
+        and b_ci[0] <= K100_LATTICE_B_FLOOR <= b_ci[1]
+    )
+    ratio_edges = [
+        _fin(c_ci[0]) / b if math.isfinite(_fin(c_ci[0])) and b > 0 else float("nan"),
+        _fin(c_ci[1]) / b if math.isfinite(_fin(c_ci[1])) and b > 0 else float("nan"),
+    ]
+    fragile_ratio = (
+        math.isfinite(ratio_edges[0])
+        and math.isfinite(ratio_edges[1])
+        and ratio_edges[0] <= K100_LATTICE_RATIO <= ratio_edges[1]
+    )
+
+    qf = doc["axes"].get("query_form", {})
+    surf = qf.get("surface", {}).get("observed", {})
+    s_flip, s_para = _fin(surf.get("flip_norm_mean")), _fin(surf.get("para_norm_mean"))
+    s_ratio = s_flip / s_para if math.isfinite(s_flip) and s_para else float("nan")
+    t_ratio = _fin(qf.get("text_space", {}).get("flip_over_para_ratio"))
+    g = s_ratio - t_ratio
+    if not math.isfinite(g):
+        qf_verdict = "not_evaluable"
+    elif g >= K100_DISSOC_G:
+        qf_verdict = "dissociation-holds"
+    else:
+        qf_verdict = "dissociation-collapses"
+    return {
+        "informational_smoke": bool(smoke),
+        "reliability_estimator": reliability_estimator,
+        "injected_name": {
+            "c_mean_cos_headline_arm_779ce": c,
+            "c_ci95": c_ci,
+            "r100_mean": r100,
+            "b100": b,
+            "b100_ci95_from_r_ci": b_ci,
+            "c_over_b": ratio,
+            "thresholds": {"b_floor": K100_LATTICE_B_FLOOR, "ratio": K100_LATTICE_RATIO},
+            "verdict": uf_verdict,
+            "fragile": bool(fragile_b or fragile_ratio),
+            "fragile_components": {
+                "b_ci_straddles_floor": bool(fragile_b),
+                "c_ci_over_b_straddles_ratio": bool(fragile_ratio),
+            },
+            "lattice": "reliability-limited <=> b>=0.55 AND c/b>=0.35; "
+            "map-direction-loss <=> b>=0.55 AND c/b<0.35; unresolved otherwise",
+        },
+        "query_form_dissociation": {
+            "state_flip_over_para": s_ratio,
+            "text_flip_over_para": t_ratio,
+            "g": g,
+            "threshold_g": K100_DISSOC_G,
+            "verdict": qf_verdict,
+            "lattice": "dissociation-holds <=> g >= 0.15; dissociation-collapses otherwise",
+        },
+    }
+
+
 # ── main analysis ──────────────────────────────────────────────────────
 
 
@@ -1185,14 +2246,19 @@ def compute_all(
     st: Stores,
     fire: dict,
     frozen_global: dict[str, float] | None = None,
+    k100_estimator: str = "pooled",
 ) -> tuple[dict, list[dict], dict]:
     """All §6 reads. Returns (minpair_delta doc, perpair rows, predictions).
 
-    ``frozen_global`` (ffr only) carries the parent's per-arm global slopes;
+    ``frozen_global`` (ffr/k100) carries the parent's per-arm global slopes;
     when present the calibration family reports ratio_to_parent_global as the
-    PRIMARY ratio with the round-pooled slope as companion (plan v7 §5)."""
+    PRIMARY ratio with the round-pooled slope as companion (plan v7 §5).
+
+    ``k100_estimator`` (k100 only): "pooled" (default) or "new_only" (the
+    registered fallback fired — ``st`` is then the new-only stores twin and
+    the split-half r is projected r90 -> r100 via r1; plan v8 §4)."""
     t0 = time.time()
-    pa = build_pair_arrays(bank, st, cfg.smoke, is_ffr=cfg.is_ffr)
+    pa = build_pair_arrays(bank, st, cfg.smoke, is_ffr=cfg.is_ffr, is_k100=cfg.is_k100)
     n_car = len(st.carriers)
     d = st.d
 
@@ -1248,7 +2314,23 @@ def compute_all(
     dlen = st.ans_len_mean[pa.a] - st.ans_len_mean[pa.b]
 
     rel = split_half_stats(st, pa, cfg.n_splits)
-    r10 = rel["r_full"]
+    if cfg.is_k100:
+        if k100_estimator == "new_only":
+            # fallback: st is the new-only twin (nv ~ 90); project r90 -> r100
+            r10 = sb_project(rel["r_full"], st.tail_draws.shape[1], K100_DRAWS_TOTAL)
+            r_key, half_key = "r100", "r45_half"
+            sb_note = (
+                "r90 = 2*r45/(1+r45), projected r90 -> r100 via r1 "
+                "(new-only REGISTERED FALLBACK, plan v8 §4)"
+            )
+        else:
+            r10 = rel["r_full"]  # pooled 50/50 split-half stepped up = r100
+            r_key, half_key = "r100", "r50_half"
+            sb_note = "r100 = 2*r50 / (1 + r50) (pooled 50/50 split-half)"
+    else:
+        r10 = rel["r_full"]
+        r_key, half_key = "r10", "r_half"
+        sb_note = "r10 = 2*r5 / (1 + r5)"
 
     # fire masks -------------------------------------------------------
     fired = {}
@@ -1277,6 +2359,9 @@ def compute_all(
             # FFR_AXES); build_pair_arrays already asserted full-bank coverage.
             unexpected = [a for a in views if a not in BK.FFR_AXES]
             assert not unexpected, f"non-ffr axes in ffr stores: {unexpected}"
+        elif cfg.is_k100:
+            # k100 roster = exactly the two low-reliability cells' axes (plan v8 §3a)
+            assert sorted(views) == sorted(K100_AXES), (sorted(views), K100_AXES)
         else:
             missing_axes = [a for a in AXES_ALL if a not in views]
             assert not missing_axes, f"axes missing from production stores: {missing_axes}"
@@ -1360,13 +2445,13 @@ def compute_all(
         ceil_pt, ceil_ci = wm(r10, head)
         ceil_all_pt, ceil_all_ci = wm(r10, prim)
         rel_axis = {
-            "r_half_mean": _nm(rel["r_half"], head),
-            "r10_mean": ceil_pt,
-            "r10_ci95": ceil_ci,
-            "r10_mean_all_values": ceil_all_pt,
-            "r10_ci95_all_values": ceil_all_ci,
+            f"{half_key}_mean": _nm(rel["r_half"], head),
+            f"{r_key}_mean": ceil_pt,
+            f"{r_key}_ci95": ceil_ci,
+            f"{r_key}_mean_all_values": ceil_all_pt,
+            f"{r_key}_ci95_all_values": ceil_all_ci,
             "noise_norm_mean": _nm(rel["noise_norm"], head),
-            "spearman_brown": "r10 = 2*r5 / (1 + r5)",
+            "spearman_brown": sb_note,
         }
         suppressed = suppression_verdict(ceil_pt, ceil_ci[0], ceil_ci[1])
 
@@ -1436,7 +2521,9 @@ def compute_all(
         # pool sizes (2,778 all-pairs / 864 swaps) which the ffr round never
         # has (<=792 / <=252), so the ffr round-pooled keys are named
         # *_round_pooled / *_round_swap instead. Parent keys byte-unchanged.
-        if cfg.is_ffr:
+        if cfg.is_ffr or cfg.is_k100:
+            # pool-size-honest names for BOTH rounds (k100 pools 474 pairs, never
+            # the parent 2,778/864 the parent key names embed)
             k_pool_slope, k_pool_ratio = "global_slope_round_pooled", "ratio_to_round_pooled"
             k_swap_slope, k_swap_ratio = "global_slope_round_swap", "ratio_to_round_swap"
         else:
@@ -1873,8 +2960,8 @@ def compute_all(
                 "cos": {arm: float(cos_arm[arm][i]) for arm in ARMS},
                 "cos_span": {arm: float(cos_arm_span[arm][i]) for arm in ARMS},
                 "norm_pred": {arm: float(norm_pred[arm][i]) for arm in ARMS},
-                "r_half": float(rel["r_half"][i]),
-                "r10": float(r10[i]),
+                half_key: float(rel["r_half"][i]),
+                r_key: float(r10[i]),
                 "noise_norm": float(rel["noise_norm"][i]),
                 "fired_a_70": bool(fa70[i]),
                 "fired_b_70": bool(fb70[i]),
@@ -1918,7 +3005,9 @@ def compute_all(
         "split_half": {
             "n_splits": cfg.n_splits,
             "seed": SPLIT_SEED,
-            "step_up": "Spearman-Brown r10 = 2*r5/(1+r5)",
+            "step_up": (
+                f"Spearman-Brown {sb_note}" if cfg.is_k100 else "Spearman-Brown r10 = 2*r5/(1+r5)"
+            ),
             "n_pairs_insufficient_draws": rel["n_pairs_insufficient_draws"],
         },
         "compliance": {
@@ -1933,17 +3022,39 @@ def compute_all(
         },
     }
 
-    # ffr-only meta additions (the parent doc's key set stays byte-identical)
+    # round-only meta additions (the parent doc's key set stays byte-identical)
     round_meta: dict = {}
-    if cfg.is_ffr:
-        assert frozen_global is not None, "ffr round requires the parent frozen slopes"
-        round_meta["round"] = "ffr"
+    if cfg.is_ffr or cfg.is_k100:
+        assert frozen_global is not None, "round requires the parent frozen slopes"
+        round_meta["round"] = "ffr" if cfg.is_ffr else "k100"
         round_meta["frozen_global_slope"] = {
             "source": str(cfg.parent_delta),
             "per_arm": dict(frozen_global),
             "note": "parent's realized per-arm global slope (global_slope_all2778), "
-            "the PRIMARY ratio denominator for this round (plan v7 §5)",
+            "the PRIMARY ratio denominator for this round "
+            + ("(plan v7 §5)" if cfg.is_ffr else "(plan v8 §11, the ffr mechanism reused)"),
         }
+    if cfg.is_k100:
+        round_meta["reliability_estimator"] = k100_estimator
+        round_meta["parent_revision"] = cfg.parent_revision
+        # consistency-checker note 1 (epm:followup-consistency v1): the v_C that
+        # feeds EVERY K6 pooled/bridge read is the PARENT's committed vc bank at
+        # --parent-revision; the k100-recaptured v_C serves ONLY provenance
+        # check (a) pod-side and is never loaded here.
+        round_meta["vc_source"] = {
+            "pooled_and_bridge_reads": (
+                f"parent committed vc2564_bank.pt @ {cfg.parent_revision} "
+                "(staged source='parent'; issue2564_analysis.load_stores_k100)"
+            ),
+            "k100_recaptured_vc": (
+                "provenance check (a) ONLY — compared pod-side against the parent bank "
+                "(issue2564_run._k100_vc_parity); never feeds a pooled or bridge read"
+            ),
+        }
+        retrieval["note"] = (
+            "restricted-pool retrieval over the 474 k100 pairs (chance = k/474); NOT "
+            "comparable to the parent's 2,778-pair global read (plan v8 §6)"
+        )
     doc = {
         "meta": {
             "issue": ISSUE,
@@ -2029,11 +3140,12 @@ def write_outputs(cfg: CfgPE, doc: dict, perpair: list[dict], predictions: dict)
     if cfg.upload == "hf":
         from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
-        pred_prefix = (
-            f"{cfg.hf_prefix}/analysis_tensors/{FFR_ROUND_SEG}/predictions"
-            if cfg.is_ffr
-            else f"{cfg.hf_prefix}/analysis_tensors/predictions"
-        )
+        if cfg.is_ffr:
+            pred_prefix = f"{cfg.hf_prefix}/analysis_tensors/{FFR_ROUND_SEG}/predictions"
+        elif cfg.is_k100:
+            pred_prefix = f"{cfg.hf_prefix}/analysis_tensors/{K100_ROUND_SEG}/predictions"
+        else:
+            pred_prefix = f"{cfg.hf_prefix}/analysis_tensors/predictions"
         res = upload_dir_sharded(
             cfg.pred_dir,
             HF_DATA_REPO,
@@ -2071,7 +3183,7 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
     frozen_global: dict[str, float] | None = None
-    if cfg.is_ffr:
+    if cfg.is_ffr or cfg.is_k100:
         assert cfg.parent_delta is not None and cfg.parent_delta.exists(), (
             f"parent minpair_delta.json missing: {cfg.parent_delta}"
         )
@@ -2080,18 +3192,52 @@ def main(argv: list[str] | None = None) -> int:
     # producer↔consumer name parity (r1 blocker ffr-bank-manifest-name-mismatch):
     # the ffr basename is the SHARED BK constant run.py writes/uploads; pinned
     # by tests/test_issue2564_ffr.py::test_ffr_bank_manifest_name_parity.
+    # k100 loads the PARENT manifest (984 contexts, staged at --parent-revision;
+    # plan v8 §10 call-shape bind) — load_bank_manifest's parent asserts pass
+    # by construction; the roster restriction happens in load_stores_k100.
     bank_rel = (
         f"manifests/{BK.FFR_BANK_MANIFEST_FILENAME}"
         if cfg.is_ffr
         else "manifests/bank2564_manifest.json"
     )
-    bank_path = resolve_input(cfg, bank_rel)
+    bank_path = resolve_input(cfg, bank_rel, source="parent" if cfg.is_k100 else "round")
     bank = load_bank_manifest(bank_path, is_ffr=cfg.is_ffr)
     assert cfg.manip_check.exists(), f"manipulation check missing: {cfg.manip_check}"
     fire = load_fire(cfg.manip_check)
     if cfg.is_ffr:
         validate_fire_coverage_ffr(bank, fire)
-    st = load_stores(cfg, bank)
+    k100_block: dict | None = None
+    k100_estimator = "pooled"
+    if cfg.is_k100:
+        # plan v8 K6, in order: stores -> K=10 bridge gate -> provenance checks
+        # (a)/(b)/(c) -> fire recompute at the realized denominator ->
+        # pooled/new-only reliability + registered fallback -> r(K) curve.
+        fire_parent = fire
+        st = load_stores_k100(cfg, bank)
+        pa100 = build_pair_arrays(bank, st, cfg.smoke, is_k100=True)
+        bridge = k100_bridge_gate(cfg, bank, st, pa100, fire_parent)
+        prov, b_pass = k100_provenance_checks(cfg, st, pa100)
+        prov["check_c_answer_length"] = k100_answer_length_check(bank, st)
+        fire_doc, fire, fire_companion = k100_fire_recompute(cfg, st, fire_parent)
+        reliab = k100_reliability_block(cfg, st, pa100, b_pass)
+        r_of_k = k100_r_of_k(cfg, st, pa100)
+        if reliab["fallback"]["fired"]:
+            k100_estimator = "new_only"
+            logger.warning(
+                "[k100] REGISTERED FALLBACK FIRED (%s) — direction reads switch to "
+                "new-only means; heterogeneity is a scope caveat (plan v8 §4)",
+                reliab["fallback"]["trigger"],
+            )
+            st = k100_new_only_stores(st)
+        k100_block = {
+            "bridge_gate": bridge,
+            "provenance_checks": prov,
+            "fire_recompute": fire_companion,
+            "reliability": reliab,
+            "r_of_k": r_of_k,
+        }
+    else:
+        st = load_stores(cfg, bank)
     st.input_files[Path(bank_rel).name] = {
         "path": str(bank_path),
         "bytes": bank_path.stat().st_size,
@@ -2101,13 +3247,25 @@ def main(argv: list[str] | None = None) -> int:
         "path": str(cfg.manip_check),
         "bytes": cfg.manip_check.stat().st_size,
     }
-    if cfg.is_ffr and cfg.parent_delta is not None:
+    if (cfg.is_ffr or cfg.is_k100) and cfg.parent_delta is not None:
         st.input_files["parent_minpair_delta.json"] = {
             "path": str(cfg.parent_delta),
             "bytes": cfg.parent_delta.stat().st_size,
             "sha256": _sha256(cfg.parent_delta),
         }
-    doc, perpair, predictions = compute_all(cfg, bank, st, fire, frozen_global=frozen_global)
+    doc, perpair, predictions = compute_all(
+        cfg, bank, st, fire, frozen_global=frozen_global, k100_estimator=k100_estimator
+    )
+    if cfg.is_k100:
+        assert k100_block is not None
+        k100_block["verdicts"] = k100_verdicts(doc, k100_estimator, cfg.smoke)
+        doc["k100"] = k100_block
+        logger.info(
+            "[k100] verdicts: injected_name=%s query_form=%s estimator=%s",
+            k100_block["verdicts"]["injected_name"]["verdict"],
+            k100_block["verdicts"]["query_form_dissociation"]["verdict"],
+            k100_estimator,
+        )
     upload = write_outputs(cfg, doc, perpair, predictions)
     print(
         f"[pe] wrote {cfg.out_dir / cfg.delta_name} + {cfg.perpair_name} "

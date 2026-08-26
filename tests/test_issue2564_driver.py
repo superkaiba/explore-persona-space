@@ -850,3 +850,528 @@ def test_ffr_pilot_selection_fp_pins_judge_instrument_and_upload(
     # satisfy a later --upload hf run)
     pcfg = D._pilot_cfg(cfg)
     assert D._pilot_selection_fp(_replace(pcfg, upload="hf")) != D._pilot_selection_fp(pcfg)
+
+
+# ── k100 round pins (plan v8; follow-up k100-low-reliability-axes) ──────
+
+import issue2564_analysis as A  # noqa: E402
+
+
+def test_k100_build_config_production_defaults():
+    """--round k100 production: roster cells, 90 fresh draws, draw offset 10,
+    dedicated out-root, pinned parent revision, k100-named sentinels."""
+    cfg = D.build_config(D.parse_args(["--phase", "all", "--round", "k100", "--upload", "hf"]))
+    assert cfg.is_k100 and not cfg.is_ffr
+    assert cfg.cells == D.K100_CELLS == ("user_fact", "query")
+    assert cfg.carriers is None  # full 12-carrier roster in production
+    assert cfg.draws == D.K100_DRAWS == 90
+    assert cfg.draw_offset == D.K100_DRAW_OFFSET == 10
+    assert cfg.parent_revision == D.K100_PARENT_REVISION_DEFAULT
+    assert cfg.out_root == Path(D.K100_OUT_ROOT_DEFAULT) == Path("/workspace/eps2564k100")
+    assert cfg.hf_prefix == "issue2564_minpair"
+    assert cfg.anchors_sentinel.name == "k100_anchors_done.json"
+    assert cfg.va_sentinel.name == "k100_va_uploaded.json"
+
+
+def test_k100_build_config_smoke_keeps_round_cells_slices_carriers():
+    """k100 smoke keeps the ROUND's cells (parent SMOKE_CELLS carries
+    'register', outside the k100 roster) and slices carriers/draws only;
+    generated artifacts rebind to the smoke twin root + smoke_k100 prefix."""
+    cfg = D.build_config(
+        D.parse_args(
+            [
+                "--phase",
+                "all",
+                "--round",
+                "k100",
+                "--out-root",
+                "/tmp/eps2564k100x",
+                "--smoke",
+                "--upload",
+                "none",
+            ]
+        )
+    )
+    assert cfg.cells == D.K100_CELLS  # NOT D.SMOKE_CELLS
+    assert cfg.carriers == D.SMOKE_CARRIERS == ("c01", "c02", "c03")
+    assert cfg.draws == D.SMOKE_DRAWS == 2
+    assert cfg.draw_offset == D.K100_DRAW_OFFSET
+    assert cfg.out_root.name == "smoke_eps2564k100x"
+    assert cfg.hf_prefix == "issue2564_minpair/smoke_k100"
+
+
+def test_k100_gen_row_draw_and_seed_bookkeeping():
+    """Fresh rows carry draw ids 10..99 with the parent seed invariant
+    seed = seed_base + draw (plan v8 §3a: seeds 52..141 at seed_base 42)."""
+    cfg = D.build_config(D.parse_args(["--phase", "all", "--round", "k100", "--upload", "none"]))
+    assert cfg.seed_base == 42
+    ctx = {
+        "id": "user_fact::n01::c01",
+        "cell": "user_fact",
+        "kind": "value",
+        "value_id": "n01",
+        "carrier": "c01",
+        "form": "stmt",
+    }
+    for i in (0, 41, 89):
+        row = D._gen_row(cfg, ctx, 7, 1, cfg.draw_offset + i, 0, "text", 3, 128)
+        assert row["draw"] == 10 + i
+        assert row["seed"] == 42 + 10 + i  # seed = seed_base + draw
+
+
+def test_k100_regime_fp_includes_draw_offset():
+    """The generation regime fingerprint changes when the draw offset does —
+    a parent-regime partial can never satisfy a k100 resume (plan v8 §3a)."""
+    cfg = D.build_config(D.parse_args(["--phase", "all", "--round", "k100", "--upload", "none"]))
+    assert D._regime_fp(cfg) != D._regime_fp(_replace(cfg, draw_offset=0))
+
+
+def test_k100_prefix_isolation_never_writes_parent_or_ffr():
+    """k100 write surfaces (HF kind prefixes, out-roots, sentinels, smoke
+    prefix, embed anchors rel) are disjoint from the parent's AND the ffr
+    round's — a k100 run can never clobber a committed prefix (plan v8 §5)."""
+    assert A.K100_ROUND_SEG == D.K100_ROUND_SEG == E.K100_ROUND_SEG
+    assert A.K100_DRAW_OFFSET == D.K100_DRAW_OFFSET and A.K100_DRAWS_TOTAL == 100
+
+    def _cfg(extra: list[str]) -> D.Cfg2564:
+        return D.build_config(D.parse_args(["--phase", "all", *extra, "--upload", "hf"]))
+
+    k100, parent, ffr = _cfg(["--round", "k100"]), _cfg([]), _cfg(["--round", "ffr"])
+    kinds = ("raw_completions", "analysis_tensors", "manifests")
+    k_set = {k100.hf_round_prefix(k) for k in kinds}
+    other = {c.hf_round_prefix(k) for c in (parent, ffr) for k in kinds}
+    assert not (k_set & other), k_set & other
+    for k in kinds:
+        assert k100.hf_round_prefix(k) == f"issue2564_minpair/{k}/k100_low_reliability_axes"
+    assert len({k100.out_root, parent.out_root, ffr.out_root}) == 3
+    k_sent = {k100.anchors_sentinel.name, k100.va_sentinel.name}
+    o_sent = {
+        parent.anchors_sentinel.name,
+        parent.va_sentinel.name,
+        ffr.anchors_sentinel.name,
+        ffr.va_sentinel.name,
+    }
+    assert k_sent.isdisjoint(o_sent)
+    # smoke prefixes are round-distinct too
+    smoke = {
+        r: _cfg([*(["--round", r] if r != "parent" else []), "--smoke"]).hf_prefix
+        for r in ("parent", "ffr", "k100")
+    }
+    assert len(set(smoke.values())) == 3 and smoke["k100"].endswith("/smoke_k100")
+    # embed-side anchors rel nests the round segment inside raw_completions
+    assert (
+        E.hf_anchors_rel("query", E.K100_ROUND_SEG)
+        == "raw_completions/k100_low_reliability_axes/anchors/anchors_query.jsonl"
+    )
+    assert E.hf_anchors_rel("query") == "raw_completions/anchors/anchors_query.jsonl"
+
+
+def test_k100_phase_embed_forces_query_cells_and_threads_round_seg(monkeypatch, tmp_path):
+    """k100 phase C embeds ONLY the query cell (user_fact is programmatic;
+    plan v8 §5) and threads --hf-round-seg so the subprocess uploads to the
+    round-nested prefix; a bank without the query cell fails loud."""
+    args = D.parse_args(
+        [
+            "--phase",
+            "C",
+            "--round",
+            "k100",
+            "--out-root",
+            str(tmp_path / "rootk"),
+            "--smoke",
+            "--upload",
+            "none",
+        ]
+    )
+    cfg = D.build_config(args)
+    bank = {
+        "contexts": [
+            {"id": "u", "cell": "user_fact", "carrier": "c01"},
+            {"id": "q", "cell": "query", "carrier": "c01"},
+        ],
+        "pairs": [],
+    }
+    monkeypatch.setattr(D, "_anchor_cell_complete", lambda cfg, cell: True)
+    captured: dict = {}
+
+    def fake_run(cmd, env):  # signature mirror of the subprocess.run call site
+        captured["cmd"] = [str(c) for c in cmd]
+        out = D._embed_out_root(cfg)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "embed_done.local.json").write_text("{}")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(D.subprocess, "run", fake_run)
+    assert D.phase_embed(cfg, bank) == D.RC_OK
+    cmd = captured["cmd"]
+    assert cmd[cmd.index("--cells") + 1] == "query"  # user_fact never reaches the embed leg
+    assert cmd[cmd.index("--hf-round-seg") + 1] == D.K100_ROUND_SEG
+    # no query cell in the bank -> loud refusal, not a silent empty embed
+    bank_uf = {"contexts": [{"id": "u", "cell": "user_fact", "carrier": "c01"}], "pairs": []}
+    with pytest.raises(RuntimeError, match="requires the query cell"):
+        D.phase_embed(cfg, bank_uf)
+
+
+def test_k100_vc_parity_report_names_k6_vc_source():
+    """Consistency note 1 (plan v8 K6): the parity manifest states that the
+    fresh k100 v_C feeds ONLY provenance check (a) — pooled/bridge reads
+    consume the PARENT committed bank at the pinned revision."""
+    src = inspect.getsource(D._k100_vc_parity)
+    assert '"k6_vc_source"' in src
+    assert "feeds ONLY this provenance check" in src
+
+
+def test_k100_sb_project_arithmetic_and_edge_cases():
+    """sb_project matches the closed-form r1 projection, reduces to the
+    spearman_brown step-up at 1->2, is the identity at k_from == k_to, and
+    is NaN-safe (plan v8 §3b)."""
+    r10 = 0.13102069808322983  # committed parent user_fact r10 (bridge target)
+    r1 = r10 / (10 - 9 * r10)
+    manual = 100 * r1 / (1 + 99 * r1)
+    assert abs(A.sb_project(r10, 10, 100) - manual) < 1e-12
+    assert 0.55 < manual < 0.65  # the plan's ~0.60 projected pooled r100
+    assert abs(A.sb_project(0.3, 1, 2) - A.spearman_brown(0.3)) < 1e-15
+    assert abs(A.sb_project(0.4, 10, 10) - 0.4) < 1e-15
+    out = A.sb_project(np.array([0.4, np.nan]), 10, 100)
+    assert np.isfinite(out[0]) and np.isnan(out[1])
+
+
+def test_k100_ci_overlap_predicate_and_registered_criterion():
+    """Fallback criterion mechanics (consistency note 2): strict CI
+    non-overlap, touching edges overlap, non-finite -> None; the
+    pre-registered criterion string is pinned in-code."""
+    assert A._ci_overlap([0.1, 0.3], [0.25, 0.5]) is True
+    assert A._ci_overlap([0.1, 0.2], [0.21, 0.5]) is False
+    assert A._ci_overlap([0.21, 0.5], [0.1, 0.2]) is False
+    assert A._ci_overlap([0.1, 0.2], [0.2, 0.3]) is True  # non-overlap is STRICT
+    assert A._ci_overlap([0.1, float("nan")], [0.2, 0.3]) is None
+    assert "PRE-REGISTERED" in A.K100_FALLBACK_CRITERION
+    assert "do NOT overlap" in A.K100_FALLBACK_CRITERION
+
+
+def _k100_verdict_doc(c: float, r100: float, s_flip: float, s_para: float, t_ratio: float) -> dict:
+    return {
+        "axes": {
+            "user_fact": {
+                "direction": {"arm_779ce": {"mean_cos_headline": c, "ci95": [c - 0.01, c + 0.01]}},
+                "reliability": {"r100_mean": r100, "r100_ci95": [r100 - 0.001, r100 + 0.001]},
+            },
+            "query_form": {
+                "surface": {"observed": {"flip_norm_mean": s_flip, "para_norm_mean": s_para}},
+                "text_space": {"flip_over_para_ratio": t_ratio},
+            },
+        }
+    }
+
+
+def test_k100_verdict_lattice_arms():
+    """All three injected-name lattice arms + both dissociation arms fire on
+    point estimates exactly as registered (plan v8 §3b)."""
+    # b = sqrt(0.36) = 0.6 >= 0.55; c/b = 0.30/0.6 = 0.5 >= 0.35
+    v = A.k100_verdicts(_k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2), "pooled", smoke=False)
+    assert v["injected_name"]["verdict"] == "reliability-limited"
+    assert v["query_form_dissociation"]["verdict"] == "dissociation-holds"  # g = 0.7
+    assert v["reliability_estimator"] == "pooled" and v["informational_smoke"] is False
+    # c/b = 0.15/0.6 = 0.25 < 0.35
+    v = A.k100_verdicts(_k100_verdict_doc(0.15, 0.36, 0.9, 1.0, 0.85), "pooled", smoke=False)
+    assert v["injected_name"]["verdict"] == "map-direction-loss"
+    assert v["query_form_dissociation"]["verdict"] == "dissociation-collapses"  # g = 0.05
+    # b = sqrt(0.25) = 0.5 < 0.55
+    v = A.k100_verdicts(_k100_verdict_doc(0.30, 0.25, 0.9, 1.0, 0.2), "new_only", smoke=True)
+    assert v["injected_name"]["verdict"] == "unresolved"
+    assert v["informational_smoke"] is True
+    # fragile flag: r CI straddling the b floor (b = 0.5501.. within +-ci)
+    doc = _k100_verdict_doc(0.30, 0.5501**2, 0.9, 1.0, 0.2)
+    doc["axes"]["user_fact"]["reliability"]["r100_ci95"] = [0.54**2, 0.57**2]
+    v = A.k100_verdicts(doc, "pooled", smoke=False)
+    assert v["injected_name"]["fragile"] is True
+
+
+# ── k100 pooled loader + split-half pins (synthetic dual-source stores) ─
+
+
+def _k100_world(tmp_path):
+    """Synthetic dual-source k100 store fixture: 6-context parent vc grid
+    (non-roster extras first + last, pinning parent_rows slicing), 4 roster
+    contexts (2 user_fact + 2 query), parent draws 0-9 / round draws 10-99,
+    tail[r, k, :] = base_r + k * dir_r (+ per-layer offset)."""
+    d, e = 4, 3
+    rng = np.random.default_rng(0)
+    vc_ids = [
+        "register::x1::c01",
+        "user_fact::n01::c01",
+        "query::E::c01",
+        "user_fact::n02::c01",
+        "query::E::c02",
+        "register::x2::c01",
+    ]
+    cells_of = {cid: cid.split("::")[0] for cid in vc_ids}
+    roster = vc_ids[1:5]
+    base = rng.normal(size=(6, d))
+    dirv = rng.normal(size=(6, d))
+    li_off = {L: 100.0 * i for i, L in enumerate(A.LAYERS)}
+    contexts = {
+        cid: {"id": cid, "cell": cells_of[cid], "carrier": cid.split("::")[2]} for cid in vc_ids
+    }
+    bank = {"contexts": contexts, "pairs": []}
+    paths: dict[tuple[str, str], Path] = {}
+    root = tmp_path / "stores"
+    root.mkdir(parents=True, exist_ok=True)
+
+    vc = np.stack([np.stack([base[r] + li_off[L] for L in A.LAYERS]) for r in range(6)])
+    vc_p = root / "vc.pt"
+    torch.save(
+        {
+            "layers": list(A.LAYERS),
+            "context_ids": vc_ids,
+            "vc": torch.tensor(vc, dtype=torch.float32),
+        },
+        vc_p,
+    )
+    paths[("analysis_tensors/vc2564/vc2564_bank.pt", "parent")] = vc_p
+
+    for cell in ("user_fact", "query"):
+        cell_ids = [cid for cid in roster if cells_of[cid] == cell]
+        for source, drange, ncomp in (("parent", range(0, 10), 5), ("round", range(10, 100), 7)):
+            index, tails = [], []
+            for cid in cell_ids:
+                r = vc_ids.index(cid)
+                for k in drange:
+                    index.append({"context_id": cid, "draw": k, "n_completion_tokens": ncomp})
+                    row = base[r] + k * dirv[r]
+                    tails.append(np.stack([row + li_off[L] for L in A.LAYERS]))
+            tail = torch.tensor(np.array(tails), dtype=torch.float32)
+            p = root / f"va_{cell}_{source}.pt"
+            torch.save(
+                {
+                    "layers": list(A.LAYERS),
+                    "index": index,
+                    "va_tail_incl": tail,
+                    "va_span": tail + 0.5,
+                },
+                p,
+            )
+            paths[(f"analysis_tensors/va2564/va2564_{cell}.pt", source)] = p
+
+    emb_mean = rng.normal(size=(6, e))
+    means_p = root / "means.npz"
+    np.savez(means_p, context_ids=np.array(vc_ids), emb_mean=emb_mean)
+    paths[("analysis_tensors/embeddings_qwen3_8b/means_anchors.npz", "parent")] = means_p
+    q_ids = [cid for cid in roster if cells_of[cid] == "query"]
+    for source, drange in (("parent", range(0, 10)), ("round", range(10, 100))):
+        ids, draws, embs = [], [], []
+        for cid in q_ids:
+            r = vc_ids.index(cid)
+            for k in drange:
+                ids.append(cid)
+                draws.append(k)
+                embs.append(emb_mean[r] + k)
+        if source == "parent":
+            # a user_fact per-draw row the query-only pooling must IGNORE
+            ids.append("user_fact::n01::c01")
+            draws.append(0)
+            embs.append(np.full(e, 999.0))
+        p = root / f"perdraw_{source}.npz"
+        np.savez(
+            p, context_ids=np.array(ids), draws=np.array(draws, dtype=np.int64), emb=np.array(embs)
+        )
+        paths[("analysis_tensors/embeddings_qwen3_8b/perdraw_anchors.npz", source)] = p
+
+    cfg = A.CfgPE(
+        in_root=None,
+        out_dir=tmp_path / "out",
+        stage_dir=tmp_path / "stage",
+        manip_check=tmp_path / "mc.json",
+        ridge_779=None,
+        ridge_1738=None,
+        smoke=False,
+        upload="none",
+        b_boot=8,
+        b_null=8,
+        n_splits=4,
+        hf_prefix="issue2564_minpair",
+        round="k100",
+    )
+    return SimpleNamespace(
+        cfg=cfg,
+        bank=bank,
+        paths=paths,
+        vc_ids=vc_ids,
+        roster=roster,
+        base=base,
+        dirv=dirv,
+        emb_mean=emb_mean,
+        li_off=li_off,
+    )
+
+
+@pytest.fixture()
+def k100_world(tmp_path, monkeypatch):
+    w = _k100_world(tmp_path)
+    monkeypatch.setattr(
+        A, "resolve_input", lambda cfg, rel, *, source="round": w.paths[(rel, source)]
+    )
+    return w
+
+
+def test_k100_load_stores_pooled_concat_and_new_only_accumulators(k100_world):
+    """load_stores_k100 pools parent draws 0-9 + round draws 10-99 into a
+    (n_ctx, 100, d) grid in PARENT vc row order, reconstructs parent-only
+    means exactly, fills the *_new accumulators, and K-pools query text
+    embeddings while user_fact keeps the parent means (plan v8 K4/K6)."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    rows = np.array([1, 2, 3, 4])  # roster rows in the 6-context parent grid
+    assert st.ctx_ids == w.roster
+    np.testing.assert_array_equal(st.parent_rows, rows)
+    assert st.n_parent_ctx_total == 6
+    assert st.tail_draws.shape == (4, 100, 4) and st.draw_valid.all()
+    np.testing.assert_array_equal(st.n_valid, np.full(4, 100))
+    np.testing.assert_array_equal(st.n_valid_new, np.full(4, 90))
+    # pooled / new-only / parent-only per-context means at the primary layer
+    off = w.li_off[A.PRIMARY_LAYER]
+    exp_pooled = w.base[rows] + 49.5 * w.dirv[rows] + off  # mean draw over 0..99
+    exp_new = w.base[rows] + 54.5 * w.dirv[rows] + off  # mean draw over 10..99
+    exp_parent = w.base[rows] + 4.5 * w.dirv[rows] + off  # mean draw over 0..9
+    np.testing.assert_allclose(st.va_tail_mean[A.PRIMARY_LAYER], exp_pooled, atol=1e-4)
+    np.testing.assert_allclose(st.va_tail_mean_new[A.PRIMARY_LAYER], exp_new, atol=1e-4)
+    np.testing.assert_allclose(
+        A._k100_parent_only_tail_mean(st, A.PRIMARY_LAYER), exp_parent, atol=1e-3
+    )
+    # answer lengths: pooled (10*5 + 90*7)/100; new-only 7
+    np.testing.assert_allclose(st.ans_len_mean, np.full(4, 6.8), atol=1e-12)
+    np.testing.assert_allclose(st.ans_len_mean_new, np.full(4, 7.0), atol=1e-12)
+    # embeddings: query rows K-pooled (parent + round per-draw), user_fact parent means
+    uf_rows = [0, 2]  # uf1, uf2 in roster order [uf1, q1, uf2, q2]
+    q_rows = [1, 3]
+    np.testing.assert_allclose(st.emb_mean[uf_rows], w.emb_mean[[1, 3]], atol=1e-12)
+    np.testing.assert_allclose(st.emb_mean[q_rows], w.emb_mean[[2, 4]] + 49.5, atol=1e-9)
+    np.testing.assert_allclose(st.emb_mean_new[q_rows], w.emb_mean[[2, 4]] + 54.5, atol=1e-9)
+    np.testing.assert_allclose(st.emb_mean_new[uf_rows], w.emb_mean[[1, 3]], atol=1e-12)
+    # dual-source provenance recorded per input
+    assert st.input_files["va2564_user_fact.parent.pt"]["source"] == "parent"
+    assert st.input_files["va2564_user_fact.pt"]["source"] == "round"
+
+
+def _uf_pair(st) -> A.PairArrays:
+    return A.PairArrays(
+        ids=["p1"],
+        cls=["value_swap"],
+        axis=["user_fact"],
+        value_a=["n01"],
+        value_b=["n02"],
+        carrier_str=["c01"],
+        a=np.array([st.row_of["user_fact::n01::c01"]], dtype=np.int64),
+        b=np.array([st.row_of["user_fact::n02::c01"]], dtype=np.int64),
+        ca=np.array([0], dtype=np.int64),
+        cb=np.array([0], dtype=np.int64),
+        dyad=np.array([False]),
+        changed=np.array([1], dtype=np.int64),
+        orientation=["n01->n02"],
+        n=1,
+    )
+
+
+def test_k100_split_half_runs_at_nv100_with_5050_halves(k100_world):
+    """At the pooled nv=100 grid the split is 50/50: with deterministic
+    ascending scores half1 = draws 0..49, so the per-pair r equals the
+    manually computed cosine of the two half-mean deltas."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    pa = _uf_pair(st)
+    seen: list[tuple[int, int]] = []
+
+    def det_scores(rng, n_ctx, k_max):
+        seen.append((n_ctx, k_max))
+        return np.broadcast_to(np.arange(k_max, dtype=float), (n_ctx, k_max)).copy()
+
+    rel = A.split_half_stats(st, pa, 2, scores_fn=det_scores)
+    assert seen == [(4, 100), (4, 100)]  # split drawn at the POOLED 100-draw grid
+    a, b = 1, 3  # vc rows of the pair's contexts
+    d1 = (w.base[a] - w.base[b]) + 24.5 * (w.dirv[a] - w.dirv[b])  # mean draws 0..49
+    d2 = (w.base[a] - w.base[b]) + 74.5 * (w.dirv[a] - w.dirv[b])  # mean draws 50..99
+    manual = float(d1 @ d2 / (np.linalg.norm(d1) * np.linalg.norm(d2)))
+    np.testing.assert_allclose(rel["r_half"][0], manual, atol=1e-5)
+    np.testing.assert_allclose(rel["r_full"][0], 2 * manual / (1 + manual), atol=1e-5)
+
+
+def test_k100_split_half_analytic_zero_noise_reliability(k100_world):
+    """Zero draw noise -> split-half r == 1 and noise norm == 0 exactly (the
+    analytic-reliability sanity pin on the pooled 100-draw grid)."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    rows = np.array([1, 2, 3, 4])
+    const = np.repeat(w.base[rows][:, None, :], 100, axis=1).astype(np.float32)
+    st0 = _replace(st, tail_draws=const)
+    rel = A.split_half_stats(st0, _uf_pair(st), 3)
+    np.testing.assert_allclose(rel["r_half"][0], 1.0, atol=1e-6)
+    np.testing.assert_allclose(rel["r_full"][0], 1.0, atol=1e-6)
+    np.testing.assert_allclose(rel["noise_norm"][0], 0.0, atol=1e-5)
+
+
+def test_k100_new_only_stores_swaps_means_and_slices_draw_axis(k100_world):
+    """The registered-fallback twin swaps every pooled read to the new-only
+    estimator and slices the draw axis past the offset (plan v8 §4)."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    st_new = A.k100_new_only_stores(st)
+    assert st_new.tail_draws.shape == (4, 90, 4)
+    assert st_new.draw_valid.shape == (4, 90)
+    np.testing.assert_array_equal(st_new.n_valid, st.n_valid_new)
+    np.testing.assert_allclose(
+        st_new.va_tail_mean[A.PRIMARY_LAYER], st.va_tail_mean_new[A.PRIMARY_LAYER]
+    )
+    np.testing.assert_allclose(st_new.ans_len_mean, st.ans_len_mean_new)
+    np.testing.assert_allclose(st_new.emb_mean, st.emb_mean_new)
+    np.testing.assert_array_equal(st_new.tail_draws, st.tail_draws[:, 10:])
+
+
+def _min_split_stores(tail: np.ndarray) -> A.Stores:
+    n = tail.shape[0]
+    valid = np.ones(tail.shape[:2], dtype=bool)
+    return A.Stores(
+        ctx_ids=[f"c{i}" for i in range(n)],
+        row_of={},
+        cells=[],
+        carriers=[],
+        va_tail_mean={},
+        va_span_mean={},
+        tail_draws=tail.astype(np.float32),
+        draw_valid=valid,
+        n_valid=valid.sum(1),
+        ans_len_mean=np.zeros(n),
+        vc={},
+        emb_mean=None,
+        d=tail.shape[2],
+    )
+
+
+def test_k100_bridge_parent_grid_scores_reproduce_full_grid_halves(k100_world):
+    """The bridge's scores_fn contract (plan v8 K6): drawing split scores at
+    the FULL parent grid and slicing parent_rows reproduces the full-grid
+    run's per-pair r exactly — every context keeps its parent-realized half
+    assignment despite the roster restriction."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    rows = st.parent_rows
+    # full 6-context parent-draw grid (draws 0..9), same values as the loader saw
+    full_tail = np.stack(
+        [
+            np.stack([w.base[r] + k * w.dirv[r] + w.li_off[A.PRIMARY_LAYER] for k in range(10)])
+            for r in range(6)
+        ]
+    )
+    full_st = _min_split_stores(full_tail)
+    pa_full = _uf_pair(st)
+    pa_full = _replace(pa_full, a=np.array([1], dtype=np.int64), b=np.array([3], dtype=np.int64))
+    rel_full = A.split_half_stats(full_st, pa_full, 4)
+
+    bridge_st = _replace(st, tail_draws=st.tail_draws[:, :10], draw_valid=st.draw_valid[:, :10])
+
+    def parent_grid_scores(rng, n_ctx, k_max):
+        assert (n_ctx, k_max) == (4, 10)
+        return rng.random((st.n_parent_ctx_total, k_max))[rows]
+
+    rel_sliced = A.split_half_stats(bridge_st, _uf_pair(st), 4, scores_fn=parent_grid_scores)
+    np.testing.assert_allclose(rel_sliced["r_half"][0], rel_full["r_half"][0], atol=1e-12)
+    np.testing.assert_allclose(rel_sliced["r_full"][0], rel_full["r_full"][0], atol=1e-12)

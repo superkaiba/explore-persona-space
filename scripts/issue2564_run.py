@@ -162,6 +162,32 @@ _FFR_PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
     "B": ("ffr_va_uploaded.json", "manifests/parity_gate_report.json"),
 }
 
+# ── K100 round (K=100 low-reliability axes, plan v8 §3) ────────────────────
+
+K100_ROUND_SEG = "k100_low_reliability_axes"  # HF path segment (plan v8 §5)
+K100_OUT_ROOT_DEFAULT = "/workspace/eps2564k100"
+# Roster restriction (plan v8 §3): user_fact (120 contexts) + query (48) = 168.
+K100_CELLS = ("user_fact", "query")
+K100_DRAWS = 90  # 90 FRESH draws per context (ids 10..99), appended to parent K=10
+K100_DRAW_OFFSET = 10  # first fresh draw id; parent/ffr stay at 0
+# v_C parity vs the parent's committed bank (provenance check (a), plan v8 §7).
+# Plan-pinned per-context bar; note the bf16 single-position two-bar caveat
+# (gotchas.md) — the plan's 0.9999 is the contract, demoted under smoke/tiny.
+K100_VC_PARITY_COS_MIN = 0.9999
+# Parent artifacts consumed at this pinned HF data-repo revision (plan v8 §10).
+K100_PARENT_REVISION_DEFAULT = "62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
+
+_K100_PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
+    "A": ("k100_anchors_done.json", "manifests/pilot_gate_report.json"),
+    "B": (
+        "k100_va_uploaded.json",
+        "manifests/parity_gate_report.json",
+        "manifests/k100_vc_parity.json",
+    ),
+    # C: the embed subprocess owns its records under ITS out-root (parent parity).
+    "C": (),
+}
+
 CAP_HIT_BASIS = "retokenized_completion_len >= max_new_tokens"
 
 
@@ -187,7 +213,13 @@ class Cfg2564:
     seed_base: int
     upload: str
     force: bool
-    round: str = "parent"  # "parent" (default, byte-unchanged) | "ffr" (plan v7)
+    # "parent" (default, byte-unchanged) | "ffr" (plan v7) | "k100" (plan v8)
+    round: str = "parent"
+    # First fresh draw id (k100: 10 — parent draws 0..9 are REUSED, never regenerated;
+    # parent/ffr: 0). Recorded seed stays cfg.seed_base + draw, so k100 seeds are 52..141.
+    draw_offset: int = 0
+    # HF data-repo revision the k100 round consumes PARENT artifacts at (plan v8 §10).
+    parent_revision: str = K100_PARENT_REVISION_DEFAULT
     model_id: str = BK.MODEL_ID
     model_revision: str = "unresolved"
     hidden: int = HIDDEN
@@ -206,25 +238,50 @@ class Cfg2564:
         return self.round == "ffr"
 
     @property
+    def is_k100(self) -> bool:
+        return self.round == "k100"
+
+    @property
     def hf_prefix(self) -> str:
         if self.smoke or self.tiny:
-            return HF_PREFIX + ("/smoke_ffr" if self.is_ffr else "/smoke")
+            if self.is_ffr:
+                return HF_PREFIX + "/smoke_ffr"
+            if self.is_k100:
+                return HF_PREFIX + "/smoke_k100"
+            return HF_PREFIX + "/smoke"
         return HF_PREFIX
 
     def hf_round_prefix(self, kind: str) -> str:
         """HF path for artifact KIND ('raw_completions'|'analysis_tensors'|'manifests'):
         parent keeps <hf_prefix>/<kind>; ffr nests <hf_prefix>/<kind>/floor_failed_reelicitation
-        (plan v7 §5)."""
-        seg = f"{kind}/{FFR_ROUND_SEG}" if self.is_ffr else kind
+        (plan v7 §5); k100 nests <hf_prefix>/<kind>/k100_low_reliability_axes (plan v8 §5)."""
+        if self.is_ffr:
+            seg = f"{kind}/{FFR_ROUND_SEG}"
+        elif self.is_k100:
+            seg = f"{kind}/{K100_ROUND_SEG}"
+        else:
+            seg = kind
         return f"{self.hf_prefix}/{seg}"
 
     @property
     def anchors_sentinel(self) -> Path:
-        return self.out_root / ("ffr_anchors_done.json" if self.is_ffr else "anchors_done.json")
+        if self.is_ffr:
+            name = "ffr_anchors_done.json"
+        elif self.is_k100:
+            name = "k100_anchors_done.json"
+        else:
+            name = "anchors_done.json"
+        return self.out_root / name
 
     @property
     def va_sentinel(self) -> Path:
-        return self.out_root / ("ffr_va_uploaded.json" if self.is_ffr else "va2564_uploaded.json")
+        if self.is_ffr:
+            name = "ffr_va_uploaded.json"
+        elif self.is_k100:
+            name = "k100_va_uploaded.json"
+        else:
+            name = "va2564_uploaded.json"
+        return self.out_root / name
 
     @property
     def anchors_dir(self) -> Path:
@@ -253,14 +310,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--phase", choices=("all", "pilot", "A", "B", "C"), default="all")
     ap.add_argument(
         "--round",
-        choices=("parent", "ffr"),
+        choices=("parent", "ffr", "k100"),
         default="parent",
-        help="'ffr' = floor-failed re-elicitation round (plan v7): pilot + A/B on the ffr bank",
+        help=(
+            "'ffr' = floor-failed re-elicitation round (plan v7): pilot + A/B on the ffr bank; "
+            "'k100' = K=100 low-reliability-axes round (plan v8): 90 fresh draws (ids 10..99) "
+            "on the parent bank restricted to user_fact+query"
+        ),
     )
     ap.add_argument(
         "--out-root",
         default=None,
-        help=f"default {PARENT_OUT_ROOT_DEFAULT} (parent) / {FFR_OUT_ROOT_DEFAULT} (--round ffr)",
+        help=(
+            f"default {PARENT_OUT_ROOT_DEFAULT} (parent) / {FFR_OUT_ROOT_DEFAULT} (--round ffr) "
+            f"/ {K100_OUT_ROOT_DEFAULT} (--round k100)"
+        ),
+    )
+    ap.add_argument(
+        "--parent-revision",
+        default=K100_PARENT_REVISION_DEFAULT,
+        help="HF data-repo revision for PARENT artifacts consumed under --round k100 "
+        "(v_C parity reference; plan v8 §10)",
     )
     ap.add_argument("--log-dir", default="/workspace/logs")
     ap.add_argument("--values", default=None, help="override bank2564_values.json path")
@@ -291,6 +361,10 @@ def build_config(args: argparse.Namespace) -> Cfg2564:
     carriers = (
         tuple(s.strip() for s in args.carriers.split(",") if s.strip()) if args.carriers else None
     )
+    if rnd == "k100":
+        # Roster restriction is a PRODUCTION default (plan v8 §3): the k100 round
+        # runs the parent bank restricted to user_fact+query in BOTH modes.
+        cells = cells or K100_CELLS
     if smoke or tiny:
         if rnd == "ffr":
             # ffr smoke slices carriers only: the parent SMOKE_CELLS
@@ -298,15 +372,26 @@ def build_config(args: argparse.Namespace) -> Cfg2564:
             # (stance/persona/hedging/query); the value-id slice is applied
             # inside phase_pilot / the selection instead (plan v7 §7).
             carriers = carriers or SMOKE_CARRIERS
+        elif rnd == "k100":
+            # k100 smoke keeps the round's own cells (parent SMOKE_CELLS carries
+            # "register", outside the k100 roster) and slices carriers only.
+            carriers = carriers or SMOKE_CARRIERS
         else:
             cells = cells or SMOKE_CELLS
             carriers = carriers or SMOKE_CARRIERS
-    draws = (
-        args.draws if args.draws is not None else (SMOKE_DRAWS if (smoke or tiny) else ANCHOR_DRAWS)
-    )
-    out_root_arg = args.out_root or (
-        FFR_OUT_ROOT_DEFAULT if rnd == "ffr" else PARENT_OUT_ROOT_DEFAULT
-    )
+    if args.draws is not None:
+        draws = args.draws
+    elif smoke or tiny:
+        draws = SMOKE_DRAWS
+    else:
+        draws = K100_DRAWS if rnd == "k100" else ANCHOR_DRAWS
+    if rnd == "k100":
+        out_root_default = K100_OUT_ROOT_DEFAULT
+    elif rnd == "ffr":
+        out_root_default = FFR_OUT_ROOT_DEFAULT
+    else:
+        out_root_default = PARENT_OUT_ROOT_DEFAULT
+    out_root_arg = args.out_root or out_root_default
     out_root = Path(out_root_arg)
     if smoke or tiny:
         # dbe smoke-root rebind: generated artifacts land under smoke_<name>; staged
@@ -328,6 +413,8 @@ def build_config(args: argparse.Namespace) -> Cfg2564:
         upload=args.upload,
         force=bool(args.force),
         round=rnd,
+        draw_offset=K100_DRAW_OFFSET if rnd == "k100" else 0,
+        parent_revision=str(args.parent_revision),
         capture_batch=int(args.capture_batch),
         raw_out_root=Path(out_root_arg),
     )
@@ -396,6 +483,9 @@ def _regime_fp(cfg: Cfg2564, extra: dict | None = None) -> str:
     }
     if cfg.round != "parent":
         params["round"] = cfg.round  # parent fingerprints stay byte-identical
+    if cfg.draw_offset:
+        # k100 only (offset 10): parent/ffr (offset 0) fingerprints stay byte-identical.
+        params["draw_offset"] = cfg.draw_offset
     if extra:
         params.update(extra)
     return hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:16]
@@ -473,7 +563,12 @@ def _resolve_model_revision(cfg: Cfg2564) -> str:
 
 def _phase_records(cfg: Cfg2564, phase: str) -> tuple[str, ...]:
     """Phase-level completion-record paths (out-root-relative), round-aware."""
-    table = _FFR_PHASE_COMPLETION_RECORDS if cfg.is_ffr else _PHASE_COMPLETION_RECORDS
+    if cfg.is_ffr:
+        table = _FFR_PHASE_COMPLETION_RECORDS
+    elif cfg.is_k100:
+        table = _K100_PHASE_COMPLETION_RECORDS
+    else:
+        table = _PHASE_COMPLETION_RECORDS
     return table[phase]
 
 
@@ -724,7 +819,11 @@ def _generate_cell(
             hook=None,
             max_new_tokens=max_new,
             temperature=ANCHOR_TEMPERATURE,
-            seed_base=cfg.seed_base,
+            # k100: offset the per-draw reseed so draw d samples under seed
+            # seed_base + d exactly as a parent run with draws 0..99 would
+            # (generate_batch does torch.manual_seed(seed_base + i) per draw i);
+            # parent/ffr (offset 0) stay byte-identical.
+            seed_base=cfg.seed_base + cfg.draw_offset,
             render_fn=BK.render_context,
             ids_fn=BK.context_token_ids,
         )
@@ -735,7 +834,11 @@ def _generate_cell(
             for i in range(cfg.draws):
                 text = results[b][i]
                 n_comp = len(tok(text, add_special_tokens=False)["input_ids"])
-                new_rows.append(_gen_row(cfg, ctx, ctx_len, n_eot, i, ci, text, n_comp, max_new))
+                new_rows.append(
+                    _gen_row(
+                        cfg, ctx, ctx_len, n_eot, cfg.draw_offset + i, ci, text, n_comp, max_new
+                    )
+                )
         # chunk-grain checkpoint: single buffered append + flush/fsync (torn-tail
         # tolerated on resume read).
         with part.open("a", encoding="utf-8") as fh:
@@ -1320,6 +1423,117 @@ def _capture_vc(cfg: Cfg2564, model, tok, contexts: list[dict]) -> None:
     )
 
 
+def _k100_vc_parity_path(cfg: Cfg2564) -> Path:
+    return cfg.manifest_dir / "k100_vc_parity.json"
+
+
+def _k100_vc_parity_ok(cfg: Cfg2564) -> bool:
+    rep = _read_json(_k100_vc_parity_path(cfg))
+    return (
+        rep is not None
+        and rep.get("regime_fp") == _gate_fp(cfg, "k100_vc_parity")
+        and (rep.get("verdict") == "pass" or rep.get("demoted"))
+    )
+
+
+def _k100_vc_parity(cfg: Cfg2564, contexts: list[dict]) -> None:
+    """K100 provenance check (a), pod-side leg (plan v8 §7): per-context cosine of the
+    fresh k100 v_C capture vs the PARENT's committed vc bank staged at the pinned
+    revision. Runs BEFORE the phase-B sentinel write (and hence before any PE pooled
+    read consumes k100 artifacts); production FAILS LOUD below K100_VC_PARITY_COS_MIN.
+
+    Under --tiny the check is structurally impossible (hidden=64 vs the parent's
+    3584) and is SKIPPED as demoted; under --smoke the comparison runs on the sliced
+    contexts and a miss is demoted to a warning (production-n/bf16-calibrated bar —
+    gotchas.md smoke GATE-CALIBRATION rule).
+
+    NOTE (K6 v_C source, consistency-checker note 1): the fresh k100 capture serves
+    ONLY this parity check — every PE pooled/bridge read consumes the PARENT
+    committed vc bank at --parent-revision (issue2564_analysis.py k100 loader)."""
+    if _k100_vc_parity_ok(cfg):
+        logger.info("[k100-vc-parity] prior report fp match — skipping")
+        return
+    demoted = cfg.smoke or cfg.tiny
+    if cfg.tiny:
+        write_json_atomic(
+            _k100_vc_parity_path(cfg),
+            {
+                "gate": "k100_vc_parity",
+                "regime_fp": _gate_fp(cfg, "k100_vc_parity"),
+                "verdict": "skipped",
+                "demoted": True,
+                "skip_reason": "tiny — from-config model hidden dim mismatch vs parent bank",
+                "repro": _repro(cfg, "pb-capture"),
+            },
+        )
+        logger.warning("[k100-vc-parity] SKIPPED under --tiny (hidden-dim mismatch vs parent)")
+        return
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    fresh = torch.load(cfg.vc_dir / "vc2564_bank.pt", map_location="cpu", weights_only=False)
+    parent_path = stage_hub_file(
+        HF_DATA_REPO,
+        f"{HF_PREFIX}/analysis_tensors/vc2564/vc2564_bank.pt",
+        cfg.out_root / "parent_vc" / "vc2564_bank.pt",
+        revision=cfg.parent_revision,
+    )
+    # Self-produced, revision-pinned bundle (torch>=2.6 weights_only convention).
+    parent = torch.load(parent_path, map_location="cpu", weights_only=False)
+    assert list(parent["layers"]) == list(fresh["layers"]), (parent["layers"], fresh["layers"])
+    parent_row = {cid: i for i, cid in enumerate(parent["context_ids"])}
+    fresh_row = {cid: i for i, cid in enumerate(fresh["context_ids"])}
+    per_context: dict[str, float] = {}
+    for c in contexts:
+        cid = c["id"]
+        if cid not in parent_row:
+            raise RuntimeError(f"k100 context {cid!r} missing from parent vc bank")
+        if cid not in fresh_row:
+            raise RuntimeError(f"k100 context {cid!r} missing from fresh vc bank")
+        per_context[cid] = _flat_cos(fresh["vc"][fresh_row[cid]], parent["vc"][parent_row[cid]])
+    min_cid = min(per_context, key=per_context.get)  # type: ignore[arg-type]
+    min_cos = per_context[min_cid]
+    verdict = "pass" if min_cos >= K100_VC_PARITY_COS_MIN else "fail"
+    write_json_atomic(
+        _k100_vc_parity_path(cfg),
+        {
+            "gate": "k100_vc_parity",
+            "regime_fp": _gate_fp(cfg, "k100_vc_parity"),
+            "cos_min_bar": K100_VC_PARITY_COS_MIN,
+            "parent_revision": cfg.parent_revision,
+            "n_contexts": len(per_context),
+            "min_cos": min_cos,
+            "min_cos_context": min_cid,
+            "verdict": verdict,
+            "demoted": demoted,
+            # consistency-checker note 1 (epm:followup-consistency v1): make the
+            # K6 v_C source legible in the durable manifest — the pooled/bridge
+            # reads consume the PARENT committed bank at parent_revision; this
+            # fresh capture serves ONLY this parity check.
+            "k6_vc_source": (
+                f"parent committed vc2564_bank.pt @ {cfg.parent_revision} — the fresh "
+                "k100 v_C capture feeds ONLY this provenance check (a), never a "
+                "pooled or bridge read (plan v8 K6)"
+            ),
+            "repro": _repro(cfg, "pb-capture"),
+        },
+    )
+    logger.info(
+        "[k100-vc-parity] n=%d min_cos=%.6f (context %s) bar=%.4f verdict=%s demoted=%s",
+        len(per_context),
+        min_cos,
+        min_cid,
+        K100_VC_PARITY_COS_MIN,
+        verdict,
+        demoted,
+    )
+    if verdict == "fail" and not demoted:
+        raise RuntimeError(
+            f"k100 v_C parity vs parent FAILED: min cos {min_cos:.6f} < "
+            f"{K100_VC_PARITY_COS_MIN} at context {min_cid!r} (parent revision "
+            f"{cfg.parent_revision}) — provenance check (a), plan v8 §7"
+        )
+
+
 def _capture_cell_va(
     cfg: Cfg2564, model, tok, eot_ids: list[int], cell: str, ctx_by_id: dict
 ) -> None:
@@ -1553,6 +1767,11 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+    if cfg.is_k100:
+        # Runs AFTER the model is freed (parity needs no model — it compares
+        # on-disk banks) and BEFORE the upload + sentinel write, so the phase-B
+        # sentinel can only exist if provenance check (a) passed (plan v8 §7).
+        _k100_vc_parity(cfg, contexts)
     upload: dict = {"mode": cfg.upload}
     if cfg.upload == "hf":
         for name, local, prefix, resume_skip in (
@@ -1622,6 +1841,12 @@ def phase_embed(cfg: Cfg2564, bank: dict) -> int:
         return RC_OK
     contexts = bank["contexts"]
     cells = sorted({c["cell"] for c in contexts})
+    if cfg.is_k100:
+        # k100 round (plan v8 §5): only the query cell's fresh anchors need
+        # embeddings (query values are text-space; user_fact is programmatic).
+        if "query" not in cells:
+            raise RuntimeError(f"k100 phase C requires the query cell; got cells={cells}")
+        cells = ["query"]
     _require_anchor_shards(cfg, cells)  # PC consumes PA's anchors (local root)
     embed_out = _embed_out_root(cfg)
     sentinel = embed_out / (
@@ -1637,6 +1862,8 @@ def phase_embed(cfg: Cfg2564, bank: dict) -> int:
         "--cells",
         ",".join(cells),
     ]
+    if cfg.is_k100:
+        cmd.extend(["--hf-round-seg", K100_ROUND_SEG])
     if cfg.smoke:
         cmd.append("--smoke")
     if cfg.upload == "none":
@@ -1693,6 +1920,9 @@ def main(argv: list[str] | None = None) -> int:
         import issue2564_judge as _chk_jd  # noqa: F401
 
         from explore_persona_space.eval.graded_judge import judge_graded as _chk_jg  # noqa: F401
+
+        # _k100_vc_parity's deferred import (k100 provenance check (a), plan v8 §7).
+        from explore_persona_space.orchestrate.hub import stage_hub_file as _chk_shf  # noqa: F401
 
         print("[import-check] ok", flush=True)
         return RC_OK
