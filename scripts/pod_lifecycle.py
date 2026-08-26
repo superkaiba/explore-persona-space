@@ -910,7 +910,12 @@ def _derived_extra_cones(issue: int) -> list[str]:
     cone derivation must never fail or stall a provision.
     """
     try:
-        import verify_carryover_inputs as _vci  # same-dir import (scripts/)
+        # Scripts-dir bootstrap for module-mode consumers (#1296/#1304 pin in
+        # tests/test_backend_poll.py): idempotent, this file's dir IS scripts/.
+        scripts_dir = str(SCRIPT_DIR)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        import verify_carryover_inputs as _vci
 
         from explore_persona_space.task_workflow import find_task_path
 
