@@ -1785,18 +1785,88 @@ def k100_deciding_ci(draws: np.ndarray, threshold: float) -> dict:
     r1 blocker k100-verdict-fragility-ci — the ratio/gap is formed PER DRAW
     under the shared carrier resample, so numerator AND denominator
     uncertainty both enter the CI). NaN draws (zero-denominator or
-    empty-selection resamples) drop out of the percentile read; an all-NaN
-    draw set yields a NaN CI and fragile=None (not evaluable)."""
+    empty-selection resamples) drop out of the percentile read; a draw set
+    with ZERO finite draws is NOT evaluable — the record then carries
+    fragile=None PLUS an explicit not_evaluable=True + durable reason, and
+    k100_verdicts forces the associated verdict to "not_evaluable" instead
+    of collapsing None through bool() into fragile=false (r2 nit
+    k100-deciding-ci-degenerate-failopen)."""
     draws = np.asarray(draws, dtype=np.float64)
+    n_finite = int(np.isfinite(draws).sum())
     ci = _ci(draws)
     finite = all(math.isfinite(v) for v in ci)
-    return {
+    out = {
         "ci95": ci,
         "threshold": float(threshold),
         "fragile": bool(ci[0] <= threshold <= ci[1]) if finite else None,
-        "n_finite_draws": int(np.isfinite(draws).sum()),
+        "n_finite_draws": n_finite,
         "scheme": "carrier-clustered paired bootstrap (shared resample)",
     }
+    if not finite:
+        out["not_evaluable"] = True
+        out["reason"] = (
+            f"deciding CI not evaluable — {n_finite} finite bootstrap draws of "
+            f"{int(draws.size)} (all resamples degenerate: empty selection or "
+            "zero denominator)"
+        )
+    return out
+
+
+def k100_paired_ratio_draws(
+    cos_vals: np.ndarray,
+    r_vals: np.ndarray,
+    head: np.ndarray,
+    ca: np.ndarray,
+    cb: np.ndarray,
+    dyad: np.ndarray,
+    mult: np.ndarray,
+) -> np.ndarray:
+    """Per-draw PAIRED c/b ratios under ONE shared carrier resample (plan v8
+    §3b; r1 blocker k100-verdict-fragility-ci): the numerator c (headline
+    cosine mean) and the denominator b = sqrt(max(r, 0)) are BOTH formed per
+    draw from the SAME multiplicity matrix ``mult`` — pairing is enforced by
+    construction (a single ``mult`` parameter), so numerator and denominator
+    uncertainty enter the deciding CI together. An empty ``head`` selection
+    yields all-NaN draws (not evaluable); zero-denominator resamples yield
+    per-draw NaN, dropped by k100_deciding_ci's percentile read."""
+    if not head.size:
+        return np.full(mult.shape[0], np.nan)
+    c_draws = boot_weighted_mean(cos_vals[head], ca[head], cb[head], dyad[head], mult)
+    r_draws = boot_weighted_mean(r_vals[head], ca[head], cb[head], dyad[head], mult)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        b_draws = np.sqrt(np.clip(r_draws, 0.0, None))
+        return np.where(b_draws > 0, c_draws / b_draws, np.nan)
+
+
+def k100_paired_g_draws(
+    state_norms: np.ndarray,
+    text_norms: np.ndarray | None,
+    head: np.ndarray,
+    para_head: np.ndarray,
+    ca: np.ndarray,
+    cb: np.ndarray,
+    dyad: np.ndarray,
+    mult: np.ndarray,
+) -> np.ndarray:
+    """Per-draw PAIRED dissociation gaps g = s_f/s_p − t_f/t_p under ONE
+    shared carrier resample (plan v8 §3b): all FOUR components (state flip /
+    state para / text flip / text para) resample together from the SAME
+    multiplicity matrix ``mult`` per draw. Empty flip/para selections or
+    absent text embeddings yield all-NaN draws (not evaluable); non-finite
+    per-draw gaps become NaN, dropped by k100_deciding_ci."""
+    if not (head.size and para_head.size) or text_norms is None:
+        return np.full(mult.shape[0], np.nan)
+    s_f = boot_weighted_mean(state_norms[head], ca[head], cb[head], dyad[head], mult)
+    s_p = boot_weighted_mean(
+        state_norms[para_head], ca[para_head], cb[para_head], dyad[para_head], mult
+    )
+    t_f = boot_weighted_mean(text_norms[head], ca[head], cb[head], dyad[head], mult)
+    t_p = boot_weighted_mean(
+        text_norms[para_head], ca[para_head], cb[para_head], dyad[para_head], mult
+    )
+    with np.errstate(invalid="ignore", divide="ignore"):
+        g_draws = s_f / s_p - t_f / t_p
+    return np.where(np.isfinite(g_draws), g_draws, np.nan)
 
 
 def k100_bridge_gate(cfg: CfgPE, bank: dict, st: Stores, pa: PairArrays, fire_parent: dict) -> dict:
@@ -2279,7 +2349,10 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
     own axes block. Point estimates drive the verdicts (the parent's
     convention); a DECIDING quantity whose carrier-clustered PAIRED-bootstrap
     CI (compute_all's ``k100_deciding`` blocks) straddles its threshold is
-    flagged fragile (r1 blocker k100-verdict-fragility-ci). Informational
+    flagged fragile (r1 blocker k100-verdict-fragility-ci); a deciding CI
+    that is NOT evaluable (zero finite paired draws) forces the associated
+    verdict to "not_evaluable" with a durable verdict_reason and keeps
+    fragile=None (r2 nit k100-deciding-ci-degenerate-failopen). Informational
     under --smoke."""
 
     def _deciding(block: dict, axis: str, key: str) -> dict:
@@ -2289,7 +2362,12 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
                 f"[k100] axes.{axis} missing k100_deciding.{key} — verdicts require "
                 "the paired-bootstrap deciding CI (r1 blocker k100-verdict-fragility-ci)"
             )
-        return dec or {"ci95": [float("nan"), float("nan")], "fragile": None}
+        return dec or {
+            "ci95": [float("nan"), float("nan")],
+            "fragile": None,
+            "not_evaluable": True,
+            "reason": f"axes.{axis} block absent — deciding {key} CI not evaluable",
+        }
 
     uf = doc["axes"].get("user_fact", {})
     c = uf.get("direction", {}).get("arm_779ce", {}).get("mean_cos_headline")
@@ -2308,7 +2386,21 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
         math.sqrt(max(_fin(r_ci[1]), 0.0)) if math.isfinite(_fin(r_ci[1])) else float("nan"),
     ]
     ratio = c / b if math.isfinite(c) and math.isfinite(b) and b > 0 else float("nan")
-    if not (math.isfinite(b) and b >= K100_LATTICE_B_FLOOR) or not math.isfinite(ratio):
+    # deciding-ratio fragility from the PAIRED bootstrap (c and r100 resampled
+    # together) — the marginal c-CI / point-b form ignored b's uncertainty
+    # (r1 blocker k100-verdict-fragility-ci). fragile=None means the deciding
+    # CI is NOT evaluable (zero finite paired draws / absent block): the
+    # verdict is forced to not_evaluable with a durable reason, never
+    # collapsed through bool(None) into a clean fragile=false (r2 nit
+    # k100-deciding-ci-degenerate-failopen).
+    fragile_ratio = dec_ratio.get("fragile")
+    uf_reason = None
+    if fragile_ratio is None:
+        uf_verdict = "not_evaluable"
+        uf_reason = dec_ratio.get("reason") or (
+            "deciding c/b paired-bootstrap CI not evaluable (zero finite draws)"
+        )
+    elif not (math.isfinite(b) and b >= K100_LATTICE_B_FLOOR) or not math.isfinite(ratio):
         uf_verdict = "unresolved"
     elif ratio >= K100_LATTICE_RATIO:
         uf_verdict = "reliability-limited"
@@ -2319,10 +2411,9 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
         and math.isfinite(b_ci[1])
         and b_ci[0] <= K100_LATTICE_B_FLOOR <= b_ci[1]
     )
-    # deciding-ratio fragility from the PAIRED bootstrap (c and r100 resampled
-    # together) — the marginal c-CI / point-b form ignored b's uncertainty
-    # (r1 blocker k100-verdict-fragility-ci).
-    fragile_ratio = dec_ratio.get("fragile")
+    fragile_uf = (
+        True if (fragile_b or fragile_ratio is True) else (None if fragile_ratio is None else False)
+    )
 
     qf = doc["axes"].get("query_form", {})
     surf = qf.get("surface", {}).get("observed", {})
@@ -2330,9 +2421,17 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
     s_ratio = s_flip / s_para if math.isfinite(s_flip) and s_para else float("nan")
     t_ratio = _fin(qf.get("text_space", {}).get("flip_over_para_ratio"))
     dec_g = _deciding(qf, "query_form", "g")
+    fragile_g = dec_g.get("fragile")
     g = s_ratio - t_ratio
-    if not math.isfinite(g):
+    qf_reason = None
+    if fragile_g is None:
         qf_verdict = "not_evaluable"
+        qf_reason = dec_g.get("reason") or (
+            "deciding g paired-bootstrap CI not evaluable (zero finite draws)"
+        )
+    elif not math.isfinite(g):
+        qf_verdict = "not_evaluable"
+        qf_reason = "point g non-finite"
     elif g >= K100_DISSOC_G:
         qf_verdict = "dissociation-holds"
     else:
@@ -2350,7 +2449,8 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
             "c_over_b_ci95": dec_ratio.get("ci95"),
             "thresholds": {"b_floor": K100_LATTICE_B_FLOOR, "ratio": K100_LATTICE_RATIO},
             "verdict": uf_verdict,
-            "fragile": bool(fragile_b or bool(fragile_ratio)),
+            "verdict_reason": uf_reason,
+            "fragile": fragile_uf,
             "fragile_components": {
                 "b_ci_straddles_floor": bool(fragile_b),
                 "c_over_b_paired_ci_straddles_ratio": fragile_ratio,
@@ -2365,7 +2465,8 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
             "g_ci95": dec_g.get("ci95"),
             "threshold_g": K100_DISSOC_G,
             "verdict": qf_verdict,
-            "fragile": dec_g.get("fragile"),
+            "verdict_reason": qf_reason,
+            "fragile": fragile_g,
             "lattice": "dissociation-holds <=> g >= 0.15; dissociation-collapses otherwise",
         },
     }
@@ -3023,50 +3124,20 @@ def compute_all(
         # k100 deciding-statistic CIs (plan v8 §3b; r1 blocker
         # k100-verdict-fragility-ci): PAIRED per-draw ratios under the SHARED
         # carrier resample (mult) — c and r100 resample TOGETHER for c/b, and
-        # all four ratio inputs resample together for the dissociation gap g.
-        # Parent/ffr axis blocks gain no key (additive contract).
+        # all four ratio inputs resample together for the dissociation gap g;
+        # the pairing lives in the named single-mult helpers (r2 concern
+        # k100-paired-bootstrap-wiring-unpinned). Parent/ffr axis blocks gain
+        # no key (additive contract).
         k100_deciding: dict | None = None
         if cfg.is_k100 and axis == "user_fact":
-            if head.size:
-                c_draws = boot_weighted_mean(
-                    cos_arm["arm_779ce"][head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
-                )
-                r_draws = boot_weighted_mean(
-                    r10[head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
-                )
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    b_draws = np.sqrt(np.clip(r_draws, 0.0, None))
-                    ratio_draws = np.where(b_draws > 0, c_draws / b_draws, np.nan)
-            else:
-                ratio_draws = np.full(mult.shape[0], np.nan)
+            ratio_draws = k100_paired_ratio_draws(
+                cos_arm["arm_779ce"], r10, head, pa.ca, pa.cb, pa.dyad, mult
+            )
             k100_deciding = {"c_over_b": k100_deciding_ci(ratio_draws, K100_LATTICE_RATIO)}
         elif cfg.is_k100 and axis == "query_form":
-            if head.size and para_head.size and norm_text is not None:
-                s_f = boot_weighted_mean(
-                    norm_obs[PRIMARY_LAYER][head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
-                )
-                s_p = boot_weighted_mean(
-                    norm_obs[PRIMARY_LAYER][para_head],
-                    pa.ca[para_head],
-                    pa.cb[para_head],
-                    pa.dyad[para_head],
-                    mult,
-                )
-                t_f = boot_weighted_mean(
-                    norm_text[head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
-                )
-                t_p = boot_weighted_mean(
-                    norm_text[para_head],
-                    pa.ca[para_head],
-                    pa.cb[para_head],
-                    pa.dyad[para_head],
-                    mult,
-                )
-                with np.errstate(invalid="ignore", divide="ignore"):
-                    g_draws = s_f / s_p - t_f / t_p
-                g_draws = np.where(np.isfinite(g_draws), g_draws, np.nan)
-            else:
-                g_draws = np.full(mult.shape[0], np.nan)
+            g_draws = k100_paired_g_draws(
+                norm_obs[PRIMARY_LAYER], norm_text, head, para_head, pa.ca, pa.cb, pa.dyad, mult
+            )
             k100_deciding = {"g": k100_deciding_ci(g_draws, K100_DISSOC_G)}
 
         axes_out[axis] = {

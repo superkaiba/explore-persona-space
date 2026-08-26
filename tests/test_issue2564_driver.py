@@ -1404,16 +1404,21 @@ def test_k100_bridge_parent_grid_scores_reproduce_full_grid_halves(k100_world):
 def test_k100_deciding_ci_fragility_flags():
     """r1 blocker k100-verdict-fragility-ci: bootstrap draws whose 95% CI
     straddles the 0.35 ratio / 0.15 g threshold set the fragile flag; clear
-    draws do not; an all-NaN draw set is not evaluable (fragile=None)."""
+    draws do not; an all-NaN draw set is EXPLICITLY not evaluable —
+    fragile=None + not_evaluable=True + a durable reason, never a silently
+    clean record (r2 nit k100-deciding-ci-degenerate-failopen)."""
     strad = A.k100_deciding_ci(np.linspace(0.30, 0.40, 200), A.K100_LATTICE_RATIO)
     assert strad["fragile"] is True
     assert strad["ci95"][0] <= A.K100_LATTICE_RATIO <= strad["ci95"][1]
+    assert "not_evaluable" not in strad
     clear = A.k100_deciding_ci(np.linspace(0.40, 0.50, 200), A.K100_LATTICE_RATIO)
     assert clear["fragile"] is False
+    assert "not_evaluable" not in clear
     assert A.k100_deciding_ci(np.linspace(0.10, 0.20, 200), A.K100_DISSOC_G)["fragile"] is True
     assert A.k100_deciding_ci(np.linspace(0.20, 0.30, 200), A.K100_DISSOC_G)["fragile"] is False
     nn = A.k100_deciding_ci(np.full(50, np.nan), A.K100_DISSOC_G)
     assert nn["fragile"] is None and nn["n_finite_draws"] == 0
+    assert nn["not_evaluable"] is True and "not evaluable" in nn["reason"]
 
 
 def test_k100_verdicts_emit_paired_deciding_ci_and_fragile():
@@ -1441,6 +1446,102 @@ def test_k100_verdicts_emit_paired_deciding_ci_and_fragile():
     del doc["axes"]["user_fact"]["k100_deciding"]
     with pytest.raises(RuntimeError, match="k100_deciding"):
         A.k100_verdicts(doc, "pooled", smoke=False)
+
+
+def test_k100_verdicts_force_not_evaluable_on_degenerate_deciding_ci():
+    """r2 nit k100-deciding-ci-degenerate-failopen: a deciding block built by
+    the REAL k100_deciding_ci from an all-NaN draw set forces the associated
+    verdict to not_evaluable with a durable verdict_reason and keeps
+    fragile=None — never bool(None) -> fragile: false; a real b-floor
+    fragility still dominates (fragile=True) even with the paired CI
+    unknown."""
+    doc = _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2)
+    doc["axes"]["user_fact"]["k100_deciding"]["c_over_b"] = A.k100_deciding_ci(
+        np.full(50, np.nan), A.K100_LATTICE_RATIO
+    )
+    v = A.k100_verdicts(doc, "pooled", smoke=False)
+    inj = v["injected_name"]
+    assert inj["verdict"] == "not_evaluable"
+    assert "not evaluable" in inj["verdict_reason"]
+    assert inj["fragile"] is None  # unknown, never coerced to False
+    assert inj["fragile_components"]["c_over_b_paired_ci_straddles_ratio"] is None
+    qf = v["query_form_dissociation"]  # healthy qf side untouched
+    assert qf["verdict"] == "dissociation-holds" and qf["verdict_reason"] is None
+    # b-floor fragility dominates: fragile True even with the paired CI unknown
+    doc_b = _k100_verdict_doc(0.30, 0.5501**2, 0.9, 1.0, 0.2)
+    doc_b["axes"]["user_fact"]["reliability"]["r100_ci95"] = [0.54**2, 0.57**2]
+    doc_b["axes"]["user_fact"]["k100_deciding"]["c_over_b"] = A.k100_deciding_ci(
+        np.full(50, np.nan), A.K100_LATTICE_RATIO
+    )
+    v_b = A.k100_verdicts(doc_b, "pooled", smoke=False)
+    assert v_b["injected_name"]["verdict"] == "not_evaluable"
+    assert v_b["injected_name"]["fragile"] is True
+    # query_form side: degenerate g CI forces the dissociation verdict
+    doc2 = _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2)
+    doc2["axes"]["query_form"]["k100_deciding"]["g"] = A.k100_deciding_ci(
+        np.full(50, np.nan), A.K100_DISSOC_G
+    )
+    v2 = A.k100_verdicts(doc2, "pooled", smoke=False)
+    qf2 = v2["query_form_dissociation"]
+    assert qf2["verdict"] == "not_evaluable" and qf2["fragile"] is None
+    assert "not evaluable" in qf2["verdict_reason"]
+    assert v2["injected_name"]["verdict"] == "reliability-limited"  # uf side untouched
+
+
+def test_k100_paired_deciding_draws_share_one_resample():
+    """r2 concern k100-paired-bootstrap-wiring-unpinned: the deciding-draw
+    builders form EVERY component from ONE shared multiplicity matrix —
+    per-draw brute-force oracles recompute c/b (both from mult[i]) and g (all
+    FOUR components from mult[i]) and must match exactly; an implementation
+    that resampled any component independently, or dropped one, diverges from
+    the oracle for generic data. compute_all's deciding blocks are wired
+    through these named helpers (source pin below)."""
+    rng = np.random.default_rng(7)
+    n_car, n_pairs, b_boot = 5, 12, 6
+    ca = rng.integers(0, n_car, size=n_pairs).astype(np.int64)
+    cb = rng.integers(0, n_car, size=n_pairs).astype(np.int64)
+    dyad = np.zeros(n_pairs, dtype=bool)
+    dyad[::3] = True
+    mult = A.carrier_multiplicities(rng.integers(0, n_car, size=(b_boot, n_car)), n_car)
+    cos_vals = rng.normal(0.4, 0.1, size=n_pairs)
+    r_vals = rng.uniform(0.2, 0.9, size=n_pairs)
+    state = rng.uniform(0.5, 2.0, size=n_pairs)
+    text = rng.uniform(0.5, 2.0, size=n_pairs)
+    head = np.array([0, 2, 3, 5, 7, 9], dtype=np.int64)
+    para_head = np.array([1, 4, 6, 8], dtype=np.int64)
+
+    def wmean(vals: np.ndarray, sel: np.ndarray, i: int) -> float:
+        w = np.where(dyad[sel], mult[i, ca[sel]] * mult[i, cb[sel]], mult[i, ca[sel]])
+        return float(np.sum(w * vals[sel]) / np.sum(w)) if np.sum(w) > 0 else float("nan")
+
+    got_ratio = A.k100_paired_ratio_draws(cos_vals, r_vals, head, ca, cb, dyad, mult)
+    got_g = A.k100_paired_g_draws(state, text, head, para_head, ca, cb, dyad, mult)
+    assert got_ratio.shape == got_g.shape == (b_boot,)
+    for i in range(b_boot):
+        c_i = wmean(cos_vals, head, i)
+        b_i = max(wmean(r_vals, head, i), 0.0) ** 0.5
+        exp_ratio = c_i / b_i if b_i > 0 else float("nan")
+        np.testing.assert_allclose(got_ratio[i], exp_ratio, atol=1e-12)
+        exp_g = wmean(state, head, i) / wmean(state, para_head, i) - wmean(text, head, i) / wmean(
+            text, para_head, i
+        )
+        np.testing.assert_allclose(got_g[i], exp_g, atol=1e-12)
+    # a zero-weight resample (no head carrier drawn) yields a NaN draw, and an
+    # all-negative r pool zeroes b -> all-NaN -> not_evaluable via the CI
+    zero_row = np.zeros((1, n_car))
+    assert np.isnan(A.k100_paired_ratio_draws(cos_vals, r_vals, head, ca, cb, dyad, zero_row))[0]
+    all_neg = A.k100_paired_ratio_draws(cos_vals, -r_vals, head, ca, cb, dyad, mult)
+    assert np.isnan(all_neg).all()
+    assert A.k100_deciding_ci(all_neg, A.K100_LATTICE_RATIO)["not_evaluable"] is True
+    # degenerate selections / absent text embeddings -> all-NaN draws
+    empty = np.array([], dtype=np.int64)
+    assert np.isnan(A.k100_paired_ratio_draws(cos_vals, r_vals, empty, ca, cb, dyad, mult)).all()
+    assert np.isnan(A.k100_paired_g_draws(state, None, head, para_head, ca, cb, dyad, mult)).all()
+    assert np.isnan(A.k100_paired_g_draws(state, text, head, empty, ca, cb, dyad, mult)).all()
+    # wiring pin: compute_all builds its deciding blocks THROUGH the helpers
+    # (pairing is by construction — each helper takes exactly ONE mult).
+    src = inspect.getsource(A.compute_all)
+    assert "k100_paired_ratio_draws(" in src and "k100_paired_g_draws(" in src
 
 
 def test_k100_vc_parity_binds_under_smoke(tmp_path, monkeypatch):
@@ -1593,6 +1694,61 @@ def test_k100_parent_staging_paths_carry_revision(tmp_path, monkeypatch):
         assert rev_b in str(paths[("parent", cell)])
     parent_calls = [c for c in calls[n:] if "/anchors/" in c[0] and c[2] == rev_b]
     assert len(parent_calls) == len(K2.K100_CELLS)
+
+
+def test_k100_pod_parent_vc_staging_keyed_on_revision(tmp_path, monkeypatch):
+    """r2 blocker k100-parent-revision-cache-unkeyed (final leg): the POD-side
+    v_C parity gate stages the parent bank under parent_vc/<revision>/, so a
+    same-out-root run pinned to revision B receives a DISTINCT path holding
+    B's bytes. The staging fake honors the REAL stage_hub_file existing-target
+    short-circuit (hub.py: an existing target returns WITHOUT a download) —
+    under the pre-fix revision-independent target, the second call would
+    silently reuse A's cached bytes and record no download."""
+    argv = ["--phase", "B", "--round", "k100", "--upload", "none"]
+    argv += ["--out-root", str(tmp_path / "root")]
+    cfg_a = D.build_config(D.parse_args(argv))
+    rev_b = "deadbeef" * 5
+    cfg_b = D.build_config(D.parse_args([*argv, "--parent-revision", rev_b]))
+    rev_a = cfg_a.parent_revision
+    assert rev_a and rev_a != rev_b
+
+    cid = "user_fact::n01::c01"
+    rng = np.random.default_rng(0)
+    vc = torch.tensor(rng.normal(size=(1, len(cfg_a.layers), 8)), dtype=torch.float32)
+    cfg_a.vc_dir.mkdir(parents=True, exist_ok=True)
+    cfg_a.manifest_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {"layers": list(cfg_a.layers), "context_ids": [cid], "vc": vc},
+        cfg_a.vc_dir / "vc2564_bank.pt",
+    )
+
+    downloads: list[tuple[str, str, str | None]] = []
+
+    def fake_stage(repo, path_in_repo, target, *, revision=None):
+        target = Path(target)
+        if target.exists():  # the REAL helper's existing-target short-circuit
+            return target
+        downloads.append((path_in_repo, str(target), revision))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {"layers": list(cfg_a.layers), "context_ids": [cid], "vc": vc, "rev": revision},
+            target,
+        )
+        return target
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.stage_hub_file", fake_stage)
+    D._k100_vc_parity(cfg_a, [{"id": cid}])
+    assert len(downloads) == 1 and downloads[0][2] == rev_a and rev_a in downloads[0][1]
+    # same out-root, new pin: the gate re-runs (fp mismatch) and must download
+    # B's bytes to a DISTINCT revision-keyed path — never reuse A's file.
+    D._k100_vc_parity(cfg_b, [{"id": cid}])
+    assert len(downloads) == 2 and downloads[1][2] == rev_b and rev_b in downloads[1][1]
+    path_a, path_b = Path(downloads[0][1]), Path(downloads[1][1])
+    assert path_a != path_b
+    # self-produced revision-tagged bundle (torch>=2.6 weights_only convention)
+    assert torch.load(path_b, map_location="cpu", weights_only=False)["rev"] == rev_b
+    rep = json.loads((cfg_b.manifest_dir / "k100_vc_parity.json").read_text())
+    assert rep["parent_revision"] == rev_b and rep["verdict"] == "pass"
 
 
 def _mutate_store(w, rel: str, source: str, mutate_fn) -> None:

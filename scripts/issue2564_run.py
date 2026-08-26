@@ -1493,10 +1493,17 @@ def _k100_vc_parity(cfg: Cfg2564, contexts: list[dict]) -> None:
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
     fresh = torch.load(cfg.vc_dir / "vc2564_bank.pt", map_location="cpu", weights_only=False)
+    # The staged target CARRIES the revision identity (parent_vc/<rev>/...),
+    # mirroring the analysis-side parent_pin/<rev>/ convention: stage_hub_file
+    # returns an existing target WITHOUT downloading, so a revision-independent
+    # path would silently reuse bytes staged under a different
+    # --parent-revision in the same out-root (r2 blocker
+    # k100-parent-revision-cache-unkeyed, final leg).
+    assert cfg.parent_revision, "k100 parent vc staging requires a non-empty parent revision"
     parent_path = stage_hub_file(
         HF_DATA_REPO,
         f"{HF_PREFIX}/analysis_tensors/vc2564/vc2564_bank.pt",
-        cfg.out_root / "parent_vc" / "vc2564_bank.pt",
+        cfg.out_root / "parent_vc" / cfg.parent_revision / "vc2564_bank.pt",
         revision=cfg.parent_revision,
     )
     # Self-produced, revision-pinned bundle (torch>=2.6 weights_only convention).
