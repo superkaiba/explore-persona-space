@@ -1,11 +1,62 @@
 {
-  "commit": "df309e7c",
-  "render_id": "bda09aee0a104e6b",
-  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "33529ec2+dirty",
+  "render_id": "5574cb57999b4244",
+  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
+    "figures/issue_2552/covariate_scatters_rep_ta.pdf",
+    "figures/issue_2552/covariate_scatters_rep_ta.png",
+    "figures/issue_2552/delta_cov_perturn.meta.json",
+    "figures/issue_2552/delta_cov_perturn.pdf",
+    "figures/issue_2552/delta_cov_perturn.png",
+    "figures/issue_2552/embedding_coverage.meta.json",
+    "figures/issue_2552/embedding_coverage.pdf",
+    "figures/issue_2552/embedding_coverage.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
+    "figures/issue_2552/matching_accuracy.meta.json",
+    "figures/issue_2552/matching_accuracy.pdf",
+    "figures/issue_2552/matching_accuracy.png",
+    "figures/issue_2552/mean_rank.meta.json",
+    "figures/issue_2552/mean_rank.pdf",
+    "figures/issue_2552/mean_rank.png",
+    "figures/issue_2552/pairwise_win_matrix.meta.json",
+    "figures/issue_2552/pairwise_win_matrix.pdf",
+    "figures/issue_2552/pairwise_win_matrix.png",
+    "figures/issue_2552/reconstruction_fve.meta.json",
+    "figures/issue_2552/reconstruction_fve.pdf",
+    "figures/issue_2552/reconstruction_fve.png",
+    "figures/issue_2552/w7_calibration.meta.json",
+    "figures/issue_2552/w7_calibration.pdf",
+    "figures/issue_2552/w7_calibration.png",
+    "scripts/issue2552_ladder.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-25T22:55:50Z",
+  "created": "2026-08-26T00:21:55Z",
   "figsize": [
     12.0,
     7.199999999999999
@@ -12020,7 +12071,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "act_mean_when_active",
+        "title_left": "mean activation when active",
         "xticklabels": [
           "\u22122.5",
           "0.0",
@@ -12041,7 +12092,7 @@
         ]
       },
       {
-        "title_left": "act_var",
+        "title_left": "activation variance",
         "xticklabels": [
           "\u22122.5",
           "0.0",
@@ -12063,7 +12114,7 @@
         ]
       },
       {
-        "title_left": "coact_mean",
+        "title_left": "co-activation degree",
         "xticklabels": [
           "\u22124",
           "\u22122",
@@ -12084,7 +12135,7 @@
         ]
       },
       {
-        "title_left": "consistency_twin",
+        "title_left": "twin consistency",
         "xticklabels": [
           "\u22122.5",
           "0.0",
@@ -12106,7 +12157,7 @@
         ]
       },
       {
-        "title_left": "decoder_norm",
+        "title_left": "decoder norm",
         "xticklabels": [
           "\u22124",
           "\u22122",
@@ -12127,7 +12178,7 @@
         ]
       },
       {
-        "title_left": "footprint_top20",
+        "title_left": "direct-logit footprint",
         "xticklabels": [
           "\u22125",
           "0",
@@ -12147,7 +12198,7 @@
         ]
       },
       {
-        "title_left": "match_cos",
+        "title_left": "twin match cosine",
         "xticklabels": [
           "\u22124",
           "\u22122",
@@ -12168,7 +12219,7 @@
         ]
       },
       {
-        "title_left": "pca_best_rank",
+        "title_left": "answer-PCA best rank",
         "xticklabels": [
           "\u22122",
           "\u22121",
@@ -12188,7 +12239,7 @@
         ]
       },
       {
-        "title_left": "rb_cos_max",
+        "title_left": "trait-direction alignment",
         "xticklabels": [
           "\u22122.5",
           "0.0",
@@ -12210,7 +12261,7 @@
         ]
       },
       {
-        "title_left": "share_lmsys",
+        "title_left": "LMSYS corpus share",
         "xticklabels": [
           "\u22124",
           "\u22122",
@@ -12230,7 +12281,7 @@
         ]
       },
       {
-        "title_left": "tier",
+        "title_left": "nested-training tier",
         "xticklabels": [
           "\u22121",
           "0",

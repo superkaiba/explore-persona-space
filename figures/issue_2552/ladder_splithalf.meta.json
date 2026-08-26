@@ -1,11 +1,20 @@
 {
-  "commit": "df309e7c",
-  "render_id": "509a9b58e73b411c",
-  "git_commit": "df309e7cd549e25ce854b0e62a314246e592d48b",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "33529ec2+dirty",
+  "render_id": "b44fd91d164e4f24",
+  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "scripts/issue2552_ladder.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2552_ladder.py",
-  "created": "2026-08-25T22:54:55Z",
+  "created": "2026-08-26T00:20:58Z",
   "figsize": [
     12.600000000000001,
     3.0

@@ -105,6 +105,20 @@ CFG_TICK = {  # MF-E: compact per-config bundle attribution for figure tick labe
     "mat_k100": "mat_k100\n(#2476 matryoshka, 65k)",
     "mat_k200": "mat_k200\n(#2476 matryoshka, 65k)",
 }
+COVARIATE_LABEL = {  # ONE display-name map — every rendered covariate label decodes here (r2)
+    "act_mean_when_active": "mean activation when active",
+    "act_var": "activation variance",
+    "decoder_norm": "decoder norm",
+    "footprint_top20": "direct-logit footprint",
+    "coact_mean": "co-activation degree",
+    "rb_cos_max": "trait-direction alignment",
+    "pca_best_rank": "answer-PCA best rank",
+    "share_lmsys": "LMSYS corpus share",
+    "consistency_twin": "twin consistency",
+    "match_cos": "twin match cosine",
+    "category": "schema category",
+    "tier": "nested-training tier",
+}
 PAPER_REFERENCE = {
     "matching_accuracy": {"pt_max": 0.950, "rep_ta": 0.739},
     "coverage": {"avg": 0.879, "head_to_head": 0.797},
@@ -1507,6 +1521,8 @@ def phase_figures(args) -> None:
     cat = json.loads((io.cat_out / "category_reads.json").read_text())
     rep = json.loads((io.dere_out / "replication_stats.json").read_text())
     cols = palette(8)
+    # one color = one meaning across every per-config figure (r2 cross-figure consistency)
+    cfg_color = {c: cols[i] for i, c in enumerate(JW.CONFIGS)}
 
     # 1. HERO — forward-selection partial ladder per dictionary
     fams = list(ladder["dictionaries"])
@@ -1514,7 +1530,10 @@ def phase_figures(args) -> None:
     axes = np.atleast_1d(axes)
     for ax, fam in zip(axes, fams, strict=True):
         run = ladder["dictionaries"][fam]["runs"]["primary"]
-        labels = ["activity\n(step 0)"] + [f"{s['selected']}\n(df={s['df']})" for s in run["steps"]]
+        labels = ["activity\n(step 0)"] + [
+            f"{COVARIATE_LABEL.get(s['selected'], s['selected'])}\n(df={s['df']})"
+            for s in run["steps"]
+        ]
         vals = [run["base_r2"]] + [s["overall_r2_increment"] for s in run["steps"]]
         bands = [np.nan] + [s.get("null_p95_overall", np.nan) for s in run["steps"]]
         x = np.arange(len(vals))
@@ -1672,7 +1691,9 @@ def phase_figures(args) -> None:
     accs = np.array([rep["per_config_matching"][c]["accuracy"] for c in cfgs], np.float64)
     cis = np.array([rep["per_config_matching"][c]["wilson_ci95"] for c in cfgs])
     x = np.arange(len(cfgs))
-    ax.bar(x, accs, color=cols[: len(cfgs)], yerr=np.abs(cis.T - accs[None, :]), capsize=3)
+    ax.bar(
+        x, accs, color=[cfg_color[c] for c in cfgs], yerr=np.abs(cis.T - accs[None, :]), capsize=3
+    )
     for cfg, ref in PAPER_REFERENCE["matching_accuracy"].items():
         if cfg in cfgs:
             ax.scatter([cfgs.index(cfg)], [ref], marker="_", s=300, color="k", zorder=3)
@@ -1708,7 +1729,7 @@ def phase_figures(args) -> None:
         fig, ax = plt.subplots(figsize=(5.6, 3.0))
         mr = w6["mean_rank"]
         cfgs = [c for c in JW.CONFIGS if c in mr and np.isfinite(mr[c])]
-        ax.bar(range(len(cfgs)), [mr[c] for c in cfgs], color=cols[: len(cfgs)])
+        ax.bar(range(len(cfgs)), [mr[c] for c in cfgs], color=[cfg_color[c] for c in cfgs])
         ax.set_xticks(
             range(len(cfgs)),
             [CFG_TICK.get(c, c) for c in cfgs],
@@ -1738,7 +1759,13 @@ def phase_figures(args) -> None:
                 [losses - (1 - hi) * n_cov, (1 - lo) * n_cov - losses],
             ]
         ).T
-        ax.bar([0, 1], [w, losses], color=[cols[2], cols[3]], yerr=np.abs(yerr), capsize=3)
+        ax.bar(
+            [0, 1],
+            [w, losses],
+            color=[cfg_color["rep_ta"], cfg_color["pt_max"]],
+            yerr=np.abs(yerr),
+            capsize=3,
+        )
         ax.set_xticks(
             [0, 1],
             [
@@ -1875,13 +1902,65 @@ def phase_figures(args) -> None:
                 m = (xv >= lo_) & (xv <= hi_)
                 if m.sum() >= 5:
                     ax.scatter([(lo_ + hi_) / 2], [np.median(r2[m])], color=cols[3], s=14, zorder=3)
-            ax.set_title(name, fontsize=7)
+            ax.set_title(COVARIATE_LABEL.get(name, name), fontsize=6.5)
         for ax in axf[len(names) :]:
             ax.axis("off")
         fig.suptitle(f"{fam}: per-feature R² vs covariate (z) — decile medians")
         fig.tight_layout()
         save(fig, f"covariate_scatters_{fam}", dir=io.figs)
         plt.close(fig)
+
+    # 14. instrument order/position sensitivity (r2 c3): matching accuracy by gold lineup
+    # slot for the headline pair; per-pair turn-averaged win rate by presentation order
+    match_rows = json.loads((io.dere_out / "matching_perturn.json").read_text())["rows"]
+    pair_rows = json.loads((io.dere_out / "pairwise_perturn.json").read_text())["rows"]
+    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(9.4, 3.2))
+    slots = [chr(ord("A") + i) for i in range(10)]
+    for cfg in ("rep_ta", "pt_max"):
+        acc = []
+        for g in slots:
+            rr = [r for r in match_rows if r["config"] == cfg and r["valid"] and r["gold"] == g]
+            acc.append(sum(r["correct"] for r in rr) / len(rr) if rr else np.nan)
+        ax_l.plot(
+            range(10),
+            acc,
+            marker="o",
+            color=cfg_color[cfg],
+            label=CFG_TICK[cfg].replace("\n", " "),
+        )
+    ax_l.set_xticks(range(10), slots)
+    ax_l.set_ylim(0, 1)
+    ax_l.set_xlabel("gold lineup slot")
+    ax_l.set_ylabel("matching accuracy")
+    ax_l.legend(fontsize=6)
+    ax_l.set_title("10-way matching by gold slot", fontsize=8)
+    firsts, seconds, ticks = [], [], []
+    for a in JW.TA_FAMILIES:
+        for b in ("pt_max", "pt_sum"):
+            w1 = n1 = w2 = n2 = 0
+            for r in pair_rows:
+                if not r["valid"] or set(r["pair"]) != {a, b}:
+                    continue
+                if r["list1"] == a:
+                    n1 += 1
+                    w1 += r["winner"] == a
+                else:
+                    n2 += 1
+                    w2 += r["winner"] == a
+            firsts.append(w1 / n1 if n1 else np.nan)
+            seconds.append(w2 / n2 if n2 else np.nan)
+            ticks.append(f"{a}\nvs {b}")
+    xr = np.arange(len(ticks))
+    ax_r.bar(xr - 0.2, firsts, width=0.4, color=cols[5], label="listed first")
+    ax_r.bar(xr + 0.2, seconds, width=0.4, color=cols[6], label="listed second")
+    ax_r.axhline(0.5, color="grey", ls=":", lw=1)
+    ax_r.set_xticks(xr, ticks, fontsize=6)
+    ax_r.set_ylabel("turn-averaged win rate")
+    ax_r.legend(fontsize=6)
+    ax_r.set_title("pairwise coverage by presentation order", fontsize=8)
+    fig.tight_layout()
+    save(fig, "instrument_position_effects", dir=io.figs)
+    plt.close(fig)
     print(f"[figures] wrote figures under {io.figs}", flush=True)
 
 
