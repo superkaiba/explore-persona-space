@@ -17546,9 +17546,10 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # Prior: 297_000 (#2260, 294,209 B) / 292_100 (#2246 post-rebase,
     # 289,354 B) / 290_900 (#2428).
     "issue/steps/18-step-10d.md": 302_000,
-    # measured 106,625 B @ #2325 2026-08-16; corridor-max
-    # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
-    "clean-results/SPEC.md": 109_400,
+    # measured 107,605 B @ #2340 2026-08-24 (check-61 enforcement-note
+    # sentence, +434 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 109_400 (#2325, 106,625 B) / 106_900; chronicle: git log.
+    "clean-results/SPEC.md": 110_400,
     # measured 88,010 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 90_000; chronicle: git log.
     "daily/SKILL.md": 90_800,
