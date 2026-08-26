@@ -2236,7 +2236,7 @@ _ODD_SEQUENCE = (
     "resid",
     "upload-fits",
 )
-_ODD_FORBIDDEN_PHASES = ("gen", "parse", "upload-raw")
+_ODD_FORBIDDEN_PHASES = ("gen", "parse", "upload-raw", "g2-anchor")
 
 
 def _sequence_for(args) -> tuple[str, ...]:
@@ -2244,7 +2244,9 @@ def _sequence_for(args) -> tuple[str, ...]:
 
     ``--phase all`` under ``--layer-set odd`` runs the layer-dependent
     sequence only; an EXPLICIT odd invocation of a primary-artifact phase
-    (gen/parse/upload-raw) is refused — those phases belong to the swept pass.
+    (gen/parse/upload-raw, plus the layer-set-independent g2-anchor gate —
+    round-4 C3-literal completeness) is refused — those belong to the swept
+    pass.
     """
     if args.phase == "all":
         if args.layer_set == "odd":

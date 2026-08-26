@@ -400,11 +400,31 @@ def test_harvest_threads_one_sha_into_every_staging_call(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 
 
+def _write_pending(path: Path, row_ids: list[str]) -> None:
+    """Coherent pending fixture (round 4): real row_ids/qids/golds, never a
+    '{}' placeholder — the staging coverage contract reads pending['rows']."""
+    path.write_text(
+        json.dumps({"rows": [{"row_id": r, "qid": f"q_{r}", "gold": "A"} for r in row_ids]}),
+        encoding="utf-8",
+    )
+
+
+def _jsonl_rows(row_ids: list[str]) -> str:
+    return "".join(
+        json.dumps({"row_id": r, "text": f"rollout {r}", "ans_char_span": [0, 7]}) + "\n"
+        for r in row_ids
+    )
+
+
 def test_stage_judge_fallback_inputs_flagged_cells_only(tmp_path, monkeypatch):
     cells = PC.all_cells()
     flagged = cells[0]
     listed: list[tuple[str, str | None]] = []
     staged_calls: list[tuple[str, str, str | None]] = []
+    # Coherent composed fixture (round 4, judge-fallback-staged-row-coverage):
+    # the staged files carry REAL rows that jointly cover the pending row_ids,
+    # so an introduced coverage gap would trip the staging assert.
+    rows_by_file = {"gpqa_s42.jsonl": ["r0", "r1"], "gpqa_s43.jsonl": ["r2"]}
 
     def _fake_list(api, repo_id, path, *, repo_type="model", revision=None):
         listed.append((path, revision))
@@ -418,7 +438,7 @@ def test_stage_judge_fallback_inputs_flagged_cells_only(tmp_path, monkeypatch):
         staged_calls.append((repo_id, path_in_repo, revision))
         t = Path(target)
         t.parent.mkdir(parents=True, exist_ok=True)
-        t.write_text("{}", encoding="utf-8")
+        t.write_text(_jsonl_rows(rows_by_file[path_in_repo.rsplit("/", 1)[-1]]), encoding="utf-8")
         return t
 
     monkeypatch.setattr(hub_mod, "list_hf_files_under_path", _fake_list)
@@ -426,7 +446,7 @@ def test_stage_judge_fallback_inputs_flagged_cells_only(tmp_path, monkeypatch):
     fits_root = tmp_path / "fits"
     for c in cells[:3]:
         (fits_root / c.key).mkdir(parents=True)
-    (fits_root / flagged.key / "gpqa_judge_pending.json").write_text("{}", encoding="utf-8")
+    _write_pending(fits_root / flagged.key / "gpqa_judge_pending.json", ["r0", "r1", "r2"])
 
     staged = TR._stage_judge_fallback_inputs(fits_root, "shaZ")
 
@@ -439,6 +459,30 @@ def test_stage_judge_fallback_inputs_flagged_cells_only(tmp_path, monkeypatch):
     parsed_dir = fits_root / flagged.key / "parsed"
     assert staged == {flagged.key: [parsed_dir / "gpqa_s42.jsonl", parsed_dir / "gpqa_s43.jsonl"]}
     assert (parsed_dir / "gpqa_s42.jsonl").exists()
+
+
+def test_stage_judge_fallback_inputs_fails_on_incomplete_row_coverage(tmp_path, monkeypatch):
+    """Round 4 BLOCKER regression (judge-fallback-staged-row-coverage): a
+    NONEMPTY staged parsed set missing ONE pending row_id fails loud AT
+    STAGING TIME with the missing id named — the cell is never certified
+    'runnable' for a KeyError inside the registered fallback."""
+    flagged = PC.all_cells()[0]
+
+    def _fake_stage_file(repo_id, path_in_repo, target, *, repo_type, revision, **kw):
+        t = Path(target)
+        t.parent.mkdir(parents=True, exist_ok=True)
+        t.write_text(_jsonl_rows(["r0", "r1"]), encoding="utf-8")  # r2 ABSENT
+        return t
+
+    monkeypatch.setattr(
+        hub_mod, "list_hf_files_under_path", lambda api, r, p, **kw: [f"{p}/gpqa_s42.jsonl"]
+    )
+    monkeypatch.setattr(hub_mod, "stage_hub_file", _fake_stage_file)
+    fits_root = tmp_path / "fits"
+    (fits_root / flagged.key).mkdir(parents=True)
+    _write_pending(fits_root / flagged.key / "gpqa_judge_pending.json", ["r0", "r1", "r2"])
+    with pytest.raises(AssertionError, match=r"2/3 pending row_ids.*\['r2'\]"):
+        TR._stage_judge_fallback_inputs(fits_root, "shaZ")
 
 
 def test_stage_judge_fallback_inputs_fails_loud_on_empty_prefix(tmp_path, monkeypatch):
@@ -527,6 +571,39 @@ def test_judge_fallback_composed_path(tmp_path, monkeypatch):
     assert merged["acc_judge_corrected"] == pytest.approx((4 + 1) / 10)
     assert merged["n_judge_corrected"] == 1
     assert merged["frac_unparseable_after_judge"] == pytest.approx(1 / 10)
+
+
+def test_judge_fallback_refuses_incomplete_parsed_coverage(tmp_path, monkeypatch):
+    """Round 4 BLOCKER regression (judge-fallback-staged-row-coverage,
+    consumer side): run_judge_fallback on nonempty staged parsed files whose
+    rows miss ONE pending row_id fails PRE-DISPATCH with the missing id
+    named and ZERO _dispatch_judge_round calls. Pre-fix this was a bare
+    KeyError at rows_by_id[p['row_id']] inside the registered fallback."""
+    calls = {"n": 0}
+
+    def _fake_round(items, checkpoint_dir):
+        calls["n"] += 1
+        return {}
+
+    monkeypatch.setattr(TR, "_dispatch_judge_round", _fake_round)
+    pending_path = tmp_path / "gpqa_judge_pending.json"
+    pending_path.write_text(
+        json.dumps({"rows": [{"row_id": f"r{i}", "qid": f"q{i}", "gold": "B"} for i in range(3)]}),
+        encoding="utf-8",
+    )
+    prompts_path = tmp_path / "gpqa_prompts.json"
+    prompts_path.write_text(
+        json.dumps({"prompts": [{"qid": f"q{i}", "prompt": f"Q{i}?"} for i in range(3)]}),
+        encoding="utf-8",
+    )
+    parsed_dir = tmp_path / "parsed"
+    parsed_dir.mkdir()
+    (parsed_dir / "gpqa_s42.jsonl").write_text(_jsonl_rows(["r0", "r1"]), encoding="utf-8")
+    out_path = tmp_path / "gpqa_judge_verdicts.json"
+    with pytest.raises(AssertionError, match=r"row_id\(s\) missing.*\['r2'\]"):
+        TR.run_judge_fallback(pending_path, parsed_dir, out_path, prompts_path=prompts_path)
+    assert calls["n"] == 0  # failed at item-build time, BEFORE any dispatch
+    assert not out_path.exists()  # no partial verdict artifact
 
 
 # ---------------------------------------------------------------------------

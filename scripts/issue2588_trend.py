@@ -386,8 +386,10 @@ def h2_reads(maps: dict[str, dict], universe: list[str], matrix: np.ndarray) -> 
       replacing the round-1 >= 5): a partial H2 read silently changes the
       registered statistic's n.
 
-    (a) gap-vs-AA-rank: Spearman between the per-checkpoint CALIBRATED arm
-        gap and the AA pin over the 7 checkpoints (registered read).
+    (a) gap-vs-AA-rank: Spearman between the per-checkpoint RAW complete-case
+        shared-ID generic gap (gap_generic_raw) and the AA pin over the 7
+        checkpoints (registered read); the calibrated gap rides ONLY as an
+        E4 sensitivity field, never the registered basis.
     (b) surface contrast (2603.05488): Wilcoxon signed-rank over the 7
         per-checkpoint [gap_GPQA − gap_generic] raw deltas (min attainable
         two-sided p at n=7 = 0.0156 — "unresolved" is calibrated, not
@@ -421,7 +423,7 @@ def h2_reads(maps: dict[str, dict], universe: list[str], matrix: np.ndarray) -> 
     gpqa_matrix = _shared_resample_matrix(gpqa_universe, int(matrix.shape[0]), PC.BOOTSTRAP_SEED)
 
     detail: dict[str, dict] = {}
-    gaps_cal, gaps_raw, aa_vals, surface_deltas = [], [], [], []
+    gaps_raw, aa_vals, surface_deltas = [], [], []
     for key in QWEN_THINKING_KEYS:
         ref_b, ref_a = MapRef(key, "b", "cot_boundary"), MapRef(key, "a", "prompt_last")
         assert_pair_metadata(ref_b, ref_a)  # same checkpoint id — legal pair
@@ -471,7 +473,6 @@ def h2_reads(maps: dict[str, dict], universe: list[str], matrix: np.ndarray) -> 
                 rec_entry["gap_gpqa_resid"] = float(
                     gq_b["same_question_acc1_cos"] - gq_a["same_question_acc1_cos"]
                 )
-        gaps_cal.append(gap_cal)
         gaps_raw.append(gap_g)
         surface_deltas.append(surface_delta)
         aa_vals.append(PC.AA_PIN[key][0])
@@ -740,6 +741,20 @@ def run_judge_fallback(
     for f in sorted(parsed_dir.glob("gpqa_s*.jsonl")):
         for r in PC.read_jsonl(f):
             rows_by_id[r["row_id"]] = r
+    # Round 4 (judge-fallback-staged-row-coverage): the staged parsed rows +
+    # frozen prompts MUST cover every pending row BEFORE any DispatchItem is
+    # built — a partial/stale parsed mirror otherwise dies as a bare KeyError
+    # (rows_by_id[p["row_id"]] / q_by_id[p["qid"]]) inside the registered
+    # fallback, the third components-green/phase-dead instance on this task.
+    missing_rows = [p["row_id"] for p in pending["rows"] if p["row_id"] not in rows_by_id]
+    missing_qids = sorted({p["qid"] for p in pending["rows"] if p["qid"] not in q_by_id})
+    assert not missing_rows and not missing_qids, (
+        f"judge fallback: staged inputs do not cover pending rows — "
+        f"{len(missing_rows)} row_id(s) missing from {parsed_dir} "
+        f"(first 5: {missing_rows[:5]}); {len(missing_qids)} qid(s) missing from "
+        f"{prompts_path} (first 5: {missing_qids[:5]}) — partial/stale staging; "
+        "re-run --harvest at the pinned revision before dispatching the judge wave"
+    )
     items = []
     for p in pending["rows"]:
         r = rows_by_id[p["row_id"]]
@@ -919,6 +934,21 @@ def _stage_judge_fallback_inputs(fits_root: Path, revision: str) -> dict[str, li
                 revision=revision,
             )
         staged[cell.key] = [parsed_dir / rp.rsplit("/", 1)[-1] for rp in wanted]
+        # Round 4 (judge-fallback-staged-row-coverage): presence of SOME
+        # gpqa_s*.jsonl is not coverage — validate that the staged rows cover
+        # every pending row_id AT STAGING TIME, so --harvest fails loud here
+        # (naming the missing ids) instead of certifying the cell "runnable"
+        # for a KeyError inside run_judge_fallback.
+        pending_rows = json.loads(pending.read_text(encoding="utf-8"))["rows"]
+        staged_ids = {r["row_id"] for fp in staged[cell.key] for r in PC.read_jsonl(fp)}
+        missing = [p["row_id"] for p in pending_rows if p["row_id"] not in staged_ids]
+        assert not missing, (
+            f"judge-fallback staging: {cell.key} staged parsed rows cover only "
+            f"{len(pending_rows) - len(missing)}/{len(pending_rows)} pending row_ids "
+            f"(first 5 missing: {missing[:5]}) under {parsed_dir} @ {revision[:12]} — "
+            "partial/stale parsed upload; the pod-side upload-raw phase must persist "
+            "ALL parsed GPQA rollouts the pending file references"
+        )
         logger.info(
             "[i2588] judge-fallback inputs staged for %s (%d files) — run: "
             "uv run python scripts/issue2588_trend.py --judge-fallback "
