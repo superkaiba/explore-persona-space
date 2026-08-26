@@ -179,7 +179,7 @@ def _math_row(i: int) -> dict:
 
 def _compose(rows_by_corpus: dict, side=POST_A1) -> tuple[dict, dict]:
     tok = TinyTok()
-    return G.compose_prompts(tok, tok, side, rows_by_corpus, False)
+    return G.compose_prompts(tok, tok, side, rows_by_corpus, False, G.MAX_MODEL_LEN)
 
 
 class _StopAtWorkers(RuntimeError):
@@ -204,6 +204,10 @@ def _patch_run_generation_boundaries(monkeypatch, spawn_calls: list[str]) -> Non
     def fake_resolve_stop_ids(model: str, revision: str | None) -> list[int]:
         return [151645]
 
+    def fake_resolve_max_model_len(model: str, revision: str | None) -> int:
+        # External boundary (r13): the real body reads the model's HF config.
+        return G.MAX_MODEL_LEN
+
     def fake_from_pretrained(model, *, revision=None, **kwargs):
         return TinyTok()
 
@@ -213,6 +217,7 @@ def _patch_run_generation_boundaries(monkeypatch, spawn_calls: list[str]) -> Non
 
     monkeypatch.setattr(G, "resolve_revision", fake_resolve_revision)
     monkeypatch.setattr(G, "resolve_stop_ids", fake_resolve_stop_ids)
+    monkeypatch.setattr(G, "resolve_max_model_len", fake_resolve_max_model_len)
     monkeypatch.setattr(G, "spawn_workers", fake_spawn_workers)
     monkeypatch.setattr(transformers.AutoTokenizer, "from_pretrained", fake_from_pretrained)
 
@@ -270,7 +275,7 @@ class TestReliabilityDrawOverComposedRows:
         drawn, and the per-stratum quota reflects the post-drop population —
         a pre-composition draw could select the dropped row and silently
         shrink the realized reliability quota (root-cause marker §fix)."""
-        budget = G.prompt_budget(POST_A1)
+        budget = G.prompt_budget(POST_A1, G.MAX_MODEL_LEN)
         rows = {"gsm8k_train": [_gsm_row(i, "k2_3") for i in range(6)]}
         rows["gsm8k_train"][0]["user_text"] = "w " * (budget + 50)
         dropped_id = rows["gsm8k_train"][0]["row_id"]
@@ -430,7 +435,7 @@ class TestRunGenerationEmitsDrawRecord:
         out_root = tmp_path / "out"
         spawn_calls: list[str] = []
         _patch_run_generation_boundaries(monkeypatch, spawn_calls)
-        budget = G.prompt_budget(POST_A1)
+        budget = G.prompt_budget(POST_A1, G.MAX_MODEL_LEN)
         rows = {
             "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(8)],
             "contexthub": [_ch_row(i, *CH_CELLS[i % 8]) for i in range(8)],
@@ -479,7 +484,7 @@ class TestExpectedUniverseAccounting:
         share redistributes so the total target is still met. Pre-fix (r8
         module): the stratum vanished — shortfall 0, capped [], no WARN,
         survivor targets renormalized (3.0 -> 4.0 here)."""
-        budget = G.prompt_budget(POST_A1)
+        budget = G.prompt_budget(POST_A1, G.MAX_MODEL_LEN)
         rows = {
             "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(40)],
         }
@@ -679,7 +684,7 @@ class TestRegisteredStratumGate:
         out_root = tmp_path / "out"
         spawn_calls: list[str] = []
         _patch_run_generation_boundaries(monkeypatch, spawn_calls)
-        budget = G.prompt_budget(POST_A1)
+        budget = G.prompt_budget(POST_A1, G.MAX_MODEL_LEN)
         rows = {
             "gsm8k_train": [_gsm_row(i, ("k1", "k2_3")[i % 2]) for i in range(12)],
             "math": [_math_row(i) for i in range(8)],
@@ -741,7 +746,7 @@ class TestRegisteredStratumGate:
         out_root = tmp_path / "out"
         spawn_calls: list[str] = []
         _patch_run_generation_boundaries(monkeypatch, spawn_calls)
-        budget = G.prompt_budget(POST_A1)
+        budget = G.prompt_budget(POST_A1, G.MAX_MODEL_LEN)
         rows = {
             "gsm8k_train": [_gsm_row(i, K_BINS[i % 4]) for i in range(8)],
             "contexthub": [_ch_row(i, *CH_CELLS[i % 8]) for i in range(8)],

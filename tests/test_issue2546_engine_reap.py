@@ -132,6 +132,7 @@ def _write_work(tmp_path: Path, *, resumed: bool) -> tuple[SimpleNamespace, Path
         "side_spec": json.loads(json.dumps(asdict(side))),  # the GENUINE JSON handoff
         "cap": side.cap,
         "regen_cap": side.regen_cap,
+        "max_model_len": G.MAX_MODEL_LEN,  # r13: resolved per-model engine context
         "stop_ids": [151645],
         "decode_fallback": False,
         "fp_sha": fp_sha,
@@ -175,7 +176,9 @@ def worker_env(monkeypatch):
 def _arm_engine_fakes(monkeypatch, log: list[str]) -> None:
     """Engine-path fakes mirroring the production call shapes."""
 
-    def fake_build_engine(model: str, revision: str | None):
+    def fake_build_engine(model: str, revision: str | None, max_model_len: int):
+        # r13 signature: the worker threads work["max_model_len"] through.
+        assert max_model_len == G.MAX_MODEL_LEN
         log.append("build_engine")
         return _FakeLLM(log)
 

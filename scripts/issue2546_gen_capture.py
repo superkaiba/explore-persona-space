@@ -113,6 +113,14 @@ RAW_PREFIX = "issue2546_cotmap/raw_completions"
 STORE_PREFIX = "issue2546_cotmap/analysis_tensors/thinkstore"
 
 MAX_MODEL_LEN = 32768
+# Generation-budget floor (r13 arm-2 P1 crash fix). Plan §11 grounds 2,048 as
+# ALREADY-truncating for Math-7B stepwise answers ("2,048 would truncate"), so
+# a row left with less than this inside the engine context is truncation-broken
+# by the plan's own reasoning, not measurably risky: compose_prompts DROPS such
+# rows (digest-only record) and row_max_tokens fails LOUD if one slips through.
+# At/above the floor the realized per-cell caphit_residual_rate (>CAPHIT_TRIGGER
+# per plan §11) stays the deciding instrument.
+GEN_FLOOR_TOKENS = 2048
 GPU_MEMORY_UTILIZATION = 0.85
 VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 REL_TEMPERATURE, REL_TOP_P, REL_DRAWS = 0.6, 0.95, 4
@@ -1204,15 +1212,84 @@ def gate_report(parses: list[dict], smoke_n_cap: int) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def build_engine(model: str, revision: str | None):
+def resolve_max_model_len(model: str, revision: str | None) -> int:
+    """Effective vLLM engine context for ONE model: min(MAX_MODEL_LEN, own ctx).
+
+    The module pin (32,768) exceeds Qwen2.5-Math-7B's ``max_position_embeddings``
+    (4,096) and vLLM refuses at ModelConfig validation when the user pin is
+    strictly GREATER than the config-derived length — the arm-2 P1 rc=1 crash
+    (r13). The min() is a NO-OP for every other arm model (config-verified):
+    Qwen3-8B 40,960; DeepSeek-R1-Distill-Qwen-7B 131,072; OpenThinker3-7B
+    32,768; Qwen2.5-7B-Instruct 32,768 (vLLM's check is strict ``>``, so
+    equality passes). Reads the model's OWN config.json (HF-cached on the pods;
+    same access pattern as the tokenizer loads beside every call site) and
+    fails LOUD when the field is absent — never a silent fall-back to the pin,
+    which is exactly the crash this function removes."""
+    from transformers import AutoConfig
+
+    cfg = AutoConfig.from_pretrained(model, revision=revision)
+    ctx = getattr(cfg, "max_position_embeddings", None)
+    if ctx is None:
+        ctx = getattr(getattr(cfg, "text_config", None), "max_position_embeddings", None)
+    if not ctx:
+        raise RuntimeError(
+            f"{model}: config.json carries no max_position_embeddings — cannot derive a "
+            f"safe engine max_model_len (refusing the bare {MAX_MODEL_LEN} pin; r13)"
+        )
+    return min(MAX_MODEL_LEN, int(ctx))
+
+
+def row_max_tokens(cap: int, max_model_len: int, n_prompt_tokens: int) -> int:
+    """Per-row generation budget: min(declared cap, room the engine context leaves).
+
+    A NO-OP (returns ``cap``) whenever the compose-side drop rule guaranteed
+    ``n_prompt_tokens + regen_cap <= max_model_len`` — every side except the
+    context-clamped arm-2 pre (Qwen2.5-Math-7B, 4,096 total context under
+    declared cap=4,096 / regen_cap=8,192). Fails LOUD below GEN_FLOOR_TOKENS
+    of generation room (the stated floor — see the constant): such a row must
+    have been dropped by compose_prompts, so reaching here means a stale or
+    hand-built work file."""
+    room = max_model_len - n_prompt_tokens
+    if room < GEN_FLOOR_TOKENS:
+        raise RuntimeError(
+            f"row leaves {room} generation tokens < floor {GEN_FLOOR_TOKENS} "
+            f"(prompt {n_prompt_tokens} of max_model_len {max_model_len}) — the "
+            f"compose-side overlong drop should have removed it; refusing a "
+            f"silently-truncated generation (r13)"
+        )
+    return min(cap, room)
+
+
+def select_regen_indices(
+    prim: list[tuple[str, str, int]], caps: list[int], regen_caps: list[int]
+) -> list[int]:
+    """Cap-hit primary rows WITH regen headroom (regen budget strictly above primary).
+
+    On the unclamped sides ``regen_caps[i] == regen_cap > cap == caps[i]`` for
+    every row, so this reduces EXACTLY to the pre-r13 rule (every
+    finish_reason=="length" row regens). On a context-clamped side both budgets
+    clamp to the same ``max_model_len - n_prompt_tokens``, so a greedy regen
+    would reproduce the identical truncated text — those rows are skipped and
+    stay finish_reason=length residuals for the per-cell caphit instrument
+    (plan G-C drop-and-count; the >2%/cell trigger)."""
+    return [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length" and regen_caps[i] > caps[i]]
+
+
+def build_engine(model: str, revision: str | None, max_model_len: int):
     from vllm import LLM
 
+    # r13 fix-engaged signal: the per-model resolved engine context. Pre-fix
+    # this passed the bare MAX_MODEL_LEN pin, which vLLM's ModelConfig refuses
+    # for a shorter-context model (arm-2 pre Qwen2.5-Math-7B: 4,096).
+    logger.info(
+        "[max-model-len] %s: engine max_model_len=%d (pin %d)", model, max_model_len, MAX_MODEL_LEN
+    )
     return LLM(
         model=model,
         revision=revision,
         dtype="bfloat16",
         gpu_memory_utilization=GPU_MEMORY_UTILIZATION,
-        max_model_len=MAX_MODEL_LEN,
+        max_model_len=max_model_len,
         seed=SEED,
     )
 
@@ -1229,6 +1306,23 @@ def sampling_params(cap: int, stop_ids: list[int], *, greedy: bool, seed: int | 
         max_tokens=cap,
         stop_token_ids=stop_ids,
     )
+
+
+def _sp_for(caps: list[int], stop_ids: list[int], *, greedy: bool, seed: int | None = None):
+    """SamplingParams for per-row generation budgets (r13).
+
+    UNIFORM caps (every unclamped side — the drop rule guarantees room >= the
+    declared cap, so ``row_max_tokens`` returns the cap for every row) keep the
+    pre-r13 single-SamplingParams shape BYTE-IDENTICAL — same object count,
+    same seeded-sampling composition (feedback: seeded vLLM sampling is not
+    reproducible across request-shape changes, so the live arms' path must not
+    change shape). MIXED caps (a context-clamped side) return one
+    SamplingParams per row; vLLM 0.11 ``LLM.generate`` accepts a Sequence
+    matched to prompts, and ``generate_chunked`` slices it per chunk."""
+    assert caps, "empty caps list — no rows to generate"
+    if len(set(caps)) == 1:
+        return sampling_params(caps[0], stop_ids, greedy=greedy, seed=seed)
+    return [sampling_params(c, stop_ids, greedy=greedy, seed=seed) for c in caps]
 
 
 def _reap_gen_engine(llm) -> None:
@@ -1428,9 +1522,12 @@ def generate_chunked(
             n_chunks,
             len(chunk),
         )
+        # Per-row SamplingParams lists (r13 context-clamped sides) slice with
+        # their prompts; a single shared SamplingParams passes through as-is.
+        sp_chunk = sp[i : i + VLLM_CHUNK_SIZE] if isinstance(sp, list) else sp
         chunk_out = [
             (o.outputs[0].text, o.outputs[0].finish_reason, len(o.outputs[0].token_ids))
-            for o in _eng().generate(chunk, sp, use_tqdm=False)
+            for o in _eng().generate(chunk, sp_chunk, use_tqdm=False)
         ]
         if cp is not None:
             line = json.dumps({"key": key, "i0": i, "fp_sha": fp_sha, "outs": chunk_out})
@@ -1522,23 +1619,40 @@ def run_gen_worker(args) -> None:
     def _llm():
         nonlocal llm
         if llm is None:
-            llm = build_engine(work["model"], work["revision"])
+            llm = build_engine(work["model"], work["revision"], work["max_model_len"])
         return llm
 
     fp_sha = work["fp_sha"]
     rc = 0
     try:
+        # Per-row generation budgets inside the engine's own context (r13): a
+        # NO-OP list of the declared caps on every unclamped side; on the
+        # context-clamped arm-2 pre (Math-7B, 4,096 total) each row gets
+        # min(cap, max_model_len - n_prompt_tokens), floor-asserted.
+        mml = work["max_model_len"]
+        caps = [row_max_tokens(work["cap"], mml, r["n_prompt_tokens"]) for r in rows]
+        regen_caps = [row_max_tokens(work["regen_cap"], mml, r["n_prompt_tokens"]) for r in rows]
         row_ids = {r["row_id"] for r in rows}
         out_rows = _load_stage(out_file, "primary", row_ids, fp_sha)
         if out_rows is None:
-            sp = sampling_params(
-                work["cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
-            )
+            sp = _sp_for(caps, stop_ids, greedy=greedy, seed=None if greedy else SEED)
             prim = generate_chunked(
                 _llm, prompts, sp, f"primary-{side.side}", ckpt=(out_file, "primary", fp_sha)
             )
             out_rows = []
-            regen_idx = [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length"]
+            regen_idx = select_regen_indices(prim, caps, regen_caps)
+            n_caphit = sum(1 for _t, fr, _n in prim if fr == "length")
+            if n_caphit > len(regen_idx):
+                logger.warning(
+                    "[regen] %d/%d cap-hit rows have NO regen headroom inside "
+                    "max_model_len=%d (regen budget == primary budget) — kept as "
+                    "finish_reason=length residuals for the per-cell "
+                    "caphit_residual_rate / %.2f trigger (plan G-C drop-and-count)",
+                    n_caphit - len(regen_idx),
+                    n_caphit,
+                    mml,
+                    CAPHIT_TRIGGER,
+                )
             regen_out: dict[int, tuple[str, str, int]] = {}
             if regen_idx:
                 logger.info(
@@ -1548,8 +1662,11 @@ def run_gen_worker(args) -> None:
                     work["cap"],
                     work["regen_cap"],
                 )
-                sp2 = sampling_params(
-                    work["regen_cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
+                sp2 = _sp_for(
+                    [regen_caps[i] for i in regen_idx],
+                    stop_ids,
+                    greedy=greedy,
+                    seed=None if greedy else SEED,
                 )
                 regen_texts = generate_chunked(
                     _llm,
@@ -1594,7 +1711,12 @@ def run_gen_worker(args) -> None:
                 out_file, f"rel_d{draw}", {r["row_id"] for _, r in rel_rows}, fp_sha
             )
             if draw_rows is None:
-                spd = sampling_params(work["cap"], stop_ids, greedy=False, seed=SEED * 100 + draw)
+                spd = _sp_for(
+                    [caps[i] for i, _ in rel_rows],
+                    stop_ids,
+                    greedy=False,
+                    seed=SEED * 100 + draw,
+                )
                 outs = generate_chunked(
                     _llm,
                     [prompts[i] for i, _ in rel_rows],
@@ -2272,9 +2394,24 @@ def spawn_workers(script_args: list[str], work_files: list[Path], out_root: Path
         raise RuntimeError(f"{tag}: worker slots failed: {failed}")
 
 
-def prompt_budget(side: SideSpec) -> int:
-    # Regen-aware length budget (verify_plan c69 arithmetic: max_model_len - 2x cap).
-    return MAX_MODEL_LEN - 2 * side.cap
+def prompt_budget(side: SideSpec, max_model_len: int) -> int:
+    """Prompt-token budget for the compose-side overlong-drop rule (r13 form).
+
+    Legacy arithmetic (verify_plan c69): ``max_model_len - regen_cap`` —
+    ``regen_cap == 2*cap`` for every declared side, so this IS the plan's
+    ``max_model_len - 2x cap``, and it is BYTE-IDENTICAL for every side whose
+    declared regen_cap fits the resolved engine length (all sides except arm-2
+    pre: Qwen2.5-Math-7B is a 4,096-token model under cap=4,096 /
+    regen_cap=8,192 — the arm-2 P1 crash class). When the declared regen_cap
+    does NOT fit, the budget keeps GEN_FLOOR_TOKENS of generation room
+    instead: kept rows are then guaranteed >= GEN_FLOOR_TOKENS of budget,
+    per-row caps clamp to the realized prompt length (``row_max_tokens``), and
+    the regen rung is structurally disabled (no headroom above the primary
+    budget exists inside the model's own context — ``select_regen_indices``)."""
+    legacy = max_model_len - side.regen_cap
+    if legacy >= GEN_FLOOR_TOKENS:
+        return legacy
+    return max_model_len - GEN_FLOOR_TOKENS
 
 
 def compose_prompts(
@@ -2283,15 +2420,19 @@ def compose_prompts(
     side: SideSpec,
     rows_by_corpus: dict[str, list[dict]],
     prefill_fallback: bool,
+    max_model_len: int,
 ) -> tuple[dict[str, list[dict]], dict]:
     """Render + tokenize prompts, compute read points, drop overlong rows (digest-only).
 
     ``tok_on`` is the same tokenizer, used to derive the arm-3 shared
     assistant-start read point from the THINK-ON render (asserted prefix).
+    ``max_model_len`` is the RESOLVED per-model engine context
+    (``resolve_max_model_len`` — required, never defaulted to the module pin:
+    a silent pin fallback is the r13 arm-2 P1 crash class).
     """
     out: dict[str, list[dict]] = {}
     dropped: dict[str, list[dict]] = {}
-    budget = prompt_budget(side)
+    budget = prompt_budget(side, max_model_len)
     for c, rows in rows_by_corpus.items():
         keep = []
         drop = []
@@ -2352,6 +2493,8 @@ def compose_prompts(
             )
     return out, {
         "budget_tokens": budget,
+        "max_model_len": max_model_len,
+        "gen_floor_tokens": GEN_FLOOR_TOKENS,
         "dropped": {c: len(d) for c, d in dropped.items()},
         "dropped_detail": dropped,
     }
@@ -2441,6 +2584,22 @@ def run_generation(
     tok = AutoTokenizer.from_pretrained(side.model, revision=revision)
     assert_think_pins(tok, side)
     stop_ids = resolve_stop_ids(side.model, revision)
+    eff_len = resolve_max_model_len(side.model, revision)
+    if eff_len < MAX_MODEL_LEN:
+        logger.warning(
+            "[max-model-len] %s (%s): model context %d < pin %d — per-row caps clamp "
+            "to min(cap, %d - n_prompt_tokens) (declared cap=%d regen_cap=%d); the "
+            "regen rung has NO headroom inside this context, so cap-hit rows stay "
+            "finish_reason=length residuals for the >%.2f/cell trigger (plan §11)",
+            side.model,
+            side.stage,
+            eff_len,
+            MAX_MODEL_LEN,
+            eff_len,
+            side.cap,
+            side.regen_cap,
+            CAPHIT_TRIGGER,
+        )
     flags = {
         "decode_fallback": bool(args.decode_fallback and side.post_like),
         "prefill_fallback": bool(args.prefill_fallback),
@@ -2472,7 +2631,9 @@ def run_generation(
         pending[c] = rows
     if not pending:
         return merged
-    composed, compose_report = compose_prompts(tok, tok, side, pending, args.prefill_fallback)
+    composed, compose_report = compose_prompts(
+        tok, tok, side, pending, args.prefill_fallback, eff_len
+    )
     rel_ids: set[str] = set()
     if rel_total > 0:
         # The quota universe is the PRE-composition pending population (r9
@@ -2563,6 +2724,14 @@ def run_generation(
                 "side_spec": asdict(side),
                 "cap": side.cap,
                 "regen_cap": side.regen_cap,
+                # Resolved per-model engine context (r13): the worker builds its
+                # engine with THIS, never the module pin, and derives per-row
+                # caps from it. Deterministic from (model, revision), so it
+                # deliberately stays OUT of the regime fingerprint — declared
+                # cap/regen_cap + revision already pin it, and adding a key
+                # would refuse-to-mix every pre-r13 persisted rollout meta on
+                # the LIVE arms (#1315 resume class).
+                "max_model_len": eff_len,
                 "stop_ids": stop_ids,
                 "decode_fallback": flags["decode_fallback"],
                 # Regime-fingerprint sha for worker-side stage/chunk resume
@@ -3339,10 +3508,23 @@ def phase_smoke(args, arm: ArmSpec, corpora: dict[str, list[dict]], out_root: Pa
         "offender_max": GATE_GB_OFFENDER_MAX,
         "pass": gb_pass,
     }
+    short = short_side(arm)
+    g_short = gen_reports[short.side]
     verdicts["G-C"] = {
         "caphit_rate": g["caphit_rate"],
         "production_trigger": CAPHIT_TRIGGER,
         "informational_at_smoke": True,
+        # r13: the SHORT side's realized cap-hit, surfaced at verdict level —
+        # on a context-clamped pre model (arm-2 Qwen2.5-Math-7B, 4,096 total,
+        # regen structurally disabled) this is the ONLY truncation instrument
+        # plan §11's >2%/cell trigger reads, so it must land in the smoke
+        # report for the pre side, not only inside gen[<side>].
+        "short_side": {
+            "side": short.side,
+            "caphit_rate": g_short["caphit_rate"],
+            "caphit_rate_all_corpora": g_short["all_corpora"]["caphit_rate"],
+            "declared_cap": short.cap,
+        },
     }
     if arm.arm == 3 and not args.decode_fallback and g["caphit_rate"] > SMOKE_CAPHIT_GB3:
         if "decode" not in fallbacks:
