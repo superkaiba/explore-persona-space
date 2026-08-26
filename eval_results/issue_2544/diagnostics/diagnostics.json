@@ -1,0 +1,555 @@
+{
+  "metadata": {
+    "issue": 2544,
+    "recipe_version": "issue2544-run-v1",
+    "git_sha": "8660656d27bfc27f701e9f70d00e195df5ef2a27",
+    "timestamp_utc": "2026-08-25T23:05:26Z",
+    "env_versions": {
+      "python": "3.11.10",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0"
+    },
+    "code_sha": "480ad29bda2eb7273ec8c91e159ff40a62cd1cc192fdb98395225fe9264e6fd4"
+  },
+  "r0": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.9999444444444444,
+      "truncated_rate": 0.9999444444444444,
+      "repetition_rate": 0.0,
+      "answer_len": {
+        "mean": 1023.9851666666667,
+        "p10": 1024.0,
+        "p50": 1024.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.9949220611300806,
+      "format_marker_rate": 0.29738888888888887
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 1.0,
+      "truncated_rate": 1.0,
+      "repetition_rate": 0.0,
+      "answer_len": {
+        "mean": 1024.0,
+        "p10": 1024.0,
+        "p50": 1024.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.9959386732941475,
+      "format_marker_rate": 0.07416666666666667
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": 0.014833333333285736,
+      "format_marker_rate": -0.2232222222222222,
+      "cap_hit_rate": 5.5555555555586444e-05,
+      "distinct_word_ratio": 0.001016612164066899
+    }
+  },
+  "r1": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.6161666666666666,
+      "truncated_rate": 0.6161666666666666,
+      "repetition_rate": 0.06372222222222222,
+      "answer_len": {
+        "mean": 779.3150555555555,
+        "p10": 85.0,
+        "p50": 1024.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.6058079972282648,
+      "format_marker_rate": 0.3001666666666667
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.31705555555555553,
+      "truncated_rate": 0.31705555555555553,
+      "repetition_rate": 0.0505,
+      "answer_len": {
+        "mean": 467.7800555555556,
+        "p10": 37.0,
+        "p50": 317.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.6862377460265707,
+      "format_marker_rate": 0.2765
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -311.53499999999997,
+      "format_marker_rate": -0.02366666666666667,
+      "cap_hit_rate": -0.2991111111111111,
+      "distinct_word_ratio": 0.08042974879830589
+    }
+  },
+  "r2": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.5437777777777778,
+      "truncated_rate": 0.5437777777777778,
+      "repetition_rate": 0.07288888888888889,
+      "answer_len": {
+        "mean": 681.0801111111111,
+        "p10": 19.0,
+        "p50": 1024.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.612701941849475,
+      "format_marker_rate": 0.33194444444444443
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.07344444444444445,
+      "truncated_rate": 0.07344444444444445,
+      "repetition_rate": 0.021833333333333333,
+      "answer_len": {
+        "mean": 163.51983333333334,
+        "p10": 8.0,
+        "p50": 47.0,
+        "p90": 497.10000000000036
+      },
+      "distinct_word_ratio_mean": 0.8027976475691757,
+      "format_marker_rate": 0.19783333333333333
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -517.5602777777779,
+      "format_marker_rate": -0.1341111111111111,
+      "cap_hit_rate": -0.4703333333333334,
+      "distinct_word_ratio": 0.1900957057197007
+    }
+  },
+  "r3": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.22822222222222222,
+      "truncated_rate": 0.22822222222222222,
+      "repetition_rate": 0.031055555555555555,
+      "answer_len": {
+        "mean": 322.14722222222224,
+        "p10": 8.0,
+        "p50": 39.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.7695984110179914,
+      "format_marker_rate": 0.12266666666666666
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.04561111111111111,
+      "truncated_rate": 0.04561111111111111,
+      "repetition_rate": 0.013166666666666667,
+      "answer_len": {
+        "mean": 217.84,
+        "p10": 20.0,
+        "p50": 155.0,
+        "p90": 480.0
+      },
+      "distinct_word_ratio_mean": 0.6928884926639765,
+      "format_marker_rate": 0.3307222222222222
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -104.30722222222224,
+      "format_marker_rate": 0.20805555555555555,
+      "cap_hit_rate": -0.1826111111111111,
+      "distinct_word_ratio": -0.07670991835401497
+    }
+  },
+  "r4": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.13833333333333334,
+      "truncated_rate": 0.13833333333333334,
+      "repetition_rate": 0.019944444444444445,
+      "answer_len": {
+        "mean": 208.89283333333333,
+        "p10": 7.0,
+        "p50": 21.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.8464719608147974,
+      "format_marker_rate": 0.09311111111111112
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.03872222222222222,
+      "truncated_rate": 0.03872222222222222,
+      "repetition_rate": 0.014388888888888889,
+      "answer_len": {
+        "mean": 203.23833333333334,
+        "p10": 25.0,
+        "p50": 143.0,
+        "p90": 419.0
+      },
+      "distinct_word_ratio_mean": 0.6976744561431761,
+      "format_marker_rate": 0.3254444444444444
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -5.6544999999999845,
+      "format_marker_rate": 0.2323333333333333,
+      "cap_hit_rate": -0.09961111111111112,
+      "distinct_word_ratio": -0.14879750467162123
+    }
+  },
+  "r5": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.25483333333333336,
+      "truncated_rate": 0.25483333333333336,
+      "repetition_rate": 0.028055555555555556,
+      "answer_len": {
+        "mean": 345.13183333333336,
+        "p10": 8.0,
+        "p50": 46.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.7681606356714258,
+      "format_marker_rate": 0.15072222222222223
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.07777777777777778,
+      "truncated_rate": 0.07777777777777778,
+      "repetition_rate": 0.01588888888888889,
+      "answer_len": {
+        "mean": 259.25877777777777,
+        "p10": 37.0,
+        "p50": 175.0,
+        "p90": 690.0
+      },
+      "distinct_word_ratio_mean": 0.6724092103505597,
+      "format_marker_rate": 0.35138888888888886
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -85.8730555555556,
+      "format_marker_rate": 0.20066666666666663,
+      "cap_hit_rate": -0.17705555555555558,
+      "distinct_word_ratio": -0.09575142532086611
+    }
+  },
+  "r6": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.17683333333333334,
+      "truncated_rate": 0.17683333333333334,
+      "repetition_rate": 0.03705555555555556,
+      "answer_len": {
+        "mean": 260.9888888888889,
+        "p10": 9.0,
+        "p50": 28.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.7940596265117442,
+      "format_marker_rate": 0.12777777777777777
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.03422222222222222,
+      "truncated_rate": 0.03422222222222222,
+      "repetition_rate": 0.011722222222222222,
+      "answer_len": {
+        "mean": 188.03894444444444,
+        "p10": 19.0,
+        "p50": 124.0,
+        "p90": 392.10000000000036
+      },
+      "distinct_word_ratio_mean": 0.7085714655725973,
+      "format_marker_rate": 0.28955555555555557
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -72.94994444444444,
+      "format_marker_rate": 0.1617777777777778,
+      "cap_hit_rate": -0.14261111111111113,
+      "distinct_word_ratio": -0.0854881609391469
+    }
+  },
+  "r7": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.18488888888888888,
+      "truncated_rate": 0.18488888888888888,
+      "repetition_rate": 0.026944444444444444,
+      "answer_len": {
+        "mean": 264.4332777777778,
+        "p10": 8.0,
+        "p50": 24.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.8065781166611075,
+      "format_marker_rate": 0.11838888888888889
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.043833333333333335,
+      "truncated_rate": 0.043833333333333335,
+      "repetition_rate": 0.012333333333333333,
+      "answer_len": {
+        "mean": 208.9925,
+        "p10": 21.0,
+        "p50": 139.0,
+        "p90": 464.0
+      },
+      "distinct_word_ratio_mean": 0.6996934770420716,
+      "format_marker_rate": 0.35355555555555557
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -55.44077777777778,
+      "format_marker_rate": 0.2351666666666667,
+      "cap_hit_rate": -0.14105555555555555,
+      "distinct_word_ratio": -0.10688463961903583
+    }
+  },
+  "r8": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.16527777777777777,
+      "truncated_rate": 0.16527777777777777,
+      "repetition_rate": 0.01961111111111111,
+      "answer_len": {
+        "mean": 248.3658888888889,
+        "p10": 8.0,
+        "p50": 24.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.8165891328684128,
+      "format_marker_rate": 0.1413888888888889
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.0435,
+      "truncated_rate": 0.0435,
+      "repetition_rate": 0.011444444444444445,
+      "answer_len": {
+        "mean": 201.88472222222222,
+        "p10": 14.0,
+        "p50": 127.0,
+        "p90": 445.0
+      },
+      "distinct_word_ratio_mean": 0.7125525466303649,
+      "format_marker_rate": 0.299
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -46.48116666666667,
+      "format_marker_rate": 0.1576111111111111,
+      "cap_hit_rate": -0.12177777777777778,
+      "distinct_word_ratio": -0.1040365862380479
+    }
+  },
+  "r9": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.2683333333333333,
+      "truncated_rate": 0.2683333333333333,
+      "repetition_rate": 0.04044444444444444,
+      "answer_len": {
+        "mean": 387.29466666666667,
+        "p10": 8.0,
+        "p50": 116.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.7218951269052745,
+      "format_marker_rate": 0.17794444444444443
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.05711111111111111,
+      "truncated_rate": 0.05711111111111111,
+      "repetition_rate": 0.014833333333333334,
+      "answer_len": {
+        "mean": 229.3548888888889,
+        "p10": 19.0,
+        "p50": 145.0,
+        "p90": 565.0
+      },
+      "distinct_word_ratio_mean": 0.6927424100005828,
+      "format_marker_rate": 0.3236111111111111
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -157.93977777777778,
+      "format_marker_rate": 0.1456666666666667,
+      "cap_hit_rate": -0.2112222222222222,
+      "distinct_word_ratio": -0.029152716904691678
+    }
+  },
+  "mid": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.07122222222222223,
+      "truncated_rate": 0.07122222222222223,
+      "repetition_rate": 0.011,
+      "answer_len": {
+        "mean": 210.8505,
+        "p10": 6.0,
+        "p50": 74.0,
+        "p90": 726.0
+      },
+      "distinct_word_ratio_mean": 0.7087509305795194,
+      "format_marker_rate": 0.24372222222222223
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.0335,
+      "truncated_rate": 0.0335,
+      "repetition_rate": 0.00938888888888889,
+      "answer_len": {
+        "mean": 207.68594444444443,
+        "p10": 23.0,
+        "p50": 134.0,
+        "p90": 474.0
+      },
+      "distinct_word_ratio_mean": 0.6915283872428226,
+      "format_marker_rate": 0.2861666666666667
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -3.16455555555558,
+      "format_marker_rate": 0.04244444444444445,
+      "cap_hit_rate": -0.037722222222222226,
+      "distinct_word_ratio": -0.017222543336696816
+    }
+  },
+  "main": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.09111111111111111,
+      "truncated_rate": 0.09111111111111111,
+      "repetition_rate": 0.015833333333333335,
+      "answer_len": {
+        "mean": 259.09905555555554,
+        "p10": 8.0,
+        "p50": 100.0,
+        "p90": 974.1000000000004
+      },
+      "distinct_word_ratio_mean": 0.6721527149309479,
+      "format_marker_rate": 0.2411111111111111
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.041055555555555553,
+      "truncated_rate": 0.041055555555555553,
+      "repetition_rate": 0.0095,
+      "answer_len": {
+        "mean": 231.24294444444445,
+        "p10": 26.0,
+        "p50": 159.0,
+        "p90": 527.1000000000004
+      },
+      "distinct_word_ratio_mean": 0.6733546053526036,
+      "format_marker_rate": 0.31772222222222224
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -27.85611111111109,
+      "format_marker_rate": 0.07661111111111113,
+      "cap_hit_rate": -0.05005555555555556,
+      "distinct_word_ratio": 0.001201890421655749
+    }
+  },
+  "S": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.05372222222222222,
+      "truncated_rate": 0.05372222222222222,
+      "repetition_rate": 0.012222222222222223,
+      "answer_len": {
+        "mean": 216.58583333333334,
+        "p10": 3.0,
+        "p50": 104.0,
+        "p90": 614.1000000000004
+      },
+      "distinct_word_ratio_mean": 0.6621650159877552,
+      "format_marker_rate": 0.24866666666666667
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.020444444444444446,
+      "truncated_rate": 0.020444444444444446,
+      "repetition_rate": 0.008444444444444444,
+      "answer_len": {
+        "mean": 192.72066666666666,
+        "p10": 26.0,
+        "p50": 136.0,
+        "p90": 403.0
+      },
+      "distinct_word_ratio_mean": 0.6829043341322808,
+      "format_marker_rate": 0.2217222222222222
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -23.86516666666668,
+      "format_marker_rate": -0.026944444444444465,
+      "cap_hit_rate": -0.033277777777777774,
+      "distinct_word_ratio": 0.020739318144525565
+    }
+  },
+  "D": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.1935,
+      "truncated_rate": 0.1935,
+      "repetition_rate": 0.0007777777777777777,
+      "answer_len": {
+        "mean": 435.42027777777776,
+        "p10": 20.0,
+        "p50": 302.5,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.6866902416446541,
+      "format_marker_rate": 0.5623333333333334
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.12494444444444444,
+      "truncated_rate": 0.12494444444444444,
+      "repetition_rate": 0.0008333333333333334,
+      "answer_len": {
+        "mean": 375.4932777777778,
+        "p10": 33.0,
+        "p50": 253.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.7237742749936332,
+      "format_marker_rate": 0.5508333333333333
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -59.926999999999964,
+      "format_marker_rate": -0.011500000000000066,
+      "cap_hit_rate": -0.06855555555555556,
+      "distinct_word_ratio": 0.03708403334897914
+    }
+  },
+  "R": {
+    "gen0": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.13633333333333333,
+      "truncated_rate": 0.13633333333333333,
+      "repetition_rate": 0.00016666666666666666,
+      "answer_len": {
+        "mean": 381.9567777777778,
+        "p10": 13.0,
+        "p50": 253.0,
+        "p90": 1024.0
+      },
+      "distinct_word_ratio_mean": 0.6911573632784962,
+      "format_marker_rate": 0.5274444444444445
+    },
+    "gen4": {
+      "n_rows": 18000,
+      "cap_hit_rate": 0.08138888888888889,
+      "truncated_rate": 0.08138888888888889,
+      "repetition_rate": 0.00022222222222222223,
+      "answer_len": {
+        "mean": 320.2915,
+        "p10": 22.0,
+        "p50": 210.0,
+        "p90": 896.0
+      },
+      "distinct_word_ratio_mean": 0.7283313660897945,
+      "format_marker_rate": 0.5172777777777777
+    },
+    "channel_activity_shift_4v0": {
+      "answer_len_mean": -61.66527777777782,
+      "format_marker_rate": -0.010166666666666768,
+      "cap_hit_rate": -0.05494444444444445,
+      "distinct_word_ratio": 0.037174002811298346
+    }
+  }
+}

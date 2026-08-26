@@ -1,0 +1,27 @@
+{
+  "layer_star": 31,
+  "band_b5": [
+    28,
+    30,
+    31
+  ],
+  "layer_fa": 31,
+  "band_b6": [
+    28,
+    30,
+    31
+  ],
+  "metadata": {
+    "issue": 2544,
+    "recipe_version": "issue2544-run-v1",
+    "git_sha": "8660656d27bfc27f701e9f70d00e195df5ef2a27",
+    "timestamp_utc": "2026-08-25T23:53:46Z",
+    "env_versions": {
+      "python": "3.11.10",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0"
+    },
+    "code_sha": "480ad29bda2eb7273ec8c91e159ff40a62cd1cc192fdb98395225fe9264e6fd4"
+  }
+}

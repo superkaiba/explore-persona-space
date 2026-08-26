@@ -1,0 +1,27 @@
+{
+  "tol": 0.0001,
+  "gcv_dof_cap": null,
+  "note": "solver parity (pure-GCV both sides); production fits pass gcv_dof_cap=0.9",
+  "slices": [
+    {
+      "rung": "r0",
+      "layer": 16,
+      "n_tr": 9040,
+      "max_rel": 7.794042991242943e-14
+    },
+    {
+      "rung": "R",
+      "layer": 0,
+      "n_tr": 9040,
+      "max_rel": 1.2304011592657668e-14
+    },
+    {
+      "rung": "R",
+      "layer": 31,
+      "n_tr": 9040,
+      "max_rel": 2.2238609782716455e-14
+    }
+  ],
+  "max_rel_diff": 7.794042991242943e-14,
+  "pass": true
+}
