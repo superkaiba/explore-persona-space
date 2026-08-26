@@ -1,4 +1,7 @@
 # code-reviewer-lean memory index
+- [Registered-constant figure sweep + exposure](registered_constant_figure_sweep_exposure.md) — re-derive the sweep, exposure-check each ungated registered constant's producer for a smoke regime (#2569 r2 s3)
+- [Producer schema fix, stale consumer touched by style unit](producer_schema_fix_stale_consumer_touched_by_style_unit.md) — execute new producer output through HEAD consumer; a co-touched consumer file proves nothing (#2569 r2 s1)
+- [Shared-null draw-set review recipe](shared_null_draw_set_review_recipe.md) — identity, marginal parity, cross-pair aggregation sweep, disclosure (#2569 r2 g2)
 - [Sizing-pilot entry class vs pinned blind spot](sizing_pilot_entry_class_vs_pinned_blindspot.md) — pilot entry class/basis vs the plan's blind-spot pin; dense SVD of low-rank ΔW is rank-blind (#2569 r1 gD)
 - [Loader default narrows extended payload](loader_default_narrows_extended_payload.md) — consumer loads an extended producer with the OLD default list → silent drop; bool resume key locks it in (#2569 r1 gD)
 - [Styled open markers at zero edge width](styled_open_marker_zero_edge_width.md) — markeredgewidth=0 → mfc="none" markers invisible in production PNGs only (#2569 r1 gF)

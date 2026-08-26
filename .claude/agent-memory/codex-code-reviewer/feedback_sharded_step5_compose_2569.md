@@ -92,3 +92,30 @@ custom verdict block. See also [[brief-pinned-sentinel-and-verdict-enum]],
   (worktree `.venv` is a stub), give small numpy recipes for the math claims,
   require per-finding evidence labels `ran|derived|read`, and keep the
   production-workload ban (bounded local tests only).
+
+## r4 addendum (unsharded re-review, denominator-aimed, 2026-08-26)
+
+- **Unpinned tip when the brief SAYS so:** the r2 pin-to-brief-tip rule is
+  brief-conditional. The r4 brief deliberately left the tip at
+  `origin/issue-2569` (brief/waiver commits land after the payload) — honor
+  it: fetch at compose time, record the compose-time SHA in the prompt as the
+  no-network fallback, and have Codex print `Reviewed range: <base>..<sha>`
+  in its verdict header.
+- **Measured-split aiming:** when the dispatch note names which side won which
+  disagreement class, build the prompt AS that class's battery — here a
+  4-question denominator battery (what set is iterated; does it match the plan's
+  REGISTERED set, verbatim-excerpted with plan line numbers; behavior at n=1/n=0;
+  is the gate precondition bound) + concrete in-range targets found by composer
+  grep (the figures markeredgewidth guard's `all()`-over-possibly-empty set,
+  `same_sign_all: None` consumed as falsy, missing-binding-field == equal).
+- **Closed-concern verification duties:** inline the `epm:concern-addressed`
+  rows verbatim as CLAIMS + per-claim verify list from the brief; composer
+  corroboration (e.g. bands 0.05/0.15 byte-identical at base vs tip) is stated
+  as corroboration while the duty stays with Codex. Unit commits from the JOIN
+  note (`epm:progress` v63) give the provenance table; the dispatch note (v65)
+  pre-named the exact prompt path — match it.
+- **Deferral engagement framing:** paste all 16 open rows with their ledger
+  `evidence` verbatim; the rule "engage-with-evidence = legitimate finding,
+  restate = not" plus "new concern with distinct root cause stays fair game —
+  say how it differs"; flag any deferral whose pre-existing shield drops
+  because the round now touches that path.
