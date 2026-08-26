@@ -37,6 +37,21 @@ global `{{` scan legitimately hits ~6 lines of verbatim SPEC content
 (the spec's own no-`{{`-sentinel rules) — only the envelope-scoped
 placeholder check is binding. Related: [[lens13-plan-fetch-patch]],
 [[Delta-scoped rounds beyond r3 — compose, don't hard-fail]].
+
+**Reuse-base VERDICT VOCABULARY is a currency-check surface too (#2564
+r6, 2026-08-26):** the currency asserts cover lens sections + SPEC but
+NOT the agent-spec output template — the #2564 r1-r5 base shipped a
+"PASS | REVISE" vocabulary override (sentinel frozen at `v1` across
+all five rounds, only the heading Round N bumped) while the live spec
+mandates `PASS | needs_targeted_fix | blocked_needs_user_decision |
+fail_not_worth_continuing` and per-round `v<n>` head sentinels. On
+every reuse round, re-read the live spec's Step 3 template and rep1
+the base's verdict enum, Blocker-tags scope phrase ("non-PASS only"),
+item-2b/item-3/denied-capability/grounding vocabulary, and the head
+sentinel to the brief's round; add the stale forms ("A REVISE verdict",
+"REVISE only:", "set the verdict to REVISE") to the stale-string
+sweep. Also note the posted-marker offset in the Step 5 return when
+prior head sentinels diverge from the round number.
 ---
 name: prior-round-prompt-reuse
 description: Rounds 2+ — reuse the previous round's prompt file (/tmp/codex-prompt-issue-<N>-crc<r>.md) as the compose base, with per-lens live-file currency assertions replacing a full rebuild.
