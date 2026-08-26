@@ -12395,8 +12395,8 @@
     "2607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2607",
-      "status": "proposed",
+      "path": "tasks/planning/2607",
+      "status": "planning",
       "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
     },
     "261": {
