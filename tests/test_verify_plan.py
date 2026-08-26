@@ -809,7 +809,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/13" in r.detail
+    assert "4/14" in r.detail
 
 
 def test_c6_fitness_counts_item_i_in_widened_class():
@@ -823,7 +823,7 @@ def test_c6_fitness_counts_item_i_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/13" in r.detail
+    assert "4/14" in r.detail
 
 
 def test_c6_fitness_counts_item_j_in_widened_class():
@@ -837,7 +837,7 @@ def test_c6_fitness_counts_item_j_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/13" in r.detail
+    assert "4/14" in r.detail
 
 
 def test_c6_fitness_counts_item_k_in_widened_class():
@@ -851,7 +851,7 @@ def test_c6_fitness_counts_item_k_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/13" in r.detail
+    assert "4/14" in r.detail
 
 
 def test_c6_fitness_counts_item_l_in_widened_class():
@@ -865,7 +865,7 @@ def test_c6_fitness_counts_item_l_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/13" in r.detail
+    assert "4/14" in r.detail
 
 
 def test_c6_fitness_counts_item_m_in_widened_class():
@@ -879,19 +879,20 @@ def test_c6_fitness_counts_item_m_in_widened_class():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/13" in r.detail
+    assert "4/14" in r.detail
 
 
-def test_c6_fitness_letters_beyond_m_do_not_count():
+def test_c6_fitness_letters_beyond_n_do_not_count():
     # Upper-boundary fixture (#941; decoy moved (k)->(l) at #1366, (l)->(m) at
-    # #1522, (m)->(n) at #2043): an unrelated (n) elsewhere in the body must NOT
-    # lift a 3-letter fitness attestation to a 4-letter PASS — an over-widening
-    # of the class to [a-n]/[a-z] would flip this to PASS.
+    # #1522, (m)->(n) at #2043, (n)->(o) at #2602): an unrelated (o) elsewhere
+    # in the body must NOT lift a 3-letter fitness attestation to a 4-letter
+    # PASS — an over-widening of the class to [a-o]/[a-z] would flip this to
+    # PASS.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
         + "\nFitness check: (a) same recipe verified against adapter_config.json; (b) valid measurement regime; (c) required cells present."
-        + "\nUnrelated enumeration elsewhere: (n) a non-fitness bullet.\n"
+        + "\nUnrelated enumeration elsewhere: (o) a non-fitness bullet.\n"
     )
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
@@ -907,7 +908,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(m)" in r.detail or "thirteen" in r.detail
+    assert "(a)–(n)" in r.detail or "fourteen" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
@@ -953,7 +954,7 @@ def test_c6_reuse_map_table_without_fitness_word_passes():
     # attestation written in artifact-reuse.md's own vocabulary — no 'fitness'
     # word anywhere — must PASS, not WARN "no fitness check found".
     # Doubles as a second grandfather pin (#1366): the fixture's (a)–(j)  # noqa: RUF003
-    # heading token still declares under the widened \([jklm]\) detector.
+    # heading token still declares under the widened \([jklmn]\) detector.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
@@ -987,7 +988,7 @@ def test_c6_letters_without_declaration_vocab_still_warns():
 
 def test_c6_reuse_map_with_few_letters_warns():
     # A bare 'Reuse map' heading (no 'self-attestation', no 'fitness', no
-    # (a)–(j)/(a)–(k)/(a)–(l)/(a)–(m) range token — guard-asserted below, so this  # noqa: RUF003
+    # (a)–(j)/(a)–(k)/(a)–(l)/(a)–(m)/(a)–(n) range token — guard-asserted below, so this  # noqa: RUF003
     # fixture isolates the reuse[- ]map branch) with <4 letters routes to the MIDDLE branch:
     # the declaration counted, but the letters threshold still gates. A
     # mutant dropping the reuse-map branch fails this test — with no
@@ -1002,7 +1003,7 @@ def test_c6_reuse_map_with_few_letters_warns():
     lowered = plan.lower()
     assert "fitness" not in lowered
     assert "attestation" not in lowered
-    assert re.search(r"\(a\)\s*[-–—…]\s*\([jklm]\)", plan) is None
+    assert re.search(r"\(a\)\s*[-–—…]\s*\([jklmn]\)", plan) is None
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
@@ -1011,7 +1012,7 @@ def test_c6_reuse_map_with_few_letters_warns():
 
 def test_c6_range_token_counts_as_declaration():
     # GRANDFATHER pin (#1366): an in-flight plan citing the OLD en-dash (a)–(j)  # noqa: RUF003
-    # range token still declares under the widened \([jklm]\) detector. No
+    # range token still declares under the widened \([jklmn]\) detector. No
     # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
     # item letters.
     plan = (
@@ -1032,7 +1033,7 @@ def test_c6_range_token_counts_as_declaration():
 def test_c6_new_range_token_counts_as_declaration():
     # GRANDFATHER pin (#1522): an in-flight plan citing the OLD en-dash (a)–(k)  # noqa: RUF003
     # range token (#1366's current form) still declares under the widened
-    # \([jklm]\) detector. No 'fitness', no 'map', no 'attestation' word
+    # \([jklmn]\) detector. No 'fitness', no 'map', no 'attestation' word
     # (guard-asserted), four real item letters.
     plan = (
         GOOD_PLAN
@@ -1052,7 +1053,7 @@ def test_c6_new_range_token_counts_as_declaration():
 def test_c6_current_range_token_counts_as_declaration():
     # GRANDFATHER pin (#2043): an in-flight plan citing the OLD en-dash (a)–(l)  # noqa: RUF003
     # range token (#1522's current form) still declares under the widened
-    # \([jklm]\) detector. No 'fitness', no 'map', no 'attestation' word
+    # \([jklmn]\) detector. No 'fitness', no 'map', no 'attestation' word
     # (guard-asserted), four real item letters.
     plan = (
         GOOD_PLAN
@@ -1070,11 +1071,10 @@ def test_c6_current_range_token_counts_as_declaration():
 
 
 def test_c6_m_range_token_counts_as_declaration():
-    # Pins the CURRENT en-dash (a)–(m) range-token branch (#2043): no  # noqa: RUF003
-    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
-    # item letters. All four widened-class members {j,k,l,m} now carry a pin
-    # (this test + the three grandfather pins above) — a [jklm]->[jlm] narrowing
-    # cannot ship green.
+    # GRANDFATHER pin (#2602): an in-flight plan citing the OLD en-dash (a)–(m)  # noqa: RUF003
+    # range token (#2043's current form) still declares under the widened
+    # \([jklmn]\) detector. No 'fitness', no 'map', no 'attestation' word
+    # (guard-asserted), four real item letters.
     plan = (
         GOOD_PLAN
         + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
@@ -1088,6 +1088,29 @@ def test_c6_m_range_token_counts_as_declaration():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
+
+
+def test_c6_n_range_token_counts_as_declaration():
+    # Pins the CURRENT en-dash (a)–(n) range-token branch (#2602 widening): no  # noqa: RUF003
+    # 'fitness', no 'map', no 'attestation' word (guard-asserted), four real
+    # item letters INCLUDING (n) — so this test also pins the [a-n] letters
+    # class ((n) must count toward the >=4 threshold). All five widened-class
+    # members {j,k,l,m,n} now carry a pin (this test + the four grandfather
+    # pins above) — a [jklmn]->[jklm] narrowing cannot ship green.
+    plan = (
+        GOOD_PLAN
+        + "\nWe reuse the parent adapters from superkaiba1/explore-persona-space for the base arm."
+        + "\nArtifact checks (a)–(n): (a) recipe; (b) regime; (c) cells; "
+        + "(n) reused-gate anchor currency — producing configuration pinned.\n"
+    )
+    lowered = plan.lower()
+    assert "fitness" not in lowered
+    assert "map" not in lowered
+    assert "attestation" not in lowered
+    _, by_id = _run(plan)
+    r = by_id["c6_reuse_fitness"]
+    assert r.status == "PASS"
+    assert "4/14" in r.detail
 
 
 # ─── Check 7 — replication fidelity ────────────────────────────────────────
