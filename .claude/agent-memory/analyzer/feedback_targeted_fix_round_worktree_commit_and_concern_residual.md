@@ -25,3 +25,16 @@ Two mechanics from the #2564 r6 targeted-fix round (2026-08-26):
    resolved (≤200-char summaries), re-run verify, and when the sole residual
    is orchestrator-owned, say so in the epm:interpretation marker + final
    report (name the clearing actor/step) instead of forcing OVERALL PASS.
+3. **Repo-root NON-code commit (INDEX.md/docs) while foreign staged code sits
+   in the shared index (k100 fold, 2026-08-26):** the guard scopes to your
+   pathspec ONLY when the literal-root `cd` is the LAST cwd-moving record and
+   every clause up to the commit is `&&`-joined — a heredoc python edit OR a
+   `;` between the cd and the commit sets `commit_off_chain=1` and the block
+   names the FOREIGN staged files (scripts/issue2356..., not yours). Split
+   into two Bash calls: (1) the file edit alone, (2) bare
+   `cd <literal root> && git add <path> && git commit -m "..." -- <path>`.
+   Also: between blocked attempts a concurrent session's pre-commit stash
+   cycle can EAT the unstaged edit (#2015 — happened live: the INDEX row
+   vanished, status clean) — re-assert the content exists before every retry
+   and verify landing by `git show <sha>:<path>`, not by push rc ("Everything
+   up-to-date" can mean a concurrent session already pushed your commit).
