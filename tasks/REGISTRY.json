@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2601,
+  "highest_id": 2602,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12356,6 +12356,13 @@
       "path": "tasks/proposed/2601",
       "status": "proposed",
       "title": "SSH-remote invocations orphan remote processes on local tool timeout; concurrent uv run env-sync guts pod venv into a silent namespace package"
+    },
+    "2602": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2602",
+      "status": "proposed",
+      "title": "artifact-reuse: prove a reused GATE's committed anchor is reproducible under the shared core's CURRENT defaults (#1887 flip silently changed #2546's G-E meaning)"
     },
     "261": {
       "has_clean_result": false,
