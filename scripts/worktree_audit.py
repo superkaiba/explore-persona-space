@@ -1124,6 +1124,43 @@ def _followup_shield_max_age_h() -> float:
     )
 
 
+def _followup_marker_epochs(events_path: Path) -> tuple[float | None, str, float | None]:
+    """Scan one events.jsonl for the follow-up shield (#2354): returns
+    ``(newest_signal_epoch, newest_signal_kind, newest_done_epoch)`` over
+    ``_FOLLOWUP_SIGNAL_KINDS`` / ``_FOLLOWUP_DONE_TRANSITION_KINDS``.
+    Raises OSError on an unreadable file (caller maps it to no-evidence);
+    every degraded ROW contributes no evidence — malformed JSON lines are
+    row-skipped, non-dict rows skipped, naive/malformed ts dropped
+    (``_aware_epoch``)."""
+    raw = events_path.read_text(encoding="utf-8")
+    newest_sig: float | None = None
+    newest_sig_kind = ""
+    newest_done: float | None = None
+    # split("\n"), NOT splitlines(): splitlines() also splits on raw
+    # U+2028/U+2029/NEL inside ensure_ascii=False JSON note strings and
+    # shreds valid rows (gotchas.md jsonl-splitlines; lint-enforced).
+    for line in raw.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        kind = row.get("kind")
+        if kind in _FOLLOWUP_SIGNAL_KINDS:
+            epoch = _aware_epoch(row.get("ts"))
+            if epoch is not None and (newest_sig is None or epoch > newest_sig):
+                newest_sig, newest_sig_kind = epoch, kind
+        elif kind in _FOLLOWUP_DONE_TRANSITION_KINDS:
+            epoch = _aware_epoch(row.get("ts"))
+            if epoch is not None and (newest_done is None or epoch > newest_done):
+                newest_done = epoch
+    return newest_sig, newest_sig_kind, newest_done
+
+
 def _followup_shield(
     name: str,
     statuses: dict[int, str],
@@ -1170,34 +1207,9 @@ def _followup_shield(
     if events_path is None:
         return False, "no events file (orphan/non-issue): no follow-up signal evidence"
     try:
-        raw = events_path.read_text(encoding="utf-8")
+        newest_sig, newest_sig_kind, newest_done = _followup_marker_epochs(events_path)
     except OSError:
         return False, "events file unreadable: no follow-up signal evidence"
-    newest_sig: float | None = None
-    newest_sig_kind = ""
-    newest_done: float | None = None
-    # split("\n"), NOT splitlines(): splitlines() also splits on raw
-    # U+2028/U+2029/NEL inside ensure_ascii=False JSON note strings and
-    # shreds valid rows (gotchas.md jsonl-splitlines; lint-enforced).
-    for line in raw.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            row = json.loads(line)
-        except ValueError:
-            continue
-        if not isinstance(row, dict):
-            continue
-        kind = row.get("kind")
-        if kind in _FOLLOWUP_SIGNAL_KINDS:
-            epoch = _aware_epoch(row.get("ts"))
-            if epoch is not None and (newest_sig is None or epoch > newest_sig):
-                newest_sig, newest_sig_kind = epoch, kind
-        elif kind in _FOLLOWUP_DONE_TRANSITION_KINDS:
-            epoch = _aware_epoch(row.get("ts"))
-            if epoch is not None and (newest_done is None or epoch > newest_done):
-                newest_done = epoch
     if newest_sig is None:
         return False, "no follow-up signal marker"
     if newest_done is None:
