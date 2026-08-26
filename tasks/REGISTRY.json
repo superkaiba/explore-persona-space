@@ -10466,8 +10466,8 @@
     "2354": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2354",
-      "status": "reviewing",
+      "path": "tasks/completed/2354",
+      "status": "completed",
       "title": "worktree_audit.py stale-sweep reaps an active inline-round worktree (pod-side work + parked parent look idle)"
     },
     "2355": {
