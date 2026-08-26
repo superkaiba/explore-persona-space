@@ -171,9 +171,19 @@ K100_CELLS = ("user_fact", "query")
 K100_DRAWS = 90  # 90 FRESH draws per context (ids 10..99), appended to parent K=10
 K100_DRAW_OFFSET = 10  # first fresh draw id; parent/ffr stay at 0
 # v_C parity vs the parent's committed bank (provenance check (a), plan v8 §7).
-# Plan-pinned per-context bar; note the bf16 single-position two-bar caveat
-# (gotchas.md) — the plan's 0.9999 is the contract, demoted under smoke/tiny.
-K100_VC_PARITY_COS_MIN = 0.9999
+# Re-grounded 0.9999 -> 0.999 (k100 fix round 4, 2026-08-26 diagnostic):
+# plan v8 §7's ">= 0.9999" rested on the determinism assumption A3 (§12),
+# falsified on-pod — the fresh k100 capture chunks/pads its batches
+# differently from the parent's 984-context bank-order capture, and the
+# resulting batch-composition bf16 jitter on bit-exact contexts measured
+# min 0.999873 / p25 0.999929 / median 0.999943 over n=42 (cross-run jitter
+# ceiling 1.27e-4 cosine). 0.999 matches the rig's own calibrated
+# single-position early-layer bar (PARITY_COS_MIN_SINGLEPOS_EARLY,
+# 62c686d845 two-bar calibration above) and carries ~8x margin over the
+# measured jitter ceiling; a real pad/row-mapping/staging bug reads far
+# below either bar (cos ~0.39-0.84, gotchas.md). The bar is keyed inside
+# _k100_parity_fp, so this change auto-invalidates any stale parity report.
+K100_VC_PARITY_COS_MIN = 0.999
 # Parent artifacts consumed at this pinned HF data-repo revision (plan v8 §10).
 K100_PARENT_REVISION_DEFAULT = "62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
 
@@ -1435,8 +1445,8 @@ def _k100_vc_parity_path(cfg: Cfg2564) -> Path:
 def _k100_parity_fp(cfg: Cfg2564) -> str:
     """k100 vc-parity GATE fingerprint: the regime fp PLUS the parent pin and
     the parity bar (r2 blocker k100-parent-revision-cache-unkeyed) — a changed
-    ``--parent-revision`` or a tightened K100_VC_PARITY_COS_MIN can never reuse
-    a stale parity report."""
+    ``--parent-revision`` or a changed K100_VC_PARITY_COS_MIN (either
+    direction) can never reuse a stale parity report."""
     return _regime_fp(
         cfg,
         {
@@ -1532,6 +1542,11 @@ def _k100_vc_parity(cfg: Cfg2564, contexts: list[dict]) -> None:
             "n_contexts": len(per_context),
             "min_cos": min_cos,
             "min_cos_context": min_cid,
+            # FULL per-context cosine map (fix round 4): the 2026-08-26
+            # deterministic-drift diagnostic needed a GPU recompute because
+            # only min_cos was persisted — persist the whole distribution.
+            # Additive key; existing keys unchanged (backward-compatible).
+            "per_context_cos": per_context,
             "verdict": verdict,
             "demoted": demoted,
             # consistency-checker note 1 (epm:followup-consistency v1): make the

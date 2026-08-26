@@ -1548,7 +1548,10 @@ def test_k100_vc_parity_binds_under_smoke(tmp_path, monkeypatch):
     """r1 blocker k100-vc-smoke-demotion-unregistered (orchestrator decision:
     CODE fix): a fresh/parent v_C cosine below K100_VC_PARITY_COS_MIN FAILS
     the parity gate under --smoke — never a demoted warning (plan v8 §7: the
-    smoke exercises v_C parity); --tiny stays the only demoted (skip) mode."""
+    smoke exercises v_C parity); --tiny stays the only demoted (skip) mode.
+    Fix round 4 additionally pins the persisted FULL per-context cosine map
+    (n == captured context count) — the 2026-08-26 deterministic-drift
+    diagnostic needed a GPU recompute because only min_cos survived to disk."""
     cfg = D.build_config(
         D.parse_args(
             [
@@ -1566,26 +1569,52 @@ def test_k100_vc_parity_binds_under_smoke(tmp_path, monkeypatch):
     )
     assert cfg.smoke and not cfg.tiny
     rng = np.random.default_rng(0)
-    cid = "user_fact::n01::c01"
-    fresh = torch.tensor(rng.normal(size=(1, len(cfg.layers), 8)), dtype=torch.float32)
-    parent = torch.tensor(rng.normal(size=(1, len(cfg.layers), 8)), dtype=torch.float32)
+    cid_ok = "user_fact::n01::c01"
+    cid_bad = "user_fact::n01::c02"
+    # cid_ok: bit-identical fresh/parent rows (cos == 1.0). cid_bad: a
+    # constructed cos ~= 0.99 — below the re-grounded bar (asserted against
+    # the constant, never a re-hardcoded literal) yet far above a real
+    # pad/row-mapping bug's ~0.39-0.84 read (gotchas.md).
+    cos_bad = 0.99
+    assert cos_bad < D.K100_VC_PARITY_COS_MIN
+    d = len(cfg.layers) * 8
+    v = rng.normal(size=d)
+    u = rng.normal(size=d)
+    u -= (u @ v) / (v @ v) * v  # orthogonalize u against v
+    v /= np.linalg.norm(v)
+    u /= np.linalg.norm(u)
+    bad = cos_bad * v + np.sqrt(1.0 - cos_bad**2) * u
+    shape = (len(cfg.layers), 8)
+    parent = torch.tensor(np.stack([v.reshape(shape), v.reshape(shape)]), dtype=torch.float32)
+    fresh = torch.tensor(np.stack([v.reshape(shape), bad.reshape(shape)]), dtype=torch.float32)
     cfg.vc_dir.mkdir(parents=True, exist_ok=True)
     cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
     torch.save(
-        {"layers": list(cfg.layers), "context_ids": [cid], "vc": fresh},
+        {"layers": list(cfg.layers), "context_ids": [cid_ok, cid_bad], "vc": fresh},
         cfg.vc_dir / "vc2564_bank.pt",
     )
     parent_path = tmp_path / "parent_vc2564_bank.pt"
-    torch.save({"layers": list(cfg.layers), "context_ids": [cid], "vc": parent}, parent_path)
+    torch.save(
+        {"layers": list(cfg.layers), "context_ids": [cid_ok, cid_bad], "vc": parent},
+        parent_path,
+    )
     monkeypatch.setattr(
         "explore_persona_space.orchestrate.hub.stage_hub_file",
         lambda *a, **k: parent_path,
     )
     with pytest.raises(RuntimeError, match="v_C parity vs parent FAILED"):
-        D._k100_vc_parity(cfg, [{"id": cid}])
+        D._k100_vc_parity(cfg, [{"id": cid_ok}, {"id": cid_bad}])
     rep = json.loads((cfg.manifest_dir / "k100_vc_parity.json").read_text())
     assert rep["verdict"] == "fail" and rep["demoted"] is False
     assert rep["regime_fp"] == D._k100_parity_fp(cfg)
+    assert rep["cos_min_bar"] == D.K100_VC_PARITY_COS_MIN
+    # fix round 4 pin: FULL per-context cosine map, n == captured context count
+    assert set(rep["per_context_cos"]) == {cid_ok, cid_bad}
+    assert len(rep["per_context_cos"]) == rep["n_contexts"] == 2
+    assert rep["min_cos_context"] == cid_bad
+    assert rep["per_context_cos"][cid_bad] == rep["min_cos"]
+    assert rep["per_context_cos"][cid_bad] == pytest.approx(cos_bad, abs=1e-4)
+    assert rep["per_context_cos"][cid_ok] == pytest.approx(1.0, abs=1e-6)
     assert D._k100_vc_parity_ok(cfg) is False  # a FAIL report never satisfies resume
 
 
