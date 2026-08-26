@@ -1361,7 +1361,10 @@ def test_launcher_p2_p3_work_conserving_workers():
     assert "run_map_wave phase_split_gen p2" in text
     assert "run_map_wave phase_split_capture p3" in text
     worker = _extract_bash_fn("map_wave_worker")
-    assert 'while task="$(pop_task' in worker
+    # r4 fail-loud pop shape: rc captured explicitly (never a bare while
+    # condition that reads every nonzero pop as drain).
+    assert 'task="$(pop_task "$queue")" || pop_rc=$?' in worker
+    assert '[ "$pop_rc" -eq 3 ]' in worker  # ONLY the drained status breaks
     assert "poison_queue" in worker  # a failed worker bounds the sibling's extra work
     assert 'CUDA_VISIBLE_DEVICES="$gpu"' in worker  # per-WORKER launcher-env CVD pin
     assert "${ENV_PINS[@]}" in worker  # §4.1 env pins preserved on the queue path
@@ -1420,3 +1423,296 @@ def test_leak_caphit_collision_guard_scoped_within_run():
     assert 'cp -f "$m" "$dest.tmp.$$"' in block and 'mv -f "$dest.tmp.$$" "$dest"' in block
     # the old unconditional pre-existing-dest guard shape is gone
     assert '[ -e "$dest" ] && ! cmp -s' not in text
+
+
+# ── R4: launcher filesystem fail-loudness (r3 reconciler-upheld Majors —
+#        ledger BLOCKER launcher-filesystem-fail-open) ──────────────────────
+
+import os  # noqa: E402
+
+_POP_FAULT_TOOLS = ("flock", "head", "tail", "mv")
+
+
+def _fault_bin(tmp_path, *tools):
+    """A PATH-prepend dir whose named external tools each fail loudly (rc=9)."""
+    wd = tmp_path / "fault-bin"
+    wd.mkdir(exist_ok=True)
+    for tool in tools:
+        w = wd / tool
+        w.write_text(f'#!/usr/bin/env bash\necho "FAULT-INJECTED {tool} $*" >&2\nexit 9\n')
+        w.chmod(0o755)
+    return wd
+
+
+def _fault_env(tmp_path, *tools, **extra):
+    env = dict(os.environ)
+    if tools:
+        env["PATH"] = f"{_fault_bin(tmp_path, *tools)}:{env['PATH']}"
+    env.update(extra)
+    return env
+
+
+@pytest.mark.parametrize("tool", _POP_FAULT_TOOLS)
+def test_pop_task_fault_is_error_status_never_drain_or_task(tmp_path, tool):
+    """r3 Major 1 (reconciler reproductions 1+2): a queue/lock filesystem
+    fault in pop_task returns the DISTINCT error status rc=2 — never the
+    drained status (rc=3), never a re-served task with rc=0 — emits no task
+    on stdout, and leaves the queue bytes + no temp residue behind."""
+    q = tmp_path / "q.txt"
+    q.write_text("a 0\na 1\n")
+    script = _extract_bash_fn("pop_task") + f'\npop_task "{q}"\n'
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+        env=_fault_env(tmp_path, tool),
+    )
+    assert proc.returncode == 2, (tool, proc.returncode, proc.stderr)
+    assert proc.stdout == "", (tool, proc.stdout)
+    assert "[pop-task] ERROR" in proc.stderr, (tool, proc.stderr)
+    assert q.read_text() == "a 0\na 1\n", tool  # never silently consumed/truncated
+    assert not (tmp_path / "q.txt.next").exists(), tool  # temp cleaned on error
+
+
+def test_pop_task_drained_status_is_distinct(tmp_path):
+    """Drained is rc=3, NOT rc=1: a failed open of the 9>> lock redirection
+    surfaces as rc=1 and must land in the worker's ERROR branch — only the
+    explicit drained status may end the wave with exit 0."""
+    q = tmp_path / "q.txt"
+    q.write_text("")
+    script = _extract_bash_fn("pop_task") + f'\npop_task "{q}"\n'
+    proc = subprocess.run(
+        ["bash", "-c", script], capture_output=True, text=True, check=False, timeout=60
+    )
+    assert proc.returncode == 3, (proc.returncode, proc.stderr)
+    assert proc.stdout == ""
+    # lock-open failure (queue path in a nonexistent dir): neither a task
+    # (0) nor drain (3) — the worker treats every other status as an error.
+    ghost = tmp_path / "no-such-dir" / "q.txt"
+    script2 = _extract_bash_fn("pop_task") + f'\npop_task "{ghost}"\n'
+    proc2 = subprocess.run(
+        ["bash", "-c", script2], capture_output=True, text=True, check=False, timeout=60
+    )
+    assert proc2.returncode not in (0, 3), (proc2.returncode, proc2.stderr)
+    assert proc2.stdout == ""
+
+
+def _queue_stub_prelude(tmp_path):
+    """Shared harness prelude: the extracted queue/worker functions wired to
+    a stub model interpreter that records each executed task to ran.txt."""
+    stub = tmp_path / "stub_model_py"
+    stub.write_text(
+        "#!/usr/bin/env bash\n"
+        f'echo "TASK-RAN cvd=$CUDA_VISIBLE_DEVICES $*" >> "{tmp_path}/ran.txt"\n'
+        "exit 0\n"
+    )
+    stub.chmod(0o755)
+    (tmp_path / "logs").mkdir(exist_ok=True)
+    fns = "\n".join(
+        _extract_bash_fn(n)
+        for n in (
+            "pop_task",
+            "poison_queue",
+            "map_task_argv",
+            "map_wave_worker",
+            "launch_bg",
+            "wait_bg",
+            "run_map_wave",
+        )
+    )
+    return (
+        "set -euo pipefail\n"
+        + fns
+        + "\n"
+        + f'LOGS_DIR="{tmp_path}/logs"\n'
+        + f'REPO_ROOT="{tmp_path}"\n'
+        + f'MODEL_PY="{stub}"\n'
+        + 'MAP="map.py"\n'
+        + 'HF_PREFIX="pfx"\n'
+        + f'OUT_ROOT="{tmp_path}/out"\n'
+        + f'RUN_META="{tmp_path}/run_meta.json"\n'
+        + f'P0B_SENTINEL="{tmp_path}/p0b.json"\n'
+        + f'SPLIT_IDS="{tmp_path}/split_ids.json"\n'
+        + 'ENV_PINS=("EPM_I2587_TEST_PIN=1")\n'
+        + 'DRYRUN=""\n'
+        + 'LAST_BG_PID=""\n'
+    )
+
+
+@pytest.mark.parametrize("tool", _POP_FAULT_TOOLS)
+def test_map_wave_worker_exits_nonzero_on_queue_fault(tmp_path, tool):
+    """The worker breaks ONLY on drained (rc=3); any other pop status poisons
+    the queue and exits nonzero — no task is executed on the fault path."""
+    q = tmp_path / "q.txt"
+    q.write_text("s1 0\ns1 1\n")
+    script = _queue_stub_prelude(tmp_path) + f'map_wave_worker 0 phase_split_gen "{q}" p2t\n'
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+        env=_fault_env(tmp_path, tool),
+    )
+    assert proc.returncode != 0, (tool, proc.stdout, proc.stderr)
+    # the REAL error branch fired (not e.g. a harness composition error)
+    assert "pop_task rc=2" in proc.stderr, (tool, proc.stderr)
+    assert not (tmp_path / "ran.txt").exists(), (tool, "a task ran despite the queue fault")
+
+
+def test_map_wave_worker_drains_cleanly_and_runs_every_task(tmp_path):
+    """Control (real-body execution of the queue path): a healthy worker
+    consumes the whole queue through the SHARED map_task_argv constructor,
+    with the launcher-env CVD pin reaching every child, and exits 0."""
+    q = tmp_path / "q.txt"
+    q.write_text("s1 0\ns1 1\ns2 0\n")
+    script = _queue_stub_prelude(tmp_path) + f'map_wave_worker 0 phase_split_gen "{q}" p2t\n'
+    proc = subprocess.run(
+        ["bash", "-c", script], capture_output=True, text=True, check=False, timeout=60
+    )
+    assert proc.returncode == 0, proc.stderr
+    ran = (tmp_path / "ran.txt").read_text().splitlines()
+    assert len(ran) == 3, ran
+    assert q.read_text() == ""
+    # production worker argv rides the shared constructor (r3 Codex Minor)
+    for ln in ran:
+        assert "cvd=0 " in ln, ln  # launcher-env CVD pin reached the child
+        assert "map.py --split s" in ln and "--capture-mode phase_split_gen" in ln, ln
+        assert "--num-shards 2" in ln and "--split-ids" in ln, ln
+
+
+def _wave_harness(tmp_path):
+    return (
+        _queue_stub_prelude(tmp_path)
+        + "SPLITS=(s1 s2 s3)\n"
+        + "run_map_wave phase_split_gen p2t\n"
+        + f': > "{tmp_path}/wave_sentinel"\n'
+    )
+
+
+def test_map_wave_sentinel_blocked_on_queue_fault(tmp_path):
+    """Launcher grain (reconciler reproduction 2): a queue I/O fault during
+    the wave fails run_map_wave loud at wait_bg, so the post-wave sentinel
+    write is never reached (previously both workers read the fault as
+    drain, exited 0, and the phase sentinel attested an unprocessed wave)."""
+    script = _wave_harness(tmp_path)
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+        env=_fault_env(tmp_path, "tail", TMPDIR=str(tmp_path)),
+    )
+    assert proc.returncode != 0, (proc.stdout, proc.stderr)
+    # the wave died at the fail-loud worker join, not a harness error
+    assert "[workload] FAILED p2t worker" in proc.stderr, proc.stderr
+    assert not (tmp_path / "wave_sentinel").exists()
+    assert not (tmp_path / "ran.txt").exists()
+
+
+def test_map_wave_sentinel_written_on_clean_drain(tmp_path):
+    """Control: the healthy 2-worker wave drains all len(SPLITS)*2 tasks and
+    the post-wave sentinel write is reached."""
+    script = _wave_harness(tmp_path)
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+        env=_fault_env(tmp_path, TMPDIR=str(tmp_path)),
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert (tmp_path / "wave_sentinel").exists()
+    ran = (tmp_path / "ran.txt").read_text().splitlines()
+    assert len(ran) == 6, ran  # 3 splits x 2 shards, no losses, no dupes
+    assert sorted({ln.split("--split ")[1].split(" --")[0] for ln in ran}) == ["s1", "s2", "s3"]
+
+
+def _extract_harvest_copy_block() -> str:
+    """The verbatim leak-manifest harvested-copy block (declare .. done)."""
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    start = text.index("  declare -A SEEN_MANIFESTS=()")
+    end = text.index('  echo "[leak-caphit] harvested', start)
+    return text[start:end]
+
+
+def _harvest_harness(tmp_path):
+    leak = tmp_path / "leak"
+    leak.mkdir(exist_ok=True)
+    src = tmp_path / "anchors_ax1.done.json"
+    src.write_text('{"fresh": 1}')
+    return (
+        "set -euo pipefail\n"
+        + "declare -A SEEN_MANIFESTS=()\n"  # trap-safety; block re-declares
+        + 'trap \'for k in "${!SEEN_MANIFESTS[@]}"; do echo "SEEN:$k"; done\' EXIT\n'
+        + f'LEAK_DIR="{leak}"\n'
+        + f'GEN_MANIFESTS=("{src}")\n'
+        + _extract_harvest_copy_block()
+        + '\necho "HARVEST-DONE"\n'
+        + 'echo "RESULTS-PUSH-PHASE-REACHED"\n'
+    )
+
+
+@pytest.mark.parametrize("tool", ("cp", "mv"))
+def test_leak_manifest_supersede_fails_loud_on_copy_fault(tmp_path, tool):
+    """r3 Major 2 (reconciler-upheld): a failed cp/mv in the harvested-copy
+    block aborts exit 6 — SEEN_MANIFESTS is NOT updated, the stale
+    prior-round $dest is NOT re-attested as refreshed, no temp file
+    survives, and the results_push phase is never reached."""
+    leak = tmp_path / "leak"
+    leak.mkdir()
+    stale = leak / "anchors_ax1.done.json"
+    stale.write_text('{"stale": 1}')  # the designed-for fresh-pod relaunch state
+    proc = subprocess.run(
+        ["bash", "-c", _harvest_harness(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+        env=_fault_env(tmp_path, tool),
+    )
+    assert proc.returncode == 6, (tool, proc.returncode, proc.stderr)
+    assert "[leak-caphit] FATAL" in proc.stderr, (tool, proc.stderr)
+    assert "SEEN:" not in proc.stdout, (tool, "seen-record updated despite copy fault")
+    assert "RESULTS-PUSH-PHASE-REACHED" not in proc.stdout, tool
+    assert stale.read_text() == '{"stale": 1}', tool  # stale dest untouched, never refreshed
+    assert list(leak.glob("*.tmp.*")) == [], tool  # temp cleaned on either failure
+
+
+def test_leak_manifest_supersede_control_supersedes_and_records(tmp_path):
+    """Control: on a healthy filesystem the pre-existing prior-round dest is
+    atomically superseded, SEEN_MANIFESTS records the manifest, and the flow
+    proceeds toward results_push."""
+    leak = tmp_path / "leak"
+    leak.mkdir()
+    stale = leak / "anchors_ax1.done.json"
+    stale.write_text('{"stale": 1}')
+    proc = subprocess.run(
+        ["bash", "-c", _harvest_harness(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "SEEN:anchors_ax1.done.json" in proc.stdout
+    assert "RESULTS-PUSH-PHASE-REACHED" in proc.stdout
+    assert stale.read_text() == '{"fresh": 1}'  # superseded to this run's bytes
+    assert list(leak.glob("*.tmp.*")) == []
+
+
+def test_map_task_argv_single_shared_constructor():
+    """r3 Codex Minor: the P2/P3 dry-run echo and the production worker
+    compose the driver argv through ONE constructor (map_task_argv), so the
+    launcher_dryrun argparse-binding sweep covers the RUNTIME argv by
+    construction — the two shapes cannot drift."""
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    assert '"${MAP_TASK_ARGV[@]}"' in _extract_bash_fn("map_wave_worker")
+    assert '"${MAP_TASK_ARGV[@]}"' in _extract_bash_fn("run_map_wave")  # dry-run echo path
+    # the (split, mode, shard) driver argv is composed in exactly ONE place
+    assert text.count('--capture-mode "$mode"') == 1
+    assert '--capture-mode "$mode"' in _extract_bash_fn("map_task_argv")

@@ -260,25 +260,55 @@ print("[p1-gate] OK before %s: %s (schema+report+code identity verified)" % (nxt
 pop_task() {
   # pop_task <queue-file> — atomically pop + print the queue's first line
   # (flock-serialized against the sibling GPU worker; the lock file lives
-  # beside the queue on container-local /tmp, never MooseFS); rc=1 when the
-  # queue is empty.
+  # beside the queue on container-local /tmp, never MooseFS).
+  # DISTINCT fail-loud statuses (r3 reconciler-upheld Major
+  # launcher-filesystem-fail-open: a queue/lock I/O fault must never read
+  # as ordinary drain, and a failed truncation must never re-serve the
+  # popped task with rc=0):
+  #   rc=0  task popped + printed (queue truncated FIRST, then emitted)
+  #   rc=3  queue drained — the ONLY status the worker treats as done.
+  #         3, not 1, because a failed open of the 9>>"$queue.lock"
+  #         redirection surfaces as the compound command's rc=1 and must
+  #         land in the worker's error branch, not read as drain.
+  #   rc=2  explicit filesystem error (flock, unreadable queue, failed
+  #         truncation write, failed rename) — task NOT emitted.
   local queue="$1" task
   {
-    flock 9
-    task="$(head -n 1 "$queue" 2>/dev/null || true)"
-    if [ -z "$task" ]; then
-      return 1
+    if ! flock 9; then
+      echo "[pop-task] ERROR: flock failed on $queue.lock" >&2
+      return 2
     fi
-    tail -n +2 "$queue" > "$queue.next" && mv "$queue.next" "$queue"
+    if [ ! -r "$queue" ]; then
+      echo "[pop-task] ERROR: queue $queue absent/unreadable (NOT drain)" >&2
+      return 2
+    fi
+    if ! task="$(head -n 1 "$queue")"; then
+      echo "[pop-task] ERROR: read failed on $queue" >&2
+      return 2
+    fi
+    if [ -z "$task" ]; then
+      return 3
+    fi
+    if ! tail -n +2 "$queue" > "$queue.next"; then
+      rm -f "$queue.next"
+      echo "[pop-task] ERROR: truncation write to $queue.next failed" >&2
+      return 2
+    fi
+    if ! mv "$queue.next" "$queue"; then
+      rm -f "$queue.next"
+      echo "[pop-task] ERROR: rename $queue.next -> $queue failed" >&2
+      return 2
+    fi
     printf '%s\n' "$task"
   } 9>>"$queue.lock"
 }
 
 poison_queue() {
-  # poison_queue <queue-file> — empty the task queue: a FAILED worker calls
-  # this so the sibling worker stops after its in-flight task instead of
-  # consuming the dead wave's remaining splits (bounds the orphan window;
-  # the launcher still exits non-zero at the failed worker's wait_bg).
+  # poison_queue <queue-file> — empty the task queue: a FAILED worker (task
+  # failure OR queue I/O fault) calls this so the sibling worker stops
+  # after its in-flight task instead of consuming the dead wave's remaining
+  # splits (bounds the orphan window; the launcher still exits non-zero at
+  # the failed worker's wait_bg).
   local queue="$1"
   {
     flock 9
@@ -286,28 +316,54 @@ poison_queue() {
   } 9>>"$queue.lock"
 }
 
+map_task_argv() {
+  # map_task_argv <split> <capture-mode> <shard> — the ONE argv constructor
+  # for a P2/P3 (split, shard) task, shared by the production worker and
+  # the dry-run echo (r4, r3 Codex Minor: a duplicated dry-run command let
+  # runtime argv drift past the launcher_dryrun argparse-binding sweep).
+  # Populates the global MAP_TASK_ARGV array (per-worker-process copy).
+  local split="$1" mode="$2" shard="$3"
+  MAP_TASK_ARGV=(
+    "$MODEL_PY" "$MAP" --split "$split" --capture-mode "$mode"
+    --num-shards 2 --shard-index "$shard" --hf-prefix "$HF_PREFIX" --h-dim 4096
+    --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META"
+    --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
+  )
+}
+
 map_wave_worker() {
   # map_wave_worker <gpu> <capture-mode> <queue-file> <label> — persistent
   # per-GPU worker (r3 Codex Major non-work-conserving-map-split-barriers):
-  # consumes "split shard" tasks until the queue drains, so a GPU whose
-  # task finishes early immediately picks up the next dependency-ready task
-  # instead of idling at a per-split two-shard barrier. CVD is pinned per
-  # WORKER process in the launcher env (gotchas.md import-time-cuInit
-  # rule); failure stays fail-loud — the first task failure poisons the
-  # queue and exits the worker with the task's rc, which wait_bg observes.
+  # consumes "split shard" tasks until pop_task reports DRAINED (rc=3, the
+  # only loop-exit-zero status; r4: ANY other nonzero pop status is a
+  # queue/lock filesystem fault — the worker poisons the queue and exits
+  # nonzero so wait_bg fails the wave and the phase sentinel is never
+  # written). CVD is pinned per WORKER process in the launcher env
+  # (gotchas.md import-time-cuInit rule); the first task failure poisons
+  # the queue and exits the worker with the task's rc, which wait_bg
+  # observes.
   local gpu="$1" mode="$2" queue="$3" label="$4"
-  local task split shard log rc
-  while task="$(pop_task "$queue")"; do
+  local task split shard log rc pop_rc
+  while :; do
+    pop_rc=0
+    task="$(pop_task "$queue")" || pop_rc=$?
+    if [ "$pop_rc" -eq 3 ]; then
+      break  # drained — the wave's normal completion
+    fi
+    if [ "$pop_rc" -ne 0 ]; then
+      echo "[workload] FAILED $label gpu$gpu: pop_task rc=$pop_rc" \
+        "(queue/lock I/O fault, NOT drain) — poisoning queue" >&2
+      poison_queue "$queue"
+      exit "$pop_rc"
+    fi
     split="${task% *}"
     shard="${task#* }"
     log="$LOGS_DIR/issue-2587-$label-$split-shard$shard.log"
     echo "[workload] $label gpu$gpu: --split $split --shard-index $shard (log: $log)"
+    map_task_argv "$split" "$mode" "$shard"
     rc=0
     env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES="$gpu" PYTHONPATH="$REPO_ROOT/src" \
-      "$MODEL_PY" "$MAP" --split "$split" --capture-mode "$mode" \
-      --num-shards 2 --shard-index "$shard" --hf-prefix "$HF_PREFIX" --h-dim 4096 \
-      --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
-      --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v > "$log" 2>&1 || rc=$?
+      "${MAP_TASK_ARGV[@]}" > "$log" 2>&1 || rc=$?
     if [ "$rc" -ne 0 ]; then
       echo "[workload] FAILED $label $split shard$shard rc=$rc — tail of $log:" >&2
       tail -n 120 "$log" >&2 || true
@@ -327,18 +383,19 @@ run_map_wave() {
   # multi-worker-dispatcher rule, #813/#778).
   local mode="$1" label="$2"
   if [ -n "$DRYRUN" ]; then
-    # Static dry-run view: one command echo per (split, shard). The echoed
-    # CVD uses the shard index; at runtime the GPU is whichever worker pops
-    # the task — both workers carry a launcher-pinned CVD.
+    # Static dry-run view: one command echo per (split, shard), composed by
+    # the SAME map_task_argv constructor the production worker executes
+    # (r4 — the argparse-binding sweep therefore covers the runtime argv by
+    # construction). The echoed CVD uses the shard index; at runtime the
+    # GPU is whichever worker pops the task — both workers carry a
+    # launcher-pinned CVD.
     local split shard
     for split in "${SPLITS[@]}"; do
       for shard in 0 1; do
+        map_task_argv "$split" "$mode" "$shard"
         launch_bg "$LOGS_DIR/issue-2587-$label-$split-shard$shard.log" \
           env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES="$shard" PYTHONPATH="$REPO_ROOT/src" \
-          "$MODEL_PY" "$MAP" --split "$split" --capture-mode "$mode" \
-          --num-shards 2 --shard-index "$shard" --hf-prefix "$HF_PREFIX" --h-dim 4096 \
-          --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META" \
-          --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
+          "${MAP_TASK_ARGV[@]}"
       done
     done
     return 0
@@ -658,7 +715,21 @@ else
       fi
       continue  # byte-identical within-run duplicate — harmless
     fi
-    cp -f "$m" "$dest.tmp.$$" && mv -f "$dest.tmp.$$" "$dest"
+    # r4 (r3 reconciler-upheld Major): cp and mv are checked SEPARATELY —
+    # a failed cp on the non-final position of an AND-list is exempt from
+    # set -e, so the old `cp && mv` shape could push a stale prior-round
+    # $dest as refreshed (or silently drop a required manifest from the
+    # push set) while SEEN_MANIFESTS still recorded it as collected.
+    if ! cp -f "$m" "$dest.tmp.$$"; then
+      rm -f "$dest.tmp.$$"
+      echo "[leak-caphit] FATAL: manifest copy (cp) failed: $m -> $dest.tmp.$$" >&2
+      exit 6
+    fi
+    if ! mv -f "$dest.tmp.$$" "$dest"; then
+      rm -f "$dest.tmp.$$"
+      echo "[leak-caphit] FATAL: manifest rename (mv) failed: $dest.tmp.$$ -> $dest" >&2
+      exit 6
+    fi
     SEEN_MANIFESTS[$base]="$m"
   done
   echo "[leak-caphit] harvested ${#GEN_MANIFESTS[@]} battery gen done-manifests -> $LEAK_DIR"
