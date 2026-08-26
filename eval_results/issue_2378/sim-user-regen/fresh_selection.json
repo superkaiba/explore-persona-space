@@ -1,0 +1,43 @@
+{
+  "predicate": "elicit_rung == 1 (rung-1-kept user_sim conversations only)",
+  "total_sim_kept": 9939,
+  "rung1_eligible": 9939,
+  "rung3_excluded": 0,
+  "requested_rows": 1000,
+  "selected_rows": 1000,
+  "selection_digest": "sha256:ad437aba850f2a30|len=15999",
+  "draw_seeds": [
+    138,
+    139,
+    140,
+    141
+  ],
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T07:53:52+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_gen.py",
+      "--phase",
+      "user_fresh",
+      "--user-fresh-rows",
+      "1000",
+      "--user-fresh-draws",
+      "4",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_completions_simregen",
+      "--ledger-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378/sim-user-regen",
+      "--stage-pools-from-hf",
+      "--skip-upload",
+      "--shard-index",
+      "0",
+      "--num-shards",
+      "1"
+    ],
+    "git_commit": "4f8e2ecde8d69d4a35cbb90e9f22ec5debfecac6",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_gen.py"
+  }
+}

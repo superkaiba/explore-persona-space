@@ -1,0 +1,86 @@
+{
+  "phase": "p7_simuser_regen",
+  "round": "sim-user-regen",
+  "layers": [
+    43,
+    47,
+    51,
+    55,
+    59
+  ],
+  "fresh_reference_na": false,
+  "fresh_selection": {
+    "predicate": "elicit_rung == 1 (rung-1-kept user_sim conversations only)",
+    "total_sim_kept": 9939,
+    "rung1_eligible": 9939,
+    "rung3_excluded": 0,
+    "requested_rows": 1000,
+    "selected_rows": 1000,
+    "selection_digest": "sha256:ad437aba850f2a30|len=15999",
+    "draw_seeds": [
+      138,
+      139,
+      140,
+      141
+    ],
+    "metadata": {
+      "issue": 2378,
+      "timestamp": "2026-08-26T07:53:52+0000",
+      "python": "3.11.10",
+      "argv": [
+        "/workspace/explore-persona-space/scripts/issue2378_gen.py",
+        "--phase",
+        "user_fresh",
+        "--user-fresh-rows",
+        "1000",
+        "--user-fresh-draws",
+        "4",
+        "--raw-root",
+        "/workspace/explore-persona-space/data/issue_2378/raw_completions_simregen",
+        "--ledger-root",
+        "/workspace/explore-persona-space/eval_results/issue_2378/sim-user-regen",
+        "--stage-pools-from-hf",
+        "--skip-upload",
+        "--shard-index",
+        "0",
+        "--num-shards",
+        "1"
+      ],
+      "git_commit": "4f8e2ecde8d69d4a35cbb90e9f22ec5debfecac6",
+      "git_dirty": false,
+      "git_argv0_state": "tracked",
+      "git_argv0_path": "scripts/issue2378_gen.py"
+    }
+  },
+  "walls_s": {
+    "model_env_smoke": 17.0,
+    "model_engine_smoke": 332.3,
+    "p7.gen_user_sim": 889.1,
+    "p7.upload_user_sim": 26.0,
+    "p7.capture_ready": 1.9,
+    "p7.gen_user_fresh": 295.8,
+    "p7.upload_user_fresh": 22.1,
+    "p7.capture_sim": 950.3,
+    "p7.capture_sim_fresh": 406.8
+  },
+  "hf": {
+    "raw": "issue2378_xframing/raw_completions/sim_user_regen",
+    "activations": "issue2378_xframing/analysis_tensors/activations_simregen"
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T08:24:21+0000",
+    "python": "3.11.10",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p7_simuser_regen",
+      "--sentinel-dir",
+      "/workspace/logs"
+    ],
+    "git_commit": "4f8e2ecde8d69d4a35cbb90e9f22ec5debfecac6",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}
