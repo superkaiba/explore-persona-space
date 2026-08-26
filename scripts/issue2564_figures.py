@@ -17,6 +17,15 @@ on single-family axes.
 
 Smoke mode (``--smoke``) consumes a smoke out-root and writes to /tmp —
 never the committed ``figures/`` tree.
+
+``--round ffr`` (floor-failed re-elicitation, plan v7 — additive; the parent
+path is byte-unchanged at default flags): reads ``minpair_delta_ffr.json`` +
+``perpair_ffr.jsonl`` from
+``eval_results/issue_2564/floor-failed-reelicitation/`` and writes stems under
+``figures/issue_2564/floor-failed-reelicitation/``; the hero calibration panel
+plots the round's PRIMARY ratio (``ratio_to_parent_global``, frozen parent
+denominator); text-space / query-axis figures skip gracefully (not collected
+in this round).
 """
 
 from __future__ import annotations
@@ -55,6 +64,10 @@ DEFAULT_RESULTS_DIR = P2564.production_results_dir()
 SMOKE_RESULTS_DIR = P2564.smoke_results_dir()
 DEFAULT_OUT_DIR = P2564.repo_root() / "figures"
 STEM_PREFIX = "issue_2564"
+FFR_RESULTS_DIRNAME = "floor-failed-reelicitation"
+# main() rebinds under --round ffr so every _save lands stems under the round
+# subdir (figures/issue_2564/floor-failed-reelicitation/); parent unchanged.
+_ACTIVE_STEM_PREFIX = STEM_PREFIX
 _SINGLE_CARRIER_RE = re.compile(r"^c\d+$")  # excludes query_content dyads ("c01|c02")
 
 ARMS = ("arm_779ce", "arm_1738ce", "arm_iddelta")
@@ -151,7 +164,7 @@ def _axes_sorted(doc: dict) -> list[str]:
 
 
 def _save(fig: plt.Figure, stem: str, out_dir: Path) -> str:
-    savefig_paper(fig, f"{STEM_PREFIX}/{stem}", dir=out_dir)
+    savefig_paper(fig, f"{_ACTIVE_STEM_PREFIX}/{stem}", dir=out_dir)
     plt.close(fig)
     return stem
 
@@ -264,17 +277,21 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
     ax.set_xlabel("per-pair direction cosine")
     ax.set_title("per-pair spread", loc="left")
 
-    # Panel 3: calibration ratio to the global slope.
+    # Panel 3: calibration ratio to the global slope. Under --round ffr the
+    # PRIMARY ratio uses the parent's FROZEN global slope as denominator
+    # (plan v7 §5); the parent doc keeps the round-pooled ratio_to_global.
+    is_ffr_doc = _get(doc, "meta", "round") == "ffr"
+    ratio_key = "ratio_to_parent_global" if is_ffr_doc else "ratio_to_global"
     ax = panels[2]
     for i, name in enumerate(axes_names):
         c = _get(doc, "axes", name, "calibration")
         if not isinstance(c, dict):
             continue
         for arm in ARMS:
-            v = _finite(_get(c, arm, "ratio_to_global"))
+            v = _finite(_get(c, arm, ratio_key))
             if v is None:
                 continue
-            lo, hi = _xerr(v, _get(c, arm, "ratio_to_global_ci95"))
+            lo, hi = _xerr(v, _get(c, arm, f"{ratio_key}_ci95"))
             ax.errorbar(
                 [v],
                 [ys[i] + off[arm]],
@@ -287,7 +304,9 @@ def fig_hero_axis_profile(doc: dict, rows: list[dict], out_dir: Path) -> str | N
                 capsize=2,
             )
     ax.axvline(1.0, color=neutral, lw=0.8, alpha=0.6)
-    ax.set_xlabel("slope ratio, axis / global")
+    ax.set_xlabel(
+        "slope ratio, axis / parent global" if is_ffr_doc else "slope ratio, axis / global"
+    )
     ax.set_title("calibration", loc="left")
     ax.xaxis.set_major_locator(plt.MaxNLocator(4))
     ax.ticklabel_format(axis="x", style="plain", useOffset=False)
@@ -1082,7 +1101,7 @@ def fig_manip_fire_rates(doc: dict, rows: list[dict], out_dir: Path) -> str | No
     results_dir = doc.get("_results_dir")
     if not results_dir:
         return None
-    mc_path = Path(results_dir) / "manipulation_check.json"
+    mc_path = Path(results_dir) / (doc.get("_manip_check_name") or "manipulation_check.json")
     if not mc_path.is_file():
         return None
     mc = json.loads(mc_path.read_text())
@@ -1171,6 +1190,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="consume the /tmp smoke out-root and write figures to /tmp",
     )
+    ap.add_argument(
+        "--round",
+        choices=("parent", "ffr"),
+        default="parent",
+        help="ffr = floor-failed re-elicitation round: reads minpair_delta_ffr.json "
+        "+ perpair_ffr.jsonl from the round results dir; stems land under "
+        f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}/",
+    )
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument(
         "--only",
@@ -1190,11 +1217,17 @@ def main(argv: list[str] | None = None) -> int:
         print("[import-check] ok", flush=True)
         return 0
 
+    is_ffr = args.round == "ffr"
+    if is_ffr:
+        global _ACTIVE_STEM_PREFIX
+        _ACTIVE_STEM_PREFIX = f"{STEM_PREFIX}/{FFR_RESULTS_DIRNAME}"
+
     results_dir = args.results_dir
+    if args.results_dir == DEFAULT_RESULTS_DIR:
+        base = SMOKE_RESULTS_DIR if args.smoke else DEFAULT_RESULTS_DIR
+        results_dir = base / FFR_RESULTS_DIRNAME if is_ffr else base
     out_dir = args.out_dir
     if args.smoke:
-        if args.results_dir == DEFAULT_RESULTS_DIR:
-            results_dir = SMOKE_RESULTS_DIR
         if args.out_dir == DEFAULT_OUT_DIR:
             out_dir = SMOKE_ROOT / "figures"
         elif out_dir.resolve().is_relative_to((P2564.repo_root() / "figures").resolve()):
@@ -1202,8 +1235,8 @@ def main(argv: list[str] | None = None) -> int:
             # guard missed absolute paths into the committed figures/ tree.
             raise SystemExit("--smoke must not write the committed figures/ tree")
 
-    doc_path = results_dir / "minpair_delta.json"
-    rows_path = results_dir / "perpair.jsonl"
+    doc_path = results_dir / ("minpair_delta_ffr.json" if is_ffr else "minpair_delta.json")
+    rows_path = results_dir / ("perpair_ffr.jsonl" if is_ffr else "perpair.jsonl")
     if not doc_path.is_file():
         raise SystemExit(f"missing {doc_path} — run scripts/issue2564_analysis.py first")
     doc = json.loads(doc_path.read_text())
@@ -1212,9 +1245,12 @@ def main(argv: list[str] | None = None) -> int:
         with rows_path.open(encoding="utf-8") as fh:
             rows = [json.loads(line) for line in fh if line.strip()]
     else:
-        print(f"[fig] perpair.jsonl missing at {rows_path}; per-pair figures will skip")
+        print(f"[fig] {rows_path.name} missing at {rows_path}; per-pair figures will skip")
 
     doc["_results_dir"] = str(results_dir)  # fig_manip_fire_rates reads a sibling artifact
+    doc["_manip_check_name"] = (
+        "manipulation_check_ffr.json" if is_ffr else "manipulation_check.json"
+    )
     set_paper_style("blog")
     figures = FIGURES
     if args.only:
@@ -1229,7 +1265,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[fig] skip {fn.__name__}: input n/a in {doc_path.name}")
         else:
             wrote.append(stem)
-            print(f"[fig] wrote {out_dir}/{STEM_PREFIX}/{stem}.png")
+            print(f"[fig] wrote {out_dir}/{_ACTIVE_STEM_PREFIX}/{stem}.png")
     print(f"[phase=figures] wrote={len(wrote)} skipped={len(skipped)} out={out_dir}")
     if not wrote:
         raise SystemExit("figures phase produced ZERO figures — inputs empty or malformed")
