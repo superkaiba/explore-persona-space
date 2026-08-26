@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2606,
+  "highest_id": 2607,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12391,6 +12391,13 @@
       "path": "tasks/reviewing/2606",
       "status": "reviewing",
       "title": "pod.py provision exits 0 with BOOTSTRAP-OK while its own preflight reports PREFLIGHT-FAILED rc=2 \u2014 fail loud instead"
+    },
+    "2607": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2607",
+      "status": "proposed",
+      "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
     },
     "261": {
       "has_clean_result": false,
