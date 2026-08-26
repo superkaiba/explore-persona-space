@@ -12,3 +12,4 @@
 - [Bg-lint wrapper rc masking](feedback_bg_lint_wrapper_rc_masking.md) — A background compound's exit 0 masks an inner lint timeout-kill (rc=124); require the `workflow_lint: PASS` line, re-fence 1500s under contention (#2263 r3).
 - [Opportunistic prod assert misses blind-spot enum](feedback_opportunistic_prod_assert_misses_blindspot_enum.md) — Fix-born `if production:` asserts skip the smoke enumeration update; grep round diff for production-gated asserts vs the enumeration block (#2476 r2).
 - [Annotated machine-parsed marker line](feedback_annotated_machine_parsed_marker_line.md) — RUN check-smoke-arch-registry each round: a trailing parenthetical on `arm-registry:` REFUSEs the checker even with byte-correct substance (#2546 r5).
+- [Pre-fix verify on committed rounds: no stash](feedback_prefix_verify_committed_round_no_stash.md) — stash push is a no-op on a clean tree and pop applies a FOREIGN autostash; checkout the base blob instead (#2546 r16).
