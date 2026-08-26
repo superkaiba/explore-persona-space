@@ -1,0 +1,222 @@
+{
+  "axis_rows": [
+    {
+      "axis": "user_fact",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 5,
+      "n_fired_para": 5,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 5
+        }
+      },
+      "width": 5
+    }
+  ],
+  "meta": {
+    "carriers": [
+      "c01",
+      "c02",
+      "c03",
+      "c04",
+      "c05",
+      "c06",
+      "c07",
+      "c08",
+      "c09",
+      "c10",
+      "c11",
+      "c12"
+    ],
+    "draws": [
+      0,
+      99
+    ],
+    "fire_threshold_pct": 70,
+    "floor_rule": ">= ceil(0.6 x width) base values fired",
+    "git_argv0_path": "scripts/issue2564_analysis.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+    "git_dirty": false,
+    "instrument": "programmatic name containment (issue2564_judge), user_fact only \u2014 query cells carry no compliance gate (plan v8 \u00a79)",
+    "judged_denominator": null,
+    "n_anchor_rows": {
+      "parent": 1200,
+      "round": 10800
+    },
+    "phase": "pe-analysis",
+    "programmatic_denominator": 1200,
+    "round": "k100",
+    "smoke": false
+  },
+  "value_rows": [
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9833333333333333,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 1180,
+      "n_incomplete": 0,
+      "n_noncomply": 20,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.99,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 1188,
+      "n_incomplete": 0,
+      "n_noncomply": 12,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9958333333333333,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 1195,
+      "n_incomplete": 0,
+      "n_noncomply": 5,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9958333333333333,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 1195,
+      "n_incomplete": 0,
+      "n_noncomply": 5,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9791666666666666,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 1175,
+      "n_incomplete": 0,
+      "n_noncomply": 25,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9833333333333333,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 1180,
+      "n_incomplete": 0,
+      "n_noncomply": 20,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9833333333333333,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 1180,
+      "n_incomplete": 0,
+      "n_noncomply": 20,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9941666666666666,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 1193,
+      "n_incomplete": 0,
+      "n_noncomply": 7,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9908333333333333,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 1189,
+      "n_incomplete": 0,
+      "n_noncomply": 11,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.985,
+      "denom": 1200,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 1182,
+      "n_incomplete": 0,
+      "n_noncomply": 18,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    }
+  ]
+}

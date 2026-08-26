@@ -1,0 +1,63 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "fb2e673d0f3d486d",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:26:38Z",
+  "figsize": [
+    6.8,
+    3.2
+  ],
+  "text": {
+    "suptitle": "Axis-identity cosine per value pair (single-turn frozen map)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "injected name",
+        "xticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ],
+        "yticklabels": [
+          "value v1",
+          "value v2",
+          "value v3",
+          "value v4",
+          "value v5"
+        ]
+      },
+      {
+        "title_left": "query form",
+        "xticklabels": [
+          "value E",
+          "value imp",
+          "value stmt"
+        ],
+        "yticklabels": [
+          "value E",
+          "value imp",
+          "value stmt"
+        ]
+      },
+      {
+        "ylabel": "axis-identity cosine",
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

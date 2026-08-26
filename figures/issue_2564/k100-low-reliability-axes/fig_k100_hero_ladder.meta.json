@@ -1,0 +1,136 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "45b1cb8bb7454fe4",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:27:04Z",
+  "figsize": [
+    9.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.1,
+      "direction cosine / reliability bound sqrt(r)": 0.17208480650441785,
+      "error": 0.020403684684877132,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.1,
+      "direction cosine / reliability bound sqrt(r)": 0.1381780839283877,
+      "error": 0.01563930046466451,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "direction cosine / reliability bound sqrt(r)": 0.3619678136011955,
+      "error": 0.12239450992894411,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.9,
+      "direction cosine / reliability bound sqrt(r)": 0.32475064591711167,
+      "error": 0.02729026939186391,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.1,
+      "direction cosine / reliability bound sqrt(r)": 0.26424653904878004,
+      "error": 0.023077741323835235,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "direction cosine / reliability bound sqrt(r)": 0.7701499287573452,
+      "error": 0.03585960705454072,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": -0.1,
+      "y": 0.30400866272404437,
+      "error": 0.033297736182515636,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.1,
+      "y": 0.22111512196235203,
+      "error": 0.024588091764536302,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.7742311644907743,
+      "error": 0.06345501022523936,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.9,
+      "y": 0.35026283550092674,
+      "error": 0.04106202874240086,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.1,
+      "y": 0.24980153992824874,
+      "error": 0.02620292592331433,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.9648937465184847,
+      "error": 0.010760108406466684,
+      "_kind": "errorbar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": "Does more sampling resolve the low-reliability axes?",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "injected name (user_fact)",
+        "ylabel": "direction cosine / reliability bound sqrt(r)",
+        "xticklabels": [
+          "K=10 (parent)",
+          "K=100 (this round)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "query form",
+        "xticklabels": [
+          "K=10 (parent)",
+          "K=100 (this round)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

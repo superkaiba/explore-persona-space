@@ -1,0 +1,72 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "fa1a015971494b70",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:26:32Z",
+  "figsize": [
+    6.5,
+    9.0
+  ],
+  "points": [
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.491667,
+      "y": 0.9833333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.497917,
+      "y": 0.9958333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.489583,
+      "y": 0.9791666666666666,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.491667,
+      "y": 0.9833333333333333,
+      "_kind": "bar"
+    },
+    {
+      "compliance fraction (dashed line: 70% fire threshold)": 0.495417,
+      "y": 0.9908333333333333,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Did each instruction actually fire in the rollouts?",
+        "xlabel": "compliance fraction (dashed line: 70% fire threshold)",
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "injected name: name Marcus",
+          "injected name: name Diego",
+          "injected name: name Sarah",
+          "injected name: name Emma",
+          "injected name: name Kevin"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,4003 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "3255a7bd3eae4f9b",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:26:34Z",
+  "figsize": [
+    9.600000000000001,
+    3.0
+  ],
+  "points": [
+    {
+      "observed shift norm": 17.259337056294143,
+      "predicted shift norm": 21.309863602271793,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.362484533813768,
+      "predicted shift norm": 10.298909855670537,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.877519835288496,
+      "predicted shift norm": 21.341633199596735,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.83317008187659,
+      "predicted shift norm": 10.794160506664628,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 18.401284978433146,
+      "predicted shift norm": 21.767750357302333,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.614667390274979,
+      "predicted shift norm": 9.104426633550275,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 18.73576147773773,
+      "predicted shift norm": 21.905538838456454,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.179405158617457,
+      "predicted shift norm": 9.525270338271563,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 17.983159396733534,
+      "predicted shift norm": 21.980271980287025,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 7.63536518695149,
+      "predicted shift norm": 11.728028895013976,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.4973352183546766,
+      "predicted shift norm": 2.8165268986277883,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0195156152739555,
+      "predicted shift norm": 2.600583106237173,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.3097020473909575,
+      "predicted shift norm": 4.3008301169127225,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.418478514562905,
+      "predicted shift norm": 4.67987221261231,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.424274713013284,
+      "predicted shift norm": 4.668184824616281,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.502536323130571,
+      "predicted shift norm": 4.486212609995913,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8359274509898793,
+      "predicted shift norm": 2.4651320753522166,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4837325378054462,
+      "predicted shift norm": 3.578010253545545,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5242986602510773,
+      "predicted shift norm": 4.937668877142175,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.8848615588497504,
+      "predicted shift norm": 4.619056342139288,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6711207125946386,
+      "predicted shift norm": 5.398417412379736,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.8022636412843354,
+      "predicted shift norm": 4.290514274724974,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.954734944705726,
+      "predicted shift norm": 3.2960128463962515,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.66691540157569,
+      "predicted shift norm": 3.569088486833202,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6918911027878112,
+      "predicted shift norm": 2.111001942998581,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.463938111979111,
+      "predicted shift norm": 1.6307056157332227,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8699488959901276,
+      "predicted shift norm": 4.3485536635290005,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.172630290850397,
+      "predicted shift norm": 6.033091328141928,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.053599043708578,
+      "predicted shift norm": 4.740374476479234,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.319843003912314,
+      "predicted shift norm": 5.694225864083388,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 11.192509770570819,
+      "predicted shift norm": 22.877794305582775,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.967440292116342,
+      "predicted shift norm": 11.520135280280181,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 11.610170893119745,
+      "predicted shift norm": 22.529702199462637,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.77670709538165,
+      "predicted shift norm": 11.896278730672849,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.705936627426233,
+      "predicted shift norm": 22.920676011869702,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.0877488105053366,
+      "predicted shift norm": 9.786150775778001,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.839195313175365,
+      "predicted shift norm": 22.844897437621327,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.3033849479878556,
+      "predicted shift norm": 10.184213153864368,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 11.58426973847575,
+      "predicted shift norm": 22.868140561340063,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.5735976471270243,
+      "predicted shift norm": 12.125900488586078,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6634270271524902,
+      "predicted shift norm": 3.276398171484338,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8219782310128179,
+      "predicted shift norm": 3.3972022884129944,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9738125605096712,
+      "predicted shift norm": 5.205340109307832,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.009388237707535,
+      "predicted shift norm": 6.004915649875553,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.1421014947670205,
+      "predicted shift norm": 5.5486619379313105,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.9387187396901875,
+      "predicted shift norm": 5.921354208755366,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.4100286205483292,
+      "predicted shift norm": 2.496836387578507,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.5325209082066789,
+      "predicted shift norm": 3.652058369952904,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.53839924955095,
+      "predicted shift norm": 5.63221386731158,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9777795800345133,
+      "predicted shift norm": 5.38397964820521,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.7576635767420044,
+      "predicted shift norm": 6.027551863536459,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.804353215467516,
+      "predicted shift norm": 5.106447958777777,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6611877449225705,
+      "predicted shift norm": 3.569734357845161,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4295438896313994,
+      "predicted shift norm": 3.8814673386621363,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.3371157689722146,
+      "predicted shift norm": 2.417739112545205,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.517408093065514,
+      "predicted shift norm": 1.6660346412192308,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.804761508933883,
+      "predicted shift norm": 5.14491221359619,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.29703690887632,
+      "predicted shift norm": 6.908455563208457,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.002589655140879,
+      "predicted shift norm": 5.545398939473065,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.43336426699726,
+      "predicted shift norm": 6.748005350453586,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.760248751315961,
+      "predicted shift norm": 19.11596949325555,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.0553491460855025,
+      "predicted shift norm": 8.804503529457303,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.934304951201366,
+      "predicted shift norm": 19.62228337192179,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.5938693834145536,
+      "predicted shift norm": 9.6248836377392,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.281835886231471,
+      "predicted shift norm": 19.199411057303575,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.2673216148166073,
+      "predicted shift norm": 8.024577869196001,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.295752181910474,
+      "predicted shift norm": 19.216528606866927,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.479275197139673,
+      "predicted shift norm": 8.068407057548454,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.19308484340287,
+      "predicted shift norm": 19.07621730748216,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.787757820424198,
+      "predicted shift norm": 8.973452075558306,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.378723025180776,
+      "predicted shift norm": 3.7638520000177267,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7491481387345227,
+      "predicted shift norm": 3.2515096456174097,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.498405120901394,
+      "predicted shift norm": 5.834773296515965,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5760898950989337,
+      "predicted shift norm": 5.961315805389168,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4714274103285816,
+      "predicted shift norm": 6.174560885948906,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.41766437599562,
+      "predicted shift norm": 5.726623698170348,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.3318794756320629,
+      "predicted shift norm": 2.5748762570092913,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7416509419333048,
+      "predicted shift norm": 2.7833336971308444,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6254122783744536,
+      "predicted shift norm": 6.454763667320483,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.0672850722070044,
+      "predicted shift norm": 5.779873429991591,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5790259452313737,
+      "predicted shift norm": 6.788451015951429,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.768720228999755,
+      "predicted shift norm": 5.481129844848058,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6273566989846104,
+      "predicted shift norm": 3.7856843077223314,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.1063103003956076,
+      "predicted shift norm": 3.6275321136168897,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.0801458935876675,
+      "predicted shift norm": 2.2351070435649465,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.3095671962935427,
+      "predicted shift norm": 1.7662483314483477,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.568859129475188,
+      "predicted shift norm": 5.639394940605303,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.249446577929218,
+      "predicted shift norm": 6.442788642168515,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.536085255597886,
+      "predicted shift norm": 6.082869203141936,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.0477559369657476,
+      "predicted shift norm": 6.192564052263422,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.9967079596504,
+      "predicted shift norm": 22.11143031507507,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.684590199320995,
+      "predicted shift norm": 9.755301250079418,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 18.051740596885697,
+      "predicted shift norm": 21.728093240127976,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 7.299049637230012,
+      "predicted shift norm": 9.963557664510212,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 19.204944643437564,
+      "predicted shift norm": 22.510052192756195,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.243364803217492,
+      "predicted shift norm": 8.891387117546165,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 19.980453112868492,
+      "predicted shift norm": 22.39407663593587,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.952431217080553,
+      "predicted shift norm": 8.936914307279846,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 17.38707553488432,
+      "predicted shift norm": 22.09311943985867,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 9.307341273869808,
+      "predicted shift norm": 10.701033587564453,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5004573382024535,
+      "predicted shift norm": 2.897839886201598,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.4139496642825904,
+      "predicted shift norm": 2.753114326715011,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.3367681339881723,
+      "predicted shift norm": 5.070871407199596,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.429033683586038,
+      "predicted shift norm": 5.000262830653432,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.198967046440027,
+      "predicted shift norm": 5.345828184172611,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.647251337920001,
+      "predicted shift norm": 4.817072621513746,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.816012047127489,
+      "predicted shift norm": 2.3807233046591985,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.161171713229417,
+      "predicted shift norm": 3.6279095956014906,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9118756227017633,
+      "predicted shift norm": 5.149927276568731,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.383842608180866,
+      "predicted shift norm": 4.829094000390527,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.5421828198474263,
+      "predicted shift norm": 5.441602228730232,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.048935032160497,
+      "predicted shift norm": 4.484617869833803,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.8101170351600455,
+      "predicted shift norm": 3.3129005243097693,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.791989846492208,
+      "predicted shift norm": 4.0960658258165,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.356900892699903,
+      "predicted shift norm": 2.190859705151846,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.1086512710175946,
+      "predicted shift norm": 1.7683187601943566,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.12003290662388,
+      "predicted shift norm": 4.728198942566198,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.792275114290495,
+      "predicted shift norm": 6.225977754552435,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.9114141196294323,
+      "predicted shift norm": 5.180180445055973,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.73130340581402,
+      "predicted shift norm": 5.9749663830117665,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.63534369757806,
+      "predicted shift norm": 25.172826817628792,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.6184107904445115,
+      "predicted shift norm": 11.10256786472848,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.856342395802965,
+      "predicted shift norm": 25.18765344955248,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.823031214642612,
+      "predicted shift norm": 11.913427263549147,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 23.122576144078064,
+      "predicted shift norm": 25.47039463149854,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.604103562275452,
+      "predicted shift norm": 9.854054957671877,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 22.481355229567527,
+      "predicted shift norm": 25.185974158237983,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.214875607505233,
+      "predicted shift norm": 10.28938166346433,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 22.92619525189507,
+      "predicted shift norm": 25.46083615408815,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.035455303876131,
+      "predicted shift norm": 12.123760506522698,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7251315120650705,
+      "predicted shift norm": 3.2983125145841976,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.2578096869195177,
+      "predicted shift norm": 3.4886471834105715,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.1671930392298107,
+      "predicted shift norm": 5.594726018629183,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.220366912025363,
+      "predicted shift norm": 6.050901972446355,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.601866163331,
+      "predicted shift norm": 5.91323565566705,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.027022240145718,
+      "predicted shift norm": 5.897860559462316,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.272525424857885,
+      "predicted shift norm": 2.606348061325772,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9017184653504784,
+      "predicted shift norm": 3.6986982494884493,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9072239927113817,
+      "predicted shift norm": 6.036755880963575,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.08983204659506,
+      "predicted shift norm": 5.723904366602018,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4542299773604017,
+      "predicted shift norm": 6.213255668528221,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.4559272747754375,
+      "predicted shift norm": 5.330443456137322,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.194875948469029,
+      "predicted shift norm": 3.6717017852161162,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.7306606218102325,
+      "predicted shift norm": 4.0601189148089825,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9010712476645242,
+      "predicted shift norm": 2.322594868373039,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.721760233075959,
+      "predicted shift norm": 1.930270746377828,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6522740264390605,
+      "predicted shift norm": 5.462189690579114,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.669502267218554,
+      "predicted shift norm": 6.59316460822561,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4117965796630068,
+      "predicted shift norm": 5.826303995861912,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.061214861482645,
+      "predicted shift norm": 6.299569122305005,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 14.57051408399176,
+      "predicted shift norm": 20.45578734289413,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6942149785375618,
+      "predicted shift norm": 8.790581244009417,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 14.592499319163593,
+      "predicted shift norm": 20.722854425540824,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.283630180730629,
+      "predicted shift norm": 9.487466642039939,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 15.01705283551298,
+      "predicted shift norm": 20.32126349375009,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.389734604131533,
+      "predicted shift norm": 8.347798666371185,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 15.038106023397946,
+      "predicted shift norm": 20.420580541037303,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.3243467781063334,
+      "predicted shift norm": 8.499819720673406,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 14.725912370265704,
+      "predicted shift norm": 20.691938081311996,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.1934156641956184,
+      "predicted shift norm": 9.26359564929155,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.4524979321617542,
+      "predicted shift norm": 3.0180843406504705,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.3762965614897247,
+      "predicted shift norm": 2.593029383825498,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4038673956990952,
+      "predicted shift norm": 5.274877174784943,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.472289337371018,
+      "predicted shift norm": 4.904266595420058,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.122151106321807,
+      "predicted shift norm": 5.486051317904468,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6962467707423783,
+      "predicted shift norm": 4.820519247859876,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.4254829420072672,
+      "predicted shift norm": 2.1579136257396097,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6662574134478796,
+      "predicted shift norm": 2.9209950541298686,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.2619455860862128,
+      "predicted shift norm": 5.690658237087742,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.851757320143498,
+      "predicted shift norm": 4.776436290936208,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.293224123401912,
+      "predicted shift norm": 5.898604686159835,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.049489067200816,
+      "predicted shift norm": 4.59171526263099,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8790336882620136,
+      "predicted shift norm": 3.0819730726648173,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8111222711107955,
+      "predicted shift norm": 3.478457047660943,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6201681229482379,
+      "predicted shift norm": 1.9513887806977752,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6727197762689756,
+      "predicted shift norm": 1.4908494588047543,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0514907525652055,
+      "predicted shift norm": 5.060871468303003,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.3110729341672145,
+      "predicted shift norm": 5.6867916382013775,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9913127918377604,
+      "predicted shift norm": 5.439851754280746,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.778640732586297,
+      "predicted shift norm": 5.5527019299197455,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 19.417116451784537,
+      "predicted shift norm": 21.112038398694615,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.132803799897091,
+      "predicted shift norm": 8.616520176849386,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 19.69785342106271,
+      "predicted shift norm": 21.244742077677277,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.665205409625852,
+      "predicted shift norm": 9.04402506756948,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.55199459640768,
+      "predicted shift norm": 22.20619117934516,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.070250264037185,
+      "predicted shift norm": 7.908830932762029,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 20.814409190544648,
+      "predicted shift norm": 21.575614556595486,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.2397210136423364,
+      "predicted shift norm": 7.505915006264708,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 20.123240054144762,
+      "predicted shift norm": 22.02553137565312,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.23245406034212,
+      "predicted shift norm": 10.606129056323647,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6782341940507772,
+      "predicted shift norm": 3.1378582185043324,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5058889412501753,
+      "predicted shift norm": 3.108055728801864,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.8398915704131826,
+      "predicted shift norm": 4.842182468610833,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.164278493668145,
+      "predicted shift norm": 5.7654729884524,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.893912570953884,
+      "predicted shift norm": 4.820095823651647,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.27990430329812,
+      "predicted shift norm": 5.775835430866504,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.1803540871004645,
+      "predicted shift norm": 2.854890798072014,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4152626602899434,
+      "predicted shift norm": 3.766004741320025,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.488688825510184,
+      "predicted shift norm": 5.286982305950274,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.2455141243386985,
+      "predicted shift norm": 5.390768688224708,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.8170277897242597,
+      "predicted shift norm": 5.322910572866252,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.314222466049141,
+      "predicted shift norm": 5.395876894626582,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9114874189082725,
+      "predicted shift norm": 3.6534015711989896,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4876559582118225,
+      "predicted shift norm": 4.596609026339816,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.060146738409146,
+      "predicted shift norm": 2.110181050173508,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.51035596285719,
+      "predicted shift norm": 1.5671541235745603,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.0291333619753695,
+      "predicted shift norm": 4.761123574730077,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.996150329972467,
+      "predicted shift norm": 7.0941557396816,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5693649396441542,
+      "predicted shift norm": 5.114857601761245,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.166761168860894,
+      "predicted shift norm": 7.0529284729746635,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.22242217472041,
+      "predicted shift norm": 18.761658249983398,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.354790750705494,
+      "predicted shift norm": 7.816752380358195,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.350510541747433,
+      "predicted shift norm": 18.700853709796625,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 6.576121571978366,
+      "predicted shift norm": 7.882031953844395,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.848504559833138,
+      "predicted shift norm": 18.471166965465507,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.086077580398673,
+      "predicted shift norm": 7.089341946827158,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.393840885336303,
+      "predicted shift norm": 18.3864642038381,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.971759333805942,
+      "predicted shift norm": 6.99396170197276,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 21.92886252641869,
+      "predicted shift norm": 18.931017031967258,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 8.996651074052483,
+      "predicted shift norm": 8.194591386366325,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9964572067583013,
+      "predicted shift norm": 2.9013410600948015,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.479369159867941,
+      "predicted shift norm": 2.719355119191604,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.668618486989389,
+      "predicted shift norm": 4.523539633227786,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.994343169891987,
+      "predicted shift norm": 4.62361775611346,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6292352091887867,
+      "predicted shift norm": 4.721434518479747,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.215390043667804,
+      "predicted shift norm": 4.8670844747434385,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.058802145175037,
+      "predicted shift norm": 2.2206375872044855,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.542109782880353,
+      "predicted shift norm": 2.915191193598716,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.8105947451630833,
+      "predicted shift norm": 4.910533791216576,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.1502013055966036,
+      "predicted shift norm": 4.400154110405147,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5759023449267553,
+      "predicted shift norm": 4.949291185857626,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.4289720748114267,
+      "predicted shift norm": 4.336297133242578,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.2590474038703006,
+      "predicted shift norm": 3.0967902399506384,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.525945298329405,
+      "predicted shift norm": 3.4607316650377706,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.5342111346660454,
+      "predicted shift norm": 2.0625970181386117,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.77701995829431,
+      "predicted shift norm": 1.6075069375823108,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.8406920923290175,
+      "predicted shift norm": 4.244117419011783,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.074912704217321,
+      "predicted shift norm": 5.249575522429269,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.7479612995221077,
+      "predicted shift norm": 4.780282774534867,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.558631347620454,
+      "predicted shift norm": 5.422978256082457,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.02778439931575,
+      "predicted shift norm": 20.77530346091232,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.636740102015192,
+      "predicted shift norm": 9.563283671294347,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.831732701889345,
+      "predicted shift norm": 20.80581431357105,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.571860556581247,
+      "predicted shift norm": 10.308882746549537,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.18777195479351,
+      "predicted shift norm": 20.572058329710803,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.3641119133545927,
+      "predicted shift norm": 8.51629668323303,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.357966272210557,
+      "predicted shift norm": 20.867823368080263,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6378995755119448,
+      "predicted shift norm": 9.050247677832955,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.326805759877944,
+      "predicted shift norm": 20.655984894732004,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.9402211554897377,
+      "predicted shift norm": 10.031004425881136,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.2108655303123639,
+      "predicted shift norm": 3.713979578924416,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.4112650591441158,
+      "predicted shift norm": 3.5594724609961896,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.5628151688739509,
+      "predicted shift norm": 6.308769858500335,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7723019931603068,
+      "predicted shift norm": 6.0413980410928465,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.636085296225716,
+      "predicted shift norm": 6.51403080350782,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0482173405403423,
+      "predicted shift norm": 5.721120222345506,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.6930871964945375,
+      "predicted shift norm": 2.755127040122344,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8345860730938155,
+      "predicted shift norm": 3.654614221733265,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.5693844941962376,
+      "predicted shift norm": 6.562893975676964,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7822407835720895,
+      "predicted shift norm": 5.785854765723927,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.574726513433836,
+      "predicted shift norm": 6.64154456561823,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0879219336824177,
+      "predicted shift norm": 5.3965266578963975,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9035768962538517,
+      "predicted shift norm": 3.8720533601235045,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.435769341546908,
+      "predicted shift norm": 3.8768170696205138,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.1446868120308458,
+      "predicted shift norm": 2.460460234727107,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.3882474829473874,
+      "predicted shift norm": 1.6529641547069982,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8142139175871501,
+      "predicted shift norm": 5.937223195361686,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.849986307010463,
+      "predicted shift norm": 6.059633457571795,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0309101532982035,
+      "predicted shift norm": 6.383840886056281,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.101124072954945,
+      "predicted shift norm": 5.728296057886734,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.459985809521864,
+      "predicted shift norm": 20.694987611295335,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.331510485409202,
+      "predicted shift norm": 9.690777110063783,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.937650409103966,
+      "predicted shift norm": 20.57983057440195,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.198445486037531,
+      "predicted shift norm": 10.174274630937788,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 17.278471595614615,
+      "predicted shift norm": 20.542656622202692,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.632925167020817,
+      "predicted shift norm": 8.433430194060477,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 17.537411696824073,
+      "predicted shift norm": 20.247359943324273,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.346303171713162,
+      "predicted shift norm": 8.818652665282167,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.374542122287092,
+      "predicted shift norm": 20.82066357408209,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.352189076498505,
+      "predicted shift norm": 10.300558985588026,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.821144095829018,
+      "predicted shift norm": 3.0187275762779584,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7846582615100932,
+      "predicted shift norm": 2.7650145487358837,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6682727448169903,
+      "predicted shift norm": 5.114160913286121,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.050726678833485,
+      "predicted shift norm": 5.5087634356833854,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.517243732319136,
+      "predicted shift norm": 5.376015807049757,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.6686653467291186,
+      "predicted shift norm": 5.24672026198792,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.5978052305811823,
+      "predicted shift norm": 2.3562495813568387,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.286447052752847,
+      "predicted shift norm": 3.224487916362241,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.3629541709267916,
+      "predicted shift norm": 5.275900301146973,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.3079403256692625,
+      "predicted shift norm": 4.928351336204965,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.1010014640623385,
+      "predicted shift norm": 5.70145728751944,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.7216812428983697,
+      "predicted shift norm": 4.514695837361673,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8460476031474944,
+      "predicted shift norm": 3.4102565644519167,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9135783796769403,
+      "predicted shift norm": 3.1316954362159364,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.366407811796226,
+      "predicted shift norm": 2.349246588872107,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7451732396096542,
+      "predicted shift norm": 1.6212312474473178,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.2835710431584926,
+      "predicted shift norm": 4.825176527364413,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.2277327765225,
+      "predicted shift norm": 5.484026049204713,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.285743949843898,
+      "predicted shift norm": 5.244675553261952,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.26915660695352,
+      "predicted shift norm": 5.2447455166928645,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.350156493599567,
+      "predicted shift norm": 19.200553493144056,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.6910943590246315,
+      "predicted shift norm": 8.391558320050587,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.199381654639172,
+      "predicted shift norm": 19.32556306861921,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.7884869397351117,
+      "predicted shift norm": 8.799323491453526,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.145685052668968,
+      "predicted shift norm": 19.008192833924674,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.867115127250028,
+      "predicted shift norm": 7.653703325385022,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 13.09107212583567,
+      "predicted shift norm": 18.759239004699488,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.378940370091795,
+      "predicted shift norm": 7.767079068136426,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 12.787761073421416,
+      "predicted shift norm": 19.40765435342309,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.559804435787828,
+      "predicted shift norm": 9.041634592956981,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.4210186967720526,
+      "predicted shift norm": 2.456005129209253,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9158694345821328,
+      "predicted shift norm": 2.2223570380005127,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9152058023302498,
+      "predicted shift norm": 3.8628982824810483,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.034895112255903,
+      "predicted shift norm": 4.053155874391823,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.898887580152944,
+      "predicted shift norm": 4.11835640666043,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.3135838237839654,
+      "predicted shift norm": 4.116694970383192,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.437776784416901,
+      "predicted shift norm": 2.1806011287485427,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0984714719630717,
+      "predicted shift norm": 2.8070280623034365,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8954355380220167,
+      "predicted shift norm": 4.038738179417532,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.958252205124982,
+      "predicted shift norm": 3.5900047442232097,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.8617388691405734,
+      "predicted shift norm": 4.419373939098463,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.790662481458676,
+      "predicted shift norm": 3.52335682740584,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.377074160083607,
+      "predicted shift norm": 2.966302867108017,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9990389082009794,
+      "predicted shift norm": 3.2080377744022983,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.0721004048927885,
+      "predicted shift norm": 1.9541432956179725,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.1204409406198863,
+      "predicted shift norm": 1.530846699768304,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.640353077574974,
+      "predicted shift norm": 3.9526157252879046,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.344514444633553,
+      "predicted shift norm": 4.69292232886267,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.739920586409612,
+      "predicted shift norm": 4.39996561421019,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.70328809266464,
+      "predicted shift norm": 4.696557437950873,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 14.20437058794747,
+      "predicted shift norm": 21.794688809807713,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.6464706757426417,
+      "predicted shift norm": 9.909367966715909,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 14.617286740519818,
+      "predicted shift norm": 21.948026148872504,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.676353821215625,
+      "predicted shift norm": 10.839464313201507,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.496734817072007,
+      "predicted shift norm": 21.632526478732256,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.0502321577107345,
+      "predicted shift norm": 8.959883122897304,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 16.109150793952743,
+      "predicted shift norm": 21.79512546082699,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.825717846496298,
+      "predicted shift norm": 9.38948245097918,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 15.12354573795048,
+      "predicted shift norm": 22.42642496485028,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 5.0865418736465156,
+      "predicted shift norm": 11.01940786451415,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7963784549046158,
+      "predicted shift norm": 3.1161506171318667,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7280152539201756,
+      "predicted shift norm": 3.435451438384439,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.5059823516186577,
+      "predicted shift norm": 4.9003037467081425,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.5397802025998057,
+      "predicted shift norm": 5.992093795652199,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.9195655486570717,
+      "predicted shift norm": 5.4911627575608675,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.378780849387522,
+      "predicted shift norm": 6.231083613375298,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0518180774298043,
+      "predicted shift norm": 2.4841099358531418,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.9928119668697661,
+      "predicted shift norm": 3.7125579254737486,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.244377086901876,
+      "predicted shift norm": 5.5855793887892835,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.6590383177815653,
+      "predicted shift norm": 5.068279270566802,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.617448463253013,
+      "predicted shift norm": 6.225885108842677,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 3.511234800425774,
+      "predicted shift norm": 5.192172759367182,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0882515475653958,
+      "predicted shift norm": 3.5637929731349636,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.409965194488087,
+      "predicted shift norm": 3.515339793386291,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.0269348093458732,
+      "predicted shift norm": 2.288612327443466,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 1.7069970293793684,
+      "predicted shift norm": 1.7227640152266763,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.4704562721589793,
+      "predicted shift norm": 5.104944551958125,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.2986564774412175,
+      "predicted shift norm": 6.267344578293482,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 2.3791958955170824,
+      "predicted shift norm": 5.680511974697112,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 4.34147817205065,
+      "predicted shift norm": 6.45330535783234,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed shift norm": 0.0,
+      "predicted shift norm": 0.0,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 0.7458895530347762,
+      "predicted shift norm": 0.7066010819600078,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 1.4917791060695524,
+      "predicted shift norm": 1.4132021639200156,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 2.2376686591043287,
+      "predicted shift norm": 2.1198032458800236,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 2.983558212139105,
+      "predicted shift norm": 2.8264043278400313,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 3.729447765173881,
+      "predicted shift norm": 3.5330054098000394,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 4.475337318208657,
+      "predicted shift norm": 4.239606491760047,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 5.2212268712434335,
+      "predicted shift norm": 4.946207573720055,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 5.96711642427821,
+      "predicted shift norm": 5.6528086556800625,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 6.713005977312986,
+      "predicted shift norm": 6.35940973764007,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 7.458895530347762,
+      "predicted shift norm": 7.066010819600079,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 8.20478508338254,
+      "predicted shift norm": 7.772611901560087,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 8.950674636417315,
+      "predicted shift norm": 8.479212983520094,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 9.69656418945209,
+      "predicted shift norm": 9.185814065480102,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 10.442453742486867,
+      "predicted shift norm": 9.89241514744011,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 11.188343295521644,
+      "predicted shift norm": 10.59901622940012,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 11.93423284855642,
+      "predicted shift norm": 11.305617311360125,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 12.680122401591195,
+      "predicted shift norm": 12.012218393320133,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 13.426011954625972,
+      "predicted shift norm": 12.71881947528014,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 14.171901507660749,
+      "predicted shift norm": 13.42542055724015,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 14.917791060695524,
+      "predicted shift norm": 14.132021639200158,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 15.6636806137303,
+      "predicted shift norm": 14.838622721160164,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 16.40957016676508,
+      "predicted shift norm": 15.545223803120175,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 17.155459719799854,
+      "predicted shift norm": 16.251824885080183,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 17.90134927283463,
+      "predicted shift norm": 16.95842596704019,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 18.647238825869405,
+      "predicted shift norm": 17.665027049000194,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 19.39312837890418,
+      "predicted shift norm": 18.371628130960204,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 20.13901793193896,
+      "predicted shift norm": 19.078229212920213,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 20.884907484973734,
+      "predicted shift norm": 19.78483029488022,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 21.63079703800851,
+      "predicted shift norm": 20.491431376840225,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 22.37668659104329,
+      "predicted shift norm": 21.19803245880024,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 23.122576144078064,
+      "predicted shift norm": 21.904633540760244,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "observed shift norm": 29.89145869529213,
+      "predicted shift norm": 24.84312530720316,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 36.27719870686057,
+      "predicted shift norm": 26.44177019332005,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.74977379775862,
+      "predicted shift norm": 33.79603426257591,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.093010854319072,
+      "predicted shift norm": 26.327197562016625,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.53286053685838,
+      "predicted shift norm": 29.25074486498596,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.911837193922732,
+      "predicted shift norm": 22.386281641013817,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 29.14390987583412,
+      "predicted shift norm": 22.566596275063006,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 34.459957438030784,
+      "predicted shift norm": 27.387540433135452,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.33600682916375,
+      "predicted shift norm": 26.24221484954241,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.050137534094144,
+      "predicted shift norm": 27.824828239733705,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.329755687363445,
+      "predicted shift norm": 24.485556782231274,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 40.46377061482664,
+      "predicted shift norm": 32.24905768067735,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.01032961359171,
+      "predicted shift norm": 33.2340681111549,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 28.528509025220448,
+      "predicted shift norm": 21.46052348621191,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 39.91801994171425,
+      "predicted shift norm": 35.354561269946004,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.065319882953766,
+      "predicted shift norm": 29.53481180744181,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.148484382462144,
+      "predicted shift norm": 25.63061522771426,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.545071403885796,
+      "predicted shift norm": 27.78192444942776,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 23.980128288800238,
+      "predicted shift norm": 19.174848862884193,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 27.011742234052416,
+      "predicted shift norm": 24.95531964839384,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.0941965950425,
+      "predicted shift norm": 29.497052382291407,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 41.693283234147074,
+      "predicted shift norm": 33.03591574815757,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 37.86341172869709,
+      "predicted shift norm": 29.9580976631011,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 28.98994841488482,
+      "predicted shift norm": 21.795407967799452,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 33.07655812920811,
+      "predicted shift norm": 22.544771704604624,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.7907761517546,
+      "predicted shift norm": 21.200756138667177,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.152621881464235,
+      "predicted shift norm": 24.725716811758268,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.51170260050908,
+      "predicted shift norm": 26.36357212014231,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 36.7225904346046,
+      "predicted shift norm": 29.691361706517732,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 36.74354181470029,
+      "predicted shift norm": 28.31431519328599,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.256440110946848,
+      "predicted shift norm": 26.116849957569254,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 38.39961585675056,
+      "predicted shift norm": 32.43298136815419,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 28.77515925480839,
+      "predicted shift norm": 27.622554075970747,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 33.9547773704909,
+      "predicted shift norm": 29.98915201431173,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.42277014202023,
+      "predicted shift norm": 24.337241101781544,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.10696730121872,
+      "predicted shift norm": 28.22241864225862,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 28.185769474373526,
+      "predicted shift norm": 26.424554730909602,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 38.38929699481736,
+      "predicted shift norm": 38.36460436565335,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 36.12804646916571,
+      "predicted shift norm": 31.883964588256617,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 31.40536093247497,
+      "predicted shift norm": 26.47878326142587,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 27.299805473714848,
+      "predicted shift norm": 23.144389855961606,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.22323919581995,
+      "predicted shift norm": 25.357955026524834,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.30350257164063,
+      "predicted shift norm": 22.099308048895953,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 25.453397897181354,
+      "predicted shift norm": 22.239172675455382,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.9437148665486,
+      "predicted shift norm": 28.53979649527154,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.39885349894518,
+      "predicted shift norm": 25.648353124322256,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.260914800403917,
+      "predicted shift norm": 22.36179093257304,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 29.02042346450207,
+      "predicted shift norm": 21.051530378470087,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 35.45332833562182,
+      "predicted shift norm": 28.989784445338127,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 34.05710446360106,
+      "predicted shift norm": 28.858220272847245,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 39.01563880273575,
+      "predicted shift norm": 33.50055127510178,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 28.190967442907876,
+      "predicted shift norm": 20.9658118512525,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 29.109664809318335,
+      "predicted shift norm": 22.479674517211706,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 29.213269892856037,
+      "predicted shift norm": 23.047402607853712,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 26.123061973851136,
+      "predicted shift norm": 21.953244196880352,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 33.395308582942995,
+      "predicted shift norm": 26.4590581751388,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.55809904642276,
+      "predicted shift norm": 21.864155671936707,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 30.09887422330736,
+      "predicted shift norm": 22.810276495790642,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 26.508229194690184,
+      "predicted shift norm": 22.155193721995634,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.31594341614811,
+      "predicted shift norm": 27.23864156079228,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 28.67471851720183,
+      "predicted shift norm": 21.725643226962678,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 22.60428509293114,
+      "predicted shift norm": 19.131646010275077,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 37.59418394723542,
+      "predicted shift norm": 32.78716847088857,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 23.009420401486334,
+      "predicted shift norm": 18.288042069094836,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.81100926175905,
+      "predicted shift norm": 26.69396381322849,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 32.84474536754502,
+      "predicted shift norm": 32.31714485271396,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "observed shift norm": 0.0,
+      "predicted shift norm": 0.0,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 1.3449446204563573,
+      "predicted shift norm": 1.2741019365724322,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 2.6898892409127146,
+      "predicted shift norm": 2.5482038731448644,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 4.034833861369072,
+      "predicted shift norm": 3.8223058097172964,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 5.379778481825429,
+      "predicted shift norm": 5.096407746289729,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 6.724723102281787,
+      "predicted shift norm": 6.370509682862161,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 8.069667722738144,
+      "predicted shift norm": 7.644611619434593,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 9.414612343194502,
+      "predicted shift norm": 8.918713556007026,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 10.759556963650859,
+      "predicted shift norm": 10.192815492579458,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 12.104501584107215,
+      "predicted shift norm": 11.466917429151888,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 13.449446204563573,
+      "predicted shift norm": 12.741019365724322,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 14.794390825019931,
+      "predicted shift norm": 14.015121302296754,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 16.139335445476288,
+      "predicted shift norm": 15.289223238869186,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 17.484280065932644,
+      "predicted shift norm": 16.563325175441616,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 18.829224686389004,
+      "predicted shift norm": 17.83742711201405,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 20.17416930684536,
+      "predicted shift norm": 19.111529048586483,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 21.519113927301717,
+      "predicted shift norm": 20.385630985158915,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 22.864058547758074,
+      "predicted shift norm": 21.659732921731344,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 24.20900316821443,
+      "predicted shift norm": 22.933834858303776,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 25.55394778867079,
+      "predicted shift norm": 24.20793679487621,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 26.898892409127146,
+      "predicted shift norm": 25.482038731448643,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 28.243837029583503,
+      "predicted shift norm": 26.75614066802107,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 29.588781650039863,
+      "predicted shift norm": 28.030242604593507,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 30.93372627049622,
+      "predicted shift norm": 29.30434454116594,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 32.278670890952576,
+      "predicted shift norm": 30.57844647773837,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 33.623615511408936,
+      "predicted shift norm": 31.852548414310807,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 34.96856013186529,
+      "predicted shift norm": 33.12665035088323,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 36.31350475232165,
+      "predicted shift norm": 34.40075228745567,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 37.65844937277801,
+      "predicted shift norm": 35.6748542240281,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 39.00339399323436,
+      "predicted shift norm": 36.94895616060053,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 40.34833861369072,
+      "predicted shift norm": 38.22305809717297,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 41.693283234147074,
+      "predicted shift norm": 39.497160033745395,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "observed shift norm": 4.318815468918146,
+      "predicted shift norm": 10.847344464447442,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 3.3208409393407656,
+      "predicted shift norm": 11.210281611572203,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 3.55022715508128,
+      "predicted shift norm": 8.10926992828258,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 4.169655054206882,
+      "predicted shift norm": 12.293849520181352,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 4.003174291670847,
+      "predicted shift norm": 13.877553021188385,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 3.617316962952747,
+      "predicted shift norm": 10.512850062601599,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 6.5196294784661175,
+      "predicted shift norm": 8.680847338140046,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 5.427730767081314,
+      "predicted shift norm": 10.13156707457883,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 6.749801750598915,
+      "predicted shift norm": 11.733727860071417,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 2.7715133466115027,
+      "predicted shift norm": 5.5008417900192965,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 4.806606183986881,
+      "predicted shift norm": 10.416228398694525,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 5.073050247910817,
+      "predicted shift norm": 9.603833821237503,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 2.847894954523543,
+      "predicted shift norm": 8.200338537372701,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 8.67722118510908,
+      "predicted shift norm": 16.912105651947748,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 7.622580505546008,
+      "predicted shift norm": 16.66562307537231,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 2.827603106581139,
+      "predicted shift norm": 5.950887142977152,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 9.24860254756841,
+      "predicted shift norm": 9.481454401415002,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 9.999176728739975,
+      "predicted shift norm": 8.748044595406013,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 7.5905284934158646,
+      "predicted shift norm": 13.605417497711242,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 8.308796001415622,
+      "predicted shift norm": 12.980714171222367,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 8.61528384225554,
+      "predicted shift norm": 8.406839869561036,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 8.145704310305886,
+      "predicted shift norm": 11.436175920909589,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 6.115892152380751,
+      "predicted shift norm": 15.041146498644432,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 10.601485089434746,
+      "predicted shift norm": 16.750921560850227,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 11.49407020895188,
+      "predicted shift norm": 9.164866036861262,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 4.493311670607989,
+      "predicted shift norm": 9.778016596996403,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 11.75805036290538,
+      "predicted shift norm": 12.3025554756462,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 6.226258716534684,
+      "predicted shift norm": 7.620578814980547,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 9.039693805301114,
+      "predicted shift norm": 16.006015697117768,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 9.967961466636837,
+      "predicted shift norm": 16.885679930921565,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 13.262601187233507,
+      "predicted shift norm": 13.495419939956003,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 7.886707644503693,
+      "predicted shift norm": 16.257732096391326,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 7.8885072269839345,
+      "predicted shift norm": 9.292889810493579,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 2.7941085336032385,
+      "predicted shift norm": 9.985214248698494,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 6.99318061199612,
+      "predicted shift norm": 15.678006450225377,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 6.143415754693006,
+      "predicted shift norm": 14.910091167333293,
+      "series": "headline pair",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "observed shift norm": 0.0,
+      "predicted shift norm": 0.0,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 0.42782584474946794,
+      "predicted shift norm": 0.4052908417344919,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 0.8556516894989359,
+      "predicted shift norm": 0.8105816834689838,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 1.2834775342484037,
+      "predicted shift norm": 1.2158725252034757,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 1.7113033789978718,
+      "predicted shift norm": 1.6211633669379677,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 2.13912922374734,
+      "predicted shift norm": 2.0264542086724595,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 2.5669550684968074,
+      "predicted shift norm": 2.4317450504069513,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 2.9947809132462755,
+      "predicted shift norm": 2.837035892141443,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 3.4226067579957435,
+      "predicted shift norm": 3.2423267338759354,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 3.8504326027452116,
+      "predicted shift norm": 3.647617575610427,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 4.27825844749468,
+      "predicted shift norm": 4.052908417344919,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 4.706084292244148,
+      "predicted shift norm": 4.458199259079411,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 5.133910136993615,
+      "predicted shift norm": 4.863490100813903,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 5.561735981743083,
+      "predicted shift norm": 5.2687809425483945,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 5.989561826492551,
+      "predicted shift norm": 5.674071784282886,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 6.417387671242019,
+      "predicted shift norm": 6.079362626017378,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 6.845213515991487,
+      "predicted shift norm": 6.484653467751871,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 7.273039360740955,
+      "predicted shift norm": 6.889944309486363,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 7.700865205490423,
+      "predicted shift norm": 7.295235151220854,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 8.12869105023989,
+      "predicted shift norm": 7.700525992955345,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 8.55651689498936,
+      "predicted shift norm": 8.105816834689838,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 8.984342739738826,
+      "predicted shift norm": 8.511107676424329,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 9.412168584488295,
+      "predicted shift norm": 8.916398518158822,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 9.839994429237763,
+      "predicted shift norm": 9.321689359893314,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 10.26782027398723,
+      "predicted shift norm": 9.726980201627805,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 10.695646118736699,
+      "predicted shift norm": 10.132271043362298,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 11.123471963486166,
+      "predicted shift norm": 10.537561885096789,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 11.551297808235635,
+      "predicted shift norm": 10.942852726831282,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 11.979123652985102,
+      "predicted shift norm": 11.348143568565773,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 12.406949497734571,
+      "predicted shift norm": 11.753434410300265,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 12.834775342484038,
+      "predicted shift norm": 12.158725252034756,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "observed shift norm": 13.262601187233507,
+      "predicted shift norm": 12.564016093769249,
+      "series": "global slope",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 558,
+  "text": {
+    "suptitle": "Predicted vs observed answer-shift magnitude (single-turn frozen map)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "injected name",
+        "xlabel": "observed shift norm",
+        "ylabel": "predicted shift norm",
+        "legend_labels": [
+          "headline pair",
+          "global slope"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30"
+        ]
+      },
+      {
+        "title_left": "query content",
+        "xlabel": "observed shift norm",
+        "ylabel": "predicted shift norm",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "title_left": "query form",
+        "xlabel": "observed shift norm",
+        "ylabel": "predicted shift norm",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      }
+    ],
+    "series": [
+      "global slope",
+      "headline pair"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
