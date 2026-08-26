@@ -1,0 +1,535 @@
+{
+  "meta": {
+    "issue": 2588,
+    "git_sha": "06f723c32e0de9af67f4d6eaf2cd04301aa0144c",
+    "timestamp_utc": "2026-08-26T07:17:10Z"
+  },
+  "aa-record": {
+    "pin_table": {
+      "q35_0p8b": {
+        "value": 5,
+        "mode": "reasoning",
+        "basis": "estimated"
+      },
+      "q35_2b": {
+        "value": 7,
+        "mode": "reasoning",
+        "basis": "estimated"
+      },
+      "q35_4b": {
+        "value": 20,
+        "mode": "reasoning",
+        "basis": "estimated"
+      },
+      "q35_9b": {
+        "value": 22,
+        "mode": "reasoning",
+        "basis": "measured"
+      },
+      "q35_9b_nonreasoning": {
+        "value": 21,
+        "mode": "non-reasoning",
+        "basis": "estimated"
+      },
+      "q35_27b": {
+        "value": 35,
+        "mode": "reasoning",
+        "basis": "estimated"
+      },
+      "q36_27b": {
+        "value": 38,
+        "mode": "reasoning",
+        "basis": "measured"
+      },
+      "q38_27b": {
+        "value": 52,
+        "mode": "reasoning-xhigh",
+        "basis": "measured"
+      },
+      "o3_7b_i": {
+        "value": 2,
+        "mode": "non-reasoning",
+        "basis": "estimated"
+      },
+      "o3_7b_t": {
+        "value": 4,
+        "mode": "reasoning",
+        "basis": "estimated"
+      },
+      "o31_32b_i": {
+        "value": 6,
+        "mode": "non-reasoning",
+        "basis": "estimated"
+      },
+      "o31_32b_t": {
+        "value": 8,
+        "mode": "reasoning",
+        "basis": "estimated"
+      },
+      "q25_7b": {
+        "value": null,
+        "mode": "n/a",
+        "basis": "no-AA-value"
+      }
+    },
+    "live": {
+      "q35_0p8b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-5-0-8b",
+        "http_status": 200,
+        "live_parse": 3,
+        "matches_pin": false
+      },
+      "q35_2b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-5-2b",
+        "http_status": 200,
+        "live_parse": 4,
+        "matches_pin": false
+      },
+      "q35_4b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-5-4b",
+        "http_status": 200,
+        "live_parse": 4,
+        "matches_pin": false
+      },
+      "q35_9b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-5-9b",
+        "http_status": 200,
+        "live_parse": 4,
+        "matches_pin": false
+      },
+      "q35_27b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-5-27b",
+        "http_status": 200,
+        "live_parse": 4,
+        "matches_pin": false
+      },
+      "q36_27b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-6-27b",
+        "http_status": 200,
+        "live_parse": 4,
+        "matches_pin": false
+      },
+      "q38_27b": {
+        "url": "https://artificialanalysis.ai/models/qwen3-8-27b",
+        "http_status": 200,
+        "live_parse": 4,
+        "matches_pin": false
+      },
+      "o3_7b_i": {
+        "url": "https://artificialanalysis.ai/models/olmo-3-7b-instruct",
+        "http_status": 200,
+        "live_parse": 1,
+        "matches_pin": false
+      },
+      "o3_7b_t": {
+        "url": "https://artificialanalysis.ai/models/olmo-3-7b-think",
+        "http_status": 200,
+        "live_parse": 1,
+        "matches_pin": false
+      },
+      "o31_32b_i": {
+        "url": "https://artificialanalysis.ai/models/olmo-3-1-32b-instruct",
+        "http_status": 200,
+        "live_parse": 3,
+        "matches_pin": false
+      },
+      "o31_32b_t": {
+        "url": "https://artificialanalysis.ai/models/olmo-3-1-32b-think",
+        "http_status": 200,
+        "live_parse": 2,
+        "matches_pin": false
+      },
+      "q25_7b": {
+        "url": "https://artificialanalysis.ai/models/qwen2-5-7b-instruct",
+        "fetch_error": "HTTPError: HTTP Error 404: Not Found"
+      }
+    }
+  },
+  "venv-config": {
+    "transformers": "5.15.1",
+    "models": {
+      "q35_0p8b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 24,
+        "hidden_size": 1024,
+        "max_position_embeddings": 262144
+      },
+      "q35_2b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 24,
+        "hidden_size": 2048,
+        "max_position_embeddings": 262144
+      },
+      "q35_4b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 32,
+        "hidden_size": 2560,
+        "max_position_embeddings": 262144
+      },
+      "q35_9b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 32,
+        "hidden_size": 4096,
+        "max_position_embeddings": 262144
+      },
+      "q35_27b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 64,
+        "hidden_size": 5120,
+        "max_position_embeddings": 262144
+      },
+      "q36_27b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 64,
+        "hidden_size": 5120,
+        "max_position_embeddings": 262144
+      },
+      "q38_27b": {
+        "arch": [
+          "Qwen3_5ForConditionalGeneration"
+        ],
+        "num_hidden_layers": 64,
+        "hidden_size": 5120,
+        "max_position_embeddings": 262144
+      },
+      "o3_7b_i": {
+        "arch": [
+          "Olmo3ForCausalLM"
+        ],
+        "num_hidden_layers": 32,
+        "hidden_size": 4096,
+        "max_position_embeddings": 65536,
+        "rope_split": {
+          "model": "allenai/Olmo-3-7B-Instruct",
+          "full_attention": "yarn",
+          "sliding_attention": "default"
+        }
+      },
+      "o3_7b_t": {
+        "arch": [
+          "Olmo3ForCausalLM"
+        ],
+        "num_hidden_layers": 32,
+        "hidden_size": 4096,
+        "max_position_embeddings": 65536,
+        "rope_split": {
+          "model": "allenai/Olmo-3-7B-Think",
+          "full_attention": "yarn",
+          "sliding_attention": "default"
+        }
+      },
+      "o31_32b_i": {
+        "arch": [
+          "Olmo3ForCausalLM"
+        ],
+        "num_hidden_layers": 64,
+        "hidden_size": 5120,
+        "max_position_embeddings": 65536,
+        "rope_split": {
+          "model": "allenai/Olmo-3.1-32B-Instruct",
+          "full_attention": "yarn",
+          "sliding_attention": "default"
+        }
+      },
+      "o31_32b_t": {
+        "arch": [
+          "Olmo3ForCausalLM"
+        ],
+        "num_hidden_layers": 64,
+        "hidden_size": 5120,
+        "max_position_embeddings": 65536,
+        "rope_split": {
+          "model": "allenai/Olmo-3.1-32B-Think",
+          "full_attention": "yarn",
+          "sliding_attention": "default"
+        }
+      },
+      "q25_7b": {
+        "arch": [
+          "Qwen2ForCausalLM"
+        ],
+        "num_hidden_layers": 28,
+        "hidden_size": 3584,
+        "max_position_embeddings": 32768
+      }
+    },
+    "vllm_registry": "all 12 architectures resolvable"
+  },
+  "gpqa-stage": {
+    "route": "B-reconstructed",
+    "frozen": "already frozen; re-stage matched"
+  },
+  "split-counts": {
+    "counts": {
+      "train_10k": 10000,
+      "train_5k": 5000,
+      "val_400": 400,
+      "test_1000": 1000,
+      "wc_test_1k": 998
+    },
+    "lengths": {
+      "train_10k": 10000,
+      "val_400": 400,
+      "test_1000": 1000
+    },
+    "sha256_prefix_pins": {
+      "train_10k": "a74675bfed",
+      "val_400": "61c7e6234e",
+      "test_1000": "b1c32e2197"
+    }
+  },
+  "banked-schema": {
+    "qwen35_9b/train_10k": {
+      "n_files": 20,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 500,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 500
+    },
+    "qwen35_9b/val_400": {
+      "n_files": 1,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 400,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 400
+    },
+    "qwen35_9b/test_1000": {
+      "n_files": 2,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 500,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 500
+    },
+    "qwen25_7b/train_10k": {
+      "n_files": 20,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 500,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 500
+    },
+    "qwen25_7b/val_400": {
+      "n_files": 1,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 400,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 400
+    },
+    "qwen25_7b/test_1000": {
+      "n_files": 2,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 500,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 500
+    },
+    "qwen35_9b/ceiling_s43": {
+      "n_files": 2,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 500,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 500
+    },
+    "qwen35_9b/ceiling_s44": {
+      "n_files": 2,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 500,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 500
+    },
+    "qwen25_7b/ceiling_s43": {
+      "n_files": 8,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 125,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 125
+    },
+    "qwen25_7b/ceiling_s44": {
+      "n_files": 8,
+      "probed_file": "shard00_chunk0000.json",
+      "n_rows_probed": 125,
+      "row0_keys": [
+        "ci",
+        "finish_reason",
+        "prompt",
+        "response"
+      ],
+      "n_ci_in_expected": 125
+    }
+  },
+  "provenance": {
+    "input_dates": {
+      "split_ids_git": "2026-08-16T13:07:01-07:00",
+      "manifest": "2026-08-05 05:11:03+00:00"
+    },
+    "capture_dates": {
+      "qwen35_9b/train_10k": "2026-08-17 13:54:59+00:00",
+      "qwen35_9b/val_400": "2026-08-17 12:48:23+00:00",
+      "qwen35_9b/test_1000": "2026-08-17 12:58:04+00:00",
+      "qwen25_7b/train_10k": "2026-08-17 17:50:59+00:00",
+      "qwen25_7b/val_400": "2026-08-17 17:27:57+00:00",
+      "qwen25_7b/test_1000": "2026-08-17 17:33:16+00:00",
+      "qwen35_9b/ceiling_s43": "2026-08-17 05:25:03+00:00",
+      "qwen35_9b/ceiling_s44": "2026-08-17 05:47:46+00:00",
+      "qwen25_7b/ceiling_s43": "2026-08-05 07:37:17+00:00",
+      "qwen25_7b/ceiling_s44": "2026-08-05 07:41:20+00:00"
+    },
+    "ordering": {
+      "qwen25_7b/ceiling_s43": "ok — inputs(manifest) <= capture 2026-08-05 07:37:17+00:00",
+      "qwen25_7b/ceiling_s44": "ok — inputs(manifest) <= capture 2026-08-05 07:41:20+00:00",
+      "qwen25_7b/test_1000": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 17:33:16+00:00",
+      "qwen25_7b/train_10k": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 17:50:59+00:00",
+      "qwen25_7b/val_400": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 17:27:57+00:00",
+      "qwen35_9b/ceiling_s43": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 05:25:03+00:00",
+      "qwen35_9b/ceiling_s44": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 05:47:46+00:00",
+      "qwen35_9b/test_1000": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 12:58:04+00:00",
+      "qwen35_9b/train_10k": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 13:54:59+00:00",
+      "qwen35_9b/val_400": "ok — inputs(manifest,split_ids_git) <= capture 2026-08-17 12:48:23+00:00"
+    }
+  },
+  "render-probes": {
+    "q35_0p8b": {
+      "a": "a0aa406545501901",
+      "b": "88bde33a5224a16c"
+    },
+    "q35_2b": {
+      "a": "a0aa406545501901",
+      "b": "88bde33a5224a16c"
+    },
+    "q35_4b": {
+      "a": "a0aa406545501901",
+      "b": "88bde33a5224a16c"
+    },
+    "q35_9b": {
+      "a": "a0aa406545501901",
+      "b": "88bde33a5224a16c"
+    },
+    "q35_27b": {
+      "a": "a0aa406545501901",
+      "b": "88bde33a5224a16c"
+    },
+    "q36_27b": {
+      "a": "a0aa406545501901",
+      "b": "88bde33a5224a16c"
+    },
+    "q38_27b": {
+      "a": "a0aa406545501901",
+      "b": "4eb77a504bbfbbca"
+    },
+    "o3_7b_i": {
+      "a": "0cea4b0229adf236",
+      "a_invariance": "render arm-invariant (a-vs-b render equal)"
+    },
+    "o3_7b_t": {
+      "b": "b1e263c7f916d844",
+      "b_invariance": "render arm-invariant (a-vs-b render equal)"
+    },
+    "o31_32b_i": {
+      "a": "16dd99ae1dd663c5",
+      "a_invariance": "render arm-invariant (a-vs-b render equal)"
+    },
+    "o31_32b_t": {
+      "b": "84e8b3b16d110bb6",
+      "b_invariance": "render arm-invariant (a-vs-b render equal)"
+    },
+    "q25_7b": {
+      "a": "654a6cb7795c2087",
+      "a_invariance": "render arm-invariant (a-vs-b render equal)"
+    },
+    "n_probes": 24
+  },
+  "length-scan": {
+    "budget": 7104,
+    "max_rendered_len": {
+      "q35_0p8b_a": 2779,
+      "q35_0p8b_b": 2777,
+      "q35_2b_a": 2779,
+      "q35_2b_b": 2777,
+      "q35_4b_a": 2779,
+      "q35_4b_b": 2777,
+      "q35_9b_a": 2779,
+      "q35_9b_b": 2777,
+      "q35_27b_a": 2779,
+      "q35_27b_b": 2777,
+      "q36_27b_a": 2779,
+      "q36_27b_b": 2777,
+      "q38_27b_a": 2779,
+      "q38_27b_b": 2819,
+      "o3_7b_i_a": 2824,
+      "o3_7b_t_b": 2863,
+      "o31_32b_i_a": 2854,
+      "o31_32b_t_b": 2844,
+      "q25_7b_a": 2819
+    },
+    "union_drop": {
+      "train_10k": [],
+      "val_400": [],
+      "test_1000": []
+    },
+    "revised_counts": {
+      "train_10k": 10000,
+      "val_400": 400,
+      "test_1000": 1000
+    },
+    "quick_slice": false
+  },
+  "unit-test": {
+    "pytest_rc": 0,
+    "tail": "....................                                                     [100%]\n20 passed in 3.83s"
+  }
+}
