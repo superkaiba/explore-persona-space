@@ -1,0 +1,1 @@
+{"ts": "2026-08-26T07:03:20Z", "event": "raised", "concern_id": "positive-evidence-polarity", "severity": "BLOCKER", "summary": "All three new/modified recognizers accept denial or pasted remedy vocabulary as affirmative evidence, suppressing their intended verdicts.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
