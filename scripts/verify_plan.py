@@ -211,14 +211,20 @@ Check catalog (id — classification — kind scope)
   c70 judge-pilot per-arm draw  WARN-only, conditional    experiment +
       resolution vs parse-fail                            analysis
       threshold
+  c71 plan-embedded jq probe    FAIL, conditional         experiment +
+      dry-run vs committed      (pre-registered           analysis
+      target                    demote-to-WARN rule)
+  c72 contingent judge wave     WARN-only, conditional    experiment +
+      (>=5k calls) names its                              analysis
+      rule-26 pilot gate
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70) also SKIP when
-their content trigger does not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72) also
+SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -433,6 +439,28 @@ labeled-line forms):
     guard misses, a cross-item arm count or component/total draw count, a
     neighboring per-arm token upgrading an aggregate threshold, or a
     future superseded-guard enable-flip)
+  - ``N/A — no registered jq probe`` (check 71 — the jq vocabulary is
+    incidental: the plan quotes jq behavior or discusses the tool without
+    registering any probe as its own gate input; a plan genuinely
+    registering a probe instead verifies it by executing it against
+    ``git show HEAD:<target>`` before registration)
+  - ``N/A — quoted jq probe is historical or a sibling's, not this plan's gate input``
+    (check 71 — the exists-but-false-alarm shape, the c68/c69 convention:
+    a jq command appears verbatim but belongs to an incident narrative, a
+    superseded version, or a sibling issue's recipe, and no P0/preflight
+    step of THIS plan executes it)
+  - ``N/A — registered jq probes assert post-run state, not current committed state``
+    (check 71 — the probes are real gate inputs but their expectations
+    describe artifacts a FUTURE run writes; a dry-run against current
+    HEAD bytes cannot adjudicate them, so the per-probe post-run
+    recognizer skips them and this escape declares the whole class)
+  - ``N/A — no contingent judge wave`` (check 72 — the fallback/judge
+    vocabulary is incidental or quotes an incident/sibling; the plan
+    registers no conditional judge wave of its own)
+  - ``N/A — the contingent judge wave inherits the primary wave's pilot gate``
+    (check 72 — the wave is real but its instrument is the SAME
+    already-piloted rubric as an unconditional primary wave in the same
+    plan; the inheritance claim is the reviewer-auditable declaration)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -475,8 +503,10 @@ import json
 import math
 import re
 import shlex
+import shutil
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -13540,6 +13570,46 @@ def check_margin_baseline_ceiling(plan: str, kind: str) -> CheckResult:
 # larger binding bound stated elsewhere (the window-first trade — FNs
 # disclosed and accepted, FPs kill); verbal multipliers ("doubling",
 # "twice") and arming paraphrases outside the three alternatives.
+# SYMBOLIC-PIN ARM (#2590 Check C, MF-C/RIDER-D) — inside the `not pins`
+# branch ONLY (a harvested numeric pin always takes the numeric path;
+# every pre-#2590 verdict on numeric-pin plans is unchanged by
+# construction). Origin: #2588 v2:118 pinned `max_model_len=budget+GEN_MAX`
+# (a derived expression — no numeric pin harvestable) beside an armed G4
+# regen trigger, and the existing branch SKIPped: the regen leg re-entered
+# the SAME engine boundary it exists to escape, invisible at plan time.
+# Direction taxonomy: the re-pin satisfier is a WARN-SUPPRESSOR — FN
+# direction (missed defect) = the satisfier matching on a defective plan:
+# residual channels are a line coincidentally carrying regen + engine + a
+# bare `>` from threshold prose; `max_model_len = budget` (bare lowercase
+# single word) escapes SYMPIN form 2 entirely (a pin-scan FN, SKIP); and
+# "max_model_len set to budget+GEN_MAX" escapes form 1's [=:]. FP
+# direction (spurious WARN on a compliant plan) = a compliant re-pin
+# phrased outside the recognizer; mitigations: WARN posture, the
+# co-locate remedy + worked example in the WARN text, the existing
+# cross-quantity escape, V5 adjudication of every WARN, §9-dev vocabulary
+# tuning. The demonstrated compliant corpus phrasings — "Regen at 16,384
+# fits max_model_len 32,768." (weak `fits` tier) and "regens at the
+# re-pinned engine" (#2588 v3:12/289 shape, strong `re-instantiat`/
+# `re-pin` tokens) — SATISFY the shipped recognizer (fixtures T-C8); a
+# compliant re-pin SPLIT across lines still WARNs (fixture T-C10 — the
+# co-location instruction in the remedy is the designed answer). Weak
+# `fits` tier pull-back pre-registered: if V5 finds it spuriously
+# satisfying on a defective-shape plan, drop the tier (§9-dev).
+# CORPUS CALIBRATION (symbolic arm, #2590) — scan 2026-08-26 (worktree
+# issue-2590 tree), 4,674 committed tasks/*/*/plans/v*.md across 1,813
+# issues, kind from the sibling body.md: exactly TWO in-corpus flips
+# SKIP->WARN, both the founding incident (#2588 v1/v2, symbolic pin
+# `max_model_len=budget+GEN_MAX`, no re-pin line); ZERO other flips and
+# zero symbolic-arm PASS suppressions in-corpus (the two demonstrated
+# compliant phrasings are fixture-pinned instead, tests T-C8/T-C9).
+# Numeric path untouched: 13 WARN = the 11 pre-#2590 KIND-GATED WARNs +
+# these 2; the 4 corrected-#2221 PASSes unchanged. Out-of-sample
+# controls: #2221 v9 still WARNs / v13 still PASSes on the numeric path
+# (pins found -> the symbolic arm never enters); #505 v1 SKIPs (no armed
+# trigger — its incident was code-level, as SCOPE above records); #601
+# has no versioned plans/v*.md (predates the convention). Weak-`fits`
+# tier: zero in-corpus satisfier hits at all -> no spurious suppression
+# observed; tier retained per the pre-registered pull-back rule.
 
 _C69_NUM = r"(?:\d{1,3}(?:,\d{3})+|\d+)"
 #: Arming vocabulary, negation-guarded on the leading token
@@ -13573,6 +13643,51 @@ _C69_BOUND_RES = (
     ),
 )
 _C69_WINDOW_LINES = 3  # the c16 _C16_WINDOW_LINES radius (caps AND bound attribution)
+
+#: Derived-expression (symbolic) max_model_len pin (#2590 Check C): form 1 is
+#: an identifier-led operand chain with >=1 arithmetic operator
+#: (`budget+GEN_MAX`, #2588 v2:118); form 2 a single CONSTANT-style
+#: identifier — all-caps >=3 chars (case-sensitively scoped via (?-i:...):
+#: under the pattern-wide (?i) a bare [A-Z] class would match lowercase
+#: prose, so "max_model_len: see the engine table" would false-arm), or a
+#: lowercase underscore-bearing identifier. Bare lowercase single words
+#: after a colon deliberately do NOT match.
+_C69_SYMPIN_RE = re.compile(
+    r"(?i)(?:vllm_)?max_model_len\s*[=:]\s*"
+    r"([A-Za-z_][\w.]*(?:\s*[+\-*/]\s*[\w.]+)+"  # form 1: expr with >=1 operator
+    r"|(?-i:[A-Z][A-Z0-9_]{2,})|[a-z][\w]*_[\w]+)"  # form 2: CONSTANT-style identifier
+)
+# MF-C (#2590): the re-pin satisfier is LINE-scoped with regen co-reference —
+# a whole-plan re.search would let a 'dedicated … engine' ANYWHERE (an
+# unrelated embedding or primary-inference stage) suppress the WARN, and
+# [^.;] gap classes MATCH NEWLINES, so even stage-anchored alternatives
+# would cross-match document-wide.
+_C69_REPIN_REGEN_TOK = re.compile(r"(?i)\bre-?gen\w*\b|\bre-?pin\w*\b")
+_C69_REPIN_OBJ_TOK = re.compile(r"(?i)\bmax_model_len\b|\bengine\b")
+_C69_REPIN_ACT_STRONG = re.compile(
+    r"(?i)[≥>]=?|\bsized?\b|\bre-?siz\w+|\bre-?instantiat\w+"
+    r"|\bdedicated\b|2\s*[×x]\b|\bre-?pin\w*\b"  # noqa: RUF001
+)
+_C69_REPIN_ACT_WEAK = re.compile(r"(?i)\bfits?\b")  # weak: needs max_model_len on the line
+_C69_MML_RE = re.compile(r"(?i)\bmax_model_len\b")
+
+
+def _c69_repin_lines(plan: str) -> list[tuple[int, str]]:
+    """Line-scoped regen-time re-pin satisfier (#2590 MF-C). A line satisfies
+    iff it carries (1) regen/re-pin co-reference, (2) an engine-length object
+    token, and (3) a sizing/action token — strong action tokens pair with
+    either object; the weak token ('fit(s)') requires the explicit
+    max_model_len object. RAW lines, fences included (re-pin statements
+    legitimately live in fenced code comments, #2221 v13)."""
+    hits: list[tuple[int, str]] = []
+    for i, line in enumerate(plan.splitlines(), start=1):
+        if not _C69_REPIN_REGEN_TOK.search(line):
+            continue
+        strong = _C69_REPIN_OBJ_TOK.search(line) and _C69_REPIN_ACT_STRONG.search(line)
+        weak = _C69_MML_RE.search(line) and _C69_REPIN_ACT_WEAK.search(line)
+        if strong or weak:
+            hits.append((i, line.strip()))
+    return hits
 
 
 def _c69_int(s: str) -> int:
@@ -13669,11 +13784,21 @@ def check_regen_headroom(plan: str, kind: str) -> CheckResult:
     analysis} only — infra workflow-fix plans (THIS check's own plan
     included) legitimately quote the arming vocabulary (the c67/c68
     precedent). Accepted false negatives are enumerated in the module
-    comment above. Escapes (standalone, unwrapped):
+    comment above. SYMBOLIC-PIN ARM (#2590 Check C): when NO numeric pin
+    is harvested, a RAW scan for a derived-expression / constant-style
+    ``max_model_len [=:] <expr>`` pin runs (``_C69_SYMPIN_RE``); an armed
+    trigger + symbolic pin WARNs unless a LINE-scoped regen-time re-pin
+    statement satisfies (``_c69_repin_lines`` — regen/re-pin co-reference
+    + engine-length object + sizing action on ONE line; the weak
+    ``fit(s)`` action tier requires the explicit ``max_model_len``
+    object), in which case the check PASSes quoting the matched line; no
+    symbolic pin keeps the existing SKIP unchanged. Escapes (standalone,
+    unwrapped):
     ``N/A — no armed re-gen trigger`` (the arming vocabulary is
     incidental or quotes an incident/sibling) and ``N/A — harvested
     max_model_len pin is unrelated to the armed re-gen stage`` (the
-    trigger is real; the pin pairing is the false alarm)."""
+    trigger is real; the pin pairing is the false alarm) — both gate the
+    symbolic arm too (they are checked before any pin scan)."""
     cid = "c69_regen_headroom"
     name = "armed re-gen 2×-cap headroom vs max_model_len pin"  # noqa: RUF001
     if kind not in ("experiment", "analysis"):
@@ -13711,6 +13836,34 @@ def check_regen_headroom(plan: str, kind: str) -> CheckResult:
         if 256 <= _c69_int(m.group(1)) <= 10_000_000
     ]
     if not pins:
+        sym = list(_C69_SYMPIN_RE.finditer(plan))  # RAW scan, fences included (#2588 v2:118)
+        if sym:
+            repin = _c69_repin_lines(plan)
+            if repin:
+                ln, txt = repin[0]
+                return _pass(
+                    cid,
+                    name,
+                    f"symbolic max_model_len pin '{sym[0].group(0)[:60]}' + regen-time "
+                    f're-pin statement at line {ln}: "{txt[:90]}" (numeric headroom '
+                    "arithmetic not adjudicable — the line-scoped re-pin declaration "
+                    "is the check)",
+                )
+            return _warn(
+                cid,
+                name,
+                f"armed re-gen trigger + SYMBOLIC max_model_len pin "
+                f"'{sym[0].group(0)[:60]}' but no regen-time re-pin statement — the "
+                "headroom arithmetic is unverifiable at plan time and the regen leg "
+                "re-enters the SAME engine boundary it exists to escape "
+                "(#505/#601/#2221/#2588; CLAUDE.md: raising a cap on an INHERITED rig "
+                "⇒ re-check its max_model_len pins). State the regen-time re-pin ON "
+                "ONE regen-referencing line (e.g. 'the regen leg runs on a dedicated "
+                "engine sized max_model_len ≥ prompt budget + 2×cap'), pin "  # noqa: RUF001
+                "numerically so the headroom arithmetic runs, or declare one of "
+                "check 69's existing escapes on its own line, unwrapped (no "
+                "backticks/quotes)",
+            )
         return _skip(
             cid,
             name,
@@ -14068,6 +14221,859 @@ def check_pilot_resolution(plan: str, kind: str) -> CheckResult:
     return _skip(cid, name, best_skip)
 
 
+# ─── Check 71 — plan-embedded jq probe dry-run vs committed target (#2590) ──
+# Origin: #2588 plan v2:108 (incident 2026-08-25) — the plan REGISTERED as a
+# P0 gate input a jq probe that ERRORS against its own committed target:
+# `jq '.train_10k|length, .val_400|length, .test_1000|length'
+# eval_results/issue_2330/split_ids.json` exits rc=5 with stdout `0` (the
+# file keys everything under `splits.*`; `null|length` is 0). FIVE reviewers
+# (2 critics + 2 codex twins + consistency-checker) read the command without
+# executing it, and BOTH critics' hand-written "corrected" comma-chained
+# repairs ALSO fail on jq precedence (`|` binds looser than `,`). The design
+# point: EXECUTION needs no jq grammar model — run the probe against the
+# committed bytes (`git show HEAD:<target>` on stdin) and read rc/stdout.
+# Offender arms (executed instances only): (a) rc != 0; (b) empty or
+# all-`null` stdout at rc=0 (jq's path-missed tell) with no declared
+# `expect null` absence-assert; (c) a machine expectation (lead-REQUIRED,
+# value-TERMINAL grammar — prose like "expect 3 columns" never arms) that
+# mismatches the executed output. FAIL posture (the c42/c65 factual-defect
+# precedent) with a PRE-REGISTERED demote-to-WARN rule: demote IFF corpus
+# calibration (or a later re-scan) finds a WRITE-TIME false positive — a
+# probe correct at plan-write time, FAILed by grammar limitation, on an
+# ACTIVE plan — adjudicated by re-running the probe against the plan-era
+# blob (`git show <plan's-own-last-commit>:<target>`); artifact-DRIFT FAILs
+# (era-PASS, HEAD-FAIL) are stale registered gate inputs, real defects, and
+# never trip demotion.
+# SAFE-EXECUTION CONTRACT (MF-A, structural): jq runs with a SCRUBBED env
+# (PATH=/usr/bin:/bin, LC_ALL=C — no parent secrets reach the child, T25),
+# reads ONLY stdin (no file argv; module-referencing filters carrying
+# include/import are REFUSED — a missing module's rc=3 would false-FAIL arm
+# (a), and module resolution reads the filesystem), input bounded by a 5 MB
+# `git cat-file -s` gate, stdout/stderr KILLED at 256 KiB / 16 KiB via
+# incremental reader pumps (capture_output/communicate() would materialize
+# the whole flood BEFORE any truncation), 5 s deadline, kill-then-wait reap
+# on every path; _c71_run_bounded NEVER raises (A14: verify_plan_text has
+# no per-check exception containment, so any escape kills the no-flags run
+# fleet-wide). Every ambiguity is a SKIP with a counted cause, never a
+# guessed execution: refused flags (execute-allowlist: -c -r -e -j -a -S
+# -s -M + long forms), refused module-refs, placeholders, unsplittable
+# candidates, no-target probes, post-run expectations (per-probe
+# recognizer), over-cap blobs, timeouts, output-cap kills, instance-cap
+# (12 executed max, document order).
+# Accepted FALSE NEGATIVES (disclosed): pipe-input forms
+# (`cat f.json | jq '.x'` — no target argv); bare `jq length` with prose
+# expectations (target unresolvable — noted, never certified); a probe
+# whose target is named in prose on the same line but not in the
+# invocation (a same-line-.json fallback is recorded as a future revision,
+# #2590 §7); `|length`-form under-recall — rc=0 output `0` with no stated
+# expectation is CLEAN under arm (b) (the #2588 v2 primary shape is caught
+# by rc=5 under arm (a), and by arm (c) whenever an expectation is
+# stated; a variant re-execution recall arm is recorded as a future
+# revision, #2590 §7); here-docs / process substitution (unsplittable or
+# shape-violation skips).
+# CORPUS CALIBRATION (#2590) — CALIBRATION FIT, snapshot-dated (the counts
+# certify transcription fidelity at re-scan time, never out-of-sample
+# precision; re-calibration MUST apply the kind gate before reading count
+# drift as grammar drift). Scan 2026-08-26 (worktree issue-2590 tree),
+# 4,674 committed tasks/*/*/plans/v*.md across 1,813 issues, kind from
+# the sibling body.md: 3 FAIL / 9 PASS / 4,662 SKIP. All 3 FAILs
+# adjudicated WRITE-TIME-BROKEN true positives — the demote-to-WARN rule
+# does NOT fire: #2588 v1:105 + v2:108 (the founding incident, rc=5 with
+# stdout 0; the corrected v3 PASSes with 2 executed clean) and #2477
+# v3:359 (`.r2_per_layer_obs["19"]` object-indexes an ARRAY — the
+# era-blob re-run at the plan's own last commit 308c416e4b errors
+# identically, and the plan's own v4 corrected the read to `[19]`,
+# "array index, not string"; v4 PASSes with 3 executed clean). PASS base
+# rate: 9 versions across 4 issues (#2588 v3; #2223 v2/v3; #2477
+# v1/v2/v4; #360 v1-v3), 1-3 executed-clean instances each; zero
+# refused-flag instances in-corpus.
+
+_C71_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (_C42_REPO_ROOT shape)
+_C71_JQ_TOKEN_RE = re.compile(r"(?<![\w-])jq(?![\w-])")  # cheap candidate pre-filter
+_C71_ALLOWED_FLAGS = frozenset(
+    {
+        "-c",
+        "-r",
+        "-e",
+        "-j",
+        "-a",
+        "-S",
+        "-s",
+        "-M",
+        "--compact-output",
+        "--raw-output",
+        "--exit-status",
+        "--sort-keys",
+    }
+)
+# Refuse-to-execute: ANY other '-'-leading token (notably -f/--from-file,
+# --args, --jsonargs, --arg, --argjson, --slurpfile, --rawfile, -n,
+# --stream, -i, -L) — skip the instance with a note, never guess.
+_C71_MODULE_REF_RE = re.compile(r"(?<![\w$.'\"])(?:include|import)\b")
+_C71_EXPECT_RE = re.compile(  # MF-B: machine expectation — lead-REQUIRED, value TERMINAL
+    r"(?i)(?:→|->|=>|#)\s*expect(?:ed|s)?\s*[:=]?\s*"
+    r"(null|[0-9][\d,]{0,17}(?:\s*/\s*[0-9][\d,]{0,17}){0,15})"  # <=18 chars/token, <=16 tokens
+    r"(?=\s*(?:$|[;)`—]|\*\*)|\s*\.(?:\s|$))"  # terminal lookahead
+)
+_C71_EXPECT_HINT_RE = re.compile(r"(?i)\bexpect(?:ed|s)?\b")  # informational skip-note flag ONLY
+_C71_POSTRUN_RE = re.compile(  # MF-B: current-state vs post-run, per probe (raw-line scope)
+    r"(?i)\b(?:post-run|after (?:the|this) run|once (?:the|this) (?:run|regen|wave|fit)s?\b"
+    r"|at (?:run )?completion|upon completion|will (?:show|hold|read|contain|be))\b"
+)
+_C71_EXPECT_LEADER_RE = re.compile(r"(?i)^(?:→|->|=>|#|expect(?:ed|s)?[:=]?)$")
+_C71_MAX_INSTANCES = 12  # executed per plan, deterministic document order; rest noted
+_C71_TIMEOUT_S = 5  # per instance (enforced by the bounded runner's own deadline)
+_C71_MAX_BLOB_BYTES = 5_000_000  # git cat-file -s gate; larger targets skip with a note
+_C71_MAX_OUTPUT_BYTES = 262_144  # stdout KILL cap — bounds BEFORE materialization (MF-A)
+_C71_MAX_STDERR_BYTES = 16_384  # stderr KILL cap (a jq `debug` filter floods stderr)
+_C71_MAX_STDOUT = 4096  # comparison/detail bound
+_C71_JQ_ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C"}  # scrubbed: no parent env reaches jq
+_C71_REFUSAL_CAUSES = frozenset({"refused flags", "refused module-ref", "shape-violation"})
+_C71_SKIP_NOTES = {
+    "timeout": "timeout — a hung jq on committed bytes is an environment anomaly, not "
+    "plan evidence",
+    "output-cap": "output cap exceeded — probe output not adjudicable at plan time",
+    "argv-error": "jq argv rejected at launch (unexecutable content)",
+}
+
+
+def _c71_jq_bin() -> str | None:
+    """Resolve the jq binary path (tests monkeypatch this environment probe,
+    substituting the probe RESULT, never the implementation)."""
+    return shutil.which("jq")
+
+
+def _c71_guarded_int(tok: str) -> int | None:
+    """Belt-and-braces numeric conversion (MF-A item 3): the expectation
+    grammar's 18-char token bound already makes a >4,300-digit capture
+    impossible (int() raises past ~4,300 digits and verify_plan_text has no
+    per-check containment — A14), so the guard can only fire on a malformed
+    token, which is DROPPED, never raised on."""
+    try:
+        return int(tok.replace(",", ""))
+    except ValueError:
+        return None
+
+
+def _c71_parse_expect(text: str) -> list[int] | str | None:
+    """Machine expectation from raw text: 'null' (absence-assert) or a
+    '/'-separated integer list; prose never arms (lead-required,
+    value-terminal grammar — MF-B). Unparseable tokens are DROPPED."""
+    m = _C71_EXPECT_RE.search(text)
+    if not m:
+        return None
+    val = m.group(1)
+    if val.lower() == "null":
+        return "null"
+    kept = [v for t in val.split("/") if (v := _c71_guarded_int(t.strip())) is not None]
+    return kept or None
+
+
+def _c71_pump(stream, buf: bytearray, cap: int, capped: threading.Event) -> None:
+    """Incremental reader pump (MF-A): capped append — stops reading and
+    sets ``capped`` the moment the buffer crosses its cap, so the parent
+    kills the child instead of materializing a flood. (Module-level rather
+    than a closure: the C901<=15 live-workflow-helper policy pin counts
+    nested functions against the enclosing runner.)"""
+    try:
+        while True:
+            chunk = stream.read(65536)
+            if not chunk:
+                return
+            buf.extend(chunk[: cap + 1 - len(buf)])
+            if len(buf) > cap:
+                capped.set()
+                return
+    except (OSError, ValueError):
+        return
+
+
+def _c71_feed(stdin, input_bytes: bytes) -> None:
+    """Feed the committed bytes to jq stdin (broken pipe tolerated — a
+    filter that never reads stdin closes the pipe early)."""
+    try:
+        stdin.write(input_bytes)
+        stdin.close()
+    except (OSError, ValueError):
+        pass
+
+
+def _c71_run_bounded(
+    argv: list[str], input_bytes: bytes, timeout_s: float
+) -> tuple[str, int | None, bytes, bytes]:
+    """Run jq with REAL pre-materialization bounds (#2590 MF-A). Returns
+    (status, rc, stdout_bytes, stderr_bytes); status in {"ok", "timeout",
+    "output-cap", "launch-error", "launch-error-argv"}. NEVER raises (A14);
+    the child is reaped on every path. capture_output/communicate() would
+    materialize the child's ENTIRE stdout before any truncation, so the
+    pumps read incrementally and the parent KILLS the child the moment
+    either stream crosses its cap."""
+    try:
+        proc = subprocess.Popen(
+            argv,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=str(_C71_REPO_ROOT),
+            env=_C71_JQ_ENV,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ("launch-error", None, b"", b"")  # MF-A item 2 → whole-check SKIP at call site
+    except ValueError:
+        # argv content (e.g. embedded NUL) → skip-instance at the call site.
+        # DISCLOSED reconciliation vs plan §4.1: the plan's two except arms
+        # returned IDENTICAL tuples while its call-site spec demands
+        # different dispositions — this distinct status implements the spec.
+        return ("launch-error-argv", None, b"", b"")
+    out_buf, err_buf = bytearray(), bytearray()
+    capped = threading.Event()
+    threads = [
+        threading.Thread(target=_c71_feed, args=(proc.stdin, input_bytes), daemon=True),
+        threading.Thread(
+            target=_c71_pump,
+            args=(proc.stdout, out_buf, _C71_MAX_OUTPUT_BYTES, capped),
+            daemon=True,
+        ),
+        threading.Thread(
+            target=_c71_pump,
+            args=(proc.stderr, err_buf, _C71_MAX_STDERR_BYTES, capped),
+            daemon=True,
+        ),
+    ]
+    for t in threads:
+        t.start()
+    deadline = time.monotonic() + timeout_s
+    status = "ok"
+    while proc.poll() is None:
+        if capped.is_set():
+            status = "output-cap"
+            break
+        if time.monotonic() >= deadline:
+            status = "timeout"
+            break
+        time.sleep(0.05)
+    if proc.poll() is None:
+        proc.kill()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        status = "timeout"  # unkillable child: report, never raise
+    for t in threads:
+        t.join(timeout=1.0)
+    if status == "ok" and capped.is_set():
+        # DISCLOSED reconciliation vs plan §4.1: a flood-then-exit child can
+        # finish before the deadline loop observes the cap — post-join
+        # re-check so truncated output is never adjudicated as complete.
+        status = "output-cap"
+    return (
+        status,
+        proc.returncode if status == "ok" else None,
+        bytes(out_buf),
+        bytes(err_buf),
+    )
+
+
+def _c71_candidates(plan: str) -> list[tuple[int, str, str, str]]:
+    """Candidate jq command strings with line index + source kind — the
+    _c46_command_candidates walker shape generalized (#2590 §4.1 step 1;
+    duplicated rather than refactored: the c46 walker returns bare strings
+    with no line index / source kind, and c71 needs both for FAIL details
+    and raw-line superseded/post-run/expectation recognition). Two sources:
+    fenced-code lines (backslash continuations joined into one logical
+    command reported at the FIRST line; bash comment-only lines skipped)
+    and inline-code spans on prose lines. Returns
+    [(line_idx0, source_kind, text, expect_src)] where expect_src is the
+    raw text expectation parsing reads — the RAW-line remainder after the
+    span (inline) or the joined logical line (fenced); only candidates
+    whose TEXT carries a bare jq token are returned."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[tuple[int, str, str, str]] = []
+    cont: list[str] = []
+    cont_start = 0
+
+    def _flush() -> None:
+        if cont:
+            joined = " ".join(tok for tok in cont if tok)
+            if _C71_JQ_TOKEN_RE.search(joined):
+                out.append((cont_start, "fenced", joined, joined))
+            cont.clear()
+
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        stripped = line.strip()
+        if fenced:
+            if stripped.startswith(("```", "~~~")) or stripped.startswith("#"):
+                _flush()
+                continue
+            if not cont:
+                cont_start = i
+            if stripped.endswith("\\"):
+                cont.append(stripped[:-1].strip())
+                continue
+            cont.append(stripped)
+            _flush()
+        else:
+            _flush()
+            for m in _C46_INLINE_CODE_RE.finditer(line):
+                if _C71_JQ_TOKEN_RE.search(m.group(1)):
+                    out.append((i, "inline", m.group(1), line[m.end() :]))
+    _flush()
+    return out
+
+
+def _c71_segments(tokens: list[str]) -> list[list[str]]:
+    """Post-`jq` argv slices, one per jq-bearing shell-op-bounded segment."""
+    segs: list[list[str]] = []
+    cur: list[str] = []
+    for tok in tokens:
+        if tok in _C46_SHELL_OPS:
+            if cur:
+                segs.append(cur)
+            cur = []
+        else:
+            cur.append(tok)
+    if cur:
+        segs.append(cur)
+    return [seg[seg.index("jq") + 1 :] for seg in segs if "jq" in seg]
+
+
+def _c71_parse_argv(argv, idx, raw, text, expect_src, bump, notes):
+    """Classify ONE jq argv per #2590 §4.1 step 3: allowlisted flags, filter
+    (module-ref refusal), optional target path, trailing expectation clause.
+    Skip/refuse dispositions are counted via ``bump``; every ambiguity is a
+    skip, never a guessed execution. Returns the instance dict or None."""
+    pos = 0
+    while pos < len(argv) and argv[pos] in _C71_ALLOWED_FLAGS:
+        pos += 1
+    flags = list(argv[:pos])
+    if pos < len(argv) and argv[pos].startswith("-"):
+        bump("refused flags")
+        notes.append(f"line {idx + 1}: refused flag {argv[pos][:20]!r} — not on the allowlist")
+        return None
+    if pos >= len(argv):
+        bump("no target path")
+        return None
+    filt = argv[pos]
+    pos += 1
+    if _C71_MODULE_REF_RE.search(filt):
+        bump("refused module-ref")
+        notes.append(f"line {idx + 1}: module-referencing filter — execution not confined to stdin")
+        return None
+    target = None
+    if pos < len(argv) and not _C71_EXPECT_LEADER_RE.match(argv[pos]):
+        target = argv[pos]
+        pos += 1
+    if pos < len(argv) and not _C71_EXPECT_LEADER_RE.match(argv[pos]):
+        bump("shape-violation")
+        notes.append(f"line {idx + 1}: trailing tokens are not an expectation clause")
+        return None
+    if target is None:
+        bump("no target path")
+        if _C71_EXPECT_HINT_RE.search(raw):
+            notes.append(
+                f"line {idx + 1}: expectation-like prose present but target unresolvable — "
+                "probe not executed, expectation not certified"
+            )
+        return None
+    if _C46_PLACEHOLDER_RE.search(filt) or _C46_PLACEHOLDER_RE.search(target):
+        bump("placeholder")
+        return None
+    return {
+        "line_no": idx + 1,
+        "head": text.strip()[:70],
+        "flags": flags,
+        "filter": filt,
+        "target": target,
+        "raw": raw,
+        "expect": _c71_parse_expect(expect_src),
+        "hint": bool(_C71_EXPECT_HINT_RE.search(raw)),
+    }
+
+
+def _c71_classify(plan: str) -> tuple[list[dict], dict[str, int], list[str]]:
+    """Steps 2-4 of the c71 extraction (#2590 §4.1): superseded/table-row
+    handling, shlex tokenization, per-segment argv classification,
+    placeholder skip. Returns (instances, per-cause counts, notes)."""
+    lines = plan.splitlines()
+    instances: list[dict] = []
+    counts: dict[str, int] = {}
+    notes: list[str] = []
+
+    def _bump(cause: str) -> None:
+        counts[cause] = counts.get(cause, 0) + 1
+
+    for idx, kind_, text, expect_src in _c71_candidates(plan):
+        raw = lines[idx] if kind_ == "inline" else text
+        if _C70_SUPERSEDED_RE.search(raw):
+            _bump("superseded-context")
+            continue
+        if kind_ == "inline" and re.match(r"\s*\|", raw):
+            text = text.replace("\\|", "|")  # markdown table-cell pipe unescape
+        try:
+            tokens = shlex.split(text)
+        except ValueError:
+            _bump("unsplittable")
+            notes.append(f"line {idx + 1}: unsplittable candidate — not executed")
+            continue
+        for seg in _c71_segments(tokens):
+            inst = _c71_parse_argv(seg, idx, raw, text, expect_src, _bump, notes)
+            if inst is not None:
+                instances.append(inst)
+    return instances, counts, notes
+
+
+def _c71_git(args: list[str]) -> tuple[int, bytes] | None:
+    """git subprocess under the c42 conventions (capture_output — safe HERE
+    because the blob size is pre-gated; timeout=10; retry once on OSError).
+    Returns (rc, stdout) or None when git itself is unusable — the caller
+    whole-check SKIPs (the c42 fail-open doctrine)."""
+    for attempt in (0, 1):
+        try:
+            r = subprocess.run(
+                ["git", *args],
+                capture_output=True,
+                timeout=10,
+                cwd=str(_C71_REPO_ROOT),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None
+        except OSError:
+            if attempt:
+                return None
+            continue
+        return r.returncode, r.stdout
+    return None
+
+
+def _c71_resolve_target(target: str) -> tuple[bytes | None, str | None]:
+    """Committed-bytes resolution (#2590 §4.1 step 5): committedness AND
+    content both come from git (HEAD:<path>), never the working tree.
+    Returns (blob, None) on success, (None, <skip cause>) otherwise; the
+    sentinel cause 'git-unusable' means whole-check SKIP at the call site."""
+    if target.startswith("/"):
+        return None, "unresolved target"
+    root = _C71_REPO_ROOT.resolve()
+    try:
+        contained = (root / target).resolve().is_relative_to(root)
+    except OSError:
+        contained = False
+    if not contained:
+        return None, "unresolved target"
+    size = _c71_git(["cat-file", "-s", f"HEAD:{target}"])
+    if size is None:
+        return None, "git-unusable"
+    rc, out = size
+    if rc != 0:
+        return None, "unresolved target"
+    n = _c71_guarded_int(out.decode("utf-8", "replace").strip() or "x")
+    if n is None:
+        return None, "unresolved target"
+    if n > _C71_MAX_BLOB_BYTES:
+        return None, "blob-cap"
+    blob = _c71_git(["show", f"HEAD:{target}"])
+    if blob is None:
+        return None, "git-unusable"
+    rc, out = blob
+    if rc != 0:
+        return None, "unresolved target"
+    return out, None
+
+
+def _c71_offender(inst: dict, rc: int | None, out_b: bytes, err_b: bytes) -> str | None:
+    """Offender-arm evaluation for one EXECUTED instance (#2590 §4.1 step
+    8). Returns the per-offender detail string, or None when clean. All
+    decoded text is decode-replaced and bounded (MF-A)."""
+    stdout = out_b[:_C71_MAX_STDOUT].decode("utf-8", "replace")
+    stderr_head = err_b[:400].decode("utf-8", "replace").replace("\n", " ").strip()[:120]
+    out_lines = [ln.strip() for ln in stdout.splitlines() if ln.strip()]
+    got = "/".join(out_lines)[:40] or "<empty>"
+    where = f"line {inst['line_no']} `{inst['head']}`"
+    expect = inst["expect"]
+    if rc != 0:
+        return (
+            f"{where}: rc={rc} against committed {inst['target']}"
+            f" (stderr: {stderr_head or '<empty>'}; stdout: {got})"
+        )
+    if expect == "null":
+        if out_lines and all(ln == "null" for ln in out_lines):
+            return None  # declared absence-assert satisfied
+        return f"{where}: got {got} vs expected null (declared absence-assert)"
+    if isinstance(expect, list):
+        got_vals = [_c71_guarded_int(ln) for ln in out_lines]
+        if got_vals != expect:
+            want = "/".join(str(v) for v in expect)
+            return f"{where}: expectation mismatch — got {got} vs expected {want}"
+        return None
+    if not out_lines or all(ln == "null" for ln in out_lines):
+        tell = "empty output" if not out_lines else "all-null output"
+        return (
+            f"{where}: {tell} at rc=0 — jq's path-missed tell against committed "
+            f"{inst['target']} (no declared 'expect null' absence-assert)"
+        )
+    return None
+
+
+def _c71_execute(
+    instances: list[dict], jq_bin: str, counts: dict[str, int], notes: list[str]
+) -> tuple[int, list[str], str | None]:
+    """Steps 5-8 of the c71 pipeline (#2590 §4.1): per instance — committed
+    target resolution, per-probe post-run recognition, bounded execution,
+    offender adjudication. Returns (n_executed, offender details,
+    whole-check-skip reason or None)."""
+    executed = 0
+    offenders: list[str] = []
+
+    def _bump(cause: str) -> None:
+        counts[cause] = counts.get(cause, 0) + 1
+
+    for inst in instances:
+        if executed >= _C71_MAX_INSTANCES:
+            _bump("instance-cap")
+            continue
+        blob, cause = _c71_resolve_target(inst["target"])
+        if cause == "git-unusable":
+            return executed, offenders, "git unavailable — committed-target dry-run not possible"
+        if blob is None:
+            _bump(cause)
+            if cause == "unresolved target" and inst["hint"]:
+                notes.append(
+                    f"line {inst['line_no']}: expectation-like prose present but target "
+                    f"{inst['target'][:60]!r} does not resolve to a committed file — probe "
+                    "not executed, expectation not certified"
+                )
+            continue
+        if _C71_POSTRUN_RE.search(inst["raw"]):
+            _bump("post-run")
+            notes.append(
+                f"line {inst['line_no']}: post-run expectation declared — adjudicable only "
+                "after the run, not against current HEAD bytes"
+            )
+            continue
+        status, rc, out_b, err_b = _c71_run_bounded(
+            [jq_bin, *inst["flags"], inst["filter"]], blob, _C71_TIMEOUT_S
+        )
+        if status == "launch-error":
+            return executed, offenders, "jq launch failed — dry-run not possible"
+        if status != "ok":
+            key = "argv-error" if status == "launch-error-argv" else status
+            _bump(key)
+            notes.append(f"line {inst['line_no']}: {_C71_SKIP_NOTES[key]}")
+            continue
+        executed += 1
+        det = _c71_offender(inst, rc, out_b, err_b)
+        if det:
+            offenders.append(det)
+        elif inst["hint"] and inst["expect"] is None:
+            notes.append(
+                f"line {inst['line_no']}: expectation-like prose not machine-certified — "
+                "the probe executed clean; only rc / empty / all-null were adjudicated"
+            )
+    return executed, offenders, None
+
+
+def check_jq_probe_dryrun(plan: str, kind: str) -> CheckResult:
+    """FAIL, conditional (#2590, incident #2588 v2:108): every plan-embedded
+    jq data probe with an explicit committed target path is EXECUTED against
+    the committed bytes (git show HEAD:<target> on stdin — read-only,
+    scrubbed-env, output-capped, deadline-bounded); offenders are (a)
+    rc != 0, (b) empty / all-null stdout at rc=0 with no declared 'expect
+    null' absence-assert, (c) a machine expectation (lead-required,
+    value-terminal grammar) that mismatches the executed output. Every
+    ambiguity is a skip with a counted cause, never a guessed execution;
+    jq absent / unlaunchable and git unusable are whole-check SKIPs (the
+    c42 fail-open doctrine). FAIL posture with the pre-registered
+    demote-to-WARN rule in the module comment above. Armed for kind in
+    {experiment, analysis} only. Escapes (standalone, unwrapped):
+    ``N/A — no registered jq probe``, ``N/A — quoted jq probe is
+    historical or a sibling's, not this plan's gate input``, and
+    ``N/A — registered jq probes assert post-run state, not current
+    committed state``."""
+    cid = "c71_jq_probe_dryrun"
+    name = "plan-embedded jq probe dry-run vs committed target"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c69/c70 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote broken "
+            "probes by design; the founding incident (#2588 v2) is kind: experiment",
+        )
+    if not _c71_candidates(plan):
+        return _skip(cid, name, "no jq probe vocabulary detected")
+    if _standalone_na_declared(plan, r"no registered jq probe\b"):
+        return _pass(cid, name, "explicit N/A declared (no registered jq probe)")
+    if _standalone_na_declared(plan, r"quoted jq probe is historical or a sibling'?s"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (historical / sibling jq probe — not this plan's gate input)",
+        )
+    if _standalone_na_declared(plan, r"registered jq probes assert post-run state"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (post-run expectations — not adjudicable against "
+            "current committed state)",
+        )
+    instances, counts, notes = _c71_classify(plan)
+    executed, offenders = 0, []
+    if instances:
+        jq_bin = _c71_jq_bin()
+        if jq_bin is None:
+            return _skip(cid, name, "jq unavailable — dry-run not possible")
+        executed, offenders, whole_skip = _c71_execute(instances, jq_bin, counts, notes)
+        if whole_skip:
+            return _skip(cid, name, whole_skip)
+    refused_n = sum(v for k, v in counts.items() if k in _C71_REFUSAL_CAUSES)
+    skipped_n = sum(v for k, v in counts.items() if k not in _C71_REFUSAL_CAUSES)
+    by_cause = "; ".join(f"{k}: {v}" for k, v in sorted(counts.items()))
+    note_tail = f"; notes: {' | '.join(notes[:3])}" if notes else ""
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" | (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        return _fail(
+            cid,
+            name,
+            f"{shown}{more} — a registered jq probe that errors or mismatches against "
+            "its own committed target is a factual defect in the plan's gate input "
+            "(#2588 v2:108: rc=5 with stdout 0 on a healthy artifact; jq's | binds "
+            "looser than , so the naive comma-chained repair fails too). Verify the "
+            "probe by EXECUTING it against git show HEAD:<target> before registering "
+            "it — the two verified working forms on the founding artifact: a "
+            "parenthesized filter ((.splits.train_10k|length), (.splits.val_400|length)"
+            ", ...) or jq -c '.counts' on the parent object. State machine expectations "
+            "inline as a lead-prefixed terminal integer sequence ('-> expect "
+            "10000/400/1000'; integer-emitting probes only; 'expect null' declares an "
+            "absence-assert), phrase genuinely post-run expectations on the probe line "
+            "('post-run', 'after the run', 'will show'), or declare "
+            "'N/A — no registered jq probe' / 'N/A — quoted jq probe is historical or "
+            "a sibling's, not this plan's gate input' / 'N/A — registered jq probes "
+            "assert post-run state, not current committed state' on its own line, "
+            "unwrapped (no backticks/quotes)",
+        )
+    if executed:
+        return _pass(
+            cid,
+            name,
+            f"{executed} executed clean, {skipped_n} skipped, {refused_n} refused"
+            + (f" ({by_cause})" if by_cause else "")
+            + note_tail,
+        )
+    return _skip(
+        cid,
+        name,
+        "no executable jq probe instance — "
+        + (
+            f"{skipped_n} skipped, {refused_n} refused ({by_cause})"
+            if by_cause
+            else "none parsed from the candidate spans"
+        )
+        + note_tail,
+    )
+
+
+# ─── Check 72 — contingent judge wave (>=5k calls) names its pilot gate (#2590) ──
+# Origin: #2588 plan v2:155 (same incident) — a CONTINGENT Sonnet-judge
+# fallback wave ("extraction failure > 5% on the smoke slice -> fall back
+# to a Sonnet judge ... would add ~<=19k Batch-API calls") shipped with NO
+# rule-26 pilot registration: c70 anchors on an EXISTING pilot-gate
+# registration, so a plan omitting the pilot entirely is INVISIBLE to it
+# (c70 SKIPs). llm-judging.md rules 23/26 pilot-gate every >= ~5,000-call
+# judge wave (#1739: an unpiloted 10,666-context wave shipped a rubric with
+# 100% parse-fail); a wave being CONDITIONAL does not exempt it — the pilot
+# is exactly what runs BEFORE the wave fires. WARN-only (the c70 posture;
+# the estimate grammar reads prose numbers). The satisfier is
+# JUDGE-vocabulary-anchored and applied PER LINE (_C72_JUDGE_PILOT_RE): a
+# bare substring 'pilot' in the window does NOT satisfy — compute-timing
+# pilots ("the smoke TIMES one batched permutation draw block",
+# "per-family pilots re-project") co-occur with judge waves in real plans
+# (#2588 v2's own window) and would false-satisfy a substring read.
+# Accepted FALSE NEGATIVES (disclosed): estimates phrased without a
+# 'calls' token ("~19k judgments", "19k rows judged") resolve no estimate
+# (SKIP-contribution); estimates split across sentences beyond the
+# [^.;]{0,30} gap; a wave whose estimate lives outside the +-8-line
+# window. FALSE-POSITIVE guards: _C16_NEG_GUARD on both alternation arms
+# ("no fallback to a judge" does not anchor); superseded lines dropped
+# from windows; comma-group repetition BOUNDED {1,3} + guarded float parse
+# (MF-A item 3: int() raises past ~4,300 digits and verify_plan_text has
+# no containment — an adversarially long token cannot reach a raw int()).
+# CORPUS CALIBRATION (#2590) — same 2026-08-26 scan (4,674 plan versions,
+# 1,813 issues): 10 WARN / 14 PASS / 4,650 SKIP. WARN adjudication
+# (3 issues): #2588 v1/v2 — the founding TP (19k contingent fallback, no
+# pilot anywhere; the corrected v3 PASSes via the co-located rule-26
+# sentence at v3:198); #2225 v1-v5 — TP (a ~36k-call "fallback re-judge
+# from persisted rollout text" recovery arm with no pilot registration
+# in-window; plan-side remedy: the inherits-escape or co-location);
+# #1979 v1-v3 — co-location miss (a genuine "Gate 1 - judge wave-1 pilot
+# ... before the full ~135k-call spend" registration sits 29 lines
+# OUTSIDE the +-8 window): the ACCEPTED window-scoped trade — a
+# document-wide satisfier would false-suppress (the founding v2's own
+# far-away compute pilots), and the remedy names co-location/echo. PASS
+# base rate: 14 versions across 4 issues (#2588 v3; #1900 v1-v7 — the
+# same-line "180k judge calls (+ <=6k pilot ..." satisfier; #2389 v1 —
+# an explicit "Rule-26 judge pilot" line; #2054 v4-v8 — satisfied AFTER
+# the calibration-driven _C72_GAP fix: their genuine "pilot-gate 200
+# calls first (llm-judging.md rule 26)" line was missed by a plain
+# [^.;] gap because the FILENAME period truncated the sentence span;
+# 5 versions flipped WARN->PASS at calibration).
+
+_C72_CONTINGENT_RE = re.compile(
+    rf"(?i){_C16_NEG_GUARD}\b(?:fall(?:s|ing)?[-\s]?back|fallback|contingen\w+)\b"
+    rf"[^.;]{{0,80}}?\bjudge\b"
+    rf"|{_C16_NEG_GUARD}\bjudge\b[^.;]{{0,60}}?\b(?:fall(?:s|ing)?[-\s]?back|fallback|contingen\w+)\b"
+)
+_C72_CALLS_RE = re.compile(  # comma-group repetition BOUNDED {1,3} (MF-A item 3)
+    r"(?i)(?<![\d.,])(\d{1,4}(?:,\d{3}){1,3}|\d{1,9}(?:\.\d{1,3})?)\s*(k\b)?"
+    r"[^.;]{0,30}?\b(?:judge\s+)?calls\b"
+)
+_C72_JUDGE_CTX = (
+    r"(?:\bjudge\b|\brubric\b|\binstrument\b|\bparse[-\s]?fail\w*"
+    r"|\brule\s*26\b|\bstop_reason\b|\bmax_tokens\b)"
+)
+# Satisfier gap atom: sentence-bounded like [^.;] BUT a period NOT followed
+# by whitespace/end (filenames, version numbers: "llm-judging.md",
+# "Sonnet-4.5") does not end a sentence — calibration-driven (#2054 v4-v8:
+# a genuine in-window "pilot-gate 200 calls first (llm-judging.md rule 26)"
+# registration was missed because ".md" truncated the plain [^.;] gap).
+_C72_GAP = r"(?:[^.;]|\.(?!\s|$))"
+_C72_JUDGE_PILOT_RE = re.compile(
+    rf"(?i)judge_pilot|allow_subresolution_pilot"
+    rf"|{_C72_JUDGE_CTX}{_C72_GAP}{{0,60}}\bpilot"
+    rf"|\bpilot\w*\b{_C72_GAP}{{0,60}}{_C72_JUDGE_CTX}"
+)
+_C72_WINDOW_LINES = 8
+_C72_FLOOR = 5000
+
+
+def _c72_estimate(win: str) -> int | None:
+    """Max window-resolved contingent-wave call estimate (guarded float
+    conversions; the {1,3} comma-group bound caps a captured token at 13
+    chars, so the conversion cannot approach the int() digit limit)."""
+    vals: list[int] = []
+    for m in _C72_CALLS_RE.finditer(win):
+        try:
+            v = float(m.group(1).replace(",", ""))
+        except ValueError:
+            continue
+        vals.append(int(v * 1000) if m.group(2) else int(v))
+    return max(vals) if vals else None
+
+
+def _c72_offender_detail(offenders: list[tuple[int, int, list[int]]]) -> str:
+    """Render the c72 WARN detail (anchor line, estimate, non-qualifying
+    'pilot' lines so the reader sees WHY they did not satisfy, remedy)."""
+    parts = []
+    for ln_no, est, pilots in offenders[:2]:
+        ctx = (
+            f"; non-qualifying 'pilot' lines in window: {pilots} (compute-timing "
+            "pilots do not satisfy)"
+            if pilots
+            else "; no pilot vocabulary in the window at all"
+        )
+        parts.append(
+            f"anchor line {ln_no}: contingent judge wave estimated at {est} calls "
+            f"(>= {_C72_FLOOR}) with NO rule-26 JUDGE-pilot registration in the "
+            f"+-{_C72_WINDOW_LINES}-line window{ctx}"
+        )
+    more = f" (+{len(offenders) - 2} more)" if len(offenders) > 2 else ""
+    return (
+        "; ".join(parts) + more + " — llm-judging.md rule 26 pilot-gates every "
+        ">= ~5,000-call judge wave, and a CONTINGENT wave is invisible to c70 (which "
+        "anchors on an EXISTING pilot registration); #1739's unpiloted 10,666-context "
+        "wave shipped a 100% parse-fail rubric. Register the judge pilot CO-LOCATED "
+        "with the wave sentence (~100-200 draws at the production instrument; zero "
+        "stop_reason == 'max_tokens' + per-arm parse-fail < ~2% gate, rule 26; "
+        "max_tokens floor >= 1024, rule 23; committed parse-contract round-trip, rule "
+        "27) — a compute-timing/sizing pilot does not satisfy — or declare "
+        "'N/A — no contingent judge wave' / 'N/A — the contingent judge wave inherits "
+        "the primary wave's pilot gate' on its own line, unwrapped (no "
+        "backticks/quotes)"
+    )
+
+
+def check_contingent_judge_pilot(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2590, incident #2588 v2:155): a plan
+    registering a CONTINGENT judge wave (fallback/contingency vocabulary
+    within a sentence of 'judge', negation-guarded) whose window-resolved
+    call estimate is >= 5,000 must name its rule-26 judge-pilot gate on a
+    line in the same +-8-line fence-masked window
+    (judge-vocabulary-anchored, applied per line: judge_pilot /
+    allow_subresolution_pilot tokens, or 'pilot' within a sentence of
+    judge/rubric/instrument/parse-fail/rule 26/stop_reason/max_tokens); a
+    bare compute-timing 'pilot' does not satisfy. c70 anchors on an
+    EXISTING pilot registration, so the omitted-pilot shape is invisible
+    to it by design. Armed for kind in {experiment, analysis} only.
+    Escapes (standalone, unwrapped): ``N/A — no contingent judge wave``
+    and ``N/A — the contingent judge wave inherits the primary wave's
+    pilot gate``."""
+    cid = "c72_contingent_judge_pilot"
+    name = "contingent judge wave (>=5k calls) names its rule-26 pilot gate"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c69/c70 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote the "
+            "fallback vocabulary; the founding incident (#2588 v2) is kind: experiment",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    anchors = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C72_CONTINGENT_RE.search(line)
+    ]
+    if not anchors:
+        return _skip(cid, name, "no contingent judge-wave vocabulary detected")
+    if _standalone_na_declared(plan, r"no contingent judge wave\b"):
+        return _pass(cid, name, "explicit N/A declared (no contingent judge wave)")
+    if _standalone_na_declared(
+        plan, r"the contingent judge wave inherits the primary wave'?s pilot gate"
+    ):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (the contingent wave inherits the primary wave's "
+            "already-piloted instrument)",
+        )
+    offenders: list[tuple[int, int, list[int]]] = []
+    passes: list[str] = []
+    best_skip = "no call estimate resolvable in any contingent-wave window"
+    for a in anchors:
+        lo, hi = max(0, a - _C72_WINDOW_LINES), min(len(lines), a + _C72_WINDOW_LINES + 1)
+        kept = [
+            (j, lines[j])
+            for j in range(lo, hi)
+            if not mask[j] and not _C70_SUPERSEDED_RE.search(lines[j])
+        ]
+        est = _c72_estimate("\n".join(txt for _, txt in kept))
+        if est is None:
+            continue
+        if est < _C72_FLOOR:
+            best_skip = (
+                f"largest window-resolved call estimate {est} is below the "
+                f"{_C72_FLOOR} rule-26 pilot-gate floor"
+            )
+            continue
+        hit = next(((j, txt) for j, txt in kept if _C72_JUDGE_PILOT_RE.search(txt)), None)
+        if hit is not None:
+            passes.append(
+                f"anchor line {a + 1} (estimate {est}): judge-pilot satisfier at line "
+                f"{hit[0] + 1}: '{hit[1].strip()[:60]}'"
+            )
+        else:
+            pilot_lines = [j + 1 for j, txt in kept if re.search(r"(?i)pilot", txt)]
+            offenders.append((a + 1, est, pilot_lines))
+    if offenders:
+        return _warn(cid, name, _c72_offender_detail(offenders))
+    if passes:
+        return _pass(
+            cid, name, "contingent-wave pilot registration satisfied: " + "; ".join(passes[:3])
+        )
+    return _skip(cid, name, best_skip)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -14137,6 +15143,8 @@ CHECKS = [
     check_margin_baseline_ceiling,
     check_regen_headroom,
     check_pilot_resolution,
+    check_jq_probe_dryrun,
+    check_contingent_judge_pilot,
 ]
 
 

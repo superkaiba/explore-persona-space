@@ -275,3 +275,114 @@ def test_spurious_grid_multiplier_not_harvested():
     assert r.status == "WARN"
     assert "2×2048" in r.detail
     assert "4×2048" not in r.detail
+
+
+# ── SYMBOLIC-PIN ARM (#2590 Check C, MF-C) — T-C1..T-C10 ─────────────────
+# Fixture faithful to #2588 v2:118: an armed G4-style regen row beside a
+# fenced derived-expression pin `max_model_len=budget+GEN_MAX` — no numeric
+# pin harvestable, so pre-#2590 the check SKIPped and the regen leg
+# re-entered the SAME engine boundary it exists to escape.
+
+SYMBOLIC = """\
+# Plan — task #9996: panel capture (c69 symbolic-pin fixture, #2588 v2:118 shape)
+
+## 4. Design
+
+| G4 cap-hit regen | vLLM finish_reason=="length" fraction > 2% per cell | \
+pre-registered regen of affected rows at 2× cap | #1332/#1426 |
+
+```python
+llm = vLLM(model_id, max_model_len=budget+GEN_MAX)   # PROMPT_TOKEN_BUDGET invariant
+```
+"""
+
+
+def test_tc1_symbolic_pin_no_repin_warns():
+    r = _run(SYMBOLIC)
+    assert r.status == "WARN", r.detail
+    assert "SYMBOLIC" in r.detail
+    assert "budget+GEN_MAX" in r.detail
+    assert "no regen-time re-pin statement" in r.detail
+
+
+def test_tc2_repin_line_passes_with_quoted_line():
+    plan = (
+        SYMBOLIC + "\n- The regen leg runs on a dedicated engine re-pinned for the doubled cap.\n"
+    )
+    r = _run(plan)
+    assert r.status == "PASS", r.detail
+    assert "re-pin statement at line" in r.detail
+    assert "re-pinned for the doubled cap" in r.detail
+
+
+def test_tc3_no_max_model_len_keeps_existing_skip_message():
+    plan = SYMBOLIC.replace("max_model_len=budget+GEN_MAX", "engine_len=budget+GEN_MAX")
+    assert "max_model_len" not in plan
+    r = _run(plan)
+    assert r.status == "SKIP"
+    # Byte-identical existing message (T-C3): the symbolic arm must not
+    # perturb the no-pin-at-all branch.
+    assert "no max_model_len / VLLM_MAX_MODEL_LEN numeric pin harvested" in r.detail
+
+
+def test_tc5_cross_quantity_escape_gates_symbolic_arm():
+    r = _run(
+        SYMBOLIC + "\nN/A — harvested max_model_len pin is unrelated to the armed re-gen stage\n"
+    )
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_tc6_prose_colon_value_is_not_a_symbolic_pin():
+    plan = SYMBOLIC.replace("max_model_len=budget+GEN_MAX", "max_model_len: see the engine table")
+    r = _run(plan)
+    # Form 2 is case-sensitively scoped ((?-i:[A-Z]...)): a bare lowercase
+    # prose word after the colon must not arm the symbolic branch.
+    assert r.status == "SKIP"
+    assert "no max_model_len / VLLM_MAX_MODEL_LEN numeric pin harvested" in r.detail
+
+
+def test_tc7_unrelated_dedicated_engine_line_does_not_satisfy():
+    plan = SYMBOLIC + (
+        "\n- A dedicated embedding engine sized for the retrieval index handles corpus embedding.\n"
+    )
+    r = _run(plan)
+    assert r.status == "WARN"  # no regen co-reference on the line → no suppression
+
+
+def test_tc8_repin_lines_unit_tiers():
+    hits = verify_plan._c69_repin_lines(
+        "Regen at 16,384 fits max_model_len 32,768.\n"  # weak `fits` tier
+        "regens at the re-pinned engine\n"  # strong `re-pin` token
+        "the dedicated engine is sized generously\n"  # no regen token
+        "regen affects 2% of rows\n"  # regen but no object/action pairing
+    )
+    assert [ln for ln, _ in hits] == [1, 2]
+    assert "fits max_model_len" in hits[0][1]
+    assert "re-pinned engine" in hits[1][1]
+
+
+def test_tc9_2588_v3_shape_mutation_pair():
+    # #2588 v3-derived compliant phrasing PASSes; deleting it reverts to
+    # the T-C1 WARN (the mutation-positive pairing).
+    repin = (
+        "\n- The G4/G5 regen path RE-INSTANTIATES the engine at "
+        "`max_model_len = PROMPT_TOKEN_BUDGET + 2×cap`.\n"
+    )
+    r = _run(SYMBOLIC + repin)
+    assert r.status == "PASS", r.detail
+    assert "RE-INSTANTIATES" in r.detail
+    r2 = _run(SYMBOLIC)
+    assert r2.status == "WARN"
+
+
+def test_tc10_split_across_lines_repin_still_warns():
+    # Known FP residual, pinned as designed behavior: a compliant re-pin
+    # SPLIT across two lines does not satisfy the LINE-scoped recognizer —
+    # the remedy's co-location instruction is the designed answer.
+    plan = SYMBOLIC + (
+        "\n- The regen path re-instantiates\n"
+        "  the engine at max_model_len sized for the doubled cap.\n"
+    )
+    r = _run(plan)
+    assert r.status == "WARN"
