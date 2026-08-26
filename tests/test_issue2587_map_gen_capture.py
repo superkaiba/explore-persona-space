@@ -1196,7 +1196,13 @@ def test_launcher_invocations_bind_target_argparse_surfaces(launcher_dryrun):
             pytest.fail(f"launcher argv does not bind the target parser: {argv}")
 
     for argv in map_argvs:
-        _parse(M._build_parser(), argv)
+        ns = _parse(M._build_parser(), argv)
+        if ns.capture_mode in ("phase_split_gen", "phase_split_capture"):
+            # Plan §4.3: the map corpus captures ALL 32 blocks. The parser
+            # default is the 3-probe-layer set, so every P1/P2/P3 map
+            # invocation must override it explicitly (compose_p1 caught the
+            # omission at n_layers=3 on the first production launch).
+            assert ns.layers == "0-31", (argv, ns.layers)
     for argv in battery_argvs:
         ns = _parse(B.build_argparser(), argv)
         assert ns.phase in ("gen", "capture", "embed"), argv

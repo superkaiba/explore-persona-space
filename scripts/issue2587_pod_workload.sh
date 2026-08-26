@@ -326,6 +326,7 @@ map_task_argv() {
   MAP_TASK_ARGV=(
     "$MODEL_PY" "$MAP" --split "$split" --capture-mode "$mode"
     --num-shards 2 --shard-index "$shard" --hf-prefix "$HF_PREFIX" --h-dim 4096
+    --layers 0-31
     --out-dir "$OUT_ROOT" --run-meta-out "$RUN_META"
     --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
   )
@@ -515,14 +516,14 @@ run_logged "$LOGS_DIR/issue-2587-p1-smoke-gen.log" \
   env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES=0 PYTHONPATH="$REPO_ROOT/src" \
   "$MODEL_PY" "$MAP" --split train_25k --capture-mode phase_split_gen \
   --num-shards 50 --shard-index 0 --shard-size 500 --no-upload \
-  --hf-prefix "$HF_PREFIX" --h-dim 4096 \
+  --hf-prefix "$HF_PREFIX" --h-dim 4096 --layers 0-31 \
   --out-dir "$P1_SMOKE_ROOT" --run-meta-out "$RUN_META" \
   --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
 run_logged "$LOGS_DIR/issue-2587-p1-smoke-capture.log" \
   env "${ENV_PINS[@]}" CUDA_VISIBLE_DEVICES=0 PYTHONPATH="$REPO_ROOT/src" \
   "$MODEL_PY" "$MAP" --split train_25k --capture-mode phase_split_capture \
   --num-shards 50 --shard-index 0 --shard-size 500 --no-upload \
-  --hf-prefix "$HF_PREFIX" --h-dim 4096 \
+  --hf-prefix "$HF_PREFIX" --h-dim 4096 --layers 0-31 \
   --out-dir "$P1_SMOKE_ROOT" --run-meta-out "$RUN_META" \
   --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
 # (b) fits smoke: the REAL P3 fits port on the local 500-row chunk (the map
