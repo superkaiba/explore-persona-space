@@ -2,7 +2,8 @@
 title: 'Repack issue1739_ctxmap once #1739 quiesces (43,905 slots; deferred by G-1739/G-writer
   in #2332)'
 kind: infra
-tags: []
+tags:
+- needs-human
 created_at: '2026-08-18T00:18:08Z'
 has_clean_result: false
 parent_id: 2332
