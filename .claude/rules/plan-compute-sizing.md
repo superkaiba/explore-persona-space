@@ -540,6 +540,45 @@ spanned 250→16000 = 64×; MEASURED evil-family pilots proxied to
 sibling budget families under-projected 2.5–4× — coresyc ratio 3.98,
 coreevil 2.52 — and the fan-out took re-fenced relaunches at
 13.6–21.6 h plus an rc=137 OOM wave at the largest-budget unit).
+WITHIN-FAMILY DISPERSION (design-admitted unequal unit costs): when the
+phase's own DESIGN acknowledges unequal per-unit costs (a
+work-conserving / claim / dynamic-queue dispatch rationale adopted
+BECAUSE unit costs are unequal, an explicit "unequal costs" note, or a
+unit set spanning a structural size axis such as variable rows/pairs
+per unit after exclusions; a claim queue adopted purely for GPU
+saturation over nominally equal units, with no unequal-costs admission,
+does not trigger), a single-unit pilot is DISQUALIFIED as the
+point-estimate projection basis by that admission: the units are one
+family, no budget/grid multiplier exists, so the per-family-floor's
+COMPUTED worst-case escape degenerates to the pilot wall verbatim
+(multiplier ratio = 1), which is the biased point basis itself. The row
+instead states the projection as a RANGE: the 1-unit basis x a STATED
+dispersion factor (default x2 when no within-phase dispersion
+measurement exists, matching the wall-reconciliation x2 default below),
+and carries the marking `dispersion-unsampled`. A range written `A-B`
+in the `planned_wall_h` cell parses as max(A, B) for the tripwire
+budget (the §9 planned_wall_h cell grammar above), so the range's upper
+end is what fences and budgets consume. The single-unit pilot may still
+set the fence (the >=2x fence rule is unchanged). RECOMMENDED upgrade,
+not required: pilot K>=3 units chosen to span the cost range by a
+stated structural proxy (cheapest + most expensive + one middle), size
+on the MEAN, report the observed max/min ratio in the row, and drop the
+`dispersion-unsampled` marking. REPORTING DUTY: the realized per-unit
+max/min ratio goes in the clean-result / report Compute row next to the
+projection, so the next task inherits a measured dispersion figure
+instead of re-deriving one. Distinction from HETEROGENEOUS FAN-OUTS
+above: that block covers ACROSS-family spreads where a budget/grid
+multiplier ratio is computable and the worst-case is COMPUTED from it;
+this clause covers WITHIN-family dispersion where no multiplier exists,
+so the honest output is a stated range. (#2329 P3: a 234-block
+work-conserving grid, plan rationale "unequal block costs absorbed by
+work conservation", 1-block pilot under-projected the phase 1.22x
+realized (5.97 h projected vs 7.28 h; ~47.8 vs ~58.2 GPU-h), cap raise
+excluded by measurement; sibling measurements on the same task: 1.39x
+and 2.2x per-worker wall spreads and up to 21% within-worker per-unit
+drift, so within-family dispersion is routinely large enough to matter.
+Blocks are DISPERSED, not monotone; the monotone-trend strengthening
+was falsified, #2329 v69/v70.)
 TRIVIALITY EXEMPTION — never
 self-certified by an asserted cost: a row may skip the pilot ONLY when
 total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
