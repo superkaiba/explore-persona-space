@@ -859,3 +859,130 @@ def test_smoke_requires_explicit_manip_check():
     never silently gate on the committed PRODUCTION manipulation_check.json."""
     with pytest.raises(SystemExit, match="manip-check"):
         A.build_config(A.parse_args(["--smoke", "--upload", "none"]))
+
+
+# ── r2 ffr pins: fire-gate coverage fail-loud + in-root layout resolution ─
+
+
+def _ffr_fire_doc(selected: dict[str, list[str]], *, round_tag: str | None = "ffr") -> dict:
+    """Minimal exact-coverage ffr manipulation-check doc for the validator."""
+    value_rows = []
+    axis_rows = []
+    for axis, vids in selected.items():
+        for vid in vids:
+            for slot_vid in (vid, f"{vid}p"):
+                value_rows.append(
+                    {
+                        "axis": axis,
+                        "value_id": slot_vid,
+                        "verdict": "fired",
+                        "sensitivity": {"50": "fired", "90": "fired"},
+                    }
+                )
+        axis_rows.append({"axis": axis, "width": len(vids), "floor": 1, "floor_met": True})
+    meta = {} if round_tag is None else {"round": round_tag}
+    return {"meta": meta, "value_rows": value_rows, "axis_rows": axis_rows}
+
+
+def _ffr_bank_selected() -> dict:
+    return {"selected": {"stance": ["s1a"], "hedging": ["h1a"]}}
+
+
+def test_ffr_fire_coverage_exact_passes(tmp_path):
+    doc = _ffr_fire_doc({"stance": ["s1a"], "hedging": ["h1a"]})
+    p = tmp_path / "manipulation_check_ffr.json"
+    p.write_text(json.dumps(doc))
+    A.validate_fire_coverage_ffr(_ffr_bank_selected(), A.load_fire(p))  # no raise
+
+
+def test_ffr_fire_coverage_missing_value_row_raises(tmp_path):
+    """r1 blocker ffr-fire-gate-fails-open: a missing selected-wording row
+    must FAIL LOUD before any tensor load, never default to fired."""
+    doc = _ffr_fire_doc({"stance": ["s1a"], "hedging": ["h1a"]})
+    doc["value_rows"] = [r for r in doc["value_rows"] if r["value_id"] != "s1ap"]
+    p = tmp_path / "mc.json"
+    p.write_text(json.dumps(doc))
+    with pytest.raises(RuntimeError, match="value-row coverage mismatch"):
+        A.validate_fire_coverage_ffr(_ffr_bank_selected(), A.load_fire(p))
+
+
+def test_ffr_fire_coverage_extra_value_row_raises(tmp_path):
+    doc = _ffr_fire_doc({"stance": ["s1a", "s2b"], "hedging": ["h1a"]})
+    p = tmp_path / "mc.json"
+    p.write_text(json.dumps(doc))
+    with pytest.raises(RuntimeError, match="value-row coverage mismatch"):
+        A.validate_fire_coverage_ffr(_ffr_bank_selected(), A.load_fire(p))
+
+
+def test_ffr_fire_coverage_missing_axis_floor_raises(tmp_path):
+    """A surviving axis whose axis row is absent (or floor-verdict-less, the
+    not_selected shape) must raise, never default floor_met=True."""
+    doc = _ffr_fire_doc({"stance": ["s1a"], "hedging": ["h1a"]})
+    doc["axis_rows"] = [
+        r if r["axis"] != "hedging" else {"axis": "hedging", "verdict": "not_selected"}
+        for r in doc["axis_rows"]
+    ]
+    p = tmp_path / "mc.json"
+    p.write_text(json.dumps(doc))
+    with pytest.raises(RuntimeError, match="missing floor verdicts"):
+        A.validate_fire_coverage_ffr(_ffr_bank_selected(), A.load_fire(p))
+
+
+def test_ffr_fire_coverage_wrong_round_doc_raises(tmp_path):
+    doc = _ffr_fire_doc({"stance": ["s1a"], "hedging": ["h1a"]}, round_tag=None)
+    p = tmp_path / "mc.json"
+    p.write_text(json.dumps(doc))
+    with pytest.raises(RuntimeError, match="not an ffr document"):
+        A.validate_fire_coverage_ffr(_ffr_bank_selected(), A.load_fire(p))
+
+
+def _cfg_pe(tmp_path: Path, *, rnd: str, in_root: Path | None) -> A.CfgPE:
+    return A.CfgPE(
+        in_root=in_root,
+        out_dir=tmp_path / "out",
+        stage_dir=tmp_path / "stage",
+        manip_check=tmp_path / "mc.json",
+        ridge_779=None,
+        ridge_1738=None,
+        smoke=True,
+        upload="none",
+        b_boot=10,
+        b_null=10,
+        n_splits=2,
+        hf_prefix="issue2564_minpair/smoke_ffr",
+        round=rnd,
+    )
+
+
+def test_resolve_input_ffr_producer_local_layout(tmp_path):
+    """r1 blocker ffr-analysis-artifact-path-drift: the pod out-root is NOT
+    round-nested (the ffr round isolates via a SEPARATE out-root), so an
+    --in-root at the producer layout must resolve WITHOUT falling through
+    to HF."""
+    in_root = tmp_path / "podroot"
+    rel = f"manifests/{BK.FFR_BANK_MANIFEST_FILENAME}"
+    target = in_root / rel
+    target.parent.mkdir(parents=True)
+    target.write_text("{}")
+    cfg = _cfg_pe(tmp_path, rnd="ffr", in_root=in_root)
+    assert A.resolve_input(cfg, rel) == target
+
+
+def test_resolve_input_ffr_hub_mirror_layout(tmp_path):
+    in_root = tmp_path / "hfmirror"
+    rel = "analysis_tensors/vc2564/vc2564_bank.pt"
+    nested = in_root / f"analysis_tensors/{A.FFR_ROUND_SEG}/vc2564/vc2564_bank.pt"
+    nested.parent.mkdir(parents=True)
+    nested.write_text("x")
+    cfg = _cfg_pe(tmp_path, rnd="ffr", in_root=in_root)
+    assert A.resolve_input(cfg, rel) == nested
+
+
+def test_resolve_input_parent_layout_unchanged(tmp_path):
+    in_root = tmp_path / "podroot"
+    rel = "manifests/bank2564_manifest.json"
+    target = in_root / rel
+    target.parent.mkdir(parents=True)
+    target.write_text("{}")
+    cfg = _cfg_pe(tmp_path, rnd="parent", in_root=in_root)
+    assert A.resolve_input(cfg, rel) == target

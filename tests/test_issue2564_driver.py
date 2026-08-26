@@ -616,3 +616,237 @@ def test_phase_embed_threads_force_flag(monkeypatch, tmp_path):
     monkeypatch.setattr(D.subprocess, "run", fake_run)
     assert D.phase_embed(cfg, bank) == D.RC_OK
     assert "--force" in captured["cmd"]
+
+
+# ── r2 ffr pins: all-axes-fail RC_OK exit + pilot judge reissue/fingerprint ─
+
+import json as _json  # noqa: E402
+from dataclasses import replace as _replace  # noqa: E402
+from unittest.mock import create_autospec  # noqa: E402
+
+import issue2564_judge as JD  # noqa: E402
+from transformers import AutoTokenizer  # noqa: E402
+
+from explore_persona_space.eval.graded_judge import JudgeResult, judge_graded  # noqa: E402
+from explore_persona_space.experiments.issue2564 import bank2564 as BK  # noqa: E402
+
+
+@pytest.fixture(scope="module")
+def qwen_tok():
+    try:
+        return AutoTokenizer.from_pretrained(BK.MODEL_ID, local_files_only=True)
+    except OSError:
+        return AutoTokenizer.from_pretrained(BK.MODEL_ID)
+
+
+@pytest.fixture(scope="module")
+def ffr_values():
+    return BK.load_values_ffr()
+
+
+def _all_fail_selection(values: dict) -> dict:
+    comply = {vid: 0 for axis in BK.FFR_AXES for vid in BK.value_ids(values, axis)}
+    sel = BK.select_ffr_values(values, comply)
+    assert sel["surviving_axes"] == []
+    return sel
+
+
+def _ffr_argv(tmp_path, phase: str) -> list[str]:
+    return [
+        "--round",
+        "ffr",
+        "--phase",
+        phase,
+        "--out-root",
+        str(tmp_path / "eps2564ffr"),
+        "--tiny",
+        "--upload",
+        "none",
+        "--log-dir",
+        str(tmp_path / "logs"),
+    ]
+
+
+def test_ffr_all_axes_fail_phase_a_exits_ok(tmp_path, capsys, ffr_values):
+    """r1 blocker ffr-all-axes-fail-crash: the plan-§6-registered VALID
+    all-axes-fail outcome exits RC_OK with a durable refusal-boundary record
+    — never a BankGateError crash."""
+    argv = _ffr_argv(tmp_path, "A")
+    cfg = D.build_config(D.parse_args(argv))
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.manifest_dir / "pilot_selection.json").write_text(
+        _json.dumps({"selection": _all_fail_selection(ffr_values)})
+    )
+    rc = D.main(argv)
+    assert rc == D.RC_OK
+    assert "[phase=done]" in capsys.readouterr().out
+    rb = _json.loads((cfg.manifest_dir / "ffr_refusal_boundary.json").read_text())
+    assert rb["outcome"] == "refusal_boundary_all_axes_failed"
+    assert rb["surviving_axes"] == []
+    assert rb["phases_skipped"] == ["A", "B"]
+    assert not (cfg.manifest_dir / BK.FFR_BANK_MANIFEST_FILENAME).exists()
+
+
+def test_ffr_all_axes_fail_phase_all_exits_ok(tmp_path, capsys, ffr_values):
+    """--phase all, real path: pilot sentinels satisfied -> phase_pilot skips,
+    the all-axes-fail guard exits RC_OK (the exact blocker invocation)."""
+    argv = _ffr_argv(tmp_path, "all")
+    cfg = D.build_config(D.parse_args(argv))
+    cfg.model_revision = "unresolved-tiny"  # what main() resolves under --tiny
+    pcfg = D._pilot_cfg(cfg)
+    pcfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    pcfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    # tiny slice: 3 smoke value ids x carriers c01-c03 -> the 3 axis cells
+    for cell in BK.FFR_AXES:
+        (pcfg.anchors_dir / f"anchors_{cell}.jsonl").write_text(
+            _json.dumps({"context_id": f"{cell}__x__c01", "draw": 0, "text": "t"}) + "\n"
+        )
+        (pcfg.manifest_dir / f"anchors_{cell}.done.json").write_text(
+            _json.dumps({"regime_fp": D._cell_fp(pcfg, "A", cell), "n_rows": 1})
+        )
+    (cfg.out_root / "ffr_pilot_anchors_done.json").write_text(
+        _json.dumps({"regime_fp": D._regime_fp(pcfg, {"phase": "pilot", "leg": "gen"})})
+    )
+    (cfg.out_root / "ffr_pilot_selection_done.json").write_text(
+        _json.dumps({"regime_fp": D._pilot_selection_fp(pcfg)})
+    )
+    (cfg.manifest_dir / "pilot_selection.json").write_text(
+        _json.dumps({"selection": _all_fail_selection(ffr_values)})
+    )
+    rc = D.main(argv)
+    assert rc == D.RC_OK
+    out = capsys.readouterr().out
+    assert "selection sentinel present" in out
+    assert "[phase=done]" in out
+    rb = _json.loads((cfg.manifest_dir / "ffr_refusal_boundary.json").read_text())
+    assert rb["outcome"] == "refusal_boundary_all_axes_failed"
+    assert not (cfg.manifest_dir / BK.FFR_BANK_MANIFEST_FILENAME).exists()
+
+
+# ── pilot judge: reissue loop, refusal accounting, selection fingerprint ─
+
+
+def _pilot_fixture(tmp_path, qwen_tok, ffr_values):
+    """Non-tiny pilot cfg with SYNTHESIZED complete generation state (the
+    resume-matrix pilot-anchors leg): per-cell done manifests + anchor rows
+    for all 276 contexts x 2 draws, so phase_pilot runs the judge+selection
+    leg only."""
+    argv = [
+        "--round",
+        "ffr",
+        "--phase",
+        "pilot",
+        "--out-root",
+        str(tmp_path / "eps2564ffr"),
+        "--upload",
+        "none",
+        "--log-dir",
+        str(tmp_path / "logs"),
+    ]
+    cfg = D.build_config(D.parse_args(argv))
+    pcfg = D._pilot_cfg(cfg)
+    pcfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    pcfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    bank = BK.build_pilot_bank_ffr(qwen_tok, values=ffr_values)
+    by_cell: dict[str, list[dict]] = {}
+    for c in bank["contexts"].values():
+        by_cell.setdefault(c["cell"], []).append(c)
+    for cell, ctxs in by_cell.items():
+        rows = [
+            _json.dumps({"context_id": c["id"], "draw": d, "text": f"answer {c['id']} {d}"})
+            for c in ctxs
+            for d in range(pcfg.draws)
+        ]
+        (pcfg.anchors_dir / f"anchors_{cell}.jsonl").write_text("\n".join(rows) + "\n")
+        (pcfg.manifest_dir / f"anchors_{cell}.done.json").write_text(
+            _json.dumps({"regime_fp": D._cell_fp(pcfg, "A", cell), "n_rows": len(rows)})
+        )
+    return cfg
+
+
+class _FakeJudge:
+    """Stateful judge_graded stand-in (the external API boundary), built via
+    create_autospec so the call signature stays conformant by construction."""
+
+    def __init__(self, n_refusal_calls: int):
+        self.n_refusal_calls = n_refusal_calls
+        self.calls = 0
+
+    def __call__(self, items, eval_prompt, **kwargs):
+        self.calls += 1
+        scores: dict[str, float | None] = {a: 80.0 for a, _q, _t in items}
+        if self.calls <= self.n_refusal_calls:
+            first = items[0][0]
+            scores[first] = None
+            return JudgeResult(
+                scores=scores,
+                n_total_draws=len(items),
+                n_dropped_draws=0,
+                n_api_refusal_draws=1,
+                per_item_api_refusals={first: 1},
+            )
+        return JudgeResult(scores=scores, n_total_draws=len(items), n_dropped_draws=0)
+
+
+def _patch_judge(monkeypatch, fake: _FakeJudge):
+    spec = create_autospec(judge_graded, side_effect=fake)
+    monkeypatch.setattr("explore_persona_space.eval.graded_judge.judge_graded", spec)
+    return spec
+
+
+def test_ffr_pilot_judge_reissues_api_refusals_then_selects(
+    tmp_path, monkeypatch, qwen_tok, ffr_values
+):
+    """r1 blocker ffr-api-refusal-censoring: an api-refused draw is reissued
+    (rule 28), never blended into drops/noncompliance; sel_doc reports the
+    rules-9/24/28 classes separately."""
+    cfg = _pilot_fixture(tmp_path, qwen_tok, ffr_values)
+    fake = _FakeJudge(n_refusal_calls=1)
+    _patch_judge(monkeypatch, fake)
+    assert D.phase_pilot(cfg, qwen_tok, ffr_values) == D.RC_OK
+    assert fake.calls == 2  # first call refused one draw -> ONE reissue round
+    sel_doc = _json.loads((cfg.manifest_dir / "pilot_selection.json").read_text())
+    j = sel_doc["judge"]
+    assert j["n_api_refusal_draws"] == 0  # final merged state: refusal reissued
+    assert j["n_reissue_rounds"] == 1
+    assert j["n_content_dropped_draws"] == 0
+    assert j["n_transport_lost_draws"] == 0
+    assert sel_doc["n_dropped_judgments"] == 0  # refusal NEVER counted as a drop
+    assert set(sel_doc["selection"]["surviving_axes"]) == set(BK.FFR_AXES)
+    assert (cfg.out_root / "ffr_pilot_selection_done.json").is_file()
+
+
+def test_ffr_pilot_judge_persistent_refusal_fails_loud(tmp_path, monkeypatch, qwen_tok, ffr_values):
+    cfg = _pilot_fixture(tmp_path, qwen_tok, ffr_values)
+    fake = _FakeJudge(n_refusal_calls=99)
+    _patch_judge(monkeypatch, fake)
+    with pytest.raises(RuntimeError, match="api-refusal"):
+        D.phase_pilot(cfg, qwen_tok, ffr_values)
+    assert fake.calls == 1 + JD.FFR_JUDGE_REISSUE_ROUNDS
+    assert not (cfg.manifest_dir / "pilot_selection.json").exists()
+
+
+def test_ffr_pilot_selection_fp_pins_judge_instrument_and_upload(
+    tmp_path, monkeypatch, qwen_tok, ffr_values
+):
+    """r1 codex concern ffr-selection-sentinel-fingerprint: the selection
+    sentinel skip invalidates when the judge instrument changes; the upload
+    destination is part of the fingerprint."""
+    cfg = _pilot_fixture(tmp_path, qwen_tok, ffr_values)
+    fake = _FakeJudge(n_refusal_calls=0)
+    _patch_judge(monkeypatch, fake)
+    assert D.phase_pilot(cfg, qwen_tok, ffr_values) == D.RC_OK
+    assert fake.calls == 1
+    # sentinel skip: a re-run with the same instrument judges NOTHING
+    assert D.phase_pilot(cfg, qwen_tok, ffr_values) == D.RC_OK
+    assert fake.calls == 1
+    # instrument change invalidates the sentinel -> re-judge
+    monkeypatch.setattr(JD, "JUDGE_MODEL", "some-other-judge")
+    assert D.phase_pilot(cfg, qwen_tok, ffr_values) == D.RC_OK
+    assert fake.calls == 2
+    # upload destination is fingerprinted (a --upload none completion cannot
+    # satisfy a later --upload hf run)
+    pcfg = D._pilot_cfg(cfg)
+    assert D._pilot_selection_fp(_replace(pcfg, upload="hf")) != D._pilot_selection_fp(pcfg)

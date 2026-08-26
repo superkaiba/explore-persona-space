@@ -30,6 +30,18 @@ delta framing, asserted numerically on a random subset via
 
 Seeds (plan §9/§11): carrier-clustered bootstrap B=10,000 seed 2215;
 derangement null B=10,000 seed 21620; 20 split-half splits seed 2564.
+
+``--round ffr`` (floor-failed re-elicitation, plan v7 — additive; the parent
+path is byte-unchanged at default flags): HF rels nest the
+``floor_failed_reelicitation`` round segment under each kind root; outputs are
+``eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json``
++ ``perpair_ffr.jsonl`` + predictions →
+``issue2564_minpair/analysis_tensors/floor_failed_reelicitation/predictions``;
+the calibration family's PRIMARY ratio denominator is the parent's FROZEN
+per-arm global slope (read from the committed parent ``minpair_delta.json``,
+``--parent-delta`` override) with the round-pooled slope as companion; text
+third-space reads are emitted ``not_collected`` (no Qwen3 embedding capture
+in this round).
 """
 
 from __future__ import annotations
@@ -78,6 +90,12 @@ ISSUE = 2564
 HF_DATA_REPO = os.environ.get("EPM_2564_DATA_WRITE_REPO", "superkaiba1/explore-persona-space-data")
 HF_PREFIX_FULL = "issue2564_minpair"
 HF_PREFIX_SMOKE = "issue2564_minpair/smoke"
+HF_PREFIX_SMOKE_FFR = "issue2564_minpair/smoke_ffr"
+# floor-failed re-elicitation round (plan v7): HF rels nest the round segment
+# under the kind root (run.py hf_round_prefix layout); results live beside the
+# parent's under eval_results/issue_2564/floor-failed-reelicitation/.
+FFR_ROUND_SEG = "floor_failed_reelicitation"
+FFR_RESULTS_DIRNAME = "floor-failed-reelicitation"
 RIDGE_779_PATH = "issue779_monitoring/n1m_readout/weights/L19/ridge.pt"
 RIDGE_1738_PATH = "issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt"
 
@@ -317,11 +335,25 @@ class CfgPE:
     b_null: int
     n_splits: int
     hf_prefix: str
+    round: str = "parent"
+    parent_delta: Path | None = None  # ffr only: parent minpair_delta.json (frozen slopes)
     seed_base: int = BOOT_SEED
+
+    @property
+    def is_ffr(self) -> bool:
+        return self.round == "ffr"
 
     @property
     def pred_dir(self) -> Path:
         return self.out_dir / "predictions"
+
+    @property
+    def delta_name(self) -> str:
+        return "minpair_delta_ffr.json" if self.is_ffr else "minpair_delta.json"
+
+    @property
+    def perpair_name(self) -> str:
+        return "perpair_ffr.jsonl" if self.is_ffr else "perpair.jsonl"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -333,6 +365,20 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--ridge-779", type=Path, default=None, help="local ridge payload override")
     ap.add_argument("--ridge-1738", type=Path, default=None)
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--round",
+        choices=("parent", "ffr"),
+        default="parent",
+        help="ffr = floor-failed re-elicitation round (plan v7): round-nested HF "
+        "rels, ffr out names, frozen parent global-slope denominator",
+    )
+    ap.add_argument(
+        "--parent-delta",
+        type=Path,
+        default=None,
+        help="ffr only: parent minpair_delta.json carrying the frozen per-arm "
+        "global slopes (default: the committed production copy)",
+    )
     ap.add_argument("--upload", choices=("hf", "none"), default=None)
     ap.add_argument("--b-boot", type=int, default=None)
     ap.add_argument("--b-null", type=int, default=None)
@@ -355,16 +401,23 @@ def build_config(args: argparse.Namespace) -> CfgPE:
     silently gating smoke reads on it would mask wiring bugs.
     """
     smoke = bool(args.smoke)
+    rnd = str(getattr(args, "round", "parent"))
+    is_ffr = rnd == "ffr"
+    if getattr(args, "parent_delta", None) is not None and not is_ffr:
+        raise SystemExit("--parent-delta is an ffr-only flag (pass --round ffr)")
     repo_root = P2564.repo_root()
     if args.out_dir is not None:
         out_dir = Path(args.out_dir)
-    elif smoke:
-        out_dir = P2564.smoke_results_dir()
     else:
-        out_dir = P2564.production_results_dir()
-    default_stage = (
-        repo_root / "data" / "issue_2564" / "hf_dl" / ("pe_stage_smoke" if smoke else "pe_stage")
-    )
+        base = P2564.smoke_results_dir() if smoke else P2564.production_results_dir()
+        out_dir = base / FFR_RESULTS_DIRNAME if is_ffr else base
+    stage_leaf = {
+        (False, False): "pe_stage",
+        (True, False): "pe_stage_smoke",
+        (False, True): "pe_stage_ffr",
+        (True, True): "pe_stage_ffr_smoke",
+    }[(smoke, is_ffr)]
+    default_stage = repo_root / "data" / "issue_2564" / "hf_dl" / stage_leaf
     if args.manip_check is not None:
         manip = Path(args.manip_check)
     elif smoke:
@@ -373,8 +426,21 @@ def build_config(args: argparse.Namespace) -> CfgPE:
             "read the committed PRODUCTION manipulation_check.json (its fire verdicts come "
             "from a different regime and would gate the smoke reads)."
         )
+    elif is_ffr:
+        manip = P2564.production_results_dir() / FFR_RESULTS_DIRNAME / "manipulation_check_ffr.json"
     else:
         manip = P2564.production_results_dir() / "manipulation_check.json"
+    parent_delta: Path | None = None
+    if is_ffr:
+        parent_delta = (
+            Path(args.parent_delta)
+            if args.parent_delta is not None
+            else P2564.production_results_dir() / "minpair_delta.json"
+        )
+    if smoke:
+        hf_prefix = HF_PREFIX_SMOKE_FFR if is_ffr else HF_PREFIX_SMOKE
+    else:
+        hf_prefix = HF_PREFIX_FULL
     return CfgPE(
         in_root=Path(args.in_root) if args.in_root else None,
         out_dir=out_dir,
@@ -387,7 +453,9 @@ def build_config(args: argparse.Namespace) -> CfgPE:
         b_boot=int(args.b_boot) if args.b_boot is not None else (100 if smoke else B_BOOT_DEFAULT),
         b_null=int(args.b_null) if args.b_null is not None else (100 if smoke else B_NULL_DEFAULT),
         n_splits=int(args.n_splits),
-        hf_prefix=HF_PREFIX_SMOKE if smoke else HF_PREFIX_FULL,
+        hf_prefix=hf_prefix,
+        round=rnd,
+        parent_delta=parent_delta,
     )
 
 
@@ -396,18 +464,33 @@ def build_config(args: argparse.Namespace) -> CfgPE:
 
 def resolve_input(cfg: CfgPE, rel: str) -> Path:
     """``<in_root>/<rel>`` when present, else stage ``<hf_prefix>/<rel>`` from
-    the HF data repo (retried, atomic, idempotent via hub.stage_hub_file)."""
+    the HF data repo (retried, atomic, idempotent via hub.stage_hub_file).
+
+    Under ``--round ffr`` the HUB rel nests every kind-rooted rel
+    (``analysis_tensors/...``, ``manifests/...``) under the round segment,
+    mirroring run.py's ``hf_round_prefix`` upload layout — but the PRODUCER's
+    local out-root is NOT round-nested (run.py isolates the ffr round via a
+    SEPARATE out-root, ``/workspace/eps2564ffr``), so an ``--in-root`` pointed
+    at the pod out-root is probed at the producer layout FIRST, then at the
+    HF-mirror (nested) layout (r1 blocker ffr-analysis-artifact-path-drift).
+    Frozen ridge payloads resolve via resolve_ridge and are round-independent."""
+    hub_rel = rel
+    if cfg.is_ffr:
+        kind, _, rest = rel.partition("/")
+        assert rest, f"kind-rooted rel expected, got {rel!r}"
+        hub_rel = f"{kind}/{FFR_ROUND_SEG}/{rest}"
     if cfg.in_root is not None:
-        cand = cfg.in_root / rel
-        if cand.exists():
-            return cand
-    target = cfg.stage_dir / rel
+        for cand_rel in dict.fromkeys((rel, hub_rel)):
+            cand = cfg.in_root / cand_rel
+            if cand.exists():
+                return cand
+    target = cfg.stage_dir / hub_rel
     if target.exists():
         return target
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
-    logger.info("[pe] staging %s/%s from %s", cfg.hf_prefix, rel, HF_DATA_REPO)
-    return Path(stage_hub_file(HF_DATA_REPO, f"{cfg.hf_prefix}/{rel}", target))
+    logger.info("[pe] staging %s/%s from %s", cfg.hf_prefix, hub_rel, HF_DATA_REPO)
+    return Path(stage_hub_file(HF_DATA_REPO, f"{cfg.hf_prefix}/{hub_rel}", target))
 
 
 def resolve_ridge(cfg: CfgPE, local: Path | None, repo_path: str) -> Path:
@@ -452,7 +535,7 @@ class Stores:
     n_valid: np.ndarray  # (n_ctx,)
     ans_len_mean: np.ndarray  # (n_ctx,) mean completion tokens over valid draws
     vc: dict[int, np.ndarray]  # layer -> (n_ctx, d) float64
-    emb_mean: np.ndarray  # (n_ctx, e) float64
+    emb_mean: np.ndarray | None  # (n_ctx, e) float64; None under ffr (not collected)
     d: int
     input_files: dict = field(default_factory=dict)
 
@@ -465,13 +548,23 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def load_bank_manifest(path: Path) -> dict:
+def load_bank_manifest(path: Path, *, is_ffr: bool = False) -> dict:
+    """Load + validate the bank manifest. The parent bank pins the frozen
+    grid constants; the ffr bank's size is selection-dependent (surviving
+    axes x realized widths), so it asserts INTERNAL consistency instead."""
     bank = json.loads(Path(path).read_text())
-    assert bank["n_contexts"] == BK.N_CONTEXTS and bank["n_pairs"] == BK.N_PAIRS, (
-        bank["n_contexts"],
-        bank["n_pairs"],
-    )
-    assert len(bank["pairs"]) == BK.N_PAIRS
+    if is_ffr:
+        assert bank["n_contexts"] == len(bank["contexts"]), (
+            bank["n_contexts"],
+            len(bank["contexts"]),
+        )
+        assert bank["n_pairs"] == len(bank["pairs"]), (bank["n_pairs"], len(bank["pairs"]))
+    else:
+        assert bank["n_contexts"] == BK.N_CONTEXTS and bank["n_pairs"] == BK.N_PAIRS, (
+            bank["n_contexts"],
+            bank["n_pairs"],
+        )
+        assert len(bank["pairs"]) == BK.N_PAIRS
     for p in bank["pairs"]:
         assert "changed_tokens" in p, (p["pair_id"], "bank manifest missing changed_tokens")
     return bank
@@ -567,15 +660,20 @@ def load_stores(cfg: CfgPE, bank: dict) -> Stores:
         tail_draws[ctx_v, draw_v] = rows_v
         draw_valid[ctx_v, draw_v] = True
 
-    emb_path = resolve_input(cfg, "analysis_tensors/embeddings_qwen3_8b/means_anchors.npz")
-    with np.load(emb_path, allow_pickle=False) as z:
-        emb_ids = [str(x) for x in z["context_ids"].tolist()]
-        emb = z["emb_mean"].astype(np.float64)
-    files["means_anchors.npz"] = {"path": str(emb_path), "bytes": emb_path.stat().st_size}
-    emb_of = {cid: i for i, cid in enumerate(emb_ids)}
-    missing_emb = [cid for cid in ctx_ids if cid not in emb_of]
-    assert not missing_emb, f"contexts missing from embedding means: {missing_emb[:5]}"
-    emb_mean = emb[[emb_of[cid] for cid in ctx_ids]]
+    if cfg.is_ffr:
+        # the ffr round collects NO Qwen3-Embedding-8B answer embeddings —
+        # text third-space rows are emitted as not_collected (plan v7 §5).
+        emb_mean = None
+    else:
+        emb_path = resolve_input(cfg, "analysis_tensors/embeddings_qwen3_8b/means_anchors.npz")
+        with np.load(emb_path, allow_pickle=False) as z:
+            emb_ids = [str(x) for x in z["context_ids"].tolist()]
+            emb = z["emb_mean"].astype(np.float64)
+        files["means_anchors.npz"] = {"path": str(emb_path), "bytes": emb_path.stat().st_size}
+        emb_of = {cid: i for i, cid in enumerate(emb_ids)}
+        missing_emb = [cid for cid in ctx_ids if cid not in emb_of]
+        assert not missing_emb, f"contexts missing from embedding means: {missing_emb[:5]}"
+        emb_mean = emb[[emb_of[cid] for cid in ctx_ids]]
 
     return Stores(
         ctx_ids=ctx_ids,
@@ -616,9 +714,10 @@ class PairArrays:
     n: int
 
 
-def build_pair_arrays(bank: dict, st: Stores, smoke: bool) -> PairArrays:
+def build_pair_arrays(bank: dict, st: Stores, smoke: bool, *, is_ffr: bool = False) -> PairArrays:
     """Restrict the frozen bank's pairs to contexts present in the stores;
-    production (non-smoke) asserts FULL 2,778/984 coverage."""
+    production (non-smoke) asserts FULL coverage — the frozen 2,778/984 grid
+    for the parent, the realized bank's own counts for the ffr round."""
     car_of = {c: i for i, c in enumerate(st.carriers)}
     keep: list[dict] = []
     for p in bank["pairs"]:
@@ -627,8 +726,10 @@ def build_pair_arrays(bank: dict, st: Stores, smoke: bool) -> PairArrays:
     if not keep:
         raise RuntimeError("empty pair selection: no bank pair has both contexts in the stores")
     if not smoke:
-        assert len(st.ctx_ids) == BK.N_CONTEXTS, (len(st.ctx_ids), BK.N_CONTEXTS)
-        assert len(keep) == BK.N_PAIRS, (len(keep), BK.N_PAIRS)
+        exp_ctx = bank["n_contexts"] if is_ffr else BK.N_CONTEXTS
+        exp_pairs = bank["n_pairs"] if is_ffr else BK.N_PAIRS
+        assert len(st.ctx_ids) == exp_ctx, (len(st.ctx_ids), exp_ctx)
+        assert len(keep) == exp_pairs, (len(keep), exp_pairs)
 
     ids, cls, axis, va_, vb_, cstr, orient = [], [], [], [], [], [], []
     a_i, b_i, ca_i, cb_i, dy, chg = [], [], [], [], [], []
@@ -692,6 +793,76 @@ def load_fire(manip_path: Path) -> dict:
             fired[t][key] = r["sensitivity"][str(t)] == "fired"
     axis_rows = {r["axis"]: r for r in doc.get("axis_rows", [])}
     return {"fired": fired, "value_rows": rows, "axis_rows": axis_rows, "meta": doc.get("meta", {})}
+
+
+def validate_fire_coverage_ffr(bank: dict, fire: dict) -> None:
+    """FFR production fire-gate coverage — fail loud BEFORE any tensor load.
+
+    ``pair_fired_mask``'s no-row default (fired) and the axis-floor
+    ``axis_rows.get`` default (floor met) are the PARENT's sanctioned
+    unchecked-axis semantics; under ffr an incomplete / wrong-round /
+    schema-drifted ``manipulation_check_ffr.json`` must never silently admit
+    unchecked values (r1 blocker ffr-fire-gate-fails-open). Required coverage
+    is derived from the bank's OWN selection: every selected wording (base +
+    paraphrase) on every surviving axis has exactly one value row, and every
+    surviving axis has a floor-verdict-bearing axis row. The install-side
+    bare anchor ``E`` (and query values generally) is the only value
+    legitimately without a fire row — it never enters the required set.
+    """
+    selected = bank.get("selected")
+    if not isinstance(selected, dict) or not selected:
+        raise RuntimeError(
+            "ffr bank manifest missing a non-empty 'selected' map — not a "
+            "production ffr bank (all-axes-fail rounds never reach analysis)"
+        )
+    if fire["meta"].get("round") != "ffr":
+        raise RuntimeError(
+            "manipulation check is not an ffr document "
+            f"(meta.round={fire['meta'].get('round')!r}) — wrong-round "
+            "manipulation_check_ffr.json?"
+        )
+    required: set[tuple[str, str]] = set()
+    for axis, vids in selected.items():
+        for vid in vids:
+            required.add((axis, vid))
+            required.add((axis, f"{vid}p"))
+    present = set(fire["value_rows"])
+    missing = sorted(required - present)
+    extra = sorted(present - required)
+    if missing or extra:
+        raise RuntimeError(
+            "ffr manipulation-check value-row coverage mismatch: "
+            f"{len(missing)} missing {missing[:6]}, {len(extra)} extra {extra[:6]} "
+            "— incomplete or wrong-round manipulation_check_ffr.json"
+        )
+    bad_axes = sorted(
+        axis for axis in selected if "floor_met" not in fire["axis_rows"].get(axis, {})
+    )
+    if bad_axes:
+        raise RuntimeError(
+            "ffr manipulation-check axis rows missing floor verdicts for "
+            f"surviving axes: {bad_axes} — incomplete or wrong-round "
+            "manipulation_check_ffr.json"
+        )
+
+
+def load_parent_frozen_slopes(path: Path) -> dict[str, float]:
+    """Per-arm PARENT global slopes (``global_slope_all2778``) from the
+    committed parent minpair_delta.json — the FROZEN primary ratio denominator
+    for the ffr round (plan v7 §5: the round's own pooled slope over <=792
+    pairs is reported beside it as a companion). The parent doc stores one
+    global value per axis block; asserted identical across axes."""
+    doc = json.loads(Path(path).read_text())
+    out: dict[str, float] = {}
+    for arm in ARMS:
+        vals = {
+            float(ax["calibration"][arm]["global_slope_all2778"]) for ax in doc["axes"].values()
+        }
+        assert len(vals) == 1, (arm, sorted(vals))
+        v = vals.pop()
+        assert math.isfinite(v) and v > 0, (arm, v)
+        out[arm] = v
+    return out
 
 
 def pair_fired_mask(pa: PairArrays, fire: dict, threshold: int) -> tuple[np.ndarray, np.ndarray]:
@@ -1008,10 +1179,20 @@ def boot_pairmean_cos_median(
 # ── main analysis ──────────────────────────────────────────────────────
 
 
-def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, list[dict], dict]:
-    """All §6 reads. Returns (minpair_delta doc, perpair rows, predictions)."""
+def compute_all(
+    cfg: CfgPE,
+    bank: dict,
+    st: Stores,
+    fire: dict,
+    frozen_global: dict[str, float] | None = None,
+) -> tuple[dict, list[dict], dict]:
+    """All §6 reads. Returns (minpair_delta doc, perpair rows, predictions).
+
+    ``frozen_global`` (ffr only) carries the parent's per-arm global slopes;
+    when present the calibration family reports ratio_to_parent_global as the
+    PRIMARY ratio with the round-pooled slope as companion (plan v7 §5)."""
     t0 = time.time()
-    pa = build_pair_arrays(bank, st, cfg.smoke)
+    pa = build_pair_arrays(bank, st, cfg.smoke, is_ffr=cfg.is_ffr)
     n_car = len(st.carriers)
     d = st.d
 
@@ -1020,7 +1201,7 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
         layer: st.va_tail_mean[layer][pa.a] - st.va_tail_mean[layer][pa.b] for layer in LAYERS
     }
     obs_span19 = st.va_span_mean[PRIMARY_LAYER][pa.a] - st.va_span_mean[PRIMARY_LAYER][pa.b]
-    delta_text = st.emb_mean[pa.a] - st.emb_mean[pa.b]
+    delta_text = None if st.emb_mean is None else st.emb_mean[pa.a] - st.emb_mean[pa.b]
 
     dev = torch.device("cpu")
     ridge_779 = resolve_ridge(cfg, cfg.ridge_779, RIDGE_779_PATH)
@@ -1063,7 +1244,7 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
     norm_obs = {layer: np.linalg.norm(obs_tail[layer], axis=1) for layer in LAYERS}
     norm_obs_span = np.linalg.norm(obs_span19, axis=1)
     norm_pred = {arm: np.linalg.norm(pred[arm], axis=1) for arm in ARMS}
-    norm_text = np.linalg.norm(delta_text, axis=1)
+    norm_text = None if delta_text is None else np.linalg.norm(delta_text, axis=1)
     dlen = st.ans_len_mean[pa.a] - st.ans_len_mean[pa.b]
 
     rel = split_half_stats(st, pa, cfg.n_splits)
@@ -1091,8 +1272,14 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
 
     views = build_axis_views(pa, n_car)
     if not cfg.smoke:
-        missing_axes = [a for a in AXES_ALL if a not in views]
-        assert not missing_axes, f"axes missing from production stores: {missing_axes}"
+        if cfg.is_ffr:
+            # the ffr bank spans only the pilot's SURVIVING axes (a subset of
+            # FFR_AXES); build_pair_arrays already asserted full-bank coverage.
+            unexpected = [a for a in views if a not in BK.FFR_AXES]
+            assert not unexpected, f"non-ffr axes in ffr stores: {unexpected}"
+        else:
+            missing_axes = [a for a in AXES_ALL if a not in views]
+            assert not missing_axes, f"axes missing from production stores: {missing_axes}"
 
     def wm(vals: np.ndarray, sel: np.ndarray) -> tuple[float, list[float]]:
         pt = float(np.nanmean(vals[sel])) if sel.size else float("nan")
@@ -1243,7 +1430,18 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
 
         # family 2: calibration (headline floor-gated; *_all_values companions
         # for the ratio + CI reads too — r3 concern all-values-companions-incomplete —
-        # under the SAME carrier-clustered bootstrap draws)
+        # under the SAME carrier-clustered bootstrap draws).
+        # Pool-size-honest key names under ffr (r1 codex nit
+        # ffr-round-pooled-legacy-labels): the parent keys embed the PARENT
+        # pool sizes (2,778 all-pairs / 864 swaps) which the ffr round never
+        # has (<=792 / <=252), so the ffr round-pooled keys are named
+        # *_round_pooled / *_round_swap instead. Parent keys byte-unchanged.
+        if cfg.is_ffr:
+            k_pool_slope, k_pool_ratio = "global_slope_round_pooled", "ratio_to_round_pooled"
+            k_swap_slope, k_swap_ratio = "global_slope_round_swap", "ratio_to_round_swap"
+        else:
+            k_pool_slope, k_pool_ratio = "global_slope_all2778", "ratio_to_global"
+            k_swap_slope, k_swap_ratio = "global_slope_swap864", "ratio_to_global_swap864"
         calibration = {}
         for arm in ARMS:
             ax_pt = through_origin_slope(norm_pred[arm][head], norm_obs[PRIMARY_LAYER][head])
@@ -1260,23 +1458,48 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 "axis_slope_ci95": _ci(ax_draws),
                 "axis_slope_all_values": ax_all_pt,
                 "axis_slope_ci95_all_values": _ci(ax_all_draws),
-                "global_slope_all2778": global_slope[arm],
-                "ratio_to_global": ax_pt / global_slope[arm] if global_slope[arm] else float("nan"),
-                "ratio_to_global_ci95": _ci(ratio_draws),
-                "ratio_to_global_all_values": (
+                k_pool_slope: global_slope[arm],
+                k_pool_ratio: ax_pt / global_slope[arm] if global_slope[arm] else float("nan"),
+                f"{k_pool_ratio}_ci95": _ci(ratio_draws),
+                f"{k_pool_ratio}_all_values": (
                     ax_all_pt / global_slope[arm] if global_slope[arm] else float("nan")
                 ),
-                "ratio_to_global_ci95_all_values": _ci(ratio_all_draws),
-                "global_slope_swap864": global_slope_swap[arm],
-                "ratio_to_global_swap864": (
+                f"{k_pool_ratio}_ci95_all_values": _ci(ratio_all_draws),
+                k_swap_slope: global_slope_swap[arm],
+                k_swap_ratio: (
                     ax_pt / global_slope_swap[arm] if global_slope_swap[arm] else float("nan")
                 ),
-                "ratio_to_global_swap864_ci95": _ci(ratio_swap_draws),
-                "ratio_to_global_swap864_all_values": (
+                f"{k_swap_ratio}_ci95": _ci(ratio_swap_draws),
+                f"{k_swap_ratio}_all_values": (
                     ax_all_pt / global_slope_swap[arm] if global_slope_swap[arm] else float("nan")
                 ),
-                "ratio_to_global_swap864_ci95_all_values": _ci(ratio_swap_all_draws),
+                f"{k_swap_ratio}_ci95_all_values": _ci(ratio_swap_all_draws),
             }
+            if frozen_global is not None:
+                # ffr (plan v7 §5): the PRIMARY ratio denominator is the
+                # parent's FROZEN per-arm global slope; the round-pooled
+                # global_slope_round_pooled keys above (round pool, <=792
+                # pairs) stay populated as the companion. The denominator is a
+                # fixed constant, so the CI comes from the axis-slope draws
+                # alone.
+                fg = frozen_global[arm]
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    ratio_frozen_draws = ax_draws / fg
+                    ratio_frozen_all_draws = ax_all_draws / fg
+                calibration[arm].update(
+                    {
+                        "global_slope_parent_frozen": fg,
+                        "ratio_to_parent_global": ax_pt / fg if fg else float("nan"),
+                        "ratio_to_parent_global_ci95": _ci(ratio_frozen_draws),
+                        "ratio_to_parent_global_all_values": (
+                            ax_all_pt / fg if fg else float("nan")
+                        ),
+                        "ratio_to_parent_global_ci95_all_values": _ci(ratio_frozen_all_draws),
+                        "primary_denominator": "global_slope_parent_frozen "
+                        "(parent's realized global slope; round-pooled "
+                        "global_slope_round_pooled is the companion)",
+                    }
+                )
 
         # family 3: axis identity (carrier-mean per vp; headline = fired-vp
         # subset under the floor gate; all-values companions always reported)
@@ -1410,61 +1633,70 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
             if headline_ok and view.para_idx.size
             else np.array([], dtype=np.int64)
         )
-        flip_txt_pt, flip_txt_ci = wm(norm_text, head)
-        flip_all_pt, flip_all_ci = wm(norm_text, prim)
-        para_txt_pt, para_txt_ci = wm(norm_text, para_head)
-        para_all_pt, para_all_ci = wm(norm_text, view.para_idx)
-        text_space = {
-            "flip_norm_mean": flip_txt_pt,
-            "flip_norm_ci95": flip_txt_ci,
-            "flip_norm_mean_all_values": flip_all_pt,
-            "flip_norm_ci95_all_values": flip_all_ci,
-            "paraphrase_null_norm_mean": para_txt_pt,
-            "paraphrase_null_norm_ci95": para_txt_ci,
-            "paraphrase_null_norm_mean_all_values": para_all_pt,
-            "paraphrase_null_norm_ci95_all_values": para_all_ci,
-            "flip_over_para_ratio": (
-                flip_txt_pt / para_txt_pt
-                if para_txt_pt and np.isfinite(para_txt_pt)
-                else float("nan")
-            ),
-            "flip_over_para_ratio_all_values": (
-                flip_all_pt / para_all_pt
-                if para_all_pt and np.isfinite(para_all_pt)
-                else float("nan")
-            ),
-            "note": "Qwen3-Embedding-8B mean answer embeddings (means of L2-normalized "
-            "per-draw rows, NOT re-normalized); observed only — no predicted arm exists "
-            "in text space",
-        }
-        if view.primary_grid is not None:
-            vp_fired_txt = fired[70][view.primary_grid[:, 0]]
-            pt_rows = np.array(
-                [
-                    offdiag_pairmean_cos(delta_text[view.primary_grid[v]])
-                    for v in range(len(view.primary_vps))
-                ]
-            )
-            cons_draws = boot_pairmean_cos_median(view.primary_grid, delta_text, idx_draws)
-            if headline_ok and vp_fired_txt.any():
-                cons_draws_h = boot_pairmean_cos_median(
-                    view.primary_grid[vp_fired_txt], delta_text, idx_draws
-                )
-                med_h_txt = float(np.nanmedian(pt_rows[vp_fired_txt]))
-                ci_h_txt = _ci(cons_draws_h)
-            else:
-                med_h_txt, ci_h_txt = float("nan"), [float("nan"), float("nan")]
-            text_space["cross_carrier_consistency"] = {
-                "per_vp_mean_pairwise_cos": {
-                    v: float(c) for v, c in zip(view.primary_vps, pt_rows)
-                },
-                "median": med_h_txt,
-                "median_ci95": ci_h_txt,
-                "median_all_values": float(np.nanmedian(pt_rows)),
-                "median_ci95_all_values": _ci(cons_draws),
+        if norm_text is None:
+            # ffr round: no Qwen3 answer-embedding capture (plan v7 §5) —
+            # the family is emitted as not_collected, never silently omitted.
+            text_space = {
+                "status": "not_collected",
+                "note": "ffr round collects no Qwen3-Embedding-8B answer embeddings; "
+                "text third-space reads are not_collected by design (plan v7 §5)",
             }
         else:
-            text_space["cross_carrier_consistency"] = None
+            flip_txt_pt, flip_txt_ci = wm(norm_text, head)
+            flip_all_pt, flip_all_ci = wm(norm_text, prim)
+            para_txt_pt, para_txt_ci = wm(norm_text, para_head)
+            para_all_pt, para_all_ci = wm(norm_text, view.para_idx)
+            text_space = {
+                "flip_norm_mean": flip_txt_pt,
+                "flip_norm_ci95": flip_txt_ci,
+                "flip_norm_mean_all_values": flip_all_pt,
+                "flip_norm_ci95_all_values": flip_all_ci,
+                "paraphrase_null_norm_mean": para_txt_pt,
+                "paraphrase_null_norm_ci95": para_txt_ci,
+                "paraphrase_null_norm_mean_all_values": para_all_pt,
+                "paraphrase_null_norm_ci95_all_values": para_all_ci,
+                "flip_over_para_ratio": (
+                    flip_txt_pt / para_txt_pt
+                    if para_txt_pt and np.isfinite(para_txt_pt)
+                    else float("nan")
+                ),
+                "flip_over_para_ratio_all_values": (
+                    flip_all_pt / para_all_pt
+                    if para_all_pt and np.isfinite(para_all_pt)
+                    else float("nan")
+                ),
+                "note": "Qwen3-Embedding-8B mean answer embeddings (means of L2-normalized "
+                "per-draw rows, NOT re-normalized); observed only — no predicted arm exists "
+                "in text space",
+            }
+            if view.primary_grid is not None:
+                vp_fired_txt = fired[70][view.primary_grid[:, 0]]
+                pt_rows = np.array(
+                    [
+                        offdiag_pairmean_cos(delta_text[view.primary_grid[v]])
+                        for v in range(len(view.primary_vps))
+                    ]
+                )
+                cons_draws = boot_pairmean_cos_median(view.primary_grid, delta_text, idx_draws)
+                if headline_ok and vp_fired_txt.any():
+                    cons_draws_h = boot_pairmean_cos_median(
+                        view.primary_grid[vp_fired_txt], delta_text, idx_draws
+                    )
+                    med_h_txt = float(np.nanmedian(pt_rows[vp_fired_txt]))
+                    ci_h_txt = _ci(cons_draws_h)
+                else:
+                    med_h_txt, ci_h_txt = float("nan"), [float("nan"), float("nan")]
+                text_space["cross_carrier_consistency"] = {
+                    "per_vp_mean_pairwise_cos": {
+                        v: float(c) for v, c in zip(view.primary_vps, pt_rows)
+                    },
+                    "median": med_h_txt,
+                    "median_ci95": ci_h_txt,
+                    "median_all_values": float(np.nanmedian(pt_rows)),
+                    "median_ci95_all_values": _ci(cons_draws),
+                }
+            else:
+                text_space["cross_carrier_consistency"] = None
 
         # family 7: surface sensitivity (descriptive; headline floor-gated,
         # all-values companions — r2 blocker 7 sweep) + edit-dose companion
@@ -1637,7 +1869,7 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
                 "ans_len_delta": float(dlen[i]),
                 "norm_obs_tail_L19": float(norm_obs[PRIMARY_LAYER][i]),
                 "norm_obs_span_L19": float(norm_obs_span[i]),
-                "norm_text": float(norm_text[i]),
+                "norm_text": float(norm_text[i]) if norm_text is not None else None,
                 "cos": {arm: float(cos_arm[arm][i]) for arm in ARMS},
                 "cos_span": {arm: float(cos_arm_span[arm][i]) for arm in ARMS},
                 "norm_pred": {arm: float(norm_pred[arm][i]) for arm in ARMS},
@@ -1701,10 +1933,22 @@ def compute_all(cfg: CfgPE, bank: dict, st: Stores, fire: dict) -> tuple[dict, l
         },
     }
 
+    # ffr-only meta additions (the parent doc's key set stays byte-identical)
+    round_meta: dict = {}
+    if cfg.is_ffr:
+        assert frozen_global is not None, "ffr round requires the parent frozen slopes"
+        round_meta["round"] = "ffr"
+        round_meta["frozen_global_slope"] = {
+            "source": str(cfg.parent_delta),
+            "per_arm": dict(frozen_global),
+            "note": "parent's realized per-arm global slope (global_slope_all2778), "
+            "the PRIMARY ratio denominator for this round (plan v7 §5)",
+        }
     doc = {
         "meta": {
             "issue": ISSUE,
             "phase": "pe_analysis",
+            **round_meta,
             "smoke": cfg.smoke,
             "layer_primary": PRIMARY_LAYER,
             "layers": list(LAYERS),
@@ -1764,9 +2008,9 @@ def _json_sanitize(obj):
 
 def write_outputs(cfg: CfgPE, doc: dict, perpair: list[dict], predictions: dict) -> dict:
     cfg.out_dir.mkdir(parents=True, exist_ok=True)
-    _write_json_atomic(cfg.out_dir / "minpair_delta.json", _json_sanitize(doc))
+    _write_json_atomic(cfg.out_dir / cfg.delta_name, _json_sanitize(doc))
     rows = [json.dumps(_json_sanitize(r), sort_keys=True) for r in perpair]
-    with atomic_replace(cfg.out_dir / "perpair.jsonl") as tmp:
+    with atomic_replace(cfg.out_dir / cfg.perpair_name) as tmp:
         tmp.write_text("\n".join(rows) + "\n")
 
     cfg.pred_dir.mkdir(parents=True, exist_ok=True)
@@ -1785,10 +2029,15 @@ def write_outputs(cfg: CfgPE, doc: dict, perpair: list[dict], predictions: dict)
     if cfg.upload == "hf":
         from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
+        pred_prefix = (
+            f"{cfg.hf_prefix}/analysis_tensors/{FFR_ROUND_SEG}/predictions"
+            if cfg.is_ffr
+            else f"{cfg.hf_prefix}/analysis_tensors/predictions"
+        )
         res = upload_dir_sharded(
             cfg.pred_dir,
             HF_DATA_REPO,
-            f"{cfg.hf_prefix}/analysis_tensors/predictions",
+            pred_prefix,
             shard_glob="*.pt",
             resume_skip=False,
             delete_local=False,
@@ -1816,28 +2065,52 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     cfg = build_config(args)
     print(
-        f"[phase=pe_analysis] smoke={cfg.smoke} in_root={cfg.in_root} out_dir={cfg.out_dir} "
-        f"b_boot={cfg.b_boot} b_null={cfg.b_null} n_splits={cfg.n_splits} upload={cfg.upload}",
+        f"[phase=pe_analysis] round={cfg.round} smoke={cfg.smoke} in_root={cfg.in_root} "
+        f"out_dir={cfg.out_dir} b_boot={cfg.b_boot} b_null={cfg.b_null} "
+        f"n_splits={cfg.n_splits} upload={cfg.upload}",
         flush=True,
     )
-    bank_path = resolve_input(cfg, "manifests/bank2564_manifest.json")
-    bank = load_bank_manifest(bank_path)
+    frozen_global: dict[str, float] | None = None
+    if cfg.is_ffr:
+        assert cfg.parent_delta is not None and cfg.parent_delta.exists(), (
+            f"parent minpair_delta.json missing: {cfg.parent_delta}"
+        )
+        frozen_global = load_parent_frozen_slopes(cfg.parent_delta)
+        logger.info("[pe] frozen parent global slopes: %s", frozen_global)
+    # producer↔consumer name parity (r1 blocker ffr-bank-manifest-name-mismatch):
+    # the ffr basename is the SHARED BK constant run.py writes/uploads; pinned
+    # by tests/test_issue2564_ffr.py::test_ffr_bank_manifest_name_parity.
+    bank_rel = (
+        f"manifests/{BK.FFR_BANK_MANIFEST_FILENAME}"
+        if cfg.is_ffr
+        else "manifests/bank2564_manifest.json"
+    )
+    bank_path = resolve_input(cfg, bank_rel)
+    bank = load_bank_manifest(bank_path, is_ffr=cfg.is_ffr)
     assert cfg.manip_check.exists(), f"manipulation check missing: {cfg.manip_check}"
     fire = load_fire(cfg.manip_check)
+    if cfg.is_ffr:
+        validate_fire_coverage_ffr(bank, fire)
     st = load_stores(cfg, bank)
-    st.input_files["bank2564_manifest.json"] = {
+    st.input_files[Path(bank_rel).name] = {
         "path": str(bank_path),
         "bytes": bank_path.stat().st_size,
         "sha256": _sha256(bank_path),
     }
-    st.input_files["manipulation_check.json"] = {
+    st.input_files[cfg.manip_check.name] = {
         "path": str(cfg.manip_check),
         "bytes": cfg.manip_check.stat().st_size,
     }
-    doc, perpair, predictions = compute_all(cfg, bank, st, fire)
+    if cfg.is_ffr and cfg.parent_delta is not None:
+        st.input_files["parent_minpair_delta.json"] = {
+            "path": str(cfg.parent_delta),
+            "bytes": cfg.parent_delta.stat().st_size,
+            "sha256": _sha256(cfg.parent_delta),
+        }
+    doc, perpair, predictions = compute_all(cfg, bank, st, fire, frozen_global=frozen_global)
     upload = write_outputs(cfg, doc, perpair, predictions)
     print(
-        f"[pe] wrote {cfg.out_dir / 'minpair_delta.json'} + perpair.jsonl "
+        f"[pe] wrote {cfg.out_dir / cfg.delta_name} + {cfg.perpair_name} "
         f"({len(perpair)} rows) + predictions ({upload})",
         flush=True,
     )
