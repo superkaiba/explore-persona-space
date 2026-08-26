@@ -109,6 +109,13 @@
 #   eval_results/issue_2329/cap_hit — test_issue2329_gate3_capfresh.py sha-pins +
 #                             re-validates the committed frozen capregen breach
 #                             basis (cap_hit_report_anchors_preregen.json, ~30K)
+#   eval_results/issue_1979/{config,race} — test_issue2569_gateladder.py::
+#                             test_load_banked_frames_committed loads the banked
+#                             #1979 config + the 18 committed race frames
+#                             (fail-loud reads; fresh sparse-worktree
+#                             FileNotFoundError otherwise, the #671 class).
+#                             Narrow cones: full issue_1979 is 14M, config+race
+#                             is ~1.4M (judge/ 12M never read by tests).
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -137,4 +144,6 @@ eval_results/issue_1739/dv_dataset
 eval_results/issue_2094/f_metrics
 eval_results/issue_2333/inputs
 eval_results/issue_2163
+eval_results/issue_1979/config
+eval_results/issue_1979/race
 eval_results/issue_823

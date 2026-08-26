@@ -5,7 +5,9 @@ Every value plotted here is READ from a persisted JSON/NPZ written by a landed
 #2569 driver; nothing is re-derived (no operator products, no SVDs, no fits).
 Each figure function is input-guarded: a missing phase artifact records a skip
 in ``<fig-dir>/figures_manifest.json`` instead of crashing the batch (P-F may
-run while some pods are still up). Rendering follows the paper-plots
+run while some pods are still up). An ALL-skipped run exits 1 (a wrong
+--results-root is a silent no-op otherwise); a zero-ink marker series (open
+marker under the production style's markeredgewidth=0) raises RuntimeError. Rendering follows the paper-plots
 conventions: ``set_paper_style`` rcParams, ``savefig_paper`` sidecars, axes +
 ticks + legend + panel titles only (no caption blocks, no value annotations;
 identity labels on small per-unit plots are the one sanctioned text overlay).
@@ -96,6 +98,14 @@ COLOR_PRIMARY = _PAL[0]  # the fitted / observed / primary object of a panel
 COLOR_COMPARISON = _PAL[1]  # comparison route / control pairs / companions
 COLOR_THEORY = _PAL[5]  # closed-form theory prediction (leg 2 curve)
 COLOR_NEUTRAL = paper_palette_role("neutral")  # nulls, chance, floors, references
+
+# Production style trap: set_paper_style("blog") pins lines.markeredgewidth to
+# 0, so any OPEN marker (mfc="none") or edge-only marker ("|", "+", "x") with
+# no explicit mew= draws ZERO ink -- the series vanishes from axes AND legend
+# while every artist count stays green. Every open/edge-only marker site in
+# this module passes an explicit mew; _assert_marker_ink() in _render() is the
+# fail-loud backstop for the next such site.
+MEW_OPEN = 1.2
 
 DISPLAY: dict[str, str] = {
     # leg-2 gate rungs (plan §5 config slugs gate_I..gate_wwt)
@@ -231,8 +241,71 @@ def _finite(vals) -> np.ndarray:
     return a[np.isfinite(a)]
 
 
+def _marker_line_has_ink(line: plt.Line2D) -> bool:
+    """True when the Line2D's MARKER glyph (if any) draws visible ink.
+
+    Under ``set_paper_style("blog")`` ``lines.markeredgewidth`` is 0, so an
+    open marker (``mfc="none"``) with no explicit ``mew=`` has no face AND no
+    edge, and an edge-only marker ("|", "+", "x") has no ink at all. A line
+    with no marker requested passes trivially (its line ink is out of scope).
+    """
+    from matplotlib.markers import MarkerStyle
+
+    marker = line.get_marker()
+    if marker in (None, "None", "", " "):
+        return True
+    edge_ok = (
+        float(line.get_markeredgewidth()) > 0 and str(line.get_markeredgecolor()).lower() != "none"
+    )
+    if not MarkerStyle(marker).is_filled():
+        return edge_ok
+    face_ok = str(line.get_markerfacecolor()).lower() != "none"
+    return face_ok or edge_ok
+
+
+def _iter_marker_lines(fig: plt.Figure):
+    """Yield (where, Line2D) over visible axes lines AND every legend handle."""
+    legends = list(fig.legends)
+    for ax in fig.axes:
+        if not ax.get_visible():
+            continue
+        for ln in ax.lines:
+            if ln.get_visible():
+                yield "axes line", ln
+        if ax.get_legend() is not None:
+            legends.append(ax.get_legend())
+    for leg in legends:
+        handles = getattr(leg, "legend_handles", None) or getattr(leg, "legendHandles", [])
+        for h in handles:
+            if isinstance(h, plt.Line2D):
+                yield "legend handle", h
+
+
+def _assert_marker_ink(fig: plt.Figure, stem: str) -> None:
+    """Fail LOUD when any visible marker series would render zero ink.
+
+    Guards the production rcParams regime (set_paper_style("blog") zeroes
+    lines.markeredgewidth): every on-canvas marker line and every legend-handle
+    glyph must carry a face or a positive-width edge. Raises RuntimeError --
+    deliberately NOT in render_all's skip tuple -- because an invisible series
+    is a code bug, never a missing-producer skip.
+    """
+    bad = [
+        f"{where}: marker={ln.get_marker()!r} label={ln.get_label()!r}"
+        for where, ln in _iter_marker_lines(fig)
+        if not _marker_line_has_ink(ln)
+    ]
+    if bad:
+        raise RuntimeError(
+            f"{stem}: {len(bad)} marker artist(s) draw ZERO ink under the current rcParams "
+            f"(open/edge-only marker with markeredgewidth 0 -- pass mew=MEW_OPEN): "
+            + "; ".join(bad)
+        )
+
+
 def _render(fig: plt.Figure, stem: str, fig_dir: Path) -> str:
     """Save one figure through savefig_paper (sidecar + commit pin) and close it."""
+    _assert_marker_ink(fig, stem)
     fig_dir.mkdir(parents=True, exist_ok=True)
     savefig_paper(fig, stem, dir=fig_dir)
     plt.close(fig)
@@ -273,7 +346,13 @@ def build_learning_curve(doc: dict) -> plt.Figure:
     if reg:
         xs, ys = zip(*reg)
         ax_a.plot(
-            xs, ys, "s", mfc="none", color=COLOR_COMPARISON, label="Off-recipe committed point"
+            xs,
+            ys,
+            "s",
+            mfc="none",
+            mew=MEW_OPEN,
+            color=COLOR_COMPARISON,
+            label="Off-recipe committed point",
         )
     if edge:
         xs, ys = zip(*edge)
@@ -282,6 +361,7 @@ def build_learning_curve(doc: dict) -> plt.Figure:
             ys,
             "^",
             mfc="none",
+            mew=MEW_OPEN,
             color=COLOR_COMPARISON,
             label="Off-recipe point, lambda at grid edge",
         )
@@ -353,7 +433,7 @@ def build_gate_ladder(doc: dict, kind: str) -> plt.Figure:
     for m in GATE_METRIC_ORDER:
         if any(m in arms[a]["observed_rho"][dv] for a in arm_ids):
             ax_a.plot([], [], "o", color=METRIC_COLORS[m], label=display(m))
-    ax_a.plot([], [], "|", color=COLOR_NEUTRAL, label="Selection-symmetric null (p97.5)")
+    ax_a.plot([], [], "|", color=COLOR_NEUTRAL, mew=2, label="Selection-symmetric null (p97.5)")
     ax_a.set_yticks(range(len(arm_ids)), [labels[a] for a in arm_ids])
     ax_a.set_xlabel(f"Within-arm Spearman rho vs {display(dv)}")
     ax_a.set_title("Gate-rung race per arm")
@@ -786,7 +866,7 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
                 if not isinstance(cell, dict) or "max_abs_cos" not in cell:
                     continue
                 mfc = COLOR_PRIMARY if cell["above_null"] else "none"
-                ax.plot(cell["max_abs_cos"], y, "o", color=COLOR_PRIMARY, mfc=mfc, ms=4)
+                ax.plot(cell["max_abs_cos"], y, "o", color=COLOR_PRIMARY, mfc=mfc, ms=4, mew=1.0)
                 ax.plot(cell["null_p95"], y, "|", color=COLOR_NEUTRAL, ms=8, mew=1.5)
         if anchor_vals:
             ax.axvline(max(anchor_vals), color=COLOR_NEUTRAL, ls=":", lw=1)
@@ -804,9 +884,12 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
             ls="none",
             color=COLOR_PRIMARY,
             mfc="none",
+            mew=MEW_OPEN,
             label="At or below null p95",
         ),
-        plt.Line2D([], [], marker="|", ls="none", color=COLOR_NEUTRAL, label="Matched null p95"),
+        plt.Line2D(
+            [], [], marker="|", ls="none", color=COLOR_NEUTRAL, mew=1.5, label="Matched null p95"
+        ),
     ]
     if anchor_vals:
         handles.append(
@@ -863,7 +946,13 @@ def build_leg6_ranks(units: dict[str, dict], convention: str) -> plt.Figure:
     gd = [units[a]["gavish_donoho_reference_count"] for a in arm_ids]
     ax_a.barh(ys, ranks, color=COLOR_PRIMARY, label="Denoised rank (calibrated)")
     ax_a.plot(
-        gd, ys, "D", mfc="none", color=COLOR_NEUTRAL, label="Gavish-Donoho reference (analytic)"
+        gd,
+        ys,
+        "D",
+        mfc="none",
+        mew=MEW_OPEN,
+        color=COLOR_NEUTRAL,
+        label="Gavish-Donoho reference (analytic)",
     )
     ax_a.set_yticks(ys, [labels[a] for a in arm_ids])
     ax_a.set_xlabel(f"Rank ({display(convention)} context)")
@@ -873,7 +962,15 @@ def build_leg6_ranks(units: dict[str, dict], convention: str) -> plt.Figure:
     r12 = [units[a]["heldout_r2"]["fit1_eval2"] for a in arm_ids]
     r21 = [units[a]["heldout_r2"]["fit2_eval1"] for a in arm_ids]
     ax_b.plot(r12, ys, "o", color=COLOR_PRIMARY, label="Fit half 1, score half 2")
-    ax_b.plot(r21, ys, "o", mfc="none", color=COLOR_PRIMARY, label="Fit half 2, score half 1")
+    ax_b.plot(
+        r21,
+        ys,
+        "o",
+        mfc="none",
+        mew=MEW_OPEN,
+        color=COLOR_PRIMARY,
+        label="Fit half 2, score half 1",
+    )
     ax_b.axvline(0.0, color=COLOR_NEUTRAL, lw=0.8)
     ax_b.set_yticks(ys, ["" for _ in arm_ids])
     ax_b.set_xlabel("Cross-half held-out R^2")
@@ -910,6 +1007,7 @@ def build_leg6_spectra(units: dict[str, dict], convention: str) -> plt.Figure:
             "o--",
             ms=3,
             mfc="none",
+            mew=1.0,
             color=COLOR_PRIMARY,
             label="Half 2",
         )
@@ -968,6 +1066,7 @@ def build_three_tier(doc: dict) -> plt.Figure:
             color=color,
             label=label,
             mfc="none" if ls == "--" else color,
+            mew=MEW_OPEN,
         )
     for tag, color in (("vc", COLOR_PRIMARY), ("va", COLOR_COMPARISON)):
         cka = [p["cka"].get(tag, np.nan) for p in grid]
@@ -1113,6 +1212,7 @@ def build_atlas(doc: dict) -> plt.Figure:
         marker="s",
         ls="none",
         mfc="none",
+        mew=1.5,
         color=COLOR_NEUTRAL,
         label="Spectrum-only pair (rotation-invariant ceiling)",
     )
@@ -1799,6 +1899,7 @@ def build_leg6_shared_factor_heatmap(cell: dict) -> plt.Figure:
             marker="x",
             ls="none",
             color="black",
+            mew=1.0,
             label="N/A: not comparable (basis mismatch, recorded refusal)",
         ),
         plt.Line2D(
@@ -1808,6 +1909,7 @@ def build_leg6_shared_factor_heatmap(cell: dict) -> plt.Figure:
             ls="none",
             markerfacecolor="white",
             markeredgecolor="black",
+            markeredgewidth=0.5,
             label="pair clears the selection-symmetric band (criterion input)",
         ),
     ]
@@ -2210,7 +2312,16 @@ def main(argv: list[str] | None = None) -> int:
         if unknown:
             raise SystemExit(f"unknown figure names: {sorted(unknown)} (known: {sorted(FIGURES)})")
     manifest = render_all(args.results_root, args.fig_dir, only)
-    return 0 if manifest["rendered"] or manifest["skipped"] else 1
+    if manifest["rendered"]:
+        return 0  # individual named skips (manifest["skipped"]) are legitimate partial coverage
+    print(
+        f"[figures] FAILURE: 0 figures rendered, {len(manifest['skipped'])} skipped -- "
+        f"an all-skipped run is a silent no-op (wrong --results-root {args.results_root}?); "
+        "every skip is named in the manifest above",
+        file=sys.stderr,
+        flush=True,
+    )
+    return 1
 
 
 if __name__ == "__main__":

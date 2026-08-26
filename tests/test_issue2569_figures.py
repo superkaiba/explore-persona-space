@@ -9,6 +9,13 @@ function end-to-end (matplotlib Agg) and asserts BOTH that the built figure
 carries plotted artists (a silently-empty render fails here, not at review) and
 that the PNG + ``.meta.json`` sidecar landed with non-trivial size. Dimensions
 stay tiny throughout (no dense 3584^2 anywhere).
+
+Every test runs under the PRODUCTION rcParams regime (the autouse
+``_production_style`` fixture calls ``set_paper_style("blog")``): the blog
+style zeroes ``lines.markeredgewidth``, so an open marker (``mfc="none"``)
+with no explicit ``mew=`` draws ZERO ink there while matplotlib defaults
+(mew=1.0) render it fine -- a suite running under defaults validated renders
+nobody ships (round-2 blocker: whole series invisible with 24 greens).
 """
 
 from __future__ import annotations
@@ -25,6 +32,22 @@ if str(REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import issue2569_figures as F  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _production_style():
+    """Pin the PRODUCTION rcParams regime (set_paper_style("blog")) per test.
+
+    render_all() sets this style in production, and it is where the
+    markeredgewidth=0 open-marker trap lives; rc_context restores the global
+    rcParams after each test so nothing leaks to other test files.
+    """
+    import matplotlib
+
+    with matplotlib.rc_context():
+        F.set_paper_style("blog")
+        yield
+
 
 # ---------------------------------------------------------------------------
 # Fixture builders (schema-true, tiny)
@@ -1649,3 +1672,138 @@ def test_leg1_hero_stability_length_mismatch_fails_loud(full_root):
         F.build_leg1_anatomy_hero(
             F._load_anatomy(full_root), F._load_factor_arrays(full_root), series
         )
+
+
+# ---------------------------------------------------------------------------
+# Open-marker ink under the production style (round-2 blocker regression)
+# ---------------------------------------------------------------------------
+
+
+def _iter_marker_artists(fig):
+    """(where, Line2D) over visible axes lines and every legend-handle glyph."""
+    from matplotlib.lines import Line2D
+
+    legends = list(fig.legends)
+    for ax in fig.axes:
+        if not ax.get_visible():
+            continue
+        yield from (("axes line", ln) for ln in ax.lines if ln.get_visible())
+        if ax.get_legend() is not None:
+            legends.append(ax.get_legend())
+    for leg in legends:
+        handles = getattr(leg, "legend_handles", None) or getattr(leg, "legendHandles", [])
+        yield from (("legend handle", h) for h in handles if isinstance(h, Line2D))
+
+
+def _marker_ink_violations(fig) -> list[str]:
+    """EFFECTIVE-property check: marker glyphs that would draw zero ink.
+
+    Deliberately independent of the module's own audit (no hardcoded mew
+    literals, no reliance on F._assert_marker_ink existing): ink = a face that
+    is not "none", or a positive-width edge whose color is not "none".
+    """
+    from matplotlib.markers import MarkerStyle
+
+    bad = []
+    for where, ln in _iter_marker_artists(fig):
+        marker = ln.get_marker()
+        if marker in (None, "None", "", " "):
+            continue
+        edge = (
+            float(ln.get_markeredgewidth()) > 0 and str(ln.get_markeredgecolor()).lower() != "none"
+        )
+        face = MarkerStyle(marker).is_filled() and str(ln.get_markerfacecolor()).lower() != "none"
+        if not (face or edge):
+            bad.append(f"{where}: marker={marker!r} label={ln.get_label()!r}")
+    return bad
+
+
+def test_open_markers_draw_ink_under_production_style(full_root):
+    """Every open/edge-only marker series carries ink under set_paper_style("blog").
+
+    Round-2 blocker regression: the blog style zeroes lines.markeredgewidth, so
+    plot(..., mfc="none") with no explicit mew= rendered NOTHING -- leg7_three_tier
+    lost BOTH Llama-to-Qwen series and leg2_learning_curve lost all committed
+    companion points while the suite stayed green. Checks EFFECTIVE artist
+    properties so any future open-marker site fails here too.
+    """
+    import matplotlib.pyplot as plt
+
+    units = F._leg6_units(full_root / "leg6", F.LEG6_PRIMARY_CONVENTION, F.LEG6_PRIMARY_LAYER)
+    cross_cell = json.loads((full_root / "leg6" / "cross_arm" / "L19_last_prompt.json").read_text())
+    figs = {
+        "leg2_learning_curve": F.build_learning_curve(
+            json.loads((full_root / "leg2_curve" / "learning_curve.json").read_text())
+        ),
+        "leg2_gate_ladder_content": F.build_gate_ladder(
+            json.loads((full_root / "leg2" / "gate_ladder.json").read_text()), "content"
+        ),
+        "leg5_dw_alignment": F.build_dw_alignment(
+            json.loads((full_root / "dw_fleet" / "alignment.json").read_text())
+        ),
+        "leg6_denoised_rank": F.build_leg6_ranks(units, F.LEG6_PRIMARY_CONVENTION),
+        "leg6_half_spectra": F.build_leg6_spectra(units, F.LEG6_PRIMARY_CONVENTION),
+        "leg6_shared_factor_heatmap": F.build_leg6_shared_factor_heatmap(cross_cell),
+        "leg7_three_tier": F.build_three_tier(
+            json.loads((full_root / "leg7" / "three_tier.json").read_text())
+        ),
+        "leg7_atlas": F.build_atlas(
+            json.loads((full_root / "leg7" / "atlas_distances.json").read_text())
+        ),
+    }
+    try:
+        bad = {name: v for name, fig in figs.items() if (v := _marker_ink_violations(fig))}
+        assert not bad, f"zero-ink marker series under production style: {bad}"
+        # The named blocker series exist AND are inked: both dashed Llama->Qwen
+        # tier-1 series and both off-recipe companion series.
+        tier_labels = [ln.get_label() for ln in figs["leg7_three_tier"].axes[0].lines]
+        assert "Context state, Llama to Qwen" in tier_labels
+        assert "Answer summary, Llama to Qwen" in tier_labels
+        curve_labels = [ln.get_label() for ln in figs["leg2_learning_curve"].axes[0].lines]
+        assert "Off-recipe committed point" in curve_labels
+        assert "Off-recipe point, lambda at grid edge" in curve_labels
+    finally:
+        for fig in figs.values():
+            plt.close(fig)
+
+
+def test_render_rejects_inkless_open_marker(tmp_path):
+    """_render fail-louds (RuntimeError, never a manifest skip) on a zero-ink marker.
+
+    mew=0 is forced explicitly so the guard's behavior is pinned independent of
+    whatever style the suite runs under.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [1.0, 2.0], "o", mfc="none", mew=0, label="ghost series")
+    with pytest.raises(RuntimeError, match="ZERO ink"):
+        F._render(fig, "ghost", tmp_path / "figs")
+    plt.close(fig)
+    fig2, ax2 = plt.subplots()
+    ax2.plot([0, 1], [1.0, 2.0], "o")  # filled marker: inked under any style
+    assert F._render(fig2, "ok", tmp_path / "figs") == "ok"
+
+
+# ---------------------------------------------------------------------------
+# main() exit code: an all-skipped run is a failure, partial skips are not
+# ---------------------------------------------------------------------------
+
+
+def test_main_fails_loud_when_all_skipped(tmp_path):
+    """A wrong --results-root (every figure skipped, none rendered) exits 1."""
+    rc = F.main(["--results-root", str(tmp_path / "nothing"), "--fig-dir", str(tmp_path / "figs")])
+    assert rc == 1
+    manifest = json.loads((tmp_path / "figs" / "figures_manifest.json").read_text())
+    assert manifest["rendered"] == {}
+    assert len(manifest["skipped"]) == len(F.FIGURES)
+
+
+def test_main_partial_skips_stay_rc_zero(full_root, tmp_path):
+    """Legitimate individual skips (one producer missing) keep rc 0."""
+    (full_root / "der" / "der_eval.json").unlink()
+    rc = F.main(["--results-root", str(full_root), "--fig-dir", str(tmp_path / "figs")])
+    assert rc == 0
+    manifest = json.loads((tmp_path / "figs" / "figures_manifest.json").read_text())
+    assert "leg4_der_matching" in manifest["skipped"]
+    assert len(manifest["rendered"]) == len(F.FIGURES) - 1
