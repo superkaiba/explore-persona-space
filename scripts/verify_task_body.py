@@ -16662,12 +16662,18 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
 
     Worktree-staleness backstop (#2607): a non-None ``concerns_path``
     that is worktree-resident (``_worktree_resident``) hard-FAILs BEFORE
-    the None/missing skip below — a worktree's ``tasks/`` tree is frozen
-    at the branch-cut base commit (per-task state mutates ONLY on the
-    main checkout via task.py), so a worktree-resolved ledger is ALWAYS
-    stale (incident #2378 r7: the analyzer's worktree-resolved run
+    the None/missing skip below — an ISSUE worktree's ``tasks/`` tree is
+    frozen at the branch-cut base commit, so a ledger resolved there is
+    ALWAYS stale (incident #2378 r7: the analyzer's worktree-resolved run
     reported OVERALL PASS while both clean-result-critic twins' main-root
-    runs FAILed Lens 14 on 5 unacknowledged concerns). The FAIL fires
+    runs FAILed Lens 14 on 5 unacknowledged concerns). Per-task state
+    mutates ONLY through ``task.py``'s ``repo_root()`` — the main
+    checkout, or, when the primary's HEAD is off-main, the routed managed
+    main-pin worktree (``.claude/worktrees/_task-main-pin``, re-pinned to
+    the current main tip on every resolution): that ONE worktree's
+    ``tasks/`` tree is CURRENT, and ``_worktree_resident`` exempts it via
+    canonical-root equality (#2607 r2, concern
+    managed-main-pin-false-stale). The FAIL fires
     regardless of ``exists()`` — a frozen tree whose ledger predates the
     task's FIRST concern row would otherwise skip-PASS, the same
     false-PASS shape. Reachability contract: the CALLER passes the path
@@ -16687,8 +16693,10 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
             "concerns audit (Lens 14)",
             False,
             f"worktree-frozen concerns.jsonl at {concerns_path} — per-task "
-            "ledgers mutate only on the main checkout; rerun via --issue / "
-            "the main checkout path (#2607)",
+            "ledgers mutate only through task.py's repo_root() (the main "
+            "checkout, or the routed _task-main-pin worktree when the "
+            "primary is off-main); rerun via --issue / the canonical "
+            "checkout path (#2607)",
         )
     if concerns_path is None or not concerns_path.exists():
         return CheckResult(
@@ -20372,45 +20380,71 @@ def _load_text_for_issue(number: int) -> tuple[str, Path]:
 
 def _worktree_resident(p: Path) -> bool:
     """True when the resolved path lives inside a linked git worktree of
-    this repo — the worktree-staleness detection predicate (#2607).
+    this repo whose ``tasks/`` tree is FROZEN at its branch-cut base —
+    the worktree-staleness detection predicate (#2607).
+
+    Managed main-pin exemption (#2607 r2, concern
+    managed-main-pin-false-stale): when the primary checkout's HEAD is
+    off-main, ``task_workflow.repo_root()`` routes current-main reads
+    through the managed worktree ``.claude/worktrees/_task-main-pin``
+    (detached; ``reset --hard`` to the current main tip on EVERY
+    resolution), so that tree's ``tasks/`` state is CURRENT, not frozen.
+    Both arms therefore treat the canonical ``_resolve_repo_root()`` root
+    as SAFE: arm A scans only the path components BELOW the canonical
+    root (a ``('.claude', 'worktrees')`` pair inside the root's own
+    prefix is the sanctioned routing containment, never a frozen tree),
+    and arm B skips the registered-worktree record equal to that root.
+    Canonical-root-EQUALITY is used rather than a ``_task-main-pin`` name
+    match: it survives a rename of the pin dir, and it correctly keeps
+    the pin FROZEN in on-main (unrouted) mode, where ``repo_root()``
+    returns the primary and the pin's last reset may be arbitrarily old.
+    Fail-soft: an unresolvable root leaves the pre-exemption behavior
+    unchanged (fail-closed toward the frozen verdict).
 
     Arm A (pure path, always available): consecutive
-    ``('.claude', 'worktrees')`` components in ``p.resolve().parts`` —
-    the canonical ``new_worktree.sh`` layout every /issue session uses.
+    ``('.claude', 'worktrees')`` components in the (canonical-root-
+    stripped) ``p.resolve().parts`` — the canonical ``new_worktree.sh``
+    layout every /issue session uses.
     Arm B (best-effort): ``p`` is under a NON-PRIMARY worktree path from
     ``git worktree list --porcelain`` run at ``_resolve_repo_root()``
-    (reuses ``_parse_worktree_list``, #2288); any subprocess / resolution
-    failure degrades silently to arm A alone.
+    (reuses ``_parse_worktree_list``, #2288), bounded by a 5 s timeout;
+    any subprocess / timeout / resolution failure degrades silently to
+    arm A alone.
 
     Known residual (named, non-blocking): a worktree reached via a raw
     mount alias (e.g. a live ``/mnt/eps-data`` bind, #681/#2132 —
     ``Path.resolve()`` does not resolve bind mounts) or a scratch
     worktree outside ``.claude/worktrees/`` evades arm A; arm B catches
-    the scratch case only while the subprocess probe succeeds. Neither
-    is a sanctioned caller shape today; the incident channel (#2378 r7 —
-    an issue worktree's frozen ``tasks/`` tree) is fully covered by
-    arm A.
+    the scratch case only while the subprocess probe succeeds. In routed
+    (off-main) mode the same alias caveat applies to the exemption: a
+    pin-dir path reached via an unresolved alias fails the prefix /
+    equality probe and is conservatively treated as frozen (fail-closed).
+    Neither is a sanctioned caller shape today; the incident channel
+    (#2378 r7 — an issue worktree's frozen ``tasks/`` tree) is fully
+    covered by arm A.
     """
     try:
         resolved = p.resolve()
     except OSError:
         resolved = p
-    parts = resolved.parts
-    for a, b in itertools.pairwise(parts):
+    canon = _canonical_root_resolved()
+    for a, b in itertools.pairwise(_scan_parts_below_canonical_root(resolved, canon)):
         if a == ".claude" and b == "worktrees":
             return True
     # Arm B: non-primary worktrees from `git worktree list` (best-effort).
-    root = _resolve_repo_root()
-    if root is None:
+    if canon is None:
         return False
     try:
         proc = subprocess.run(
-            ["git", "-C", str(root), "worktree", "list", "--porcelain"],
+            ["git", "-C", str(canon), "worktree", "list", "--porcelain"],
             capture_output=True,
             text=True,
             check=False,
+            timeout=5,
         )
-    except OSError:
+    except (OSError, subprocess.SubprocessError):
+        # SubprocessError covers TimeoutExpired: a wedged git degrades to
+        # arm A alone, as the docstring promises (#2607 r2).
         return False
     if proc.returncode != 0:
         return False
@@ -20420,12 +20454,45 @@ def _worktree_resident(p: Path) -> bool:
             wt_resolved = wt_path.resolve()
         except OSError:
             wt_resolved = wt_path
+        if wt_resolved == canon:
+            # The canonical root itself (the routed managed-main worktree
+            # in off-main mode) — its tasks/ tree is CURRENT, never frozen.
+            continue
         try:
             if resolved.is_relative_to(wt_resolved):
                 return True
         except (TypeError, ValueError):
             continue
     return False
+
+
+def _canonical_root_resolved() -> Path | None:
+    """Resolved canonical ``_resolve_repo_root()`` root, or None
+    (fail-soft: import failure or an unresolvable path). In routed
+    (off-main) mode this is the managed main-pin worktree — the ONE
+    ``.claude/worktrees/`` tree whose ``tasks/`` state is CURRENT
+    (#2607 r2, concern managed-main-pin-false-stale)."""
+    root = _resolve_repo_root()
+    if root is None:
+        return None
+    try:
+        return root.resolve()
+    except OSError:
+        return root
+
+
+def _scan_parts_below_canonical_root(resolved: Path, canon: Path | None) -> tuple[str, ...]:
+    """Arm-A scan components for ``_worktree_resident``: the components
+    BELOW the canonical root when ``resolved`` sits under it (the managed
+    main-pin exemption — a ``('.claude', 'worktrees')`` pair inside the
+    root's own prefix is the sanctioned routing containment, #2607 r2),
+    else the full ``resolved.parts`` (fail-closed)."""
+    if canon is None:
+        return resolved.parts
+    try:
+        return resolved.relative_to(canon).parts
+    except ValueError:
+        return resolved.parts  # not under the canonical root — scan the full path
 
 
 def _resolve_file_siblings(
@@ -20534,24 +20601,30 @@ def main() -> int:
         raw = Path(args.file).read_text()
         source = args.file
         body_source_path = Path(args.file).resolve()
-        # Worktree-staleness refusal (#2607): a worktree's tasks/ tree is
-        # frozen at the branch-cut base commit — per-task state mutates
-        # ONLY on the main checkout via task.py — so sibling resolution
-        # against a worktree task-layout body silently audits stale
-        # ledgers (incident #2378 r7: a worktree-resolved run false-PASSed
-        # Lens 14 while both CRC twins' main-root runs FAILed on 5
-        # unacknowledged concerns). Non-task-layout worktree paths
+        # Worktree-staleness refusal (#2607): an ISSUE worktree's tasks/
+        # tree is frozen at the branch-cut base commit — per-task state
+        # mutates ONLY through task.py's repo_root(): the main checkout,
+        # or (primary HEAD off-main) the routed managed main-pin worktree
+        # `.claude/worktrees/_task-main-pin`, whose tasks/ tree is CURRENT
+        # and which `_worktree_resident` exempts (#2607 r2). Sibling
+        # resolution against a frozen task-layout body silently audits
+        # stale ledgers (incident #2378 r7: a worktree-resolved run
+        # false-PASSed Lens 14 while both CRC twins' main-root runs FAILed
+        # on 5 unacknowledged concerns). Non-task-layout worktree paths
         # (e.g. a worktree .claude/cache/ draft) are UNCHANGED.
         if body_source_path.parent.name.isdigit() and _worktree_resident(body_source_path.parent):
             print(
                 f"verify_task_body: REFUSED — {body_source_path} is a worktree-frozen "
-                "tasks/ tree (per-task state mutates only on the main checkout; this "
-                "copy is frozen at the branch-cut base commit and its "
-                "concerns.jsonl/plans/original-body.md siblings are silently stale — "
-                "#2607, incident #2378 r7). Re-run with "
+                "tasks/ tree (per-task state mutates only through task.py's "
+                "repo_root() — the main checkout, or the routed _task-main-pin "
+                "worktree when the primary is off-main; THIS copy is frozen at its "
+                "branch-cut base commit and its concerns.jsonl/plans/"
+                "original-body.md siblings are silently stale — #2607, incident "
+                "#2378 r7). Re-run with "
                 f"--issue {body_source_path.parent.name} (resolves via the "
-                "branch-guarded task_workflow registry against the main checkout) "
-                "or pass the main checkout's tasks/<status>/<N>/body.md path.",
+                "branch-guarded task_workflow registry against the canonical "
+                "checkout) or pass the canonical checkout's "
+                "tasks/<status>/<N>/body.md path.",
                 file=sys.stderr,
             )
             return 2

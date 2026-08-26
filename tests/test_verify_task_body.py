@@ -8470,6 +8470,83 @@ def test_file_invocation_worktree_cache_draft_unchanged(tmp_path, monkeypatch, c
     assert "no concerns.jsonl sibling" in captured.out
 
 
+def _managed_pin_fixture(tmp_path):
+    """#2607 r2 (concern managed-main-pin-false-stale): the ROUTED
+    managed main-pin worktree `.claude/worktrees/_task-main-pin` — in
+    off-main mode `task_workflow.repo_root()` returns it and re-pins it
+    to the current main tip on every resolution, so its tasks/ tree is
+    CURRENT (never frozen). The fixture simulates routed mode by making
+    the pin dir the canonical `_resolve_repo_root()` root (callers
+    monkeypatch it in). Its ledger carries one OPEN concern row NOT
+    acknowledged in GOOD_BODY, so a test can prove the audit actually
+    RAN (FAILing on the concern) rather than being refused or skipped.
+    Returns ``(pin_root, task_dir)``."""
+    pin_root = tmp_path / "main" / ".claude" / "worktrees" / "_task-main-pin"
+    task_dir = pin_root / "tasks" / "reviewing" / "99"
+    task_dir.mkdir(parents=True)
+    (task_dir / "body.md").write_text(GOOD_BODY)
+    (task_dir / "concerns.jsonl").write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "probe-position-undefined",
+                "severity": "CONCERN",
+                "summary": "Probe position is undefined.",
+            }
+        )
+        + "\n"
+    )
+    return pin_root, task_dir
+
+
+def test_concerns_audit_managed_main_pin_ledger_not_frozen(tmp_path, monkeypatch):
+    """#2607 r2 API leg: a concerns.jsonl under the routed managed
+    main-pin worktree (canonical `_resolve_repo_root()` root) is CURRENT,
+    not frozen — the Lens-14 backstop does NOT return the worktree-frozen
+    FAIL; the audit RUNS and FAILs on the ledger's real open concern."""
+    pin_root, task_dir = _managed_pin_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: pin_root)
+    result = verify_task_body.check_concerns_audit(
+        GOOD_BODY, concerns_path=task_dir / "concerns.jsonl"
+    )
+    assert "worktree-frozen" not in result.detail
+    assert not result.passed  # the REAL open concern — proof the audit executed
+    assert "probe-position-undefined" in result.detail
+
+
+def test_file_invocation_managed_main_pin_body_not_refused(tmp_path, monkeypatch, capsys):
+    """#2607 r2 CLI leg: `--file` on a body under the routed managed
+    main-pin worktree is NOT refused — main() reaches the normal verdict
+    path, with Lens 14 running against the CURRENT pin ledger (FAILing on
+    its real open concern, proving neither refusal nor skip). Previously
+    the refusal's own `--issue` remedy looped into the same false FAIL in
+    routed mode."""
+    pin_root, task_dir = _managed_pin_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: pin_root)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(task_dir / "body.md")])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    assert "probe-position-undefined" in captured.out
+    assert "worktree-frozen" not in captured.out
+
+
+def test_worktree_resident_issue_worktree_still_frozen_in_routed_mode(tmp_path, monkeypatch):
+    """#2607 r2 scoping pin: with the canonical root routed to the pin
+    dir, a SIBLING issue worktree's tasks/ path is STILL worktree-resident
+    (frozen) — the exemption is canonical-root equality, never a blanket
+    `.claude/worktrees/` allowance."""
+    pin_root, _task_dir = _managed_pin_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: pin_root)
+    sibling = tmp_path / "main" / ".claude" / "worktrees" / "issue-99" / "tasks" / "reviewing"
+    sibling = sibling / "99"
+    sibling.mkdir(parents=True)
+    assert verify_task_body._worktree_resident(sibling)
+    # And the pin dir itself is exempt under the same routed root.
+    assert not verify_task_body._worktree_resident(pin_root / "tasks" / "reviewing" / "99")
+
+
 def test_concerns_audit_stale_marker_warns_alongside_acknowledged_open_concern(tmp_path):
     """Pins the SECOND warns-only return site: `open_binding` is
     non-empty (a raised CONCERN, acknowledged in the body via
