@@ -330,3 +330,4 @@
 {"ts": "2026-08-26T23:57:48Z", "kind": "phase-pa-split-half", "version": 1, "by": "issue779", "note": "split-half done layers=[19, 14, 26]", "sentinel_fp": "35298a79491e6427", "sentinel_path": "/workspace/logs/issue-2569-phase-pa-split-half-1787788268.json"}
 {"ts": "2026-08-26T23:57:56Z", "kind": "phase-pa-upload", "version": 1, "by": "issue779", "note": "weights-battery leg1+leg3+leg8 uploaded", "sentinel_fp": "d2caff76466c927f", "sentinel_path": "/workspace/logs/issue-2569-phase-pa-upload-1787788374.json"}
 {"ts": "2026-08-26T23:58:03Z", "kind": "phase-pa-wiring", "version": 1, "by": "issue779", "note": "wiring done layers=[19]", "sentinel_fp": "98d3aea92fdff8fd", "sentinel_path": "/workspace/logs/issue-2569-phase-pa-wiring-1787788259.json"}
+{"ts": "2026-08-26T23:58:12Z", "kind": "epm:progress", "version": 96, "by": "poll_pipeline", "note": "phase transition: unknown -> done", "phase": "done", "pod": "pod-2569-wa"}
