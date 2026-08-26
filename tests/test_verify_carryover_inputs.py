@@ -2611,3 +2611,126 @@ def test_corpus_sweep_resolver_failure_surfaces_error_not_substitute(
     # No record graded against a substituted fallback ref.
     assert all(r["check_ref"] != "origin/main" for r in payload["sample"])
     assert payload["aggregates"]["n_resolution_errors"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Cross-issue cone derivation + --print-extra-cones resolver mode (#2608).
+# ---------------------------------------------------------------------------
+
+
+def test_extra_cones_for_plan_success_criterion_fixture() -> None:
+    """Plan v3 success criterion 2: the exact foreign cone set, own issue excluded."""
+    plan = (
+        "Reads eval_results/issue_1482/x.json, ood_eval_results/issue_779/y.jsonl, "
+        "figures/issue_2476/z.png and its own eval_results/issue_2569/own.json."
+    )
+    assert vci.extra_cones_for_plan(plan, 2569) == [
+        "eval_results/issue_1482",
+        "figures/issue_2476",
+        "ood_eval_results/issue_779",
+    ]
+
+
+def test_extra_cones_for_plan_includes_skip_classed_candidates() -> None:
+    """Glob / trailing-'/' dir / no-ext Channel-A forms are dependency declarations.
+
+    The gate's skip reasons (glob-or-template / dir / no-ext) exist for the
+    never-block contract; cone derivation must NOT filter on them, or a plan
+    citing only globs/dirs recreates the #2569 blind path.
+    """
+    plan = (
+        "Globs eval_results/issue_1979/*.json, cites the dir eval_results/issue_1482/ "
+        "and the no-ext path ood_eval_results/issue_779/raw."
+    )
+    assert vci.extra_cones_for_plan(plan, 2569) == [
+        "eval_results/issue_1482",
+        "eval_results/issue_1979",
+        "ood_eval_results/issue_779",
+    ]
+
+
+def test_extra_cones_for_plan_no_citations_and_dedupe() -> None:
+    assert vci.extra_cones_for_plan("no artifact citations here", 5) == []
+    plan = (
+        "eval_results/issue_9/a.json then eval_results/issue_9/b.json and "
+        "figures/issue_9/x.png plus figures/issue_9/deep/y.png"
+    )
+    assert vci.extra_cones_for_plan(plan, 5) == ["eval_results/issue_9", "figures/issue_9"]
+
+
+def test_extra_cones_for_plan_left_guard_blocks_hf_and_nested_forms() -> None:
+    """HF data-repo / nested figures citations never derive a repo-relative cone."""
+    plan = (
+        "see explore-persona-space-data/figures/issue_9/x.png and "
+        "tests/fixtures/figures/issue_9/y.png"
+    )
+    assert vci.extra_cones_for_plan(plan, 1) == []
+
+
+def test_print_extra_cones_cli_with_plan(tmp_path: Path, capsys) -> None:
+    """--print-extra-cones on an explicit tmp plan: space-joined set, exit 0."""
+    plan = _plan(
+        tmp_path,
+        "eval_results/issue_1482/x.json ood_eval_results/issue_779/y.jsonl "
+        "figures/issue_2476/z.png eval_results/issue_2569/own.json",
+    )
+    rc = vci.main(["--print-extra-cones", "--issue", "2569", "--plan", str(plan)])
+    assert rc == 0
+    out = capsys.readouterr().out.strip()
+    assert out == "eval_results/issue_1482 figures/issue_2476 ood_eval_results/issue_779"
+
+
+def test_print_extra_cones_mode_validation(tmp_path: Path) -> None:
+    """Mutually exclusive with --print-repo-branch; check-mode flags refused."""
+    with pytest.raises(SystemExit) as exc1:
+        vci.main(["--print-extra-cones", "--print-repo-branch", "--issue", "5"])
+    assert exc1.value.code == 2
+    with pytest.raises(SystemExit) as exc2:
+        vci.main(["--print-extra-cones", "--issue", "5", "--json"])
+    assert exc2.value.code == 2
+    with pytest.raises(SystemExit) as exc3:
+        vci.main(["--print-extra-cones", "--issue", "5", "--lane", "rsync"])
+    assert exc3.value.code == 2
+
+
+def test_print_extra_cones_fail_soft_unreadable_plan(tmp_path: Path, capsys) -> None:
+    """Unreadable --plan: NOTE on stderr, EMPTY stdout, exit 0 (never blocks)."""
+    rc = vci.main(["--print-extra-cones", "--issue", "5", "--plan", str(tmp_path / "missing.md")])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out == ""
+    assert "NOTE: --print-extra-cones: cannot read plan" in captured.err
+
+
+def test_print_extra_cones_fail_soft_unresolvable_task(monkeypatch, capsys) -> None:
+    """No --plan + unresolvable task: NOTE on stderr, EMPTY stdout, exit 0."""
+
+    def _boom(task_id: int) -> Path:
+        raise FileNotFoundError(f"task #{task_id} not found in registry or on disk")
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.find_task_path", _boom)
+    rc = vci.main(["--print-extra-cones", "--issue", "999999"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out == ""
+    assert "NOTE: --print-extra-cones: cannot resolve persisted plans" in captured.err
+
+
+def test_print_extra_cones_resolves_union_of_persisted_plans(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """Without --plan the mode unions ALL persisted plans/v*.md via task_workflow."""
+    task_dir = tmp_path / "running" / "2569"
+    (task_dir / "plans").mkdir(parents=True)
+    (task_dir / "plans" / "v1.md").write_text(
+        "Reads eval_results/issue_1482/x.json and eval_results/issue_2569/own.json\n"
+    )
+    (task_dir / "plans" / "v2.md").write_text("Also figures/issue_2476/z.png\n")
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.find_task_path", lambda task_id: task_dir
+    )
+    rc = vci.main(["--print-extra-cones", "--issue", "2569"])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out.strip() == "eval_results/issue_1482 figures/issue_2476"
+    assert captured.err == ""

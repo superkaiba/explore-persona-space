@@ -896,6 +896,59 @@ def _resolve_spec(
     )
 
 
+def _derived_extra_cones(issue: int) -> list[str]:
+    """Foreign-issue artifact cone dirs derived from the task's persisted plans (#2608).
+
+    Reads the UNION of ``tasks/<status>/<issue>/plans/v*.md`` (resolved via
+    ``task_workflow.find_task_path`` — never hand-built ``tasks/...`` paths)
+    through ``verify_carryover_inputs.extra_cones_for_plan``, returning the
+    sorted deduped ``(ood_)eval_results/issue_<M>`` / ``figures/issue_<M>``
+    cone dirs for foreign issues ``M != issue``.
+
+    FAIL-SOFT on EVERY error class (task not found, no plans dir, unreadable
+    plan, import failure): returns ``[]`` after printing a one-line note —
+    cone derivation must never fail or stall a provision.
+    """
+    try:
+        import verify_carryover_inputs as _vci  # same-dir import (scripts/)
+
+        from explore_persona_space.task_workflow import find_task_path
+
+        plans_dir = find_task_path(issue) / "plans"
+        cones: set[str] = set()
+        for p in sorted(plans_dir.glob("v*.md")):
+            cones.update(_vci.extra_cones_for_plan(p.read_text(encoding="utf-8"), issue))
+        return sorted(cones)
+    except Exception as exc:
+        # Fail-soft by contract (#2608): the note is the audit trail; the
+        # bootstrap-side audit legs + the workload's own input read remain
+        # the loud backstops.
+        print(f"NOTE: extra-cone derivation skipped for issue {issue}: {exc!r}")
+        return []
+
+
+def _bootstrap_env(intent_label: str, issue: int | None) -> dict[str, str]:
+    """Child env for bootstrap_pod.sh: POD_INTENT + ISSUE + merged extra cones.
+
+    When ``issue`` is set, UNIONs any caller-exported ``BOOTSTRAP_EXTRA_CONES``
+    with the plan-derived foreign-issue cone set (#2608) — order-stable dedupe,
+    caller tokens first, space-joined — and prints the final set. On an empty
+    union the caller env is left untouched (fail-soft derivation included).
+    """
+    env = os.environ.copy()
+    env["POD_INTENT"] = intent_label
+    if issue is not None:
+        env["ISSUE"] = str(issue)
+        merged: list[str] = []
+        for cone in (*env.get("BOOTSTRAP_EXTRA_CONES", "").split(), *_derived_extra_cones(issue)):
+            if cone not in merged:
+                merged.append(cone)
+        if merged:
+            env["BOOTSTRAP_EXTRA_CONES"] = " ".join(merged)
+            print(f"Extra sparse cones (caller + plan-derived): {' '.join(merged)}")
+    return env
+
+
 def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = None) -> int:
     """Run the existing bootstrap_pod.sh against a managed pod entry.
 
@@ -911,20 +964,22 @@ def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = 
     bootstrap_pod.sh consumes it LOCALLY (captured into ``ISSUE_VAL`` and
     baked into the ssh payload) — ssh forwards no env vars (#1739).
 
-    A pod that reads ANOTHER issue's committed artifacts declares the extra
-    cones via ``BOOTSTRAP_EXTRA_CONES`` (space-separated repo-relative dirs,
-    e.g. ``"eval_results/issue_722"``), exported before ``pod.py provision``
-    / ``pod.py bootstrap`` — it passes through the ``os.environ`` copy below.
+    ``BOOTSTRAP_EXTRA_CONES`` (space-separated repo-relative dirs, e.g.
+    ``"eval_results/issue_722"``) is AUTO-DERIVED from the task's persisted
+    plans when ``issue`` is set (#2608): the child env carries the UNION of
+    any caller-exported value (exported before ``pod.py provision`` /
+    ``pod.py bootstrap``) and the plan-cited foreign-issue
+    ``(ood_)eval_results/issue_<M>`` / ``figures/issue_<M>`` cone dirs
+    (``verify_carryover_inputs.extra_cones_for_plan``), so a pod that reads
+    ANOTHER issue's committed artifacts opens those cones by default.
+    Derivation is fail-soft (see :func:`_derived_extra_cones`) — a caller
+    export still works standalone and is never dropped.
     """
     print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
-    env = os.environ.copy()
-    env["POD_INTENT"] = intent_label
-    if issue is not None:
-        env["ISSUE"] = str(issue)
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
         cwd=str(PROJECT_ROOT),
-        env=env,
+        env=_bootstrap_env(intent_label, issue),
     )
 
 

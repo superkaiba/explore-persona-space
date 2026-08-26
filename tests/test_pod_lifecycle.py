@@ -6113,3 +6113,140 @@ def test_owner_fence_state_matches_guard_semantics():
     ).blocks_teardown
     tier2 = pod_lifecycle.owner_fence_state(scenarios["tier2-unbound-pass"], pod, now)
     assert tier2.pass_owner == "sess-a" and tier2.owner_matched
+
+
+# ---------------------------------------------------------------------------
+# #2608: plan-derived BOOTSTRAP_EXTRA_CONES at _bootstrap (auto-threading).
+# ---------------------------------------------------------------------------
+
+
+def _fake_task_dir(tmp_path: Path, plans: dict[str, str]) -> Path:
+    """A tasks/<status>/<N>/-shaped dir with the given plans/v*.md contents."""
+    task_dir = tmp_path / "running" / "2569"
+    (task_dir / "plans").mkdir(parents=True)
+    for name, text in plans.items():
+        (task_dir / "plans" / name).write_text(text)
+    return task_dir
+
+
+def test_derived_extra_cones_reads_persisted_plans_union(tmp_path, monkeypatch):
+    """Real _derived_extra_cones body: unions ALL plans/v*.md, own issue excluded.
+
+    Boundary fake only (task_workflow.find_task_path — the task-resolution /
+    filesystem seam); the plan reads + extra_cones_for_plan run for real.
+    """
+    import explore_persona_space.task_workflow as tw
+
+    task_dir = _fake_task_dir(
+        tmp_path,
+        {
+            "v1.md": (
+                "Reads eval_results/issue_1482/x.json and its own "
+                "eval_results/issue_2569/own.json\n"
+            ),
+            "v2.md": "Also ood_eval_results/issue_779/y.jsonl and figures/issue_2476/z.png\n",
+        },
+    )
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: task_dir)
+    assert pod_lifecycle._derived_extra_cones(2569) == [
+        "eval_results/issue_1482",
+        "figures/issue_2476",
+        "ood_eval_results/issue_779",
+    ]
+
+
+def test_bootstrap_env_unions_caller_and_derived_cones(tmp_path, monkeypatch, capsys):
+    """Caller-exported BOOTSTRAP_EXTRA_CONES unions with the derived set:
+    order-stable dedupe (caller first), idempotent on re-merge."""
+    import explore_persona_space.task_workflow as tw
+
+    task_dir = _fake_task_dir(
+        tmp_path,
+        {"v1.md": "Reads eval_results/issue_2/a.json and figures/issue_3/b.png\n"},
+    )
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: task_dir)
+    monkeypatch.setenv("BOOTSTRAP_EXTRA_CONES", "eval_results/issue_1 eval_results/issue_2")
+    env = pod_lifecycle._bootstrap_env("lora-7b", 2569)
+    assert env["ISSUE"] == "2569"
+    assert env["POD_INTENT"] == "lora-7b"
+    assert (
+        env["BOOTSTRAP_EXTRA_CONES"] == "eval_results/issue_1 eval_results/issue_2 figures/issue_3"
+    )
+    assert "Extra sparse cones" in capsys.readouterr().out
+    # Idempotent: merging the already-merged value changes nothing.
+    monkeypatch.setenv("BOOTSTRAP_EXTRA_CONES", env["BOOTSTRAP_EXTRA_CONES"])
+    env2 = pod_lifecycle._bootstrap_env("lora-7b", 2569)
+    assert env2["BOOTSTRAP_EXTRA_CONES"] == env["BOOTSTRAP_EXTRA_CONES"]
+
+
+def test_bootstrap_env_fail_soft_missing_task(monkeypatch, capsys):
+    """Fail-soft pin (#2608 plan): a missing task never raises, never mutates
+    the caller env, and still surfaces its one-line note (never a silent pass)."""
+    import explore_persona_space.task_workflow as tw
+
+    def _missing(task_id: int) -> Path:
+        raise FileNotFoundError(f"task #{task_id} not found in registry or on disk")
+
+    monkeypatch.setattr(tw, "find_task_path", _missing)
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    env = pod_lifecycle._bootstrap_env("eval", 999999)
+    assert "BOOTSTRAP_EXTRA_CONES" not in env
+    assert env["ISSUE"] == "999999"
+    out = capsys.readouterr().out
+    assert "extra-cone derivation skipped for issue 999999" in out
+    assert "FileNotFoundError" in out
+
+
+def test_bootstrap_env_fail_soft_unexpected_error_surfaces_note(monkeypatch, capsys):
+    """Negative control: an UNEXPECTED internal error class still fail-softs
+    with its note — derivation must never fail or stall a provision."""
+    import explore_persona_space.task_workflow as tw
+
+    def _boom(task_id: int) -> Path:
+        raise RuntimeError("registry corrupted (synthetic)")
+
+    monkeypatch.setattr(tw, "find_task_path", _boom)
+    monkeypatch.setenv("BOOTSTRAP_EXTRA_CONES", "eval_results/issue_7")
+    env = pod_lifecycle._bootstrap_env("eval", 42)
+    # Caller-exported cones survive a failed derivation untouched.
+    assert env["BOOTSTRAP_EXTRA_CONES"] == "eval_results/issue_7"
+    out = capsys.readouterr().out
+    assert "extra-cone derivation skipped for issue 42" in out
+    assert "RuntimeError" in out
+
+
+def test_bootstrap_env_without_issue_leaves_env_untouched(monkeypatch):
+    """No issue => no derivation, no ISSUE, caller cones pass through as-is."""
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    env = pod_lifecycle._bootstrap_env("custom", None)
+    assert "ISSUE" not in env
+    assert "BOOTSTRAP_EXTRA_CONES" not in env
+
+
+def test_bootstrap_body_threads_merged_env_into_subprocess(tmp_path, monkeypatch):
+    """Real _bootstrap body end-to-end: the merged env reaches subprocess.call.
+
+    The whole chain (_bootstrap -> _bootstrap_env -> _derived_extra_cones ->
+    verify_carryover_inputs.extra_cones_for_plan) runs for real; fakes sit
+    only at the external boundaries (find_task_path, subprocess.call — the
+    latter signature-conformant with the call site's cmd/cwd/env shape).
+    """
+    import explore_persona_space.task_workflow as tw
+
+    task_dir = _fake_task_dir(tmp_path, {"v1.md": "Reads figures/issue_2/b.png\n"})
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: task_dir)
+    monkeypatch.setenv("BOOTSTRAP_EXTRA_CONES", "eval_results/issue_1")
+    calls: list[dict] = []
+
+    def fake_call(cmd, cwd=None, env=None):
+        calls.append({"cmd": cmd, "cwd": cwd, "env": env})
+        return 0
+
+    monkeypatch.setattr(pod_lifecycle.subprocess, "call", fake_call)
+    rc = pod_lifecycle._bootstrap("pod-2569", intent_label="eval", issue=2569)
+    assert rc == 0
+    (call,) = calls
+    assert call["cmd"][0] == "bash" and call["cmd"][-1] == "pod-2569"
+    assert call["env"]["ISSUE"] == "2569"
+    assert call["env"]["POD_INTENT"] == "eval"
+    assert call["env"]["BOOTSTRAP_EXTRA_CONES"] == "eval_results/issue_1 figures/issue_2"

@@ -318,6 +318,8 @@ def test_extra_cones_env_opens_foreign_issue_cones(scratch: Path, origin: Path) 
     assert "eval_results/issue_400" in cones, f"extra cone missing: {sorted(cones)}"
     assert (repo / "eval_results/issue_400/x.txt").is_file()
     assert "eval_results/issue_1739" in cones
+    # Leg A negative (#2608): every declared extra cone landed => no WARNING.
+    assert "WARNING" not in result.stderr
 
 
 # ---------------------------------------------------------------------------
@@ -442,3 +444,114 @@ def test_pod_py_bootstrap_env_carries_issue(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.delenv("ISSUE", raising=False)
     env = pod._bootstrap_env_with_intent(None)
     assert "ISSUE" not in env
+
+
+# ---------------------------------------------------------------------------
+# 6. Post-checkout audit legs A + B (#2608): declared-cone verification and
+#    the driver-grep backstop for undeclared cross-issue reads. EXECUTED
+#    payload tests — anchor-only presence checks cannot tell a never-firing
+#    warning from a firing one (the incident shape one level up).
+# ---------------------------------------------------------------------------
+
+
+def test_audit_leg_a_warns_on_declared_but_unrealized_extra_cone(
+    scratch: Path, origin: Path
+) -> None:
+    """Leg A positive: a DECLARED extra cone that never landed draws a WARNING.
+
+    ``git sparse-checkout add`` of a not-yet-committed dir still lists it
+    (probed at implementation time), so a healthy payload cannot realize the
+    missing state; the regression this leg guards is the ADD not landing
+    (a future refactor regressing the add sites — the #2569 shape one level
+    up). Simulate it by no-op'ing the extra-cone add commands in the
+    materialized payload, then execute: the audit must WARN with the remedy
+    while rc stays 0 (warn loud, never hard-fail).
+    """
+    payload = _materialize_payload(
+        scratch, origin, issue="1739", extra_cones="eval_results/issue_400"
+    )
+    text = payload.read_text()
+    assert "git sparse-checkout add eval_results/issue_400" in text
+    payload.write_text(
+        text.replace("git sparse-checkout add eval_results/issue_400", ": regression-sim")
+    )
+    result = _exec_payload_clean_env(payload, scratch)
+    assert result.returncode == 0, f"audit must never hard-fail:\n{result.stdout}\n{result.stderr}"
+    assert "WARNING: declared extra cone eval_results/issue_400 MISSING" in result.stderr
+    assert "git sparse-checkout add eval_results/issue_400" in result.stderr, (
+        "the leg-A warning must name the one-line sparse-checkout add remedy"
+    )
+
+
+def test_audit_leg_b_warns_on_driver_referenced_foreign_cone(scratch: Path, origin: Path) -> None:
+    """Leg B positive: a driver citing a foreign issue's artifacts with the
+    cone unopened draws a WARNING; own-issue refs (incl. ood_) never warn."""
+    driver = origin / "scripts" / "issue1739_reader.py"
+    driver.write_text(
+        'FOREIGN = "eval_results/issue_400/pvsynth/x.txt"\n'
+        'OWN = "eval_results/issue_1739/pvsynth/x.txt"\n'
+        # Own-issue ood_ ref: NOT in the default per-issue cone set, so only
+        # the leg-B own-issue `continue` keeps it warning-free.
+        'OWN_OOD = "ood_eval_results/issue_1739/raw.json"\n'
+    )
+    _git("add", "scripts/issue1739_reader.py", cwd=origin)
+    _git(
+        "-c",
+        "user.email=t@example.com",
+        "-c",
+        "user.name=t",
+        "commit",
+        "-q",
+        "-m",
+        "driver",
+        cwd=origin,
+    )
+    payload = _materialize_payload(scratch, origin, issue="1739")
+    result = _exec_payload_clean_env(payload, scratch)
+    assert result.returncode == 0, f"audit must never hard-fail:\n{result.stdout}\n{result.stderr}"
+    assert "WARNING: driver-referenced foreign cone eval_results/issue_400 MISSING" in (
+        result.stderr
+    )
+    assert "git sparse-checkout add eval_results/issue_400" in result.stderr, (
+        "the leg-B warning must name the one-line sparse-checkout add remedy"
+    )
+    assert "issue_1739 MISSING" not in result.stderr, (
+        "own-issue driver refs (incl. ood_eval_results/issue_1739) must not warn"
+    )
+
+
+def test_audit_leg_b_foreign_cone_present_no_warning(scratch: Path, origin: Path) -> None:
+    """Leg B negative: the driver-referenced foreign cone IS open => no WARNING."""
+    driver = origin / "scripts" / "issue1739_reader.py"
+    driver.write_text('FOREIGN = "eval_results/issue_400/x.txt"\n')
+    _git("add", "scripts/issue1739_reader.py", cwd=origin)
+    _git(
+        "-c",
+        "user.email=t@example.com",
+        "-c",
+        "user.name=t",
+        "commit",
+        "-q",
+        "-m",
+        "driver",
+        cwd=origin,
+    )
+    payload = _materialize_payload(
+        scratch, origin, issue="1739", extra_cones="eval_results/issue_400"
+    )
+    result = _exec_payload_clean_env(payload, scratch)
+    assert result.returncode == 0, f"payload failed:\n{result.stdout}\n{result.stderr}"
+    assert "WARNING" not in result.stderr
+
+
+def test_audit_leg_b_empty_driver_glob_is_inert(scratch: Path, origin: Path) -> None:
+    """Leg B negative + empty-glob guard: no per-issue drivers => rc 0, no error.
+
+    The origin fixture ships no ``scripts/issue1739_*.py``, so the unmatched
+    glob must stay inert under the payload's ``set -eu`` (the ls guard), with
+    no warning and no crash.
+    """
+    payload = _materialize_payload(scratch, origin, issue="1739")
+    result = _exec_payload_clean_env(payload, scratch)
+    assert result.returncode == 0, f"payload failed:\n{result.stdout}\n{result.stderr}"
+    assert "WARNING" not in result.stderr

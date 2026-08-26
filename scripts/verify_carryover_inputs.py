@@ -285,6 +285,46 @@ def _issue_of_path(path: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+# --- Cross-issue cone derivation (#2608) ------------------------------------
+# Cone-dir head of a Channel-A candidate: unlike _ISSUE_DIR_RE this accepts a
+# bare dir citation with NO trailing slash (`eval_results/issue_1482`), since
+# a dir/no-ext candidate is still a dependency declaration for cone purposes.
+_CONE_HEAD_RE = re.compile(r"^((?:ood_)?eval_results)/issue_(\d+)(?:/|$)")
+# figures/issue_<M> is NOT in _PATH_RE's alternation (Channel A never fires on
+# it), so cone derivation scans the plan text directly. Same left guard as
+# _PATH_RE so HF-repo / nested (`.../figures/issue_5`) forms never match.
+_FIGURES_ISSUE_RE = re.compile(r"(?<![\w/\-.])figures/issue_(\d+)(?!\d)")
+
+
+def extra_cones_for_plan(plan_text: str, issue: int) -> list[str]:
+    """Sorted, deduped FOREIGN-issue artifact cone dirs cited in a plan (#2608).
+
+    Returns the top-2-component cone dirs (``eval_results/issue_<M>``,
+    ``ood_eval_results/issue_<M>``, ``figures/issue_<M>``) for every cited
+    path whose owning issue ``M != issue`` — the set pod bootstrap must open
+    via ``BOOTSTRAP_EXTRA_CONES`` so the round's carry-over inputs exist on
+    the pod's cone sparse-checkout (incident: #2569's first launch died on
+    BOTH pods because the cross-issue cones were hidden).
+
+    Derives from ALL Channel-A regex matches INCLUDING skip-classed
+    candidates (glob ``eval_results/issue_M/*.json``, trailing-``/`` dir,
+    no-ext forms): those skip reasons exist for the GATE's never-block
+    contract, but for cone derivation they are real dependency declarations —
+    filtering to classify-eligible candidates only would recreate a blind
+    path for plans that cite only globs/dirs. Own-issue paths are never
+    returned.
+    """
+    cones: set[str] = set()
+    for cand in extract_candidate_paths(plan_text):
+        m = _CONE_HEAD_RE.match(cand["path"])
+        if m and int(m.group(2)) != issue:
+            cones.add(f"{m.group(1)}/issue_{m.group(2)}")
+    for m in _FIGURES_ISSUE_RE.finditer(plan_text):
+        if int(m.group(1)) != issue:
+            cones.add(f"figures/issue_{m.group(1)}")
+    return sorted(cones)
+
+
 def _expand_braces(s: str) -> list[str]:
     """Expand `{a,b}` brace-globs (recursively for multiple groups)."""
     m = re.search(r"\{([^{}]*)\}", s)
@@ -1388,26 +1428,38 @@ def _repo_branch_arg(value: str) -> str:
 
 
 def _validate_cli_mode(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
-    """Post-parse mode validation (#2263); `parser.error` exits 2.
+    """Post-parse mode validation (#2263, #2608); `parser.error` exits 2.
 
-    Resolver mode (--print-repo-branch) takes only --issue/--repo-root —
-    every check-mode flag is refused loud so a fence typo cannot half-run
-    the gate; check mode still REQUIRES --plan.
+    Resolver modes (--print-repo-branch / --print-extra-cones) are mutually
+    exclusive; each takes only its own flag subset — every check-mode flag
+    is refused loud so a fence typo cannot half-run the gate; check mode
+    still REQUIRES --plan. --print-extra-cones additionally accepts an
+    OPTIONAL --plan (an explicit plan file overrides task_workflow
+    resolution of the persisted plans/v*.md union).
     """
+    if args.print_repo_branch and args.print_extra_cones:
+        parser.error("--print-repo-branch and --print-extra-cones are mutually exclusive")
+    check_mode_flags = [
+        ("--ref", args.ref is not None),
+        ("--repo-branch", args.repo_branch is not None),
+        ("--extra-sync-path", bool(args.extra_sync_path)),
+        ("--no-fetch", args.no_fetch),
+        ("--json", args.as_json),
+        ("--lane", args.lane != "clone"),
+    ]
     if args.print_repo_branch:
-        forbidden = [
-            ("--plan", args.plan is not None),
-            ("--ref", args.ref is not None),
-            ("--repo-branch", args.repo_branch is not None),
-            ("--extra-sync-path", bool(args.extra_sync_path)),
-            ("--no-fetch", args.no_fetch),
-            ("--json", args.as_json),
-            ("--lane", args.lane != "clone"),
-        ]
+        forbidden = [("--plan", args.plan is not None), *check_mode_flags]
         bad = [flag for flag, hit in forbidden if hit]
         if bad:
             parser.error(
                 f"--print-repo-branch combines only with --issue/--repo-root (got {', '.join(bad)})"
+            )
+    elif args.print_extra_cones:
+        bad = [flag for flag, hit in check_mode_flags if hit]
+        if bad:
+            parser.error(
+                "--print-extra-cones combines only with --issue/--repo-root[/--plan] "
+                f"(got {', '.join(bad)})"
             )
     elif args.plan is None:
         parser.error("--plan is required")
@@ -1425,6 +1477,51 @@ def _print_repo_branch_mode(repo_root: Path, issue: int) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     print(branch)
+    return 0
+
+
+def _print_extra_cones_mode(issue: int, plan: str | None) -> int:
+    """Execute --print-extra-cones: space-separated foreign cone dirs, exit 0.
+
+    FAIL-SOFT by contract (#2608): this mode feeds pod provisioning
+    (``pod_lifecycle._bootstrap`` derives ``BOOTSTRAP_EXTRA_CONES`` from it)
+    and must never fail or stall a provision — an unreadable plan, an
+    unresolvable task, an import failure, or zero matches all print an empty
+    stdout and exit 0, with a one-line NOTE on stderr for the error classes
+    (never a silent swallow). Distinct from --print-repo-branch, whose
+    refusals are load-bearing (exit 2). Without --plan, reads the UNION of
+    the task's persisted plans/v*.md via ``task_workflow.find_task_path``
+    (never hand-built ``tasks/...`` paths): cones are additive, idempotent
+    and JSON-tree-sized, so over-inclusion from a superseded plan version
+    costs a few MB of promisor fetch, while under-inclusion is exactly the
+    #2569 incident class.
+    """
+    texts: list[str] = []
+    if plan is not None:
+        try:
+            texts.append(Path(plan).read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"NOTE: --print-extra-cones: cannot read plan {plan}: {exc}", file=sys.stderr)
+            return 0
+    else:
+        try:
+            from explore_persona_space.task_workflow import find_task_path
+
+            plans_dir = find_task_path(issue) / "plans"
+            for p in sorted(plans_dir.glob("v*.md")):
+                texts.append(p.read_text(encoding="utf-8"))
+        except Exception as exc:
+            # Fail-soft resolver contract (#2608): task not found, registry
+            # drift, branch-guard refusal, import failure — note + exit 0.
+            print(
+                f"NOTE: --print-extra-cones: cannot resolve persisted plans for issue "
+                f"{issue}: {exc!r}",
+                file=sys.stderr,
+            )
+            return 0
+    cones = sorted({c for t in texts for c in extra_cones_for_plan(t, issue)})
+    if cones:
+        print(" ".join(cones))
     return 0
 
 
@@ -1456,6 +1553,19 @@ def main(argv: list[str] | None = None) -> int:
             "issue-scoped branch resolver BOTH Step 6 fences call (#2263). Exit 2 with "
             "EMPTY stdout on zero or multiple candidates; combines only with "
             "--issue/--repo-root"
+        ),
+    )
+    parser.add_argument(
+        "--print-extra-cones",
+        action="store_true",
+        help=(
+            "print the space-separated FOREIGN-issue artifact cone dirs "
+            "(eval_results / ood_eval_results / figures issue_<M> trees, M != --issue) "
+            "cited in the plan text, for BOOTSTRAP_EXTRA_CONES threading at pod "
+            "provision (#2608). With --plan reads that file; without it, reads the "
+            "UNION of the task's persisted plans/v*.md via task_workflow. FAIL-SOFT "
+            "resolver mode: no plan / no task / no matches print nothing and exit 0 "
+            "(never blocks a provision); combines only with --issue/--repo-root[/--plan]"
         ),
     )
     ref_group = parser.add_mutually_exclusive_group()
@@ -1524,6 +1634,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", dest="as_json", help="JSON findings")
     args = parser.parse_args(argv)
     _validate_cli_mode(parser, args)
+
+    if args.print_extra_cones:
+        # #2608 resolver mode: fail-soft by contract; needs no repo root
+        # (plan text only), so it dispatches BEFORE repo-root resolution.
+        return _print_extra_cones_mode(args.issue, args.plan)
 
     repo_root = args.repo_root if args.repo_root is not None else _default_repo_root()
     if repo_root is None:
