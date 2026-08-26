@@ -2726,6 +2726,29 @@ def test_extra_cones_for_plan_figures_right_boundary_rejects_suffix_named_trees(
     ]
 
 
+def test_extra_cones_for_plan_brace_expansion_cap_skips_degenerate_candidate(capsys) -> None:
+    """Cap pin (#2608 r3, cone-brace-expansion-unbounded NIT): a candidate
+    whose brace groups multiply past _BRACE_EXPANSION_CAP is skipped with a
+    stderr note BEFORE expansion; healthy candidates in the same plan still
+    derive. The count check is a pre-expansion product, so the degenerate
+    candidate never materializes its Cartesian set."""
+    members = ",".join(str(i) for i in range(10))  # 10 members per group
+    # 4 groups of 10 => 10_000 expansions > 512 cap.
+    degenerate = f"eval_results/issue_{{{members}}}/a_{{{members}}}/b_{{{members}}}/c_{{{members}}}"
+    plan = f"{degenerate} plus a healthy eval_results/issue_{{3,4}}/x.json cite"
+    assert vci.extra_cones_for_plan(plan, 9) == [
+        "eval_results/issue_3",
+        "eval_results/issue_4",
+    ]
+    err = capsys.readouterr().err
+    assert "brace expansions" in err and "cap 512" in err
+    # At-or-under cap expands normally (boundary: 2 members == trivially under).
+    assert vci.extra_cones_for_plan("eval_results/issue_{1,2}/x.json", 9) == [
+        "eval_results/issue_1",
+        "eval_results/issue_2",
+    ]
+
+
 def test_print_extra_cones_cli_with_plan(tmp_path: Path, capsys) -> None:
     """--print-extra-cones on an explicit tmp plan: space-joined set, exit 0."""
     plan = _plan(

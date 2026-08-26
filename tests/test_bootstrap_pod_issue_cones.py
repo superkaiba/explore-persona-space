@@ -431,6 +431,14 @@ def test_pod_py_derives_issue_from_pod_name() -> None:
 def test_pod_py_bootstrap_env_carries_issue(monkeypatch: pytest.MonkeyPatch) -> None:
     import pod
 
+    import explore_persona_space.task_workflow as tw
+
+    # Hermetic: keep the (fail-soft, #2608 r3) cone derivation off the REAL
+    # task registry — this test pins ISSUE precedence only.
+    def _no_task(task_id: int) -> Path:
+        raise FileNotFoundError(f"task #{task_id} (synthetic)")
+
+    monkeypatch.setattr(tw, "find_task_path", _no_task)
     monkeypatch.delenv("ISSUE", raising=False)
     env = pod._bootstrap_env_with_intent("pod-1739-r2fair")
     assert env.get("ISSUE") == "1739"
@@ -444,6 +452,156 @@ def test_pod_py_bootstrap_env_carries_issue(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.delenv("ISSUE", raising=False)
     env = pod._bootstrap_env_with_intent(None)
     assert "ISSUE" not in env
+
+
+# ---------------------------------------------------------------------------
+# 5b. pod.py MANUAL bootstrap path derives plan cones (#2608 round 3 —
+#     concern pod-py-bootstrap-path-no-derivation). Both public bootstrap
+#     paths share pod_lifecycle.merge_derived_extra_cones, so a
+#     `provision --no-bootstrap` followed by the documented
+#     `pod.py bootstrap <name>` recovery opens the same cross-issue cones.
+# ---------------------------------------------------------------------------
+
+
+def _plan_task_dir(tmp_path: Path, issue: int, plan_text: str) -> Path:
+    """A tasks/<status>/<N>-shaped dir holding one persisted plans/v1.md."""
+    task_dir = tmp_path / "running" / str(issue)
+    (task_dir / "plans").mkdir(parents=True)
+    (task_dir / "plans" / "v1.md").write_text(plan_text)
+    return task_dir
+
+
+def test_pod_py_manual_bootstrap_env_derives_cones_without_export(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Real _bootstrap_env_with_intent body: with NO caller export, the manual
+    path derives the plan-cited foreign cones (pre-r3 it set only
+    POD_INTENT + ISSUE). Boundary fake: task_workflow.find_task_path only —
+    the merge helper + extra_cones_for_plan chain runs for real."""
+    import pod
+
+    import explore_persona_space.task_workflow as tw
+
+    task_dir = _plan_task_dir(
+        tmp_path,
+        1739,
+        "Reads eval_results/issue_1482/x.json and its own eval_results/issue_1739/own.json\n",
+    )
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: task_dir)
+    monkeypatch.setenv("POD_INTENT", "eval")  # precedence-1 branch: no sidecar read
+    monkeypatch.delenv("ISSUE", raising=False)
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    env = pod._bootstrap_env_with_intent("pod-1739-r2fair")
+    assert env["ISSUE"] == "1739"
+    assert env["BOOTSTRAP_EXTRA_CONES"] == "eval_results/issue_1482"
+    assert "Extra sparse cones" in capsys.readouterr().out
+
+
+def test_pod_py_manual_bootstrap_env_unions_caller_export(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Caller export survives FIRST; derived cones union in (order-stable)."""
+    import pod
+
+    import explore_persona_space.task_workflow as tw
+
+    task_dir = _plan_task_dir(tmp_path, 1739, "Reads figures/issue_2476/z.png\n")
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: task_dir)
+    monkeypatch.setenv("POD_INTENT", "eval")
+    monkeypatch.delenv("ISSUE", raising=False)
+    monkeypatch.setenv("BOOTSTRAP_EXTRA_CONES", "eval_results/issue_7")
+    env = pod._bootstrap_env_with_intent("pod-1739")
+    assert env["BOOTSTRAP_EXTRA_CONES"] == "eval_results/issue_7 figures/issue_2476"
+
+
+def test_pod_py_manual_bootstrap_env_fail_soft_leaves_env_untouched(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Fail-soft pin: a derivation error never raises, never mutates the
+    caller env, and surfaces its one-line stderr note (never a silent pass)."""
+    import pod
+
+    import explore_persona_space.task_workflow as tw
+
+    def _boom(task_id: int) -> Path:
+        raise RuntimeError("registry corrupted (synthetic)")
+
+    monkeypatch.setattr(tw, "find_task_path", _boom)
+    monkeypatch.setenv("POD_INTENT", "eval")
+    monkeypatch.delenv("ISSUE", raising=False)
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    env = pod._bootstrap_env_with_intent("pod-42")
+    assert env["ISSUE"] == "42"
+    assert "BOOTSTRAP_EXTRA_CONES" not in env
+    err = capsys.readouterr().err
+    assert "extra-cone derivation skipped for issue 42" in err
+    assert "RuntimeError" in err
+
+
+def test_pod_py_manual_bootstrap_env_non_numeric_issue_notes_and_skips(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A malformed operator ISSUE export fail-softs at the wrapper's own
+    int() with a stderr note — env untouched, bootstrap proceeds."""
+    import pod
+
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw, "find_task_path", lambda task_id: pytest.fail("must not resolve a task")
+    )
+    monkeypatch.setenv("POD_INTENT", "eval")
+    monkeypatch.setenv("ISSUE", "not-a-number")
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    env = pod._bootstrap_env_with_intent("pod-42")
+    assert env["ISSUE"] == "not-a-number"  # explicit override preserved verbatim
+    assert "BOOTSTRAP_EXTRA_CONES" not in env
+    err = capsys.readouterr().err
+    assert "extra-cone derivation skipped for manual bootstrap" in err
+    assert "ValueError" in err
+
+
+def test_pod_py_manual_bootstrap_no_issue_no_derivation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No resolvable issue => derivation never attempted (negative control:
+    a task resolution would fail the test)."""
+    import pod
+
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw, "find_task_path", lambda task_id: pytest.fail("must not resolve a task")
+    )
+    monkeypatch.setenv("POD_INTENT", "eval")
+    monkeypatch.delenv("ISSUE", raising=False)
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    env = pod._bootstrap_env_with_intent(None)
+    assert "ISSUE" not in env
+    assert "BOOTSTRAP_EXTRA_CONES" not in env
+
+
+def test_pod_py_manual_path_routes_through_shared_merge_helper(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AC3 choke-point pin (dispatch-level): the manual path calls the SAME
+    shared helper provision's _bootstrap_env uses. Body coverage of the real
+    helper lives in the sibling tests above + tests/test_pod_lifecycle.py."""
+    import pod
+    import pod_lifecycle
+
+    calls: list[tuple[int, str | None]] = []
+
+    def _recorder(env: dict[str, str], issue: int) -> dict[str, str]:
+        calls.append((issue, env.get("BOOTSTRAP_EXTRA_CONES")))
+        return env
+
+    monkeypatch.setattr(pod_lifecycle, "merge_derived_extra_cones", _recorder)
+    monkeypatch.setenv("POD_INTENT", "eval")
+    monkeypatch.delenv("ISSUE", raising=False)
+    monkeypatch.delenv("BOOTSTRAP_EXTRA_CONES", raising=False)
+    pod._bootstrap_env_with_intent("pod-77")
+    assert calls == [(77, None)]
 
 
 # ---------------------------------------------------------------------------

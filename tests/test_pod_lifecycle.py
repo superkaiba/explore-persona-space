@@ -6192,9 +6192,9 @@ def test_bootstrap_env_fail_soft_missing_task(monkeypatch, capsys):
     env = pod_lifecycle._bootstrap_env("eval", 999999)
     assert "BOOTSTRAP_EXTRA_CONES" not in env
     assert env["ISSUE"] == "999999"
-    out = capsys.readouterr().out
-    assert "extra-cone derivation skipped for issue 999999" in out
-    assert "FileNotFoundError" in out
+    err = capsys.readouterr().err  # diagnostics go to stderr (r3 NIT)
+    assert "extra-cone derivation skipped for issue 999999" in err
+    assert "FileNotFoundError" in err
 
 
 def test_bootstrap_env_fail_soft_unexpected_error_surfaces_note(monkeypatch, capsys):
@@ -6210,9 +6210,26 @@ def test_bootstrap_env_fail_soft_unexpected_error_surfaces_note(monkeypatch, cap
     env = pod_lifecycle._bootstrap_env("eval", 42)
     # Caller-exported cones survive a failed derivation untouched.
     assert env["BOOTSTRAP_EXTRA_CONES"] == "eval_results/issue_7"
-    out = capsys.readouterr().out
-    assert "extra-cone derivation skipped for issue 42" in out
-    assert "RuntimeError" in out
+    err = capsys.readouterr().err  # diagnostics go to stderr (r3 NIT)
+    assert "extra-cone derivation skipped for issue 42" in err
+    assert "RuntimeError" in err
+
+
+def test_derived_extra_cones_empty_plans_dir_notes_and_returns_empty(tmp_path, monkeypatch, capsys):
+    """r3 NIT (missing-plans-diagnostic-silent): an empty/absent plans dir is
+    no longer a silent [] — a one-line stderr note names it. Env untouched."""
+    import explore_persona_space.task_workflow as tw
+
+    task_dir = tmp_path / "running" / "2569"
+    (task_dir / "plans").mkdir(parents=True)  # exists but holds no v*.md
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: task_dir)
+    assert pod_lifecycle._derived_extra_cones(2569) == []
+    err = capsys.readouterr().err
+    assert "no persisted plans" in err
+    # Absent plans dir takes the same branch (glob on a missing dir is empty).
+    monkeypatch.setattr(tw, "find_task_path", lambda task_id: tmp_path / "running" / "7")
+    assert pod_lifecycle._derived_extra_cones(7) == []
+    assert "no persisted plans" in capsys.readouterr().err
 
 
 def test_bootstrap_env_without_issue_leaves_env_untouched(monkeypatch):

@@ -343,7 +343,7 @@ def extra_cones_for_plan(plan_text: str, issue: int) -> list[str]:
     cones: set[str] = set()
     for m in _CONE_CAND_RE.finditer(plan_text):
         raw = m.group("path").rstrip(_TRAIL_PUNCT)
-        for cand in _expand_braces(raw):
+        for cand in _bounded_brace_expansions(raw):
             em = _CONE_HEAD_RE.match(cand)
             if em and int(em.group(2)) != issue:
                 cones.add(f"{em.group(1)}/issue_{em.group(2)}")
@@ -351,6 +351,38 @@ def extra_cones_for_plan(plan_text: str, issue: int) -> list[str]:
             if fm and int(fm.group(1)) != issue:
                 cones.add(f"figures/issue_{fm.group(1)}")
     return sorted(cones)
+
+
+# Hard cap on the Cartesian brace expansion of ONE cone-scope candidate
+# (#2608 r3, cone-brace-expansion-unbounded NIT): real plans cite <= ~10
+# members per group, so 512 covers 2-3 modest groups while bounding a
+# degenerate many-group candidate that would otherwise multiply without
+# limit. Applies ONLY to cone derivation — gate-mode `_collect_decl` keeps
+# calling `_expand_braces` directly (its semantics are deliberately
+# untouched; the gate's declared values are operator-authored, not scanned
+# free text).
+_BRACE_EXPANSION_CAP = 512
+
+
+def _bounded_brace_expansions(raw: str, cap: int = _BRACE_EXPANSION_CAP) -> list[str]:
+    """`_expand_braces` bounded by the Cartesian product of group sizes.
+
+    Computes the expansion COUNT first (product of per-group member counts —
+    exact for the flat, non-nested groups `_CONE_CAND_RE` admits) so an
+    over-cap candidate is SKIPPED with a one-line stderr note BEFORE any
+    expansion is materialized. Fail-soft: cone derivation must never stall a
+    provision on a pathological plan line.
+    """
+    n = 1
+    for grp in re.findall(r"\{([^{}\n]*)\}", raw):
+        n *= grp.count(",") + 1
+    if n > cap:
+        print(
+            f"NOTE: skipping cone candidate with {n} brace expansions (> cap {cap}): {raw[:120]}",
+            file=sys.stderr,
+        )
+        return []
+    return _expand_braces(raw)
 
 
 def _expand_braces(s: str) -> list[str]:
