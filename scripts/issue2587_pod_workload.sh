@@ -587,15 +587,23 @@ phase p4_fits
 # P2/P3 wrote (r2 g2 concern 1; defaults are byte-equal). The finalize leg
 # passes the plan-§6.5 destination prefixes EXPLICITLY — fits.py raises on
 # `--upload hf` without them (r3 Codex Critical 1).
+# Per-leg --cache-dir (crash-fix r5; .claude/rules/crash-fix-rounds.md
+# § Per-leg out-roots, the #2330 fu1 trigger): both legs stream the SAME
+# HF chunks with delete-after-reduce, so a shared dl/ staging root lets the
+# faster leg purge chunks the slower leg is still reading
+# (FileNotFoundError). --out-root stays shared BY DESIGN (layer-keyed
+# files; finalize reads the union).
 launch_bg "$LOGS_DIR/issue-2587-p4-fits-l0-15.log" \
   env CUDA_VISIBLE_DEVICES=0 \
   uv run python "$FITS" --phase fits --layers 0-15 --device cuda \
-  --h-dim 4096 --store-prefix "$HF_PREFIX" --upload hf -v
+  --h-dim 4096 --store-prefix "$HF_PREFIX" --upload hf \
+  --cache-dir data/issue_2587/fits_cache_l0_15 -v
 P4_PID0="$LAST_BG_PID"
 launch_bg "$LOGS_DIR/issue-2587-p4-fits-l16-31.log" \
   env CUDA_VISIBLE_DEVICES=1 \
   uv run python "$FITS" --phase fits --layers 16-31 --device cuda \
-  --h-dim 4096 --store-prefix "$HF_PREFIX" --upload hf -v
+  --h-dim 4096 --store-prefix "$HF_PREFIX" --upload hf \
+  --cache-dir data/issue_2587/fits_cache_l16_31 -v
 P4_PID1="$LAST_BG_PID"
 wait_bg "$P4_PID0" "p4 fits layers 0-15" "$LOGS_DIR/issue-2587-p4-fits-l0-15.log"
 wait_bg "$P4_PID1" "p4 fits layers 16-31" "$LOGS_DIR/issue-2587-p4-fits-l16-31.log"
