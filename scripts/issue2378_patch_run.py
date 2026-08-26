@@ -24,12 +24,27 @@ Phases (each resumable; ``model_all`` = one model load for the model chain):
 - ``screen``   F_act per cell + the pre-registered pair-clustered bootstrap
                screen (patch_common.screen_families) -> confirm selection.
 - ``confirm``  temp-1.0 K=5 re-measure of the screened families (steered +
-               matched null), labeled post-selection.
+               matched null), labeled post-selection. ``--confirm-families``
+               overrides the screen-report list (validated against the
+               realized grid family set — fail loud on a typo).
+- ``bank_staged``  confirm-only rounds: stage the ORIGINAL round's bank
+               (rows + v_C) from ``--stage-bank-from-hf-prefix`` instead of
+               re-capturing, then re-run the in-process gates on THIS pod.
 - ``upload``   HF upload (rollout text + tensors + reports) + git harvest of
                the eval JSONs + results sentinel.
 - ``all``      parent mode: ensure model venv (issue2378_dispatch machinery),
                run ``model_all`` under the model interpreter, then ``upload``
                under the repo venv. Emits the single terminal ``[phase=done]``.
+
+Confirm-only rounds (e.g. the ``dana-behavior-confirm`` follow-up): pass
+``--confirm-families '<pair|char|dir|variant|steered>'`` +
+``--stage-bank-from-hf-prefix <orig>/bank`` + round-scoped ``--out-root`` /
+``--logs-dir`` / ``--hf-suffix`` / ``--ledger-subdir``. ``model_all`` then
+runs ``bank_staged`` + ``confirm`` only (anchors/grid/screen stay banked in
+the original round; the VM judge/analysis legs stage those back from the
+original HF prefixes via issue2378_patch_vm_stage.py), and ``upload``
+tolerates the absent anchors/grid dirs (fail-loud contract unchanged when
+the flag is absent).
 
 Layer-indexing seam (LOAD-BEARING): this task's stores index hidden states as
 ``hs[l]`` (hs[0]=embeddings), so task-layer L is the output of decoder BLOCK
@@ -640,6 +655,77 @@ def _load_bank(args) -> tuple[list[dict], dict[str, np.ndarray]]:
             "— stale/partial bank; re-run --phase bank into a fresh out-root"
         )
     return rows, vc
+
+
+BANK_STAGE_FILES = ("bank_rows.jsonl", "vc_bank.npz", "gate_report.json")
+
+
+def _stage_bank_files(prefix: str, out: Path) -> None:
+    """Stage the ORIGINAL round's three named bank files under HF ``prefix``
+    into ``out`` (never the ``vc_parts/`` capture residue). Idempotent
+    (present targets skip); atomic per-file publish via same-filesystem
+    ``os.replace`` (EXDEV-safe: scratch lives INSIDE ``out``)."""
+    import shutil
+
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    scratch = out / ".hfstage"
+    for name in BANK_STAGE_FILES:
+        target = out / name
+        if target.exists():
+            _log(f"[bank_staged] {name} already present — skip")
+            continue
+        got = hub.retry_transient(
+            lambda p=f"{prefix}/{name}": hf_hub_download(
+                cm.HF_DATA_REPO, p, repo_type="dataset", local_dir=str(scratch)
+            ),
+            what=f"stage {prefix}/{name}",
+        )
+        from explore_persona_space.atomic_io import atomic_replace
+
+        with atomic_replace(target) as tmp:  # process-unique temp name (#2336)
+            tmp.write_bytes(Path(got).read_bytes())
+        _log(f"[bank_staged] staged {name} <- {prefix}")
+    if scratch.is_dir():
+        shutil.rmtree(scratch)
+
+
+def phase_bank_staged(args) -> int:
+    """Confirm-only rounds: stage the ORIGINAL round's banked v_C inputs
+    (bank rows + vc_bank.npz + its gate report) from HF instead of
+    re-capturing them — the confirm leg then patches with donors BIT-IDENTICAL
+    to the ones the screen phase nominated — and RE-RUN the in-process gates
+    against the staged donors on THIS pod (fresh venv/CUDA env; the #2094
+    hs-vs-block seam + padding-parity + hooked-generate gates). Gate FAIL
+    exits RC_GATE exactly like phase_bank."""
+    _phase_line("patch_bank_staged")
+    if not args.stage_bank_from_hf_prefix:
+        raise SystemExit("phase bank_staged requires --stage-bank-from-hf-prefix (fail loud)")
+    out = _out(args) / "bank"
+    out.mkdir(parents=True, exist_ok=True)
+    _stage_bank_files(args.stage_bank_from_hf_prefix, out)
+    ctxs, bank_vc = _load_bank(args)  # key-coverage asserts on the staged bank
+    mctx = _ensure_mctx(args)
+    gate = _run_gates(args, mctx, ctxs, bank_vc)
+    gate["metadata"] = cm.run_metadata(
+        {
+            "phase": "patch_bank_staged",
+            "n_contexts": len(ctxs),
+            "staged_from": args.stage_bank_from_hf_prefix,
+        }
+    )
+    # Fresh-pod gate verdict supersedes the staged original's report.
+    cm.atomic_write_json(out / "gate_report.json", gate)
+    _log(
+        f"[bank_staged] contexts={len(ctxs)} gate_ok={gate['ok']} "
+        f"staged_from={args.stage_bank_from_hf_prefix}"
+    )
+    if not gate["ok"]:
+        _log("[bank_staged] GATE FAIL — designed halt (see gate_report.json)")
+        return RC_GATE
+    return 0
 
 
 # ── shared rollout post-processing ──────────────────────────────────────────
@@ -1448,6 +1534,34 @@ def phase_screen(args) -> int:
 # ── confirm (temp-1.0 K=5, labeled post-selection) ─────────────────────────
 
 
+def _confirm_family_override(raw: str | None, grid_families: set[str]) -> list[str] | None:
+    """Parse + validate ``--confirm-families`` against the REALIZED grid family
+    set (dana-behavior-confirm round: confirm a family the activation screen
+    did not select). Returns the sorted deduped key list, or None when the
+    flag is absent. Fails loud on an empty parse, a non-``|steered`` key
+    (confirm pairs each steered family with its matched ``|null`` family), or
+    any key not in the grid family set (typo guard)."""
+    if raw is None:
+        return None
+    fams = sorted({f.strip() for f in raw.split(",") if f.strip()})
+    if not fams:
+        raise SystemExit("--confirm-families given but empty after parsing (fail loud)")
+    bad_arm = sorted(f for f in fams if not f.endswith("|steered"))
+    if bad_arm:
+        raise SystemExit(
+            f"--confirm-families keys must be '|steered' family keys "
+            f"(each is confirm-paired with its matched '|null' family): {bad_arm}"
+        )
+    unknown = sorted(set(fams) - grid_families)
+    if unknown:
+        valid = sorted(f for f in grid_families if f.endswith("|steered"))
+        raise SystemExit(
+            f"--confirm-families: unknown family key(s) {unknown} — not in the realized "
+            f"grid family set; valid '|steered' keys: {valid}"
+        )
+    return fams
+
+
 def phase_confirm(args) -> int:
     _phase_line("patch_confirm")
     import random
@@ -1455,18 +1569,26 @@ def phase_confirm(args) -> int:
     out = _out(args) / "confirm"
     (out / "rollouts").mkdir(parents=True, exist_ok=True)
     (out / "va").mkdir(parents=True, exist_ok=True)
-    screen = json.loads((_out(args) / "screen" / "screen_report.json").read_text(encoding="utf-8"))
-    fams = screen["confirm_families"]
-    if not fams:
-        _log("[confirm] no screen-PASS families — nothing to confirm (recorded)")
-        # Inside the uploaded confirm subtree (r17 codex NIT: the valid
-        # "no families selected" terminal record must persist to HF).
-        cm.atomic_write_json(out / "rollouts" / "confirm_empty.json", {"confirm_families": []})
-        return 0
+    fams: list[str] = []
+    if args.confirm_families is None:
+        screen = json.loads(
+            (_out(args) / "screen" / "screen_report.json").read_text(encoding="utf-8")
+        )
+        fams = screen["confirm_families"]
+        if not fams:
+            _log("[confirm] no screen-PASS families — nothing to confirm (recorded)")
+            # Inside the uploaded confirm subtree (r17 codex NIT: the valid
+            # "no families selected" terminal record must persist to HF).
+            cm.atomic_write_json(out / "rollouts" / "confirm_empty.json", {"confirm_families": []})
+            return 0
     ctxs, bank_vc = _load_bank(args)
     by_ctx = {c["ctx_id"]: c for c in ctxs}
     dmaps = _derangement_maps(ctxs)
     cells = _grid_cells(args, ctxs)
+    override = _confirm_family_override(args.confirm_families, {c["family"] for c in cells})
+    if override is not None:
+        fams = override
+        _log(f"[confirm] --confirm-families override: {fams} (screen-report list bypassed)")
     wanted: list[dict] = []
     for fam in fams:
         null_fam = fam.rsplit("|", 1)[0] + "|null"
@@ -1530,11 +1652,19 @@ def phase_confirm(args) -> int:
 # ── upload + harvest ────────────────────────────────────────────────────────
 
 
+def _ledger_dir(args) -> Path:
+    """Git-harvest destination for this round's eval reports. Round-scoped via
+    ``--ledger-subdir`` (per-leg out-root discipline: a follow-up confirm leg
+    must never clobber the original round's committed reports)."""
+    return cm.REPO_ROOT / "eval_results" / "issue_2378" / args.ledger_subdir
+
+
 def phase_upload(args) -> int:
     _phase_line("patch_upload")
     import issue2378_dispatch as D
 
     out = _out(args)
+    confirm_only = bool(args.confirm_families)
     if args.skip_upload:
         _log("[upload] --skip-upload set — HF upload + harvest skipped (smoke only)")
         return 0
@@ -1542,9 +1672,14 @@ def phase_upload(args) -> int:
     meta = out / "meta"
     meta.mkdir(parents=True, exist_ok=True)
     openers_src = out / "anchors" / "openers.jsonl"
-    if not openers_src.exists():
+    if openers_src.exists():
+        (meta / "openers.jsonl").write_text(
+            openers_src.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+    elif confirm_only:
+        _log("[upload] confirm-only round — anchors phase not run in this root; openers skipped")
+    else:
         raise RuntimeError(f"missing {openers_src} (fail loud)")
-    (meta / "openers.jsonl").write_text(openers_src.read_text(encoding="utf-8"), encoding="utf-8")
     for stage_dir in ("anchors", "grid", "confirm"):
         led = out / stage_dir / "ledger.json"
         if led.exists():
@@ -1563,6 +1698,9 @@ def phase_upload(args) -> int:
             if stage == "confirm":
                 _log("[upload] confirm dir empty (no screen-PASS families) — skipped")
                 continue
+            if confirm_only and stage in ("anchors", "grid"):
+                _log(f"[upload] {sub} empty — confirm-only round (skipped)")
+                continue
             raise RuntimeError(f"missing/empty stage dir {local} (fail loud)")
         cm.upload_stage_dir(local, f"{_hf_prefix(args, 'raw')}/{stage}")
     tensor_dirs = [
@@ -1577,7 +1715,7 @@ def phase_upload(args) -> int:
     if args.skip_harvest:
         _log("[upload] --skip-harvest set — git harvest skipped (smoke: no tiny artifacts on git)")
     else:
-        ledger_dir = cm.REPO_ROOT / "eval_results" / "issue_2378" / pc.LEDGER_SUBDIR
+        ledger_dir = _ledger_dir(args)
         ledger_dir.mkdir(parents=True, exist_ok=True)
         for src, name in (
             (out / "bank" / "gate_report.json", "gate_report.json"),
@@ -1585,24 +1723,37 @@ def phase_upload(args) -> int:
             (out / "screen" / "fact_cells.json", "fact_cells.json"),
         ):
             if not src.exists():
+                if confirm_only and name != "gate_report.json":
+                    _log(f"[upload] harvest source {name} absent — confirm-only round (skipped)")
+                    continue
                 raise RuntimeError(f"missing harvest source {src} (fail loud)")
             (ledger_dir / name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
             harvested.append(str((ledger_dir / name).relative_to(cm.REPO_ROOT)))
-        D.git_harvest(harvested, f"task #2378: {pc.FOLLOWUP_LABEL} pod reports (gate/screen/fact)")
-    D.write_sentinel(
-        args,
-        "epm:results",
-        {
-            "followup_label": pc.FOLLOWUP_LABEL,
-            "harvested": harvested,
-            "hf_raw_prefix": _hf_prefix(args, "raw"),
-            "hf_tensor_prefix": _hf_prefix(args, "tensor"),
-        },
-    )
+        D.git_harvest(harvested, f"task #2378: {args.ledger_subdir} pod reports (gate/screen/fact)")
+    payload = {
+        "followup_label": args.ledger_subdir,
+        "harvested": harvested,
+        "hf_raw_prefix": _hf_prefix(args, "raw"),
+        "hf_tensor_prefix": _hf_prefix(args, "tensor"),
+    }
+    if confirm_only:
+        payload["confirm_families"] = args.confirm_families
+    D.write_sentinel(args, "epm:results", payload)
     return 0
 
 
 # ── parent mode (all) ───────────────────────────────────────────────────────
+
+
+def _model_chain(args) -> tuple:
+    """Model-phase chain for ``model_all``: the full grid chain by default; a
+    confirm-only round (``--confirm-families``) stages the banked inputs
+    (``--stage-bank-from-hf-prefix``; else re-captures the bank) and runs
+    confirm alone — anchors/grid/screen stay banked in the original round."""
+    if args.confirm_families:
+        bank = phase_bank_staged if args.stage_bank_from_hf_prefix else phase_bank
+        return (bank, phase_confirm)
+    return (phase_bank, phase_anchors, phase_grid, phase_screen, phase_confirm)
 
 
 def phase_model_all(args) -> int:
@@ -1611,26 +1762,18 @@ def phase_model_all(args) -> int:
     so the checkpoint is deserialized at most once per process and the HBM
     preflight runs only on that first load (r17 Claude M1 / codex
     patch-model-all-reloads); phases with no pending units never load."""
-    for fn in (phase_bank, phase_anchors, phase_grid, phase_screen, phase_confirm):
+    for fn in _model_chain(args):
         rc = fn(args)
         if rc != 0:
             return rc
     return 0
 
 
-def phase_all(args) -> int:
-    """Parent dispatcher: ensure model venv, run model_all under the model
-    interpreter, then upload under the repo venv. Runner OK-flags resume."""
-    if args.tiny:
-        raise SystemExit(
-            "--phase all is the pod parent mode and refuses --tiny (r17 Claude m3: children "
-            "would re-default to production dials) — the VM smoke runs --phase model_all/upload "
-            "directly under --tiny"
-        )
-    import issue2378_dispatch as D
-
-    runner = D.Runner(Path(args.logs_dir), resume=not args.no_resume, dry=False)
-    D.ensure_model_venv(args, runner)
+def _child_passthrough(args) -> list[str]:
+    """argv forwarded from the parent (``--phase all``) to child phase
+    invocations (model_all under the model venv, upload under the repo venv).
+    Every output-affecting flag must ride here — a dropped flag silently
+    re-defaults in the child."""
     passthrough = [
         "--out-root",
         str(args.out_root),
@@ -1650,6 +1793,8 @@ def phase_all(args) -> int:
         args.hf_suffix,
         "--ledger-root",
         str(args.ledger_root),
+        "--ledger-subdir",
+        args.ledger_subdir,
         "--cells-limit",
         str(args.cells_limit or 0),
         "--batch-tokens",
@@ -1661,6 +1806,10 @@ def phase_all(args) -> int:
         "--min-free-hbm-gb",
         str(args.min_free_hbm_gb),
     ]
+    if args.confirm_families:
+        passthrough += ["--confirm-families", args.confirm_families]
+    if args.stage_bank_from_hf_prefix:
+        passthrough += ["--stage-bank-from-hf-prefix", args.stage_bank_from_hf_prefix]
     if args.stage_raw_from_hf:
         passthrough.append("--stage-raw-from-hf")
     if args.lstar:
@@ -1673,6 +1822,23 @@ def phase_all(args) -> int:
         passthrough.append("--skip-upload")
     if args.skip_harvest:
         passthrough.append("--skip-harvest")
+    return passthrough
+
+
+def phase_all(args) -> int:
+    """Parent dispatcher: ensure model venv, run model_all under the model
+    interpreter, then upload under the repo venv. Runner OK-flags resume."""
+    if args.tiny:
+        raise SystemExit(
+            "--phase all is the pod parent mode and refuses --tiny (r17 Claude m3: children "
+            "would re-default to production dials) — the VM smoke runs --phase model_all/upload "
+            "directly under --tiny"
+        )
+    import issue2378_dispatch as D
+
+    runner = D.Runner(Path(args.logs_dir), resume=not args.no_resume, dry=False)
+    D.ensure_model_venv(args, runner)
+    passthrough = _child_passthrough(args)
     child_env = {CHILD_ENV: "1"}
     runner.run(
         "patch.model_all",
@@ -1685,7 +1851,7 @@ def phase_all(args) -> int:
         D.write_sentinel(
             args,
             "epm:failure",
-            {"followup_label": pc.FOLLOWUP_LABEL, "reason": "patch bank gate FAIL", "gate": gate},
+            {"followup_label": args.ledger_subdir, "reason": "patch bank gate FAIL", "gate": gate},
             blocks_pipeline=True,
         )
         return RC_GATE
@@ -1699,6 +1865,7 @@ def phase_all(args) -> int:
 
 PHASES = {
     "bank": phase_bank,
+    "bank_staged": phase_bank_staged,
     "anchors": phase_anchors,
     "grid": phase_grid,
     "screen": phase_screen,
@@ -1729,6 +1896,25 @@ def build_argparser() -> argparse.ArgumentParser:
         "--mined-dir", default=None, help="sega_mined rows dir (default <raw-root>/sega_mined)"
     )
     ap.add_argument("--stage-raw-from-hf", action="store_true")
+    ap.add_argument(
+        "--confirm-families",
+        default=None,
+        help="comma-separated '|steered' family keys overriding the screen-report confirm list "
+        "(confirm-only round; each key validated against the realized grid family set)",
+    )
+    ap.add_argument(
+        "--ledger-subdir",
+        default=pc.LEDGER_SUBDIR,
+        help="eval_results/issue_2378/<subdir> harvest destination + sentinel followup_label "
+        "(round-scoped for follow-up confirm legs — never clobber the original round's reports)",
+    )
+    ap.add_argument(
+        "--stage-bank-from-hf-prefix",
+        default=None,
+        help="HF data-repo prefix holding the ORIGINAL round's bank (e.g. "
+        "issue2378_xframing/raw_completions/causal_patching/bank); with --confirm-families, "
+        "model_all stages it + re-runs the gates instead of re-capturing the bank",
+    )
     ap.add_argument("--sentinel-dir", default=None)
     ap.add_argument("--no-resume", action="store_true")
     ap.add_argument("--skip-upload", action="store_true")
