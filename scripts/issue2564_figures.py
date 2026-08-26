@@ -1183,7 +1183,8 @@ def fig_k100_ladder(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
         return None
     colors = _arm_colors()
     neutral = paper_palette_role("neutral")
-    panels = (("user_fact", "injected name (user_fact)"), ("query_form", "query form"))
+    # reader-facing panel titles only (crc: no internal axis tokens on the canvas)
+    panels = (("user_fact", "injected name"), ("query_form", "query form"))
     fig, axs = plt.subplots(1, 2, figsize=(9.0, 4.4), sharey=True)
     for ax, (axis, title) in zip(axs, panels):
         for x, src in ((0.0, parent), (1.0, doc)):
@@ -1308,6 +1309,78 @@ def fig_k100_r_of_k(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
     ax.legend(fontsize=7)
     fig.tight_layout()
     return _save(fig, "fig_k100_r_of_k", out_dir)
+
+
+def fig_k100_pair_groups(doc: dict, rows: list[dict], out_dir: Path) -> str | None:
+    """Exploratory (k100): per name-pair map-vs-identity direction cosines at
+    100 draws — the per-unit spread behind the aggregate injected-name verdict
+    (interp r2 heterogeneity finding). One column per unordered name pair;
+    small points are the 12 individual carrier swap pairs, large markers the
+    pair means."""
+    if _get(doc, "meta", "round") != "k100":
+        return None
+    names = {"v1": "Marcus", "v2": "Diego", "v3": "Sarah", "v4": "Emma", "v5": "Kevin"}
+    swaps = [
+        r
+        for r in rows
+        if r.get("axis") == "user_fact"
+        and r.get("pair_class") == "swap"
+        and r.get("in_headline_70")
+    ]
+    if not swaps:
+        return None
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for r in swaps:
+        groups.setdefault(tuple(sorted((r["value_a"], r["value_b"]))), []).append(r)
+
+    # sort by mean map-minus-identity gap, most map-favoring first
+    def _gap(key: tuple[str, str]) -> float:
+        rs = groups[key]
+        return float(
+            np.mean([p["cos"]["arm_779ce"] for p in rs])
+            - np.mean([p["cos"]["arm_iddelta"] for p in rs])
+        )
+
+    order = sorted(groups, key=_gap, reverse=True)
+    colors = _arm_colors()
+    rng = np.random.default_rng(42)
+    fig, ax = plt.subplots(figsize=(8.4, 4.6))
+    for x, key in enumerate(order):
+        rs = groups[key]
+        for arm, off in (("arm_779ce", -0.16), ("arm_iddelta", 0.16)):
+            vals = [p["cos"][arm] for p in rs]
+            jit = rng.uniform(-0.06, 0.06, size=len(vals))
+            ax.scatter(
+                np.full(len(vals), x + off) + jit,
+                vals,
+                s=14,
+                color=colors[arm],
+                alpha=0.35,
+                linewidths=0,
+                zorder=2,
+            )
+            ax.scatter(
+                [x + off],
+                [float(np.mean(vals))],
+                s=90,
+                marker="D",
+                color=colors[arm],
+                edgecolors="white",
+                linewidths=1.0,
+                zorder=3,
+            )
+    ax.axhline(0.0, color=paper_palette_role("neutral"), lw=0.8, alpha=0.6)
+    ax.set_xticks(range(len(order)))
+    ax.set_xticklabels([f"{names[a]} vs {names[b]}" for a, b in order], rotation=30, ha="right")
+    ax.set_ylabel("direction cosine (100 draws)")
+    ax.set_title("Per name-pair direction recovery: map vs identity", loc="left")
+    handles = [
+        plt.Line2D([], [], marker="D", ls="none", color=colors["arm_779ce"], label="frozen map"),
+        plt.Line2D([], [], marker="D", ls="none", color=colors["arm_iddelta"], label="identity"),
+    ]
+    ax.legend(handles=handles, fontsize=8, loc="upper right")
+    fig.tight_layout()
+    return _save(fig, "fig_k100_pair_groups", out_dir)
 
 
 FIGURES = (
@@ -1442,7 +1515,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"[fig] parent doc missing at {parent_doc_path}; ladder hero will skip")
     set_paper_style("blog")
-    figures = FIGURES + ((fig_k100_ladder, fig_k100_r_of_k) if is_k100 else ())
+    figures = FIGURES + (
+        (fig_k100_ladder, fig_k100_r_of_k, fig_k100_pair_groups) if is_k100 else ()
+    )
     if args.only:
         figures = tuple(fn for fn in figures if fn.__name__ == args.only)
         if not figures:

@@ -1,11 +1,14 @@
 {
-  "commit": "c5c233ac",
-  "render_id": "45b1cb8bb7454fe4",
-  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "8ae0a857+dirty",
+  "render_id": "932448cd527a4831",
+  "git_commit": "8ae0a857360dd4a7a52375c3d314a666eeaa85a0",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2564_figures.py",
-  "created": "2026-08-26T22:27:04Z",
+  "created": "2026-08-26T23:33:51Z",
   "figsize": [
     9.0,
     4.4
@@ -103,7 +106,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "injected name (user_fact)",
+        "title_left": "injected name",
         "ylabel": "direction cosine / reliability bound sqrt(r)",
         "xticklabels": [
           "K=10 (parent)",
