@@ -29,6 +29,14 @@ A dotenv-before-heavy-import ordering fix (the #847 / `test_no_new_torch_before_
 
 **Why:** validated #2254 R1 g4 — all three ran in ~4 tool calls; the parent
 chain happened to be clean (fleet.py is stdlib-only) but nothing else would
+have caught it dirty. Re-validated #2379 R1 g5 (chain still clean).
+
+Cheap fails-pre-fix probe (pairs with [[fails-pre-fix-probe-parent-commit]]):
+import the test module's own `_first_heavy_import_line` / `_first_load_dotenv_line`
+(`sys.path.insert(0, "tests")`) and run them on the parent blob extracted to
+/tmp vs the HEAD file — one python -c call certifies VIOLATION→CLEAN without
+a pytest run against the parent tree (which the working-tree-scanning test
+cannot do anyway).
 have caught it dirty. Re-validated #2379 R1 g5, #2477 R1 g2, and #2479 R1 g7
 (chain still clean all three times; #2479 hit the check-3 issue823 red +
 attribution recipe verbatim).

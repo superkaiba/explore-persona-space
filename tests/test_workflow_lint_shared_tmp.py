@@ -360,6 +360,10 @@ def test_files_mode_scoped_run_emits_zero_stale_warns(
         "_files_scope_rel — re-point this test at the new producer"
     )
 
+    # R-rel (#2336 batch 2): the RELATIVE-input branch is the mainline CLI shape
+    # (`--files scripts/foo.py`) — pin it directly, absolute-fixture-independent.
+    assert wl._files_scope_rel(Path("scripts/x.py")) == "scripts/x.py"
+
     # Scope derived through the PRODUCTION derivation, not a hand-formed
     # frozenset: a drifted _files_scope_rel output mismatches the raw
     # allowlist keys in the stale-WARN scoping below.

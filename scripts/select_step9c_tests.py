@@ -348,7 +348,9 @@ from typing import NamedTuple
 # A module-level literal tuple, NOT a glob: a future ``tests/test_workflowish.py``
 # that is NOT meant to gate Step 9c must not silently join the gate, and the gate
 # must not silently shrink if a glob arm stops matching. Drift is made loud by the
-# on-disk existence check (a vanished entry prints WORKFLOW-INVARIANT MISSING) and
+# on-disk existence check (a vanished entry prints WORKFLOW-INVARIANT MISSING and,
+# since #2537, FAILS the selection path closed — main() returns 1 with no
+# selection emitted; --map-files mode is deliberately unaffected) and
 # pinned against the live tree by tests/test_select_step9c_tests.py.
 # REGISTERING A NEW PIN TEST (#1593 — deliberately NO count to bump anywhere):
 # add ONE tuple entry below (at its group's position — prefer within-group
@@ -692,6 +694,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
     # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
     "tests/test_issue_skill_step10_teardown_ordering.py",
+    # NEW (#2537) — constructed-path consumer discovery invariant: the
+    # meta-test discovers spec_from_file_location loader consumers over the
+    # whole tests/ tree and asserts each pair is invariant-, registry-,
+    # allowlist-, or map-arm-covered. Lives in WORKFLOW_INVARIANT so a NEW
+    # same-idiom consumer fails the gate of the very round that lands it
+    # (the stem-mapped pin file would not run on such a round).
+    "tests/test_step9c_constructed_path_consumers.py",
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
@@ -853,6 +862,63 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
     # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
     # reaches a constructed-path consumer.
     "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
+    # #2537: constructed-path consumers load their scripts/ module via a local
+    # loader (`ced = _load("clean_experiment_downloads")` wrapping
+    # spec_from_file_location(mod, _SCRIPTS / f"{mod}.py")) or a parametrized
+    # spec_from_file_location(script_name, path) over a module-level stem list,
+    # and reference the module only by BARE NAME — no Import node, no
+    # contiguous repo-relative path literal, no `<stem>.py` token, no module
+    # stem in the test FILENAME — so every text-scan arm misses (the
+    # #1688-documented f-string / flat-token miss classes). Incident #2336:
+    # tests/test_janitor_tmp_scratch_sweep.py and
+    # tests/test_vm_disk_guard_slurm_src.py never ran on a
+    # clean_experiment_downloads diff. Every entry below was vetted at its
+    # load site (#2537 round-start audit, 35 pairs). Standing enforcement:
+    # test_constructed_path_consumers_all_covered
+    # (tests/test_step9c_constructed_path_consumers.py, a WORKFLOW_INVARIANT
+    # member) fails the gate of any round that lands a NEW constructed-path
+    # consumer unregistered.
+    "scripts/build_dpo_midtrain_data.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/build_language_inversion_data.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/build_language_inversion_data_v2.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/build_paper.py": ("tests/test_issue1547_callsite_routing.py",),
+    "scripts/clean_experiment_downloads.py": (
+        "tests/test_janitor_tmp_scratch_sweep.py",
+        "tests/test_tmp_uv_project_poison_sweep.py",
+        "tests/test_vm_disk_guard_device_fs.py",
+        "tests/test_vm_disk_guard_extra_roots.py",
+        "tests/test_vm_disk_guard_home_hf.py",
+        "tests/test_vm_disk_guard_home_hf_cache.py",
+        "tests/test_vm_disk_guard_slurm_src.py",
+    ),
+    "scripts/failure_classifier.py": ("tests/test_clean_experiment_downloads_active_consumer.py",),
+    "scripts/gen_data_appendix.py": ("tests/test_issue1547_callsite_routing.py",),
+    "scripts/generate_a3_data.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/generate_a3b_data.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/generate_leakage_data.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/generate_sdf_neutral_ai.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/generate_sdf_variants.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/generate_trait_transfer_data_v2.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/generate_wrong_answers.py": ("tests/test_data_gen_upload_wiring.py",),
+    "scripts/issue1739_features.py": ("tests/test_issue1739_wiring.py",),
+    "scripts/issue1739_figures.py": ("tests/test_issue1739_wiring.py",),
+    "scripts/issue1739_upload.py": ("tests/test_issue1739_wiring.py",),
+    "scripts/issue2225_analysis.py": ("tests/test_issue2225_judge_analysis.py",),
+    "scripts/issue2225_mmlu.py": ("tests/test_issue2225_judge_analysis.py",),
+    "scripts/issue545_repair_smoke_contamination.py": ("tests/test_issue545_smoke_isolation.py",),
+    "scripts/issue545_sweep.py": (
+        "tests/test_issue545_gpu_lease.py",
+        "tests/test_issue545_phase_p3_order.py",
+        "tests/test_issue545_smoke_isolation.py",
+    ),
+    "scripts/issue778_lib.py": ("tests/test_issue2225_dispatch.py",),
+    "scripts/poll_pipeline.py": ("tests/test_issue1739_wiring.py",),
+    "scripts/sync_models.py": ("tests/test_issue1547_callsite_routing.py",),
+    "scripts/verify_reused_artifact_keys.py": ("tests/test_issue1547_callsite_routing.py",),
+    "scripts/vm_disk_guard.py": (
+        "tests/test_janitor_tmp_scratch_sweep.py",
+        "tests/test_tmp_uv_project_poison_sweep.py",
+    ),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------
@@ -2765,8 +2831,28 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    for t in missing:
-        print(f"WORKFLOW-INVARIANT MISSING: {t}", file=sys.stderr)
+    # #2537 fail-closed: a WORKFLOW_INVARIANT member missing on disk means the
+    # standing every-gate enforcement that member carries is silently disabled
+    # — the pre-#2537 print-only WARN at rc=0 let a one-file deletion ride
+    # every later gate green (cases 6/6b live in the stem-mapped pin file and
+    # do not run on a round touching neither the selector nor the manifest).
+    # SELECTION path only: --map-files early-returns above (mapping is a
+    # query/diagnostic mode and must keep working while a fix for a missing
+    # member is in progress); the gate's own invocation always takes this
+    # path. The sanctioned 3-part deregistration (tuple entry + manifest line
+    # + test file removed in ONE commit) leaves missing_invariants() empty and
+    # passes by construction.
+    if missing:
+        for t in missing:
+            print(f"WORKFLOW-INVARIANT MISSING: {t}", file=sys.stderr)
+        print(
+            f"select_step9c_tests: REFUSING to emit a selection — {len(missing)} "
+            "WORKFLOW_INVARIANT member(s) missing on disk (#2537 fail-closed). "
+            "Remedy: restore the file(s), or remove tuple entry + manifest line "
+            "+ test file together — the sanctioned 3-part deregistration.",
+            file=sys.stderr,
+        )
+        return 1
 
     # Gate-timeout sizing (#1046): a machine-greppable stderr line on every
     # run, the bound riding in the printed command, and the same number in the

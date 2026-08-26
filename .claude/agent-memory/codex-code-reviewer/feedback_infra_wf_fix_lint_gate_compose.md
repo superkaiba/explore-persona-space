@@ -174,6 +174,43 @@ optional `CONCERN::` row, never a FAIL. Also validated again: crash-safety
 hypothesis duty (fact-8 stakes-both-directions wording) for a check wired
 into the no-flags default run.
 
+**#2584 r1 (2026-08-25) sharpenings — target-script COMPLIANCE round (diff
+routes bare Hub calls in `scripts/*.py`; workflow_lint.py itself untouched):**
+(a) **Helper-resolution attests need an import smoke, not a `def` grep** —
+`retry_transient` is an ASSIGNMENT re-export (`retry_transient =
+_retry_upload`, hub.py:1696), so `grep 'def retry_transient'` returns
+nothing and a naive attest would either miss it or (worse) prime the twin to
+flag a phantom unresolvable import. Run `uv run python -c "from ... import
+X; inspect.signature(X)"` in the worktree venv and attest the signature +
+the re-export line. (b) **Adopt-then-fix two-commit shape:** when the plan
+sanctions adopting an UNTRACKED repo-root stray verbatim (commit 1) then
+fixing it (commit 2), the composer runs the `cmp` of the commit-1 blob vs
+the out-of-sandbox repo-root copy and attests byte-identity (Codex cannot
+reach the repo root); explicitly scope #1805 / bare-target judgments to the
+round's FINAL state — commit 1's blob legitimately carries the bare call.
+(c) **Scanner recompute for a compliance diff** = hand-apply
+`_hf_routing_call_is_wrapped` window/paren-balance/`what=`-exemption
+semantics to the realized wrapped shapes — especially any allowed-class
+line-wrap deviation from the plan's one-liner (the one place a silent lint
+regression hides behind a green in-process claim). (d) **Step 4.5 N/A
+adjudication for lint-compliance fixes:** the CI pin is the EXISTING lint
+checks — compose it as a hollow-gate-style registration trace (both checks
+wired into the no-flags run), not as a missing-test finding.
+
+**#2354 r1 (2026-08-25) sharpening — destructive-JANITOR variant (diff adds a
+keep/shield guard to a reaper like `worktree_audit.py`):** stakes gain a THIRD
+named direction beyond FP/FN — crash-safety with an explicit failure-DIRECTION
+duty: on probe errors the shield must fail CLOSED (keep + unknown-reason
+constant), never fail OPEN into a reap, never raise out of the sweep loop.
+Hollow-gate trace widens to KWARG DEFAULTS: when the shield threads through a
+decision function's new kwarg (`should_remove(followup_shield=False)`), have
+Codex grep ALL callers — a production path silently passing the disabling
+default is the hollow shape. Execution ban names the janitor explicitly
+(`--apply` deletes worktrees; even dry-run spawns fleet-wide git subprocesses).
+Also validated again here: #2306 plan-verify version nuance (PASS at v3, plan
+amended to v4 — attest both), truthful identical-plan envelope on a brief that
+orders inlining, and pinned-round-parent sha-range diff acquisition.
+
 **#2342 r1 (2026-08-24) sharpenings — second #2309-shape round (reconcile-kind
 guard on `task.py post-marker`):** (a) the origin-prompt arm of TAG-first
 wf-fix detection fired — tags `[]` AND no title prefix, but `origin_prompt`

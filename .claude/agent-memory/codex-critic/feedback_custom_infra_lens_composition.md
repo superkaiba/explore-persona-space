@@ -2655,3 +2655,118 @@ Related: [[plan-path-missing-read-from-main]],
   press + lensitems + plan + empty prior; unsigned both-sides-guard atoms +
   comma-grouping first + isfinite literal-keep + collect-all + registry leg
   from repo root; version-suffixed workspace keyed to PLAN version).
+
+- **Gate-tool plan whose safe direction is fail-CLOSED, standard methodology
+  lens + brief press bullets (#2578 round one, verify_uploads multi-repo
+  union): when the orchestrator orders "cannot become fail-open" as the
+  primary design constraint, compose it as its own PRIMARY DESIGN CONSTRAINT
+  header paragraph** — per new search lane, "construct the simplest
+  realistic scenario in which that lane lets a never-uploaded file read as
+  covered; judge whether the defenses CLOSE it or merely narrate it; a
+  disclosure that materially understates the hole is itself a finding" — and
+  add a matching do-not-flag line gagging residual fail-CLOSED annoyance
+  unless it defeats the Goal. The #2332 live-Hub ban extends to a VERIFIER
+  plan whose own acceptance recipe hits the Hub: ban all Hub calls AND
+  running the tool itself ("its HF-touching paths hit the live Hub"), with
+  the justification that every wanted live count is already plan-measured +
+  fact-check-confirmed. Snapshot-note extension for live-measured-count
+  plans: drift between plan-measured Hub counts and later repo state is
+  expected, pre-covered by the plan's own flake row, not a finding. Brief
+  bullets got letter labels (a)-(g) in the press span with a mandated
+  `### Answers to the review questions` section (SOUND | CONCERN | MUST-FIX
+  | UNVERIFIED); one 1:1 sharpener rode inside the fail-open-defense bullet
+  as a "lead worth walking" (stale pointer from a PRIOR attempt at the same
+  prefix widening the union). Scaffold hygiene: "Phase-1.5" is NOT
+  scaffold-safe (1.5 atoms) — write "a dedicated pre-critique fact-check
+  pass" and keep the literal phrase in the inputs span; `tasks/<status>/<N>`
+  paths in scaffold LABELS are fine (task-ref extraction removes them)
+  provided the same path also appears in a span. Numcheck PASS first try at
+  ~137 KB (spans = inputs + press + lensitems + plan + body + empty prior;
+  unsigned both-sides-guard atoms + comma-grouping first + pair-split +
+  isfinite literal-keep + collect-all + registry leg from repo root;
+  version-suffixed workspace keyed to PLAN version).
+
+- **Lint-fix plan, standard methodology lens + brief six-target translation +
+  Codex-side plan-freshness readlink (#2351 round one, tokenize-mask
+  string-awareness fix): three new patterns.** (1) When the orchestrator
+  orders the composed prompt to `readlink` the plan symlink and FAIL LOUD on
+  a version mismatch, compose it as the FIRST ACTION header block with an
+  exact BLOCKER line + stop-with-no-verdict semantics — the plan-version pin
+  moves Codex-side (composer still verifies the symlink at compose time; keep
+  the measured byte count OUT of the prompt — composer-authored numeric).
+  (2) When the brief says "verdict text only; no marker posting", the
+  envelope is a bare literal `VERDICT: PASS|REVISE` FINAL line + numbered
+  findings tagged [Must-Fix]/[Consider] (no epm marker tags at all); the
+  return summary tells the orchestrator to extract the WHOLE output file and
+  key the verdict on the final VERDICT line, and defines REVISE as at least
+  one [Must-Fix] standing. (3) Under write=false on a plan that INLINES its
+  proposed helper code, the execution-probe gap closes by mandating a
+  code-TEXT walkthrough ("walk concrete adversarial source shapes through
+  the proposed code line by line — tokenize start/end semantics") with the
+  UNVERIFIED escape filing as [Consider] naming the fixture shape +
+  assertion a regression test should pin. Also: orchestrator-named
+  version-less prompt path honored (workspace stays version-suffixed; no
+  stale files so no mv needed); per-target dispositions
+  HOLDS|FAILS|PARTIAL|UNVERIFIED with FAILS requiring a matching [Must-Fix];
+  settled block distinguishes relitigating clarify-measured FACTS (banned)
+  from judging the design DECISIONS built on them (a review target's job —
+  say so explicitly when a settled fence is itself a review target).
+  Numcheck PASS first try at ~109 KB (spans = inputs + plan + body +
+  clarify + lensitems + targets + empty prior; scaffold digit-free —
+  decimal/teens section refs confined to span files; "v1.md"/"A2"/"A7"
+  atom-free under both-sides guards).
+
+- **verify_plan check-ADDITION plan, standard alternatives lens +
+  orchestrator-numbered hypotheses AND a mandated "sharpest criticism"
+  (#2590 round one, jq-probe dry-run FAIL + judge-wave pilot WARN +
+  cap-repin arm — extends the #2228 alternatives shape + item 51-B): map
+  the brief's numbered hypotheses to lettered press points 1:1 tagged
+  "(orchestrator-named)" and give the sharpest criticism its OWN lettered
+  point** framed as one-sided calibration (a post-freeze corpus scan
+  measures FPs only, never TP recall on unseen incidents) with a
+  multi-incident-recall probe (the plan cites an incident FAMILY for one
+  check — direct the twin to test whether the OTHER cited incidents' plans
+  satisfy the drafted conjunction, i.e. would the arm have fired on THEM)
+  plus the mutation move (perturb a passing fixture into a minimal
+  NON-founding offender) as the named cheapest TP evidence. Probes earned
+  here: (i) TOCTOU/era-drift press for an EXECUTING check re-run at every
+  verifier invocation against moving HEAD — the plan's own corpus-era-drift
+  honesty note extends to ACTIVE plans mid-lifecycle (a probe correct at
+  approval hard-FAILs after its target is legitimately regenerated); (ii)
+  the #2261 clean-baseline ambiguity applied to a NARROWED RECOGNIZER
+  (all-pilot-lines-reject presented as precision is equally consistent with
+  inertness; separating evidence = real-corpus positive registrations from
+  OUTSIDE the recognizer's own authorship — the plan's qualifying probes
+  were self-authored fixtures; also ask whether the calibration scan CAN
+  measure FP-on-properly-piloted plans at all — few true pilot-gated waves
+  in the corpus makes a clean scan evidence of rarity, not precision);
+  (iii) satisfier-too-narrow inversion: a disclosed-FN framing on a
+  SATISFIER flips into an undisclosed-FP problem when most COMPLIANT
+  phrasings miss the alternation. Fact-check-revision plans get the
+  two-sided FACT-CHECK STATUS block with the inference-layer carve-out
+  pointed at the brief's own one-artifact-fit question. Settled-list
+  nuance: fence only the must-ask reversion (bare-token recognizer) while
+  explicitly opening plan-allowed micro-tuning as in-bounds finding space.
+  Numcheck PASS first try at ~99 KB (spans = plan + lensitems + brief +
+  empty prior; scaffold fully digit-free; "c71"/"c72"/"T17"/"V5" atom-free
+  letter-prefixed).
+  Methodology-lens sibling round on the same plan (deltas only — the entry
+  above carries the shared moves): (i) for any check that EXECUTES
+  extracted probes with a stated expectation arm, press the POST-RUN
+  EXPECTATION class as its own lead — a healthy plan's verification recipe
+  states values its OWN run will create, executed against today's committed
+  bytes (the approval-time twin of the era-drift press; walk whether either
+  escape phrase is TRUTHFUL for such a plan); (ii) satisfier GRANULARITY
+  inversion of the too-narrow probe: a whole-plan `re.search` satisfier
+  guarding a line-local defect (the re-pin regex's "dedicated…engine"
+  alternative) lets an unrelated sentence suppress the WARN plan-wide —
+  press coarse and narrow both; (iii) the concrete hole probe for
+  stdin-only jq execution claims: jq's include/import module system
+  consults filesystem search paths even with no file argument — ask what
+  VERDICT such a filter draws, not just whether the claim is overstated;
+  (iv) when the plan version exists BECAUSE a prior trace was
+  reasoned-not-executed, mandate the twin REPLAY the revision's measured
+  traces itself (quote-the-command grounding) — "measured this session" is
+  a claim class, not a settled fact. Numcheck PASS first try at ~169 KB
+  (spans = brief-inputs + lensitems + plan + empty prior; version-suffixed
+  workspace; run from repo root for the registry leg).

@@ -30,6 +30,15 @@ fig.tight_layout()
 
 `set_title_subtitle(ax, ...)` remains fine for single-axis figures outside the blog style.
 
+**2b. Subtitle geometry limits when it IS used single-axis (blog style, #2378 r6, 2026-08-25).**
+Working examples exist (the #2378 `issue2378_analyzer_figs.py` figures), but two subtitle shapes
+break an 8.0-inch-wide figure: (i) a single subtitle line past ~110 chars overflows the canvas
+and constrained_layout collapses the axes to near-zero width (warning: "axes sizes collapsed to
+zero"; render shows the axes squeezed into the left fraction, ticks overlapping); (ii) a
+multi-line (`\n`) subtitle overlaps the title — the helper positions the subtitle at a fixed
+one-line offset. Fix: ONE subtitle line, ≤ ~105 chars at 8.0-in width (scale with figsize);
+push overflow detail into the Methodology table / caption instead.
+
 **3. `fig.suptitle(..., y=<explicit>)` on a grid under constrained layout (#2330 r2, 2026-08-17).**
 An explicitly-positioned suptitle is EXCLUDED from the constrained-layout pass, so it overlaps the
 top subplot titles; `fig.subplots_adjust` is silently a no-op (UserWarning), and

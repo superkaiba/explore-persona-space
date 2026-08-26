@@ -21,11 +21,23 @@ round-2: ``gh pr merge 1527 --rebase`` ran against the round-1 PR, exited
   compose-time substitution sites and out of scope);
 - the payload-scoped Idempotent bullet + the exit-0 false-success prose
   (shapes 0-3 key only on non-zero exits).
+- ready-before-merge adjacency in every executable merge block (#2538), with
+  the copy-source snippets section as the sole pinned exemption
+  (exact-heading, globally bounded to one merge form).
+- the recovery classification echo's FULL draft arm (error string AND its
+  ``gh pr ready <PR>`` remedy, scoped to the ``MERGE FAILED post-push`` echo
+  line) plus the recovery snapshot-before-ready ordering
+  (gate < PRE_STATE < PRE_MERGED_AT < probe echo < ready < merge)
+  (#2538 round 2: concerns recovery-draft-arm-pin,
+  recovery-ready-probe-order-pin).
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
+
+import pytest
 
 from tests.issue_skill_source import issue_skill_text
 
@@ -145,3 +157,155 @@ def test_exit0_false_success_prose_documented() -> None:
     text = _text()
     assert "Exit-0 false success" in text
     assert "#1768 round-2 / #1897" in text
+
+
+_SNIPPETS_HEADING = (
+    "#### Bare push / merge snippets (canonical — copy verbatim, never compose a piped variant)"
+)
+_EXEC_MERGE = re.compile(r"^\s*(?:if\s+)?gh pr merge\b")
+_EXEC_READY = re.compile(r"^\s*gh pr ready\b")
+
+
+def _fenced_blocks_with_headings(text: str) -> list[tuple[str, str]]:
+    """(governing H4 heading, block body) for every ``` fenced block."""
+    blocks: list[tuple[str, str]] = []
+    heading = ""
+    cur: list[str] | None = None
+    for line in text.split("\n"):
+        if cur is None and line.startswith("#### "):
+            heading = line
+        if line.strip().startswith("```"):
+            if cur is None:
+                cur = []
+            else:
+                blocks.append((heading, "\n".join(cur)))
+                cur = None
+            continue
+        if cur is not None:
+            cur.append(line)
+    return blocks
+
+
+def _scan_ready_before_merge(text: str) -> int:
+    """Assert ready-before-merge per fenced block; return the non-exempt merge count.
+
+    Grammar (the certified surface): a line counts as an executable merge/ready
+    ONLY when its stripped text opens with `gh pr merge` / `if gh pr merge` /
+    `gh pr ready` inside a fenced block. Accepted escapes BY DESIGN, mirroring
+    the documented `_GIT_PUSH_LINE` class in test_issue_skill_step10d_no_pr_arm:
+    `VAR=$(gh pr merge ...)`, `timeout N gh pr merge`, and a mid-line
+    `&& gh pr merge` all escape the anchored regex; the recipe's copy-verbatim
+    conventions plus code review catch those. Exemption: blocks governed by the
+    copy-source snippets H4 (EXACT full-heading equality, so a sibling H4
+    sharing the prefix never inherits it), with the exempt merge total
+    accumulated across ALL governed blocks and bounded to 1 GLOBALLY.
+    """
+    merges_seen = 0
+    exempt_merges = 0
+    for heading, body in _fenced_blocks_with_headings(text):
+        lines = body.split("\n")
+        merge_rows = [i for i, ln in enumerate(lines) if _EXEC_MERGE.match(ln)]
+        if not merge_rows:
+            continue
+        if heading == _SNIPPETS_HEADING:
+            exempt_merges += len(merge_rows)
+            continue
+        merges_seen += len(merge_rows)
+        ready_rows = [i for i, ln in enumerate(lines) if _EXEC_READY.match(ln)]
+        for m in merge_rows:
+            assert any(r < m for r in ready_rows), (
+                f"executable `gh pr merge` without a preceding `gh pr ready` "
+                f"in the same fenced block (under {heading!r}): "
+                f"{lines[m].strip()!r}; the #2315 draft-precondition shape "
+                f"(#2538)"
+            )
+    assert exempt_merges == 1, (
+        f"the snippets exemption covers exactly ONE canonical merge form "
+        f"GLOBALLY; found {exempt_merges}; a new merge site may not shelter "
+        f"under the copy-source exemption (#2538)"
+    )
+    return merges_seen
+
+
+def test_every_executable_merge_is_ready_preceded() -> None:
+    # #2538 (incident #2315): every executable `gh pr merge` in the composed
+    # issue skill must be preceded by an executable `gh pr ready` in the SAME
+    # fenced block; Step 4a + both Step-10d fresh-PR arms open PRs as drafts,
+    # so an unready merge dies on the draft precondition.
+    merges_seen = _scan_ready_before_merge(_text())
+    assert merges_seen >= 2, "scanner liveness: safe-case + recovery merge sites must be visible"
+
+
+def test_snippets_exemption_total_bounded_globally() -> None:
+    # #2538 Should-Fix A fixture: two ONE-merge fences under the exemption
+    # heading MUST fail the global exempt-total assert (a per-block bound
+    # would pass each fence individually).
+    fixture = "\n".join(
+        [
+            _SNIPPETS_HEADING,
+            "```bash",
+            "gh pr merge <PR> --rebase --delete-branch=false",
+            "```",
+            "prose between the fences",
+            "```bash",
+            "gh pr merge <PR2> --rebase --delete-branch=false",
+            "```",
+        ]
+    )
+    with pytest.raises(AssertionError, match="exactly ONE canonical merge form"):
+        _scan_ready_before_merge(fixture)
+
+
+def test_recovery_ready_between_verdict_gate_and_merge() -> None:
+    # #2538 site pin, extended in round 2 (concern recovery-ready-probe-order-pin,
+    # raised by BOTH reviewers): the ready call sits AFTER the three-conjunct
+    # verdict conditional AND after the full pre-merge snapshot (PRE_STATE
+    # binding, PRE_MERGED_AT derivation, the probe echo), and BEFORE the
+    # --squash merge. Pinning ready only relative to the gate would let a
+    # future edit hoist the ready call above the snapshot with the test still
+    # green; a ready-triggered mergeability recompute captured as the
+    # pre-attempt state makes the unchanged #1897 landing verification reject
+    # a genuinely fresh landing.
+    block = _recovery_block()
+    gate = block.find("grep -qxE 'pass|skip-artifact-only'")
+    pre_state = block.find("PRE_STATE=$(gh pr view <PR> --json mergeable,state,mergedAt")
+    pre_merged_at = block.find("PRE_MERGED_AT=${PRE_STATE##* }")
+    probe = block.find('echo "$PRE_STATE"')
+    ready = block.find("gh pr ready <PR>")
+    merge = block.find("if gh pr merge <PR> --squash --delete-branch=false; then")
+    assert -1 < gate < pre_state < pre_merged_at < probe < ready < merge, (
+        gate,
+        pre_state,
+        pre_merged_at,
+        probe,
+        ready,
+        merge,
+    )
+
+
+# The realized bytes of the draft arm inside the `MERGE FAILED post-push`
+# classification echo: the echo lives inside a double-quoted shell string, so
+# the inner quotes appear escaped (\") in the file text.
+_DRAFT_ARM_FRAGMENT = (
+    '(draft) \\"Pull Request is still a draft\\" -> gh pr ready <PR>, '
+    "then re-enter this SAME conditional ONCE"
+)
+
+
+def _merge_failed_classification_line(block: str) -> str:
+    """The single `MERGE FAILED post-push` classification echo line of the block."""
+    lines = [ln for ln in block.split("\n") if "MERGE FAILED post-push" in ln]
+    assert len(lines) == 1, f"expected exactly one classification echo line, got {len(lines)}"
+    return lines[0]
+
+
+def test_recovery_classification_names_draft_arm() -> None:
+    # #2538 round 2 (concern recovery-draft-arm-pin): the draft error string
+    # occurs TWICE in the recovery block (the ready-call comment and the
+    # classification echo), so a whole-block substring check is satisfied by
+    # the comment alone and says nothing about the echo. Pin the echo LINE and
+    # the FULL arm (error string AND the `gh pr ready <PR>` remedy AND the
+    # bounded same-conditional re-entry), so dropping the ready action from
+    # the classification fails this test.
+    line = _merge_failed_classification_line(_recovery_block())
+    assert _DRAFT_ARM_FRAGMENT in line, line

@@ -25,3 +25,8 @@ ordinal pins whenever the launcher can inherit a non-trivial CVD (SLURM lanes
 reachable, shared pods). Also check the companion footgun seen same review: a
 mode flag like `--fan-out` that is never read, so a BARE invocation falls
 through to the full production fan-out.
+
+Sighting (#2546 r1 g3, c59ea9715a): recurred in a fit-driver fan-out — width
+half fixed allocation-first in the DISPATCHER (U4 "SLURM-safe GPU width") while
+the child pin inside the driver stayed `env[CVD]=str(slot)`; check BOTH halves
+(width derivation AND the per-child pin) — fixing one is the common partial fix.
