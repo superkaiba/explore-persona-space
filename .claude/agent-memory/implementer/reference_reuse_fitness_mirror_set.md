@@ -1,17 +1,17 @@
 ---
 name: Reuse-fitness check mirror set (20 sites)
-description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(m)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
+description: Any change to the trained-artifact + code reuse fitness check (currently (a)-(n)) must touch the full 20-site mirror set — artifact-reuse.md (canonical) + gotchas.md sibling bullet + CLAUDE.md bullet + LESSONS.md entry + planner.md step 5/§10 + planner-section-reference.md §10 + critic.md item 9 + critic-lens-reference.md item 9 + methodology-baselines-critic.md item 9 + consistency-checker.md cross-refs + lens-coverage-map.md row + adversarial-planner-v2 SKILL.md + verify_plan.py c6 + its tests + 6 agent memories
 type: reference
 ---
 
 The trained-artifact (and code) reuse fitness check — the lettered set,
-currently (a)-(m) — is mirrored across TWENTY workflow-surface sites, and
+currently (a)-(n) — is mirrored across TWENTY workflow-surface sites, and
 precedent fixes (#600 content-identity, #601 application-scaling, #545
 adapter_config grounding, #734 train-input fetchability (h), #871 code
 throughput (i), #941 pairwise provenance coherence (j), #1366
 parent-lineage coherence (k), #1522 instrument validity-domain transfer
-(l), #2043 device-domain smoke (m)) each touched the relevant set in one
-change:
+(l), #2043 device-domain smoke (m), #2602 reused-gate anchor currency (n))
+each touched the relevant set in one change:
 
 1. `.claude/rules/artifact-reuse.md` — the CANONICAL checklist (the full
    lettered list + the H1/description range + the closing remedy line + the
@@ -183,12 +183,35 @@ device-domain judgment is a methodology-lens call). The c6 regex
 grandfathers the old tokens via `\([jklm]\)`; the decoy letter moved
 (m) → (n); all four widened-class members {j,k,l,m} carry range-token pins.
 
+**#2602 added (n) reused-gate anchor currency** (#2546 incident: an adopted
+#1336 `--g0` gate FAILed a 111-GPU-h primary arm while the reused core
+reproduced #1336's committed current-defaults value byte-exactly — the
+0.6731 anchor belonged to the pre-#1887 legacy-GCV estimator). Gate-scoped:
+triggers when a plan ADOPTS an existing gate whose PASS condition is a
+committed numeric reference; requires the producing estimator configuration
+stated + pinned (or dated current-defaults reproducibility evidence);
+recommends the two-leg form (legacy-pinned anchor leg + current-recipe
+self-check leg). Routes the SIXTH non-retrain remedy branch
+(pin-the-producing-configuration / re-derive the anchor — never a
+shared-core defaults revert), so the remedy-split lines were edited again
+(artifact-reuse.md routing paragraph incl. its leading exclusion enumeration
+now (i)/(h)(iv)/(k)/(l)/(m)/(n), planner.md step 5 incl. its
+(i)/(k)/(l)/(m)/(n) enumeration — its pre-existing (h)(iv) omission left
+untouched by explicit scope decision, critic-lens-reference.md item-9 remedy
+tail — NOT CLAUDE.md). NEW at #2602: a cross-ref sentence inside
+artifact-reuse.md § Reuse-validation gate calibration rule 1 (anchor
+CURRENCY is (n); rule 1 governs threshold DERIVATION), and a REVISE-also arm
+in critic-lens-reference item 9 parallel to the #813 gate-calibration arm.
+The c6 regex is `\([jklmn]\)` ((a)-(m) joined the grandfathered tokens);
+13→14 in the c6 details; the decoy letter moved (n) → (o); all five
+widened-class members {j,k,l,m,n} carry range-token pins.
+
 Every remedy-split line on the live surfaces is deliberately worded WITHOUT a
-lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)/(l)/(m)" names
-letters, never a range token) so the stale-range completeness grep stays
-clean; a future letter needs no remedy re-edit ONLY when it routes through
-the default retrain/regenerate branch ((j) did; (k), (l), and (m) did not —
-see the #1366/#1522/#2043 paragraphs).
+lettered RANGE ("a failing check other than (i)/(h)(iv)/(k)/(l)/(m)/(n)"
+names letters, never a range token) so the stale-range completeness grep
+stays clean; a future letter needs no remedy re-edit ONLY when it routes
+through the default retrain/regenerate branch ((j) did; (k), (l), (m), and
+(n) did not — see the #1366/#1522/#2043/#2602 paragraphs).
 
 A change targeting only planner.md leaves the independent enforcement passes
 (critic, consistency-checker), the canonical rule file, and the mechanical

@@ -1,15 +1,15 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(m) — reuse a prior HF adapter / checkpoint / mix / completions / eval JSON / fit helper vs retrain, incl. pair provenance (#922), gate calibration + HALT-vs-WARN (#813), staged-layout consumer-open (#928), parent-lineage (#1345), validity-domain transfer (#1417), device-domain smoke (#1345), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(n) — reuse a prior HF adapter / checkpoint / mix / completions / eval JSON / fit helper vs retrain, incl. pair provenance (#922), gate calibration + HALT-vs-WARN (#813), staged-layout consumer-open (#928), parent-lineage (#1345), validity-domain transfer (#1417), device-domain smoke (#1345), reused-gate anchor currency (#2546), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
 ---
 
-# Trained-artifact (and code) reuse — the fitness check (a)-(m)
+# Trained-artifact (and code) reuse — the fitness check (a)-(n)
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(m); this file is the full checklist AND, as of
+summary naming checks (a)-(n); this file is the full checklist AND, as of
 #829, the single operational copy — `planner.md` step 5 self-attests it via a
 pointer here (the former inline copy is relocated into § Plan-time search +
 verification mechanics below), `critic.md` Methodology lens item 9 enforces it
@@ -520,8 +520,60 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   the #1417/#1887 inner-group-cv defaults on a CUDA node; the fix threaded
   `device=` through the prep/caches and the relaunch COMPLETED. Marker:
   #1345 `epm:progress` v239.)
+- **(n) Reused-gate anchor currency (adopted gates whose PASS condition is a
+  committed numeric reference; N/A when the plan adopts no such gate).** A
+  committed gate anchor is a product of the ESTIMATOR CONFIGURATION that
+  produced it, and a shared core's DEFAULTS can drift after the anchor was
+  committed — the adopted gate then compares a correct fresh number against
+  a different estimator's number and FAILs while nothing is broken. When a
+  plan ADOPTS an existing gate (a parent's fit-core parity gate, a one-cell
+  reuse gate, any PASS-iff-within-tolerance-of-a-committed-number check),
+  three requirements: (1) the plan STATES the estimator configuration that
+  produced the reference — selector, grid, and every pinned knob — citing
+  where it is recorded (the producing artifact's own JSON fields, the parent
+  gate script, a docstring); (2) the gate either PINS that configuration
+  explicitly rather than inheriting shared-core defaults, OR carries DATED
+  evidence that the reference is still reproducible under CURRENT defaults —
+  a committed artifact, never an assumption; (3) a reference whose producing
+  configuration cannot be established is NOT usable as a gate bar — the gate
+  is re-derived or the anchor re-measured under the current regime.
+  RECOMMENDED form: a TWO-LEG gate — leg 1 pins the legacy/producing regime
+  and checks the historical anchor (certifies the anchor), leg 2 checks the
+  CURRENT recipe against its own known value (certifies recipe + device
+  identity); both enforced (#2546 implemented this for itself, and its run
+  had already reproduced the current-recipe value byte-exactly, so leg 2 was
+  free and strictly more informative than the single-leg form). Scope
+  splits: check (l) asks whether the new DATA regime crosses boundaries the
+  instrument itself declares (#1417); the § Reuse-validation gate
+  calibration rules below ask whether a THRESHOLD is derived from a
+  same-surface committed reference (#813); (n) asks whether the committed
+  reference ITSELF is still the number the entry point produces under the
+  shared core's CURRENT defaults — a time/default-drift axis neither
+  covers: #2546 passed (l) as written (no data-regime change) and the #813
+  rules as written (rig/gauge/slot vocabulary), and still compared against
+  a different estimator's number. (#2546 arm 1, 2026-08-26: plan v4 §7
+  adopted #1336's `issue1336_fit_cells.py --g0` gate verbatim — PASS iff
+  layer-19 held-out R² within ±0.01 of the committed 0.6731 — and it FAILed
+  the primary arm (`R2=0.6935 vs committed 0.6731, tol 0.01`, rc=3) while
+  NOTHING was broken: the measured `0.6935026836671432` is byte-identical
+  to all 16 significant figures to #1336's own committed
+  `eval_results/issue_1336/gates_v2/g0v2.json` →
+  `leg_b_gram_vs_primal.r2_primal`, computed on different hardware four
+  weeks earlier. Mechanism: the #1887 shared-core defaults flip
+  (`lambda_selection` → `"inner-group-cv"`); `run_g0` passes no
+  `lambda_selection` and no `lambdas`, silently inheriting the flipped
+  default, while the 0.6731 anchor is reachable ONLY under the pre-#1887
+  legacy pins (`lambda_selection="gcv"`, `lambdas=logspace(-2,4,13)`,
+  `GCV_DOF_CAP=None`, `LEGACY_UNGUARDED_GCV=True`, `FORCE_GRAM=True`).
+  Dated staleness proof: `eval_results/issue_1336/gates/g0_gate.json`
+  (2026-07-16, r2 0.6730940896676356, pass=true — ran pre-flip) vs
+  `gates_v2/g0v2.json` (2026-08-02, both numbers recorded with pins made
+  explicit). The three-way separation on the identical cell shows the
+  anchor depends on the SELECTOR + grid, not the fold count: legacy GCV
+  reproduces the anchor to 5.9e-06 while `inner-group-cv` reads 0.6935 at
+  2 inner folds and 0.6957 at 4 — neither fold count reaches the anchor.)
 
-A failing check other than (i)/(h)(iv)/(k)/(l)/(m) → retrain / regenerate; a failing
+A failing check other than (i)/(h)(iv)/(k)/(l)/(m)/(n) → retrain / regenerate; a failing
 throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
 there — never a caller-side workaround), then reuse; a failing staged-layout
 consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
@@ -537,7 +589,14 @@ device-domain check (m) → fix the device seam at the SOURCE module (thread
 `device=` through prep/caches so a prep can never be internally split),
 re-run the 1-cell smoke on the failing device class, then reuse — the
 artifact and instrument are sound; the execution environment was never
-exercised. Say why in the plan either way.
+exercised. A failing reused-gate anchor-currency check (n) → pin the
+producing configuration in the gate (prefer the two-leg form: a
+legacy-pinned historical-anchor leg plus a current-recipe self-check leg)
+or re-derive / re-measure the anchor under the current regime, then
+reuse — NEVER revert the shared core's defaults to reach the anchor, and
+never read the FAIL as a reuse/device failure: the artifact and
+instrument are sound; the anchor belongs to a different estimator
+configuration. Say why in the plan either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 
@@ -575,7 +634,10 @@ surface is NOT a calibration source for a HALT: derive a same-surface
 reference first, or the gate runs as WARN (rule 2). Likewise a behavior
 with NO committed reference for the gate's read does not silently inherit
 another behavior's constant — derive a reference first, or run that
-behavior's gate as WARN (rule 2).
+behavior's gate as WARN (rule 2). Anchor CURRENCY — whether the committed
+reference itself is still the number the entry point produces under the
+shared core's CURRENT defaults — is check (n) above; this rule governs
+threshold DERIVATION given a current same-surface reference.
 
 **2. A HALT threshold must sit at a DISCRIMINATING value between
 failure-mode bands; a diagnostic that can only fail by the artifact being
