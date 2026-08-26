@@ -314,6 +314,79 @@ def _assemble_user_sim(tok, row: dict, pool_row: dict):
     }, None
 
 
+def _bf16_np_to_f32(a: np.ndarray) -> np.ndarray:
+    """numpy-only bf16-as-uint16 -> float32 (diff telemetry; no torch dep)."""
+    assert a.dtype == np.uint16, a.dtype
+    return (np.ascontiguousarray(a).astype(np.uint32) << 16).view(np.float32)
+
+
+def _load_user_vcvp(store_root: Path, layers: list[int]) -> dict:
+    """Real-arm stored v_C/v_P per conversation per layer (raw bf16-as-uint16).
+
+    sim-user-regen §4.2b shared-context reuse: the two user arms' context
+    bytes are identical by construction, so the sim arm REUSES the real
+    arm's stored context/prefix vectors instead of recomputing them under a
+    different batch geometry (bf16 batched kernels are batch-composition
+    dependent — recomputation would break the per-conversation v_C sha256
+    pair assert `p6.assert_user_pair` runs before H4b). Reads the parent
+    `chat_user_real__part*` npz directly (no p6 import — this module runs
+    in the MODEL venv). Returns {layer: {conv_id: {"v_C": row, "v_P": row}}}.
+    """
+    out: dict[int, dict[str, dict[str, np.ndarray]]] = {}
+    for layer in layers:
+        parts = sorted(store_root.glob(f"chat_user_real__part*__L{layer}.npz"))
+        if not parts:
+            raise RuntimeError(
+                f"--user-vcvp-from-store: no chat_user_real parts at layer {layer} "
+                f"under {store_root} (stage the parent real-arm store first)"
+            )
+        by_id: dict[str, dict[str, np.ndarray]] = {}
+        for p in parts:
+            with np.load(p) as z:
+                meta = json.loads(z["meta"].item())
+                if meta.get("encoding") != "bf16_as_uint16":
+                    raise RuntimeError(f"unexpected encoding in {p}: {meta}")
+                ids = [str(x) for x in z["row_ids"].tolist()]
+                v_c, v_p = np.asarray(z["v_C"]), np.asarray(z["v_P"])
+                for i, rid in enumerate(ids):
+                    by_id[rid] = {"v_C": v_c[i], "v_P": v_p[i]}
+        out[layer] = by_id
+    return out
+
+
+def _apply_vcvp_sub(arrays: dict, row_ids, layers: list[int], vcvp_sub: dict) -> dict:
+    """Replace recomputed v_C/v_P rows with the real arm's stored vectors.
+
+    Fail-loud on a conversation missing from the real store (the §4.2b
+    intersection is a subset of the real kept set by construction). Returns
+    per-layer max-abs decoded diffs between the recomputed and stored
+    vectors — telemetry on the batch-geometry numerics being replaced."""
+    diffs: dict[str, float] = {}
+    for layer in layers:
+        by_id = vcvp_sub[layer]
+        missing = [rid for rid in row_ids if str(rid) not in by_id]
+        if missing:
+            raise RuntimeError(
+                f"--user-vcvp-from-store: {len(missing)} conversations missing from the "
+                f"real-arm store at layer {layer} (e.g. {missing[:3]})"
+            )
+        max_diff = 0.0
+        for slot in ("v_C", "v_P"):
+            recomputed = arrays[layer][slot]
+            stored = np.stack([by_id[str(rid)][slot] for rid in row_ids], axis=0)
+            if recomputed.shape != stored.shape:
+                raise RuntimeError(
+                    f"vcvp substitution shape mismatch at L{layer}/{slot}: "
+                    f"{recomputed.shape} vs {stored.shape}"
+                )
+            if recomputed.size:
+                d = np.abs(_bf16_np_to_f32(recomputed) - _bf16_np_to_f32(stored))
+                max_diff = max(max_diff, float(d.max()))
+            arrays[layer][slot] = stored
+        diffs[str(layer)] = max_diff
+    return diffs
+
+
 # ---------------------------------------------------------------------------
 # Row-source resolution (unit 1 artifacts; local-first -> --stage-raw-from-hf)
 # ---------------------------------------------------------------------------
@@ -788,9 +861,16 @@ def _capture_cell(
     phase_name: str,
     assembly_drops: Counter,
     draw_seed: int | None = None,
+    vcvp_sub: dict | None = None,
 ) -> dict:
     """Capture one cell (or one fresh draw) chunk-by-chunk; per-chunk npz per
-    layer + rows.json, ledger-resumable; final per-tag meta aggregates counts."""
+    layer + rows.json, ledger-resumable; final per-tag meta aggregates counts.
+
+    ``vcvp_sub`` (sim-user-regen §4.2b): a `_load_user_vcvp` map — when set,
+    every chunk's v_C/v_P rows are REPLACED by the real arm's stored vectors
+    (shared context bytes ⇒ same construct; substitution makes the pair sha
+    assert hold by construction instead of by bf16 batch-geometry luck),
+    with per-chunk recompute-vs-stored max-abs-diff telemetry persisted."""
     out_root.mkdir(parents=True, exist_ok=True)
     regime = {
         "phase": phase_name,
@@ -800,6 +880,7 @@ def _capture_cell(
         "model": cm.MODEL_ID,
         "rows_cap": int(args.rows),
         "n_rows": len(rows),
+        "vcvp_source": ("chat_user_real store (§4.2b shared-context reuse)" if vcvp_sub else None),
         # Input CONTENT fingerprint (r1 review g2 concern 1): a post-regen
         # recapture into the same out_root must NOT resume onto the pre-regen
         # store — string digests, machine-stable (never float hashes).
@@ -830,6 +911,9 @@ def _capture_cell(
                 for layer in layers
             }
         row_ids = np.array([r["row_id"] for r in recs])
+        vcvp_diffs = None
+        if vcvp_sub is not None and len(row_ids):
+            vcvp_diffs = _apply_vcvp_sub(arrays, row_ids.tolist(), layers, vcvp_sub)
         for layer in layers:
             meta = json.dumps(
                 {
@@ -857,6 +941,11 @@ def _capture_cell(
                 "draw_seed": draw_seed,
                 "rows": [_row_record(r) for r in recs],
                 "position_drops": dict(pos_drops),
+                "vcvp_substitution": (
+                    {"source": "chat_user_real", "recompute_max_abs_diff": vcvp_diffs}
+                    if vcvp_diffs is not None
+                    else None
+                ),
                 "metadata": cm.run_metadata(),
             },
         )
@@ -1233,6 +1322,13 @@ def phase_capture(args) -> None:
             raise SystemExit(f"unknown cell {cell}")
     out_root = Path(args.out_root)
     out_root.mkdir(parents=True, exist_ok=True)
+    vcvp_sub = None
+    if args.user_vcvp_from_store:
+        if "chat_user_sim" not in cells:
+            raise SystemExit(
+                "--user-vcvp-from-store is meaningful only when capturing chat_user_sim"
+            )
+        vcvp_sub = _load_user_vcvp(Path(args.user_vcvp_from_store), layers)
     holder: dict = {}
     summary: dict[str, dict] = {}
     for cell in cells:
@@ -1249,6 +1345,7 @@ def phase_capture(args) -> None:
             tag=cell,
             phase_name="capture",
             assembly_drops=asm_drops,
+            vcvp_sub=(vcvp_sub if cell == "chat_user_sim" else None),
         )
         summary[cell] = {
             k: meta[k] for k in ("n_rows_in", "n_captured", "assembly_drops", "position_drops")
@@ -1574,6 +1671,13 @@ def build_argparser() -> argparse.ArgumentParser:
         help="smoke escape: skip the capture_ready kept-id gate",
     )
     ap.add_argument("--skip-upload", action="store_true")
+    ap.add_argument(
+        "--user-vcvp-from-store",
+        default="",
+        help="sim-user-regen §4.2b: store root holding the parent chat_user_real parts; "
+        "chat_user_sim capture replaces its recomputed v_C/v_P with the real arm's stored "
+        "vectors per conversation (pair sha-identity by construction)",
+    )
     ap.add_argument(
         "--skip-sweep",
         action="store_true",

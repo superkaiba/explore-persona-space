@@ -238,7 +238,7 @@ def run_cell_leg(
         "cell": cell,
         "arm": ARM,
         "leg": leg,
-        "fold_regime": "global-family",
+        "fold_regime": regime.get("fold_regime", "global-family"),
         "fold_structure": entry["fold_structure"],
         "n_rows": int(n),
         "d_ambient": D_AMBIENT,
@@ -299,6 +299,137 @@ def unmatched_ceiling(ledger_root: Path, fm: dict, cell: str) -> dict:
     return out
 
 
+def _ks_2samp(a: np.ndarray, b: np.ndarray) -> dict:
+    """Two-sample KS statistic + asymptotic p-value (numpy-only).
+
+    The sim-user-regen (real, sim) length-KS companion (plan §4.2b: "Length-KS
+    + length-matched refit companions extend to the (real, sim) pair").
+    Asymptotic Kolmogorov p via the standard series with the Stephens
+    small-sample correction on lambda; fine at n ~ thousands."""
+    import math
+
+    a, b = np.sort(np.asarray(a, dtype=np.float64)), np.sort(np.asarray(b, dtype=np.float64))
+    allv = np.concatenate([a, b])
+    cdf_a = np.searchsorted(a, allv, side="right") / a.size
+    cdf_b = np.searchsorted(b, allv, side="right") / b.size
+    d = float(np.max(np.abs(cdf_a - cdf_b)))
+    en = math.sqrt(a.size * b.size / (a.size + b.size))
+    lam = (en + 0.12 + 0.11 / en) * d
+    if lam < 0.1:
+        # Q(lam) -> 1 as lam -> 0; the truncated alternating series cancels
+        # to ~0 there (the standard small-lambda guard).
+        p = 1.0
+    else:
+        p = 2.0 * sum((-1.0) ** (k - 1) * math.exp(-2.0 * (k * lam) ** 2) for k in range(1, 101))
+    return {
+        "statistic": d,
+        "pvalue_asymptotic": float(min(max(p, 0.0), 1.0)),
+        "n_a": int(a.size),
+        "n_b": int(b.size),
+    }
+
+
+def main_pair(args) -> int:
+    """(real, sim) user-pair mode (sim-user-regen round): length-KS on the
+    shared intersection cohort + per-arm length-matched/control refits under
+    the ROUND fold map's shared user-pair folds (identical row_ids + folds
+    across arms asserted, §4.2b). Outputs land under the round ledger root's
+    ``lenmatch/`` (per-cell legs) + ``lenmatch/lenmatch_user_pair.json``."""
+    ledger_root = Path(args.ledger_root)
+    fm_path = Path(args.fold_map_path or (ledger_root / p6.FOLD_MAP_NAME))
+    full_fm = json.loads(fm_path.read_text(encoding="utf-8"))
+    missing = [c for c in cm.USER_CELLS if c not in full_fm["cells"]]
+    if missing:
+        raise SystemExit(f"--pair-user: user arms missing from fold map {fm_path}: {missing}")
+    real_e = full_fm["cells"]["chat_user_real"]
+    sim_e = full_fm["cells"]["chat_user_sim"]
+    if real_e["row_ids"] != sim_e["row_ids"] or real_e["folds"] != sim_e["folds"]:
+        raise RuntimeError("§4.2b assert FAILED: user-arm row_ids/folds differ in the fold map")
+    fm = {"cells": {c: full_fm["cells"][c] for c in cm.USER_CELLS}}
+    store_root = Path(args.store_root)
+    lengths = {}
+    for c in cm.USER_CELLS:
+        by_id = answer_token_lengths(store_root, c)
+        lengths[c] = np.array([by_id[rid] for rid in fm["cells"][c]["row_ids"]])
+    ks = _ks_2samp(lengths["chat_user_real"], lengths["chat_user_sim"])
+    paired_delta = lengths["chat_user_sim"].astype(np.int64) - lengths["chat_user_real"].astype(
+        np.int64
+    )
+    edges = _bin_edges()
+    sel_matched, table = matched_selection(fm, lengths, edges)
+    n_m = table["n_matched_per_cell"]
+    _log(f"[lenmatch-pair] KS={ks['statistic']:.4f} p~{ks['pvalue_asymptotic']:.2e}")
+    _log(f"[lenmatch-pair] matching table: {json.dumps(table)}")
+    min_n_train = min(
+        int(np.sum(np.asarray(fm["cells"][c]["folds"])[sel_matched[c]] != f))
+        for c in fm["cells"]
+        for f in range(int(np.asarray(fm["cells"][c]["folds"]).max()) + 1)
+    )
+    k = min(REDUCED_K_MAX, min_n_train // 2)
+    _log(f"[lenmatch-pair] n_matched={n_m}/arm; min n_train={min_n_train}; reduced k={k}")
+    regime = {
+        "script_version": SCRIPT_VERSION,
+        "arm": ARM,
+        "layer": LAYER,
+        "seed": cm.SEED,
+        "fold_map_sha": full_fm.get("sha256") or p6.fold_map_sha(full_fm),
+        "fold_regime": "user-pair shared intersection folds (sim-user-regen round)",
+        "matching": table,
+        "length_variable": "answer span tokens (ans_hi - ans_lo, the v_A span-mean window)",
+        "reduced_k": int(k),
+        "dof_cap": 0.9,
+        "lambda_grid": ["logspace", -2, 4, 13],
+        "bootstrap_draws": BOOTSTRAP_DRAWS,
+        "null_battery": "skipped by design (ordering read; tiers live at the round fits)",
+        "seed_derivation": "137-rooted per-(cell,bin|leg) via p6.unit_seed",
+    }
+    rows: dict = {}
+    for cell in cm.USER_CELLS:
+        row: dict = {}
+        for leg in LEGS:
+            sel = sel_matched[cell] if leg == "matched" else control_selection(fm, cell, n_m)
+            d = run_cell_leg(args, fm, cell, leg, sel, k, regime, lengths[cell])
+            row[leg] = {
+                "fold_mean_r2": d["fold_mean_r2"],
+                "pooled_r2": d["pooled_r2"],
+                "ci95": [d["pooled_bootstrap"]["ci_lo"], d["pooled_bootstrap"]["ci_hi"]],
+                "n_rows": d["n_rows"],
+                "median_len_tokens": d["answer_len_tokens"]["median"],
+            }
+        fit_path = ledger_root / "fits" / f"{cell}__{ARM}.json"
+        if fit_path.exists():
+            fit = json.loads(fit_path.read_text(encoding="utf-8"))
+            row["unmatched_round_ceiling"] = {
+                "source": f"fits/{cell}__{ARM}.json",
+                "fold_mean_r2": fit["fold_mean_r2"],
+                "pooled_r2": fit["pooled_r2"],
+                "n_rows": fit["n_rows"],
+            }
+        rows[cell] = row
+    out = {
+        "regime": regime,
+        "length_ks": ks,
+        "paired_len_delta_tokens": {
+            "median": float(np.median(paired_delta)),
+            "p5": float(np.percentile(paired_delta, 5)),
+            "p95": float(np.percentile(paired_delta, 95)),
+        },
+        "per_arm_len_tokens": {
+            c: {
+                "median": float(np.median(lengths[c])),
+                "p5": float(np.percentile(lengths[c], 5)),
+                "p95": float(np.percentile(lengths[c], 95)),
+            }
+            for c in cm.USER_CELLS
+        },
+        "cells": rows,
+        "metadata": cm.run_metadata(),
+    }
+    cm.atomic_write_json(ledger_root / "lenmatch" / "lenmatch_user_pair.json", out)
+    _log(f"[lenmatch-pair] wrote {ledger_root / 'lenmatch' / 'lenmatch_user_pair.json'}")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--store-root", required=False, default=None)
@@ -306,6 +437,17 @@ def main() -> int:
     ap.add_argument("--cells", default=None, help="comma subset (default: all fold-map cells)")
     ap.add_argument("--legs", default=",".join(LEGS))
     ap.add_argument("--summary-only", action="store_true")
+    ap.add_argument(
+        "--pair-user",
+        action="store_true",
+        help="sim-user-regen: (real, sim) pair mode — length-KS + matched/control refits "
+        "under the round fold map's shared user-pair folds",
+    )
+    ap.add_argument(
+        "--fold-map-path",
+        default="",
+        help="pair mode: explicit fold_map.json path (default <ledger-root>/fold_map.json)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
     if args.import_check:
@@ -315,6 +457,8 @@ def main() -> int:
         raise SystemExit(0)
     if args.store_root is None and not args.summary_only:
         raise SystemExit("--store-root is required unless --summary-only")
+    if args.pair_user:
+        return main_pair(args)
 
     ledger_root = Path(args.ledger_root)
     fm = json.loads((ledger_root / "pool_gf" / "fold_map_gf.json").read_text(encoding="utf-8"))

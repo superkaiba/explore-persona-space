@@ -36,6 +36,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ISSUE = 2378
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX = "issue2378_xframing"
+# sim-user-regen round-scoped HF prefixes (raw prefix per the follow-up brief;
+# the round's activation parts must never land in the parent activations
+# prefix — a parent-style stage_p6 pull would silently mix store generations).
+SIMREGEN_HF_RAW_PREFIX = f"{HF_PREFIX}/raw_completions/sim_user_regen"
+SIMREGEN_ACTIVATIONS_PREFIX = f"{HF_PREFIX}/analysis_tensors/activations_simregen"
 MODEL_ID = "Qwen/Qwen3.6-27B"
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 
@@ -136,6 +141,26 @@ CHAT_MAX_TOKENS = 2048
 PLAIN_MAX_TOKENS = 2048
 USER_SIM_MAX_TOKENS = 1024
 JUDGE_MAX_TOKENS = 1024
+
+# ---------------------------------------------------------------------------
+# sim-user-regen follow-up round (same-issue follow-up `sim-user-regen`):
+# repaired #612-ladder elicitation for the chat_user_sim cell. Wave-1 collapsed
+# at rung 1 (bare prefill): 6,402/10,000 EMPTY turns (the model's most likely
+# continuation at `<|im_start|>user\n` is the turn terminator — user-turn
+# tokens are loss-masked in assistant SFT) + 2,656 sub-16-char fragments ⇒
+# 521 kept (5.2%). Repair rung 1 = the same bare prefill under a mechanical
+# non-degeneracy constraint: vLLM `min_tokens` masks EOS + `stop_token_ids`
+# logits for the first N steps (stop STRINGS are NOT masked, so the special
+# turn-terminators move into stop_token_ids), plus <=2 fresh-seed
+# re-elicitation passes over degenerate rows. Rung 3 (minimal opener prefill,
+# #612 tier 3; opener stays in the measured text, disclosed
+# experimenter-written boundary text) fires ONLY if the kept quota is still
+# unfilled. Per-rung / per-pass yields are recorded in the stage summary.
+# ---------------------------------------------------------------------------
+USER_SIM_MIN_TOKENS = 8  # ~2x the 16-char band floor at ~3.5-4 chars/token
+USER_SIM_RETRY_PASSES = 2  # rung-1 re-elicitation budget (brief: "re-elicited or dropped")
+USER_SIM_RUNG3_OPENERS = ("Ok, ", "Thanks. ", "Wait, ", "What about ")  # seeded per conv_id
+SIMREGEN_ROUND = "sim-user-regen"
 
 CAP_HIT_REGEN_THRESHOLD = 0.02  # > 2%/cell => regen cap-hit rows at 2x cap (SegA exempt)
 # G1 recalibration (r11): 250 -> 512, the full SegA generation cap. The 250-tok
@@ -244,6 +269,15 @@ RAW_ROOT_DEFAULT = REPO_ROOT / "data" / "issue_2378" / "raw_completions"
 # Pilot capture store default (capture.py --pilot-out-root). Plan §10 declared
 # discard: all-layer chat states, regenerable from the persisted chat text.
 PILOT_STORE_DEFAULT = REPO_ROOT / "data" / "issue_2378" / "activations_pilot"
+
+# sim-user-regen round-scoped roots + HF prefixes (§4.7 out-root lesson: a
+# regenerated cell is a NEW regime — every stateful root is round-scoped so
+# the parent run's raw dirs / StageLedgers / fold_map.json / fits regimes are
+# never resumed onto or clobbered; the parent artifacts stay the wave-1
+# record).
+SIMREGEN_RAW_ROOT = REPO_ROOT / "data" / "issue_2378" / "raw_completions_simregen"
+SIMREGEN_STORE_ROOT = REPO_ROOT / "data" / "issue_2378" / "activations_simregen"
+SIMREGEN_LEDGER_ROOT = LEDGER_ROOT / SIMREGEN_ROUND
 
 
 def pilot_capture_out_root(rnd: int, stable: Path | None = None) -> Path:

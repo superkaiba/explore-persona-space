@@ -38,6 +38,14 @@ Runbook (venue per phase; provision commands are plan §10 verbatim):
     bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-b   # waits for G3 on origin
     bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-c
     bash scripts/issue2378_dispatch.sh p6_fits --pod-role fits-d   # + pool/h4b/h5/ratio/merge
+  sim-user-regen follow-up round (1x H200 pod-2378-simuser; #612 elicitation
+  repair of the wave-1 chat_user_sim empty-turn collapse — 521/10,000 kept):
+    bash scripts/issue2378_dispatch.sh p7_simuser_regen             # GPU: regen+capture, ~4 GPU-h
+    uv run python scripts/issue2378_dispatch.py --phase p7_simuser_fits   # CPU venue (VM
+        # detached or cpu-bigmem; never holds the GPU pod) — round fold map + fits +
+        # ladder pairs + H4b + retrieval + lenmatch --pair-user + plan-named sync.
+        # Round artifacts: eval_results/issue_2378/sim-user-regen/ (round ledger),
+        # HF raw_completions/sim_user_regen/ + analysis_tensors/activations_simregen/.
 
 Contracts implemented here (pod-side-reporting.md):
 - ``[phase=<name>]`` lines on the MAIN log; ONE terminal ``[phase=done]`` on the
@@ -61,6 +69,9 @@ Designed-halt exit codes:
   5  G1 hard fail (round 2 trip, judge-pilot FAIL, or layer-sweep rig floor)
   6  G2b survivor-predicate fail (partial-result stop; report persisted)
   7  judge pilot gate fail (mirrors issue2378_judge.RC_PILOT_GATE_FAIL)
+  8  sim-user-regen floor fail (repaired sim kept OR pair intersection below
+     the 6,500 floor after the full #612 ladder — report persisted + blocking
+     sentinel; a below-floor shortfall is REPORTED, never template-backfilled)
 
 Retry-wave policy (dispatcher-owned; plan §7 G2b): SegB-stage retries draw ONLY
 from the already-admitted surplus (deterministic selection-order extras — the
@@ -137,6 +148,7 @@ RC_G1_RECALIBRATE = 4
 RC_G1_FAIL = 5
 RC_G2B_PARTIAL = 6
 RC_JUDGE_PILOT_FAIL = 7
+RC_SIMREGEN_FLOOR = 8
 
 G1_SWEEP_R2_MIN = 0.05  # plan §7 G1(c) rig-defect floor
 WAVE1_SLACK = 1.25  # plan §8 "wave-1 sized with 1.25x slack"
@@ -166,6 +178,8 @@ PHASE_HEADROOM_GB = {
     "p4_segb_capture": 32,
     "p5_congruence": 3,
     "p6_fits": 10,
+    "p7_simuser_regen": 12,
+    "p7_simuser_fits": 10,
 }
 
 # P6 fan-out shard map (plan §9: 4 suffixed cpu-bigmem pods; shard = unit
@@ -2935,6 +2949,555 @@ def phase_p6(args, runner: Runner) -> int:
 
 
 # ---------------------------------------------------------------------------
+# sim-user-regen follow-up round (P7): #612 elicitation repair + re-fit
+# ---------------------------------------------------------------------------
+
+
+def _rel_repo(p: Path) -> str:
+    """Repo-relative path string (absolute fallback for tmp-dir probe roots)."""
+    try:
+        return str(p.relative_to(cm.REPO_ROOT))
+    except ValueError:
+        return str(p)
+
+
+def _simregen_paths(args) -> tuple[Path, Path, Path]:
+    """Round-scoped (raw_root, ledger_root, store_root) — §4.7 out-root lesson:
+    fresh roots + fresh HF prefixes per round, never the parent stage roots."""
+    return (
+        Path(args.simregen_raw_root),
+        Path(args.simregen_ledger_root),
+        Path(args.simregen_store_root),
+    )
+
+
+def _link_into(src_dir: Path, dst_dir: Path, names: list[str]) -> int:
+    """Hardlink (copy fallback) named files src->dst; size-checked skip on
+    existing targets; fail-loud on a missing source (never a silent gap)."""
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for name in names:
+        src = src_dir / name
+        if not src.is_file():
+            raise RuntimeError(f"_link_into: missing source {src}")
+        dst = dst_dir / name
+        if dst.exists():
+            if dst.stat().st_size == src.stat().st_size:
+                continue
+            dst.unlink()
+        try:
+            os.link(src, dst)
+        except OSError:
+            shutil.copy2(src, dst)
+        n += 1
+    return n
+
+
+def _stage_parent_store_slice(args, npz_cells: set[str], layers: list[int]) -> Path:
+    """Scoped, size-check-resumed staging of a PARENT activation-store slice:
+    every cell's production ``__rows.json`` + ``store_index.json`` (KB-scale,
+    fold-map identity) + npz for ``npz_cells`` at ``layers``. Fresh tags are
+    excluded (round fresh draws live in the round store). Count-asserted
+    against the parent store_index BEFORE any consumer runs."""
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    stage_root = Path(args.stage_root)
+    store_root = stage_root / ACTIVATIONS_PREFIX
+    api = HfApi()
+    entries = hub.list_hf_entries_under_path(
+        api, cm.HF_DATA_REPO, ACTIVATIONS_PREFIX, repo_type="dataset"
+    )
+    suffixes = tuple(f"__L{layer}.npz" for layer in layers)
+    wanted: list[tuple[str, int | None]] = []
+    for path, size in entries:
+        name = path.rsplit("/", 1)[-1]
+        if "__fresh_d" in name:
+            continue
+        if name.endswith("__rows.json") or name == "store_index.json":
+            wanted.append((path, size))
+            continue
+        if not name.endswith(suffixes):
+            continue
+        if name.split("__part")[0] in npz_cells:
+            wanted.append((path, size))
+    for path, size in wanted:
+        target = stage_root / path
+        if target.exists() and (size is None or target.stat().st_size == int(size)):
+            continue
+        hub.retry_transient(
+            lambda p=path: hf_hub_download(
+                cm.HF_DATA_REPO, p, repo_type="dataset", local_dir=str(stage_root)
+            ),
+            what=f"download {path}",
+        )
+    idx = json.loads((store_root / "store_index.json").read_text(encoding="utf-8"))
+    for cell in sorted(npz_cells):
+        meta = idx["cells"].get(cell)
+        if not meta:
+            raise RuntimeError(f"[simregen-stage] cell {cell} absent from parent store_index")
+        for part in meta["parts"]:
+            for layer in layers:
+                npz = store_root / f"{part}__L{layer}.npz"
+                if not npz.exists():
+                    raise RuntimeError(f"[simregen-stage] SHORT-STAGED: missing {npz}")
+    _log(
+        f"[simregen-stage] parent slice staged: {len(wanted)} files "
+        f"(npz cells={sorted(npz_cells)} layers={layers}) -> {store_root}"
+    )
+    return store_root
+
+
+def _stage_user_real_render(args, raw_root: Path) -> None:
+    """Pre-stage the parent real-arm render rows into the ROUND raw root.
+
+    The round consumers (capture_ready pair reduction; capture) read
+    ``<raw_root>/user_real_render`` LOCALLY — ``--stage-raw-from-hf`` is
+    deliberately NOT passed on round legs: its manifest reconciliation targets
+    the PARENT stage prefix and would fall through to the parent mirror for
+    the round's own user_sim stage (the §4.7 out-root lesson)."""
+    leaf = cm.stage_hf_prefix(
+        f"{cm.HF_PREFIX}/raw_completions/user_real_render", Path(args.stage_root)
+    )
+    names = sorted(p.name for p in leaf.glob("*.jsonl"))
+    if not names:
+        raise RuntimeError(f"[simregen-stage] no user_real_render rows staged at {leaf}")
+    n = _link_into(leaf, raw_root / "user_real_render", names)
+    _log(f"[simregen-stage] user_real_render: {len(names)} files ({n} new) -> round raw root")
+
+
+def _simregen_floor_verdict(cr_sim: dict) -> dict:
+    """Pure floor-gate verdict from the ROUND capture_ready sim payload (plan
+    §4.6 floors on the repaired yield; #612: a below-floor shortfall is
+    REPORTED — rc 8 designed halt — never template-backfilled)."""
+    inter = cr_sim.get("pair_intersection") or {}
+    n_sim = int(cr_sim.get("n_kept", 0))
+    n_int = int(inter.get("n_intersection", 0))
+    ok = n_sim >= cm.FLOOR_KEPT and n_int >= cm.FLOOR_KEPT
+    return {
+        "gate": "simregen_floor",
+        "verdict": "PASS" if ok else "FLOOR_FAIL",
+        "floor": cm.FLOOR_KEPT,
+        "n_sim_kept": n_sim,
+        "n_intersection": n_int,
+        "sim_floor_pass": n_sim >= cm.FLOOR_KEPT,
+        "intersection_floor_pass": n_int >= cm.FLOOR_KEPT,
+        "close_miss_band": cm.CLOSE_MISS_FLOOR <= min(n_sim, n_int) < cm.FLOOR_KEPT,
+        "policy": "below-floor is REPORTED (rc 8 + blocking sentinel), never backfilled (#612)",
+    }
+
+
+def _simregen_plan_named_sync(round_ledger: Path, parent_ledger: Path) -> list[str]:
+    """Copy the round's plan-named sim results onto the PARENT plan paths with
+    round provenance (brief: 'prefer the plan-named fits/chat_user_sim__*.json
+    paths with a round provenance field, keep BOTH consistent'), and stamp the
+    parent drop marker ``superseded_by``. The parent real-arm fits + ladder
+    rows stay UNTOUCHED (they are the registered single-user-arm-regime reads;
+    the round's paired-regime real refit stays round-scoped). Returns the
+    parent paths written (repo-relative), for git_harvest."""
+    import issue2378_p6_common as p6
+
+    written: list[str] = []
+    for arm in p6.ARMS:
+        src = round_ledger / "fits" / f"chat_user_sim__{arm}.json"
+        payload = json.loads(src.read_text(encoding="utf-8"))
+        payload["round"] = cm.SIMREGEN_ROUND
+        payload["round_source"] = _rel_repo(src)
+        payload["supersedes"] = "fits/chat_user_sim__g2b_dropped.json (wave-1 collapse drop)"
+        dst = parent_ledger / "fits" / f"chat_user_sim__{arm}.json"
+        cm.atomic_write_json(dst, payload)
+        written.append(_rel_repo(dst))
+    src = round_ledger / "ladder" / "h4b_real_vs_sim.json"
+    payload = json.loads(src.read_text(encoding="utf-8"))
+    payload["round"] = cm.SIMREGEN_ROUND
+    payload["round_source"] = _rel_repo(src)
+    payload["supersedes"] = "parent single-user-arm N/A record"
+    dst = parent_ledger / "ladder" / "h4b_real_vs_sim.json"
+    cm.atomic_write_json(dst, payload)
+    written.append(_rel_repo(dst))
+    drop = parent_ledger / "fits" / "chat_user_sim__g2b_dropped.json"
+    if drop.exists():
+        d = json.loads(drop.read_text(encoding="utf-8"))
+        d["superseded_by"] = {
+            "round": cm.SIMREGEN_ROUND,
+            "paths": [
+                _rel_repo(parent_ledger / "fits" / f"chat_user_sim__{a}.json") for a in p6.ARMS
+            ],
+        }
+        cm.atomic_write_json(drop, d)
+        written.append(_rel_repo(drop))
+    return written
+
+
+def phase_p7_simuser_regen(args, runner: Runner) -> int:
+    """GPU leg (1x H200): repaired sim-user elicitation (#612 rung 1 mechanical
+    non-degeneracy + retries; quota-gated rung 3) -> raw upload (round HF
+    prefix) -> fresh draws -> capture_ready pair reduction -> floor gate ->
+    vcvp-substituted capture (+L* fresh) -> round store upload + report."""
+    _phase_line("p7_simuser_regen")
+    raw_root, round_ledger, store_root = _simregen_paths(args)
+    assert_headroom("p7_simuser_regen", raw_root)
+    gpus = visible_gpus()
+    if not runner.dry:
+        _git_pull_rebase()  # parent pilot/layer_sweep.json arrives via git
+        lstar = resolve_lstar(Path(args.ledger_root))
+    else:
+        lstar = 32
+    layers = parse_layers_spec(args.layers, lstar)
+    ensure_model_venv(args, runner)
+    gen_common = [
+        "--raw-root",
+        str(raw_root),
+        "--ledger-root",
+        str(round_ledger),
+        "--stage-pools-from-hf",
+        "--skip-upload",
+    ]
+    runner.fanout(
+        "p7.gen_user_sim",
+        _model_py(
+            "issue2378_gen.py",
+            "--phase",
+            "user_sim",
+            "--user-sim-rows",
+            str(args.user_rows),
+            *gen_common,
+        ),
+        gpus=gpus,
+    )
+    runner.run(
+        "p7.upload_user_sim",
+        _py(
+            "issue2378_gen.py",
+            "--phase",
+            "upload_stage",
+            "--stage",
+            "user_sim",
+            "--raw-root",
+            str(raw_root),
+            "--hf-prefix-override",
+            cm.SIMREGEN_HF_RAW_PREFIX,
+        ),
+    )
+    runner.fanout(
+        "p7.gen_user_fresh",
+        _model_py(
+            "issue2378_gen.py",
+            "--phase",
+            "user_fresh",
+            "--user-fresh-rows",
+            str(args.user_fresh_rows),
+            "--user-fresh-draws",
+            str(args.user_fresh_draws),
+            *gen_common,
+        ),
+        gpus=gpus,
+    )
+    runner.run(
+        "p7.upload_user_fresh",
+        _py(
+            "issue2378_gen.py",
+            "--phase",
+            "upload_stage",
+            "--stage",
+            "user_sim_fresh",
+            "--raw-root",
+            str(raw_root),
+            "--hf-prefix-override",
+            cm.SIMREGEN_HF_RAW_PREFIX,
+        ),
+    )
+    if runner.dry:
+        _log("[dry] p7.stage_user_real_render: parent raw user_real_render -> round raw root")
+    else:
+        _stage_user_real_render(args, raw_root)
+    runner.run(
+        "p7.capture_ready",
+        _py(
+            "issue2378_gen.py",
+            "--phase",
+            "capture_ready",
+            "--cells",
+            "chat_user_real,chat_user_sim",
+            "--raw-root",
+            str(raw_root),
+            "--ledger-root",
+            str(round_ledger),
+        ),
+    )
+    if runner.dry:
+        _log("[dry] p7.floor_gate: capture_ready/chat_user_sim.json -> PASS | rc 8 (FLOOR_FAIL)")
+    else:
+        cr = json.loads(
+            (round_ledger / "capture_ready" / "chat_user_sim.json").read_text(encoding="utf-8")
+        )
+        verdict = _simregen_floor_verdict(cr)
+        elicitation = [
+            {"file": p.name, **json.loads(p.read_text(encoding="utf-8")).get("elicitation", {})}
+            for p in sorted((raw_root / "user_sim").glob("summary_w*_s*.json"))
+        ]
+        report = {"floor_gate": verdict, "elicitation": elicitation, "metadata": cm.run_metadata()}
+        cm.atomic_write_json(round_ledger / "simregen_floor_report.json", report)
+        git_harvest(
+            [
+                "eval_results/issue_2378/sim-user-regen/capture_ready/*.json",
+                "eval_results/issue_2378/sim-user-regen/simregen_floor_report.json",
+            ],
+            f"task #{ISSUE}: sim-user-regen floor gate ({verdict['verdict']})",
+        )
+        write_sentinel(
+            args,
+            "epm:progress",
+            report,
+            gate="simregen_floor",
+            blocks_pipeline=verdict["verdict"] != "PASS",
+        )
+        if verdict["verdict"] != "PASS":
+            _log("[p7] sim-user-regen floor FAIL — reported, never backfilled (#612)")
+            return RC_SIMREGEN_FLOOR
+    if runner.dry:
+        real_store = Path(args.stage_root) / ACTIVATIONS_PREFIX
+        _log("[dry] p7.stage_real_vcvp: parent chat_user_real npz (capture layers) for vcvp sub")
+    else:
+        real_store = _stage_parent_store_slice(args, {"chat_user_real"}, layers)
+    cap_common = [
+        "--raw-root",
+        str(raw_root),
+        "--ledger-root",
+        str(round_ledger),
+        "--out-root",
+        str(store_root),
+        "--stage-pools-from-hf",
+        "--skip-upload",
+    ]
+    runner.run(
+        "p7.capture_sim",
+        _model_py(
+            "issue2378_capture.py",
+            "--phase",
+            "capture",
+            "--cells",
+            "chat_user_sim",
+            "--layers",
+            ",".join(str(x) for x in layers),
+            "--user-vcvp-from-store",
+            str(real_store),
+            *cap_common,
+        ),
+        env_extra=_first_gpu_env(runner, gpus, "p7.capture_sim"),
+    )
+    runner.run(
+        "p7.capture_sim_fresh",
+        _model_py(
+            "issue2378_capture.py",
+            "--phase",
+            "capture_fresh",
+            "--cells",
+            "chat_user_sim",
+            "--fresh-draws",
+            str(args.user_fresh_draws),
+            "--layers",
+            str(lstar),
+            *cap_common,
+        ),
+        env_extra=_first_gpu_env(runner, gpus, "p7.capture_sim_fresh"),
+    )
+    if not runner.dry:
+        import issue2378_p6_common as p6
+
+        cm.atomic_write_json(
+            store_root / "store_index.json",
+            {
+                "cells": p6.build_store_index(store_root, ["chat_user_sim"]),
+                "round": cm.SIMREGEN_ROUND,
+                "metadata": cm.run_metadata(),
+            },
+        )
+        uploaded = cm.upload_stage_dir(store_root, cm.SIMREGEN_ACTIVATIONS_PREFIX)
+        _log(
+            f"[p7] round store uploaded+verified: {len(uploaded)} files "
+            f"-> {cm.SIMREGEN_ACTIVATIONS_PREFIX}"
+        )
+        report = {
+            "phase": "p7_simuser_regen",
+            "round": cm.SIMREGEN_ROUND,
+            "layers": layers,
+            "walls_s": {k: round(v, 1) for k, v in runner.walls.items()},
+            "hf": {
+                "raw": cm.SIMREGEN_HF_RAW_PREFIX,
+                "activations": cm.SIMREGEN_ACTIVATIONS_PREFIX,
+            },
+            "metadata": cm.run_metadata(),
+        }
+        cm.atomic_write_json(round_ledger / "simregen_report.json", report)
+        git_harvest(
+            ["eval_results/issue_2378/sim-user-regen/simregen_report.json"],
+            f"task #{ISSUE}: sim-user-regen regen+capture report",
+        )
+        write_sentinel(args, "epm:progress", report, gate="simregen_gpu_leg")
+    return 0
+
+
+def phase_p7_simuser_fits(args, runner: Runner) -> int:
+    """CPU leg (VM detached / cpu venue — never holds the GPU pod): round fold
+    map (both user arms, repaired intersection) -> guarded GCV-ridge own-map
+    fits (BOTH arms refit under the shared paired topology) -> ladder recovery
+    pairs -> H4b paired delta -> retrieval battery + fresh reference ->
+    length-KS + matched refits (--pair-user) -> plan-named sync + harvest."""
+    _phase_line("p7_simuser_fits")
+    raw_root, round_ledger, store_root = _simregen_paths(args)
+    parent_ledger = Path(args.ledger_root)
+    assert_headroom("p7_simuser_fits", Path(args.stage_root))
+    if runner.dry:
+        lstar = 32
+        combined = Path(args.stage_root) / "simregen_combined"
+        _log(
+            "[dry] p7.stage_combined: parent rows.json (all cells) + chat/chat_user_real "
+            "L* npz + round sim parts -> combined store"
+        )
+    else:
+        _git_pull_rebase()  # round capture_ready + floor report arrive via git
+        cr_path = round_ledger / "capture_ready" / "chat_user_sim.json"
+        verdict = _simregen_floor_verdict(json.loads(cr_path.read_text(encoding="utf-8")))
+        if verdict["verdict"] != "PASS":
+            _log(f"[p7-fits] floor re-check FAIL: {json.dumps(verdict)} — rc 8")
+            return RC_SIMREGEN_FLOOR
+        lstar = resolve_lstar(parent_ledger)
+        parent_store = _stage_parent_store_slice(args, {"chat", "chat_user_real"}, [lstar])
+        sim_src = store_root
+        if not any(sim_src.glob(f"chat_user_sim__part*__L{lstar}.npz")):
+            sim_src = cm.stage_hf_prefix(cm.SIMREGEN_ACTIVATIONS_PREFIX, Path(args.stage_root))
+        combined = Path(args.stage_root) / "simregen_combined"
+        n_parent = _link_into(
+            parent_store,
+            combined,
+            [
+                p.name
+                for p in parent_store.iterdir()
+                if "__fresh_d" not in p.name
+                and (p.name.endswith("__rows.json") or p.name.endswith(f"__L{lstar}.npz"))
+            ],
+        )
+        n_sim = _link_into(
+            sim_src,
+            combined,
+            [
+                p.name
+                for p in sim_src.iterdir()
+                if p.name.startswith("chat_user_sim__")
+                and (p.name.endswith("__rows.json") or p.name.endswith(f"__L{lstar}.npz"))
+            ],
+        )
+        import issue2378_p6_common as p6
+
+        for cell in ("chat", "chat_user_real", "chat_user_sim"):
+            if not p6.production_part_indices(combined, cell):
+                raise RuntimeError(f"[p7-fits] combined store missing production parts: {cell}")
+        _log(f"[p7-fits] combined store assembled ({n_parent} parent + {n_sim} sim links)")
+    parent_refs = [
+        "--layer-star-from",
+        str(parent_ledger / "pilot" / "layer_sweep.json"),
+        "--g3-gate-file",
+        str(parent_ledger / "g3_gate.json"),
+    ]
+    fit_common = [
+        "--store-root",
+        str(combined),
+        "--ledger-root",
+        str(round_ledger),
+        *parent_refs,
+    ]
+    runner.run(
+        "p7.fits",
+        _py(
+            "issue2378_fits.py",
+            "--phase",
+            "fit",
+            "--units",
+            "chat_user_real,chat_user_sim",
+            *fit_common,
+        ),
+    )
+    runner.run(
+        "p7.ladder",
+        _py(
+            "issue2378_ladder.py",
+            "--phase",
+            "pairs",
+            "--pairs",
+            "chat_user_real,chat_user_sim",
+            *fit_common,
+        ),
+    )
+    runner.run("p7.h4b", _py("issue2378_ladder.py", "--phase", "h4b", *fit_common))
+    runner.run(
+        "p7.retrieval",
+        _py(
+            "issue2378_retrieval.py",
+            "--phase",
+            "all",
+            "--cells",
+            "chat_user_real,chat_user_sim",
+            *fit_common,
+        ),
+    )
+    runner.run(
+        "p7.lenmatch_pair",
+        _py(
+            "issue2378_lenmatch.py",
+            "--pair-user",
+            "--store-root",
+            str(combined),
+            "--ledger-root",
+            str(round_ledger),
+        ),
+    )
+    if not runner.dry:
+        for sub in ("fits/percell", "ladder/percell"):
+            d = round_ledger / sub
+            if d.exists() and any(d.iterdir()):
+                cm.upload_stage_dir(d, f"{cm.HF_PREFIX}/p6_sidecars_simregen/{sub}")
+        synced = _simregen_plan_named_sync(round_ledger, parent_ledger)
+        digest = {
+            "phase": "p7_simuser_fits",
+            "round": cm.SIMREGEN_ROUND,
+            "layer": lstar,
+            "plan_named_sync": synced,
+            "walls_s": {k: round(v, 1) for k, v in runner.walls.items()},
+            "metadata": cm.run_metadata(),
+        }
+        cm.atomic_write_json(round_ledger / "p7_digest.json", digest)
+        git_harvest(
+            [
+                "eval_results/issue_2378/sim-user-regen/fold_map.json",
+                "eval_results/issue_2378/sim-user-regen/fits/*.json",
+                "eval_results/issue_2378/sim-user-regen/ladder/*.json",
+                "eval_results/issue_2378/sim-user-regen/retrieval/*.json",
+                "eval_results/issue_2378/sim-user-regen/lenmatch/*.json",
+                "eval_results/issue_2378/sim-user-regen/p7_digest.json",
+                *synced,
+            ],
+            f"task #{ISSUE}: sim-user-regen fits + H4b + plan-named sync",
+        )
+        write_sentinel(
+            args,
+            "epm:results",
+            {
+                "phase": "sim-user-regen complete (P7 fits)",
+                "round": cm.SIMREGEN_ROUND,
+                "eval_json_paths": [
+                    "eval_results/issue_2378/sim-user-regen/",
+                    "eval_results/issue_2378/fits/chat_user_sim__context.json",
+                    "eval_results/issue_2378/ladder/h4b_real_vs_sim.json",
+                ],
+                "note": "no training in this round — no reproducibility_card adapters",
+            },
+        )
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # probe (CPU fixtures; no GPU, no network) + import-check
 # ---------------------------------------------------------------------------
 
@@ -3531,6 +4094,64 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
             t_rows_dir_manifest,
         )
 
+        def t_simregen_floor_gate():
+            def cr(n_sim: int, n_int: int) -> dict:
+                return {"n_kept": n_sim, "pair_intersection": {"n_intersection": n_int}}
+
+            v = _simregen_floor_verdict(cr(8200, 7100))
+            assert v["verdict"] == "PASS" and not v["close_miss_band"], v
+            # BOTH floors bind: an above-floor sim yield with a starved pair
+            # intersection still fails (the fits consume the intersection).
+            v = _simregen_floor_verdict(cr(8200, 6100))
+            assert v["verdict"] == "FLOOR_FAIL" and v["sim_floor_pass"], v
+            assert not v["intersection_floor_pass"], v
+            v = _simregen_floor_verdict(cr(6000, 5900))
+            assert v["verdict"] == "FLOOR_FAIL" and v["close_miss_band"], v
+            v = _simregen_floor_verdict(cr(500, 400))
+            assert v["verdict"] == "FLOOR_FAIL" and not v["close_miss_band"], v
+
+        check(
+            "simregen floor gate (PASS + both FAIL branches + close-miss band)",
+            t_simregen_floor_gate,
+        )
+
+        def t_simregen_plan_named_sync():
+            import issue2378_p6_common as p6
+
+            rl = tmp / "simregen_round"
+            pl = tmp / "simregen_parent"
+            for arm in p6.ARMS:
+                cm.atomic_write_json(
+                    rl / "fits" / f"chat_user_sim__{arm}.json",
+                    {"cell": "chat_user_sim", "arm": arm, "pooled_r2": 0.1},
+                )
+            cm.atomic_write_json(
+                rl / "ladder" / "h4b_real_vs_sim.json", {"statistic": "paired", "status": "ok"}
+            )
+            cm.atomic_write_json(
+                pl / "fits" / "chat_user_sim__g2b_dropped.json",
+                {"cell": "chat_user_sim", "status": "N/A"},
+            )
+            written = _simregen_plan_named_sync(rl, pl)
+            assert len(written) == 4, written  # 2 arms + h4b + drop-marker stamp
+            for arm in p6.ARMS:
+                d = json.loads(
+                    (pl / "fits" / f"chat_user_sim__{arm}.json").read_text(encoding="utf-8")
+                )
+                assert d["round"] == cm.SIMREGEN_ROUND and d["pooled_r2"] == 0.1, d
+                assert "g2b_dropped" in d["supersedes"], d
+            h = json.loads((pl / "ladder" / "h4b_real_vs_sim.json").read_text(encoding="utf-8"))
+            assert h["round"] == cm.SIMREGEN_ROUND and h["status"] == "ok", h
+            drop = json.loads(
+                (pl / "fits" / "chat_user_sim__g2b_dropped.json").read_text(encoding="utf-8")
+            )
+            assert drop["superseded_by"]["round"] == cm.SIMREGEN_ROUND, drop
+            assert drop["status"] == "N/A", drop  # original record preserved
+
+        check(
+            "simregen plan-named sync (provenance + drop-marker stamp)", t_simregen_plan_named_sync
+        )
+
     if failures:
         raise RuntimeError(f"probe FAILURES ({len(failures)}): " + " | ".join(failures))
     _log("[probe] all dispatch probes passed")
@@ -3566,6 +4187,16 @@ def run_import_check() -> int:
     inspect.signature(_hub.stage_hub_prefix).bind(
         cm.HF_DATA_REPO, "prefix", Path("x"), repo_type="dataset", revision=None
     )
+    # P7 sim-user-regen seams: the round phases call these cm/p6 helpers on
+    # branches a VM dry-run never executes — bind their exact call shapes.
+    inspect.signature(cm.stage_hf_prefix).bind(
+        f"{cm.HF_PREFIX}/raw_completions/user_real_render", Path("x")
+    )
+    inspect.signature(cm.upload_stage_dir).bind(Path("x"), cm.SIMREGEN_ACTIVATIONS_PREFIX)
+    import issue2378_p6_common as _p6
+
+    inspect.signature(_p6.build_store_index).bind(Path("x"), ["chat_user_sim"])
+    inspect.signature(_p6.production_part_indices).bind(Path("x"), "chat")
     # r8 engine_smoke seam: create_vllm_engine resolves on the repo venv (its
     # own vllm import is deferred) — bind the gate's exact call shape. The
     # `from vllm import SamplingParams` / EngineArgs deferred imports inside
@@ -3604,6 +4235,8 @@ PHASES = {
     "p4_segb_capture": phase_p4,
     "p5_congruence": phase_p5,
     "p6_fits": phase_p6,
+    "p7_simuser_regen": phase_p7_simuser_regen,
+    "p7_simuser_fits": phase_p7_simuser_fits,
     "probe": None,
 }
 
@@ -3665,6 +4298,10 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--g3-poll-s", type=int, default=120)
     ap.add_argument("--g3-timeout-s", type=int, default=6 * 3600)
     ap.add_argument("--siblings-timeout-s", type=int, default=24 * 3600)
+    # P7 sim-user-regen round roots (§4.7 out-root lesson: fresh per-round roots)
+    ap.add_argument("--simregen-raw-root", default=str(cm.SIMREGEN_RAW_ROOT))
+    ap.add_argument("--simregen-ledger-root", default=str(cm.SIMREGEN_LEDGER_ROOT))
+    ap.add_argument("--simregen-store-root", default=str(cm.SIMREGEN_STORE_ROOT))
     return ap
 
 

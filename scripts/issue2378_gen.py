@@ -486,7 +486,12 @@ def _reap_engine(llm) -> None:
 
 
 def _sampling_params(
-    max_tokens: int, stop: list[str] | None, seed: int, bad_words: list[str] | None = None
+    max_tokens: int,
+    stop: list[str] | None,
+    seed: int,
+    bad_words: list[str] | None = None,
+    min_tokens: int = 0,
+    stop_token_ids: list[int] | None = None,
 ):
     """Shared SamplingParams builder. ``bad_words`` carries the '<think>'
     reasoning-mode ban on the RAW continuation legs — SegA mining (G1
@@ -496,7 +501,13 @@ def _sampling_params(
     unbanned. Threaded UNGUARDED: verified constructible on the production
     model venv (vllm 0.27.1, pod-2378) — an engine venv lacking the param
     must TypeError loudly, never introspection-skip (the r9
-    ENGINE_KWARG_PINS lesson)."""
+    ENGINE_KWARG_PINS lesson).
+
+    ``min_tokens`` + ``stop_token_ids`` (sim-user-regen rung-1 repair): vLLM
+    masks EOS + stop_token_ids logits for the first ``min_tokens`` steps but
+    does NOT mask stop STRINGS — a caller wanting a binding non-empty
+    constraint must put the special turn-terminators in ``stop_token_ids``
+    (the strings stay too, catching spelled-out non-special variants)."""
     from vllm import SamplingParams
 
     return SamplingParams(
@@ -507,6 +518,8 @@ def _sampling_params(
         max_tokens=max_tokens,
         stop=stop,
         bad_words=bad_words,
+        min_tokens=min_tokens,
+        stop_token_ids=stop_token_ids,
     )
 
 
@@ -1070,6 +1083,7 @@ def _cell_grain_regen(
     update_row,
     tag: str,
     bad_words: list[str] | None = None,
+    sp_kwargs: dict | None = None,
 ) -> dict:
     """Cap-hit > 2% regen at PER-SHARD grain (r1 review majors 13+15; grain
     relabeled per the r2 reconciler disposition of cap-hit-rule-wrong-grain):
@@ -1088,6 +1102,9 @@ def _cell_grain_regen(
     ``bad_words`` threads the caller's decoding ban into the 2x pass so a
     regenerated row samples under the SAME regime as its 1x pass (r13: the
     plain/user '<think>' ban must not silently drop on regen).
+    ``sp_kwargs`` threads any further caller SamplingParams kwargs the same
+    way (sim-user-regen: the rung-1 min_tokens + stop_token_ids constraint
+    must not silently drop on the 2x cap regen).
     """
     files = [f for f in files if f.exists()]
     if decision_path.exists():
@@ -1122,7 +1139,11 @@ def _cell_grain_regen(
                 prompts.append(prompt)
                 sps.append(
                     _sampling_params(
-                        cap2, stop, cm.derived_seed(rows[i]["seed"], "regen"), bad_words=bad_words
+                        cap2,
+                        stop,
+                        cm.derived_seed(rows[i]["seed"], "regen"),
+                        bad_words=bad_words,
+                        **(sp_kwargs or {}),
                     )
                 )
             outs = _chunked_generate(llm, prompts, sps, f"{tag}/regen2x")
@@ -1325,14 +1346,142 @@ def _classify_sim_turn(text: str) -> tuple[bool, str | None]:
 
 
 def _classify_sim_row(row: dict, text: str) -> None:
-    """Set sim_turn/keep/drop_reason on a sim-user row (1x pass + 2x regen)."""
+    """Set sim_turn/keep/drop_reason on a sim-user row (1x pass + 2x regen).
+
+    ``text`` is the FULL measured turn — rung-3 callers prepend the opener
+    prefill before calling (the opener stays in the measured text, #612)."""
     keep, drop_reason = _classify_sim_turn(text)
     row.update({"sim_turn": text.strip(), "keep": keep, "drop_reason": drop_reason})
 
 
+def _user_stop_token_ids(tok) -> list[int]:
+    """Single-token ids for the sim-user stop set (sim-user-regen rung-1
+    repair): vLLM's ``min_tokens`` masks EOS + ``stop_token_ids`` logits for
+    the first N steps but NOT stop STRINGS, so the special turn-terminators
+    must be token ids for the non-empty constraint to bind. Fail loud if a
+    stop is not exactly one token (a silent multi-token stop would leave the
+    constraint non-binding — the wave-1 collapse shape)."""
+    ids: list[int] = []
+    for s in cm.USER_SIM_STOP:
+        enc = tok.encode(s, add_special_tokens=False)
+        if len(enc) != 1:
+            raise RuntimeError(f"user_sim stop {s!r} is not a single token (got {enc})")
+        ids.append(int(enc[0]))
+    return ids
+
+
+# Degenerate-turn drop reasons eligible for rung-1 re-elicitation (fresh-seed
+# resample). over_length is deterministic in the prefix — never retryable.
+RETRYABLE_SIM_DROPS = ("empty_turn", "len_band", "think_leak", "non_english")
+
+
+def _rung3_opener(conv_id: str) -> str:
+    """Deterministic minimal opener (#612 tier 3) per conversation."""
+    bank = cm.USER_SIM_RUNG3_OPENERS
+    return bank[cm.derived_seed(cm.SEED, "rung3_opener", conv_id) % len(bank)]
+
+
+def _sim_prompt(tok, pool_row: dict, row: dict) -> str:
+    """Generation prompt for a sim row: shared rendered prefill (+ the row's
+    rung-3 opener when present — the opener is part of the measured turn, so
+    prefix_chars/prefix_digest stay pinned to the BASE prefix, §4.2b)."""
+    return _render_user_prefix(tok, pool_row["u1"], pool_row["a1"]) + row.get("opener_text", "")
+
+
+def _sim_reclassify(row: dict, text: str, finish: str) -> None:
+    """Re-classify a re-elicited/regenerated sim row in place, composing the
+    row's opener (if any) into the measured turn."""
+    row["finish_reason"] = finish
+    _classify_sim_row(row, row.get("opener_text", "") + text)
+
+
+def _sim_repair_pass(
+    args,
+    llm,
+    tok,
+    pool_by_id: dict[str, dict],
+    files: list[Path],
+    decision_path: Path,
+    *,
+    select,
+    mark,
+    seed_parts: tuple,
+    cap: int,
+    ban: list[str],
+    sp_extra: dict,
+    tag: str,
+    extra_decision: dict | None = None,
+) -> dict:
+    """One durable in-place re-elicitation pass over selected degenerate rows.
+
+    ``select(row) -> bool`` picks rows to re-elicit; ``mark(row)`` stamps the
+    row BEFORE generation state is applied (retry_pass / rung fields), so a
+    killed pass resumes on the un-stamped remainder. The decision JSON makes
+    a completed pass idempotent (the `_cell_grain_regen` durability shape)."""
+    if decision_path.exists():
+        decision = json.loads(decision_path.read_text(encoding="utf-8"))
+        if decision.get("done"):
+            return decision
+    n_selected = 0
+    n_recovered = 0
+    for path in files:
+        rows = list(cm.iter_jsonl(path))
+        todo = [i for i, r in enumerate(rows) if select(r)]
+        if not todo:
+            continue
+        prompts, sps = [], []
+        for i in todo:
+            r = rows[i]
+            pool_row = pool_by_id.get(r["conv_id"])
+            if pool_row is None:
+                raise RuntimeError(f"{tag}: conv_id {r['conv_id']} not in the user pool")
+            mark(r)
+            prompts.append(_sim_prompt(tok, pool_row, r))
+            sps.append(
+                _sampling_params(
+                    cap,
+                    cm.USER_SIM_STOP,
+                    cm.derived_seed(r["seed"], *seed_parts),
+                    bad_words=ban,
+                    **sp_extra,
+                )
+            )
+        outs = _chunked_generate(llm, prompts, sps, tag)
+        for k, i in enumerate(todo):
+            text, finish = _gen_text(outs[k])
+            prior = list(rows[i].get("prior_drop_reasons", []))
+            if rows[i].get("drop_reason"):
+                prior.append(rows[i]["drop_reason"])
+            _sim_reclassify(rows[i], text, finish)
+            rows[i]["prior_drop_reasons"] = prior
+            if rows[i]["keep"]:
+                n_recovered += 1
+        n_selected += len(todo)
+        _write_chunk_jsonl(path, rows)
+    decision = {
+        "done": True,
+        "n_selected": n_selected,
+        "n_recovered": n_recovered,
+        **(extra_decision or {}),
+    }
+    cm.atomic_write_json(decision_path, decision)
+    print(f"[{tag}] re-elicited {n_selected} rows, recovered {n_recovered}", flush=True)
+    return decision
+
+
 def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list[int]) -> None:
     """Sim-user turn generation (plan §4.2b): raw continuation of the rendered
-    prefill; one pass per draw seed (production: [SEED]; fresh: 138-141)."""
+    prefill; one pass per draw seed (production: [SEED]; fresh: 138-141).
+
+    sim-user-regen elicitation repair (#612 ladder; wave-1 collapse: 6,402/
+    10,000 empty turns — the assistant-SFT'd model's most likely continuation
+    at the bare user header is the turn terminator): rung 1 = the SAME bare
+    prefill under a mechanical non-degeneracy constraint (min_tokens masks
+    EOS/stop-token logits for the first USER_SIM_MIN_TOKENS steps) plus <=
+    USER_SIM_RETRY_PASSES fresh-seed re-elicitation passes over degenerate
+    rows; rung 3 (minimal opener prefill, production ``user_sim`` stage only)
+    fires ONLY when the kept quota is unfilled after the retries. Per-rung /
+    per-pass yields are recorded in the stage summary (``elicitation``)."""
     raw_root = Path(args.raw_root)
     cap = cm.USER_SIM_MAX_TOKENS
     budget = args.max_model_len - 2 * cap
@@ -1341,6 +1490,9 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
     # leg like plain (277/10,000 wave-1 think_leaks) — same '<think>' ban;
     # output-affecting, so it rides the regime (fresh roots by design).
     ban = ["<think>"]
+    stop_ids = _user_stop_token_ids(tok)
+    sp_extra = {"min_tokens": cm.USER_SIM_MIN_TOKENS, "stop_token_ids": stop_ids}
+    rung3_enabled = stage == "user_sim"
     regime = {
         "phase": stage,
         "wave": wave,
@@ -1350,6 +1502,12 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
         "cap": cap,
         "model": cm.MODEL_ID,
         "bad_words": ban,
+        # sim-user-regen repair regime (output-affecting — fresh roots by design)
+        "min_tokens": cm.USER_SIM_MIN_TOKENS,
+        "stop_token_ids": stop_ids,
+        "retry_passes": cm.USER_SIM_RETRY_PASSES,
+        "rung3_openers": list(cm.USER_SIM_RUNG3_OPENERS) if rung3_enabled else None,
+        "rung3_quota_frac": (cm.FLOOR_KEPT / cm.USER_DRAW_N) if rung3_enabled else None,
     }
     ledger = cm.StageLedger(raw_root / stage / f"ledger_w{wave}_s{args.shard_index}.json", regime)
     pool_by_id = {r["conv_id"]: r for r in rows}
@@ -1379,7 +1537,9 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
                 prompts.append(prefix)
                 seeds.append(cm.derived_seed(draw_seed, "user_sim", wave, r["conv_id"]))
                 kept_rows.append(r)
-            sps = [_sampling_params(cap, cm.USER_SIM_STOP, s, bad_words=ban) for s in seeds]
+            sps = [
+                _sampling_params(cap, cm.USER_SIM_STOP, s, bad_words=ban, **sp_extra) for s in seeds
+            ]
             outs = _chunked_generate(llm, prompts, sps, stage)
             out_rows = list(dropped_rows)
             for r, prefix, out, s in zip(kept_rows, prompts, outs, seeds):
@@ -1391,6 +1551,8 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
                     "finish_reason": finish,
                     "seed": s,
                     "regen": False,
+                    "elicit_rung": 1,
+                    "retry_pass": 0,
                     "prefix_chars": len(prefix),
                     "prefix_digest": cm.text_digest(prefix),
                 }
@@ -1400,20 +1562,87 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
             _write_chunk_jsonl(raw_root / stage / f"{stem}.jsonl", out_rows)
             ledger.mark_done(key)
             cm.progress(stage, ci + 1, n_chunks, key, t0)
-    # Cell-grain cap-hit regen + durable-file summary (r1 review majors 13+15);
-    # fresh draws (user_sim_fresh) share this path, so the > 2% rule covers
-    # them too (r1 review: cap-hit rule skipped fresh draws).
     files = sorted((raw_root / stage).glob(f"w{wave}_d*_s{args.shard_index}_c*.jsonl"))
 
+    # Rung-1 re-elicitation passes (sim-user-regen repair): retryable
+    # degenerates get a fresh derived seed, <= USER_SIM_RETRY_PASSES times.
+    retry_decisions = []
+    for pass_i in range(1, cm.USER_SIM_RETRY_PASSES + 1):
+        retry_decisions.append(
+            _sim_repair_pass(
+                args,
+                llm,
+                tok,
+                pool_by_id,
+                files,
+                raw_root / stage / f"retry_decision_w{wave}_p{pass_i}_s{args.shard_index}.json",
+                select=lambda r, p=pass_i: (
+                    not r.get("keep")
+                    and r.get("drop_reason") in RETRYABLE_SIM_DROPS
+                    and r.get("retry_pass", 0) == p - 1
+                ),
+                mark=lambda r, p=pass_i: r.__setitem__("retry_pass", p),
+                seed_parts=("retry", pass_i),
+                cap=cap,
+                ban=ban,
+                sp_extra=sp_extra,
+                tag=f"{stage}/retry{pass_i}",
+                extra_decision={"pass": pass_i},
+            )
+        )
+
+    # Rung-3 escalation (#612 tier 3; production user_sim stage only): fires
+    # ONLY when the shard's kept quota is unfilled after the rung-1 retries.
+    # Quota scales with the shard's drawn count (FLOOR_KEPT/USER_DRAW_N =
+    # the plan's 6,500-kept-of-10,000-drawn floor), so smoke slices and
+    # multi-shard runs get proportional quotas.
+    rung3_decision: dict = {"enabled": rung3_enabled, "fired": False}
+    if rung3_enabled:
+        kept_now = sum(1 for p in files for r in cm.iter_jsonl(p) if r.get("keep"))
+        n_shard = sum(1 for p in files for r in cm.iter_jsonl(p))
+        quota = -(-(cm.FLOOR_KEPT * n_shard) // cm.USER_DRAW_N)  # ceil-div
+        if kept_now < quota:
+
+            def _mark_rung3(r: dict) -> None:
+                r["elicit_rung"] = 3
+                r["opener_text"] = _rung3_opener(r["conv_id"])
+
+            d = _sim_repair_pass(
+                args,
+                llm,
+                tok,
+                pool_by_id,
+                files,
+                raw_root / stage / f"rung3_decision_w{wave}_s{args.shard_index}.json",
+                select=lambda r: (
+                    not r.get("keep")
+                    and r.get("drop_reason") in RETRYABLE_SIM_DROPS
+                    and r.get("elicit_rung", 1) == 1
+                ),
+                mark=_mark_rung3,
+                seed_parts=("rung3",),
+                cap=cap,
+                ban=ban,
+                sp_extra=sp_extra,
+                tag=f"{stage}/rung3",
+                extra_decision={"fired": True, "kept_before": kept_now, "quota": quota},
+            )
+            rung3_decision.update(d)
+            rung3_decision["fired"] = True
+        else:
+            rung3_decision.update({"kept_before": kept_now, "quota": quota})
+            print(f"[{stage}] rung3 not fired: kept {kept_now} >= quota {quota}", flush=True)
+
+    # Cell-grain cap-hit regen + durable-file summary (r1 review majors 13+15);
+    # fresh draws (user_sim_fresh) share this path, so the > 2% rule covers
+    # them too (r1 review: cap-hit rule skipped fresh draws). Runs AFTER the
+    # repair passes so re-elicited rows are covered; rung-3 rows rebuild with
+    # their opener and reclassify opener-composed (sim-user-regen).
     def _rebuild(row: dict) -> tuple[str, int, list[str] | None]:
         pool_row = pool_by_id.get(row["conv_id"])
         if pool_row is None:
             raise RuntimeError(f"{stage} regen: conv_id {row['conv_id']} not in the user pool")
-        return _render_user_prefix(tok, pool_row["u1"], pool_row["a1"]), 2 * cap, cm.USER_SIM_STOP
-
-    def _update(row: dict, text: str, finish: str) -> None:
-        row["finish_reason"] = finish
-        _classify_sim_row(row, text)
+        return _sim_prompt(tok, pool_row, row), 2 * cap, cm.USER_SIM_STOP
 
     decision = _cell_grain_regen(
         llm,
@@ -1421,9 +1650,10 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
         raw_root / stage / f"regen_decision_w{wave}_s{args.shard_index}.json",
         is_hit=lambda r: r.get("finish_reason") == "length",
         rebuild=_rebuild,
-        update_row=_update,
+        update_row=_sim_reclassify,
         tag=stage,
         bad_words=ban,
+        sp_kwargs=sp_extra,
     )
     counts: dict[str, int] = {
         "rows": 0,
@@ -1434,6 +1664,8 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
         "len_band": 0,
         "non_english": 0,
     }
+    kept_by_rung = {1: 0, 3: 0}
+    retry_recovered = 0
     for path in files:
         for row in cm.iter_jsonl(path):
             if row.get("drop_reason") == "over_length":
@@ -1442,11 +1674,25 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
             counts["rows"] += 1
             if row.get("keep"):
                 counts["kept"] += 1
+                kept_by_rung[row.get("elicit_rung", 1)] += 1
+                if row.get("elicit_rung", 1) == 1 and row.get("retry_pass", 0) > 0:
+                    retry_recovered += 1
             elif row.get("drop_reason") in counts:
                 counts[row["drop_reason"]] += 1
     summary = {
         "regime": regime,
         "counts": counts,
+        "elicitation": {
+            "constraint": (
+                "rung-1 min_tokens + stop_token_ids (vLLM masks EOS/stop-id logits for the "
+                f"first {cm.USER_SIM_MIN_TOKENS} steps); #612 ladder repair, sim-user-regen"
+            ),
+            "kept_rung1": kept_by_rung[1],
+            "kept_rung3": kept_by_rung[3],
+            "rung1_retry_recovered": retry_recovered,
+            "retry_passes": retry_decisions,
+            "rung3": rung3_decision,
+        },
         "cap_hit_fraction_before": decision["frac_before"],
         "cap_hit_fraction_after": decision["frac_after"],
         "cap_hit_regen": decision["regen"],
@@ -1454,6 +1700,7 @@ def _run_user_sim(args, llm, tok, rows: list[dict], stage: str, draw_seeds: list
     }
     cm.atomic_write_json(raw_root / stage / f"summary_w{wave}_s{args.shard_index}.json", summary)
     print(f"[{stage}] {json.dumps(counts)}", flush=True)
+    print(f"[{stage}] elicitation: {json.dumps(summary['elicitation'])}", flush=True)
 
 
 def phase_user_sim(args) -> None:
@@ -1477,7 +1724,12 @@ def phase_user_fresh(args) -> None:
     tok = _get_tokenizer()
     _assert_chat_template(tok)
     rows = _load_pool(pools_dir, "user_draw")
-    sim_kept = set(_stage_kept_rows(_rows_dir(args, "user_sim")))
+    sim_rows = _stage_kept_rows(_rows_dir(args, "user_sim"))
+    # sim-user-regen: fresh redraws are BARE rung-1 elicitations, so the fresh
+    # reference restricts to rung-1-kept conversations — a rung-3/opener-kept
+    # conversation would deterministically under-cover under bare redraws
+    # (selection disclosed via the stage summaries' elicitation blocks).
+    sim_kept = {rid for rid, r in sim_rows.items() if r.get("elicit_rung", 1) == 1}
     rows = [r for r in rows if r["conv_id"] in sim_kept]
     if not rows:
         raise RuntimeError("user_fresh: no kept user_sim conversations (run user_sim first)")
@@ -2015,10 +2267,30 @@ def phase_fresh_draws(args) -> None:
 
 def phase_capture_ready(args) -> None:
     """Reduce stage ledgers into per-cell capture_ready.json (plan §4.6 floors;
-    §4.2b pair-complete intersection for the two user arms)."""
+    §4.2b pair-complete intersection for the two user arms).
+
+    ``--cells`` restricts emission to a subset (sim-user-regen: the round's
+    raw root holds ONLY the user stages, so the story/chat reductions must
+    not run there). The two user arms are computed jointly — selecting one
+    without its sibling is refused (capture's sibling-gate check expects
+    both files from one pass)."""
     ledger_root = Path(args.ledger_root)
     out_dir = ledger_root / "capture_ready"
     kept_dir = Path(args.kept_dir)
+    want = {c.strip() for c in args.cells.split(",") if c.strip()} or None
+    if want is not None:
+        unknown = sorted(want - set(cm.ALL_CELLS))
+        if unknown:
+            raise SystemExit(f"capture_ready --cells: unknown cells {unknown}")
+        user_sel = want & set(cm.USER_CELLS)
+        if user_sel and user_sel != set(cm.USER_CELLS):
+            raise SystemExit(
+                "capture_ready --cells: the user arms are emitted jointly — select both "
+                f"{sorted(cm.USER_CELLS)} or neither"
+            )
+
+    def _want(cell: str) -> bool:
+        return want is None or cell in want
 
     def emit(cell: str, kept_ids: list[str], drops: dict, extra: dict | None = None) -> None:
         n = len(kept_ids)
@@ -2041,37 +2313,49 @@ def phase_capture_ready(args) -> None:
             flush=True,
         )
 
-    segb_dir = _rows_dir(args, "segb")
-    for cell in cm.STORY_CELLS:
-        admitted = set(_load_kept_ids(kept_dir, cell))
-        segb_kept = _stage_kept_rows(segb_dir, cell)
-        kept = [rid for rid in segb_kept if rid in admitted]
-        drops = {"admitted": len(admitted), "segb_resolved": len(segb_kept)}
-        emit(cell, kept, drops)
+    if any(_want(c) for c in cm.STORY_CELLS):
+        segb_dir = _rows_dir(args, "segb")
+        for cell in cm.STORY_CELLS:
+            if not _want(cell):
+                continue
+            admitted = set(_load_kept_ids(kept_dir, cell))
+            segb_kept = _stage_kept_rows(segb_dir, cell)
+            kept = [rid for rid in segb_kept if rid in admitted]
+            drops = {"admitted": len(admitted), "segb_resolved": len(segb_kept)}
+            emit(cell, kept, drops)
     for cell, stage in (("chat", "chat"), ("plain_text", "plain")):
+        if not _want(cell):
+            continue
         kept_rows = _stage_kept_rows(_rows_dir(args, stage), cell)
         emit(cell, list(kept_rows), {"kept": len(kept_rows)})
-    real_rows = _stage_kept_rows(_rows_dir(args, "user_real_render"))
-    sim_rows = _stage_kept_rows(_rows_dir(args, "user_sim"))
-    inter = sorted(set(real_rows) & set(sim_rows))
-    pair_block = {
-        "pair_intersection": {
-            "n_real_kept": len(real_rows),
-            "n_sim_kept": len(sim_rows),
-            "n_intersection": len(inter),
-            "intersection_ids": inter,
+    if any(_want(c) for c in cm.USER_CELLS):
+        real_rows = _stage_kept_rows(_rows_dir(args, "user_real_render"))
+        sim_rows = _stage_kept_rows(_rows_dir(args, "user_sim"))
+        inter = sorted(set(real_rows) & set(sim_rows))
+        pair_block = {
+            "pair_intersection": {
+                "n_real_kept": len(real_rows),
+                "n_sim_kept": len(sim_rows),
+                "n_intersection": len(inter),
+                "intersection_ids": inter,
+            }
         }
-    }
-    emit("chat_user_real", list(real_rows), {"kept": len(real_rows)}, pair_block)
-    emit("chat_user_sim", list(sim_rows), {"kept": len(sim_rows)}, pair_block)
+        emit("chat_user_real", list(real_rows), {"kept": len(real_rows)}, pair_block)
+        emit("chat_user_sim", list(sim_rows), {"kept": len(sim_rows)}, pair_block)
 
 
 def phase_upload_stage(args) -> None:
+    """Upload one raw stage dir; ``--hf-prefix-override`` re-roots the HF
+    prefix (sim-user-regen: round-scoped ``raw_completions/sim_user_regen/``
+    so the regenerated wave never lands in the parent stage prefix)."""
     if args.stage not in cm.RAW_STAGES:
         raise SystemExit(f"--stage must be one of {cm.RAW_STAGES}")
-    cm.upload_stage_dir(
-        Path(args.raw_root) / args.stage, f"{cm.HF_PREFIX}/raw_completions/{args.stage}"
-    )
+    # Issue-2378-only script: parent phases call upload_stage flag-less against this
+    # issue's own canonical prefix (adding the flag there would invalidate Runner
+    # ok-flag resume argv-shas); round dispatchers re-root via --hf-prefix-override.
+    base = args.hf_prefix_override or f"{cm.HF_PREFIX}/raw_completions"
+    # UPLOAD_PREFIX_EXEMPT: parent-stage default is this issue's own prefix contract
+    cm.upload_stage_dir(Path(args.raw_root) / args.stage, f"{base}/{args.stage}")
 
 
 def phase_probe_miner(args) -> None:
@@ -2260,6 +2544,12 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--fresh-rows", type=int, default=1000)
     ap.add_argument("--fresh-draws", type=int, default=4)
     ap.add_argument("--stage", default="", help="stage name for --phase upload_stage")
+    ap.add_argument(
+        "--hf-prefix-override",
+        default="",
+        help="upload_stage: replace the default <HF_PREFIX>/raw_completions prefix root "
+        "(sim-user-regen round scoping)",
+    )
     ap.add_argument(
         "--bank-only",
         default="",
