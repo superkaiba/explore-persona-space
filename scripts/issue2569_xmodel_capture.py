@@ -45,10 +45,14 @@ Identity gates (plan §7 rows; BOTH are preconditions of the production pass):
   banked ``final_token_capture`` store on 8 rows.
 
 Phases: ``select`` (row selection + corpus tags + text staging, stream-reduced with
-per-file checkpoint/resume) → ``identity-gate``/``spot-gate`` → ``capture`` (chunked,
-regime-keyed resume, built-in pilot-gate report) → ``finalize`` (per (model, summary,
-layer) ``{model}_{vc,va}_L{K}.pt`` bundles + realized-row asserts + HF upload) →
-``sentinel`` (pod-side done JSON).
+per-file checkpoint/resume) → ``identity-gate``/``spot-gate`` (regime-keyed PASS
+resume-skip; fixed 8-row roster + full comparison cardinality asserted) →
+``capture`` (chunked, regime-keyed resume; the built-in pilot-gate report is
+measured on FRESH forward rows ONLY — a resume that did no work can never
+overwrite a recorded FAIL — and the production-scale pass REQUIRES a smoke-scale
+pilot PASS, plan §7) → ``finalize`` (per (model, summary, layer)
+``{model}_{vc,va}_L{K}.pt`` bundles + realized-row asserts + gate/pilot PASS
+preconditions + HF upload) → ``sentinel`` (pod-side done JSON).
 
 Observed banked schemas (probed 2026-08-25, keys only):
 ``raw_completions/shardSS_chunkCCCC.json`` = ``{"shard_index": int, "chunk": int,
@@ -782,7 +786,11 @@ def _gate_rows(
             picked_recs.append(kept[0])
             if pass_corpus is not None:
                 quota[r["corpus"]] -= 1
-    assert picked_texts, "no gate rows survive tokenization"
+    assert len(picked_texts) == n, (
+        f"gate roster short: {len(picked_texts)}/{n} rows survive tokenization — "
+        "plan §7 registers a fixed-cardinality gate row set; a partial roster must "
+        "fail loud, never PASS over fewer cells (pd-gate-cardinality-unenforced)"
+    )
     return picked_texts, picked_recs
 
 
@@ -811,6 +819,58 @@ def _gate_halt(args, name: str, report: dict, err: BaseException) -> None:
     raise SystemExit(GATE_HALT_RC)
 
 
+def _require_layer_coverage(layers: list[int], banked_layers: list[int]) -> None:
+    """Spot-gate admissibility: every gated layer must exist in the banked oracle —
+    an empty intersection would yield a verdict over ZERO admissible comparisons,
+    indistinguishable from a genuine PASS (pd-gate-cardinality-unenforced). Refuse
+    loud BEFORE any verdict is computed."""
+    assert set(layers) <= set(banked_layers), (
+        f"--layers {layers} not covered by the banked oracle layers {banked_layers} — "
+        "zero admissible comparisons would make the verdict vacuous (fail loud)"
+    )
+
+
+def _gate_regime(
+    args, spec: dict, layers: list[int], texts: list[dict], extra: dict | None = None
+) -> dict:
+    """Generating-parameters-only regime key for the GPU gate phases' resume
+    idempotency: covers every output-affecting input of the gate — model, layers,
+    tolerance, tokenize/batch knobs, gate cardinality, and the selection CONTENT
+    fingerprint (ordered ci array) — never a status string, never a
+    recomputed-float hash (machine-stable, code-style float-last-bit rule)."""
+    cis = np.asarray([int(r["ci"]) for r in texts], dtype=np.int64)
+    key = {
+        "model_id": spec["model_id"],
+        "layers": [int(x) for x in layers],
+        "gate_rel_tol": float(args.gate_rel_tol),
+        "max_capture_tokens": int(args.max_capture_tokens),
+        "batch_tokens": int(args.batch_tokens),
+        "max_batch_rows": int(args.max_batch_rows),
+        "gate_rows": GATE_ROWS,
+        "selection_ci_sha256": _sha_int64(cis),
+        "n_texts": int(len(cis)),
+    }
+    if extra:
+        key.update(extra)
+    return key
+
+
+def _gate_resume_skip(args, name: str, regime: dict) -> bool:
+    """GPU gate phases are resume-idempotent (gpu-gate-phases-not-idempotent): a
+    re-entry with a recorded PASS under an IDENTICAL regime is a no-op — no model
+    load, no forwards, no record mutation. A FAIL record, a regime drift, or a
+    regime-less legacy record re-runs the REAL gate (a fresh measurement of real
+    forwards may then legitimately overwrite the record)."""
+    path = Path(args.out_root) / "gates" / f"{name}.json"
+    if not path.exists():
+        return False
+    rec = json.loads(path.read_text())
+    if rec.get("verdict") == "PASS" and rec.get("regime") == regime:
+        print(f"[{name}] resume-skip: PASS record present under an identical regime", flush=True)
+        return True
+    return False
+
+
 def phase_identity_gate(args) -> None:
     """B5 identity gate (plan §7 row): independent-boundary + batch-1 recompute vs
     the capture path on 8 fixed rows; ANY mismatch HALTS P-D (rc=4).
@@ -824,14 +884,24 @@ def phase_identity_gate(args) -> None:
     layers = _parse_layers(args, spec)
     print(f"[phase=identity-gate] model={args.model} layers={layers}", flush=True)
     texts = load_selection(args)
+    regime = _gate_regime(args, spec, layers, texts)
+    if _gate_resume_skip(args, f"identity_gate_{args.model}", regime):
+        return
     mctx = _load_model_ctx(args, spec)
     tok = mctx["tok"]
     probe = template_probe(tok, args.model)
     rows, kept = _gate_rows(texts, tok, probe["gen_suffix"], args.max_capture_tokens)
     captured = forward_batches(args, mctx, kept, layers)
 
-    report = {"model": args.model, "layers": layers, "rows": [], "rel_tol": args.gate_rel_tol}
+    report = {
+        "model": args.model,
+        "layers": layers,
+        "rows": [],
+        "rel_tol": args.gate_rel_tol,
+        "regime": regime,
+    }
     worst = 0.0
+    n_cmp = 0
     try:
         for j, (r, rec) in enumerate(zip(rows, kept)):
             prompt_text, full_text = _render(tok, r["prompt"], r["response"])
@@ -861,6 +931,7 @@ def phase_identity_gate(args) -> None:
                     # identical layer indices + shapes (B5 asserts 2+3)
                     assert a.shape == b.shape == (spec["hidden"],), (a.shape, b.shape)
                     d = _rel_l2(a, b)
+                    n_cmp += 1
                     worst = max(worst, d)
                     row_rep["diffs"][f"{slot}_l{layer}"] = d
                     assert d <= args.gate_rel_tol, (
@@ -870,7 +941,15 @@ def phase_identity_gate(args) -> None:
             report["rows"].append(row_rep)
     except AssertionError as err:
         report["worst_rel_diff"] = worst
+        report["n_comparisons"] = n_cmp
         _gate_halt(args, f"identity_gate_{args.model}", report, err)
+    expected = GATE_ROWS * len(layers) * len(SLOTS)
+    assert n_cmp == expected > 0, (
+        f"identity-gate comparisons {n_cmp} != expected {expected} — a verdict over a "
+        "partial/vacuous cell set is inadmissible (pd-gate-cardinality-unenforced)"
+    )
+    report["n_comparisons"] = n_cmp
+    report["expected_comparisons"] = expected
     report["worst_rel_diff"] = worst
     report["verdict"] = "PASS"
     report["template_sha"] = probe["template_sha"]
@@ -893,7 +972,13 @@ def phase_spot_gate(args) -> None:
     spec = MODEL_SPECS["qwen"]
     layers = _parse_layers(args, spec)
     print(f"[phase=spot-gate] layers={layers}", flush=True)
-    texts = {int(r["ci"]): r for r in load_selection(args)}
+    texts_list = load_selection(args)
+    regime = _gate_regime(
+        args, spec, layers, texts_list, extra={"spot_chunk": str(args.spot_chunk)}
+    )
+    if _gate_resume_skip(args, "spot_gate_qwen", regime):
+        return
+    texts = {int(r["ci"]): r for r in texts_list}
     scratch = Path(args.out_root) / "stage_spot"
     scratch.mkdir(parents=True, exist_ok=True)
     dest = scratch / Path(args.spot_chunk).name
@@ -903,6 +988,7 @@ def phase_spot_gate(args) -> None:
     bundle = torch.load(dest, map_location="cpu", weights_only=False)
     banked_layers = [int(x) for x in bundle["layers"]]
     assert banked_layers == list(spec["default_layers"]), banked_layers
+    _require_layer_coverage(layers, banked_layers)
     banked_ci = [int(c) for c in bundle["ci"]]
     overlap = [(pos, ci) for pos, ci in enumerate(banked_ci) if ci in texts]
     assert overlap, "no banked-chunk rows overlap the selection — pass a different --spot-chunk"
@@ -919,10 +1005,20 @@ def phase_spot_gate(args) -> None:
         if k1:
             picks.append((pos, ci))
             kept.append(k1[0])
-    assert picks, "no spot-gate rows survive tokenization"
+    assert len(picks) == GATE_ROWS, (
+        f"spot-gate roster short: {len(picks)}/{GATE_ROWS} banked-overlap rows survive "
+        f"tokenization (overlap={len(overlap)}) — pass a different --spot-chunk or widen "
+        "the selection; a partial roster must fail loud (pd-gate-cardinality-unenforced)"
+    )
     captured = forward_batches(args, mctx, kept, layers)
-    report = {"rows": [], "rel_tol": args.gate_rel_tol, "chunk": args.spot_chunk}
+    report = {
+        "rows": [],
+        "rel_tol": args.gate_rel_tol,
+        "chunk": args.spot_chunk,
+        "regime": regime,
+    }
     worst = 0.0
+    n_cmp = 0
     try:
         for j, (pos, ci) in enumerate(picks):
             row_rep = {"ci": ci, "diffs": {}}
@@ -935,6 +1031,7 @@ def phase_spot_gate(args) -> None:
                 }
                 for slot in SLOTS:
                     d = _rel_l2(captured[layer][slot][j], banked[slot])
+                    n_cmp += 1
                     worst = max(worst, d)
                     row_rep["diffs"][f"{slot}_l{layer}"] = d
                     assert d <= args.gate_rel_tol, (
@@ -944,7 +1041,15 @@ def phase_spot_gate(args) -> None:
             report["rows"].append(row_rep)
     except AssertionError as err:
         report["worst_rel_diff"] = worst
+        report["n_comparisons"] = n_cmp
         _gate_halt(args, "spot_gate_qwen", report, err)
+    expected = len(picks) * len(layers) * len(SLOTS)
+    assert n_cmp == expected > 0, (
+        f"spot-gate comparisons {n_cmp} != expected {expected} — a verdict over a "
+        "partial/vacuous cell set is inadmissible (pd-gate-cardinality-unenforced)"
+    )
+    report["n_comparisons"] = n_cmp
+    report["expected_comparisons"] = expected
     report["worst_rel_diff"] = worst
     report["verdict"] = "PASS"
     report["metadata"] = _meta("spot-gate")
@@ -966,6 +1071,10 @@ def _parse_layers(args, spec: dict) -> list[int]:
         layers = [int(x) for x in args.layers.split(",") if x.strip()]
     else:
         layers = list(spec["default_layers"])
+    assert layers, (
+        "--layers resolved to an EMPTY layer list — every gate/capture over it "
+        "would be vacuous (pd-gate-cardinality-unenforced; fail loud)"
+    )
     for layer in layers:
         assert 1 <= layer <= spec["n_layers"], (layer, spec["n_layers"])
     return layers
@@ -995,6 +1104,22 @@ def _require_gate(args, name: str) -> None:
     assert rec.get("verdict") == "PASS", f"{path}: verdict {rec.get('verdict')!r} != PASS"
 
 
+def _require_pilot_pass(args) -> None:
+    """Pilot-gate precondition (plan §7 P-D pilot row; pd-gate-precondition-bypass):
+    the production-scale pass and finalize refuse to proceed until a smoke-scale
+    pilot record with verdict PASS exists for this model. The smoke-scale capture
+    itself is EXEMPT — it IS the pilot (gate-calibration parity, the #1345 class)."""
+    path = Path(args.out_root) / "gates" / f"pilot_gate_{args.model}.json"
+    assert path.exists(), (
+        f"pilot gate record {path} missing — run the smoke-scale capture pilot "
+        f"(0 < --rows <= {SMOKE_ROWS_CEILING}) first (plan §7)"
+    )
+    rec = json.loads(path.read_text())
+    assert rec.get("verdict") == "PASS", (
+        f"{path}: verdict {rec.get('verdict')!r} != PASS — the pilot gate blocks this phase"
+    )
+
+
 def phase_capture(args) -> None:
     """Chunked teacher-forced capture for one model (regime-keyed resume; per-chunk
     atomic .pt checkpoints; per-unit progress lines; built-in pilot-gate report)."""
@@ -1005,6 +1130,11 @@ def phase_capture(args) -> None:
         _require_gate(args, "identity_gate_llama")  # B5 PRECONDITION of the production pass
     if args.model == "qwen" and not args.skip_gate_check:
         _require_gate(args, "spot_gate_qwen")
+    smoke_scale = 0 < int(args.rows) <= SMOKE_ROWS_CEILING
+    if not smoke_scale and not args.skip_gate_check:
+        # plan §7 P-D pilot row: the production pass proceeds ONLY on a pilot PASS
+        # (pd-gate-precondition-bypass). The smoke-scale run IS the pilot — exempt.
+        _require_pilot_pass(args)
     texts = load_selection(args)
     if int(args.rows) > 0:
         texts = texts[: int(args.rows)]
@@ -1020,6 +1150,9 @@ def phase_capture(args) -> None:
     total_drops: Counter = Counter()
     t0 = time.time()
     rows_done = 0
+    fresh_rows = 0  # rows computed by REAL forwards THIS process (pilot basis)
+    fresh_wall_s = 0.0
+    resumed_chunks = 0
     for k in range(n_chunks):
         cpath = chunk_dir / f"chunk{k:05d}.pt"
         chunk_texts = texts[k * args.chunk_rows : (k + 1) * args.chunk_rows]
@@ -1027,8 +1160,10 @@ def phase_capture(args) -> None:
             prior = torch.load(cpath, map_location="cpu", weights_only=False)
             total_drops.update(prior["drops"])
             rows_done += len(prior["ci"])
+            resumed_chunks += 1
             print(f"[capture] chunk {k + 1}/{n_chunks} resume-skip", flush=True)
             continue
+        c0 = time.time()
         kept, drops = tokenize_rows(tok, chunk_texts, probe["gen_suffix"], args.max_capture_tokens)
         total_drops.update(drops)
         arrays: dict[str, np.ndarray] = {}
@@ -1056,45 +1191,88 @@ def phase_capture(args) -> None:
             cpath,
         )
         rows_done += len(kept)
+        fresh_rows += len(kept)
+        fresh_wall_s += time.time() - c0
         print(
             f"[capture] chunk {k + 1}/{n_chunks} model={args.model} kept={len(kept)} "
             f"drops={dict(drops)} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
-    wall_s = time.time() - t0
-    _pilot_gate_report(args, rows_done, wall_s)
+    _pilot_gate_report(args, fresh_rows, fresh_wall_s, resumed_chunks)
     print(
         f"[capture] done model={args.model} realized={rows_done} drops={dict(total_drops)}",
         flush=True,
     )
 
 
-def _pilot_gate_report(args, rows_done: int, wall_s: float) -> None:
+def _pilot_gate_report(args, fresh_rows: int, fresh_wall_s: float, resumed_chunks: int) -> None:
     """Built-in pilot-gate report (plan §7 P-D pilot row): the 32-row smoke IS the
-    measured sizing pilot. Extrapolates the 60,000-row x 2-model capture wall from
-    the measured per-row wall; at smoke scale (rows <= SMOKE_ROWS_CEILING) an
-    extrapolation > 2x the booked wall EXITS rc=3 (halt-and-report)."""
-    if rows_done <= 0 or wall_s <= 0:
+    measured sizing pilot. The measurement basis is FRESH forward-pass rows ONLY —
+    resume-skipped chunks contribute NOTHING to per_row_s, so a relaunch that did
+    no work can neither write nor overwrite the gate record: a recorded FAIL
+    stands byte-identical and RE-HALTS (rc=3) at smoke scale
+    (pilot-gate-halt-erased-by-resume). A fresh smoke-scale measurement writes the
+    verdict; extrapolation > 2x the booked wall EXITS rc=3 (halt-and-report).
+    Production-scale runs (rows == 0 or > SMOKE_ROWS_CEILING) write an
+    INFORMATIONAL ``capture_wall_{model}.json`` instead and NEVER touch the pilot
+    gate record (the smoke verdict is the durable gate; sunk production compute is
+    not re-gated on its own wall)."""
+    smoke_scale = 0 < int(args.rows) <= SMOKE_ROWS_CEILING
+    gate_dir = Path(args.out_root) / "gates"
+    gate_path = gate_dir / f"pilot_gate_{args.model}.json"
+    if fresh_rows <= 0 or fresh_wall_s <= 0:
+        if gate_path.exists():
+            prior = json.loads(gate_path.read_text())
+            print(
+                f"[pilot-gate] no fresh rows this run (resumed_chunks={resumed_chunks}) — "
+                f"record unchanged (verdict={prior.get('verdict')})",
+                flush=True,
+            )
+            if smoke_scale and prior.get("verdict") == "FAIL":
+                print(
+                    "[pilot-gate] recorded FAIL stands — the resume did no fresh work; "
+                    "halt (rc=3, plan §7)",
+                    flush=True,
+                )
+                sys.stdout.flush()
+                raise SystemExit(3)
+        else:
+            print(
+                f"[pilot-gate] no fresh rows this run (resumed_chunks={resumed_chunks}) "
+                "and no prior record — nothing to measure",
+                flush=True,
+            )
         return
-    per_row_s = wall_s / rows_done
+    per_row_s = fresh_wall_s / fresh_rows
     extrapolated_h = per_row_s * 60_000 * 2 / 3600.0
     booked_h = float(args.pilot_booked_wall_h)
+    rec = {
+        "per_row_s": per_row_s,
+        "rows_measured": int(fresh_rows),
+        "fresh_wall_s": float(fresh_wall_s),
+        "resumed_chunks": int(resumed_chunks),
+        "extrapolated_wall_h": extrapolated_h,
+        "booked_wall_h": booked_h,
+        "metadata": _meta("pilot-gate"),
+    }
+    if not smoke_scale:
+        rec["informational"] = True
+        _atomic_json(gate_dir / f"capture_wall_{args.model}.json", rec)
+        print(
+            f"[capture-wall] per_row_s={per_row_s:.3f} extrapolated_wall_h(60k x 2 models)="
+            f"{extrapolated_h:.2f} booked_h={booked_h:.1f} — informational (production scale)",
+            flush=True,
+        )
+        return
     verdict = "PASS" if extrapolated_h <= 2.0 * booked_h else "FAIL"
+    rec["verdict"] = verdict
     print(
         f"[pilot-gate] per_row_s={per_row_s:.3f} extrapolated_wall_h(60k x 2 models)="
         f"{extrapolated_h:.2f} booked_h={booked_h:.1f} verdict={verdict}",
         flush=True,
     )
-    rec = {
-        "per_row_s": per_row_s,
-        "rows_measured": rows_done,
-        "extrapolated_wall_h": extrapolated_h,
-        "booked_wall_h": booked_h,
-        "verdict": verdict,
-        "metadata": _meta("pilot-gate"),
-    }
-    _atomic_json(Path(args.out_root) / "gates" / f"pilot_gate_{args.model}.json", rec)
-    if verdict == "FAIL" and int(args.rows) > 0 and int(args.rows) <= SMOKE_ROWS_CEILING:
+    _atomic_json(gate_path, rec)
+    if verdict == "FAIL":
         print("[pilot-gate] halt-and-report: extrapolation > 2x booked wall (plan §7)", flush=True)
         sys.stdout.flush()
         raise SystemExit(3)
@@ -1111,6 +1289,13 @@ def phase_finalize(args) -> None:
     floor (plan §4 leg 7 step 1); upload the bundle set to the HF data repo."""
     spec = MODEL_SPECS[args.model]
     print(f"[phase=finalize] model={args.model}", flush=True)
+    if not args.skip_gate_check:
+        # finalize is DOWNSTREAM of the gates: chunks exist even from a halted
+        # pilot run (the chunk lands before the gate fires), so a blind finalize
+        # must refuse rather than bundle+upload past a FAIL/missing verdict
+        # (pd-gate-precondition-bypass).
+        _require_gate(args, "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen")
+        _require_pilot_pass(args)
     chunk_dir = Path(args.out_root) / "chunks" / args.model
     chunks = sorted(chunk_dir.glob("chunk*.pt"))
     assert chunks, f"no chunks under {chunk_dir} — run --phase capture first"
