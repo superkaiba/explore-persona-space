@@ -12402,8 +12402,8 @@
     "2608": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2608",
-      "status": "approved",
+      "path": "tasks/running/2608",
+      "status": "running",
       "title": "Pod bootstrap cone sparse-checkout omits CROSS-ISSUE artifact cones, so drivers reading prior issues' committed eval_results/figures crash at launch"
     },
     "261": {
