@@ -38,6 +38,15 @@ plain JSON files the VM poller reads.
 
 Workload command (plan §9): ``uv run python scripts/issue2564_run.py --phase all
 --out-root /workspace/eps2564 --upload hf``.
+
+FFR round (plan v7, followup floor-failed-reelicitation): ``--round ffr`` adds an
+additive mode — pilot phase (23 fresh wordings x 12 carriers x K=2 -> pod-side
+sync judge -> pilot_selection.json) then phases A/B on the selection-built
+production bank (no phase C/embed under ffr). All ffr HF uploads land under
+``<kind>/floor_failed_reelicitation/`` (smoke twin ``issue2564_minpair/smoke_ffr``);
+default out-root ``/workspace/eps2564ffr``. Parent behavior at default flags is
+byte-unchanged. Workload command: ``uv run python scripts/issue2564_run.py
+--round ffr --phase all --upload hf``.
 """
 
 from __future__ import annotations
@@ -52,7 +61,7 @@ import random
 import subprocess
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -137,6 +146,22 @@ _PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
     "C": (),
 }
 
+# ── FFR round (floor-failed re-elicitation, plan v7 §3) ───────────────────
+
+FFR_ROUND_SEG = "floor_failed_reelicitation"  # HF path segment (plan v7 §5)
+FFR_OUT_ROOT_DEFAULT = "/workspace/eps2564ffr"
+PARENT_OUT_ROOT_DEFAULT = "/workspace/eps2564"
+FFR_PILOT_DRAWS = 2  # K=2 pilot rollouts per context (plan v7 §3b)
+FFR_SMOKE_VALUE_IDS = ("s1a", "p1", "h1a")  # 1 candidate/axis smoke slice (plan v7 §7)
+FFR_SMOKE_JUDGE_ITEMS = 4  # sync-judge item cap under --smoke (plan v7 §7)
+FFR_PHASES = ("pilot", "A", "B")  # no C/embed under ffr (plan v7 §3c)
+
+_FFR_PHASE_COMPLETION_RECORDS: dict[str, tuple[str, ...]] = {
+    "pilot": ("ffr_pilot_anchors_done.json", "ffr_pilot_selection_done.json"),
+    "A": ("ffr_anchors_done.json", "manifests/pilot_gate_report.json"),
+    "B": ("ffr_va_uploaded.json", "manifests/parity_gate_report.json"),
+}
+
 CAP_HIT_BASIS = "retokenized_completion_len >= max_new_tokens"
 
 
@@ -162,6 +187,7 @@ class Cfg2564:
     seed_base: int
     upload: str
     force: bool
+    round: str = "parent"  # "parent" (default, byte-unchanged) | "ffr" (plan v7)
     model_id: str = BK.MODEL_ID
     model_revision: str = "unresolved"
     hidden: int = HIDDEN
@@ -176,8 +202,29 @@ class Cfg2564:
     _values_sha_cache: str | None = field(default=None, repr=False)
 
     @property
+    def is_ffr(self) -> bool:
+        return self.round == "ffr"
+
+    @property
     def hf_prefix(self) -> str:
-        return HF_PREFIX + ("/smoke" if (self.smoke or self.tiny) else "")
+        if self.smoke or self.tiny:
+            return HF_PREFIX + ("/smoke_ffr" if self.is_ffr else "/smoke")
+        return HF_PREFIX
+
+    def hf_round_prefix(self, kind: str) -> str:
+        """HF path for artifact KIND ('raw_completions'|'analysis_tensors'|'manifests'):
+        parent keeps <hf_prefix>/<kind>; ffr nests <hf_prefix>/<kind>/floor_failed_reelicitation
+        (plan v7 §5)."""
+        seg = f"{kind}/{FFR_ROUND_SEG}" if self.is_ffr else kind
+        return f"{self.hf_prefix}/{seg}"
+
+    @property
+    def anchors_sentinel(self) -> Path:
+        return self.out_root / ("ffr_anchors_done.json" if self.is_ffr else "anchors_done.json")
+
+    @property
+    def va_sentinel(self) -> Path:
+        return self.out_root / ("ffr_va_uploaded.json" if self.is_ffr else "va2564_uploaded.json")
 
     @property
     def anchors_dir(self) -> Path:
@@ -203,8 +250,18 @@ class Cfg2564:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """CLI for the pod driver (per-issue phase-dispatch driver — argparse by convention)."""
     ap = argparse.ArgumentParser(description="issue2564 minimal-pair pod driver")
-    ap.add_argument("--phase", choices=("all", "A", "B", "C"), default="all")
-    ap.add_argument("--out-root", default="/workspace/eps2564")
+    ap.add_argument("--phase", choices=("all", "pilot", "A", "B", "C"), default="all")
+    ap.add_argument(
+        "--round",
+        choices=("parent", "ffr"),
+        default="parent",
+        help="'ffr' = floor-failed re-elicitation round (plan v7): pilot + A/B on the ffr bank",
+    )
+    ap.add_argument(
+        "--out-root",
+        default=None,
+        help=f"default {PARENT_OUT_ROOT_DEFAULT} (parent) / {FFR_OUT_ROOT_DEFAULT} (--round ffr)",
+    )
     ap.add_argument("--log-dir", default="/workspace/logs")
     ap.add_argument("--values", default=None, help="override bank2564_values.json path")
     ap.add_argument("--cells", default=None, help="csv cell subset (default: all; smoke default)")
@@ -225,17 +282,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def build_config(args: argparse.Namespace) -> Cfg2564:
     """Resolve the CLI namespace into a Cfg2564 (smoke slicing + out-root rebind)."""
     smoke, tiny = bool(args.smoke), bool(args.tiny)
+    rnd = args.round
+    if args.phase == "pilot" and rnd != "ffr":
+        raise SystemExit("--phase pilot is only valid with --round ffr")
+    if rnd == "ffr" and args.phase == "C":
+        raise SystemExit("--phase C (embed) is not run under --round ffr (plan v7 §3c)")
     cells = tuple(s.strip() for s in args.cells.split(",") if s.strip()) if args.cells else None
     carriers = (
         tuple(s.strip() for s in args.carriers.split(",") if s.strip()) if args.carriers else None
     )
     if smoke or tiny:
-        cells = cells or SMOKE_CELLS
-        carriers = carriers or SMOKE_CARRIERS
+        if rnd == "ffr":
+            # ffr smoke slices carriers only: the parent SMOKE_CELLS
+            # ("register", "query") would empty-select the ffr cells
+            # (stance/persona/hedging/query); the value-id slice is applied
+            # inside phase_pilot / the selection instead (plan v7 §7).
+            carriers = carriers or SMOKE_CARRIERS
+        else:
+            cells = cells or SMOKE_CELLS
+            carriers = carriers or SMOKE_CARRIERS
     draws = (
         args.draws if args.draws is not None else (SMOKE_DRAWS if (smoke or tiny) else ANCHOR_DRAWS)
     )
-    out_root = Path(args.out_root)
+    out_root_arg = args.out_root or (
+        FFR_OUT_ROOT_DEFAULT if rnd == "ffr" else PARENT_OUT_ROOT_DEFAULT
+    )
+    out_root = Path(out_root_arg)
     if smoke or tiny:
         # dbe smoke-root rebind: generated artifacts land under smoke_<name>; staged
         # INPUTS (the packaged values JSON) are read-only and are NOT rebound.
@@ -255,8 +327,9 @@ def build_config(args: argparse.Namespace) -> Cfg2564:
         seed_base=int(args.seed_base),
         upload=args.upload,
         force=bool(args.force),
+        round=rnd,
         capture_batch=int(args.capture_batch),
-        raw_out_root=Path(args.out_root),
+        raw_out_root=Path(out_root_arg),
     )
     if tiny:
         cfg.hidden = 64
@@ -297,7 +370,8 @@ def _values_sha(cfg: Cfg2564) -> str:
     """sha256 of the bit-exact values JSON (regime-fp input, #1336 machine-stable rule:
     file BYTES are safe to hash — never a recomputed float array)."""
     if cfg._values_sha_cache is None:
-        p = cfg.values_path or (Path(BK.__file__).parent / BK.VALUES_FILENAME)
+        fname = BK.FFR_VALUES_FILENAME if cfg.is_ffr else BK.VALUES_FILENAME
+        p = cfg.values_path or (Path(BK.__file__).parent / fname)
         cfg._values_sha_cache = hashlib.sha256(p.read_bytes()).hexdigest()
     return cfg._values_sha_cache
 
@@ -320,6 +394,8 @@ def _regime_fp(cfg: Cfg2564, extra: dict | None = None) -> str:
         "layers": list(cfg.layers),
         "capture_batch": cfg.capture_batch,
     }
+    if cfg.round != "parent":
+        params["round"] = cfg.round  # parent fingerprints stay byte-identical
     if extra:
         params.update(extra)
     return hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:16]
@@ -395,12 +471,18 @@ def _resolve_model_revision(cfg: Cfg2564) -> str:
     return sha
 
 
+def _phase_records(cfg: Cfg2564, phase: str) -> tuple[str, ...]:
+    """Phase-level completion-record paths (out-root-relative), round-aware."""
+    table = _FFR_PHASE_COMPLETION_RECORDS if cfg.is_ffr else _PHASE_COMPLETION_RECORDS
+    return table[phase]
+
+
 def _invalidate_phase_records(cfg: Cfg2564, phase: str) -> None:
     """--force: quarantine phase-level completion records (atomic replace); per-cell
     done manifests stay honored."""
     if not cfg.force:
         return
-    for rel in _PHASE_COMPLETION_RECORDS[phase]:
+    for rel in _phase_records(cfg, phase):
         p = cfg.out_root / rel
         if p.exists():
             cfg.quarantine_dir.mkdir(parents=True, exist_ok=True)
@@ -731,13 +813,373 @@ def _upload_summary(res) -> dict:
     }
 
 
+# ── FFR pilot (compliance pilot + selection, plan v7 §3b) ──────────────────
+
+
+def _pilot_cfg(cfg: Cfg2564) -> Cfg2564:
+    """Pilot sub-config: K=FFR_PILOT_DRAWS draws into an ISOLATED out-root.
+
+    ``replace(out_root=<out_root>/pilot)`` re-derives every dir property
+    (anchors_dir / manifest_dir / quarantine_dir), so pilot ``anchors_{cell}``
+    shards + done manifests can never resume-collide with production ffr
+    phase-A cells (both use the same axis cell names).
+    """
+    return replace(cfg, draws=FFR_PILOT_DRAWS, out_root=cfg.out_root / "pilot")
+
+
+def _ffr_smoke_selection(values: dict, denom: int) -> dict:
+    """Forced full-schema selection under --smoke/--tiny (plan v7 §7).
+
+    One fixed candidate per axis (FFR_SMOKE_VALUE_IDS); all three axes
+    survive so the smoke exercises the production bank build + phases A/B.
+    Shape mirrors BK.select_ffr_values verbatim (rule: "smoke-forced").
+    """
+    by_axis: dict[str, str] = {}
+    for axis in BK.FFR_AXES:
+        for vid in FFR_SMOKE_VALUE_IDS:
+            if vid in BK.value_ids(values, axis):
+                by_axis[axis] = vid
+                break
+        if axis not in by_axis:
+            raise RuntimeError(f"no FFR_SMOKE_VALUE_IDS candidate for axis {axis!r}")
+    axes_out: dict[str, dict] = {}
+    for axis in BK.FFR_AXES:
+        width_cap = int(values["axes"][axis]["parent_width"])
+        axes_out[axis] = {
+            "per_slot": {},
+            "selected_ids": [by_axis[axis]],
+            "width": 1,
+            "parent_width": width_cap,
+            "floor": BK.ffr_slot_floor(width_cap),
+            "survives": True,
+        }
+    return {
+        "round": BK.FFR_ROUND,
+        "denominator": denom,
+        "threshold_pct": BK.FFR_COMPLY_THRESHOLD_PCT,
+        "rule": "smoke-forced",
+        "axes": axes_out,
+        "surviving_axes": list(BK.FFR_AXES),
+    }
+
+
+def _pilot_selection_fp(pcfg: Cfg2564) -> str:
+    """Regime fingerprint of the pilot judge+selection leg.
+
+    Beyond the generating parameters, the fingerprint pins the JUDGE
+    INSTRUMENT (model, rubric sha, max_tokens, n_draws), the TRANSPORT
+    (force_sync), the selection thresholds, and the upload destination
+    (r1 codex concern ffr-selection-sentinel-fingerprint): a corrective
+    round that changes any of these invalidates the sentinel skip without
+    --force, and a prior --upload none completion cannot satisfy a later
+    --upload hf run.
+    """
+    # Deferred sibling-script import (scripts/ is on sys.path at module top).
+    import issue2564_judge as JD
+
+    return _regime_fp(
+        pcfg,
+        {
+            "phase": "pilot",
+            "leg": "selection",
+            "judge_model": JD.JUDGE_MODEL,
+            "judge_max_tokens": JD.JUDGE_MAX_TOKENS,
+            "judge_rubric_sha": hashlib.sha256(JD.EVAL_PROMPT.encode("utf-8")).hexdigest()[:16],
+            "judge_n_draws": 1,
+            "judge_force_sync": True,
+            "score_threshold": 50.0,
+            "comply_threshold_pct": BK.FFR_COMPLY_THRESHOLD_PCT,
+            "pilot_denom": BK.FFR_PILOT_DENOM,
+            "upload": pcfg.upload,
+        },
+    )
+
+
+def phase_pilot(cfg: Cfg2564, tok, values: dict) -> int:
+    """FFR pilot: K=2 compliance rollouts per candidate wording → pod-side
+    sync judge → deterministic selection → pilot_selection.json (plan v7 §3b).
+
+    Two resume-keyed sub-stages, each with its own regime-fp sentinel at the
+    MAIN ffr out-root: generation (``ffr_pilot_anchors_done.json``) and
+    judge+selection (``ffr_pilot_selection_done.json``). Generation runs in
+    the isolated pilot sub-root (see _pilot_cfg).
+    """
+    _invalidate_phase_records(cfg, "pilot")
+    # F0 (plan v7): datagen gates run at FULL 23-candidate grain regardless of
+    # --smoke; the smoke value-id slice applies AFTER the gates, to execution.
+    pilot_bank = BK.build_pilot_bank_ffr(tok, values=values)
+    bank = _filter_bank(pilot_bank, cfg.cells, cfg.carriers)
+    if cfg.smoke or cfg.tiny:
+        ctxs = [c for c in bank["contexts"] if c["value_id"] in FFR_SMOKE_VALUE_IDS]
+        if not ctxs:
+            raise RuntimeError(
+                f"empty ffr pilot smoke slice: no contexts with value_id in {FFR_SMOKE_VALUE_IDS}"
+            )
+        bank = {**bank, "contexts": ctxs, "n_contexts": len(ctxs)}
+    pcfg = _pilot_cfg(cfg)
+    contexts = bank["contexts"]
+    cells = sorted({c["cell"] for c in contexts})
+    per_cell = {cell: [c for c in contexts if c["cell"] == cell] for cell in cells}
+    anchors_sent = cfg.out_root / "ffr_pilot_anchors_done.json"
+    gen_fp = _regime_fp(pcfg, {"phase": "pilot", "leg": "gen"})
+
+    gen_done = False
+    pending = [cell for cell in cells if not _anchor_cell_complete(pcfg, cell)]
+    if not pending and anchors_sent.is_file():
+        s = _read_json(anchors_sent)
+        gen_done = s is not None and s.get("regime_fp") == gen_fp
+    if gen_done:
+        logger.info(
+            "[ffr-pilot] all %d cells complete + sentinel fp match — gen skipped", len(cells)
+        )
+    else:
+        if pending:
+            for d in (pcfg.out_root, pcfg.log_dir, pcfg.anchors_dir, pcfg.manifest_dir):
+                d.mkdir(parents=True, exist_ok=True)
+            assert_out_root_headroom(cfg.out_root, need_gb=2.0, phase="ffr-pilot")
+            model, mtok = R.load_model_and_tokenizer(pcfg)
+            eot_ids = R.eot_tail_ids(mtok)
+            total_rows = sum(len(v) for v in per_cell.values()) * pcfg.draws
+            pilot = _pilot_state(pcfg, total_rows)
+            t0 = time.time()
+            for k, cell in enumerate(pending):
+                _anchor_cell(pcfg, model, mtok, eot_ids, cell, per_cell[cell], pilot)
+                print(
+                    f"[ffr-pilot] cell {k + 1}/{len(pending)} {cell} "
+                    f"elapsed={time.time() - t0:.1f}s",
+                    flush=True,
+                )
+            if not pilot["evaluated"]:
+                _pilot_eval(pcfg, pilot)
+            del model
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        upload: dict = {"mode": cfg.upload}
+        if cfg.upload == "hf":
+            res = upload_dir_sharded(
+                pcfg.anchors_dir,
+                HF_DATA_REPO,
+                f"{cfg.hf_round_prefix('raw_completions')}/pilot",
+                shard_glob="*.jsonl",
+                resume_skip=False,
+                delete_local=False,
+            )
+            upload["pilot_anchors"] = _upload_summary(res)
+        manifests = {
+            cell: _read_json(pcfg.manifest_dir / f"anchors_{cell}.done.json") for cell in cells
+        }
+        write_json_atomic(
+            anchors_sent,
+            {
+                "phase": "pilot",
+                "regime_fp": gen_fp,
+                "n_cells": len(cells),
+                "n_rows": sum(int(m["n_rows"]) for m in manifests.values() if m),
+                "upload": upload,
+                "hf_prefix": cfg.hf_prefix,
+                "repro": _repro(cfg, "ffr-pilot-anchors"),
+            },
+        )
+        print("[phase=ffr_pilot] anchors sentinel written", flush=True)
+
+    # ── judge + selection leg ──────────────────────────────────────────────
+    sel_sent = cfg.out_root / "ffr_pilot_selection_done.json"
+    sel_path = cfg.manifest_dir / "pilot_selection.json"
+    sel_fp = _pilot_selection_fp(pcfg)
+    if sel_sent.is_file() and sel_path.is_file():
+        s = _read_json(sel_sent)
+        if s is not None and s.get("regime_fp") == sel_fp:
+            logger.info("[ffr-pilot] selection sentinel fp match — judge skipped")
+            print("[phase=ffr_pilot] selection sentinel present", flush=True)
+            return RC_OK
+
+    if not (cfg.smoke or cfg.tiny):
+        missing_axes = [a for a in BK.FFR_AXES if a not in cells]
+        if missing_axes:
+            raise RuntimeError(
+                f"ffr pilot selection needs all axes; missing {missing_axes} (check --cells)"
+            )
+
+    # Deferred sibling-script import (scripts/ is on sys.path at module top);
+    # instrument reused VERBATIM from the parent judge (plan v7 §3c f7).
+    import issue2564_judge as JD
+
+    from explore_persona_space.eval.graded_judge import judge_graded
+
+    texts: dict[tuple[str, int], str] = {}
+    for cell in cells:
+        for row in _read_jsonl(pcfg.anchors_dir / f"anchors_{cell}.jsonl"):
+            texts[(row["context_id"], int(row["draw"]))] = row["text"]
+    items: list[tuple[str, str, str]] = []
+    spec_by_alias: dict[str, dict] = {}
+    for c in sorted(contexts, key=lambda c: c["id"]):
+        # instruction = the carrier-independent frozen system string — the
+        # SAME {question} the parent judge feeds (judged_value_slots).
+        instruction = BK.system_string(values, c["cell"], c["value_id"])
+        for draw in range(pcfg.draws):
+            key = (c["id"], draw)
+            if key not in texts:
+                raise RuntimeError(f"missing ffr pilot rollout for {key}")
+            alias = JD._alias(c["cell"], c["value_id"], c["carrier"], draw)
+            if not JD._ALIAS_RE.match(alias) or "__" in alias:
+                raise ValueError(f"illegal judge alias: {alias!r}")
+            if alias in spec_by_alias:
+                raise ValueError(f"judge alias collision: {alias!r}")
+            spec_by_alias[alias] = {
+                "cell": c["cell"],
+                "value_id": c["value_id"],
+                "carrier": c["carrier"],
+                "draw": draw,
+            }
+            items.append((alias, instruction, texts[key]))
+    if cfg.smoke or cfg.tiny:
+        items = items[:FFR_SMOKE_JUDGE_ITEMS]
+        kept = {it[0] for it in items}
+        spec_by_alias = {a: s for a, s in spec_by_alias.items() if a in kept}
+    if not items:
+        raise RuntimeError("ffr pilot: no judge items composed")
+
+    judge_dir = cfg.out_root / "pilot_judge"
+    judge_dir.mkdir(parents=True, exist_ok=True)
+
+    def _pilot_judge():
+        return judge_graded(
+            items,
+            JD.EVAL_PROMPT,
+            n_draws=1,
+            cache_dir=cfg.out_root / "pilot_judge_cache",
+            save_raw=judge_dir / "pilot_judge_raw.json",
+            judge_model=JD.JUDGE_MODEL,
+            max_tokens=JD.JUDGE_MAX_TOKENS,
+            force_sync=True,  # pod-side sync judge (plan v7 §3b; 552 calls << batch crossover)
+        )
+
+    res = _pilot_judge()
+    # rules 24/28: transport-lost AND api-classifier-refused draws are
+    # RETRIABLE classes, never compliance evidence (r1 blocker
+    # ffr-api-refusal-censoring). The judge cache stores neither class, so a
+    # re-call re-dispatches ONLY those draws (kept + content-dropped draws are
+    # cache-served) and save_raw re-lands the full merged state. #1739
+    # precedent: 0 re-refusals in 14,887 sync re-issues of the same instrument.
+    n_reissue_rounds = 0
+    for _ in range(JD.FFR_JUDGE_REISSUE_ROUNDS):
+        if not (res.n_transport_lost_draws or res.n_api_refusal_draws):
+            break
+        n_reissue_rounds += 1
+        logger.warning(
+            "[ffr-pilot] judge reissue round %d: transport_lost=%d api_refusal=%d",
+            n_reissue_rounds,
+            res.n_transport_lost_draws,
+            res.n_api_refusal_draws,
+        )
+        res = _pilot_judge()
+    if res.n_transport_lost_draws:
+        # rule 24: transport losses are re-judged, never persisted as drops —
+        # fail loud; the re-run re-judges only the lost draws (cache serves kept).
+        raise RuntimeError(
+            f"ffr pilot judge: {res.n_transport_lost_draws} transport-lost draws after "
+            f"{n_reissue_rounds} reissue rounds — re-run --phase pilot to re-judge them"
+        )
+    if res.n_api_refusal_draws:
+        # rule 28: an api-classifier refusal is NEVER counted as noncompliance
+        # or a content drop — fail loud after the reissue budget.
+        raise RuntimeError(
+            f"ffr pilot judge: {res.n_api_refusal_draws} api-refusal draws after "
+            f"{n_reissue_rounds} reissue rounds — retriable class, never compliance "
+            "evidence (rule 28); re-run --phase pilot to re-issue them"
+        )
+    comply: dict[str, int] = {vid: 0 for axis in BK.FFR_AXES for vid in BK.value_ids(values, axis)}
+    n_dropped = 0
+    for alias, spec in spec_by_alias.items():
+        score = res.scores.get(alias)
+        if score is None:
+            n_dropped += 1  # content-dropped judgment counts against compliance
+            continue
+        if float(score) >= 50.0:
+            comply[spec["value_id"]] += 1
+
+    denom = len({c["carrier"] for c in contexts}) * pcfg.draws
+    if cfg.smoke or cfg.tiny:
+        selection = _ffr_smoke_selection(values, denom)
+    else:
+        if denom != BK.FFR_PILOT_DENOM:
+            raise RuntimeError(
+                f"ffr pilot denominator {denom} != {BK.FFR_PILOT_DENOM} (plan v7 §3b)"
+            )
+        selection = BK.select_ffr_values(values, comply)
+    sel_doc = {
+        "selection": selection,
+        "comply": comply,
+        "n_items_judged": len(items),
+        "n_dropped_judgments": n_dropped,
+        "judge": {
+            "model": JD.JUDGE_MODEL,
+            "max_tokens": JD.JUDGE_MAX_TOKENS,
+            "n_draws": 1,
+            "force_sync": True,
+            # rules 9/24/28 drop-class accounting (plan v7 §3b): content drops,
+            # transport losses, and api-classifier refusals reported SEPARATELY
+            # (the latter two are zero here by the fail-loud guards above).
+            "n_content_dropped_draws": res.n_dropped_draws,
+            "n_instructed_refusal_draws": res.n_refusal_draws,
+            "n_truncation_dropped_draws": res.n_truncation_dropped_draws,
+            "n_transport_lost_draws": res.n_transport_lost_draws,
+            "n_api_refusal_draws": res.n_api_refusal_draws,
+            "n_reissue_rounds": n_reissue_rounds,
+            "stop_reason_tally": res.stop_reason_tally,
+            "frac_items_complete": res.frac_items_complete,
+        },
+        "repro": _repro(cfg, "ffr-pilot-selection"),
+    }
+    write_json_atomic(sel_path, sel_doc)
+    logger.info(
+        "[ffr-pilot] selection: surviving_axes=%s widths=%s dropped=%d",
+        selection["surviving_axes"],
+        {a: selection["axes"][a]["width"] for a in BK.FFR_AXES},
+        n_dropped,
+    )
+    upload_sel: dict = {"mode": cfg.upload}
+    if cfg.upload == "hf":
+        res_j = upload_dir_sharded(
+            judge_dir,
+            HF_DATA_REPO,
+            f"{cfg.hf_round_prefix('raw_completions')}/pilot_judge",
+            shard_glob="*.json",
+            resume_skip=False,
+            delete_local=False,
+        )
+        upload_sel["pilot_judge"] = _upload_summary(res_j)
+        res_m = upload_dir_sharded(
+            cfg.manifest_dir,
+            HF_DATA_REPO,
+            cfg.hf_round_prefix("manifests"),
+            shard_glob="pilot_selection.json",
+            resume_skip=False,
+            delete_local=False,
+        )
+        upload_sel["selection"] = _upload_summary(res_m)
+    write_json_atomic(
+        sel_sent,
+        {
+            "phase": "pilot",
+            "regime_fp": sel_fp,
+            "surviving_axes": selection["surviving_axes"],
+            "upload": upload_sel,
+            "repro": _repro(cfg, "ffr-pilot-selection"),
+        },
+    )
+    print("[phase=ffr_pilot] selection sentinel written", flush=True)
+    return RC_OK
+
+
 def phase_anchors(cfg: Cfg2564, bank: dict) -> int:
     """PA: generation of all anchor rollouts (plan §3.8 pa_generate)."""
     _invalidate_phase_records(cfg, "A")
     contexts = bank["contexts"]
     cells = sorted({c["cell"] for c in contexts})
     per_cell = {cell: [c for c in contexts if c["cell"] == cell] for cell in cells}
-    sentinel = cfg.out_root / "anchors_done.json"
+    sentinel = cfg.anchors_sentinel
     pending = [cell for cell in cells if not _anchor_cell_complete(cfg, cell)]
     if not pending and sentinel.is_file():
         s = _read_json(sentinel)
@@ -768,7 +1210,7 @@ def phase_anchors(cfg: Cfg2564, bank: dict) -> int:
         res = upload_dir_sharded(
             cfg.anchors_dir,
             HF_DATA_REPO,
-            f"{cfg.hf_prefix}/raw_completions/anchors",
+            f"{cfg.hf_round_prefix('raw_completions')}/anchors",
             shard_glob="*.jsonl",
             resume_skip=False,  # anchors jsonls are mutable across cap-hit re-gen
             delete_local=False,
@@ -1084,7 +1526,7 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
     ctx_by_id = {c["id"]: c for c in contexts}
     cells = sorted({c["cell"] for c in contexts})
     _require_anchor_shards(cfg, cells)
-    sentinel = cfg.out_root / "va2564_uploaded.json"
+    sentinel = cfg.va_sentinel
     pending_va = [cell for cell in cells if not _va_cell_complete(cfg, cell)]
     vc_pending = not _vc_complete(cfg)
     parity_pending = not _parity_report_ok(cfg)
@@ -1119,9 +1561,9 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
             # size-match presence probe would silently retain STALE HF tensors for
             # the off-pod PE phase (#2552 class). Mutable-across-recompute, like
             # the anchors jsonls.
-            ("va2564", cfg.va_dir, f"{cfg.hf_prefix}/analysis_tensors/va2564", False),
-            ("vc2564", cfg.vc_dir, f"{cfg.hf_prefix}/analysis_tensors/vc2564", False),
-            ("manifests", cfg.manifest_dir, f"{cfg.hf_prefix}/manifests", False),
+            ("va2564", cfg.va_dir, f"{cfg.hf_round_prefix('analysis_tensors')}/va2564", False),
+            ("vc2564", cfg.vc_dir, f"{cfg.hf_round_prefix('analysis_tensors')}/vc2564", False),
+            ("manifests", cfg.manifest_dir, cfg.hf_round_prefix("manifests"), False),
         ):
             glob = "*.pt" if name != "manifests" else "*.json"
             res = upload_dir_sharded(
@@ -1246,6 +1688,12 @@ def main(argv: list[str] | None = None) -> int:
 
         assert_args_attributes_defined(__file__)
         _assert_call_kwargs()
+        # Execute phase_pilot's deferred imports (smoke-architecture Axis 1;
+        # aliased so the branch cannot shadow module-level names — #1739).
+        import issue2564_judge as _chk_jd  # noqa: F401
+
+        from explore_persona_space.eval.graded_judge import judge_graded as _chk_jg  # noqa: F401
+
         print("[import-check] ok", flush=True)
         return RC_OK
     cfg = build_config(args)
@@ -1272,6 +1720,87 @@ def main(argv: list[str] | None = None) -> int:
         cfg.model_revision,
     )
     tok = _load_tokenizer(cfg)
+    if cfg.is_ffr:
+        # ── FFR round (plan v7): pilot → selection-derived production bank → A/B.
+        values = BK.load_values_ffr(cfg.values_path)
+        if cfg.phase in ("all", "pilot"):
+            print("[phase=ffr_pilot]", flush=True)
+            rc = phase_pilot(cfg, tok, values)
+            if rc != RC_OK:
+                return rc
+        if cfg.phase == "pilot":
+            print("[phase=done]", flush=True)
+            return RC_OK
+        sel_path = cfg.manifest_dir / "pilot_selection.json"
+        sel_doc = _read_json(sel_path)
+        if sel_doc is None:
+            raise RuntimeError(
+                f"ffr phase {cfg.phase!r} needs {sel_path} — run --round ffr --phase pilot first"
+            )
+        selection = sel_doc["selection"]
+        if not selection.get("surviving_axes"):
+            # plan v7 §6: ALL 3 axes failing the pilot floor is a VALID,
+            # complete outcome — the round folds in as a pure refusal-boundary
+            # result and phases A/B (F3–F7) are skipped. Never a BankGateError
+            # crash on a registered outcome (r1 blocker ffr-all-axes-fail-crash);
+            # the durable record below is what analysis/fold-in reads.
+            outcome = {
+                "round": BK.FFR_ROUND,
+                "outcome": "refusal_boundary_all_axes_failed",
+                "surviving_axes": [],
+                "axes": {
+                    a: {
+                        "width": selection["axes"][a]["width"],
+                        "floor": selection["axes"][a]["floor"],
+                        "survives": selection["axes"][a]["survives"],
+                    }
+                    for a in BK.FFR_AXES
+                },
+                "selection_file": "pilot_selection.json",
+                "phases_skipped": ["A", "B"],
+                "repro": _repro(cfg, "ffr-refusal-boundary"),
+            }
+            write_json_atomic(cfg.manifest_dir / "ffr_refusal_boundary.json", outcome)
+            if cfg.upload == "hf":
+                res_rb = upload_dir_sharded(
+                    cfg.manifest_dir,
+                    HF_DATA_REPO,
+                    cfg.hf_round_prefix("manifests"),
+                    shard_glob="ffr_refusal_boundary.json",
+                    resume_skip=False,
+                    delete_local=False,
+                )
+                logger.info("[ffr] refusal-boundary record uploaded: %s", _upload_summary(res_rb))
+            logger.info(
+                "[ffr] all axes below pilot floor — refusal-boundary outcome; "
+                "phases A/B skipped (plan v7 §6)"
+            )
+            print("[phase=done]", flush=True)
+            return RC_OK
+        # F0 (plan v7): bank gates run at FULL selected grain regardless of --smoke;
+        # smoke slicing (carriers) applies AFTER the gates, to execution only.
+        bank = BK.build_bank_ffr(tok, selection, values=values)
+        BK.write_bank_manifest(bank, cfg.manifest_dir / BK.FFR_BANK_MANIFEST_FILENAME)
+        bank = _filter_bank(bank, cfg.cells, cfg.carriers)
+        logger.info(
+            "ffr bank: %d contexts / %d pairs after filter (surviving_axes=%s)",
+            bank["n_contexts"],
+            bank["n_pairs"],
+            selection["surviving_axes"],
+        )
+        ffr_phase_fns = {
+            "A": ("pa_generate", phase_anchors),
+            "B": ("pb_capture", phase_capture),
+        }
+        run_phases = ["A", "B"] if cfg.phase == "all" else [cfg.phase]
+        for ph in run_phases:
+            name, fn = ffr_phase_fns[ph]
+            print(f"[phase={name}]", flush=True)
+            rc = fn(cfg, bank)
+            if rc != RC_OK:
+                return rc
+        print("[phase=done]", flush=True)
+        return RC_OK
     values = BK.load_values(cfg.values_path)
     # Bank gates run at FULL 984-context grain regardless of --smoke (plan §8 A3);
     # smoke slicing applies AFTER the gates, to execution only.
