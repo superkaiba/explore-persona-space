@@ -258,7 +258,7 @@ def append_robust_values(perpair_path: Path, out_path: Path) -> int:
     clean-result Takeaways (map 0.49 vs identity 0.36). Fail-loud: refuses to
     run if the pair count is not 12 or the output JSON is missing.
     """
-    rows = [json.loads(line) for line in perpair_path.read_text().splitlines() if line.strip()]
+    rows = [json.loads(line) for line in perpair_path.read_text().split("\n") if line.strip()]
     sel = [
         r
         for r in rows
