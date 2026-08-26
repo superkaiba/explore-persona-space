@@ -207,12 +207,20 @@ def _rb_payload(layers=(0, 1), d=_D_MODEL, seed=3, trait="evil"):
     }
 
 
-def _fake_operator_module(d=_D_MODEL):
-    """sys.modules stand-in for issue2569_operator (cmd_align's B1 entry asserts)."""
+def _fake_operator_module(map_file: Path, d=_D_MODEL):
+    """sys.modules stand-in for issue2569_operator (cmd_align's B1 entry asserts).
+
+    ``map_file`` mirrors the real ``MapPayload.path`` field: cmd_align fingerprints
+    the banked map's FILE BYTES into its regime key (fix-round-3 concern
+    ``dwfleet-align-resume-key-omits-banked-map-fingerprint``), so the fake payload
+    must carry a real on-disk path.
+    """
     mod = types.ModuleType("issue2569_operator")
     a_mat = np.eye(d)
 
-    mod.load_banked_map = lambda layer=19, root=None: {"layer": layer}
+    mod.load_banked_map = lambda layer=19, root=None: types.SimpleNamespace(
+        layer=layer, path=map_file
+    )
     mod.run_driver_identity_asserts = lambda payload: None
     mod.row_operator = lambda payload: (a_mat, np.zeros(d))
     mod.monitor_gradient = lambda A, r: np.asarray(A) @ np.asarray(r)
@@ -334,6 +342,40 @@ def test_effective_rank_summaries_known_spectrum():
         DW.effective_rank_summaries(np.zeros(3))
 
 
+def test_factor_separation_ties_null_space_and_bounds():
+    """Per-factor separation labels (fix-round-3
+    dwfleet-degenerate-svd-vectors-scored-as-signal): distinct spectra label
+    well-separated; a near-tied pair flags BOTH members; a numerically-null factor
+    flags; a soft top-k boundary flags boundary_tied; out-of-range k / a zero
+    spectrum raise (never a silent default)."""
+    sep = DW.factor_separation(np.array([1.0, 0.8, 0.5, 0.2]), 3)
+    assert sep["well_separated"] == [True, True, True]
+    assert sep["rel_gap_next"] == pytest.approx([0.2, 0.3, 0.3])
+    assert sep["rel_gap_prev"][0] is None
+    assert sep["rel_gap_prev"][1] == pytest.approx(0.2)
+    assert sep["boundary_tied"] is False and sep["n_well_separated"] == 3
+    assert sep["rel_gap_floor"] == DW.DEGEN_REL_GAP_FLOOR
+    # Near-tie at the probe-observed scale (real minima 5.8e-4 of s0): both members
+    # of the tied pair flagged; neighbors unaffected.
+    sep2 = DW.factor_separation(np.array([1.0, 0.5, 0.4995, 0.2]), 4)
+    assert sep2["well_separated"] == [True, False, False, True]
+    # Numerically-null factor (sv floor): the exact-zero tail of a rank-limited
+    # spectrum is degenerate even as the "last computed" value.
+    sep3 = DW.factor_separation(np.array([1.0, 5e-7]), 2)
+    assert sep3["well_separated"][1] is False
+    # Soft top-k BOUNDARY: the k-th gap tied => subspace-level reads unstable too.
+    sep4 = DW.factor_separation(np.array([1.0, 0.5, 0.4999]), 2)
+    assert sep4["boundary_tied"] is True and sep4["well_separated"][1] is False
+    with pytest.raises(ValueError):
+        DW.factor_separation(np.array([1.0, 0.5]), 3)
+    with pytest.raises(ValueError):
+        DW.factor_separation(np.array([1.0, 0.5]), 0)
+    with pytest.raises(ValueError):
+        DW.factor_separation(np.zeros(4), 2)
+    top = DW.top_vector_separation(np.array([1.0, 0.9995]))
+    assert top["well_separated"] is False and top["rel_gap_01"] == pytest.approx(5e-4)
+
+
 def test_svdvals_stack_matches_serial():
     """The batched dense reference equals per-matrix svdvals (oracle self-consistency)."""
     rng = np.random.default_rng(0)
@@ -399,6 +441,64 @@ def test_dv3_null_symmetry_flag_is_computed_not_claimed():
         DW.dv3_payload_from_null({"write": bad_p95})
 
 
+def test_dv3_payload_from_null_refuses_empty_and_unknown_arms():
+    """An EMPTY arm roster (or an unregistered arm name) RAISES at the producer — with
+    zero arms the per-arm guards never run and the True flag would vacuously certify
+    aggregation symmetry over nothing (fix-round-3 blocker
+    dv3-empty-arm-roster-yields-vacuous-true)."""
+    with pytest.raises(AssertionError, match="EMPTY arm roster"):
+        DW.dv3_payload_from_null({})
+    rng = np.random.default_rng(6)
+    basis = {5: np.linalg.qr(rng.normal(size=(8, 8)))[0].T.astype(np.float32)}
+    res = I650.dv3_max_matched_null(
+        observed_vec=rng.normal(size=8).astype(np.float32),
+        basis_by_layer=basis,
+        band=(5,),
+        n_draws=20,
+        seed=0,
+    )
+    with pytest.raises(AssertionError, match="unknown arm"):
+        DW.dv3_payload_from_null({"wrote": res})
+
+
+def test_assert_dv3_schema_arm_roster_floor_and_real_cells():
+    """assert_dv3_schema rejects a ZERO-arm payload (the vacuous-True shape) and unknown
+    arm keys, KEEPS the single-arm tolerance (the dw_fleet per-module intruder shape is
+    one arm — 'write' U-side / 'read' V-side), and every cell of the REAL committed
+    #650 artifact (both arms, 12/12) still passes the strengthened assert."""
+    vac = {
+        "observed": {},
+        "null": {},
+        "assertions": {"null_aggregation_matches_observed": True},
+    }
+    with pytest.raises(AssertionError, match="ZERO of the registered arms"):
+        I650.assert_dv3_schema(vac)
+    mixed = {
+        "observed": {"write": {"max_by_layer": {}}, "extra": {}},
+        "null": {},
+        "assertions": {"null_aggregation_matches_observed": True},
+    }
+    with pytest.raises(AssertionError, match="unknown arm"):
+        I650.assert_dv3_schema(mixed)
+    # Single-arm ('read') payload stays legal — the V-side module shape.
+    rng = np.random.default_rng(7)
+    basis = {2: np.linalg.qr(rng.normal(size=(8, 8)))[0].T.astype(np.float32)}
+    res = I650.dv3_max_matched_null(
+        observed_vec=rng.normal(size=8).astype(np.float32),
+        basis_by_layer=basis,
+        band=(2,),
+        n_draws=20,
+        seed=1,
+    )
+    I650.assert_dv3_schema(DW.dv3_payload_from_null({"read": res}))
+    # Real committed artifact (probed 2026-08-26: dict of 12 cells, arms {read, write}).
+    real = REPO_ROOT / "eval_results" / "issue_650" / "analysis" / "dv3_intruder.json"
+    cells = json.loads(real.read_text())["cells"]
+    assert len(cells) == 12
+    for cell in cells.values():
+        I650.assert_dv3_schema(cell)
+
+
 def test_intruder_read_planted_vs_random():
     """A dW top vector INSIDE the base column space reads pre-existing; an orthogonal
     intruder direction reads intruder-at-null. Aggregation is the registered band-max."""
@@ -461,6 +561,56 @@ def test_analyze_lora_arm_rank_r_path_and_all_module_intruder(tmp_path):
     fact = rec["modules"]["down_proj"]["0"]
     for key in ("stable_rank", "participation_ratio", "top1_share_energy", "frobenius"):
         assert fact[key] == pytest.approx(dense[key], rel=1e-4), key
+
+
+def test_analyze_lora_arm_labels_top_vector_separation(tmp_path):
+    """Every (module, layer) top vector carries a separation label computed from the
+    EXACT rank-r spectrum, and an EXACTLY-TIED top pair is flagged degenerate —
+    self-labeled, never silently scored (fix-round-3
+    dwfleet-degenerate-svd-vectors-scored-as-signal)."""
+    from safetensors.torch import save_file
+
+    adapter = _write_adapter(tmp_path / "adapter", r=2)
+    base_svd = I650.load_base_svd(_build_tiny_base_svd(tmp_path), modules=DW.LORA_MODULES)
+    rec = DW.analyze_lora_arm(_lora_entry(), adapter, base_svd)
+    assert set(rec["intruder_top_separation"]) == set(DW.LORA_MODULES)
+    # Label agrees with a recompute from the dense oracle's spectrum.
+    deltas = DW.load_adapter_deltas(adapter)
+    sv = DW.svdvals_robust(deltas[(0, "q_proj")])
+    expect = DW.top_vector_separation(sv[:2])  # rank-2: two nonzero svals
+    got = rec["intruder_top_separation"]["q_proj"]["0"]
+    assert got["rel_gap_01"] == pytest.approx(expect["rel_gap_01"], rel=1e-4, abs=1e-7)
+    assert got["well_separated"] == expect["well_separated"]
+    # Constructed EXACT top tie on q_proj (dW = s * (E00 + E11): equal svals).
+    g = torch.Generator().manual_seed(5)
+    tensors = {}
+    for layer in (0, 1):
+        for m in DW.LORA_MODULES:
+            d_out, d_in = _SHAPES[m]
+            grp = "self_attn" if m in _ATTN else "mlp"
+            prefix = f"base_model.model.model.layers.{layer}.{grp}.{m}"
+            if m == "q_proj":
+                a = torch.zeros(2, d_in)
+                a[0, 0] = 1.0
+                a[1, 1] = 1.0
+                b = torch.zeros(d_out, 2)
+                b[0, 0] = 1.0
+                b[1, 1] = 1.0
+            else:
+                a = torch.randn(2, d_in, generator=g)
+                b = torch.randn(d_out, 2, generator=g)
+            tensors[f"{prefix}.lora_A.weight"] = a
+            tensors[f"{prefix}.lora_B.weight"] = b
+    tie_dir = tmp_path / "tie_adapter"
+    tie_dir.mkdir(parents=True, exist_ok=True)
+    (tie_dir / "adapter_config.json").write_text(
+        json.dumps({"r": 2, "lora_alpha": 4, "use_rslora": True})
+    )
+    save_file(tensors, str(tie_dir / "adapter_model.safetensors"))
+    tie_rec = DW.analyze_lora_arm(_lora_entry("tied"), tie_dir, base_svd)
+    tie_top = tie_rec["intruder_top_separation"]["q_proj"]["0"]
+    assert tie_top["well_separated"] is False
+    assert tie_top["rel_gap_01"] < DW.DEGEN_REL_GAP_FLOOR
 
 
 def test_load_base_svd_required_fails_loud_on_subset_payload(tmp_path):
@@ -574,6 +724,45 @@ def test_analyze_ft_checkpoint_full_outputs(tmp_path):
     assert rec2["n_matrices"] == 4 and set(rec2["intruder"]) == {"down_proj", "q_proj"}
 
 
+def test_analyze_ft_checkpoint_labels_and_exact_svals(tmp_path):
+    """FT analysis labels every (module, layer) top vector from the EXACT spectrum and
+    the align-layer sidecar persists an exact-sval prefix LONGER than the factor count
+    (the k-th boundary gap needs s[k]) — --phase align consumes it for the separation
+    labels (fix-round-3 dwfleet-degenerate-svd-vectors-scored-as-signal)."""
+    bdir, pdir = _write_ft_pair(tmp_path)
+    base_svd = I650.load_base_svd(_build_tiny_base_svd(tmp_path), modules=DW.LORA_MODULES)
+    factors_path = tmp_path / "ft_factors_L0.pt"
+    rec = DW.analyze_ft_checkpoint(
+        _ft_entry(), bdir, pdir, base_svd, align_layer=0, factors_path=factors_path
+    )
+    assert set(rec["intruder_top_separation"]) == set(DW.LORA_MODULES)
+    # Label recomputes from the exact spectrum of the same delta.
+    deltas = {DW._ft_name_parts(nm): nm for nm in rec["matrices"] if DW._ft_name_parts(nm)}
+    from safetensors.torch import load_file
+
+    base = load_file(str(bdir / "model.safetensors"))
+    post = load_file(str(pdir / "model.safetensors"))
+    nm = deltas[(0, "q_proj")]
+    dw = post[nm].to(torch.float32) - base[nm].to(torch.float32)
+    expect = DW.top_vector_separation(DW.svdvals_robust(dw))
+    got = rec["intruder_top_separation"]["q_proj"]["0"]
+    assert got["rel_gap_01"] == pytest.approx(expect["rel_gap_01"], rel=1e-6)
+    assert got["well_separated"] == expect["well_separated"]
+    # Sidecar: exact-sval prefix present, descending, strictly longer than needed
+    # (tiny dims: the full 6-value spectrum; production: LOWRANK_Q + 1 = 65 > kk = 8).
+    sidecar = torch.load(factors_path, weights_only=True, map_location="cpu")
+    for module, blk in sidecar["modules"].items():
+        sv = blk["svals_exact"].numpy()
+        assert sv.shape[0] == min(_SHAPES[module]), module  # full tiny spectrum
+        assert sv.shape[0] >= blk["factors"].shape[0]
+        assert np.all(np.diff(sv) <= 1e-9), module  # descending
+        expect_sv = DW.svdvals_robust(
+            post[deltas[(0, module)]].to(torch.float32)
+            - base[deltas[(0, module)]].to(torch.float32)
+        )
+        np.testing.assert_allclose(sv, expect_sv[: sv.shape[0]], rtol=1e-6, atol=1e-8)
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Banked-direction loaders (fixtures mirror the PROBED real schemas)
 # ──────────────────────────────────────────────────────────────────────────
@@ -655,14 +844,20 @@ def test_stage_optional_banked_file_absence_vs_error(tmp_path, monkeypatch):
 
 
 def _setup_align(tmp_path, monkeypatch, *, banked, entries):
-    """Common cmd_align scaffolding: fleet table, adapters, fake operator, staged fakes."""
+    """Common cmd_align scaffolding: fleet table, adapters, fake operator, staged fakes.
+
+    The fake banked map lives at ``tmp_path / "fake_banked_map.pt"`` — tests that
+    exercise the map-bytes regime fingerprint rewrite that file directly.
+    """
     out_root = tmp_path / "out"
     dl_root = tmp_path / "dl"
     _write_fleet_table(out_root, entries)
     for e in entries:
         if e.method == "lora":
             _write_adapter(dl_root / "adapters" / e.arm_id / e.subfolder, r=2, layers=(0, 1))
-    monkeypatch.setitem(sys.modules, "issue2569_operator", _fake_operator_module())
+    map_file = tmp_path / "fake_banked_map.pt"
+    map_file.write_bytes(b"fake-banked-ridge-v1")
+    monkeypatch.setitem(sys.modules, "issue2569_operator", _fake_operator_module(map_file))
     calls: list[tuple[str, str]] = []
     served = tmp_path / "served"
 
@@ -713,6 +908,9 @@ def test_cmd_align_stages_pins_routes_bases_and_records_absence(tmp_path, monkey
                 "side": I650.RESIDUAL_SIDE_BY_MODULE[m],
                 "factors": torch.randn(3, _D_MODEL, generator=g),
                 "svals": torch.rand(3, generator=g),
+                # EXACT spectrum prefix (len > n_factors) — --phase align hard-requires
+                # it for the factor_separation labels (fix-round-3).
+                "svals_exact": torch.tensor([1.0, 0.6, 0.3, 0.12]),
             }
             for m in DW.LORA_MODULES
         },
@@ -795,6 +993,125 @@ def test_cmd_align_dim_mismatch_raises_not_skips(tmp_path, monkeypatch):
     out_root, dl_root, _ = _setup_align(tmp_path, monkeypatch, banked=banked, entries=[lora])
     with pytest.raises(RuntimeError, match="dim"):
         DW.cmd_align(_args(out_root=str(out_root), dl_root=str(dl_root)))
+
+
+def test_cmd_align_labels_degenerate_factors_pins_and_anchor(tmp_path, monkeypatch):
+    """alignment.json self-labels factor degeneracy (fix-round-3
+    dwfleet-degenerate-svd-vectors-scored-as-signal): every factor block carries
+    factor_separation; every read carries argmax_factor / argmax_well_separated and
+    the rotation-invariant subspace_proj; FT labels recompute from the sidecar's
+    exact svals; the seed-noise anchor labels both arms' top factors; and the pins
+    block fingerprints the banked map bytes."""
+    import hashlib
+
+    s42 = DW.FleetEntry(
+        "imp-pers-con-lr3e5-s42", "content", "imp", "lora", "org/m", "s42", "arms.json"
+    )
+    s137 = DW.FleetEntry(
+        "imp-pers-con-lr3e5-s137", "content", "imp", "lora", "org/m", "s137", "arms.json"
+    )
+    ft = _ft_entry()
+    banked = _rb_banked()
+    for aid in (s42.arm_id, s137.arm_id):
+        banked[f"{DW.DELTA_TF_PREFIX}/{aid}/tbar.pt"] = _tbar_payload(layer=0)
+        banked[f"{DW.ANCHORS_PREFIX}/{aid}.pt"] = _anchor_payload(layer=0)
+    out_root, dl_root, _ = _setup_align(
+        tmp_path, monkeypatch, banked=banked, entries=[s42, s137, ft]
+    )
+    g = torch.Generator().manual_seed(23)
+    ft_svals_exact = torch.tensor([1.0, 0.6, 0.3, 0.12])
+    sidecar = {
+        "layer": 0,
+        "arm_id": ft.arm_id,
+        "method": "svd_lowrank-test",
+        "modules": {
+            m: {
+                "side": I650.RESIDUAL_SIDE_BY_MODULE[m],
+                "factors": torch.randn(3, _D_MODEL, generator=g),
+                "svals": torch.rand(3, generator=g),
+                "svals_exact": ft_svals_exact,
+            }
+            for m in DW.LORA_MODULES
+        },
+    }
+    ft_dir = out_root / "dw_fleet" / "ft"
+    ft_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(sidecar, ft_dir / f"{ft.arm_id}_factors_L0.pt")
+
+    assert DW.cmd_align(_args(out_root=str(out_root), dl_root=str(dl_root))) == 0
+    out = json.loads((out_root / "dw_fleet" / "alignment.json").read_text())
+
+    blk = out["arms"][s42.arm_id]["factors"]["L0.o_proj"]
+    sep = blk["factor_separation"]
+    assert len(sep["well_separated"]) == blk["k_basis"]
+    assert sep["rel_gap_floor"] == DW.DEGEN_REL_GAP_FLOOR
+    read = blk["alignments"]["r_B[evil]"]
+    assert 0 <= read["argmax_factor"] < blk["k_basis"]
+    assert isinstance(read["argmax_well_separated"], bool)
+    assert 0.0 <= read["subspace_proj"] <= 1.0 + 1e-6
+    # FT labels recompute exactly from the sidecar's exact-sval prefix.
+    ft_blk = out["arms"][ft.arm_id]["factors"]["L0.o_proj"]
+    expect_sep = DW.factor_separation(ft_svals_exact.numpy(), 3)
+    assert ft_blk["factor_separation"]["well_separated"] == expect_sep["well_separated"]
+    assert ft_blk["factor_separation"]["rel_gap_next"] == pytest.approx(expect_sep["rel_gap_next"])
+    # Seed-noise anchor: both arms' top-factor separation labeled.
+    anchor = out["seed_noise_anchor"]
+    assert set(anchor["o_proj"]["top1_well_separated"]) == {s42.arm_id, s137.arm_id}
+    assert set(anchor["o_proj"]["factor_separation"]) == {s42.arm_id, s137.arm_id}
+    # Pins fingerprint the banked map's FILE BYTES.
+    map_file = tmp_path / "fake_banked_map.pt"
+    assert (
+        out["pins"]["banked_map"]["sha256_16"]
+        == (hashlib.sha256(map_file.read_bytes()).hexdigest()[:16])
+    )
+
+
+def test_cmd_align_requires_sidecar_exact_svals(tmp_path, monkeypatch):
+    """An FT factor sidecar predating the separation-labels schema (no svals_exact)
+    fails LOUD with the re-run command — never a silent unlabeled read."""
+    ft = _ft_entry()
+    out_root, dl_root, _ = _setup_align(tmp_path, monkeypatch, banked=_rb_banked(), entries=[ft])
+    g = torch.Generator().manual_seed(29)
+    sidecar = {
+        "layer": 0,
+        "arm_id": ft.arm_id,
+        "method": "svd_lowrank-test",
+        "modules": {
+            m: {
+                "side": I650.RESIDUAL_SIDE_BY_MODULE[m],
+                "factors": torch.randn(3, _D_MODEL, generator=g),
+                "svals": torch.rand(3, generator=g),
+            }
+            for m in DW.LORA_MODULES
+        },
+    }
+    ft_dir = out_root / "dw_fleet" / "ft"
+    ft_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(sidecar, ft_dir / f"{ft.arm_id}_factors_L0.pt")
+    with pytest.raises(RuntimeError, match="svals_exact"):
+        DW.cmd_align(_args(out_root=str(out_root), dl_root=str(dl_root)))
+
+
+def test_cmd_align_regime_key_covers_banked_map_bytes(tmp_path, monkeypatch, capsys):
+    """A re-banked ridge map (different BYTES at --map-root) must RECOMPUTE align
+    units, never resume-skip onto stale Ar[trait] reads (fix-round-3 concern
+    dwfleet-align-resume-key-omits-banked-map-fingerprint); an unchanged map still
+    resume-skips."""
+    lora = _lora_entry()
+    banked = _rb_banked()
+    banked[f"{DW.DELTA_TF_PREFIX}/{lora.arm_id}/tbar.pt"] = _tbar_payload(layer=0)
+    banked[f"{DW.ANCHORS_PREFIX}/{lora.arm_id}.pt"] = _anchor_payload(layer=0)
+    out_root, dl_root, _ = _setup_align(tmp_path, monkeypatch, banked=banked, entries=[lora])
+    args = _args(out_root=str(out_root), dl_root=str(dl_root))
+    assert DW.cmd_align(args) == 0
+    capsys.readouterr()
+    # Same map bytes: the unit resume-skips.
+    assert DW.cmd_align(args) == 0
+    assert "resume-skip" in capsys.readouterr().out
+    # Re-banked map (same path, different bytes): the unit RECOMPUTES.
+    (tmp_path / "fake_banked_map.pt").write_bytes(b"fake-banked-ridge-v2-REBANKED")
+    assert DW.cmd_align(args) == 0
+    assert "resume-skip" not in capsys.readouterr().out
 
 
 # ──────────────────────────────────────────────────────────────────────────

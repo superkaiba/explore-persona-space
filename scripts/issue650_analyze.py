@@ -351,6 +351,16 @@ def assert_dv3_schema(payload: dict) -> None:
     keys. A null that scored per-draw SINGLE cosines, or a flat p95 over
     ``<full-rank`` random directions, has a different ``null_aggregation`` string
     OR a False ``assertions`` flag and is REJECTED (hard fail, Must-Fix #1).
+
+    Arm-roster floor (#2569 fix-round-3 ``dv3-empty-arm-roster-yields-vacuous-true``):
+    at least ONE of the registered arms must be present in ``observed`` — a zero-arm
+    payload skips every per-arm check and would certify aggregation symmetry over
+    nothing — and every ``observed`` key must BE a registered arm (an unknown arm
+    name escapes per-arm validation the same way). A SINGLE-arm payload stays legal:
+    #2569's per-module intruder reads carry exactly one arm ("write" for U-side
+    modules, "read" for V-side), while #650's own cells carry both (verified against
+    the committed ``eval_results/issue_650/analysis/dv3_intruder.json`` — 12/12
+    cells).
     """
     observed = payload.get("observed")
     null = payload.get("null")
@@ -371,6 +381,18 @@ def assert_dv3_schema(payload: dict) -> None:
             "True — the null routine's per-draw reduction does NOT match the observed "
             "reduction; a non-max-matched null guarantees a false intruder/pre-existing "
             "verdict on the headline discriminator. REJECTED (Must-Fix #1)."
+        )
+    if not any(arm in observed for arm in ("write", "read")):
+        raise AssertionError(
+            "dv3_intruder.json cell: `observed` carries ZERO of the registered arms "
+            "('write'/'read') — an empty-arm payload certifies aggregation symmetry "
+            "over nothing. REJECTED (dv3-empty-arm-roster-yields-vacuous-true)."
+        )
+    unknown_arms = sorted(set(observed) - {"write", "read"})
+    if unknown_arms:
+        raise AssertionError(
+            f"dv3_intruder.json cell: unknown arm key(s) {unknown_arms} in `observed` "
+            "escape per-arm validation. REJECTED."
         )
     for arm in ("write", "read"):
         if arm not in observed:

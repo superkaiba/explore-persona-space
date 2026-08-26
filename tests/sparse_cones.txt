@@ -147,3 +147,4 @@ eval_results/issue_2163
 eval_results/issue_1979/config
 eval_results/issue_1979/race
 eval_results/issue_823
+eval_results/issue_650

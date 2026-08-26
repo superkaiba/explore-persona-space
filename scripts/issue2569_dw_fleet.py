@@ -342,6 +342,75 @@ def effective_rank_summaries(svals: np.ndarray) -> dict:
     }
 
 
+# Degeneracy floors for per-factor separation labels (fix-round-3 blocker
+# ``dwfleet-degenerate-svd-vectors-scored-as-signal``). MEASURED basis (probe
+# 2026-08-26, two real banked adapters through the production ``lora_svd_factors``
+# path — imp-pers-con-lr3e5-s42, 196 (layer,module) cells; mk-pers-con-lr5e6-s42,
+# 112 cells): top gap (s0-s1)/s0 median 0.30/0.38, p5 0.10/0.14, min 0.036/0.054
+# (the intruder read's top vector is healthy on trained arms); min consecutive gap
+# WITHIN the scored top-8: median 7e-3/1e-2, p5 ~2e-3, observed minima 5.8e-4/9.9e-4
+# (real near-ties among deeper factors); s31/s0 <= 0.33 (nowhere numerically null).
+# The 1e-3 gap floor sits below the healthy-bulk gaps and ~4 orders above fp32 sval
+# jitter (~1e-7*s0); the observed real ties land under it and get labeled. The 1e-6
+# sv floor flags only numerically-null spectrum mass (real minima s31/s0 = 9.1e-3
+# sit ~4 orders above).
+DEGEN_REL_GAP_FLOOR = 1e-3
+DEGEN_SV_FLOOR = 1e-6
+
+
+def factor_separation(svals, k: int) -> dict:
+    """Per-factor separation labels for the top-``k`` singular VECTORS of a spectrum.
+
+    A singular vector is unique only up to rotation within a tied group, so a
+    per-factor alignment scored on a near-tied or numerically-null factor is
+    arbitrary (fix-round-3 ``dwfleet-degenerate-svd-vectors-scored-as-signal``).
+    Factor ``i`` is ``well_separated`` iff BOTH neighboring relative gaps
+    ``(s[j] - s[j+1]) / s[0]`` clear ``DEGEN_REL_GAP_FLOOR`` AND ``s[i]/s[0] >=
+    DEGEN_SV_FLOOR``. The last COMPUTED singular value's lower gap is its distance
+    to the exact-zero tail (``s[i]/s[0]`` — exact for rank-r LoRA products; FT
+    callers must pass a spectrum longer than ``k`` so the boundary gap is real).
+    ``boundary_tied`` flags a soft top-``k`` SUBSPACE (the k-th gap itself tied) —
+    there even subspace-level reads are unstable. Raises on ``k`` out of range or a
+    non-positive leading singular value (never a silent default).
+    """
+    s = np.asarray(svals, dtype=np.float64).ravel()
+    if k < 1 or k > s.size:
+        raise ValueError(f"k={k} out of range for spectrum of length {s.size}")
+    s0 = float(s[0])
+    if s0 <= 0:
+        raise ValueError("non-positive leading singular value — empty/invalid spectrum")
+    gap_next = [
+        (float(s[i] - s[i + 1]) / s0 if i + 1 < s.size else float(s[i]) / s0) for i in range(k)
+    ]
+    sv_over_s0 = [float(s[i]) / s0 for i in range(k)]
+    well: list[bool] = []
+    for i in range(k):
+        tied_prev = i > 0 and gap_next[i - 1] < DEGEN_REL_GAP_FLOOR
+        tied_next = gap_next[i] < DEGEN_REL_GAP_FLOOR
+        null_i = sv_over_s0[i] < DEGEN_SV_FLOOR
+        well.append(not (tied_prev or tied_next or null_i))
+    return {
+        "rel_gap_prev": [None] + [gap_next[i - 1] for i in range(1, k)],
+        "rel_gap_next": gap_next,
+        "sv_over_s0": sv_over_s0,
+        "well_separated": well,
+        "n_well_separated": int(sum(well)),
+        "boundary_tied": bool(gap_next[k - 1] < DEGEN_REL_GAP_FLOOR),
+        "rel_gap_floor": DEGEN_REL_GAP_FLOOR,
+        "sv_floor": DEGEN_SV_FLOOR,
+    }
+
+
+def top_vector_separation(svals) -> dict:
+    """Separation label for the TOP singular vector (the intruder read's observed vector)."""
+    sep = factor_separation(svals, 1)
+    return {
+        "rel_gap_01": sep["rel_gap_next"][0],
+        "well_separated": bool(sep["well_separated"][0]),
+        "rel_gap_floor": DEGEN_REL_GAP_FLOOR,
+    }
+
+
 def _issue650():
     """Import the shared #650 module (scripts/ is on sys.path via module top)."""
     import issue650_analyze as i650  # noqa: PLC0415
@@ -359,8 +428,23 @@ def dv3_payload_from_null(arm_results: dict[str, dict]) -> dict:
     draw's band max is recomputed from the per-layer null draws, and the band p95 is
     recomputed from the recomputed draws — each compared numerically at 1e-6. Any
     mismatch raises BEFORE anything is persisted; the returned payload additionally
-    passes ``issue650_analyze.assert_dv3_schema``.
+    passes ``issue650_analyze.assert_dv3_schema``. An EMPTY roster (or an arm name
+    outside the registered ``write``/``read`` pair) RAISES: with zero arms the
+    per-arm guards never execute and the True flag would certify aggregation
+    symmetry over nothing (fix-round-3 blocker
+    ``dv3-empty-arm-roster-yields-vacuous-true``).
     """
+    if not arm_results:
+        raise AssertionError(
+            "dv3 payload: EMPTY arm roster — zero arms would make "
+            "null_aggregation_matches_observed vacuously True over nothing"
+        )
+    unknown_arms = sorted(set(arm_results) - {"write", "read"})
+    if unknown_arms:
+        raise AssertionError(
+            f"dv3 payload: unknown arm name(s) {unknown_arms} — the registered schema "
+            "arms are 'write'/'read'; an unknown arm escapes load-time per-arm validation"
+        )
     tol = 1e-6
     observed: dict = {}
     null: dict = {}
@@ -712,7 +796,11 @@ def analyze_lora_arm(entry: FleetEntry, adapter_dir: Path, base_svd: dict) -> di
     The intruder read runs per module on the module's RESIDUAL side (o/down: U "write";
     q/k/v/gate/up: V "read"); a base-svd payload lacking any adapter module or layer
     RAISES — no module is ever silently dropped (fix-round-2
-    ``dwfleet-oproj-intruder-silently-dropped``).
+    ``dwfleet-oproj-intruder-silently-dropped``). Each layer's TOP vector carries a
+    ``top_vector_separation`` label under ``intruder_top_separation`` — a near-tied
+    top pair makes the intruder verdict's observed vector arbitrary within the tied
+    span, so the read is self-labeled, never silently published (fix-round-3
+    ``dwfleet-degenerate-svd-vectors-scored-as-signal``).
     """
     i650 = _issue650()
     pairs, scaling = load_adapter_factors(adapter_dir)
@@ -725,6 +813,7 @@ def analyze_lora_arm(entry: FleetEntry, adapter_dir: Path, base_svd: dict) -> di
         "modules": {},
         "intruder": {},
         "intruder_side": {},
+        "intruder_top_separation": {},
     }
     for module, by_layer in sorted(by_module.items()):
         layers = sorted(by_layer)
@@ -734,6 +823,9 @@ def analyze_lora_arm(entry: FleetEntry, adapter_dir: Path, base_svd: dict) -> di
         svals = s.to(torch.float64).numpy()  # (L, r) — the EXACT nonzero spectrum
         rec["modules"][module] = {
             str(layer): effective_rank_summaries(svals[i]) for i, layer in enumerate(layers)
+        }
+        rec["intruder_top_separation"][module] = {
+            str(layer): top_vector_separation(svals[i]) for i, layer in enumerate(layers)
         }
         if module not in i650.RESIDUAL_SIDE_BY_MODULE:
             raise RuntimeError(f"no residual-side convention for adapter module {module!r}")
@@ -786,6 +878,7 @@ def analyze_ft_checkpoint(
         "matrices": {},
         "intruder": {},
         "intruder_side": {},
+        "intruder_top_separation": {},
     }
     torch.manual_seed(SEED)  # svd_lowrank is randomized — pin for resume stability
     top_vecs: dict[str, dict[int, np.ndarray]] = {}
@@ -803,6 +896,9 @@ def analyze_ft_checkpoint(
         layer_idx, module = _ft_name_parts(name)  # type: ignore[misc]
         svals = svdvals_robust(dw)
         rec["matrices"][name] = effective_rank_summaries(svals)
+        rec["intruder_top_separation"].setdefault(module, {})[str(layer_idx)] = (
+            top_vector_separation(svals)
+        )
         side = i650.RESIDUAL_SIDE_BY_MODULE[module]
         q = min(LOWRANK_Q, min(dw.shape))
         u, s, v = torch.svd_lowrank(dw, q=q, niter=LOWRANK_NITER)
@@ -814,6 +910,10 @@ def analyze_ft_checkpoint(
                 "side": side,
                 "factors": side_vecs[:kk].clone(),
                 "svals": s[:kk].clone(),
+                # EXACT spectrum prefix (svdvals_robust, not the lowrank estimates):
+                # --phase align computes factor_separation labels from it, so it must
+                # extend PAST kk (the k-th boundary gap needs s[kk]).
+                "svals_exact": torch.from_numpy(svals[: LOWRANK_Q + 1].copy()),
             }
         n += 1
         print(f"[dw-ft] unit {n} {entry.arm_id}/{name} elapsed={time.time() - t0:.0f}s", flush=True)
@@ -972,6 +1072,13 @@ def cmd_align(args) -> int:
     payload = op.load_banked_map(layer=layer, root=args.map_root or None)
     op.run_driver_identity_asserts(payload)
     a_mat, _b = op.row_operator(payload)
+    # Content fingerprint of the banked ridge map feeding the Ar[trait] directions:
+    # file BYTES are read from disk (machine-stable to hash — never recomputed floats),
+    # so a re-banked map at --map-root changes the regime key and stale units recompute
+    # instead of resume-skipping (fix-round-3 concern
+    # ``dwfleet-align-resume-key-omits-banked-map-fingerprint``).
+    map_path = Path(payload.path)
+    map_sha = hashlib.sha256(map_path.read_bytes()).hexdigest()[:16]
 
     fleet = _load_fleet_table(out_root)
     if args.arms:
@@ -1000,6 +1107,8 @@ def cmd_align(args) -> int:
         delta_tf_rev=DELTA_TF_REV,
         rb_rev=RB_REV,
         anchors_rev=ANCHORS_REV,
+        map_sha=map_sha,
+        separation=(DEGEN_REL_GAP_FLOOR, DEGEN_SV_FLOOR),
     )
     results: dict[str, dict] = {}
     t0 = time.time()
@@ -1051,9 +1160,12 @@ def cmd_align(args) -> int:
             arm_dirs["c_C"] = cc
             arm_rec["directions_provenance"]["c_C"] = cc_prov
 
-        # Top-8 factors per module at the align layer.
+        # Top-8 factors per module at the align layer, each stack with its
+        # factor_separation labels (fix-round-3
+        # ``dwfleet-degenerate-svd-vectors-scored-as-signal``: a near-tied factor's
+        # identity is arbitrary within the tied span — label, never silently score).
         i650 = _issue650()
-        module_factors: dict[str, tuple[str, np.ndarray]] = {}
+        module_factors: dict[str, tuple[str, np.ndarray, dict]] = {}
         if entry.method == "lora":
             arm_dir = dl_root / "adapters" / entry.arm_id / entry.subfolder
             if not (arm_dir / "adapter_model.safetensors").is_file():
@@ -1069,7 +1181,8 @@ def cmd_align(args) -> int:
                 side = i650.RESIDUAL_SIDE_BY_MODULE[module]
                 kk = min(TOP_K_FACTORS, s.shape[-1])
                 stack = (u[:, :kk].T if side == "U" else vh[:kk]).numpy()
-                module_factors[module] = (side, stack)
+                sep = factor_separation(s.to(torch.float64).numpy(), kk)
+                module_factors[module] = (side, stack, sep)
         else:
             factors_path = out_root / "dw_fleet" / "ft" / f"{entry.arm_id}_factors_L{layer}.pt"
             if not factors_path.is_file():
@@ -1082,11 +1195,18 @@ def cmd_align(args) -> int:
                 raise RuntimeError(
                     f"ft factor sidecar layer {sidecar['layer']} != align layer {layer}"
                 )
-            module_factors = {
-                m: (v["side"], v["factors"].numpy()) for m, v in sidecar["modules"].items()
-            }
+            for m, v in sidecar["modules"].items():
+                if "svals_exact" not in v:
+                    raise RuntimeError(
+                        f"ft factor sidecar for {entry.arm_id} lacks 'svals_exact' "
+                        f"({m}) — it predates the separation-labels schema; re-run "
+                        f"--phase ft (same --align-layer {layer}) before --phase align"
+                    )
+                stack = v["factors"].numpy()
+                sep = factor_separation(v["svals_exact"].numpy(), stack.shape[0])
+                module_factors[m] = (v["side"], stack, sep)
 
-        for module, (side, stack) in sorted(module_factors.items()):
+        for module, (side, stack, sep) in sorted(module_factors.items()):
             # Basis routing: U-side factors live in residual-OUTPUT space (all directions
             # read); V-side factors live in residual-INPUT space for q/k/v/gate/up (the
             # context-space direction c_C reads). o_proj input (head-concat) and
@@ -1106,11 +1226,23 @@ def cmd_align(args) -> int:
                         f"{d.shape[0]} != factor dim {stack.shape[1]} (side {side}) — "
                         "corrupted input, refusing to publish a mismatched-basis cosine"
                     )
-                reads[name] = alignment_vs_null(stack, d)
+                read = alignment_vs_null(stack, d)
+                # Self-label: WHICH factor achieved max |cos|, and whether that
+                # factor's identity is well-separated (a max on a near-tied factor
+                # is arbitrary within the tied span). ``subspace_proj`` is the
+                # rotation-invariant companion — the projection norm onto the
+                # top-k subspace, well-defined whenever ``boundary_tied`` is False.
+                abs_cos = np.abs(stack.astype(np.float64) @ d)
+                am = int(np.argmax(abs_cos))
+                read["argmax_factor"] = am
+                read["argmax_well_separated"] = bool(sep["well_separated"][am])
+                read["subspace_proj"] = float(np.linalg.norm(stack.astype(np.float64) @ d))
+                reads[name] = read
             arm_rec["factors"][f"L{layer}.{module}"] = {
                 "side": side,
                 "k_basis": int(stack.shape[0]),
                 "alignments": reads,
+                "factor_separation": sep,
             }
 
         arm_rec.update({"regime_key": rk, "metadata": _meta("align")})
@@ -1152,7 +1284,7 @@ def cmd_align(args) -> int:
     }
     pair_entries = {e.arm_id: e for e in fleet if e.arm_id in seed_pair}
     if len(pair_entries) == 2:
-        vecs: dict[str, dict[str, np.ndarray]] = {}
+        vecs: dict[str, dict[str, tuple[np.ndarray, dict]]] = {}
         for aid, e in pair_entries.items():
             arm_dir = dl_root / "adapters" / aid / e.subfolder
             if not (arm_dir / "adapter_model.safetensors").is_file():
@@ -1163,14 +1295,21 @@ def cmd_align(args) -> int:
                     ab = pairs[(layer, module)]
                     u, s, _vh = lora_svd_factors(ab["A"], ab["B"], scaling)
                     kk = min(TOP_K_FACTORS, s.shape[-1])
-                    vecs.setdefault(module, {})[aid] = u[:, :kk].T.numpy()
+                    sep = factor_separation(s.to(torch.float64).numpy(), kk)
+                    vecs.setdefault(module, {})[aid] = (u[:, :kk].T.numpy(), sep)
         for module, by_arm in vecs.items():
             if len(by_arm) == 2:
-                u1, u2 = (by_arm[a] for a in seed_pair)
+                u1, u2 = (by_arm[a][0] for a in seed_pair)
                 cos = np.abs(u1 @ u2.T)
                 anchor_rec[module] = {
                     "top1_abs_cos": float(cos[0, 0]),
                     "max_abs_cos_topk": float(cos.max()),
+                    # A near-tied top factor on EITHER arm makes top1_abs_cos an
+                    # arbitrary rotation read — self-labeled per arm.
+                    "top1_well_separated": {
+                        a: bool(by_arm[a][1]["well_separated"][0]) for a in seed_pair
+                    },
+                    "factor_separation": {a: by_arm[a][1] for a in seed_pair},
                 }
     else:
         anchor_rec["skipped"] = f"seed pair not fully in fleet: {sorted(pair_entries)}"
@@ -1186,6 +1325,11 @@ def cmd_align(args) -> int:
                 "delta_tf": f"{DELTA_TF_PREFIX}@{DELTA_TF_REV}",
                 "r_b": f"{RB_PREFIX}@{RB_REV}",
                 "anchors": f"{ANCHORS_PREFIX}@{ANCHORS_REV}",
+                "banked_map": {
+                    "file": map_path.name,
+                    "layer": layer,
+                    "sha256_16": map_sha,
+                },
             },
             "metadata": _meta("align"),
         },
@@ -1356,6 +1500,8 @@ def cmd_lora(args) -> int:
         # model changes the key, so stale units recompute (fix-round-2: bool(base_svd)
         # was blind to content and resume-skipped every stale unit).
         base_svd_meta=base_svd.get("_meta", {}),
+        # Output-affecting: the intruder_top_separation labels + their floors.
+        separation=(DEGEN_REL_GAP_FLOOR, DEGEN_SV_FLOOR),
     )
     t0 = time.time()
     for k, entry in enumerate(fleet, start=1):
@@ -1403,6 +1549,10 @@ def cmd_ft(args) -> int:
         dv3_draws=DV3_NULL_DRAWS,
         lowrank=(LOWRANK_Q, LOWRANK_NITER),
         base_svd_meta=base_svd.get("_meta", {}),
+        # Output-affecting: separation labels/floors + the sidecar 'svals_exact' key
+        # --phase align hard-requires (schema bump forces stale sidecars to rebuild).
+        separation=(DEGEN_REL_GAP_FLOOR, DEGEN_SV_FLOOR),
+        sidecar_schema=2,
     )
     for k, entry in enumerate(fleet, start=1):
         unit_path = out_root / "dw_fleet" / "ft" / f"{entry.arm_id}.json"
