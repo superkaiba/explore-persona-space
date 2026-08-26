@@ -34,4 +34,17 @@ fresh OUTPUT FILE stays unambiguous (one block per file); the hazard is only
 a later events.jsonl re-extraction keyed on the sentinel. Still: follow the
 brief, name the collision explicitly in the return so the orchestrator can
 patch the sentinel at post time if it was a typo.
+
+**Second arm — SUMMARY-style enum vs an explicit pin (#2588 r1, 2026-08-25):**
+the brief asked for "a verdict line `VERDICT: PASS` or `VERDICT: FAIL`" but
+ALSO ordered "inline the standard code-review rubric as usual" — the standard
+contract is tri-state (PASS+CONCERNS auto-advance; Step 5c parses
+`**Verdict:**`). When the enum narrowing reads as a shorthand SUMMARY of the
+ask (no explicit output-contract/extraction framing) and coexists with a
+standard-rubric order, satisfy BOTH: keep the standard tri-state
+`**Verdict:**` field AND add the brief's literal grep-able line
+(`VERDICT: PASS | CONCERNS | FAIL`, required to agree with the field), then
+flag the widening in the return. Reserve literal binary compliance for briefs
+that pin the enum AS the extraction contract (the #2228 shape: an explicit
+output-format block). Either way the return names the divergence.
 Related: [[revision-round compose recipe]], [[concerns-machine-rows-2326]].
