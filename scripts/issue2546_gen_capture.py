@@ -72,6 +72,7 @@ import re
 import subprocess
 import sys
 import time
+import traceback
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -140,6 +141,13 @@ GF_FLAT_BAR = 0.9999
 # Designed artifact-routed halts (never a bare rc=1; gotchas.md pilot-gate entry)
 RC_GATE_FAIL = 3
 RC_FALLBACK_BAND = 4
+# Gen-WORKER exit: engine reap / drain verdict FAILED at the worker terminal —
+# an unreaped EngineCore orphan would silently starve the NEXT engine (arm-1
+# p1_smoke: pid 4528, PPID 1, 70,560 MiB after the post side exited). Worker
+# rcs surface only via spawn_workers' "worker slots failed: [(slot, rc)]" (the
+# parent phase then crashes rc=1), so this cannot collide with the dispatcher's
+# phase-rc routing on RC_GATE_FAIL/RC_FALLBACK_BAND.
+RC_ENGINE_TEARDOWN = 5
 
 
 def stage_dirname(stage: str, smoke: bool) -> str:
@@ -1223,6 +1231,67 @@ def sampling_params(cap: int, stop_ids: list[int], *, greedy: bool, seed: int | 
     )
 
 
+def _reap_gen_engine(llm) -> None:
+    """Reap the vLLM v1 EngineCore subprocess, then verify this worker's GPU drained.
+
+    The gen worker's terminal is ``os._exit`` (finalization deadlocks on
+    surviving engine children — gotchas.md #1739/#2149), but ``os._exit`` also
+    skips vLLM's own teardown: without an explicit reap the EngineCore child
+    reparents to init still holding ~GPU_MEMORY_UTILIZATION of HBM, and the
+    NEXT engine this phase builds on the same GPU starves at init (arm-1
+    p1_smoke: pid 4528, PPID 1, 70,560 MiB after the post side exited; the pre
+    side died "Engine core initialization failed"). Composes the two documented
+    recipes VERBATIM — no new teardown logic:
+
+    1. ``representation_shift._reap_vllm_engine`` (#653): graceful v1
+       ``llm_engine.engine_core.shutdown()`` (v0 fallback
+       ``model_executor.shutdown()``), ``is_initialized()``-guarded
+       ``destroy_process_group()`` — plus its call site's follow-up
+       (gc / empty_cache / ipc_collect / sleep; representation_shift.py:480-486).
+       The CUDA calls are gated on ``torch.cuda.is_initialized()``:
+       ``ipc_collect`` lazy-INITIALIZES CUDA, and a v1 parent whose EngineCore
+       ran in a spawn subprocess may never have touched CUDA — initializing a
+       fresh context at teardown would itself pin HBM (and crash CUDA-less
+       test hosts).
+    2. ``eval_battery.teardown_vllm`` (#1090 r3 / #396 BF9): psutil sweep of
+       any SURVIVING engine children (wandb-core protected), then the bounded
+       CVD-aware drain verdict — poll ``nvidia-smi --query-compute-apps`` up to
+       ``EPM_VLLM_TEARDOWN_DRAIN_TIMEOUT_S`` (default 60 s), PASS when no
+       foreign pid remains on the visible devices OR total foreign
+       ``used_memory`` <= ``EPM_VLLM_TEARDOWN_RESIDUAL_FLOOR_MIB`` (default
+       6144; host-pid-namespace safe, ``[N/A]`` counts above-floor), and a
+       fail-LOUD RuntimeError with per-pid used_memory on timeout. The caller
+       maps that raise to RC_ENGINE_TEARDOWN, so a silent next-engine starve
+       becomes a loud worker-slot failure the parent reports.
+
+    Both imports are DEFERRED to this terminal: no other gen_capture path needs
+    them, a module-top import would run on EVERY worker/parent spawn (capture
+    workers never build an engine), and representation_shift drags transformers
+    model classes at import time. The deferred imports + call shapes are
+    executed/bound by tests/test_issue2546_engine_reap.py (the #606/#1332 pin).
+
+    Python-ref note (#1333 caller-binding lesson): ``teardown_vllm``'s internal
+    ``del llm`` cannot free the object while this frame's binding lives — the
+    HBM is held by the EngineCore SUBPROCESS, which step 1's shutdown + step
+    2's child sweep reap regardless of parent-side refs; the caller drops its
+    own binding right after this returns.
+    """
+    import gc
+
+    from explore_persona_space.analysis.representation_shift import _reap_vllm_engine
+    from explore_persona_space.experiments.behavior_testbed_545.eval_battery import teardown_vllm
+
+    _reap_vllm_engine(llm)
+    gc.collect()
+    if torch.cuda.is_initialized():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()  # cross-process freed mem (representation_shift.py:484)
+    time.sleep(1.0)  # subprocess teardown is async (representation_shift.py:486)
+    teardown_vllm(llm)
+    # Fix-engaged signal: only the reap-then-drain terminal emits this line.
+    print("[gen-teardown] EngineCore reaped; drain verdict PASS", flush=True)
+
+
 def _chunk_ckpt_path(out_file: Path, name: str) -> Path:
     """Per-chunk checkpoint file for one generation stage (append-only JSONL)."""
     return out_file.with_name(out_file.name + f".stage_{name}.chunks.jsonl")
@@ -1430,6 +1499,12 @@ def run_gen_worker(args) -> None:
     the moment it completes and resume-skipped on relaunch (checkpoint-per-
     phase intra-phase grain — a crash in draw 3 must not forfeit hours of
     already-generated text; code-style.md).
+
+    EVERY terminal path (clean AND exception) funnels through ONE ``os._exit``
+    preceded by the None-guarded ``_reap_gen_engine`` — os._exit skips
+    finalization, so without the explicit reap the EngineCore child outlives
+    this worker and starves the phase's NEXT engine (see _reap_gen_engine;
+    ordering pinned by tests/test_issue2546_engine_reap.py).
     """
     work = json.loads(Path(args.work_file).read_text())
     from transformers import AutoTokenizer
@@ -1451,102 +1526,136 @@ def run_gen_worker(args) -> None:
         return llm
 
     fp_sha = work["fp_sha"]
-    row_ids = {r["row_id"] for r in rows}
-    out_rows = _load_stage(out_file, "primary", row_ids, fp_sha)
-    if out_rows is None:
-        sp = sampling_params(work["cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED)
-        prim = generate_chunked(
-            _llm, prompts, sp, f"primary-{side.side}", ckpt=(out_file, "primary", fp_sha)
-        )
-        out_rows = []
-        regen_idx = [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length"]
-        regen_out: dict[int, tuple[str, str, int]] = {}
-        if regen_idx:
-            logger.info(
-                "[regen] %d/%d rows hit cap %d -> forced %d",
-                len(regen_idx),
-                len(rows),
-                work["cap"],
-                work["regen_cap"],
+    rc = 0
+    try:
+        row_ids = {r["row_id"] for r in rows}
+        out_rows = _load_stage(out_file, "primary", row_ids, fp_sha)
+        if out_rows is None:
+            sp = sampling_params(
+                work["cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
             )
-            sp2 = sampling_params(
-                work["regen_cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
+            prim = generate_chunked(
+                _llm, prompts, sp, f"primary-{side.side}", ckpt=(out_file, "primary", fp_sha)
             )
-            regen_texts = generate_chunked(
-                _llm,
-                [prompts[i] for i in regen_idx],
-                sp2,
-                "regen",
-                ckpt=(out_file, "primary_regen", fp_sha),
-            )
-            regen_out = dict(zip(regen_idx, regen_texts, strict=True))
-        for i, r in enumerate(rows):
-            text, fr, ntok = prim[i]
-            rec = {
-                "row_id": r["row_id"],
-                "corpus": r["corpus"],
-                "kind": "primary",
-                "text": text,
-                "finish_reason": fr,
-                "n_gen_tokens": ntok,
-                "regen": False,
-                "n_prompt_tokens": r["n_prompt_tokens"],
-                "read_idx": r["read_idx"],
-            }
-            if i in regen_out:
-                # Persist the superseded truncated primary too (persist-by-default).
-                out_rows.append({**rec, "kind": "superseded_primary"})
-                t2, fr2, n2 = regen_out[i]
-                rec = {**rec, "text": t2, "finish_reason": fr2, "n_gen_tokens": n2, "regen": True}
-            out_rows.append(rec)
-        _write_stage(out_file, "primary", out_rows, fp_sha)
-    rel_ids = set(work["rel_row_ids"])
-    rel_rows = [(i, r) for i, r in enumerate(rows) if r["row_id"] in rel_ids]
-    for draw in range(work["rel_draws"]):
-        if not rel_rows:
-            break
-        draw_rows = _load_stage(
-            out_file, f"rel_d{draw}", {r["row_id"] for _, r in rel_rows}, fp_sha
-        )
-        if draw_rows is None:
-            spd = sampling_params(work["cap"], stop_ids, greedy=False, seed=SEED * 100 + draw)
-            outs = generate_chunked(
-                _llm,
-                [prompts[i] for i, _ in rel_rows],
-                spd,
-                f"rel-d{draw}",
-                ckpt=(out_file, f"rel_d{draw}", fp_sha),
-            )
-            draw_rows = []
-            for (_, r), (text, fr, ntok) in zip(rel_rows, outs, strict=True):
-                draw_rows.append(
-                    {
-                        "row_id": r["row_id"],
-                        "corpus": r["corpus"],
-                        "kind": "reliability",
-                        "draw": draw,
-                        "text": text,
-                        "finish_reason": fr,
-                        "n_gen_tokens": ntok,
-                        "regen": False,
-                        "n_prompt_tokens": r["n_prompt_tokens"],
-                        "read_idx": r["read_idx"],
-                    }
+            out_rows = []
+            regen_idx = [i for i, (_t, fr, _n) in enumerate(prim) if fr == "length"]
+            regen_out: dict[int, tuple[str, str, int]] = {}
+            if regen_idx:
+                logger.info(
+                    "[regen] %d/%d rows hit cap %d -> forced %d",
+                    len(regen_idx),
+                    len(rows),
+                    work["cap"],
+                    work["regen_cap"],
                 )
-            _write_stage(out_file, f"rel_d{draw}", draw_rows, fp_sha)
-        out_rows.extend(draw_rows)
-    _write_jsonl(Path(work["out_file"]), out_rows)
-    logger.info(
-        "[gen-worker] slot %s wrote %d rows -> %s",
-        args.worker_slot,
-        len(out_rows),
-        work["out_file"],
-    )
+                sp2 = sampling_params(
+                    work["regen_cap"], stop_ids, greedy=greedy, seed=None if greedy else SEED
+                )
+                regen_texts = generate_chunked(
+                    _llm,
+                    [prompts[i] for i in regen_idx],
+                    sp2,
+                    "regen",
+                    ckpt=(out_file, "primary_regen", fp_sha),
+                )
+                regen_out = dict(zip(regen_idx, regen_texts, strict=True))
+            for i, r in enumerate(rows):
+                text, fr, ntok = prim[i]
+                rec = {
+                    "row_id": r["row_id"],
+                    "corpus": r["corpus"],
+                    "kind": "primary",
+                    "text": text,
+                    "finish_reason": fr,
+                    "n_gen_tokens": ntok,
+                    "regen": False,
+                    "n_prompt_tokens": r["n_prompt_tokens"],
+                    "read_idx": r["read_idx"],
+                }
+                if i in regen_out:
+                    # Persist the superseded truncated primary too (persist-by-default).
+                    out_rows.append({**rec, "kind": "superseded_primary"})
+                    t2, fr2, n2 = regen_out[i]
+                    rec = {
+                        **rec,
+                        "text": t2,
+                        "finish_reason": fr2,
+                        "n_gen_tokens": n2,
+                        "regen": True,
+                    }
+                out_rows.append(rec)
+            _write_stage(out_file, "primary", out_rows, fp_sha)
+        rel_ids = set(work["rel_row_ids"])
+        rel_rows = [(i, r) for i, r in enumerate(rows) if r["row_id"] in rel_ids]
+        for draw in range(work["rel_draws"]):
+            if not rel_rows:
+                break
+            draw_rows = _load_stage(
+                out_file, f"rel_d{draw}", {r["row_id"] for _, r in rel_rows}, fp_sha
+            )
+            if draw_rows is None:
+                spd = sampling_params(work["cap"], stop_ids, greedy=False, seed=SEED * 100 + draw)
+                outs = generate_chunked(
+                    _llm,
+                    [prompts[i] for i, _ in rel_rows],
+                    spd,
+                    f"rel-d{draw}",
+                    ckpt=(out_file, f"rel_d{draw}", fp_sha),
+                )
+                draw_rows = []
+                for (_, r), (text, fr, ntok) in zip(rel_rows, outs, strict=True):
+                    draw_rows.append(
+                        {
+                            "row_id": r["row_id"],
+                            "corpus": r["corpus"],
+                            "kind": "reliability",
+                            "draw": draw,
+                            "text": text,
+                            "finish_reason": fr,
+                            "n_gen_tokens": ntok,
+                            "regen": False,
+                            "n_prompt_tokens": r["n_prompt_tokens"],
+                            "read_idx": r["read_idx"],
+                        }
+                    )
+                _write_stage(out_file, f"rel_d{draw}", draw_rows, fp_sha)
+            out_rows.extend(draw_rows)
+        _write_jsonl(Path(work["out_file"]), out_rows)
+        logger.info(
+            "[gen-worker] slot %s wrote %d rows -> %s",
+            args.worker_slot,
+            len(out_rows),
+            work["out_file"],
+        )
+    except BaseException:
+        # Print the ORIGINAL failure BEFORE any teardown so a reap-side error can
+        # never replace it (the #1947 finally-raise mask), then fall through to
+        # the reap + os._exit — a PROPAGATING exception would run interpreter
+        # finalization, which deadlocks on surviving EngineCore children
+        # (gotchas.md #1739/#2149).
+        traceback.print_exc()
+        rc = 1
+    # Reap the vLLM EngineCore BEFORE os._exit: os._exit skips finalization, so
+    # it also skips vLLM's own teardown — the orphaned EngineCore (PPID 1) keeps
+    # ~GPU_MEMORY_UTILIZATION of HBM pinned and the NEXT engine this phase
+    # builds on the same GPU dies at init (arm-1 p1_smoke incident, pid 4528 /
+    # 70,560 MiB). None-guarded: a fully-resumed slot never builds an engine.
+    if llm is not None:
+        try:
+            _reap_gen_engine(llm)
+        except BaseException:
+            traceback.print_exc()
+            # Fail LOUD: an unreaped/undrained engine would starve the next
+            # engine SILENTLY; the parent surfaces "worker slots failed:
+            # [(slot, 5)]" with this log's drain detail instead.
+            rc = rc or RC_ENGINE_TEARDOWN
+        llm = None
     sys.stdout.flush()
     sys.stderr.flush()
-    # A vLLM generation driver's terminal is os._exit(0) after flushes + durable
-    # writes — sys.exit deadlocks on surviving engine children (gotchas.md #1739/#2149).
-    os._exit(0)
+    # A vLLM generation driver's terminal is os._exit after flushes + durable
+    # writes + the engine reap above — sys.exit runs finalization, which
+    # deadlocks on surviving engine children (gotchas.md #1739/#2149).
+    os._exit(rc)
 
 
 # ---------------------------------------------------------------------------
