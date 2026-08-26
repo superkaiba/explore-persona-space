@@ -51,6 +51,25 @@ Recorded diff vs the source (everything else is byte-identical):
      (the plan-§4.3 kept gates; #2330's smoke_shard/fits_smoke/parity7b
      records are still WRITTEN when those modes run but no longer gate the
      sentinel); schema ``issue2587_p0b_gates_v1``, issue 2587, phase P0b.
+  7. Round-2 P1 enforcement (blocker ``compat-gate-not-enforced``): new
+     ``--gate compose_p1`` (model venv — verifies interpreter identity,
+     realized §4.1 pins, banned-dist absence, the driver gate, EVERY
+     P1_COMPOSE_REQUIRED run_meta record, and the tiny battery cell's
+     manifests; writes ``compat_smoke_report.json`` ALWAYS and the
+     ``compat_smoke_done.json`` sentinel ONLY on all-PASS, rc 5 on any
+     failure) + new ``--p1-apply-probe`` mode (repo venv — the §4.7 tiny-cell
+     apply_map(random payload)->reads leg over the local ``--upload none``
+     battery stores, via the REAL ``issue779_ffc_n1m_fits.apply_map``; writes
+     the run_meta ``apply_probe`` record compose_p1 requires) + args
+     ``--p1-battery-root/--p1-smoke-cell/--p1-apply-layer/--p1-report-out/
+     --p1-sentinel-out``. ``scripts/issue2587_pod_workload.sh`` re-asserts
+     the compose_p1 sentinel before EVERY production wave (P2..P8).
+  8. ``gate_length_scan`` drop path: split_ids.json is mutated BEFORE the
+     ``passed: true`` run_meta record is written (the parent wrote the
+     record first, so a crash between the two left run_meta claiming PASS
+     against un-dropped split_ids — a later gate could then write the P0b
+     sentinel with pre-drop shas; #2330-inherited M1, fixed in this fork
+     only). The HALT branch's ``passed: false`` audit record is unchanged.
 
 Standalone-port lineage (inherited verbatim from the #2330 driver, itself a
 port of ``scripts/issue1491_ladder_generate_capture.py``): runs in the
@@ -361,11 +380,28 @@ _LIVE_ENGINE = None  # last-constructed engine handle (the __main__ exception-te
 # Required gate run_meta keys for the plan-§9 P0b completion sentinel
 # (<out-dir>/split_ids_done.json): the plan-§4.3 kept gates. #2330's
 # smoke_shard/fits_smoke/parity7b run-meta records are still WRITTEN when
-# those modes run, but they no longer gate the sentinel.
+# those modes run, but they no longer gate the sentinel. NOTE: this is the
+# P0b (convention-gates) sentinel ONLY — the FULL plan-§4.7 P1 check set is
+# enforced by the SEPARATE `--gate compose_p1` sentinel below
+# (P1_COMPOSE_REQUIRED + venv/driver/battery checks -> compat_smoke_done.json),
+# which the pod launcher re-asserts before every production wave.
 P1_SENTINEL_REQUIRED = (
     "template_pin",
     "length_scan",
     "hook_probe",
+)
+
+# Run_meta records `--gate compose_p1` requires with passed=true (plan §4.7
+# P1: the three P0b convention gates + the 500-row smoke shard + the fits
+# smoke + the tiny-battery apply probe). parity7b/emit_spans run on the 7B
+# parity leg and gate P3's port-parity anchor, not the P1 compat sentinel.
+P1_COMPOSE_REQUIRED = (
+    "template_pin",
+    "length_scan",
+    "hook_probe",
+    "smoke_shard",
+    "fits_smoke",
+    "apply_probe",
 )
 
 
@@ -1593,12 +1629,15 @@ def gate_length_scan(args) -> int:
         "drops_per_split": {k: len(v) for k, v in drops.items()},
         "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         # The record persists on the HALT branch too (audit trail) — the P1
-        # sentinel keys on this flag, not on key presence.
+        # sentinel keys on this flag, not on key presence. Written PER BRANCH
+        # below: the drop path mutates split_ids.json FIRST (fork item 8 — a
+        # crash between a passed:true record and the mutation would let a
+        # later gate write the P0b sentinel against pre-drop shas).
         "passed": total_over == 0 or frac <= args.max_over_budget_frac,
     }
-    _update_run_meta(args.run_meta_out, "length_scan", record)
 
     if total_over == 0:
+        _update_run_meta(args.run_meta_out, "length_scan", record)
         print(
             f"[gate] length_scan PASS: 0/{total_scanned} over the {PROMPT_TOKEN_BUDGET}-token "
             f"budget (max rendered len {max_len_seen})"
@@ -1607,6 +1646,7 @@ def gate_length_scan(args) -> int:
         _phase("done")
         return 0
     if frac > args.max_over_budget_frac:
+        _update_run_meta(args.run_meta_out, "length_scan", record)  # passed: false audit row
         print(
             f"[gate] length_scan HALT: {total_over}/{total_scanned} = {frac:.4%} over budget "
             f"exceeds the {args.max_over_budget_frac:.2%} re-scope band (plan §7) — "
@@ -1618,7 +1658,8 @@ def gate_length_scan(args) -> int:
 
     # Drop-from-both path: remove the ids from the split lists (both models
     # subset by these lists, so removal drops the rows from BOTH cells),
-    # record them, recompute shas + counts, re-write atomically.
+    # record them, recompute shas + counts, re-write atomically — BEFORE the
+    # passed:true run_meta record lands (fork item 8).
     for key, entries in drops.items():
         drop_ids = {e["id"] for e in entries}
         payload["splits"][key] = [i for i in payload["splits"][key] if i not in drop_ids]
@@ -1627,6 +1668,7 @@ def gate_length_scan(args) -> int:
     payload["counts"] = {k: len(v) for k, v in payload["splits"].items()}
     payload["length_scan"] = record
     _write_json_atomic(split_ids_path, payload)
+    _update_run_meta(args.run_meta_out, "length_scan", record)
     print(
         f"[gate] length_scan: DROPPED {total_over} over-budget rows "
         f"({frac:.4%} <= {args.max_over_budget_frac:.2%}); split_ids.json re-written — "
@@ -2864,9 +2906,54 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--gate",
-        choices=["template_pin", "length_scan", "emit_spans", "parity7b", "hook_probe"],
+        choices=[
+            "template_pin",
+            "length_scan",
+            "emit_spans",
+            "parity7b",
+            "hook_probe",
+            "compose_p1",
+        ],
         default=None,
-        help="run ONE P1 convention gate and exit (plan §4 P1 steps 1/2/5/6)",
+        help="run ONE P1 convention gate and exit (plan §4 P1 steps 1/2/5/6; compose_p1 "
+        "composes the FULL §4.7 P1 verdict — model venv, after every P1 leg)",
+    )
+    ap.add_argument(
+        "--p1-battery-root",
+        type=Path,
+        default=None,
+        help="tiny battery cell's LOCAL out-root (the --upload none P1 leg; required for "
+        "--p1-apply-probe and --gate compose_p1)",
+    )
+    ap.add_argument(
+        "--p1-smoke-cell",
+        default="register",
+        help="tiny battery cell name (plan §4.7: register axis, 3 carriers, K=2)",
+    )
+    ap.add_argument(
+        "--p1-apply-probe",
+        action="store_true",
+        help="P1 apply_map(random payload)->reads probe over the tiny battery cell's local "
+        "stores (REPO venv — the issue779 fit module's import closure; local-only, no token)",
+    )
+    ap.add_argument(
+        "--p1-apply-layer",
+        type=int,
+        default=22,
+        help="captured layer index the apply probe reads (must be in the store's layers list)",
+    )
+    ap.add_argument(
+        "--p1-report-out",
+        type=Path,
+        default=_REPO_ROOT / "eval_results" / "issue_2587" / "compat_smoke_report.json",
+        help="compose_p1 per-check report JSON (plan §9 p1 output; written on PASS and FAIL)",
+    )
+    ap.add_argument(
+        "--p1-sentinel-out",
+        type=Path,
+        default=None,
+        help="compose_p1 all-PASS sentinel (plan §9: <out-root>/compat_smoke_done.json — "
+        "resolved in main; the pod launcher re-asserts it before every production wave)",
     )
     ap.add_argument(
         "--max-over-budget-frac",
@@ -3059,6 +3146,248 @@ def _run_fits_smoke(args) -> int:
     return 0
 
 
+def run_p1_apply_probe(args) -> int:
+    """Plan-§4.7 P1 tiny-cell apply probe (round-2 blocker
+    ``compat-gate-not-enforced``, leg (d)): load the tiny battery cell's LOCAL
+    va/vc stores (the ``--upload none`` leg — the production hf-upload path
+    deletes local bytes after verified upload), structurally assert the store
+    schema, apply a SEEDED RANDOM ridge payload through the REAL
+    ``issue779_ffc_n1m_fits.apply_map`` (REPO venv — that module's import
+    closure is repo-pinned; the fresh qwen35 model venv deliberately lacks
+    it), and compute the reads (per-row cosine + prediction norms). Writes the
+    run_meta ``apply_probe`` record ``--gate compose_p1`` requires. Local-only
+    CPU mode: no HF token, no GPU (dispatched BEFORE the token assert)."""
+    _phase("p1_apply_probe")
+    assert args.p1_battery_root, "--p1-battery-root is required for --p1-apply-probe"
+    import math
+
+    import numpy as np
+
+    import issue779_ffc_n1m_fits as ffc  # repo venv only (heavy issue779 closure)
+
+    root = Path(args.p1_battery_root)
+    cell = args.p1_smoke_cell
+    man_path = root / "manifests" / f"capture_{cell}.done.json"
+    assert man_path.is_file(), f"tiny battery capture manifest missing: {man_path}"
+    n_rows = int(json.loads(man_path.read_text(encoding="utf-8")).get("n_rows", 0))
+    assert n_rows >= 1, f"{man_path}: n_rows={n_rows} < 1"
+
+    va_path = root / "capture" / "va2587" / f"{cell}.pt"
+    vc_path = root / "capture" / "vc2587" / f"{cell}.pt"
+    assert va_path.is_file(), f"va store missing: {va_path} (run the tiny cell with --upload none)"
+    assert vc_path.is_file(), f"vc store missing: {vc_path} (run the tiny cell with --upload none)"
+    # Self-produced same-run bundles: weights_only=False is the sanctioned
+    # torch>=2.6 posture for sha-pinned own-run .pt stores.
+    va = torch.load(va_path, map_location="cpu", weights_only=False)
+    vc = torch.load(vc_path, map_location="cpu", weights_only=False)
+
+    layers = [int(x) for x in va["layers"]]
+    hidden = int(va["hidden"])
+    va_t = va["va_tail_incl"]
+    assert va_t.ndim == 3, ("va_tail_incl ndim != 3", tuple(va_t.shape))
+    assert va_t.shape[0] == len(va["rows"]) == n_rows, (va_t.shape[0], len(va["rows"]), n_rows)
+    assert va_t.shape[1] == len(layers), (va_t.shape[1], len(layers))
+    assert va_t.shape[2] == hidden, (va_t.shape[2], hidden)
+    assert torch.isfinite(va_t).all(), "non-finite values in va_tail_incl"
+    vc_t = vc["vc"]
+    assert vc_t.ndim == 2 and vc_t.shape[1] == hidden, tuple(vc_t.shape)
+    assert torch.isfinite(vc_t).all(), "non-finite values in vc"
+
+    layer = int(args.p1_apply_layer)
+    assert layer in layers, f"--p1-apply-layer {layer} not in captured layers {layers}"
+    X = va_t[:, layers.index(layer), :].to(torch.float64)
+
+    gen = torch.Generator().manual_seed(2587)
+    payload = {
+        "kind": "ridge",
+        # apply_map upcasts payload tensors to fp64 on device — fp32 storage
+        # mirrors the persisted-weights contract (issue779_ffc_n1m_fits:906).
+        "xmu": X.mean(dim=0).to(torch.float32),
+        "xsd": (X.std(dim=0) + 1.0).to(torch.float32),
+        "ymu": torch.zeros(hidden, dtype=torch.float32),
+        "W": (
+            torch.randn(hidden, hidden, generator=gen, dtype=torch.float64) / math.sqrt(hidden)
+        ).to(torch.float32),
+    }
+    pred = ffc.apply_map(payload, X.numpy(), torch.device("cpu"))
+    assert pred.shape == (n_rows, hidden), (pred.shape, (n_rows, hidden))
+    assert np.isfinite(pred).all(), "non-finite apply_map prediction"
+
+    # Reads: per-row cosine(prediction, raw va input) + prediction norms —
+    # the read math executed on real store bytes. Values are recorded, not
+    # gated (a RANDOM payload's cosine carries no correctness bar); the probe
+    # gates STRUCTURE + finiteness (plan §4.7 "apply_map(random payload) ->
+    # reads").
+    x_np = X.numpy()
+    num = (pred * x_np).sum(axis=1)
+    den = np.linalg.norm(pred, axis=1) * np.linalg.norm(x_np, axis=1)
+    cos = num / np.maximum(den, 1e-12)
+    record = {
+        "cell": cell,
+        "layer": layer,
+        "layers_captured": layers,
+        "n_rows": n_rows,
+        "hidden": hidden,
+        "vc_rows": int(vc_t.shape[0]),
+        "mean_cos_pred_vs_input": float(np.mean(cos)),
+        "pred_norm_mean": float(np.mean(np.linalg.norm(pred, axis=1))),
+        "payload_seed": 2587,
+        "passed": True,  # the structural + finiteness asserts above precede this
+    }
+    _update_run_meta(args.run_meta_out, "apply_probe", record)
+    print(
+        f"[apply-probe] PASS: cell={cell} layer={layer} n_rows={n_rows} "
+        f"mean_cos={record['mean_cos_pred_vs_input']:.4f}",
+        flush=True,
+    )
+    _phase("done")
+    return 0
+
+
+def _compose_p1_checks(args) -> list[dict]:
+    """Evaluate the FULL plan-§4.7 P1 check set (the ``compose_p1`` gate).
+
+    Each check is evaluated independently so the report names EVERY failing
+    check in one pass; an exception inside a check is captured as that
+    check's FAIL detail — never swallowed: any failed check makes the gate
+    exit rc 5 with no sentinel (the FAIL verdict IS the fail-loud path)."""
+    import importlib.metadata as _md
+    import importlib.util as _mu
+
+    checks: list[dict] = []
+
+    def _check(name: str, fn) -> None:
+        try:
+            checks.append({"name": name, "passed": True, "detail": fn()})
+        except Exception as exc:  # captured into the FAIL verdict (rc 5), not swallowed
+            checks.append({"name": name, "passed": False, "detail": f"{type(exc).__name__}: {exc}"})
+
+    def _interpreter():
+        got = str(Path(sys.executable).resolve())
+        want = str(Path(cm2587.model_python()).resolve())
+        assert got == want, (
+            f"interpreter {got} != model venv {want} — run compose_p1 under the §4.1 model "
+            "interpreter (the realized-pin/banned-dist checks below inspect THIS venv)"
+        )
+        return got
+
+    def _pins():
+        pins = dict(cm2587.MODEL_VENV_PINS)
+        for spec in cm2587.MODEL_VENV_EXTRA_PINS:
+            dist, _, ver = spec.partition("==")
+            assert ver, f"unparseable extra pin {spec!r}"
+            pins[dist] = ver
+        realized = {}
+        for dist, want in pins.items():
+            got = _md.version(dist)  # PackageNotFoundError -> failed check
+            assert got == want, f"{dist}: installed {got} != pinned {want}"
+            realized[dist] = got
+        return realized
+
+    def _banned():
+        out = {}
+        for dist, module in cm2587.MODEL_VENV_BANNED_DISTS.items():
+            try:
+                got = _md.version(dist)
+            except _md.PackageNotFoundError:
+                got = None
+            assert got is None, f"banned dist {dist}=={got} is installed (§4.1 post-uninstall)"
+            assert _mu.find_spec(module) is None, f"banned module {module!r} still importable"
+            out[dist] = "absent"
+        return out
+
+    def _driver():
+        cm2587.assert_driver_compat()
+        return f"host driver satisfies floor major {cm2587.MODEL_DRIVER_FLOOR_MAJOR}"
+
+    def _records():
+        meta: dict = {}
+        if args.run_meta_out.exists():
+            meta = json.loads(args.run_meta_out.read_text(encoding="utf-8"))
+        out = {}
+        for key in P1_COMPOSE_REQUIRED:
+            rec = meta.get(key)
+            assert isinstance(rec, dict) and rec.get("passed") is True, (
+                f"run_meta record {key!r} missing or not passed — run its P1 leg first "
+                f"(run_meta: {args.run_meta_out})"
+            )
+            out[key] = True
+        return out
+
+    def _battery():
+        root = Path(args.p1_battery_root)
+        out = {}
+        for stem in ("anchors", "capture"):
+            p = root / "manifests" / f"{stem}_{args.p1_smoke_cell}.done.json"
+            assert p.is_file(), f"tiny battery manifest missing: {p}"
+            n = int(json.loads(p.read_text(encoding="utf-8")).get("n_rows", 0))
+            assert n >= 1, f"{p}: n_rows={n} < 1"
+            out[p.name] = n
+        return out
+
+    _check("interpreter_identity", _interpreter)
+    _check("realized_pins", _pins)
+    _check("banned_dists_absent", _banned)
+    _check("driver_gate", _driver)
+    _check("p1_run_meta_records", _records)
+    _check("tiny_battery_manifests", _battery)
+    return checks
+
+
+def gate_compose_p1(args) -> int:
+    """P1 compat-smoke composer (plan §4.7; round-2 blocker
+    ``compat-gate-not-enforced``). Runs in the MODEL venv AFTER every P1 leg:
+    verifies interpreter identity, realized §4.1 pins + banned-dist absence
+    (in THIS interpreter), the driver-version gate, every P1_COMPOSE_REQUIRED
+    run_meta PASS record, and the tiny battery cell's manifests. Writes
+    ``compat_smoke_report.json`` ALWAYS (per-check rows, PASS and FAIL) and
+    the ``compat_smoke_done.json`` sentinel ONLY on all-PASS; any failure
+    exits rc 5 with NO sentinel — the pod launcher's ``require_p1`` then
+    refuses every production wave (the enforcement loop this gate closes)."""
+    _phase("gate_compose_p1")
+    assert args.p1_battery_root, "--p1-battery-root is required for --gate compose_p1"
+    checks = _compose_p1_checks(args)
+    failed = [c["name"] for c in checks if not c["passed"]]
+    report = {
+        "schema": "issue2587_compat_smoke_v1",
+        "issue": 2587,
+        "phase": "P1",
+        "status": "FAIL" if failed else "PASS",
+        "model_interpreter": sys.executable,
+        "code_git_sha": _git_sha(),
+        "required_run_meta_records": list(P1_COMPOSE_REQUIRED),
+        "checks": checks,
+        "failed_checks": failed,
+        "ts_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    report_path = Path(args.p1_report_out)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(report_path, report)
+    print(f"[compose-p1] report -> {report_path} (status {report['status']})", flush=True)
+    if failed:
+        for c in checks:
+            if not c["passed"]:
+                print(f"[compose-p1] FAIL {c['name']}: {c['detail']}", file=sys.stderr)
+        print(f"[compose-p1] FAIL — checks failed: {failed} (no sentinel)", file=sys.stderr)
+        _phase("done")
+        return 5
+    sentinel = {
+        "schema": "issue2587_compat_smoke_v1",
+        "issue": 2587,
+        "phase": "P1",
+        "status": "PASS",
+        "report_path": str(report_path),
+        "report_sha256": _sha256_file(report_path),
+        "checks_passed": [c["name"] for c in checks],
+        "ts_utc": report["ts_utc"],
+    }
+    sentinel_path = Path(args.p1_sentinel_out)
+    _write_json_atomic(sentinel_path, sentinel)
+    print(f"[compose-p1] PASS — sentinel -> {sentinel_path}", flush=True)
+    _phase("done")
+    return 0
+
+
 def main() -> int:
     args = _build_parser().parse_args()
     logging.basicConfig(
@@ -3088,6 +3417,9 @@ def main() -> int:
     if args.sentinel_path is None:
         # Plan §9 p0b_gates sentinel: <out-root>/split_ids_done.json.
         args.sentinel_path = args.out_dir / "split_ids_done.json"
+    if args.p1_sentinel_out is None:
+        # Plan §9 p1 sentinel: <out-root>/compat_smoke_done.json.
+        args.p1_sentinel_out = args.out_dir / "compat_smoke_done.json"
 
     if args.selftest_cap_hit:
         # Local-only synthetic-chunk selftest: runs BEFORE the token assert below.
@@ -3096,6 +3428,10 @@ def main() -> int:
     if args.fits_smoke:
         # Local-only (no HF token needed): runs BEFORE the token assert below.
         return _run_fits_smoke(args)
+
+    if args.p1_apply_probe:
+        # Local-only (no HF token needed): runs BEFORE the token assert below.
+        return run_p1_apply_probe(args)
 
     # Every mode touches the private data repo (manifest / banked-store /
     # upload paths) — fail fast on a missing token rather than mid-phase.
@@ -3114,6 +3450,7 @@ def main() -> int:
             "emit_spans": gate_emit_spans,
             "parity7b": gate_parity7b,
             "hook_probe": gate_hook_probe,
+            "compose_p1": gate_compose_p1,
         }[args.gate](args)
 
     assert args.split, "--split is required for run mode"

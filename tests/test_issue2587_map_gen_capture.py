@@ -425,3 +425,463 @@ def test_sentinel_written_only_when_all_three_gates_pass(monkeypatch, tmp_path):
     assert tuple(sentinel["gates"]) == M.P1_SENTINEL_REQUIRED
     assert sentinel["split_ids_sha256_per_split"] == payload["sha256"]
     assert sentinel["split_ids_file_sha256"] == hashlib.sha256(split_ids.read_bytes()).hexdigest()
+
+
+# ── R2a: length_scan drop-path write ordering (fork item 8, #2330 M1) ──
+
+
+def test_drop_path_mutates_split_ids_before_run_meta_record(monkeypatch, tmp_path):
+    """The passed:true run_meta record must land AFTER the split_ids drop
+    mutation — pre-fix (parent order) a crash between the two left run_meta
+    claiming PASS against un-dropped split_ids, so a later gate could write
+    the P0b sentinel with pre-drop shas. Fails pre-fix: the record write is
+    forced to raise, and split_ids must ALREADY carry the drop."""
+    _wire_gate(monkeypatch, tmp_path, over_len={12: 8000})
+    args = _gate_args(tmp_path, ["--max-over-budget-frac", "0.10"])
+
+    def _boom(path, key, record):
+        raise RuntimeError("simulated crash at the run_meta write")
+
+    monkeypatch.setattr(M, "_update_run_meta", _boom)
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        M.gate_length_scan(args)
+    payload = json.loads((tmp_path / "split_ids.json").read_text())
+    assert payload["splits"]["train_25k"] == [10, 11, 13, 14, 15]  # drop ALREADY applied
+    assert payload["dropped_overlength"]["train_25k"] == [{"id": 12, "n_tokens": 8000}]
+    assert not (tmp_path / "run_meta.json").exists()  # the record never landed
+
+
+def test_halt_path_still_writes_audit_record_before_exit(monkeypatch, tmp_path):
+    """The HALT branch's passed:false audit row is written on the way out
+    (unchanged by the fork-item-8 reorder)."""
+    _wire_gate(monkeypatch, tmp_path, over_len={12: 8000})
+    args = _gate_args(tmp_path)  # default 0.5% band -> HALT at 6.25%
+    assert M.gate_length_scan(args) == 4
+    assert json.loads((tmp_path / "run_meta.json").read_text())["length_scan"]["passed"] is False
+
+
+# ── R2a: P1 compose gate + apply probe (blocker compat-gate-not-enforced) ──
+
+import importlib.metadata as _ilmd  # noqa: E402
+import subprocess  # noqa: E402
+import unittest.mock  # noqa: E402
+
+import torch  # noqa: E402
+
+
+def test_p1_compose_required_records():
+    assert M.P1_COMPOSE_REQUIRED == (
+        "template_pin",
+        "length_scan",
+        "hook_probe",
+        "smoke_shard",
+        "fits_smoke",
+        "apply_probe",
+    )
+
+
+def test_parser_p1_defaults():
+    args = M._build_parser().parse_args([])
+    assert args.p1_battery_root is None  # required-by-assert in both new modes
+    assert args.p1_smoke_cell == "register"
+    assert args.p1_apply_layer == 22
+    assert args.p1_apply_probe is False
+    assert str(args.p1_report_out).endswith("eval_results/issue_2587/compat_smoke_report.json")
+    assert args.p1_sentinel_out is None  # resolved in main to <out-dir>/compat_smoke_done.json
+    assert "compose_p1" in {
+        c for a in M._build_parser()._actions if a.dest == "gate" for c in (a.choices or [])
+    }
+
+
+def _battery_fixture(tmp_path, *, n_rows=3, layers=(0, 1, 2, 3), hidden=8, cell="register"):
+    """Tiny local battery-cell fixture mirroring issue2587_battery_run's
+    --upload none store layout (manifests + va2587/vc2587 .pt stores)."""
+    root = tmp_path / "p1_battery"
+    (root / "manifests").mkdir(parents=True)
+    for stem in ("anchors", "capture"):
+        (root / "manifests" / f"{stem}_{cell}.done.json").write_text(
+            json.dumps({"cell": cell, "n_rows": n_rows})
+        )
+    gen = torch.Generator().manual_seed(0)
+    va = {
+        "cell": cell,
+        "layers": list(layers),
+        "hidden": hidden,
+        "va_tail_incl": torch.randn(n_rows, len(layers), hidden, generator=gen),
+        "rows": [{"row": i} for i in range(n_rows)],
+    }
+    vc = {"cell": cell, "hidden": hidden, "vc": torch.randn(5, hidden, generator=gen)}
+    (root / "capture" / "va2587").mkdir(parents=True)
+    (root / "capture" / "vc2587").mkdir(parents=True)
+    torch.save(va, root / "capture" / "va2587" / f"{cell}.pt")
+    torch.save(vc, root / "capture" / "vc2587" / f"{cell}.pt")
+    return root
+
+
+def _probe_args(tmp_path, root, layer="2"):
+    args = M._build_parser().parse_args(
+        ["--p1-apply-probe", "--p1-battery-root", str(root), "--p1-apply-layer", layer]
+    )
+    args.out_dir = tmp_path
+    args.run_meta_out = tmp_path / "run_meta.json"
+    return args
+
+
+def test_apply_probe_happy_path_writes_record(tmp_path):
+    root = _battery_fixture(tmp_path)
+    assert M.run_p1_apply_probe(_probe_args(tmp_path, root)) == 0
+    rec = json.loads((tmp_path / "run_meta.json").read_text())["apply_probe"]
+    assert rec["passed"] is True
+    assert rec["cell"] == "register" and rec["layer"] == 2
+    assert rec["n_rows"] == 3 and rec["hidden"] == 8
+    assert rec["layers_captured"] == [0, 1, 2, 3]
+    assert rec["payload_seed"] == 2587
+    # The reads executed on the real store bytes.
+    assert -1.0 <= rec["mean_cos_pred_vs_input"] <= 1.0
+    assert rec["pred_norm_mean"] > 0.0
+
+
+def test_apply_probe_rejects_absent_layer(tmp_path):
+    root = _battery_fixture(tmp_path)
+    with pytest.raises(AssertionError, match="not in captured layers"):
+        M.run_p1_apply_probe(_probe_args(tmp_path, root, layer="22"))
+    assert not (tmp_path / "run_meta.json").exists()
+
+
+def test_apply_probe_rejects_row_count_mismatch(tmp_path):
+    root = _battery_fixture(tmp_path)
+    man = root / "manifests" / "capture_register.done.json"
+    man.write_text(json.dumps({"cell": "register", "n_rows": 5}))  # store holds 3
+    with pytest.raises(AssertionError):
+        M.run_p1_apply_probe(_probe_args(tmp_path, root))
+
+
+def test_apply_probe_rejects_nonfinite_store(tmp_path):
+    root = _battery_fixture(tmp_path)
+    va_path = root / "capture" / "va2587" / "register.pt"
+    va = torch.load(va_path, weights_only=False)
+    va["va_tail_incl"][0, 0, 0] = float("nan")
+    torch.save(va, va_path)
+    with pytest.raises(AssertionError, match="non-finite"):
+        M.run_p1_apply_probe(_probe_args(tmp_path, root))
+
+
+def test_apply_probe_requires_battery_root(tmp_path):
+    args = M._build_parser().parse_args(["--p1-apply-probe"])
+    args.out_dir = tmp_path
+    args.run_meta_out = tmp_path / "run_meta.json"
+    with pytest.raises(AssertionError, match="--p1-battery-root is required"):
+        M.run_p1_apply_probe(args)
+
+
+def _compose_env(monkeypatch, *, pins=None, extra=(), banned=None):
+    """Wire compose_p1's venv-facing checks to the TEST interpreter: the pin
+    set is rebound to an installed dist at its installed version, the model
+    interpreter to sys.executable, and the driver gate to a
+    signature-conformant autospec."""
+    monkeypatch.setenv(cm2587.MODEL_PY_ENV, sys.executable)
+    monkeypatch.setattr(
+        cm2587,
+        "MODEL_VENV_PINS",
+        pins if pins is not None else {"pytest": _ilmd.version("pytest")},
+    )
+    monkeypatch.setattr(cm2587, "MODEL_VENV_EXTRA_PINS", tuple(extra))
+    monkeypatch.setattr(
+        cm2587,
+        "MODEL_VENV_BANNED_DISTS",
+        banned if banned is not None else {"definitely-not-a-dist-2587": "not_a_module_2587"},
+    )
+    monkeypatch.setattr(
+        cm2587,
+        "assert_driver_compat",
+        unittest.mock.create_autospec(cm2587.assert_driver_compat, return_value=None),
+    )
+
+
+def _compose_args(tmp_path, root):
+    args = M._build_parser().parse_args(
+        [
+            "--gate",
+            "compose_p1",
+            "--p1-battery-root",
+            str(root),
+            "--p1-report-out",
+            str(tmp_path / "compat_smoke_report.json"),
+            "--p1-sentinel-out",
+            str(tmp_path / "compat_smoke_done.json"),
+        ]
+    )
+    args.out_dir = tmp_path
+    args.run_meta_out = tmp_path / "run_meta.json"
+    return args
+
+
+def _write_all_p1_records(tmp_path):
+    (tmp_path / "run_meta.json").write_text(
+        json.dumps({k: {"passed": True} for k in M.P1_COMPOSE_REQUIRED})
+    )
+
+
+def test_compose_p1_pass_writes_report_and_sentinel(monkeypatch, tmp_path):
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    _write_all_p1_records(tmp_path)
+    args = _compose_args(tmp_path, root)
+    assert M.gate_compose_p1(args) == 0
+
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert report["schema"] == "issue2587_compat_smoke_v1"
+    assert report["issue"] == 2587 and report["phase"] == "P1"
+    assert report["status"] == "PASS" and report["failed_checks"] == []
+    names = [c["name"] for c in report["checks"]]
+    assert names == [
+        "interpreter_identity",
+        "realized_pins",
+        "banned_dists_absent",
+        "driver_gate",
+        "p1_run_meta_records",
+        "tiny_battery_manifests",
+    ]
+    assert all(c["passed"] for c in report["checks"])
+    assert report["required_run_meta_records"] == list(M.P1_COMPOSE_REQUIRED)
+
+    sentinel = json.loads((tmp_path / "compat_smoke_done.json").read_text())
+    assert sentinel["status"] == "PASS" and sentinel["phase"] == "P1"
+    assert sentinel["checks_passed"] == names
+    assert (
+        sentinel["report_sha256"]
+        == hashlib.sha256((tmp_path / "compat_smoke_report.json").read_bytes()).hexdigest()
+    )
+    cm2587.assert_driver_compat.assert_called_once_with()
+
+
+def test_compose_p1_fails_rc5_on_wrong_pin_no_sentinel(monkeypatch, tmp_path):
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch, pins={"pytest": "0.0.0"})  # installed != pinned
+    _write_all_p1_records(tmp_path)
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert report["status"] == "FAIL"
+    assert "realized_pins" in report["failed_checks"]
+    assert not (tmp_path / "compat_smoke_done.json").exists()  # no sentinel on FAIL
+
+
+def test_compose_p1_fails_on_missing_run_meta_record(monkeypatch, tmp_path):
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    records = {k: {"passed": True} for k in M.P1_COMPOSE_REQUIRED if k != "apply_probe"}
+    (tmp_path / "run_meta.json").write_text(json.dumps(records))
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "p1_run_meta_records" in report["failed_checks"]
+    detail = next(c for c in report["checks"] if c["name"] == "p1_run_meta_records")["detail"]
+    assert "apply_probe" in detail  # the report NAMES the missing leg
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_banned_dist_present(monkeypatch, tmp_path):
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch, banned={"pytest": "pytest"})  # installed => banned check fires
+    _write_all_p1_records(tmp_path)
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "banned_dists_absent" in report["failed_checks"]
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_interpreter_mismatch(monkeypatch, tmp_path):
+    root = _battery_fixture(tmp_path)
+    _compose_env(monkeypatch)
+    monkeypatch.setenv(cm2587.MODEL_PY_ENV, "/nonexistent/model-venv/bin/python")
+    _write_all_p1_records(tmp_path)
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "interpreter_identity" in report["failed_checks"]
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_compose_p1_fails_on_missing_battery_manifest(monkeypatch, tmp_path):
+    root = _battery_fixture(tmp_path)
+    (root / "manifests" / "anchors_register.done.json").unlink()
+    _compose_env(monkeypatch)
+    _write_all_p1_records(tmp_path)
+    assert M.gate_compose_p1(_compose_args(tmp_path, root)) == 5
+    report = json.loads((tmp_path / "compat_smoke_report.json").read_text())
+    assert "tiny_battery_manifests" in report["failed_checks"]
+    assert not (tmp_path / "compat_smoke_done.json").exists()
+
+
+def test_main_routes_p1_apply_probe_before_token_assert(monkeypatch, tmp_path):
+    """--p1-apply-probe is a local-only mode: main dispatches it BEFORE the
+    HF_TOKEN assert (like --fits-smoke) and resolves p1_sentinel_out."""
+    captured: dict = {}
+
+    def fake_probe(args):
+        captured["args"] = args
+        return 0
+
+    monkeypatch.setattr(M, "run_p1_apply_probe", fake_probe)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue2587_map_gen_capture.py",
+            "--p1-apply-probe",
+            "--p1-battery-root",
+            str(tmp_path / "b"),
+            "--out-dir",
+            str(tmp_path),
+        ],
+    )
+    assert M.main() == 0
+    assert captured["args"].p1_sentinel_out == tmp_path / "compat_smoke_done.json"
+
+
+# ── R2a: pod workload launcher (scripts/issue2587_pod_workload.sh) ──────
+
+_LAUNCHER = SCRIPTS / "issue2587_pod_workload.sh"
+
+_PHASE_ORDER = [
+    "[phase=bootstrap]",
+    "[phase=p0b_gates]",
+    "[phase=p1_smoke]",
+    "[phase=p2_map_gen]",
+    "[phase=p3_map_capture]",
+    "[phase=p4_fits]",
+    "[phase=p5_battery_gen]",
+    "[phase=p6_battery_capture]",
+    "[phase=p8_matched7b]",
+    "[phase=results_push]",
+    "[phase=done]",
+]
+
+
+def test_launcher_bash_syntax():
+    proc = subprocess.run(
+        ["bash", "-n", str(_LAUNCHER)], capture_output=True, text=True, check=False
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_launcher_static_contract():
+    text = _LAUNCHER.read_text(encoding="utf-8")
+    assert "set -euo pipefail" in text
+    # Single launcher-owned terminal: exactly one `phase done` call composes
+    # the reserved [phase=done] token (child output is log-redirected).
+    assert text.count("\nphase done\n") == 1
+    assert '+ ".tmp"' not in text  # the #2336 shared-tmp-name class (R2b handoff)
+    # The P1 sentinel is re-asserted before EVERY production wave.
+    for nxt in (
+        "p2_map_gen",
+        "p3_map_capture",
+        "p4_fits",
+        "p5_battery_gen",
+        "p6_battery_capture",
+        "p8_matched7b",
+    ):
+        assert f"require_p1 {nxt}" in text, f"missing require_p1 before {nxt}"
+
+
+@pytest.fixture(scope="module")
+def launcher_dryrun():
+    """ONE dry-run execution shared by the structural tests below (the pin
+    derivation runs REAL — it imports issue2587_common in the repo venv —
+    so the echoed commands carry the true §4.1 pins)."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        out_root = Path(td) / "out"
+        logs = Path(td) / "logs"
+        proc = subprocess.run(
+            ["bash", str(_LAUNCHER)],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+            cwd=str(SCRIPTS.parent),
+            env={
+                **__import__("os").environ,
+                "EPM_I2587_DRYRUN": "1",
+                "EPM_I2587_OUT_ROOT": str(out_root),
+                "EPM_I2587_LOGS_DIR": str(logs),
+            },
+        )
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    return proc.stdout
+
+
+def test_launcher_dryrun_phase_order_single_done(launcher_dryrun):
+    out = launcher_dryrun
+    idx = [out.index(tok) for tok in _PHASE_ORDER]  # ValueError = missing phase
+    assert idx == sorted(idx), "phase tokens out of order"
+    assert out.count("[phase=done]") == 1
+
+
+def test_launcher_dryrun_require_p1_guards_every_wave(launcher_dryrun):
+    out = launcher_dryrun
+    for nxt in (
+        "p2_map_gen",
+        "p3_map_capture",
+        "p4_fits",
+        "p5_battery_gen",
+        "p6_battery_capture",
+        "p8_matched7b",
+    ):
+        guard = f"[dryrun] require_p1 before {nxt}"
+        assert guard in out, f"missing {guard}"
+        assert out.index(guard) < out.index(f"[phase={nxt}]"), f"require_p1 after {nxt} entry"
+
+
+def test_launcher_dryrun_real_env_pins_and_cvd(launcher_dryrun):
+    out = launcher_dryrun
+    # §4.1 pins derived from issue2587_common (never retyped in the .sh).
+    for k, v in cm2587.LAUNCH_ENV_PINS.items():
+        assert f"{k}={v}" in out, f"launch pin {k}={v} not derived"
+    # One CVD-pinned process per GPU on both H100s (plan §9).
+    assert "CUDA_VISIBLE_DEVICES=0" in out and "CUDA_VISIBLE_DEVICES=1" in out
+
+
+def test_launcher_dryrun_covers_all_six_splits(launcher_dryrun):
+    out = launcher_dryrun
+    for split in sorted(M.SPLIT_TO_MANIFEST):
+        assert f"--split {split} " in out, f"split {split} missing from the production waves"
+
+
+def test_launcher_dryrun_p1_legs_present(launcher_dryrun):
+    out = launcher_dryrun
+    # (a) the driver-documented 500-row smoke shard, both sub-phases.
+    assert "--num-shards 50 --shard-index 0 --shard-size 500 --no-upload" in out
+    assert out.count("--shard-size 500") == 2  # gen + capture
+    # (b) the real fits port on the local chunk.
+    assert "--fits-smoke" in out
+    # (c) the tiny battery cell, LOCAL stores kept for the probe.
+    assert "--axes register --max-carriers 3 --draws 2" in out
+    battery_lines = [ln for ln in out.splitlines() if "--axes register" in ln]
+    assert battery_lines and all("--upload none" in ln for ln in battery_lines)
+    # (d) the apply probe (repo venv) + (e) the composer (model venv).
+    assert "--p1-apply-probe" in out
+    assert "--gate compose_p1" in out
+
+
+def test_launcher_dryrun_every_command_log_redirected(launcher_dryrun):
+    out = launcher_dryrun
+    cmd_lines = [
+        ln
+        for ln in out.splitlines()
+        if ln.startswith(("[dryrun] ", "[dryrun-bg] "))
+        and not ln.startswith(
+            (
+                "[dryrun] require_p1",
+                "[dryrun] assert_file",
+                "[dryrun] write_sentinel",
+                "[dryrun] driver_gate",
+                "[dryrun] results_push",
+                "[dryrun] hf_mirror",
+                "[dryrun] epm_results",
+            )
+        )
+    ]
+    assert cmd_lines, "no dry-run command lines captured"
+    for ln in cmd_lines:
+        assert " > " in ln, f"command not log-redirected: {ln}"
