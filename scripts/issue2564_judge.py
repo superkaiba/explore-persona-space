@@ -98,6 +98,13 @@ DEFAULT_OUT = "eval_results/issue_2564/manipulation_check.json"
 DEFAULT_WORK_ROOT = "data/issue_2564/judge_work"
 SMOKE_ROOT = "/tmp/issue2564_pd_smoke"
 
+# ── FFR round (plan v7 §5): --round ffr judges the re-elicitation anchors ──
+# Path segment mirrors issue2564_run.py's FFR_ROUND_SEG (hf_round_prefix).
+FFR_ROUND_SEG = "floor_failed_reelicitation"
+DEFAULT_OUT_FFR = "eval_results/issue_2564/floor-failed-reelicitation/manipulation_check_ffr.json"
+DEFAULT_WORK_ROOT_FFR = "data/issue_2564/judge_work_ffr"
+SMOKE_ROOT_FFR = "/tmp/issue2564_pd_smoke_ffr"
+
 # custom_id budget: batch_judge appends "__{idx:05d}__{comp:02d}" (11 chars) to a
 # 64-char cap => alias budget 53; charset ^[a-zA-Z0-9_-]$ (#1776).
 _ALIAS_RE = re.compile(r"^[a-zA-Z0-9_-]{1,53}$")
@@ -254,20 +261,56 @@ def _alias(axis: str, value_id: str, carrier: str, draw: int) -> str:
     return f"{axis}--{value_id}--{carrier}-d{draw}"
 
 
+def judged_value_slots_ffr(values: dict, selection: dict) -> list[dict]:
+    """FFR slots: SURVIVING axes' selected base ids + their paraphrases (plan v7 §5).
+
+    Mirrors judged_value_slots, but (axis, value_id) membership comes from the
+    pilot selection (``select_ffr_values`` shape) instead of the module-level
+    JUDGED_AXES roster; the ffr round has no programmatic axes.
+    """
+    slots: list[dict] = []
+    for axis in BK.FFR_AXES:
+        sel = selection["axes"][axis]
+        if not sel["survives"]:
+            continue
+        for vid in sel["selected_ids"]:
+            slots.append(
+                {
+                    "axis": axis,
+                    "value_id": vid,
+                    "kind": "orig",
+                    "instruction": BK.system_string(values, axis, vid),
+                }
+            )
+            slots.append(
+                {
+                    "axis": axis,
+                    "value_id": f"{vid}p",
+                    "kind": "para",
+                    "instruction": BK.paraphrase_string(values, axis, vid),
+                }
+            )
+    return slots
+
+
 def judged_specs(
     values: dict,
     carriers: tuple[str, ...] = BK.CARRIER_IDS,
     draws: tuple[int, ...] = JUDGED_DRAWS,
+    slots: list[dict] | None = None,
 ) -> list[dict]:
     """One judged check per (value slot × carrier × rollout draw).
 
     Production shape: 58 slots × 12 carriers = 696 contexts × 2 draws = 1,392
     checks. Aliases are validated against the Batch custom_id grammar
     (charset + 53-char budget + no ``__``) and asserted collision-free over
-    the FULL realized set (#1776).
+    the FULL realized set (#1776). ``slots`` overrides the parent roster
+    (the ffr round passes judged_value_slots_ffr output).
     """
+    if slots is None:
+        slots = judged_value_slots(values)
     specs = []
-    for slot in judged_value_slots(values):
+    for slot in slots:
         for carrier in carriers:
             cid = BK.context_id(slot["axis"], slot["value_id"], carrier)
             for draw in draws:
@@ -427,8 +470,10 @@ def axis_summary(value_rows: list[dict], axis: str, width: int) -> dict:
 # ── anchors ingestion ─────────────────────────────────────────────────
 
 
-def anchors_rel(cell: str) -> str:
-    """Repo-relative anchors path for one cell (the PA layout)."""
+def anchors_rel(cell: str, round_seg: str | None = None) -> str:
+    """Repo-relative anchors path for one cell (the PA layout; round_seg nests a round)."""
+    if round_seg:
+        return f"raw_completions/{round_seg}/anchors/anchors_{cell}.jsonl"
     return f"raw_completions/anchors/anchors_{cell}.jsonl"
 
 
@@ -437,6 +482,7 @@ def stage_anchor_cells(
     anchors_dir: Path | None,
     hf_prefix: str,
     staging_dir: Path,
+    round_seg: str | None = None,
 ) -> dict[str, Path]:
     """Resolve each cell's anchors JSONL: local dir first, else HF fetch (retried)."""
     from huggingface_hub import hf_hub_download
@@ -448,7 +494,7 @@ def stage_anchor_cells(
             if local.is_file():
                 out[cell] = local
                 continue
-        fn = f"{hf_prefix}/{anchors_rel(cell)}"
+        fn = f"{hf_prefix}/{anchors_rel(cell, round_seg)}"
         got = hub.retry_transient(
             lambda fn=fn: hf_hub_download(
                 HF_DATA_REPO, filename=fn, repo_type="dataset", local_dir=str(staging_dir)
@@ -473,6 +519,33 @@ def load_anchor_texts(paths: dict[str, Path]) -> dict[tuple[str, int], str]:
     return texts
 
 
+def stage_selection(selection_arg: str | None, hf_prefix: str, staging_dir: Path) -> dict:
+    """Load the ffr pilot selection: --selection local path first, else HF fetch (retried).
+
+    Returns the ``selection`` sub-dict of pilot_selection.json (the
+    ``select_ffr_values`` shape: ``axes`` + ``surviving_axes``).
+    """
+    if selection_arg:
+        p = Path(selection_arg)
+        if not p.is_file():
+            raise FileNotFoundError(f"--selection not found: {p}")
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    else:
+        from huggingface_hub import hf_hub_download
+
+        fn = f"{hf_prefix}/manifests/{FFR_ROUND_SEG}/pilot_selection.json"
+        got = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_DATA_REPO, filename=fn, repo_type="dataset", local_dir=str(staging_dir)
+            ),
+            what=f"hf_hub_download({fn})",
+        )
+        doc = json.loads(Path(got).read_text(encoding="utf-8"))
+    if "selection" not in doc:
+        raise RuntimeError("pilot_selection.json lacks the 'selection' key (wrong file?)")
+    return doc["selection"]
+
+
 # ── main ──────────────────────────────────────────────────────────────
 
 
@@ -484,6 +557,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--anchors-dir",
         default=None,
         help="local dir holding anchors_{cell}.jsonl (default: HF fetch)",
+    )
+    ap.add_argument(
+        "--round",
+        choices=("parent", "ffr"),
+        default="parent",
+        help="ffr judges the floor-failed re-elicitation anchors (plan v7 §5)",
+    )
+    ap.add_argument(
+        "--selection",
+        default=None,
+        help="ffr only: local pilot_selection.json (default: HF fetch from the ffr manifests)",
     )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument(
@@ -510,34 +594,68 @@ def main() -> None:
         raise SystemExit(0)
 
     smoke = args.smoke
-    hf_prefix = f"{HF_PREFIX}/smoke" if smoke else HF_PREFIX
+    is_ffr = args.round == "ffr"
+    if not is_ffr and args.selection is not None:
+        raise SystemExit("--selection is ffr-only (the parent round has no pilot selection)")
+    round_seg = FFR_ROUND_SEG if is_ffr else None
+    smoke_prefix = f"{HF_PREFIX}/smoke_ffr" if is_ffr else f"{HF_PREFIX}/smoke"
+    smoke_root = Path(SMOKE_ROOT_FFR) if is_ffr else Path(SMOKE_ROOT)
+    check_name = "manipulation_check_ffr" if is_ffr else "manipulation_check"
+    hf_prefix = smoke_prefix if smoke else HF_PREFIX
     out = Path(args.out)
+    if is_ffr and args.out == DEFAULT_OUT:
+        out = Path(DEFAULT_OUT_FFR)  # untouched default -> the ffr sentinel path
     work_root = Path(args.work_root)
+    if is_ffr and args.work_root == DEFAULT_WORK_ROOT:
+        work_root = Path(DEFAULT_WORK_ROOT_FFR)
     max_items = args.max_judged_items
     if smoke:
         if args.out == DEFAULT_OUT:
-            out = Path(SMOKE_ROOT) / "manipulation_check.json"
+            out = smoke_root / f"{check_name}.json"
         elif str(out).startswith("eval_results"):
             raise SystemExit("--smoke must not write the committed eval_results/ path")
         if args.work_root == DEFAULT_WORK_ROOT:
-            work_root = Path(SMOKE_ROOT) / "judge_work"
+            work_root = smoke_root / "judge_work"
         if max_items is None:
             max_items = SMOKE_JUDGE_ITEMS
     if args.dry_run and args.out == DEFAULT_OUT:
         # never overwrite the production sentinel with a zero-API dry-run table
-        out = Path(SMOKE_ROOT) / "manipulation_check.dryrun.json"
+        out = smoke_root / f"{check_name}.dryrun.json"
         log(f"[pd_judge] --dry-run: out rebound to {out}")
 
     carriers = SMOKE_CARRIERS if smoke else BK.CARRIER_IDS
-    judged_axes = tuple(a for a in JUDGED_AXES if not smoke or a in SMOKE_CELLS)
-    prog_axes = tuple(a for a in PROGRAMMATIC_AXES if not smoke or a in SMOKE_CELLS)
+    selection: dict | None = None
+    if is_ffr:
+        values = BK.load_values_ffr()
+        selection = stage_selection(args.selection, hf_prefix, work_root / "selection_staging")
+        judged_axes = tuple(a for a in BK.FFR_AXES if selection["axes"][a]["survives"])
+        prog_axes: tuple[str, ...] = ()  # no programmatic axes in the ffr round (plan v7 §5)
+        if not judged_axes:
+            raise SystemExit(
+                "no surviving ffr axes in pilot_selection.json — all-axes-fail is a valid "
+                "pilot outcome; nothing to judge"
+            )
+    else:
+        values = BK.load_values()
+        judged_axes = tuple(a for a in JUDGED_AXES if not smoke or a in SMOKE_CELLS)
+        prog_axes = tuple(a for a in PROGRAMMATIC_AXES if not smoke or a in SMOKE_CELLS)
     log(
         f"[phase=pd_judge] start out={out} smoke={smoke} judged_axes={list(judged_axes)} "
         f"prog_axes={list(prog_axes)} carriers={list(carriers)}"
     )
+    if is_ffr:
+        log(
+            f"[pd_judge] round=ffr selection_source={'local' if args.selection else 'hf'} "
+            f"surviving={list(judged_axes)}"
+        )
 
-    values = BK.load_values()
-    j_specs = judged_specs(values, carriers=carriers) if judged_axes else []
+    if is_ffr:
+        assert selection is not None
+        j_specs = judged_specs(
+            values, carriers=carriers, slots=judged_value_slots_ffr(values, selection)
+        )
+    else:
+        j_specs = judged_specs(values, carriers=carriers) if judged_axes else []
     j_specs = [s for s in j_specs if s["axis"] in judged_axes]
     p_specs = programmatic_specs(values, carriers=carriers) if prog_axes else []
     p_specs = [s for s in p_specs if s["axis"] in prog_axes]
@@ -548,7 +666,9 @@ def main() -> None:
     raw_dir = work_root / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     anchors_dir = Path(args.anchors_dir) if args.anchors_dir else None
-    paths = stage_anchor_cells(cells_needed, anchors_dir, hf_prefix, work_root / "anchors_staging")
+    paths = stage_anchor_cells(
+        cells_needed, anchors_dir, hf_prefix, work_root / "anchors_staging", round_seg=round_seg
+    )
     texts = load_anchor_texts(paths)
     log(f"[pd_judge] loaded {len(texts)} anchor rows across {len(cells_needed)} cells")
 
@@ -638,25 +758,47 @@ def main() -> None:
         value_rows += programmatic_fire_table(p_specs, texts, carriers, PROG_DRAWS)
 
     axis_rows: list[dict] = []
-    for axis in BK.INSTRUCTION_AXES:
-        if axis in judged_axes or axis in prog_axes:
-            axis_rows.append(axis_summary(value_rows, axis, BK.N_VALUES_PER_AXIS[axis]))
-        else:
-            axis_rows.append(
-                {
+    if is_ffr:
+        assert selection is not None
+        for axis in BK.FFR_AXES:
+            sel = selection["axes"][axis]
+            width = len(sel["selected_ids"])
+            if axis in judged_axes:
+                row = axis_summary(value_rows, axis, width)
+            else:
+                row = {
                     "axis": axis,
-                    "width": BK.N_VALUES_PER_AXIS[axis],
-                    "floor": axis_floor(BK.N_VALUES_PER_AXIS[axis]),
-                    "verdict": "not_in_slice",
+                    "width": width,
+                    "floor": sel["floor"],
+                    "verdict": "not_selected",
                 }
-            )
+            row["parent_width"] = sel["parent_width"]
+            row["pilot_survives"] = sel["survives"]
+            axis_rows.append(row)
+    else:
+        for axis in BK.INSTRUCTION_AXES:
+            if axis in judged_axes or axis in prog_axes:
+                axis_rows.append(axis_summary(value_rows, axis, BK.N_VALUES_PER_AXIS[axis]))
+            else:
+                axis_rows.append(
+                    {
+                        "axis": axis,
+                        "width": BK.N_VALUES_PER_AXIS[axis],
+                        "floor": axis_floor(BK.N_VALUES_PER_AXIS[axis]),
+                        "verdict": "not_in_slice",
+                    }
+                )
 
     # ---- upload raw judge outputs ----
     upload_summary: dict | None = None
     if items and not args.dry_run and not args.skip_upload:
         from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
 
-        dest_prefix = f"{hf_prefix}/raw_completions/judge"
+        dest_prefix = (
+            f"{hf_prefix}/raw_completions/{FFR_ROUND_SEG}/judge"
+            if is_ffr
+            else f"{hf_prefix}/raw_completions/judge"
+        )
         res_up = upload_dir_sharded(
             raw_dir,
             HF_DATA_REPO,
@@ -710,6 +852,15 @@ def main() -> None:
         "value_rows": value_rows,
         "axis_rows": axis_rows,
     }
+    if is_ffr:
+        assert selection is not None
+        doc["meta"]["round"] = "ffr"
+        doc["meta"]["ffr_selection"] = {
+            "source": args.selection
+            or f"hf:{hf_prefix}/manifests/{FFR_ROUND_SEG}/pilot_selection.json",
+            "surviving_axes": list(judged_axes),
+            "selected_ids": {a: selection["axes"][a]["selected_ids"] for a in BK.FFR_AXES},
+        }
     _write_json_atomic(out, doc)
     log(f"[phase=pd_judge] sentinel written {out}")
     sys.stdout.flush()
