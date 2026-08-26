@@ -8,14 +8,19 @@ Round 3 returned FAIL on both sides. Two fix units (H1, H2) then ran on disjoint
 file sets and closed 4 concerns; the orchestrator landed two more commits (a lint
 waiver and a brief amendment). This is the re-review of that work.
 
-**Review range:** `6193ee115b..019d3e3738`. 8 files, 5 commits, 71 KB — under the
-~300 KB budget where a single reviewer autocompact-thrashes, so this round is
-**one reviewer per side, no sharding**. Review the round-scoped range, NOT the
-branch-wide diff (1444 KB — it will thrash you).
+**Review range:** `6193ee115b..origin/issue-2569`. ~8 files, ~71 KB at the payload
+commits — under the ~300 KB budget where a single reviewer autocompact-thrashes, so
+this round is **one reviewer per side, no sharding**. Review the round-scoped
+range, NOT the branch-wide diff (1444 KB — it will thrash you).
+
+The base is fixed (`6193ee115b`, the last pre-v4 commit); the tip is resolved at
+review time rather than pinned, because pinning it excludes the brief-and-waiver
+commits that land after the payload — including this brief.
 
 ```bash
 WT=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2569
-git -C "$WT" diff 6193ee115b..019d3e3738
+git -C "$WT" fetch origin issue-2569 --quiet
+git -C "$WT" diff 6193ee115b..origin/issue-2569
 ```
 
 Files: `scripts/issue2569_{figures,gateladder,xmodel_capture}.py`,
