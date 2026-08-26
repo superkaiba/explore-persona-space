@@ -1,1 +1,2 @@
 {"ts": "2026-08-26T00:32:42Z", "event": "raised", "concern_id": "capture-helper-return-shape", "severity": "BLOCKER", "summary": "Capture treats `(blocks, depth)` as a layer list, so every real capture crashes.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-26T00:33:03Z", "event": "raised", "concern_id": "phase-idempotency", "severity": "BLOCKER", "summary": "Expensive generation/capture/fit/null phases have no default skip/resume contract.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
