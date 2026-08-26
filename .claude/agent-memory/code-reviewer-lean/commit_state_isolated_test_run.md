@@ -22,3 +22,10 @@ by commit X". Caveat: `ruff check` on the /tmp copies loses pyproject
 `per-file-ignores` (path patterns don't match /tmp) — spurious style hits;
 re-run ruff on the real repo paths before reporting a lint finding. Clean up
 the /tmp tree after.
+
+**Cheap precheck FIRST (#2590 r1 g1):** when HEAD merely advanced (sync-import
+/ agent-memory commits), probe `git diff --name-only <sha>..HEAD -- <round
+deliverable paths>` — EMPTY output means the round files are byte-identical at
+HEAD, so in-tree test runs certify the scoped commit directly and the whole
+/tmp extraction is unnecessary. Only a non-empty probe (the files themselves
+extended) needs the isolation recipe above.
