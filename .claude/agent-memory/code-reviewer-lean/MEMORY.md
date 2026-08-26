@@ -1,4 +1,6 @@
 # code-reviewer-lean memory index
+- [Spec-freshness sync group identity recipe](spec_freshness_sync_group_identity_recipe.md) — probe at group TIP vs origin/main (which may outrun the pin); payload grep; 09-step-5.md:496/596 anchor subjects; never read the body
+- [Pod-launcher DAG review recipe](pod_launcher_dag_review_recipe.md) — 6 probes: phase-vs-plan map, gate-sentinel freshness, compose-required records vs real producers, fixture-vs-producer store parity, envelope/glob, env-knob threading symmetry
 - [Fork's not-inherited list vs parent gate surface](fork_not_inherited_list_vs_parent_gate_surface.md) — diff disclosure list against parent's FULL gate enum; undisclosed drops hide between named ones
 - [Dtype-proxy shim over pinned blob](dtype_proxy_shim_over_pinned_blob.md) — 4 blob probes: exhaustive attr grep, single module-level import, cross-…
 - [Fingerprint resume: ids ≠ content](fingerprint_resume_ids_not_content.md) — regime-fingerprint resume keys hash panel IDS not DV values; live two-…
@@ -110,3 +112,6 @@
 - [Resume-fp key grain over-invalidation](resume_fp_key_grain_overinvalidation.md) — audit each fp key per grain; upload mode in the CELL fp forces GPU
 - [Measured-constant floor third-arm re-measure](measured_constant_floor_thirdarm_remeasure.md) — re-measure a k-artifact-calibrated threshold on an arm outside the set, via the production path; + tie-rotation invariance probe…
 - [Pilot-binding field-split audit](pilot_binding_field_split_audit.md) — compared⇒pilot-matchable, exempt⇒bounded/owned/inert-verified; tri-state verdict combo enumeration
+- [Boundary-fake smoke driver probes](boundary_fake_smoke_driver_probes.md) — patch-binds attr check, fresh-root rerun, realized-offline grep, hub fall-through mask post-production
+- [Lint-waiver conformance fix review](lint_waiver_conformance_fix_review.md) — waiver-recognizer placement grammar + guard-tuple subclass check + rerun targeted flags; promised-gate-note residual
+- [Default-flip exemption enum vs input universe](default_flip_exemption_enum_vs_input_universe.md) — enumerate committed bank classes×vids under the new predicate; diff per-class vs parent's committed artifact; fix's tests omit the missed class
