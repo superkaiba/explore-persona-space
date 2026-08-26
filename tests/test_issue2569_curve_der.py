@@ -172,7 +172,13 @@ def test_fit_point_extra_eval_matches_direct_refit():
 
 def test_curve_core_threads_extra_eval_and_verdict():
     """curve_core: verdict points carry theory + extra_eval_r2; parity passes;
-    the H2b statistic and the extra_eval_slices record are present."""
+    the H2b statistic and the extra_eval_slices record are present.
+
+    Three grid points — the smallest series clearing
+    ``MIN_WELLPOSED_VERDICT_POINTS`` (= 3, fix-round-4
+    ``h2b-two-of-five-yields-registered-verdict``; a 2-point grid is now
+    UNDECIDABLE, so a scored ``mean_abs_dr2`` requires >= 3 survivors).
+    """
     x, y, corpus, conv = _synth_store()
     extra = {"passb_pinned_val": np.arange(2400, 2500), "passb_pinned_test": np.arange(2500, 2700)}
     doc = GL.curve_core(
@@ -180,7 +186,7 @@ def test_curve_core_threads_extra_eval_and_verdict():
         y,
         corpus,
         conv,
-        n_grid=(200, 400),
+        n_grid=(200, 300, 400),
         eval_rows=300,
         val_rows=200,
         dev=torch.device("cpu"),
@@ -189,7 +195,7 @@ def test_curve_core_threads_extra_eval_and_verdict():
         smoke=True,
         extra_eval=extra,
     )
-    assert [p["n_train"] for p in doc["verdict_points"]] == [200, 400]
+    assert [p["n_train"] for p in doc["verdict_points"]] == [200, 300, 400]
     assert all(pp["pass"] for pp in doc["parity_check"]["per_point"])
     assert doc["h2b"]["mean_abs_dr2"] is not None
     for p in doc["verdict_points"]:
@@ -197,7 +203,7 @@ def test_curve_core_threads_extra_eval_and_verdict():
         assert set(p["extra_eval_r2"]) == set(extra)
         assert np.isfinite(p["theory"]["predicted_r2"])
     assert doc["extra_eval_slices"]["passb_pinned_test"]["n_rows"] == 200
-    assert doc["regime"]["n_grid"] == [200, 400]
+    assert doc["regime"]["n_grid"] == [200, 300, 400]
 
 
 # ── der: description loading + the #2552 probe ────────────────────────────────────
