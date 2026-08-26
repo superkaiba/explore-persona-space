@@ -12395,8 +12395,8 @@
     "2607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2607",
-      "status": "running",
+      "path": "tasks/reviewing/2607",
+      "status": "reviewing",
       "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
     },
     "2608": {
