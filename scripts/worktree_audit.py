@@ -33,6 +33,25 @@ A targeted worktree is removed only when it is provably idle. It is KEPT
      evidence (HEAD sha in a note — any worktree; or, for UNSUFFIXED
      ``issue-<N>`` only, an epm:merged timestamp strictly newer than HEAD's
      committer epoch). A FAILED probe also keeps (fail toward retention).
+  6. (#2354) its parent task carries an in-flight FOLLOW-UP SHIELD — the
+     ``keep-running`` tag (tri-state ``task_workflow.keep_running_tag_state``
+     read; an UNKNOWABLE read keeps, fail toward retention), or a follow-up
+     signal marker (``epm:run-launched`` / ``epm:followup-scope`` /
+     ``epm:free-analysis-followup-run``) NEWER than the latest
+     done-transition marker (``epm:promoted`` / ``epm:status-changed`` /
+     ``epm:pod-terminated`` / ``epm:step-completed``) AND younger than the
+     signal-age ceiling (default 168h = 7d, matching the pod default TTL;
+     env ``EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H``) — the ceiling exists
+     because a sanctioned inline round on a terminal-status parent posts NO
+     done-transition after its last ``epm:run-launched``, so an unbounded
+     signal arm would immortalize every such worktree. The kind sets MIRROR
+     the watcher's session-reconcile predicate (anti-drift test-pinned, no
+     runtime watcher import). A stale ``keep-running`` tag keeps a worktree
+     indefinitely BY DESIGN (fleet-wide tag semantics, audited pod-side by
+     the watcher's keep-running arms). Incident #2223: an active
+     inline-round worktree (compute on a pod — no VM process, parent parked
+     at awaiting_promotion, tree clean, branch merged) read reapable on
+     every prior guard.
 
 Disk-pressure mode (2026-06-10, #543): the VM root disk hit 100% mid-pipeline
 with ``.claude/worktrees/`` holding 264 GB, intermittently killing git /
@@ -147,7 +166,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from explore_persona_space.task_workflow import repo_root, tasks_dir
+from explore_persona_space.task_workflow import keep_running_tag_state, repo_root, tasks_dir
 
 # Issue statuses whose worktree is DONE + merged -> eligible for reaping.
 # This is an ALLOWLIST (fail-closed): an issue-<N> worktree is reaped only
@@ -237,6 +256,41 @@ _UNMERGED_PROBE_FAILED_REASON = "unmerged-branch probe failed (fail toward keep)
 # worst observed, and a timeout fails toward retention (None -> keep).
 _HEAD_PROBE_TIMEOUT_S = 10.0
 _REV_LIST_TIMEOUT_S = 60.0
+
+# Follow-up shield (#2354, incident #2223): marker kinds signaling an
+# in-flight follow-up round on a parked/terminal task, and the
+# done-transition kinds that settle them. MIRRORS
+# autonomous_session_watch._SESSION_FOLLOWUP_SIGNAL_KINDS /
+# _SESSION_DONE_TRANSITION_KINDS (the session-reconcile variant, whose done
+# set includes epm:pod-terminated + epm:step-completed) — pinned by an
+# anti-drift equality test rather than a runtime import of the ~28.5K-line
+# watcher script into the daily cron.
+_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {"epm:run-launched", "epm:followup-scope", "epm:free-analysis-followup-run"}
+)
+_FOLLOWUP_DONE_TRANSITION_KINDS = frozenset(
+    {"epm:promoted", "epm:status-changed", "epm:pod-terminated", "epm:step-completed"}
+)
+
+# Single-source follow-up-shield keep reasons (anti-drift coupling, same
+# idiom as _TRACKED_CHANGES_REASON): emitted by should_remove off the
+# callers' three-valued shield verdict. UNKNOWN is the fail-toward-keep
+# arm: callers PRESERVE a None verdict (never collapse it to falsy).
+_FOLLOWUP_SHIELD_REASON = "parent task has an in-flight follow-up shield"
+_FOLLOWUP_SHIELD_UNKNOWN_REASON = "follow-up shield state unknowable (fail toward keep)"
+
+# Signal-age ceiling (#2354 critic round-1 Must-Fix): the SIGNAL arm keeps
+# only while the newest follow-up signal is younger than this. A sanctioned
+# inline round on a completed/archived parent ends with
+# epm:upload-verification + pod.py terminate, posting NO done-transition
+# kind (epm:pod-terminated is posted only by the /issue orchestrator at
+# Step 8), so without a bound the signal stays permanently newest and every
+# such round immortalizes its worktree. 168h = 7d matches the pod default
+# TTL — deliberately NOT 48h, which would reap mid-round under a multi-day
+# pod run whose only signal is the provision-time epm:run-launched. The
+# keep-running TAG stays the explicit UNBOUNDED override (fleet-wide tag
+# semantics, audited pod-side).
+_FOLLOWUP_SHIELD_MAX_AGE_H_DEFAULT = 168.0  # env: EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H
 
 # Issue statuses eligible for ACTIVE remediation (orphan-holder kill /
 # junk-dirty rescue) under --apply. `awaiting_promotion` included as of
@@ -445,6 +499,7 @@ def should_remove(
     has_tracked_changes: bool,
     grace_hours: float = DEFAULT_GRACE_HOURS,
     branch_unmerged: bool | None = False,
+    followup_shield: bool | None = False,
 ) -> Decision:
     """Pure decision logic (unit-tested). ``status`` is the issue's task
     status for ``issue-<N>`` worktrees, else ``None``. Returns a Decision
@@ -455,7 +510,15 @@ def should_remove(
     no patch-equivalent on origin/main and no epm:merged evidence (keep);
     None = the probe FAILED (keep — fail toward retention, never collapsed
     to falsy); False = merged/clean/not-probed (today's behavior, the
-    default so non-probing callers and tests are byte-unchanged)."""
+    default so non-probing callers and tests are byte-unchanged).
+
+    ``followup_shield`` is the three-valued _followup_shield verdict the
+    callers thread in (#2354): True = an in-flight follow-up round shields
+    the worktree (keep-running tag, or a fresh follow-up signal newer than
+    the latest done-transition); None = the tag state is UNKNOWABLE (keep —
+    fail toward retention, never collapsed to falsy); False =
+    unshielded/not-probed (the default, byte-preserving for existing
+    callers and tests)."""
     if not _TARGET_NAME_RE.match(name):
         return Decision(name, False, "human-named worktree (out of sweep scope)")
     if is_live:
@@ -467,6 +530,15 @@ def should_remove(
     # worktrees; those fall through to the idle guards.
     if _ISSUE_NAME_RE.match(name) and status is not None and status not in REAPABLE_ISSUE_STATUSES:
         return Decision(name, False, f"issue status not reapable ({status})")
+    # Follow-up shield (#2354), deliberately AFTER the status guard (an
+    # in-flight status keeps with its own reason first) and BEFORE the
+    # unmerged guard (an in-flight round outranks byte-safety reads). `is
+    # None` before truthiness: the unknowable tri-state must never read as
+    # falsy-unshielded.
+    if followup_shield is None:
+        return Decision(name, False, _FOLLOWUP_SHIELD_UNKNOWN_REASON)
+    if followup_shield:
+        return Decision(name, False, _FOLLOWUP_SHIELD_REASON)
     # Unmerged-branch guard (#2246 item 2), deliberately AFTER the status
     # guard (an in-flight status keeps with its own reason first) and BEFORE
     # the grace/tracked-changes guards. `is None` before truthiness: the
@@ -1042,6 +1114,107 @@ def _branch_unmerged(
     )
 
 
+def _followup_shield_max_age_h() -> float:
+    """Signal-age ceiling (hours) for the follow-up shield's SIGNAL arm
+    (#2354); the keep-running TAG arm is deliberately unbounded."""
+    return float(
+        os.environ.get(
+            "EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H", str(_FOLLOWUP_SHIELD_MAX_AGE_H_DEFAULT)
+        )
+    )
+
+
+def _followup_shield(
+    name: str,
+    statuses: dict[int, str],
+    *,
+    now: float,
+    max_age_h: float | None = None,
+) -> tuple[bool | None, str]:
+    """Three-valued follow-up-shield probe (#2354, incident #2223):
+    ``(verdict, detail)`` with verdict True = an in-flight follow-up round
+    shields the worktree (keep), None = the keep-running tag state is
+    UNKNOWABLE (keep — fail toward retention, never collapsed to falsy),
+    False = no shield (fall through to the remaining guards).
+
+    Arm order: (a) non-issue names never shield — the arm is
+    issue-name-gated, so agent-/wf-/human-named worktrees are
+    byte-unchanged; (b) the keep-running TAG via the shared tri-state
+    ``task_workflow.keep_running_tag_state`` (#1485): True keeps
+    UNBOUNDED (fleet-wide tag semantics), None keeps (registry corruption
+    / branch-guard error — the destructive-path posture its docstring
+    mandates), False falls through to (c) the SIGNAL read: the newest
+    ``_FOLLOWUP_SIGNAL_KINDS`` marker epoch must be STRICTLY newer than
+    the newest ``_FOLLOWUP_DONE_TRANSITION_KINDS`` epoch (mirroring the
+    watcher's ``_task_session_followup_active``: no signal -> False; no
+    done-transition -> False, defensive) AND younger than the
+    ``max_age_h`` ceiling — an over-age signal falls through with the
+    settled-business disposition (no keep). Every degraded reading moves
+    toward LESS signal evidence: a None/missing/unreadable events file
+    (OSError) yields no evidence; a malformed JSON line is row-skipped; a
+    naive/malformed ts contributes no evidence (``_aware_epoch``). A
+    missed signal keep degrades to the #2223 inconvenience (recreate a
+    worktree), never data loss — the #2246 + tracked-changes guards
+    already protect bytes."""
+    m = _ISSUE_NAME_RE.match(name)
+    if not m:
+        return False, ""
+    tag = keep_running_tag_state(int(m.group(1)))
+    if tag is True:
+        return True, "keep-running tag set"
+    if tag is None:
+        return None, "keep-running tag state unknowable"
+    if max_age_h is None:
+        max_age_h = _followup_shield_max_age_h()
+    events_path = _issue_events_path(name, statuses)
+    if events_path is None:
+        return False, "no events file (orphan/non-issue): no follow-up signal evidence"
+    try:
+        raw = events_path.read_text(encoding="utf-8")
+    except OSError:
+        return False, "events file unreadable: no follow-up signal evidence"
+    newest_sig: float | None = None
+    newest_sig_kind = ""
+    newest_done: float | None = None
+    # split("\n"), NOT splitlines(): splitlines() also splits on raw
+    # U+2028/U+2029/NEL inside ensure_ascii=False JSON note strings and
+    # shreds valid rows (gotchas.md jsonl-splitlines; lint-enforced).
+    for line in raw.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        kind = row.get("kind")
+        if kind in _FOLLOWUP_SIGNAL_KINDS:
+            epoch = _aware_epoch(row.get("ts"))
+            if epoch is not None and (newest_sig is None or epoch > newest_sig):
+                newest_sig, newest_sig_kind = epoch, kind
+        elif kind in _FOLLOWUP_DONE_TRANSITION_KINDS:
+            epoch = _aware_epoch(row.get("ts"))
+            if epoch is not None and (newest_done is None or epoch > newest_done):
+                newest_done = epoch
+    if newest_sig is None:
+        return False, "no follow-up signal marker"
+    if newest_done is None:
+        # Defensive, mirroring _task_session_followup_active: a task at a
+        # reapable status has at least one epm:status-changed by
+        # construction, so a missing done-transition reads settled.
+        return False, "no done-transition marker (defensive: reads settled)"
+    if newest_sig <= newest_done:
+        return False, "follow-up signal older than latest done-transition (settled)"
+    age_h = (now - newest_sig) / 3600.0
+    if age_h >= max_age_h:
+        return False, (
+            f"follow-up signal over the {max_age_h:g}h age ceiling ({age_h:.1f}h old; settled)"
+        )
+    return True, f"{newest_sig_kind} newer than latest done-transition ({age_h:.1f}h old)"
+
+
 def _classify(
     child,
     statuses: dict[int, str],
@@ -1067,6 +1240,18 @@ def _classify(
     # Only pay for the git status call on otherwise-removable worktrees.
     if decision.remove and _has_tracked_changes(str(child)):
         return Decision(name, False, _TRACKED_CHANGES_REASON)
+    # Follow-up shield probe (#2354), same lazy shape: only pay the
+    # registry/events reads on otherwise-removable ISSUE worktrees, and
+    # BEFORE the unmerged probe (one events+body read vs a 60s-timeout git
+    # walk — a shield keep short-circuits the expensive arm). The None
+    # (tag-unknowable) verdict is PRESERVED as its own keep reason, never
+    # collapsed to falsy.
+    if decision.remove and _ISSUE_NAME_RE.match(name):
+        shield, s_detail = _followup_shield(name, statuses, now=now)
+        if shield is None:
+            return Decision(name, False, f"{_FOLLOWUP_SHIELD_UNKNOWN_REASON}: {s_detail}")
+        if shield:
+            return Decision(name, False, f"{_FOLLOWUP_SHIELD_REASON}: {s_detail}")
     # Unmerged-branch probe (#2246 item 2), same lazy shape: only pay the
     # git/events reads on otherwise-removable ISSUE worktrees. The None
     # (probe-failed) verdict is PRESERVED as its own keep reason, never
@@ -1167,19 +1352,26 @@ def _execute_remediation(
                 f"became unsafe mid-audit: {_LIVE_PROCESS_REASON} after orphan kill",
             )
     # Re-derive the non-tracked guards fresh (a `task.py set-status` or a
-    # recent write since the snapshot must still be honored). The
-    # unmerged-branch probe (#2246 item 2) is re-run FRESH here too — a
-    # merge or new commit since the loop snapshot must be honored; the
-    # tri-state verdict threads through should_remove unmodified (None is
-    # never collapsed to falsy).
+    # recent write since the snapshot must still be honored). The follow-up
+    # shield (#2354) is re-derived FRESH here too — a shield-active worktree
+    # can enter remediation via a live orphan-codex holder, and a signal
+    # posted since the loop snapshot must veto the removal; likewise the
+    # unmerged-branch probe (#2246 item 2) — a merge or new commit since
+    # the loop snapshot must be honored. Both tri-state verdicts thread
+    # through should_remove unmodified (None is never collapsed to falsy);
+    # a shield keep short-circuits the expensive rev-list walk.
+    shield_detail = ""
+    followup_shield: bool | None = False
     unmerged_detail = ""
     branch_unmerged: bool | None = False
     if _ISSUE_NAME_RE.match(name):
-        branch_unmerged, unmerged_detail = _branch_unmerged(
-            str(child),
-            _issue_events_path(name, statuses),
-            allow_ts_evidence=_allow_ts_evidence(name),
-        )
+        followup_shield, shield_detail = _followup_shield(name, statuses, now=now)
+        if followup_shield is False:
+            branch_unmerged, unmerged_detail = _branch_unmerged(
+                str(child),
+                _issue_events_path(name, statuses),
+                allow_ts_evidence=_allow_ts_evidence(name),
+            )
     base = should_remove(
         name,
         status=status,
@@ -1188,11 +1380,17 @@ def _execute_remediation(
         has_tracked_changes=False,
         grace_hours=grace_hours,
         branch_unmerged=branch_unmerged,
+        followup_shield=followup_shield,
     )
     if not base.remove:
         reason = base.reason
         if unmerged_detail and reason in (_UNMERGED_BRANCH_REASON, _UNMERGED_PROBE_FAILED_REASON):
             reason = f"{reason}: {unmerged_detail}"
+        elif shield_detail and reason in (
+            _FOLLOWUP_SHIELD_REASON,
+            _FOLLOWUP_SHIELD_UNKNOWN_REASON,
+        ):
+            reason = f"{reason}: {shield_detail}"
         return Decision(name, False, f"became unsafe mid-audit: {reason}")
     # Junk-dirty rescue (fresh dirty read; rescue strictly precedes removal).
     porcelain = _git_porcelain(str(child))
