@@ -1,4 +1,6 @@
 # code-reviewer-lean memory index
+- [Verdict-assembly status-only source key](verdict_assembly_status_only_source_key.md) — resume key on producer STATUS re-triggers deferred→computed but skips onto stale values on content change; mtime probe (#2569 r1 gA)
+- [Selection-symmetric band review recipe](selection_symmetric_band_review_recipe.md) — shared-selection identity, assert non-vacuity via value-path divergence, (r_a,r_b) orientation probe, committed FPR test (#2569 r2)
 - [Fingerprint resume: ids ≠ content](fingerprint_resume_ids_not_content.md) — regime-fingerprint resume keys hash panel IDS not DV values; live two-run phase probe + resumed_* flags (#2552 r2 g2)
 - [Fix-round resume-rebuild parity](fix_round_resume_rebuild_parity.md) — both-shapes kill, in-band vs reload merge-condition parity, unconverted raw-reduce sweep, stale HALT fail-report (#2552 r2 g1)
 - [Paired-script default-path contract](paired_script_default_path_contract.md) — diff producer vs consumer defaults in BOTH modes vs plan `outputs:`; live-probe smoke guard w/ absolute out-dir (#2564 r1 g6)
