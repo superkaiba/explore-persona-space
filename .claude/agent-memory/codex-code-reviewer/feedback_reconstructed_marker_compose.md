@@ -72,3 +72,32 @@ implementer report unrecoverable" provenance disclosure. Related:
   reconstruction (pre-review) — frame it explicitly as "the closure CLAIM
   this review adjudicates, not settled truth", with NOT-ADDRESSED ⇒ the row
   is PREMATURE + the one sanctioned same-id `CONCERN:: ` re-emission.
+
+**#2351 r2 sharpenings (2026-08-25, third hit — reconstruction on a
+FAIL+FAIL-union fix round):**
+
+- **Mid-compose drift can be the sibling twin's `addressed` rows, not only
+  `raised` rows.** The parallel Claude reviewer finished FIRST and posted
+  per-concern `addressed` rows while the build script ran (count grew 6→7→10
+  across minutes). Same fix as #2326 r3: filter the inlined snapshot to
+  `ts <= impl-marker ts` (never a bare row-count assert on the raw file),
+  and report every excluded row to the orchestrator — an addressed-row leak
+  is worse than a raised-row leak (it hands Codex the sibling's VERDICT).
+- **Function-grain differential on a `scripts/_bootstrap`-style module needs
+  a fake repo root:** `workflow_lint.py` runs `_load_agent_spec_caps()` at
+  import, resolving `Path(__file__).parents[1]/.claude/config/...` — a blob
+  copied to bare `/tmp` crashes at import. Stage `/tmp/<fr>/scripts/<blob>.py`
+  + `/tmp/<fr>/.claude/config/<needed file>` and import via
+  `spec_from_file_location` with the WORKTREE's `scripts/` on sys.path.
+- **Composer-run differential doubles as pin-adjudication evidence:** running
+  the committed pin's EXACT fixture through both blobs (r1: real call
+  suppressed, 1 err at :4; r2: 2 errs, real at :3) settles both the
+  "pin fails pre-fix" [from commit msg] claim AND the closure observable in
+  one leg — compose it as a fact with "your duty is the MECHANISM half by
+  reading", never as a replaced duty.
+- **Post-compose worktree-dirtying hazard:** a compose-time fact attesting
+  `git status --porcelain` CLEAN goes stale if the composer then writes its
+  own agent-memory file into the SAME worktree before the review runs —
+  name the residue in the return so the orchestrator can discount a Codex
+  observation of it (the memory edit stays uncommitted mid-round per the
+  #2332 r2 rule).
