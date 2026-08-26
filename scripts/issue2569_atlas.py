@@ -38,6 +38,16 @@ Consumes the paired captures ``issue2569_xmodel_capture.py`` finalizes
   rotation"). Split-half noise floors for every refittable operator; operators
   without refittable rows are labeled ``no floor — descriptive only``. Classical MDS
   coordinates are presentation-only; every claim reads off the distance table.
+  The pre-registered H7 demote branch (plan §7.5 leg 7) is COMPUTED here and the
+  verdict written into the artifact (``h7_demote``): per evaluable pair,
+  within-operator split-half distance (1 - floor cosine, max over the two members)
+  vs between-operator distance (1 - aligned raw cosine, matched vec-cosine units);
+  noise-dominated for > half of evaluable pairs -> demote (descriptive only).
+  Pair statistics are BATCHED (concern atlas-pair-loop-unbatched-unresumable):
+  one SVD per row + ONE shared Haar draw set serving every pair's rotation null
+  (``shared_rotation_null_draws`` — exact in distribution via Haar invariance),
+  checkpointed per row / per draw-chunk under ``<fits-dir>/atlas_ckpt`` with
+  content-fingerprint resume keys (never status strings).
   Writes ``eval_results/issue_2569/leg7/atlas_distances.json``.
 - ``--phase selftest``: tiny-synthetic end-to-end pass (fits -> report -> atlas at
   d=32/48, n~240) — the committed CPU smoke for the whole assembly path.
@@ -137,6 +147,16 @@ def _meta(phase: str) -> dict:
 def _sha_int64(a: np.ndarray) -> str:
     """sha256 of an int64 array (pinned integer dtype — machine-stable)."""
     return hashlib.sha256(np.ascontiguousarray(np.asarray(a, dtype=np.int64)).tobytes()).hexdigest()
+
+
+def _file_sha(path: Path) -> str:
+    """sha256 of on-disk file bytes — the content fingerprint for resume keys
+    (#1336-safe: bit-exact bytes READ FROM A FILE, never a recomputed float array)."""
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 _FIT_CORE: tuple | None = None
@@ -422,6 +442,196 @@ def mds_2d(dist: np.ndarray) -> np.ndarray:
     return V[:, order] * np.sqrt(w2)[None, :]
 
 
+def shared_rotation_null_draws(
+    spectra_unit: np.ndarray,
+    *,
+    n_draws: int,
+    seed: int,
+    device: str = "cpu",
+    chunk_draws: int = 25,
+    ckpt_dir: Path | None = None,
+    regime_key: str = "",
+) -> np.ndarray:
+    """Batched EXACT form of the ``issue1345_operator_comparison
+    .raw_cosine_with_rotation_null`` two-sided rotation null — ONE shared draw set
+    serving every square-operator pair (concern atlas-pair-loop-unbatched-unresumable).
+
+    Identity (equality in distribution via Haar invariance; pinned by
+    ``tests/test_issue2569_atlas.py::test_shared_null_algebraic_identity``): for
+    square A = Ua Sa Va^T, B = Ub Sb Vb^T (full SVDs) and Haar Q1, Q2,
+
+        cos(vec(A), vec(Q1^T B Q2))
+          = tr(Sa [Ua^T Q1^T Ub] Sb [Vb^T Q2 Va]) / (||A||_F ||B||_F)
+          =d sa_hat^T (G1 * G2^T) sb_hat,   G1, G2 iid Haar O(d),
+
+    because Ua^T Q1^T Ub and Vb^T Q2 Va are themselves iid Haar (two-sided
+    invariance) and ||Q1^T B Q2||_F == ||B||_F. Cost: 2 Haar QRs per draw TOTAL
+    (shared across ALL pairs) instead of 2 QRs + 2 dense d^3 GEMMs per draw PER
+    PAIR. Haar samples come from ``issue825_map_alignment._random_orthogonal``
+    (gaussian QR + sign fix; CPU gaussian from the seeded generator, QR on
+    ``device``) — the SAME construction the serial convention uses. Draws are
+    therefore shared across pairs (pairs' null bands are correlated; each pair
+    still receives ``n_draws`` draws from its exact null distribution).
+
+    ``spectra_unit``: (n_rows, d) — row i = svdvals(A_i) / ||A_i||_F. Returns
+    X (n_draws, n, n): X[t, i, j] = one null draw of the pair (i, j) cosine with
+    row j in the rotated (beta_b) slot. Draws are generated in chunks of
+    ``chunk_draws`` (per-chunk generator seed = seed + chunk index) and, when
+    ``ckpt_dir`` is set, each chunk is checkpointed keyed on ``regime_key`` +
+    chunk shape (#1482 checkpoint-cadence duty), so a mid-phase death resumes at
+    the first missing chunk instead of restarting every pair.
+    """
+    import issue825_map_alignment as MA
+
+    sn = torch.as_tensor(np.asarray(spectra_unit), dtype=torch.float64)
+    n, d = sn.shape
+    assert n_draws >= 1, n_draws
+    dev = torch.device(device)
+    sn_dev = sn.to(dev)
+    out: list[np.ndarray] = []
+    n_chunks = (n_draws + chunk_draws - 1) // chunk_draws
+    t0 = time.time()
+    for c in range(n_chunks):
+        take = min(chunk_draws, n_draws - c * chunk_draws)
+        cpath = (ckpt_dir / f"null_chunk_{c:03d}.pt") if ckpt_dir is not None else None
+        if cpath is not None and cpath.exists():
+            prior = torch.load(cpath, map_location="cpu", weights_only=False)
+            x_prior = np.asarray(prior.get("x"), dtype=np.float64)
+            if prior.get("regime_key") == regime_key and x_prior.shape == (take, n, n):
+                out.append(x_prior)
+                print(
+                    f"[atlas] null chunk {c + 1}/{n_chunks} RESUME (checkpoint) "
+                    f"elapsed={time.time() - t0:.0f}s",
+                    flush=True,
+                )
+                continue
+        gen = torch.Generator().manual_seed(seed + c)
+        xs = torch.empty((take, n, n), dtype=torch.float64)
+        for t in range(take):
+            g1 = MA._random_orthogonal(d, gen, dev)
+            g2 = MA._random_orthogonal(d, gen, dev)
+            h = g1 * g2.T
+            xs[t] = (sn_dev @ h @ sn_dev.T).cpu()
+        if cpath is not None:
+            _atomic_torch_save(
+                {"x": xs, "regime_key": regime_key, "chunk": c, "take": take, "seed": seed + c},
+                cpath,
+            )
+        out.append(xs.numpy())
+        print(
+            f"[atlas] null chunk {c + 1}/{n_chunks} draws={take} elapsed={time.time() - t0:.0f}s",
+            flush=True,
+        )
+    return np.concatenate(out, axis=0)
+
+
+def _null_stats(draws: np.ndarray, d: int) -> dict:
+    """Rotation-null band in the ``issue1345_operator_comparison`` output shape."""
+    arr = np.asarray(draws, dtype=np.float64)
+    return {
+        "n_draws": int(len(arr)),
+        "null_mean": float(arr.mean()),
+        "null_std": float(arr.std()),
+        "null_p975": float(np.quantile(arr, 0.975)),
+        "analytic_sd_1_over_d": float(1.0 / d),
+        "null_form": (
+            "shared spectra-bilinear Haar draws (exact in distribution; draws "
+            "shared across pairs — see shared_rotation_null_draws)"
+        ),
+    }
+
+
+def tier2_aligned_operator_cosine(
+    qwen_ops: dict[str, np.ndarray],
+    A_llama: np.ndarray,
+    R_in: np.ndarray,
+    R_out: np.ndarray,
+    *,
+    n_draws: int,
+    seed: int,
+    device: str,
+    n_rows_alignment: int,
+) -> dict:
+    """Tier-2 activation-Procrustes aligned operator cosine vs the random-rotation
+    null (plan §4 leg 7 item 3; concern leg7-tier2-aligned-cosine-missing).
+
+    Construction = ``issue825_map_alignment._procrustes_cosine_null``'s observed
+    statistic, transposed into the atlas row convention: the Llama native operator
+    is conjugated into the shared qwen basis by the FIXED activation-fitted
+    semi-orthogonal alignments (``A_l_in_q = R_in @ A_llama @ R_out.T``; R_in from
+    paired v_C TRAIN rows, R_out from paired v_A TRAIN rows — identical to the
+    #825 ``R_in^T beta_b R_out`` modulo transpose naming) and compared to each
+    qwen-side operator by raw vec-cosine. The null rotates the ALIGNED Llama
+    operator two-sidedly (Haar) in the shared basis — the #1345 pair convention
+    applied post-alignment; in the square full-orthogonal case this equals the
+    #825 pre-alignment null exactly, and it is the well-defined extension when
+    the alignment is semi-orthogonal (cross-model d_q != d_l). Read against the
+    #825 base<->instruct anchor 0.6864. Direction-aware BY CONSTRUCTION — this
+    statistic can never be produced by a spectrum cosine, which is
+    rotation-invariant-only and cannot support "same operator up to rotation".
+    """
+    A_al = (
+        np.asarray(R_in, np.float64)
+        @ np.asarray(A_llama, np.float64)
+        @ np.asarray(R_out, np.float64).T
+    )
+    d = int(A_al.shape[0])
+    assert A_al.shape == (d, d), A_al.shape
+    names = list(qwen_ops)
+    mats = [np.asarray(qwen_ops[nm], np.float64) for nm in names]
+    for m in mats:
+        assert m.shape == (d, d), (m.shape, d)
+    all_mats = mats + [A_al]
+    spectra = []
+    for m in all_mats:
+        s = np.linalg.svd(m, compute_uv=False)
+        spectra.append(s / (np.linalg.norm(s) + 1e-12))
+    x = shared_rotation_null_draws(np.stack(spectra), n_draws=n_draws, seed=seed, device=device)
+    j = len(all_mats) - 1
+    v_al = A_al.reshape(-1)
+    n_al = float(np.linalg.norm(v_al))
+    per_op: dict[str, dict] = {}
+    for i, nm in enumerate(names):
+        v = mats[i].reshape(-1)
+        obs = float(v @ v_al / (np.linalg.norm(v) * n_al + 1e-12))
+        null = _null_stats(x[:, i, j], d)
+        if np.asarray(A_llama).shape == mats[i].shape:
+            v2 = np.asarray(A_llama, np.float64).reshape(-1)
+            raw = {
+                "applicable": True,
+                "value": float(v @ v2 / (np.linalg.norm(v) * np.linalg.norm(v2) + 1e-12)),
+            }
+        else:
+            raw = {
+                "applicable": False,
+                "reason": (
+                    f"pre-alignment operator shapes differ ({mats[i].shape} vs "
+                    f"{tuple(np.asarray(A_llama).shape)}) — cross-model spaces"
+                ),
+            }
+        per_op[nm] = {
+            "observed_aligned_cosine": obs,
+            "rotation_null": null,
+            "z_observed_vs_null": float((obs - null["null_mean"]) / (null["null_std"] + 1e-12)),
+            "raw_vec_cosine": raw,
+        }
+    return {
+        "per_operator": per_op,
+        "anchor_825_aligned_cosine": ANCHOR_825_ALIGNED_COSINE,
+        "n_rows_alignment": int(n_rows_alignment),
+        "alignment": (
+            "activation-fitted semi-orthogonal Procrustes (R_in from paired v_C "
+            "TRAIN rows, R_out from paired v_A TRAIN rows; the "
+            "issue825_map_alignment._procrustes_cosine_null construction)"
+        ),
+        "statistic_class": (
+            "direction-aware under the FIXED activation-Procrustes alignment "
+            "(vs a two-sided random-rotation null; NOT rotation-invariant — a "
+            "spectrum cosine can never produce this read)"
+        ),
+    }
+
+
 def _knn(pred: np.ndarray, true: np.ndarray) -> dict:
     """kNN retrieval read with the stated chance floor (mandatory companion)."""
     return knn_retrieval(np.asarray(pred, np.float64), np.asarray(true, np.float64), ks=KNN_KS)
@@ -679,6 +889,33 @@ def phase_fits(args) -> None:
         "statistic_class": "direction-aware (raw cosine vs two-sided rotation null)",
     }
 
+    # -- tier 2 aligned operator cosine (plan §4 leg 7 item 3; the #825
+    # _procrustes_cosine_null construction — concern leg7-tier2-aligned-cosine-missing)
+    R_in = orth_procrustes(Xq_c[folds["tr"]], Xl_c[folds["tr"]])
+    R_out = orth_procrustes(Xq_a[folds["tr"]], Xl_a[folds["tr"]])
+    A_banked, _b0 = OP.row_operator(a_qwen)
+    A_matched, _b1 = OP.row_operator(named[f"qwen_matched_L{qL}"]["payload"])
+    A_ll_native, _b2 = OP.row_operator(named[f"llama_native_L{lL}"]["payload"])
+    t2 = tier2_aligned_operator_cosine(
+        {"a_qwen": A_banked, "qwen_matched": A_matched},
+        A_ll_native,
+        R_in,
+        R_out,
+        n_draws=args.null_draws,
+        seed=20250826,
+        device=args.device,
+        n_rows_alignment=int(len(folds["tr"])),
+    )
+    t2["a_qwen_source"] = a_qwen_source(a_qwen)
+    summary["tier2_aligned_operator_cosine"] = t2
+    print(
+        "[fits] tier2 aligned operator cosine "
+        f"a_qwen={t2['per_operator']['a_qwen']['observed_aligned_cosine']:.4f} "
+        f"qwen_matched={t2['per_operator']['qwen_matched']['observed_aligned_cosine']:.4f} "
+        f"(anchor 0.6864)",
+        flush=True,
+    )
+
     _atomic_json(out_dir / "fits_summary.json", summary)
     print(f"[fits] done wall={time.time() - t0:.0f}s", flush=True)
     if not args.skip_upload:
@@ -766,6 +1003,7 @@ def phase_report(args) -> None:
         },
         "tier2_operator_similarity": {
             "routes": s["tier2_routes"],
+            "aligned_operator_cosine": s["tier2_aligned_operator_cosine"],
             "correspondence_test": s["correspondence_test"],
             "anchor_825_aligned_cosine": ANCHOR_825_ALIGNED_COSINE,
             "note": (
@@ -785,8 +1023,132 @@ def phase_report(args) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Phase: atlas (operator rows + pairwise distance table + MDS)
+# Phase: atlas (operator rows + pairwise distance table + MDS + H7 demote)
 # ---------------------------------------------------------------------------
+
+H7_PREDICATE = (
+    "within-operator split-half distance >= between-operator distance for > half "
+    "of pairs -> atlas reported noise-dominated, descriptive only"
+)
+
+
+def _floor_cos(floor) -> float | None:
+    """Normalize a split-half floor record to its COSINE: fitted rows persist
+    ``{'floor': cos, 'n_half': [...]}`` (``_split_half_floor``); the leg-6
+    producer persists a BARE FLOAT (``issue2569_leg6.write_operator_factors``,
+    key ``split_half_floor``); absent/None -> None."""
+    if floor is None:
+        return None
+    if isinstance(floor, dict):
+        v = floor.get("floor")
+        return None if v is None else float(v)
+    return float(floor)
+
+
+def h7_demote_block(rows: list[dict], table: list[dict]) -> dict:
+    """The pre-registered H7 demote branch (plan §7.5 leg 7; concerns
+    h7-demote-branch-not-implemented + leg7-atlas-noise-demotion-missing) —
+    decided FROM THE ARTIFACT ALONE, never at interpretation time.
+
+    Reading (stated because the plan text leaves two details open):
+
+    - **Units:** distances derive as 1 - cosine in MATCHED vec-cosine units —
+      within-operator distance = 1 - split_half_floor cosine (the raw vec-cosine
+      of the two half-refit operators) and between-operator distance = 1 - the
+      pair's direction-aware ALIGNED raw cosine. The rotation-invariant spectrum
+      fallback is NEVER used here (unmatched units); such pairs are excluded
+      with a recorded reason.
+    - **Pair-level within distance:** the MAX of the two members' within
+      distances — a pair's separation is resolvable only if it exceeds BOTH
+      members' split-half self-distance, so the noisier member binds (the
+      conservative reading: the demote fires more readily, never less).
+    - **Denominator:** evaluable pairs only (both floors known AND a
+      direction-aware cosine present); every exclusion carries a reason. The
+      demote fires on the STRICT majority (n_noise * 2 > n_evaluable, the plan's
+      "> half"). Zero evaluable pairs -> verdict UNDECIDABLE and the atlas ships
+      descriptive-only (no above-noise separation claim is possible) — never a
+      silent not-demoted default.
+
+    Mutates each table entry with an ``h7`` record; returns the verdict block.
+    """
+    floors = {r["name"]: _floor_cos(r.get("floor")) for r in rows}
+    n_eval = 0
+    n_noise = 0
+    excluded: dict[str, int] = {}
+    for e in table:
+        a, b = e["pair"]
+        fa, fb = floors.get(a), floors.get(b)
+        if e.get("cosine") is None:
+            rec = {
+                "evaluable": False,
+                "reason": (
+                    "no direction-aware aligned cosine (the spectrum fallback is "
+                    "rotation-invariant — unmatched units for the floor comparison)"
+                ),
+            }
+        elif fa is None or fb is None:
+            missing = [nm for nm, f in ((a, fa), (b, fb)) if f is None]
+            rec = {"evaluable": False, "reason": f"no split-half floor on: {', '.join(missing)}"}
+        else:
+            within = 1.0 - min(fa, fb)  # == max(1 - fa, 1 - fb)
+            between = 1.0 - float(e["cosine"]["raw_cosine"])
+            nd = bool(within >= between)
+            rec = {
+                "evaluable": True,
+                "within_distance_max": float(within),
+                "between_distance": float(between),
+                "noise_dominated": nd,
+            }
+            n_eval += 1
+            n_noise += int(nd)
+        if not rec["evaluable"]:
+            excluded[rec["reason"]] = excluded.get(rec["reason"], 0) + 1
+        e["h7"] = rec
+    if n_eval == 0:
+        noise_dominated = None
+        disposition = (
+            "undecidable — descriptive only (zero pairs carry both split-half "
+            "floors and a direction-aware aligned cosine)"
+        )
+    elif n_noise * 2 > n_eval:
+        noise_dominated = True
+        disposition = "noise-dominated — descriptive only (pre-registered H7 demote fired)"
+    else:
+        noise_dominated = False
+        disposition = (
+            "not demoted — within-operator split-half distance < between-operator "
+            "distance for at least half of evaluable pairs"
+        )
+    return {
+        "predicate": H7_PREDICATE,
+        "reading": {
+            "units": (
+                "distances are 1 - cosine in matched vec-cosine units: within = "
+                "1 - split_half_floor cosine (raw vec-cosine of the two half-refit "
+                "operators); between = 1 - the pair's direction-aware aligned raw "
+                "cosine; the rotation-invariant spectrum fallback is never used"
+            ),
+            "pair_within": (
+                "max over the two members' within-operator distances (the noisier "
+                "member binds: a separation is resolvable only above BOTH self-floors)"
+            ),
+            "denominator": (
+                "evaluable pairs only (both floors present + direction-aware "
+                "cosine); every exclusion recorded with a reason; strict > half"
+            ),
+        },
+        "n_pairs_total": int(len(table)),
+        "n_evaluable": int(n_eval),
+        "n_noise_dominated": int(n_noise),
+        "fraction_noise_dominated": (float(n_noise) / n_eval) if n_eval else None,
+        "noise_dominated": noise_dominated,
+        "disposition": disposition,
+        "excluded_pair_reasons": excluded,
+        "conservatism_note": (
+            "floors are split-half refits at n/2 train rows, which overstates the "
+            "full-n operator's noise — the demote fires conservatively"
+        ),
+    }
 
 
 def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
@@ -794,7 +1156,8 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
     leg 7 step 4: a miss drops the row, never a silent substitute).
 
     Returns (rows, dropped). Each row: {name, basis ('qwen'|'llama'), A (d x d or
-    d_in x d_out np), floor (dict|None), floor_label, source}."""
+    d_in x d_out np), floor (dict|float|None), floor_label, source, fp (content
+    fingerprint of the row's on-disk inputs — the resume key component)}."""
     rows: list[dict] = []
     dropped: list[dict] = []
 
@@ -817,6 +1180,7 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                     "floor": None,
                     "floor_label": "no floor — banked (refit rows not staged)",
                     "source": str(p.path),
+                    "fp": _file_sha(p.path),
                 }
             )
         except (FileNotFoundError, RuntimeError, AssertionError) as e:
@@ -846,6 +1210,7 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                         "floor": None,
                         "floor_label": "no floor — banked (n_train=4,500 pass-B fit)",
                         "source": f"{PASSB_PREFIX}/base_L{layer}.pt",
+                        "fp": _file_sha(dest),
                     }
                 )
             except Exception as e:  # drop-on-miss is the PLAN-sanctioned disposition
@@ -880,6 +1245,7 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                     "floor": floor,
                     "floor_label": "split-half refit at the selected lambda",
                     "source": str(path),
+                    "fp": _file_sha(path),
                 }
             )
         # composed operator in the llama basis: align_c_l2q -> A_qwen -> align_a_q2l
@@ -895,6 +1261,8 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                 Ac, _ = OP.row_operator(a_c)
                 Am, _ = OP.row_operator(center["payload"])
                 Aa, _ = OP.row_operator(a_a)
+                center_path = Path(center["payload"].path)
+                center_fp = _file_sha(center_path) if center_path.is_file() else str(center_path)
                 rows.append(
                     {
                         "name": f"composed_L{lL}",
@@ -903,6 +1271,9 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                         "floor": None,
                         "floor_label": "no floor — composition of three fitted maps",
                         "source": f"{align_path} (center: {center['source']})",
+                        "fp": hashlib.sha256(
+                            (_file_sha(align_path) + center_fp).encode()
+                        ).hexdigest(),
                     }
                 )
             except KeyError as e:
@@ -943,9 +1314,11 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                     "name": f"leg6_wmap_{path.parent.name}",
                     "basis": "qwen",
                     "A": (u * s_vals[None, :]) @ v.T,
+                    # producer schema: BARE FLOAT (issue2569_leg6.write_operator_factors)
                     "floor": d.get("split_half_floor"),
-                    "floor_label": "leg6 sidecar",
+                    "floor_label": "leg6 sidecar (operator split-half self-cosine)",
                     "source": str(path),
+                    "fp": _file_sha(path),
                 }
             )
     else:
@@ -965,6 +1338,7 @@ def _resolve_atlas_rows(args) -> tuple[list[dict], list[dict]]:
                     "floor": None,
                     "floor_label": "no floor — descriptive only",
                     "source": str(path),
+                    "fp": _file_sha(path),
                 }
             )
     else:
@@ -1043,6 +1417,17 @@ def _featmap_row(args) -> dict:
     assert A_mid.shape == (len(alive_1pct), len(union)), (A_mid.shape, len(alive_1pct), len(union))
     A_feat = E @ A_mid @ D  # (d, d) row action: vhat = v @ A_feat
     floor = _split_half_floor(X, Y, tr, lam)
+    # Fingerprint covers the small derivation-pinning files + the recorded lambda;
+    # the fp16 encode arrays are deliberately not hashed (multi-GB) — their
+    # generation is pinned by enc_meta's row counts + the metrics-recorded lambda.
+    fp = hashlib.sha256(
+        (
+            _file_sha(fdir / "enc_meta.json")
+            + _file_sha(fdir / "feature_map_metrics.json")
+            + _file_sha(fdir / "counts_ctx.npy")
+            + f"lam={lam:g}"
+        ).encode()
+    ).hexdigest()
     return {
         "name": "featmap_L19",
         "basis": "qwen",
@@ -1050,6 +1435,7 @@ def _featmap_row(args) -> dict:
         "floor": floor,
         "floor_label": "split-half refit of M_feat at the recorded lambda (linearized)",
         "source": f"{fdir} (re-derived at recorded lambda={lam:g}; ReLU/TopK gates ignored)",
+        "fp": fp,
     }
 
 
@@ -1070,16 +1456,193 @@ def _activation_procrustes(args, qL: int, lL: int) -> dict | None:
     Xl_c = caps["llama"][("vc", lL)]["x"][join["l_idx"]][tr]
     Yq_a = caps["qwen"][("va", qL)]["x"][join["q_idx"]][tr]
     Yl_a = caps["llama"][("va", lL)]["x"][join["l_idx"]][tr]
+    # content fingerprint of the alignment inputs (int64 ci read from the capture
+    # files — machine-stable to hash; #1336) for the aligned-spectra resume keys
+    fp = hashlib.sha256(
+        json.dumps(
+            {"ci": _sha_int64(join["ci"]), "n_tr": int(len(tr)), "val_rows": int(args.val_rows)},
+            sort_keys=True,
+        ).encode()
+    ).hexdigest()
     return {
         "R_in": orth_procrustes(Xq_c, Xl_c),  # (d_q, d_l)
         "R_out": orth_procrustes(Yq_a, Yl_a),  # (d_q, d_l)
         "n_rows": int(len(tr)),
+        "fp": fp,
     }
 
 
+def _safe_name(name: str) -> str:
+    """Filesystem-safe checkpoint stem for a row name."""
+    return "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in name)
+
+
+def _spectra_key(row: dict, proc_fp: str) -> str:
+    """Resume key for one row's spectra checkpoint: content fingerprints of the
+    row's inputs + (for llama-basis rows) the alignment inputs — generating
+    parameters and file-byte shas only, never a recomputed float array (#1336)."""
+    payload = {
+        "name": row["name"],
+        "fp": row.get("fp", ""),
+        "basis": row["basis"],
+        "shape": [int(x) for x in np.asarray(row["A"]).shape],
+        "aligned": bool(row.get("aligned_A") is not None),
+        "proc_fp": proc_fp if row["basis"] == "llama" else "",
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+
+def _pair_statistics(
+    rows: list[dict],
+    *,
+    n_draws: int,
+    seed: int,
+    device: str,
+    ckpt_dir: Path,
+    proc_fp: str,
+    chunk_draws: int,
+) -> list[dict]:
+    """Batched pair statistics (concern atlas-pair-loop-unbatched-unresumable).
+
+    Structure — the axes the old per-pair loop recomputed are hoisted:
+
+    1. **One SVD per row** (checkpointed per row, keyed on the row's content
+       fingerprint) instead of two dense SVDs per PAIR: spectrum cosines are dot
+       products of the stored singular values (numerically identical to
+       ``spectrum_cosine`` — pinned by
+       ``tests/test_issue2569_atlas.py::test_pair_table_matches_direct_statistics``).
+    2. **One shared Haar draw set for every pair's rotation null**
+       (``shared_rotation_null_draws``; exact in distribution; 2 QRs per draw
+       TOTAL instead of 2 QRs + 2 dense GEMMs per draw per pair), chunked +
+       checkpointed. SVDs run on CPU deliberately (cuSOLVER svd non-convergence
+       class, gotchas.md); the Haar QRs honor ``device`` (well-conditioned
+       gaussian inputs).
+    3. Per-pair raw aligned cosines are O(d^2) dots — the residual python loop
+       is assembly-only and keeps the per-pair progress lines.
+    """
+    assert n_draws >= 1, "--null-draws must be >= 1"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    n = len(rows)
+    t0 = time.time()
+    for i, r in enumerate(rows):
+        key = _spectra_key(r, proc_fp)
+        f = ckpt_dir / f"spectra_{i:02d}_{_safe_name(r['name'])}.pt"
+        blob = None
+        if f.exists():
+            prior = torch.load(f, map_location="cpu", weights_only=False)
+            if prior.get("key") == key:
+                blob = prior
+                print(
+                    f"[atlas] row {i + 1}/{n} {r['name']} spectra RESUME "
+                    f"elapsed={time.time() - t0:.0f}s",
+                    flush=True,
+                )
+        if blob is None:
+            s_raw = torch.linalg.svdvals(torch.as_tensor(np.asarray(r["A"]), dtype=torch.float64))
+            if r.get("aligned_A") is None:
+                s_al = None
+            elif r["aligned_A"] is r["A"]:
+                s_al = s_raw  # qwen-basis rows alias aligned_A == A
+            else:
+                s_al = torch.linalg.svdvals(
+                    torch.as_tensor(np.asarray(r["aligned_A"]), dtype=torch.float64)
+                )
+            blob = {"key": key, "s_raw": s_raw, "s_al": s_al}
+            _atomic_torch_save(blob, f)
+            print(
+                f"[atlas] row {i + 1}/{n} {r['name']} spectra elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+        r["_s_raw"] = np.asarray(blob["s_raw"], dtype=np.float64)
+        r["_s_al"] = None if blob["s_al"] is None else np.asarray(blob["s_al"], dtype=np.float64)
+
+    al_idx = [i for i, r in enumerate(rows) if r.get("aligned_A") is not None]
+    x_draws = None
+    d_al = 0
+    if len(al_idx) >= 2:
+        d_al = int(np.asarray(rows[al_idx[0]]["aligned_A"]).shape[0])
+        for i in al_idx:
+            shape = tuple(np.asarray(rows[i]["aligned_A"]).shape)
+            assert shape == (d_al, d_al), (rows[i]["name"], shape, d_al)
+        spectra_unit = np.stack(
+            [rows[i]["_s_al"] / (np.linalg.norm(rows[i]["_s_al"]) + 1e-12) for i in al_idx]
+        )
+        regime = hashlib.sha256(
+            json.dumps(
+                {
+                    "rows": [_spectra_key(rows[i], proc_fp) for i in al_idx],
+                    "seed": seed,
+                    "chunk_draws": chunk_draws,
+                    "d": d_al,
+                },
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()
+        x_draws = shared_rotation_null_draws(
+            spectra_unit,
+            n_draws=n_draws,
+            seed=seed,
+            device=device,
+            chunk_draws=chunk_draws,
+            ckpt_dir=ckpt_dir,
+            regime_key=regime,
+        )
+    al_pos = {i: p for p, i in enumerate(al_idx)}
+
+    table: list[dict] = []
+    n_pairs = n * (n - 1) // 2
+    k = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            k += 1
+            a, b = rows[i], rows[j]
+            sa, sb = a["_s_raw"], b["_s_raw"]
+            kk = int(min(len(sa), len(sb)))
+            spec = float(
+                (sa[:kk] * sb[:kk]).sum()
+                / (np.linalg.norm(sa[:kk]) * np.linalg.norm(sb[:kk]) + 1e-12)
+            )
+            entry = {
+                "pair": [a["name"], b["name"]],
+                "bases": [a["basis"], b["basis"]],
+                "spectrum": {
+                    "spectrum_cosine": spec,
+                    "truncated": bool(len(sa) != len(sb)),
+                    "k": kk,
+                    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+                },
+            }
+            if i in al_pos and j in al_pos and x_draws is not None:
+                va = np.asarray(a["aligned_A"], dtype=np.float64).reshape(-1)
+                vb = np.asarray(b["aligned_A"], dtype=np.float64).reshape(-1)
+                raw = float(va @ vb / (np.linalg.norm(va) * np.linalg.norm(vb) + 1e-12))
+                same_basis = a["basis"] == b["basis"]
+                entry["cosine"] = {
+                    "raw_cosine": raw,
+                    "rotation_null": _null_stats(x_draws[:, al_pos[i], al_pos[j]], d_al),
+                    "statistic_class": (
+                        "direction-aware (raw cosine vs rotation null; same basis)"
+                        if same_basis
+                        else "direction-aware under the FIXED activation-Procrustes "
+                        "alignment (anchor alignment applied before cross-basis "
+                        "comparison)"
+                    ),
+                }
+            else:
+                entry["cosine"] = None
+            table.append(entry)
+            print(
+                f"[atlas] pair {k}/{n_pairs} {a['name']}~{b['name']} "
+                f"elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+    return table
+
+
 def phase_atlas(args) -> None:
-    """Operator atlas: resolve rows, align bases, pairwise statistics (every
-    statistic class-labeled), split-half floors, MDS coords (presentation-only).
+    """Operator atlas: resolve rows, align bases, batched pairwise statistics
+    (every statistic class-labeled), split-half floors, the pre-registered H7
+    demote verdict, MDS coords (presentation-only).
     Writes ``eval_results/issue_2569/leg7/atlas_distances.json``."""
     print("[phase=atlas]", flush=True)
     rows, dropped = _resolve_atlas_rows(args)
@@ -1104,44 +1667,17 @@ def phase_atlas(args) -> None:
         if r["basis"] == "qwen":
             r["aligned_A"] = r["A"]
 
-    table = []
-    t0 = time.time()
-    n_pairs = len(rows) * (len(rows) - 1) // 2
-    k = 0
-    for i in range(len(rows)):
-        for j in range(i + 1, len(rows)):
-            k += 1
-            a, b = rows[i], rows[j]
-            entry = {
-                "pair": [a["name"], b["name"]],
-                "bases": [a["basis"], b["basis"]],
-                "spectrum": {
-                    **spectrum_cosine(a["A"], b["A"]),
-                    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
-                },
-            }
-            if a.get("aligned_A") is not None and b.get("aligned_A") is not None:
-                same_basis = a["basis"] == b["basis"]
-                cos = raw_cosine_with_rotation_null(
-                    a["aligned_A"], b["aligned_A"], n_draws=args.null_draws, seed=1345 + k
-                )
-                entry["cosine"] = {
-                    **cos,
-                    "statistic_class": (
-                        "direction-aware (raw cosine vs rotation null; same basis)"
-                        if same_basis
-                        else "direction-aware under the FIXED activation-Procrustes "
-                        "alignment (anchor alignment applied before cross-basis "
-                        "comparison)"
-                    ),
-                }
-            else:
-                entry["cosine"] = None
-            table.append(entry)
-            print(
-                f"[atlas] pair {k}/{n_pairs} {a['name']}~{b['name']} elapsed={time.time() - t0:.0f}s",
-                flush=True,
-            )
+    table = _pair_statistics(
+        rows,
+        n_draws=args.null_draws,
+        seed=1345,
+        device=args.device,
+        ckpt_dir=Path(args.fits_dir) / "atlas_ckpt",
+        proc_fp=proc["fp"] if proc else "",
+        chunk_draws=args.null_chunk_draws,
+    )
+    h7 = h7_demote_block(rows, table)
+    print(f"[atlas] h7_demote: {h7['disposition']}", flush=True)
 
     # MDS (presentation-only) over 1 - aligned cosine (pairs without an aligned
     # cosine fall back to 1 - spectrum cosine, flagged).
@@ -1167,8 +1703,17 @@ def phase_atlas(args) -> None:
                 "basis": r["basis"],
                 "shape": list(np.asarray(r["A"]).shape),
                 "floor": r["floor"],
+                # explicit derived forms so no downstream reader re-derives units
+                # (the H7 predicate is phrased in DISTANCES; floors store COSINES)
+                "floor_cos": _floor_cos(r.get("floor")),
+                "within_distance": (
+                    None
+                    if _floor_cos(r.get("floor")) is None
+                    else float(1.0 - _floor_cos(r.get("floor")))
+                ),
                 "floor_label": r["floor_label"],
                 "source": r["source"],
+                "fp": r.get("fp", ""),
                 "procrustes_aligned": bool(
                     r.get("aligned_A") is not None and r["basis"] == "llama"
                 ),
@@ -1176,6 +1721,7 @@ def phase_atlas(args) -> None:
             for r in rows
         ],
         "dropped_rows": dropped,
+        "h7_demote": h7,
         "distance_table": table,
         "procrustes": {"available": proc is not None, "n_rows": proc["n_rows"] if proc else 0},
         "mds_2d": {
@@ -1293,7 +1839,15 @@ def phase_selftest(args) -> None:
     assert routes["native"]["r2"] > 0.5, routes["native"]["r2"]
     # the composed route must beat the alignment-only baseline on TRUE linear structure
     assert routes["composed_matched"]["r2"] > routes["alignment_only_baseline"]["r2"], routes
+    t2 = tt["tier2_operator_similarity"]["aligned_operator_cosine"]
+    assert set(t2["per_operator"]) == {"a_qwen", "qwen_matched"}, sorted(t2["per_operator"])
+    for rec in t2["per_operator"].values():
+        assert -1.0 <= rec["observed_aligned_cosine"] <= 1.0, rec
+        assert rec["rotation_null"]["n_draws"] == 24, rec["rotation_null"]
     assert at["rows"], "selftest atlas resolved no rows"
+    h7 = at["h7_demote"]
+    assert h7["disposition"] and h7["n_pairs_total"] == len(at["distance_table"]), h7
+    assert all("h7" in e for e in at["distance_table"]), "per-pair h7 records missing"
     # ridge_beta_at_lambda equivalence vs the reused core at a fixed lambda
     rng = np.random.default_rng(1)
     X = rng.standard_normal((60, 6))
@@ -1364,6 +1918,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--val-rows", type=int, default=512)
     ap.add_argument("--null-draws", type=int, default=200)
+    ap.add_argument(
+        "--null-chunk-draws",
+        type=int,
+        default=25,
+        help="rotation-null draws per checkpoint chunk (atlas pair statistics)",
+    )
     ap.add_argument("--hf-data-repo", default="superkaiba1/explore-persona-space-data")
     ap.add_argument("--stage-from-hf", action="store_true")
     ap.add_argument("--skip-upload", action="store_true")
@@ -1392,6 +1952,7 @@ def main(argv: list[str] | None = None) -> None:
         import math as _math  # noqa: F401
         import tempfile as _tempfile  # noqa: F401
 
+        import issue825_map_alignment as _ma  # noqa: F401
         import issue1345_operator_comparison as _oc  # noqa: F401
         import issue2476_turnavg_sae as _t24  # noqa: F401
         import issue2569_gateladder as _gl  # noqa: F401
