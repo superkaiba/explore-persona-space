@@ -114,7 +114,7 @@ HF_DATA_REPO = os.environ.get("EPM_2587_DATA_WRITE_REPO", "superkaiba1/explore-p
 PREFIX_2587 = "issue2587_minpair"  # unit 3a/3b battery stores + embeddings
 PREFIX_2564 = "issue2564_minpair"  # parent bank manifest + parent stores
 PREFIX_FITS = "issue2587_q35_map"  # unit 4 ridge payloads + preds (issue2587_fits.py CLI)
-PREFIX_PREDS7B = "issue2564_minpair/analysis_tensors/predictions_7b_matched"  # unit 4 P8
+PREFIX_PREDS7B = "issue2587_minpair/analysis_tensors/preds_7b_matched"  # unit 4 P8 (plan §6.5)
 
 # Seeds + battery sizes — parent parity (plan §9/§11).
 BOOT_SEED = 2215

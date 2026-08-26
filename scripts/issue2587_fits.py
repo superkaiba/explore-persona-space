@@ -62,7 +62,7 @@ CLI examples:
       --payloads-prefix issue2587_q35_map/analysis_tensors/ridge_payloads \
       --preds-prefix issue2587_q35_map/analysis_tensors/preds
   uv run python scripts/issue2587_fits.py --phase matched7b --upload hf \
-      --preds7b-prefix issue2564_minpair/analysis_tensors/predictions_7b_matched
+      --preds7b-prefix issue2587_minpair/analysis_tensors/preds_7b_matched
   uv run python scripts/issue2587_fits.py --smoke-chunk-dir /tmp/smoke_chunks \
       --device cpu --h-dim 16 --out-json /tmp/smoke_fits.json
   uv run python scripts/issue2587_fits.py --import-check
