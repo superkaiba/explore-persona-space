@@ -467,8 +467,14 @@ def test_main_smoke_path_end_to_end(tmp_path, monkeypatch):
     assert ident["answer_language_rubric_sha256"] == ANSWER_LANGUAGE_RUBRIC_SHA256
     assert ident["answer_language_rubric_text"] == J.ANSWER_LANGUAGE_EVAL_PROMPT
 
-    # smoke slice → arithmetic recorded but NOT verified against 1,464
+    # smoke slice → arithmetic recorded but NOT verified against 1,464 — and
+    # the artifact ENUMERATES its active downgrades (smoke blind-spot registry)
     assert meta["call_arithmetic"]["verified"] is False
+    bs = {e["site"]: e["kind"] for e in meta["smoke_blind_spots"]}
+    assert bs == {
+        "call_arithmetic_1464": "assert-skipped",
+        "smoke_slice_narrowing": "param-narrowed",
+    }
     assert meta["n_judged_specs"] == len(reg_specs)
     assert meta["n_lang_specs"] == len(lang_specs)
     assert meta["n_capped_out"]["compliance"] == len(reg_specs) - J.SMOKE_JUDGE_ITEMS
@@ -530,3 +536,49 @@ def test_main_smoke_refuses_committed_eval_results_out(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as ei:
         J.main()
     assert "must not write" in str(ei.value)
+
+
+def test_smoke_refuses_absolute_eval_results_out(monkeypatch):
+    """r1 g6 M1: the committed-results guard is path-NORMALIZED — an ABSOLUTE
+    --out under eval_results/ refuses exactly like the relative spelling."""
+    absolute = str((Path.cwd() / "eval_results" / "issue_2587" / "x.json").resolve())
+    monkeypatch.setattr(sys, "argv", ["issue2587_judge.py", "--smoke", "--out", absolute])
+    with pytest.raises(SystemExit) as ei:
+        J.main()
+    assert "must not write" in str(ei.value)
+
+
+def test_dry_run_refuses_explicit_eval_results_out(monkeypatch):
+    """r1 g6 M1 (second half): an explicit eval_results/ --out under --dry-run
+    would overwrite a committed sentinel with an all-incomplete table — refuse
+    loud, never rebind silently."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["issue2587_judge.py", "--dry-run", "--out", "eval_results/issue_2587/x.json"],
+    )
+    with pytest.raises(SystemExit) as ei:
+        J.main()
+    assert "must not write" in str(ei.value)
+
+
+def test_inside_eval_results_normalizes(tmp_path):
+    assert J._inside_eval_results("eval_results/issue_2587/x.json")
+    assert J._inside_eval_results(Path.cwd() / "eval_results" / "y.json")
+    assert J._inside_eval_results("figures/../eval_results/y.json")
+    assert not J._inside_eval_results(tmp_path / "manip.json")
+    assert not J._inside_eval_results("/tmp/issue2587_judge_smoke/x.json")
+
+
+def test_judge_smoke_blind_spot_registry_shape():
+    """The registry is the enumerable source for the marker: exactly the
+    arithmetic-gate skip (r1 g6 M2) + the slice/cap narrowing."""
+    sites = {e.site: e.kind for e in J.SMOKE_BLIND_SPOTS}
+    assert sites == {
+        "call_arithmetic_1464": "assert-skipped",
+        "smoke_slice_narrowing": "param-narrowed",
+    }
+    out = J.format_smoke_blind_spots(J.SMOKE_BLIND_SPOTS)
+    assert all(set(d) == {"site", "kind", "production", "smoke", "why"} for d in out)
+    arith = next(e for e in J.SMOKE_BLIND_SPOTS if e.site == "call_arithmetic_1464")
+    assert "1,464" in arith.production  # names the gate the smoke skips, verbatim

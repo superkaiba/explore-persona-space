@@ -1004,3 +1004,69 @@ def test_build_config_default_ref7b_commit_routes_through_resolver(monkeypatch) 
         ]
     )
     assert AN.build_config(args2).ref7b_parent_commit == "b" * 40
+
+
+# ── smoke blind-spot registry (r2 concern analysis-smoke-blindspots) ────
+
+
+def test_smoke_blind_spot_registry_shape():
+    """The registry is the single enumerable source: unique sites, the five
+    cardinality assertions registered assert-skipped, the B narrowing
+    registered param-narrowed (it RUNS at reduced B, never disabled)."""
+    sites = [e.site for e in AN.SMOKE_BLIND_SPOTS]
+    assert len(sites) == len(set(sites))
+    assert set(AN._ASSERT_SKIPPED_SITES) == {
+        "expected_contexts",
+        "expected_pairs",
+        "axis_completeness",
+        "bank9_cardinality",
+        "carrier_count_12",
+        "parent_axes_count",
+    }
+    kinds = {e.site: e.kind for e in AN.SMOKE_BLIND_SPOTS}
+    assert kinds["bootstrap_null_b"] == "param-narrowed"
+    out = AN.format_smoke_blind_spots(AN.SMOKE_BLIND_SPOTS)
+    assert len(out) == 7
+    assert all(set(d) == {"site", "kind", "production", "smoke", "why"} for d in out)
+
+
+def test_every_assert_skipped_site_gated_in_source_and_vice_versa():
+    """Set equality between the registry's assert-skipped sites and the
+    production_gate() call sites in the source — a new smoke-conditional
+    skip cannot land without a registry entry, and a stale entry cannot
+    outlive its site (the enumerable-registry contract)."""
+    import re
+
+    src = Path(AN.__file__).read_text()
+    called = set(re.findall(r'production_gate\(\s*"([a-z0-9_]+)"', src))
+    assert called == set(AN._ASSERT_SKIPPED_SITES), (called, set(AN._ASSERT_SKIPPED_SITES))
+
+
+def test_production_gate_semantics(caplog):
+    import logging as _logging
+
+    # unregistered site refuses in BOTH modes
+    with pytest.raises(RuntimeError, match="not registered 'assert-skipped'"):
+        AN.production_gate("not_a_site", True, True, None)
+    # a param-narrowed entry is NOT an assert-skip licence
+    with pytest.raises(RuntimeError, match="not registered 'assert-skipped'"):
+        AN.production_gate("bootstrap_null_b", True, True, None)
+    # production: assert semantics (fail loud), pass-through on True
+    with pytest.raises(AssertionError):
+        AN.production_gate("carrier_count_12", False, False, "detail")
+    AN.production_gate("carrier_count_12", False, True, "detail")
+    # smoke: SKIP with the [smoke-blind-spot] log line
+    with caplog.at_level(_logging.WARNING, logger="issue2587_analysis"):
+        AN.production_gate("carrier_count_12", True, False, "detail")
+    assert any("[smoke-blind-spot] carrier_count_12" in r.getMessage() for r in caplog.records)
+
+
+def test_smoke_config_narrows_b_and_meta_discloses(tmp_path):
+    """--smoke defaults B to 100 (the registered param-narrowed downgrade);
+    explicit --b-boot/--b-null override; production keeps 10,000."""
+    argv = ["--smoke", "--manip-9b", "m9.json", "--manip-7b", "m7.json"]
+    ref = ["--ref7b-parent", "r.json", "--ref7b-parent-commit", "c" * 40]
+    cfg = AN.build_config(AN.parse_args([*argv, *ref]))
+    assert cfg.b_boot == 100 and cfg.b_null == 100
+    cfg2 = AN.build_config(AN.parse_args([*argv, "--b-boot", "17", "--b-null", "19", *ref]))
+    assert cfg2.b_boot == 17 and cfg2.b_null == 19

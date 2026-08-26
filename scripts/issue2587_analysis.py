@@ -100,6 +100,11 @@ from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
 )
 from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2587 import bank2587 as B87  # noqa: E402
+from explore_persona_space.experiments.issue2587.smoke_registry import (  # noqa: E402
+    SmokeDowngrade,
+    format_smoke_blind_spots,
+    validate_registry,
+)
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
     git_provenance,
@@ -152,6 +157,118 @@ QUERY_AXES = ("query_content", "query_form")
 PILOT_AXES = ("answer_language", "query_content_oneword")
 # Classes with no complete (vp x carrier) grid: parent dyads + single-carrier oneword pairs.
 GRIDLESS_CLASSES = ("query_content", "query_content_oneword")
+
+# ── smoke blind-spot registry (r2 concern analysis-smoke-blindspots) ────
+# EVERY runtime --smoke downgrade of a production gate in this script is
+# registered here; the assert-skipped sites route through production_gate(),
+# which REFUSES an unregistered site in both modes — the code is the single
+# enumerable source for the marker's blind-spot enumeration
+# (smoke-blind-spots.md; the #1336 SLURM-5005 incident class). None of the
+# five cardinality assertions can run at reduced n under smoke: each pins an
+# ABSOLUTE production cardinality (bank / spec / carrier constants) that a
+# smoke slice is structurally below. The B narrowing is the one downgrade
+# whose gate still RUNS (param-narrowed, CLI-overridable).
+SMOKE_BLIND_SPOTS: tuple[SmokeDowngrade, ...] = validate_registry(
+    (
+        SmokeDowngrade(
+            site="expected_contexts",
+            kind="assert-skipped",
+            production=(
+                "build_pair_arrays: len(st.ctx_ids) == spec.expected_contexts "
+                "(9B merged 1,080 / 7B parent 984)"
+            ),
+            smoke="SKIPPED (logged [smoke-blind-spot])",
+            why="absolute bank-cardinality pin; a smoke store slice is structurally smaller",
+        ),
+        SmokeDowngrade(
+            site="expected_pairs",
+            kind="assert-skipped",
+            production=(
+                "build_pair_arrays: len(keep) == spec.expected_pairs "
+                "(9B merged 2,874 / 7B parent 2,778)"
+            ),
+            smoke="SKIPPED (logged [smoke-blind-spot])",
+            why="absolute bank-cardinality pin; a smoke pair slice is structurally smaller",
+        ),
+        SmokeDowngrade(
+            site="axis_completeness",
+            kind="assert-skipped",
+            production=(
+                "compute_side: every spec axis (instruction + query + pilot) present in the "
+                "realized axis views"
+            ),
+            smoke="SKIPPED (logged [smoke-blind-spot]; missing axes named in the log)",
+            why="a smoke slice legitimately omits whole axes; full coverage is a production pin",
+        ),
+        SmokeDowngrade(
+            site="bank9_cardinality",
+            kind="assert-skipped",
+            production=(
+                "main: bank9 n_contexts == B87.N_CONTEXTS (1,080) and n_pairs == B87.N_PAIRS "
+                "(2,874)"
+            ),
+            smoke="SKIPPED (logged [smoke-blind-spot])",
+            why="absolute merged-bank pin; a smoke bank manifest is structurally smaller",
+        ),
+        SmokeDowngrade(
+            site="carrier_count_12",
+            kind="assert-skipped",
+            production="main: n_car == 12 shared carriers (the G=12 bootstrap cluster count)",
+            smoke="SKIPPED (logged [smoke-blind-spot])",
+            why=(
+                "a smoke world carries fewer carriers by construction; G=12 coverage "
+                "properties (convention 8/15) are NOT certified by an analysis smoke"
+            ),
+        ),
+        SmokeDowngrade(
+            site="parent_axes_count",
+            kind="assert-skipped",
+            production=(
+                "crossmodel_contrasts: len(parent_axes) == len(instruction_axes) + "
+                "len(query_axes) (the 11 parent axes)"
+            ),
+            smoke="SKIPPED (logged [smoke-blind-spot])",
+            why="a smoke 7B view set is structurally below the 11-parent-axis production pin",
+        ),
+        SmokeDowngrade(
+            site="bootstrap_null_b",
+            kind="param-narrowed",
+            production="B_BOOT_DEFAULT = B_NULL_DEFAULT = 10,000 draws",
+            smoke="default 100 draws under --smoke (CLI-overridable via --b-boot/--b-null)",
+            why=(
+                "the batteries still RUN (narrowed, never disabled), but bootstrap/null "
+                "CALIBRATION is not certified by an analysis smoke"
+            ),
+        ),
+    )
+)
+_ASSERT_SKIPPED_SITES = {e.site: e for e in SMOKE_BLIND_SPOTS if e.kind == "assert-skipped"}
+
+
+def production_gate(site: str, smoke: bool, cond: bool, detail: object) -> None:
+    """Production cardinality gate with a REGISTERED smoke downgrade.
+
+    Production: ``assert cond`` (fail loud — identical semantics to the
+    inline asserts this replaces). Smoke: SKIP with a ``[smoke-blind-spot]``
+    log line — but ONLY for a site registered ``assert-skipped`` in
+    :data:`SMOKE_BLIND_SPOTS`; an unregistered site raises in BOTH modes, so
+    the enumeration can never silently drift behind the code."""
+    entry = _ASSERT_SKIPPED_SITES.get(site)
+    if entry is None:
+        raise RuntimeError(
+            f"site {site!r} is not registered 'assert-skipped' in SMOKE_BLIND_SPOTS — register "
+            "it (smoke_registry.SmokeDowngrade) before gating on it"
+        )
+    if smoke:
+        logger.warning(
+            "[smoke-blind-spot] %s: production gate SKIPPED under --smoke (%s); detail=%r",
+            site,
+            entry.production,
+            detail,
+        )
+        return
+    assert cond, (site, detail)
+
 
 # t_{0.975, df=11} for the convention-15 t-scaled companion (G=12 carriers -> df 11).
 T975_DF11 = 2.200985160082949
@@ -542,6 +659,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--prefix-2564", default=PREFIX_2564)
     ap.add_argument("--prefix-fits", default=PREFIX_FITS)
     ap.add_argument("--prefix-preds7b", default=PREFIX_PREDS7B)
+    ap.add_argument(
+        "--list-smoke-blind-spots",
+        action="store_true",
+        help="print the SMOKE_BLIND_SPOTS registry as JSON and exit (marker enumeration source)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -624,6 +746,18 @@ def build_config(args: argparse.Namespace) -> CfgX:
     )
     if args.ref7b_parent is not None and not args.ref7b_parent_commit:
         raise SystemExit("--ref7b-parent-commit is REQUIRED with --ref7b-parent (plan §4.5)")
+    b_boot = int(args.b_boot) if args.b_boot is not None else (100 if smoke else B_BOOT_DEFAULT)
+    b_null = int(args.b_null) if args.b_null is not None else (100 if smoke else B_NULL_DEFAULT)
+    if smoke and (b_boot < B_BOOT_DEFAULT or b_null < B_NULL_DEFAULT):
+        logger.warning(
+            "[smoke-blind-spot] bootstrap_null_b: b_boot=%d b_null=%d under --smoke "
+            "(production %d/%d; registered param-narrowed downgrade — the batteries run, "
+            "their calibration is NOT certified at smoke B)",
+            b_boot,
+            b_null,
+            B_BOOT_DEFAULT,
+            B_NULL_DEFAULT,
+        )
     return CfgX(
         in_root_9b=Path(args.in_root_9b) if args.in_root_9b else None,
         in_root_7b=Path(args.in_root_7b) if args.in_root_7b else None,
@@ -643,8 +777,8 @@ def build_config(args: argparse.Namespace) -> CfgX:
         ref7b_parent_commit=args.ref7b_parent_commit or _resolve_ref7b_default_commit(ref7b),
         embed_parity_report=Path(args.embed_parity_report) if args.embed_parity_report else None,
         smoke=smoke,
-        b_boot=int(args.b_boot) if args.b_boot is not None else (100 if smoke else B_BOOT_DEFAULT),
-        b_null=int(args.b_null) if args.b_null is not None else (100 if smoke else B_NULL_DEFAULT),
+        b_boot=b_boot,
+        b_null=b_null,
         n_splits=int(args.n_splits),
         prefix_2587=args.prefix_2587,
         prefix_2564=args.prefix_2564,
@@ -1161,9 +1295,19 @@ def build_pair_arrays(bank: dict, st: Stores, spec: SideSpec, smoke: bool) -> Pa
     keep = [p for p in bank["pairs"] if p["a"] in st.row_of and p["b"] in st.row_of]
     if not keep:
         raise RuntimeError("empty pair selection: no bank pair has both contexts in the stores")
-    if not smoke and spec.expected_pairs is not None:
-        assert len(st.ctx_ids) == spec.expected_contexts, (len(st.ctx_ids), spec.expected_contexts)
-        assert len(keep) == spec.expected_pairs, (len(keep), spec.expected_pairs)
+    if spec.expected_pairs is not None:
+        production_gate(
+            "expected_contexts",
+            smoke,
+            len(st.ctx_ids) == spec.expected_contexts,
+            (len(st.ctx_ids), spec.expected_contexts),
+        )
+        production_gate(
+            "expected_pairs",
+            smoke,
+            len(keep) == spec.expected_pairs,
+            (len(keep), spec.expected_pairs),
+        )
 
     ids, cls, axis, va_, vb_, cstr, orient = [], [], [], [], [], [], []
     a_i, b_i, ca_i, cb_i, dy, chg = [], [], [], [], [], []
@@ -1671,10 +1815,14 @@ def compute_side(
         resid[name] = norms - (icpt + slope * dose)
 
     views = build_axis_views(pa, spec, n_car)
-    if not cfg.smoke:
-        expected_axes = spec.instruction_axes + spec.query_axes + spec.pilot_axes
-        missing_axes = [a for a in expected_axes if a not in views]
-        assert not missing_axes, f"axes missing from production stores: {missing_axes}"
+    expected_axes = spec.instruction_axes + spec.query_axes + spec.pilot_axes
+    missing_axes = [a for a in expected_axes if a not in views]
+    production_gate(
+        "axis_completeness",
+        cfg.smoke,
+        not missing_axes,
+        f"axes missing from production stores: {missing_axes}",
+    )
 
     def wm(vals: np.ndarray, sel: np.ndarray) -> tuple[float, list]:
         pt = float(np.nanmean(vals[sel])) if sel.size else float("nan")
@@ -2497,9 +2645,12 @@ def crossmodel_contrasts(
     n_car = len(run9.st.carriers)
     loco = loco_multiplicities(n_car)
     parent_axes = tuple(sorted(run7.views.keys()))
-    assert len(parent_axes) == len(run7.spec.instruction_axes) + len(run7.spec.query_axes) or (
-        cfg.smoke
-    ), parent_axes
+    production_gate(
+        "parent_axes_count",
+        cfg.smoke,
+        len(parent_axes) == len(run7.spec.instruction_axes) + len(run7.spec.query_axes),
+        parent_axes,
+    )
 
     # pair_id-aligned shared subset (identity fields asserted equal).
     id9 = {pid: i for i, pid in enumerate(run9.pa.ids)}
@@ -2928,6 +3079,9 @@ def main(argv: list[str] | None = None) -> int:
         assert_args_attributes_defined(__file__)
         print("[import-check] ok", flush=True)
         return 0
+    if args.list_smoke_blind_spots:
+        print(json.dumps(format_smoke_blind_spots(SMOKE_BLIND_SPOTS), indent=2, sort_keys=True))
+        return 0
     cfg = build_config(args)
     t0 = time.time()
     print(
@@ -2944,11 +3098,11 @@ def main(argv: list[str] | None = None) -> int:
 
     # banks
     bank9 = json.loads(cfg.bank_9b.read_text())
-    assert (
-        bank9["n_contexts"] == B87.N_CONTEXTS and bank9["n_pairs"] == B87.N_PAIRS
-    ) or cfg.smoke, (
-        bank9["n_contexts"],
-        bank9["n_pairs"],
+    production_gate(
+        "bank9_cardinality",
+        cfg.smoke,
+        bank9["n_contexts"] == B87.N_CONTEXTS and bank9["n_pairs"] == B87.N_PAIRS,
+        (bank9["n_contexts"], bank9["n_pairs"]),
     )
     for p in bank9["pairs"]:
         assert "changed_tokens" in p, (p["pair_id"], "bank manifest missing changed_tokens")
@@ -2988,8 +3142,7 @@ def main(argv: list[str] | None = None) -> int:
     st7 = load_stores_7b(cfg, bank7, spec7)
     assert st9.carriers == st7.carriers, (st9.carriers, st7.carriers)
     n_car = len(st9.carriers)
-    if not cfg.smoke:
-        assert n_car == 12, st9.carriers
+    production_gate("carrier_count_12", cfg.smoke, n_car == 12, st9.carriers)
     idx_draws = rng_boot.integers(0, n_car, size=(cfg.b_boot, n_car))
     mult = carrier_multiplicities(idx_draws, n_car)
 
@@ -3086,6 +3239,9 @@ def main(argv: list[str] | None = None) -> int:
     meta_common = {
         "issue": ISSUE,
         "smoke": cfg.smoke,
+        # Active-downgrade disclosure: a smoke artifact names every gate it
+        # skipped/narrowed; a production artifact records the empty list.
+        "smoke_blind_spots": format_smoke_blind_spots(SMOKE_BLIND_SPOTS) if cfg.smoke else [],
         "primary_h2_7b_arm": resolve_primary_h2_arm([spec7.map_arm]),
         "lstar": ls,
         "ridge_payload_9b": ridge_meta,

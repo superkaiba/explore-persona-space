@@ -61,9 +61,19 @@ fail-loud vs recorded vs reported EXACTLY as the plan splits them):
 Deliberately NOT inherited (report §(b)): the parent's gate (iv) paraphrase
 length-ratio assert (tokenizer-dependent; not in the plan's §4.4 gate list —
 the ratio property of the frozen strings was already gated under q25 at the
-pin) and the parent's q25 empty-system render-prefix assert
+pin); the parent's q25 empty-system render-prefix assert
 (``<|im_start|>system\\n<|im_end|>\\n`` is template-version-specific; Qwen3.5
-render-shape invariants must be re-derived per fork, #2329).
+render-shape invariants must be re-derived per fork, #2329); and the parent's
+default-system-injection render probe — the render-half of its gate (vi):
+bare ``rendered.count("assistant") == 1`` plus the ``"You are Qwen"``
+default-system check. Plan §4.4 (vii) prescribes the NARROWER
+``<|im_start|>assistant`` header-count form for the q35 gate, and the q25
+probe's premise (Qwen2.5 injects a default system turn on empty-system
+messages) does not transfer: the Qwen3.5 template inserts NO default system
+turn (#2329), so its bare-"assistant" count and default-marker text are q25
+template-shape invariants, re-derivable per fork rather than portable.
+Residual (r1 g1 M1, disclosed): a q35 template revision that DID inject
+default system text on empty-system messages would pass gate (vii) silently.
 
 Phases: ``build_bank_strings()`` is the P0a entry (VM, repo venv, CPU —
 string gates only, no tokenizer); ``run_token_gates(tok, bank)`` is the P0b

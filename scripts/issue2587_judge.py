@@ -51,6 +51,11 @@ from pathlib import Path  # noqa: E402
 
 from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2587 import bank2587 as B25  # noqa: E402
+from explore_persona_space.experiments.issue2587.smoke_registry import (  # noqa: E402
+    SmokeDowngrade,
+    format_smoke_blind_spots,
+    validate_registry,
+)
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
     as_metadata_dict,
@@ -79,6 +84,45 @@ DEFAULT_OUT = "eval_results/issue_2587/manipulation_check_2587.json"
 DEFAULT_WORK_ROOT = "data/issue_2587/judge_work"
 SMOKE_ROOT = "/tmp/issue2587_judge_smoke"
 PILOT_LABEL = "7B side pending #2564"
+
+# ── smoke blind-spot registry (r1 g6 M2; r2 concern analysis-smoke-blindspots) ──
+# EVERY runtime --smoke downgrade of a production gate in this script is
+# registered here (the enumerable source the implementation marker's
+# blind-spot enumeration reads; smoke-blind-spots.md). The --smoke out/work
+# rebind + committed-path refusal are UPGRADES, not downgrades — not listed.
+SMOKE_BLIND_SPOTS: tuple[SmokeDowngrade, ...] = validate_registry(
+    (
+        SmokeDowngrade(
+            site="call_arithmetic_1464",
+            kind="assert-skipped",
+            production=(
+                "verify_call_arithmetic: realized spec counts == 1,392 compliance + 72 "
+                "answer_language = 1,464 (plan §4.4)"
+            ),
+            smoke=(
+                "skipped; the artifact records call_arithmetic.verified=false, expected=null "
+                "(realized counts still recorded)"
+            ),
+            why=(
+                "a smoke slice structurally cannot total 1,464 "
+                "(SMOKE_CELLS x SMOKE_CARRIERS x 4-item per-wave caps)"
+            ),
+        ),
+        SmokeDowngrade(
+            site="smoke_slice_narrowing",
+            kind="param-narrowed",
+            production="all judged + programmatic axes x 12 carriers x full draw grids",
+            smoke=(
+                "SMOKE_CELLS=('register','answer_language') x SMOKE_CARRIERS=('c01'..'c03'), "
+                "<=SMOKE_JUDGE_ITEMS=4 items per rubric-family wave"
+            ),
+            why=(
+                "both rubric families still reach the Batch client (plan blind-spot line "
+                "144); fire floors / drop rates are NOT calibrated at smoke n"
+            ),
+        ),
+    )
+)
 
 # Plan §4.4 call arithmetic — VERIFIED against the realized bank in main().
 EXPECTED_COMPLIANCE_CALLS = 1392  # (29 values + 29 paraphrases) × 12 carriers × 2 draws
@@ -146,6 +190,16 @@ def log(msg: str) -> None:
 def rubric_sha256(text: str) -> str:
     """Instrument identity: sha256 of the rubric template's UTF-8 bytes."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _inside_eval_results(path: Path | str) -> bool:
+    """Path-NORMALIZED committed-results guard (r1 g6 M1): True when any
+    component of the fully resolved path is ``eval_results`` — absolute,
+    relative, and ``../``-spelled forms all normalize, where the old
+    ``str(out).startswith("eval_results")`` check was spelling-sensitive and
+    bypassed by an absolute ``--out``. Deliberately conservative: ANY
+    eval_results directory refuses, not just the repo's."""
+    return "eval_results" in Path(path).resolve().parts
 
 
 def _write_json_atomic(path: Path, obj: dict) -> None:
@@ -697,6 +751,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="cap EACH judged wave (smoke default 4/wave); capped-out checks read incomplete",
     )
+    ap.add_argument(
+        "--list-smoke-blind-spots",
+        action="store_true",
+        help="print the SMOKE_BLIND_SPOTS registry as JSON and exit (marker enumeration source)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -709,6 +768,9 @@ def main() -> None:
         assert_args_attributes_defined(__file__)
         print("[import-check] ok", flush=True)
         raise SystemExit(0)
+    if args.list_smoke_blind_spots:
+        print(json.dumps(format_smoke_blind_spots(SMOKE_BLIND_SPOTS), indent=2, sort_keys=True))
+        raise SystemExit(0)
 
     smoke = args.smoke
     hf_prefix = f"{HF_PREFIX}/smoke" if smoke else HF_PREFIX
@@ -718,16 +780,21 @@ def main() -> None:
     if smoke:
         if args.out == DEFAULT_OUT:
             out = Path(SMOKE_ROOT) / "manipulation_check_2587.json"
-        elif str(out).startswith("eval_results"):
-            raise SystemExit("--smoke must not write the committed eval_results/ path")
+        elif _inside_eval_results(out):
+            raise SystemExit("--smoke must not write under any eval_results/ path")
         if args.work_root == DEFAULT_WORK_ROOT:
             work_root = Path(SMOKE_ROOT) / "judge_work"
         if max_items is None:
             max_items = SMOKE_JUDGE_ITEMS
-    if args.dry_run and args.out == DEFAULT_OUT:
-        # never overwrite the production sentinel with a zero-API dry-run table
-        out = Path(SMOKE_ROOT) / "manipulation_check_2587.dryrun.json"
-        log(f"[judge2587] --dry-run: out rebound to {out}")
+    if args.dry_run:
+        if args.out == DEFAULT_OUT:
+            # never overwrite the production sentinel with a zero-API dry-run table
+            out = Path(SMOKE_ROOT) / "manipulation_check_2587.dryrun.json"
+            log(f"[judge2587] --dry-run: out rebound to {out}")
+        elif _inside_eval_results(out):
+            # an explicit eval_results/ out under --dry-run would overwrite a
+            # committed sentinel with an all-incomplete table (r1 g6 M1)
+            raise SystemExit("--dry-run must not write under any eval_results/ path")
 
     bk = B25._bk()  # sha-asserted pinned bank2564 module (bank2587's accessor)
     carriers = SMOKE_CARRIERS if smoke else bk.CARRIER_IDS
@@ -909,6 +976,9 @@ def main() -> None:
             "phase": "judge2587",
             "parent_pin": PARENT_PIN,
             "smoke": smoke,
+            # Active-downgrade disclosure: a smoke artifact names every gate
+            # it skipped/narrowed; production records the empty list.
+            "smoke_blind_spots": format_smoke_blind_spots(SMOKE_BLIND_SPOTS) if smoke else [],
             "dry_run": args.dry_run,
             "judge_model": JUDGE_MODEL,
             "judge_max_tokens": JUDGE_MAX_TOKENS,

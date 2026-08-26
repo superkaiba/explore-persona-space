@@ -24,6 +24,7 @@ import hashlib
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import numpy as np
@@ -286,13 +287,21 @@ def test_regime_fp_sensitivity(tmp_path):
         {"draws": 3},
         {"max_new_tokens": 4096},
         {"seed_base": 7},
-        {"upload": "hf"},
         {"max_carriers": 2},
         {"gen_batch": 4},
         {"model_revision": "otherrev"},
         {"bank_values_sha": "other"},
     ):
         assert M._regime_fp(_cfg(tmp_path, ("alpha",), **kw)) != fp, kw
+    # upload is NOT in the cell-grain fp (r1 g3: an --upload none -> hf flip
+    # re-uploads banked rows, never regenerates) ...
+    hf = _cfg(tmp_path, ("alpha",), upload="hf")
+    assert M._regime_fp(hf) == fp
+    assert M._cell_fp(hf, "gen", "alpha") == M._cell_fp(base, "gen", "alpha")
+    # ... but it IS in the sentinel fp (a none-run sentinel never satisfies hf)
+    assert M._regime_fp(base, {"phase": "gen", "axes": ["alpha"], "upload": base.upload}) != (
+        M._regime_fp(hf, {"phase": "gen", "axes": ["alpha"], "upload": hf.upload})
+    )
     assert M._cell_fp(base, "gen", "alpha") != M._cell_fp(base, "gen", "beta")
 
 
@@ -462,7 +471,9 @@ def test_phase_gen_e2e_upload_none_and_idempotent(tmp_path, monkeypatch):
     assert rc == 0
     assert fake.call_count == 2 + 2 + 1  # pilot (warm + timed) + alpha chunks + beta chunk
     sent = json.loads((cfg.out_root / "battery_gen_done.json").read_text())
-    assert sent["regime_fp"] == M._regime_fp(cfg, {"phase": "gen", "axes": sorted(cfg.axes)})
+    assert sent["regime_fp"] == M._regime_fp(
+        cfg, {"phase": "gen", "axes": sorted(cfg.axes), "upload": cfg.upload}
+    )
     assert sent["upload"] == {"mode": "none"}
     assert set(sent["cells"]) == {"alpha", "beta"}
     assert sent["cells"]["alpha"]["n_rows"] == 3 * cfg.draws
@@ -475,6 +486,56 @@ def test_phase_gen_e2e_upload_none_and_idempotent(tmp_path, monkeypatch):
     monkeypatch.setattr(M, "generate_batch", fake2)
     assert M.phase_gen(cfg, bank, object(), FakeTok()) == 0
     assert fake2.call_count == 0
+
+
+def test_phase_gen_upload_flip_none_to_hf_uploads_without_regenerating(tmp_path, monkeypatch):
+    """r1 g3: ``upload`` lives in the SENTINEL fp / completion predicate, not
+    the per-cell fingerprint — flipping ``--upload none -> hf`` on the same
+    out-root UPLOADS the banked rollouts and rewrites the sentinel, with ZERO
+    generation calls (never a 10,800-rollout GPU regen)."""
+    bank = _mini_bank({"alpha": 3, "beta": 2})
+    monkeypatch.setattr(M, "generate_batch", _mk_fake_gen())
+    cfg_none = _cfg(tmp_path, ("alpha", "beta"))  # upload="none"
+    assert M.phase_gen(cfg_none, bank, object(), FakeTok()) == 0
+    manifests_before = {
+        ax: (cfg_none.manifest_dir / f"anchors_{ax}.done.json").read_text()
+        for ax in ("alpha", "beta")
+    }
+
+    cfg_hf = _cfg(tmp_path, ("alpha", "beta"), upload="hf")
+    fake_gen2 = _mk_fake_gen()
+    monkeypatch.setattr(M, "generate_batch", fake_gen2)
+    up_calls: list[dict] = []
+
+    def _fake_upload(local_dir, repo_id, prefix, *, shard_glob, resume_skip, delete_local):
+        names = sorted(p.name for p in Path(local_dir).glob(shard_glob))
+        up_calls.append({"dir": Path(local_dir), "prefix": prefix, "names": names})
+        return SimpleNamespace(
+            repo_id=repo_id, uploaded=list(names), rerouted=[], skipped_existing=[]
+        )
+
+    monkeypatch.setattr(
+        M,
+        "upload_dir_sharded",
+        mock.create_autospec(M.upload_dir_sharded, side_effect=_fake_upload),
+    )
+    assert M.phase_gen(cfg_hf, bank, object(), FakeTok()) == 0
+    assert fake_gen2.call_count == 0  # NO pilot, NO regeneration — cells stay done
+    assert len(up_calls) == 1  # the banked rollouts were re-uploaded
+    assert up_calls[0]["names"] == ["anchors_alpha.jsonl", "anchors_beta.jsonl"]
+    # per-cell done manifests untouched (fp excludes upload)
+    for ax, before in manifests_before.items():
+        assert (cfg_hf.manifest_dir / f"anchors_{ax}.done.json").read_text() == before
+    # the sentinel was REWRITTEN at the hf fp: a later hf re-run short-circuits
+    sent = json.loads((cfg_hf.out_root / "battery_gen_done.json").read_text())
+    assert sent["regime_fp"] == M._regime_fp(
+        cfg_hf, {"phase": "gen", "axes": sorted(cfg_hf.axes), "upload": "hf"}
+    )
+    assert sent["upload"]["mode"] == "hf" and sent["upload"]["anchors"]["uploaded"] == 2
+    # and the none-run sentinel could never have satisfied the hf run
+    assert sent["regime_fp"] != M._regime_fp(
+        cfg_none, {"phase": "gen", "axes": sorted(cfg_none.axes), "upload": "none"}
+    )
 
 
 def test_phase_gen_pilot_refuse_exits_before_generation(tmp_path, monkeypatch):
@@ -754,6 +815,19 @@ def test_phase_embed_e2e_upload_none(tmp_path, monkeypatch):
     assert M.phase_embed(ecfg, bank, None, None) == 0
 
 
+def _parity_report_dict(**overrides) -> dict:
+    """A PASSING probe report at the plan admission bars (r1 g4 C1)."""
+    rep = {
+        "parity_pass": True,
+        "reference_engine": M.EXPECTED_EMBED_ENGINE,
+        "engine": "0.27.1",
+        "n_anchors": M.PARITY_N_ANCHORS_MIN,
+        "cos_min_bar": M.PARITY_COS_MIN,
+    }
+    rep.update(overrides)
+    return rep
+
+
 def test_phase_embed_engine_gate(tmp_path, monkeypatch):
     """Unprobed engine mismatch REFUSES; a non-passing report REFUSES; a
     PASSING report admits the engine and records parity_mode=parity-probe."""
@@ -763,24 +837,52 @@ def test_phase_embed_engine_gate(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="parity reference"):
         M.phase_embed(ecfg, bank, None, None)
     rep = tmp_path / "parity.json"
-    rep.write_text(
-        json.dumps(
-            {"parity_pass": False, "reference_engine": M.EXPECTED_EMBED_ENGINE, "engine": "0.27.1"}
-        )
-    )
+    rep.write_text(json.dumps(_parity_report_dict(parity_pass=False)))
     ecfg2 = _cfg(tmp_path, ("alpha",), phase="embed", parity_report=rep)
     with pytest.raises(RuntimeError, match="parity_pass"):
         M.phase_embed(ecfg2, bank, None, None)
-    rep.write_text(
-        json.dumps(
-            {"parity_pass": True, "reference_engine": M.EXPECTED_EMBED_ENGINE, "engine": "0.27.1"}
-        )
-    )
+    rep.write_text(json.dumps(_parity_report_dict()))
     ecfg3 = _cfg(tmp_path, ("alpha",), phase="embed", parity_report=rep)
     assert M.phase_embed(ecfg3, bank, None, None) == 0
     meta = json.loads((ecfg3.embed_root / "embeddings_qwen3_8b" / "meta.json").read_text())
     assert meta["engine"]["parity_mode"] == "parity-probe"
     assert meta["engine"]["vllm_version"] == "0.27.1"
+
+
+def test_engine_parity_report_admission_floors(tmp_path):
+    """r1 g4 C1: a parity_pass=true report produced by a WEAKENED probe run
+    (lower --parity-cos-min, fewer --parity-n-anchors, or the fields absent)
+    is REFUSED — the WARN-1 instrument-identity gate enforces its own
+    admission criteria on the consumed report."""
+    rep = tmp_path / "parity.json"
+    # weakened cosine bar — parity_pass true, but below the plan bar
+    rep.write_text(json.dumps(_parity_report_dict(cos_min_bar=0.5)))
+    with pytest.raises(RuntimeError, match="cos_min_bar"):
+        M._assert_engine_parity("0.27.1", rep)
+    # weakened anchor count
+    rep.write_text(json.dumps(_parity_report_dict(n_anchors=3)))
+    with pytest.raises(RuntimeError, match="n_anchors"):
+        M._assert_engine_parity("0.27.1", rep)
+    # fields absent (a legacy / hand-rolled report) — refused, never defaulted
+    legacy = _parity_report_dict()
+    del legacy["n_anchors"], legacy["cos_min_bar"]
+    rep.write_text(json.dumps(legacy))
+    with pytest.raises(RuntimeError, match="n_anchors"):
+        M._assert_engine_parity("0.27.1", rep)
+    # bool True must never alias the int floor (True < 10 -> refused as non-int)
+    rep.write_text(json.dumps(_parity_report_dict(n_anchors=True)))
+    with pytest.raises(RuntimeError, match="n_anchors"):
+        M._assert_engine_parity("0.27.1", rep)
+    # at the bars (or stricter cosine) -> admitted
+    rep.write_text(json.dumps(_parity_report_dict()))
+    out = M._assert_engine_parity("0.27.1", rep)
+    assert out["parity_mode"] == "parity-probe"
+    rep.write_text(json.dumps(_parity_report_dict(cos_min_bar=0.999, n_anchors=12)))
+    assert M._assert_engine_parity("0.27.1", rep)["parity_mode"] == "parity-probe"
+    # the probe's own report satisfies the admission floors by construction
+    probe_defaults = {"n_anchors": M.PARITY_N_ANCHORS_MIN, "cos_min_bar": M.PARITY_COS_MIN}
+    assert probe_defaults["n_anchors"] >= M.PARITY_N_ANCHORS_MIN
+    assert probe_defaults["cos_min_bar"] >= M.PARITY_COS_MIN
 
 
 def test_embed_chunk_resume_and_engine_keyed_fp(tmp_path, monkeypatch):
@@ -802,11 +904,7 @@ def test_embed_chunk_resume_and_engine_keyed_fp(tmp_path, monkeypatch):
     # the fp keys on the ENGINE version: chunks embedded under 0.11.0 can
     # never satisfy a 0.27.1 run's resume — it must reach the engine ctor.
     rep = tmp_path / "parity.json"
-    rep.write_text(
-        json.dumps(
-            {"parity_pass": True, "reference_engine": M.EXPECTED_EMBED_ENGINE, "engine": "0.27.1"}
-        )
-    )
+    rep.write_text(json.dumps(_parity_report_dict()))
     monkeypatch.setattr(M, "_realized_vllm_version", lambda: "0.27.1")
     ecfg2 = _cfg(tmp_path, ("alpha",), phase="embed", embed_chunk=2, parity_report=rep)
     with pytest.raises(AssertionError, match="engine must not load"):

@@ -60,9 +60,11 @@ at ``manifests/pilot_gate_report.json``; embed report at
 written — a miss forces the 0.11.0 route), any crash = the process's own
 non-zero exit observed by the poller. Rollout TEXT uploads unconditionally to
 ``{hf_prefix}/raw_completions/anchors/`` at end of shard, BEFORE any capture
-consumes it (#779; upload mode is part of the resume fingerprint). Phase
-sentinels: ``battery_gen_done.json`` / ``battery_capture_done.json`` (per
-shard out-root) / ``battery_embed_done.json`` (embed is single-process).
+consumes it (#779; upload mode is part of the SENTINEL fingerprint / per-cell
+COMPLETION predicate, never the per-cell regime fingerprint — an ``--upload
+none -> hf`` flip re-uploads banked rows, it never regenerates them; r1 g3).
+Phase sentinels: ``battery_gen_done.json`` / ``battery_capture_done.json``
+(per shard out-root) / ``battery_embed_done.json`` (embed is single-process).
 """
 
 from __future__ import annotations
@@ -156,6 +158,11 @@ EMBED_MAX_MODEL_LEN = 8192
 EMBED_PILOT_CEILING_H = 2.0
 EXPECTED_EMBED_ENGINE = "0.11.0"
 PARITY_COS_MIN = 0.995
+# WARN-1 instrument-identity control admission floors (r1 g4 C1): a consumed
+# --parity-report must itself have been produced at >= these bars — a probe
+# run with a deliberately weakened --parity-cos-min / --parity-n-anchors is
+# REFUSED by _assert_engine_parity even when its parity_pass is true.
+PARITY_N_ANCHORS_MIN = 10
 EXIT_PARITY_MISS = 8
 
 # Pinned #2564-branch issue2162_run blob (same PIN the langow pilot + bank2587
@@ -310,7 +317,7 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--parity-banked-npz", default=None, help="banked perdraw npz (0.11.0 reference vectors)"
     )
-    ap.add_argument("--parity-n-anchors", type=int, default=10)
+    ap.add_argument("--parity-n-anchors", type=int, default=PARITY_N_ANCHORS_MIN)
     ap.add_argument("--parity-cos-min", type=float, default=PARITY_COS_MIN)
     ap.add_argument(
         "--import-check",
@@ -483,8 +490,15 @@ def _regime_fp(cfg: Cfg, extra: dict | None = None) -> str:
     """16-hex fingerprint of the GENERATING PARAMETERS (never recomputed
     floats, #1336) — the resume / done-manifest key. Deliberately EXCLUDES the
     axes tuple / shard assignment, so a completed axis resumes across shard
-    re-splits; ``upload`` IS included (a --upload none run must never satisfy
-    a later --upload hf run's sentinel — the langow review-finding-1 shape)."""
+    re-splits — and EXCLUDES ``upload`` (r1 g3: upload does not change what
+    was GENERATED, so an --upload none -> hf flip must re-upload the banked
+    rows, never regenerate them; the fits.py regime_key shape). The langow
+    review-finding-1 invariant — a --upload none run must never satisfy a
+    later --upload hf run — lives in the SENTINEL fps (phase_gen/
+    phase_capture pass ``upload`` in their sentinel ``extra``; embed hashes
+    it into ``sent_fp``) and in the per-cell COMPLETION predicates
+    (``_capture_cell_complete`` requires the manifest's verified-upload
+    record under upload=hf)."""
     base = {
         "issue": ISSUE,
         "parent_pin": B.PIN,
@@ -498,7 +512,6 @@ def _regime_fp(cfg: Cfg, extra: dict | None = None) -> str:
         "temperature": str(ANCHOR_TEMPERATURE),
         "max_new_tokens": cfg.max_new_tokens,
         "max_carriers": cfg.max_carriers,
-        "upload": cfg.upload,
     }
     if extra:
         base.update(extra)
@@ -820,7 +833,9 @@ def phase_gen(cfg: Cfg, bank: dict, model, tok) -> int:
     for a, lst in ctxs_by_axis.items():
         assert lst, f"axis {a}: no contexts survive --max-carriers={cfg.max_carriers}"
     sentinel = cfg.out_root / "battery_gen_done.json"
-    sent_fp = _regime_fp(cfg, {"phase": "gen", "axes": sorted(cfg.axes)})
+    # upload rides the SENTINEL fp only (never the cell grain): a none-run
+    # sentinel cannot satisfy an hf run, but the completed cells resume.
+    sent_fp = _regime_fp(cfg, {"phase": "gen", "axes": sorted(cfg.axes), "upload": cfg.upload})
     pending = [a for a in cfg.axes if not _gen_cell_complete(cfg, a)]
     s = _read_json(sentinel)
     if not pending and s is not None and s.get("regime_fp") == sent_fp:
@@ -1291,6 +1306,8 @@ def phase_capture(cfg: Cfg, bank: dict, model, tok) -> int:
             "axes": sorted(cfg.axes),
             "capture_batch": cfg.capture_batch,
             "capture_dtype": cfg.capture_dtype,
+            # sentinel-only (never the cell grain) — see _regime_fp docstring
+            "upload": cfg.upload,
         },
     )
     pending = [a for a in cfg.axes if not _capture_cell_complete(cfg, a)]
@@ -1397,6 +1414,27 @@ def _assert_engine_parity(realized: str, parity_report: Path | None) -> dict:
                 f"[embed] parity report {parity_report}: {key}={rep.get(key)!r} != {want!r} "
                 f"— a probe miss forces the {EXPECTED_EMBED_ENGINE} route (plan §4.4)"
             )
+    # r1 g4 C1: the report's OWN admission criteria are enforced, not just its
+    # verdict — a probe run with a deliberately weakened --parity-cos-min or
+    # --parity-n-anchors must never be admitted (bool excluded: True is an int).
+    n_anchors = rep.get("n_anchors")
+    if (
+        isinstance(n_anchors, bool)
+        or not isinstance(n_anchors, int)
+        or (n_anchors < PARITY_N_ANCHORS_MIN)
+    ):
+        raise RuntimeError(
+            f"[embed] parity report {parity_report}: n_anchors={n_anchors!r} below the "
+            f"admission floor {PARITY_N_ANCHORS_MIN} (or non-int) — re-run the probe at "
+            f"--parity-n-anchors >= {PARITY_N_ANCHORS_MIN}"
+        )
+    bar = rep.get("cos_min_bar")
+    if isinstance(bar, bool) or not isinstance(bar, int | float) or bar < PARITY_COS_MIN:
+        raise RuntimeError(
+            f"[embed] parity report {parity_report}: cos_min_bar={bar!r} below the plan bar "
+            f"{PARITY_COS_MIN} (or non-numeric) — a weakened-bar probe report is never "
+            "admitted; re-run the probe at the plan bar"
+        )
     return {
         "vllm_version": realized,
         "parity_mode": "parity-probe",
@@ -1660,7 +1698,7 @@ def run_engine_parity_probe(
     banked_npz: Path,
     out_path: Path,
     *,
-    n_anchors: int = 10,
+    n_anchors: int = PARITY_N_ANCHORS_MIN,
     cos_min: float = PARITY_COS_MIN,
     max_model_len: int = EMBED_MAX_MODEL_LEN,
 ) -> dict:
