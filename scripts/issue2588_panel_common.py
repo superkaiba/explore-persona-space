@@ -355,14 +355,30 @@ def assert_olmo_rope_split(model_id: str) -> dict:
     return {"model": model_id, "full_attention": full_t, "sliding_attention": slide_t}
 
 
+def resolve_cfg_attr(cfg, attr: str):
+    """Read a decoder config attr that may sit top-level OR under ``cfg.text_config``.
+
+    transformers >= 5.13 gives the Qwen3.5 family a nested ``Qwen3_5Config``: the
+    decoder params (``num_hidden_layers``, ``hidden_size``,
+    ``max_position_embeddings``) live under ``cfg.text_config`` and the top-level
+    reads return None. Olmo3Config and Qwen2_5Config keep them top-level. Measured
+    across the 12-model panel (2026-08-25): all 7 Qwen3.5/3.6/3.8 ids nest, the 4
+    OLMo ids + Qwen2.5-7B-Instruct do not.
+
+    Returns the resolved value, or None when neither level carries it.
+    """
+    val = getattr(cfg, attr, None)
+    if val is None and getattr(cfg, "text_config", None) is not None:
+        val = getattr(cfg.text_config, attr, None)
+    return val
+
+
 def assert_max_position_embeddings(model_id: str, floor: int = REGEN_MAX_MODEL_LEN_BOUND) -> int:
     """Record + HARD-assert max_position_embeddings >= the G4/G5 regen headroom."""
     from transformers import AutoConfig
 
     cfg = AutoConfig.from_pretrained(model_id)
-    mpe = getattr(cfg, "max_position_embeddings", None)
-    if mpe is None and getattr(cfg, "text_config", None) is not None:
-        mpe = getattr(cfg.text_config, "max_position_embeddings", None)
+    mpe = resolve_cfg_attr(cfg, "max_position_embeddings")
     assert isinstance(mpe, int), f"{model_id}: max_position_embeddings unreadable ({mpe!r})"
     assert mpe >= floor, (
         f"G4/G5 regen headroom FAIL: {model_id} max_position_embeddings={mpe} < {floor} — the "
@@ -812,6 +828,30 @@ def _norm_q(text: str) -> str:
     return " ".join(str(text).split())
 
 
+_BOXED_RE = re.compile(r"\\boxed\{(.*)\}", re.DOTALL)
+
+
+def _norm_answer(text: str) -> str:
+    """Normalize an ANSWER string for cross-source comparison (Route B).
+
+    The two ungated mirrors carry the SAME answer in different wrappers:
+    ``hendrydong/gpqa_diamond.solution`` is LaTeX-boxed (``\\boxed{10^-4 eV}``)
+    while ``ankner/gpqa["Correct Answer"]`` is the bare string, sometimes with
+    trailing whitespace or a trailing newline. Comparing them through the
+    question-oriented ``_norm_q`` disagrees on 198/198 rows — a comparator
+    artifact, not a data conflict.
+
+    Unwraps a single outer ``\\boxed{...}``, then whitespace-normalizes. Measured
+    2026-08-25 over the full Diamond-198 join: 198/198 agree under this
+    normalizer, 0/198 under bare ``_norm_q``.
+    """
+    s = str(text).strip()
+    m = _BOXED_RE.fullmatch(s)
+    if m is not None:
+        s = m.group(1)
+    return _norm_q(s).strip()
+
+
 def stage_gpqa_diamond(cache_dir: Path) -> tuple[list[dict], str]:
     """Stage GPQA Diamond rows via the registered dual route.
 
@@ -898,8 +938,15 @@ def _stage_gpqa_route_b(cache_dir: Path) -> list[dict]:
         ]
         assert all(x.strip() for x in incorrect), f"empty distractor on joined row: {key[:80]}"
         # Cross-source correct-answer agreement (two mirrors replace one canonical file).
-        assert _norm_q(r["solution"]) == _norm_q(src["Correct Answer"]), (
-            f"cross-source correct-answer DISAGREEMENT on: {key[:80]}"
+        # Compare through _norm_answer, NOT _norm_q: the two mirrors store the same
+        # answer in different wrappers (hendrydong `\boxed{X}` vs ankner bare `X`),
+        # so a raw _norm_q comparison disagrees on 198/198 rows — unsatisfiable by
+        # construction rather than a data problem. Measured 2026-08-25: under
+        # _norm_answer the mirrors agree on 198/198.
+        assert _norm_answer(r["solution"]) == _norm_answer(src["Correct Answer"]), (
+            f"cross-source correct-answer DISAGREEMENT on: {key[:80]}\n"
+            f"  hendrydong.solution   = {str(r['solution'])[:160]!r}\n"
+            f"  ankner.Correct Answer = {str(src['Correct Answer'])[:160]!r}"
         )
         rows.append(
             {

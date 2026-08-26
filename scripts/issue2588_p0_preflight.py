@@ -112,8 +112,12 @@ def step_venv_config(args) -> dict:
     out: dict = {"transformers": PC.assert_transformers_floor(), "models": {}}
     for m in PC.PANEL.values():
         cfg = AutoConfig.from_pretrained(m.hf_id)
-        n_layers = getattr(cfg, "num_hidden_layers", None)
-        h_dim = getattr(cfg, "hidden_size", None)
+        # Qwen3.5-family configs nest the decoder params under cfg.text_config on
+        # transformers >= 5.13 (the pinned floor); OLMo3 / Qwen2.5 keep them
+        # top-level. Resolve through the shared helper so the G6 dim asserts read
+        # the same place assert_max_position_embeddings already reads.
+        n_layers = PC.resolve_cfg_attr(cfg, "num_hidden_layers")
+        h_dim = PC.resolve_cfg_attr(cfg, "hidden_size")
         assert n_layers == m.n_layers, (m.hf_id, n_layers, m.n_layers)
         assert h_dim == m.h_dim, (m.hf_id, h_dim, m.h_dim)
         mpe = PC.assert_max_position_embeddings(m.hf_id)
