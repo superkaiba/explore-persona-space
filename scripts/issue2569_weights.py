@@ -1649,18 +1649,71 @@ def _source_status(json_path: Path) -> str:
         return "unreadable"
 
 
-def _criterion_regime(args, layer: int) -> dict:
-    """criterion phase regime: base + thresholds + source statuses.
+def _source_fingerprint(json_path: Path, value_keys: tuple[str, ...]) -> dict:
+    """CONTENT fingerprint of a criterion source JSON: status + regime + consumed values.
 
-    Embedding the source statuses makes the verdict recompute automatically
-    when a deferred producer later lands (deferred -> computed flips the key).
+    The section-7.5 verdict's resume key must see what the producer HOLDS,
+    not its status string alone: a regenerated producer (new numbers, same
+    "computed" status) flips this fingerprint via (a) the producer's own
+    regime dict — which embeds the P-B moments fingerprint (selected_lambda,
+    split seed, row counts, config hash) — and (b) the specific FILE-READ
+    values the criterion consumes (dotted paths), so even a producer code fix
+    that changes numbers under an unchanged regime flips the key. File-read
+    values are machine-stable key members (the float-last-bit rule bans only
+    RECOMPUTED floats, code-style.md). absent/unreadable degrade to
+    status-only sentinels. Fix for concern
+    criterion-resume-blind-to-producer-content (#2552/#2225 class).
+    """
+    if not json_path.exists():
+        return {"status": "absent", "regime": None, "values": None}
+    try:
+        doc = json.loads(json_path.read_text())
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return {"status": "unreadable", "regime": None, "values": None}
+
+    def _get(node, dotted: str):
+        """Dotted-path lookup into the source doc; None when any hop is absent."""
+        for part in dotted.split("."):
+            if not isinstance(node, dict) or part not in node:
+                return None
+            node = node[part]
+        return node
+
+    return {
+        "status": doc.get("status"),
+        "regime": doc.get("regime"),
+        "values": {k: _get(doc, k) for k in value_keys},
+    }
+
+
+def _criterion_regime(args, layer: int) -> dict:
+    """criterion phase regime: base + thresholds + source CONTENT fingerprints.
+
+    Keyed on the producers' CONTENT, never their status strings alone:
+    `deferred -> computed` still flips the key (the original intent), AND a
+    regenerated producer with different numbers under an unchanged status
+    flips it too — the pre-fix status-string key logged SKIP (done) and
+    served the section-7.5 verdict from superseded inputs (reviewer
+    live-probed: dw_mass/splithalf recomputed, criterion did not). Matches
+    the content-keyed shape of `_dwmass_regime` / `_splithalf_regime`
+    (moments fingerprint) and extends it with the values the criterion
+    consumes: rho / kappa_v from factor, copied_dw_share, n_above_floor.
     """
     base = _regime(args, layer)
+    leg1 = _leg1(args)
     base["criterion"] = {
         "thresholds": _criterion_thresholds(),
         "sources": {
-            "dw_mass": _source_status(_leg1(args) / f"dw_mass_L{layer}.json"),
-            "splithalf": _source_status(_leg1(args) / f"splithalf_stability_L{layer}.json"),
+            "factor": _source_fingerprint(
+                leg1 / f"factor_L{layer}.json", ("stats.rho", "stats.kappa_v")
+            ),
+            "dw_mass": _source_fingerprint(
+                leg1 / f"dw_mass_L{layer}.json", ("copied_dw_share", "deferral_reason")
+            ),
+            "splithalf": _source_fingerprint(
+                leg1 / f"splithalf_stability_L{layer}.json",
+                ("n_above_floor", "deferral_reason"),
+            ),
         },
     }
     return base
@@ -3760,12 +3813,18 @@ def phase_criterion(args) -> None:
 
 
 def phase_upload(args) -> None:
-    """Production-only HF upload of leg1/ + leg8/ with fail-loud exact-set verify.
+    """Production-only HF upload of leg1/ + leg3/ + leg8/ with fail-loud exact-set verify.
 
-    Smoke or --skip-upload SKIPS LOUDLY (a smoke's artifacts must never
-    clobber the production prefix). Mirrors the rowbattery `_upload_leaf`
-    shape: `upload_dir_sharded` (hub-routed, overflow-aware) + the exact-set
-    `hub.verify_repo_paths_uploaded` when not rerouted.
+    ALL THREE product dirs this driver writes upload + verify, one leaf at a
+    time (leg1: factor/anatomy/criterion chain; leg3: receipts/wiring/
+    attribution; leg8: kernel/monitor/certificates/dashboards) — an upload
+    audit composes verify prefix sets from this docstring, so under-reporting
+    a leaf here is how a verify script gets composed short (#1773 class).
+    Staged INPUTS under the out-root (r_b/, stage/) are HF-fetched and never
+    re-uploaded. Smoke or --skip-upload SKIPS LOUDLY (a smoke's artifacts
+    must never clobber the production prefix). Mirrors the rowbattery
+    `_upload_leaf` shape: `upload_dir_sharded` (hub-routed, overflow-aware)
+    + the exact-set `hub.verify_repo_paths_uploaded` when not rerouted.
     """
     if args.skip_upload or args.smoke:
         logger.warning("[upload] skip_upload/smoke: HF upload SKIPPED (loud)")
@@ -3800,7 +3859,7 @@ def phase_upload(args) -> None:
             )
             assert not missing, f"[upload] verify FAILED — missing on Hub: {missing}"
         logger.info("[upload] %s -> %s (rerouted=%s)", local, prefix, res.rerouted)
-    _sentinel("pa-upload", "weights-battery leg1+leg8 uploaded")
+    _sentinel("pa-upload", "weights-battery leg1+leg3+leg8 uploaded")
 
 
 PHASE_ORDER = (

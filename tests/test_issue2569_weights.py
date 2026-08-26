@@ -1281,3 +1281,173 @@ def test_driver_criterion_phases_moments_attached(tmp_path, monkeypatch):
     _run_driver(monkeypatch, tmp_path, ["--phase", "split-half", *withm])
     assert os.stat(leg1 / "dw_mass_L19.json").st_mtime_ns == before_dw
     assert os.stat(leg1 / "splithalf_stability_L19.pt").st_mtime_ns == before_sh
+
+
+# ── fix-round r2: criterion resume keys on producer CONTENT (#2569) ───────────────
+
+
+def test_criterion_regime_keys_on_producer_content(tmp_path):
+    """FIX criterion-resume-blind-to-producer-content: the section-7.5 verdict's
+    resume key embeds producer CONTENT (their own regime dicts + the consumed
+    file-read values), so a regenerated producer with new numbers but an
+    unchanged status string flips the key. Pre-fix the key held status strings
+    only, so a regenerated producer left the criterion logging SKIP (done) on
+    superseded inputs (#2552/#2225 class).
+    """
+    args = SimpleNamespace(out_root=tmp_path, smoke=True, top_k=0, n_draws=0)
+    leg1 = tmp_path / "leg1"
+    leg1.mkdir()
+    base = WB._regime(args, 19)
+
+    def _write(name: str, doc: dict) -> None:
+        (leg1 / name).write_text(json.dumps(doc))
+
+    _write("factor_L19.json", {"regime": base, "stats": {"rho": 0.9, "kappa_v": 120.0}})
+    dw_regime = {**base, "dw_mass": {"moments": {"selected_lambda": 0.001}, "trace_rtol": 1e-6}}
+    _write("dw_mass_L19.json", {"regime": dw_regime, "status": "computed", "copied_dw_share": 0.05})
+    sh_regime = {**base, "split_half": {"moments": {"selected_lambda": 0.001}, "null_seed": 0}}
+    _write(
+        "splithalf_stability_L19.json",
+        {"regime": sh_regime, "status": "computed", "n_above_floor": 400},
+    )
+    k0 = WB._criterion_regime(args, 19)
+    assert WB._criterion_regime(args, 19) == k0  # deterministic on unchanged inputs
+
+    # (1) regenerated dw-mass: DIFFERENT number, SAME status + regime => key flips
+    _write("dw_mass_L19.json", {"regime": dw_regime, "status": "computed", "copied_dw_share": 0.31})
+    k1 = WB._criterion_regime(args, 19)
+    assert k1 != k0, "criterion resume key is blind to a regenerated producer's content"
+
+    # (2) producer-regime (moments fingerprint) change alone flips it too
+    dw2 = {**base, "dw_mass": {"moments": {"selected_lambda": 0.01}, "trace_rtol": 1e-6}}
+    _write("dw_mass_L19.json", {"regime": dw2, "status": "computed", "copied_dw_share": 0.31})
+    k2 = WB._criterion_regime(args, 19)
+    assert k2 != k1
+
+    # (3) splithalf consumed-value change flips it
+    _write(
+        "splithalf_stability_L19.json",
+        {"regime": sh_regime, "status": "computed", "n_above_floor": 250},
+    )
+    k3 = WB._criterion_regime(args, 19)
+    assert k3 != k2
+
+    # (4) factor stats change flips it (rho / kappa_v are consumed inputs too)
+    _write("factor_L19.json", {"regime": base, "stats": {"rho": 1.2, "kappa_v": 120.0}})
+    k4 = WB._criterion_regime(args, 19)
+    assert k4 != k3
+
+    # (5) the key survives the storage round-trip _unit_done performs
+    assert json.loads(json.dumps(k4)) == k4
+
+    # (6) deferred -> computed still flips the key (the original intent kept)
+    _write("dw_mass_L19.json", {"regime": dw2, "status": "deferred", "deferral_reason": "no P-B"})
+    assert WB._criterion_regime(args, 19) != k4
+
+
+def test_driver_criterion_recomputes_on_regenerated_producers(tmp_path, monkeypatch):
+    """FIX criterion-resume-blind-to-producer-content, production-CLI shape:
+    regenerate the P-B moments dir (different pool => different fingerprint AND
+    numbers, both producers stay status == "computed"), re-run dw-mass +
+    split-half (they recompute), then `--phase criterion` WITHOUT --fresh: the
+    verdict record must recompute from the new inputs, never log SKIP (done).
+    Mirrors the reviewer's live probe (pre-fix: dw_mass recomputed True,
+    splithalf True, criterion False).
+    """
+    d = 32
+    map_root = tmp_path / "maproot"
+    path = OP.banked_map_path(19, root=map_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = _synth_raw_payload(d)
+    torch.save(payload, path)
+    out = tmp_path / "out"
+    base = ["--smoke", "--skip-upload", "--out-root", str(out), "--map-root", str(map_root)]
+    _run_driver(monkeypatch, tmp_path, ["--phase", "factor", *base])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "anatomy", *base])
+    leg1 = out / "leg1"
+
+    mdir_a = _synth_moments_dir(tmp_path / "a", d, payload, n_pool=400)
+    with_a = [*base, "--moments-dir", str(mdir_a)]
+    _run_driver(monkeypatch, tmp_path, ["--phase", "dw-mass", *with_a])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "split-half", *with_a])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "criterion", *with_a])
+    crit_mtime = os.stat(leg1 / "criterion_L19.json").st_mtime_ns
+
+    mdir_b = _synth_moments_dir(tmp_path / "b", d, payload, n_pool=500)
+    with_b = [*base, "--moments-dir", str(mdir_b)]
+    _run_driver(monkeypatch, tmp_path, ["--phase", "dw-mass", *with_b])
+    _run_driver(monkeypatch, tmp_path, ["--phase", "split-half", *with_b])
+    dw = json.loads((leg1 / "dw_mass_L19.json").read_text())
+    shj = json.loads((leg1 / "splithalf_stability_L19.json").read_text())
+    assert dw["status"] == "computed" and dw["moments"]["n_pool"] == 500
+    assert shj["status"] == "computed"
+
+    _run_driver(monkeypatch, tmp_path, ["--phase", "criterion", *with_b])
+    assert os.stat(leg1 / "criterion_L19.json").st_mtime_ns != crit_mtime, (
+        "criterion SKIP (done) on regenerated producers — resume key blind to content"
+    )
+    crit = json.loads((leg1 / "criterion_L19.json").read_text())
+    assert crit["clauses"]["copied_data_share"]["value"] == dw["copied_dw_share"]
+    assert crit["clauses"]["stable_directions"]["value"] == shj["n_above_floor"]
+    src = crit["regime"]["criterion"]["sources"]
+    assert src["dw_mass"]["regime"]["dw_mass"]["moments"]["n_pool"] == 500
+    assert src["splithalf"]["values"]["n_above_floor"] == shj["n_above_floor"]
+
+    # unchanged inputs => the criterion still resumes (content keying is not a
+    # recompute-always key)
+    mtime2 = os.stat(leg1 / "criterion_L19.json").st_mtime_ns
+    _run_driver(monkeypatch, tmp_path, ["--phase", "criterion", *with_b])
+    assert os.stat(leg1 / "criterion_L19.json").st_mtime_ns == mtime2
+
+
+def test_phase_upload_covers_all_three_product_prefixes(tmp_path, monkeypatch):
+    """FIX weights-upload-docstring-omits-leg3: the docstring names every
+    uploaded prefix (leg1 + leg3 + leg8 — an upload audit composes verify
+    prefix sets from it, #1773 class), and the loop + per-leaf exact-set
+    verify actually cover all three product dirs. Boundary fakes are
+    create_autospec'd (signature-conformant by construction).
+    """
+    assert "leg1/ + leg3/ + leg8/" in WB.phase_upload.__doc__
+    args = SimpleNamespace(
+        skip_upload=False,
+        smoke=False,
+        out_root=tmp_path / "out",
+        hf_prefix="issue2569_theory/analysis_tensors",
+    )
+    for leg, fname in (
+        ("leg1", "criterion_L19.json"),
+        ("leg3", "wiring_L19.json"),
+        ("leg8", "certificates_L19.json"),
+    ):
+        p = args.out_root / leg
+        p.mkdir(parents=True)
+        (p / fname).write_text("{}")
+
+    from unittest.mock import create_autospec
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+    from explore_persona_space.orchestrate import upload_sharded as us_mod
+
+    fake_up = create_autospec(
+        us_mod.upload_dir_sharded,
+        side_effect=lambda *a, **k: SimpleNamespace(rerouted=False),
+    )
+    fake_verify = create_autospec(hub_mod.verify_repo_paths_uploaded, return_value=[])
+    monkeypatch.setattr(us_mod, "upload_dir_sharded", fake_up)
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", fake_verify)
+    sentinels: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        WB.C,
+        "write_sentinel",
+        lambda kind, note, task_id=None, extra=None: sentinels.append((kind, note)),
+    )
+    WB.phase_upload(args)
+
+    prefixes = [c.args[2] for c in fake_up.call_args_list]
+    assert prefixes == [f"{args.hf_prefix}/weights/{leg}" for leg in ("leg1", "leg3", "leg8")]
+    verified = {c.kwargs["path_in_repo"]: c.args[2] for c in fake_verify.call_args_list}
+    assert set(verified) == set(prefixes), "exact-set verify must cover EVERY uploaded prefix"
+    assert verified[f"{args.hf_prefix}/weights/leg3"] == [
+        f"{args.hf_prefix}/weights/leg3/wiring_L19.json"
+    ]
+    assert sentinels and "leg1+leg3+leg8" in sentinels[-1][1]
