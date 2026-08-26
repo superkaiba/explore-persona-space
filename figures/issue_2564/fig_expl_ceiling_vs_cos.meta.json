@@ -1,0 +1,155 @@
+{
+  "commit": "8265bcd7+dirty",
+  "render_id": "5e2de54aaeae499d",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_arm_agreement.meta.json",
+    "figures/issue_2564/fig_expl_arm_agreement.pdf",
+    "figures/issue_2564/fig_expl_arm_agreement.png",
+    "figures/issue_2564/fig_expl_carrier_transfer.meta.json",
+    "figures/issue_2564/fig_expl_carrier_transfer.pdf",
+    "figures/issue_2564/fig_expl_carrier_transfer.png",
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.meta.json",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.pdf",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_expl_retrieval_acc.meta.json",
+    "figures/issue_2564/fig_expl_retrieval_acc.pdf",
+    "figures/issue_2564/fig_expl_retrieval_acc.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T20:00:37Z",
+  "figsize": [
+    5.4,
+    4.4
+  ],
+  "points": [
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9405974925633374,
+      "direction cosine (single-turn frozen map)": 0.49747541567498366,
+      "label": "content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9093781216471862,
+      "direction cosine (single-turn frozen map)": 0.3621701718184568,
+      "label": "output format",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.746408988829969,
+      "direction cosine (single-turn frozen map)": 0.4156299252722266,
+      "label": "marker word",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9913820244054419,
+      "direction cosine (single-turn frozen map)": 0.8989838133944595,
+      "label": "tone",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.13102069808322983,
+      "direction cosine (single-turn frozen map)": 0.17208480650441785,
+      "label": "injected name",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9272067242251268,
+      "direction cosine (single-turn frozen map)": 0.5964832924624228,
+      "label": "user description",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9826447430382637,
+      "direction cosine (single-turn frozen map)": 0.7145733467120705,
+      "label": "query content",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.5994338960687404,
+      "direction cosine (single-turn frozen map)": 0.30400866272404437,
+      "label": "query form",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Split-half reliability vs direction recovery",
+        "xlabel": "split-half reliability of the observed shift (Spearman-Brown r10)",
+        "ylabel": "direction cosine (single-turn frozen map)",
+        "annotations": [
+          "content constraint",
+          "output format",
+          "marker word",
+          "tone",
+          "injected name",
+          "user description",
+          "query content",
+          "query form"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

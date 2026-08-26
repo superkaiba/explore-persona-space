@@ -1,0 +1,1031 @@
+{
+  "axis_floor_verdicts": {
+    "hedging": {
+      "fired_values_excluded": [
+        "h1c",
+        "h2a"
+      ],
+      "fired_values_orig": [
+        "h1c",
+        "h2a"
+      ],
+      "fired_values_zeroed": [
+        "h1c",
+        "h2a"
+      ],
+      "floor": 2,
+      "floor_met_excluded": true,
+      "floor_met_orig": true,
+      "floor_met_zeroed": true,
+      "floor_source": "manipulation_check_ffr.json axis_rows",
+      "n_fired_excluded": 2,
+      "n_fired_orig": 2,
+      "n_fired_zeroed": 2,
+      "width": 2
+    },
+    "persona": {
+      "fired_values_excluded": [
+        "p2",
+        "p3",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      "fired_values_orig": [
+        "p2",
+        "p3",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      "fired_values_zeroed": [
+        "p2",
+        "p3",
+        "p5",
+        "p6",
+        "p7"
+      ],
+      "floor": 3,
+      "floor_met_excluded": true,
+      "floor_met_orig": true,
+      "floor_met_zeroed": true,
+      "floor_source": "manipulation_check_ffr.json axis_rows",
+      "n_fired_excluded": 5,
+      "n_fired_orig": 5,
+      "n_fired_zeroed": 5,
+      "width": 5
+    },
+    "stance": {
+      "fired_values_excluded": [
+        "s1b",
+        "s2a",
+        "s3a",
+        "s4a"
+      ],
+      "fired_values_orig": [
+        "s1b",
+        "s2a",
+        "s3a",
+        "s4a"
+      ],
+      "fired_values_zeroed": [
+        "s1b",
+        "s2a",
+        "s3a"
+      ],
+      "floor": 3,
+      "floor_met_excluded": true,
+      "floor_met_orig": true,
+      "floor_met_zeroed": true,
+      "floor_source": "manipulation_check_ffr.json axis_rows",
+      "n_fired_excluded": 4,
+      "n_fired_orig": 4,
+      "n_fired_zeroed": 3,
+      "width": 4
+    }
+  },
+  "direction_recount": {
+    "axes": {
+      "hedging": {
+        "arms": {
+          "arm_1738ce": {
+            "delta": -0.00026358926424752127,
+            "delta_all_values": -0.00026358926424752127,
+            "mean_cos_all_values_as_scored": 0.7261270795373521,
+            "mean_cos_all_values_cjk_excluded": 0.7258634902731046,
+            "mean_cos_as_scored": 0.7261270795373521,
+            "mean_cos_cjk_excluded": 0.7258634902731046
+          },
+          "arm_779ce": {
+            "delta": -0.00023700660874426127,
+            "delta_all_values": -0.00023700660874426127,
+            "mean_cos_all_values_as_scored": 0.7421892851006572,
+            "mean_cos_all_values_cjk_excluded": 0.7419522784919129,
+            "mean_cos_as_scored": 0.7421892851006572,
+            "mean_cos_cjk_excluded": 0.7419522784919129
+          },
+          "arm_iddelta": {
+            "delta": -0.0006323868447553616,
+            "delta_all_values": -0.0006323868447553616,
+            "mean_cos_all_values_as_scored": 0.3503323144008972,
+            "mean_cos_all_values_cjk_excluded": 0.3496999275561418,
+            "mean_cos_as_scored": 0.3503323144008972,
+            "mean_cos_cjk_excluded": 0.3496999275561418
+          }
+        },
+        "compliance_limited": false,
+        "headline_ok": true,
+        "n_contexts_affected_headline": 3,
+        "n_draws_excluded_headline": 5,
+        "n_pairs_headline": 12,
+        "no_fired_pairs": false
+      },
+      "persona": {
+        "arms": {
+          "arm_1738ce": {
+            "delta": 0.000947205924686001,
+            "delta_all_values": 0.000947205924686001,
+            "mean_cos_all_values_as_scored": 0.7814724303045177,
+            "mean_cos_all_values_cjk_excluded": 0.7824196362292037,
+            "mean_cos_as_scored": 0.7814724303045177,
+            "mean_cos_cjk_excluded": 0.7824196362292037
+          },
+          "arm_779ce": {
+            "delta": -0.0006294098564880724,
+            "delta_all_values": -0.0006294098564880724,
+            "mean_cos_all_values_as_scored": 0.7735029262115383,
+            "mean_cos_all_values_cjk_excluded": 0.7728735163550502,
+            "mean_cos_as_scored": 0.7735029262115383,
+            "mean_cos_cjk_excluded": 0.7728735163550502
+          },
+          "arm_iddelta": {
+            "delta": 0.0002700330834629616,
+            "delta_all_values": 0.0002700330834629616,
+            "mean_cos_all_values_as_scored": 0.6373059388789157,
+            "mean_cos_all_values_cjk_excluded": 0.6375759719623787,
+            "mean_cos_as_scored": 0.6373059388789157,
+            "mean_cos_cjk_excluded": 0.6375759719623787
+          }
+        },
+        "compliance_limited": false,
+        "headline_ok": true,
+        "n_contexts_affected_headline": 26,
+        "n_draws_excluded_headline": 39,
+        "n_pairs_headline": 120,
+        "no_fired_pairs": false
+      },
+      "stance": {
+        "arms": {
+          "arm_1738ce": {
+            "delta": 0.0015286889522387326,
+            "delta_all_values": 0.0015286889522387326,
+            "mean_cos_all_values_as_scored": 0.35603590427390613,
+            "mean_cos_all_values_cjk_excluded": 0.35756459322614487,
+            "mean_cos_as_scored": 0.35603590427390613,
+            "mean_cos_cjk_excluded": 0.35756459322614487
+          },
+          "arm_779ce": {
+            "delta": 0.001033344075966225,
+            "delta_all_values": 0.001033344075966225,
+            "mean_cos_all_values_as_scored": 0.36850240888693886,
+            "mean_cos_all_values_cjk_excluded": 0.3695357529629051,
+            "mean_cos_as_scored": 0.36850240888693886,
+            "mean_cos_cjk_excluded": 0.3695357529629051
+          },
+          "arm_iddelta": {
+            "delta": -0.00010894643897343959,
+            "delta_all_values": -0.00010894643897343959,
+            "mean_cos_all_values_as_scored": 0.1462426784836614,
+            "mean_cos_all_values_cjk_excluded": 0.14613373204468796,
+            "mean_cos_as_scored": 0.1462426784836614,
+            "mean_cos_cjk_excluded": 0.14613373204468796
+          }
+        },
+        "compliance_limited": false,
+        "headline_ok": true,
+        "n_contexts_affected_headline": 13,
+        "n_draws_excluded_headline": 18,
+        "n_pairs_headline": 72,
+        "no_fired_pairs": false
+      }
+    },
+    "basis": "observed swap deltas re-derived from per-draw va2564 stores with intruded draws excluded; predicted deltas are draw-independent (committed fp32 prediction tensors reused); as-scored recompute parity-asserted against minpair_delta_ffr.json",
+    "max_abs_delta": 0.0015286889522387326,
+    "obs_delta_store_max_abs_fp32": 0.0,
+    "parity_max_abs_diff": 3.0008107110290894e-10
+  },
+  "headline_pairs_by_convention": {
+    "hedging": {
+      "excluded": 12,
+      "orig": 12,
+      "zeroed": 12
+    },
+    "persona": {
+      "excluded": 120,
+      "orig": 120,
+      "zeroed": 120
+    },
+    "stance": {
+      "excluded": 72,
+      "orig": 72,
+      "zeroed": 36
+    }
+  },
+  "judged_pool": {
+    "fired_overlap_crosstab": {
+      "intruded_comply": 17,
+      "intruded_incomplete": 0,
+      "intruded_noncomply": 13
+    },
+    "intruded_checks": [
+      {
+        "alias": "hedging--h2a--c02-d0",
+        "axis": "hedging",
+        "context_id": "hedging::h2a::c02",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "h2a"
+      },
+      {
+        "alias": "persona--p2--c02-d1",
+        "axis": "persona",
+        "context_id": "persona::p2::c02",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p2"
+      },
+      {
+        "alias": "persona--p2--c10-d0",
+        "axis": "persona",
+        "context_id": "persona::p2::c10",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "p2"
+      },
+      {
+        "alias": "persona--p2p--c02-d0",
+        "axis": "persona",
+        "context_id": "persona::p2p::c02",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "p2p"
+      },
+      {
+        "alias": "persona--p2p--c04-d1",
+        "axis": "persona",
+        "context_id": "persona::p2p::c04",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p2p"
+      },
+      {
+        "alias": "persona--p2p--c07-d1",
+        "axis": "persona",
+        "context_id": "persona::p2p::c07",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p2p"
+      },
+      {
+        "alias": "persona--p2p--c11-d0",
+        "axis": "persona",
+        "context_id": "persona::p2p::c11",
+        "draw": 0,
+        "outcome": "noncomply",
+        "value_id": "p2p"
+      },
+      {
+        "alias": "persona--p3--c04-d1",
+        "axis": "persona",
+        "context_id": "persona::p3::c04",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "p3"
+      },
+      {
+        "alias": "persona--p5--c05-d0",
+        "axis": "persona",
+        "context_id": "persona::p5::c05",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "p5"
+      },
+      {
+        "alias": "persona--p5--c12-d0",
+        "axis": "persona",
+        "context_id": "persona::p5::c12",
+        "draw": 0,
+        "outcome": "noncomply",
+        "value_id": "p5"
+      },
+      {
+        "alias": "persona--p5p--c02-d1",
+        "axis": "persona",
+        "context_id": "persona::p5p::c02",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p5p"
+      },
+      {
+        "alias": "persona--p5p--c04-d1",
+        "axis": "persona",
+        "context_id": "persona::p5p::c04",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p5p"
+      },
+      {
+        "alias": "persona--p6--c07-d0",
+        "axis": "persona",
+        "context_id": "persona::p6::c07",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "p6"
+      },
+      {
+        "alias": "persona--p6--c11-d1",
+        "axis": "persona",
+        "context_id": "persona::p6::c11",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p6"
+      },
+      {
+        "alias": "persona--p6--c12-d1",
+        "axis": "persona",
+        "context_id": "persona::p6::c12",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "p6"
+      },
+      {
+        "alias": "persona--p6p--c05-d0",
+        "axis": "persona",
+        "context_id": "persona::p6p::c05",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "p6p"
+      },
+      {
+        "alias": "persona--p6p--c05-d1",
+        "axis": "persona",
+        "context_id": "persona::p6p::c05",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p6p"
+      },
+      {
+        "alias": "persona--p6p--c06-d0",
+        "axis": "persona",
+        "context_id": "persona::p6p::c06",
+        "draw": 0,
+        "outcome": "noncomply",
+        "value_id": "p6p"
+      },
+      {
+        "alias": "persona--p6p--c06-d1",
+        "axis": "persona",
+        "context_id": "persona::p6p::c06",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "p6p"
+      },
+      {
+        "alias": "persona--p6p--c09-d1",
+        "axis": "persona",
+        "context_id": "persona::p6p::c09",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "p6p"
+      },
+      {
+        "alias": "persona--p7--c10-d0",
+        "axis": "persona",
+        "context_id": "persona::p7::c10",
+        "draw": 0,
+        "outcome": "noncomply",
+        "value_id": "p7"
+      },
+      {
+        "alias": "persona--p7--c11-d0",
+        "axis": "persona",
+        "context_id": "persona::p7::c11",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "p7"
+      },
+      {
+        "alias": "persona--p7p--c01-d1",
+        "axis": "persona",
+        "context_id": "persona::p7p::c01",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "p7p"
+      },
+      {
+        "alias": "stance--s1b--c03-d1",
+        "axis": "stance",
+        "context_id": "stance::s1b::c03",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "s1b"
+      },
+      {
+        "alias": "stance--s2a--c09-d1",
+        "axis": "stance",
+        "context_id": "stance::s2a::c09",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "s2a"
+      },
+      {
+        "alias": "stance--s2ap--c03-d1",
+        "axis": "stance",
+        "context_id": "stance::s2ap::c03",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "s2ap"
+      },
+      {
+        "alias": "stance--s4a--c02-d1",
+        "axis": "stance",
+        "context_id": "stance::s4a::c02",
+        "draw": 1,
+        "outcome": "comply",
+        "value_id": "s4a"
+      },
+      {
+        "alias": "stance--s4a--c03-d0",
+        "axis": "stance",
+        "context_id": "stance::s4a::c03",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "s4a"
+      },
+      {
+        "alias": "stance--s4a--c04-d1",
+        "axis": "stance",
+        "context_id": "stance::s4a::c04",
+        "draw": 1,
+        "outcome": "noncomply",
+        "value_id": "s4a"
+      },
+      {
+        "alias": "stance--s4ap--c11-d0",
+        "axis": "stance",
+        "context_id": "stance::s4ap::c11",
+        "draw": 0,
+        "outcome": "comply",
+        "value_id": "s4ap"
+      }
+    ],
+    "total": 528,
+    "total_intruded": 30
+  },
+  "meta": {
+    "cjk_ranges_hex": [
+      [
+        "0x4e00",
+        "0x9fff"
+      ],
+      [
+        "0x3400",
+        "0x4dbf"
+      ],
+      [
+        "0xf900",
+        "0xfaff"
+      ],
+      [
+        "0x3040",
+        "0x30ff"
+      ],
+      [
+        "0xac00",
+        "0xd7af"
+      ]
+    ],
+    "conventions": {
+      "excluded": "intruded draws removed from numerator and denominator",
+      "orig": "as scored (no intrusion adjustment)",
+      "zeroed": "intruded draw counted non-complying; fixed denominator"
+    },
+    "fire_rule": "verdicts via issue2564_intrusion_audit._fire_rows (fire_verdict from issue2564_judge); axis floors read from manipulation_check_ffr.json axis_rows (parent-width-anchored)",
+    "flag_semantics": "intrusion flags are COMPLETE: a rollout/check is intruded iff its context_id::draw appears in rollouts.intruded_rollouts / judged_pool.intruded_checks; every other (context_id, draw) is clean",
+    "hf_revision": "8168886e8436ff13bd49d6b47d1d5e2a861be8d6",
+    "inputs": [
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/analysis_tensors/va2564/va2564_hedging.pt",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/analysis_tensors/va2564/va2564_persona.pt",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/analysis_tensors/va2564/va2564_query.pt",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/analysis_tensors/va2564/va2564_stance.pt",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/anchors/anchors_hedging.jsonl",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/anchors/anchors_persona.jsonl",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/anchors/anchors_query.jsonl",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/anchors/anchors_stance.jsonl",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/bank2564_ffr_manifest.json",
+      "data/issue_2564/hf_dl/pe_stage_ffr_pin/judge_scores.jsonl"
+    ],
+    "issue": 2564,
+    "provenance": {
+      "git_argv0_path": "scripts/issue2564_intrusion_audit_ffr.py",
+      "git_argv0_state": "untracked",
+      "git_commit": "e479f8734b70e00e2bdd224ed3d2345228d3ee8c",
+      "git_dirty": true,
+      "git_dirty_paths": [
+        "scripts/issue2564_intrusion_audit_ffr.py"
+      ]
+    },
+    "purpose": "durable record of the fold-time Step 3.7 CJK recount for the re-elicitation round (clean-result-critique r6 concern fold-time-cjk-recount-unpersisted)",
+    "round": "floor_failed_reelicitation",
+    "script": "scripts/issue2564_intrusion_audit_ffr.py"
+  },
+  "rollouts": {
+    "contexts_with_intrusion": 91,
+    "intruded_rollouts": [
+      "hedging::h1c::c02::2",
+      "hedging::h2a::c02::0",
+      "hedging::h2a::c02::2",
+      "hedging::h2a::c02::9",
+      "hedging::h2a::c10::3",
+      "hedging::h2ap::c01::2",
+      "hedging::h2ap::c01::3",
+      "hedging::h2ap::c03::3",
+      "hedging::h2ap::c03::5",
+      "hedging::h2ap::c05::4",
+      "hedging::h2ap::c08::2",
+      "hedging::h2ap::c08::4",
+      "hedging::h2ap::c10::7",
+      "hedging::h2ap::c11::8",
+      "persona::p2::c01::3",
+      "persona::p2::c01::6",
+      "persona::p2::c02::1",
+      "persona::p2::c02::3",
+      "persona::p2::c03::3",
+      "persona::p2::c06::4",
+      "persona::p2::c06::6",
+      "persona::p2::c06::9",
+      "persona::p2::c07::5",
+      "persona::p2::c10::0",
+      "persona::p2::c11::4",
+      "persona::p2::c11::9",
+      "persona::p2::c12::5",
+      "persona::p2::c12::8",
+      "persona::p2::c12::9",
+      "persona::p2p::c01::2",
+      "persona::p2p::c01::4",
+      "persona::p2p::c02::0",
+      "persona::p2p::c02::4",
+      "persona::p2p::c02::9",
+      "persona::p2p::c04::1",
+      "persona::p2p::c04::3",
+      "persona::p2p::c06::7",
+      "persona::p2p::c07::1",
+      "persona::p2p::c07::5",
+      "persona::p2p::c08::2",
+      "persona::p2p::c09::9",
+      "persona::p2p::c11::0",
+      "persona::p2p::c11::4",
+      "persona::p3::c04::1",
+      "persona::p3::c04::6",
+      "persona::p3::c05::4",
+      "persona::p3::c06::4",
+      "persona::p5::c02::6",
+      "persona::p5::c03::5",
+      "persona::p5::c05::0",
+      "persona::p5::c05::7",
+      "persona::p5::c07::4",
+      "persona::p5::c10::5",
+      "persona::p5::c10::8",
+      "persona::p5::c10::9",
+      "persona::p5::c12::0",
+      "persona::p5::c12::9",
+      "persona::p5p::c02::1",
+      "persona::p5p::c02::3",
+      "persona::p5p::c02::7",
+      "persona::p5p::c04::1",
+      "persona::p5p::c05::2",
+      "persona::p5p::c06::5",
+      "persona::p5p::c09::4",
+      "persona::p5p::c09::6",
+      "persona::p5p::c10::6",
+      "persona::p5p::c11::7",
+      "persona::p5p::c12::5",
+      "persona::p6::c01::7",
+      "persona::p6::c02::6",
+      "persona::p6::c07::0",
+      "persona::p6::c11::1",
+      "persona::p6::c11::3",
+      "persona::p6::c12::1",
+      "persona::p6p::c04::6",
+      "persona::p6p::c05::0",
+      "persona::p6p::c05::1",
+      "persona::p6p::c05::3",
+      "persona::p6p::c06::0",
+      "persona::p6p::c06::1",
+      "persona::p6p::c06::6",
+      "persona::p6p::c08::9",
+      "persona::p6p::c09::1",
+      "persona::p6p::c09::5",
+      "persona::p6p::c11::4",
+      "persona::p7::c03::5",
+      "persona::p7::c06::9",
+      "persona::p7::c10::0",
+      "persona::p7::c11::0",
+      "persona::p7p::c01::1",
+      "persona::p7p::c03::7",
+      "persona::p7p::c07::3",
+      "persona::p7p::c08::6",
+      "persona::p7p::c10::2",
+      "query::E::c01::5",
+      "query::E::c01::9",
+      "query::E::c05::5",
+      "query::E::c06::6",
+      "query::E::c10::8",
+      "stance::s1b::c02::7",
+      "stance::s1b::c03::1",
+      "stance::s1b::c03::2",
+      "stance::s1b::c03::5",
+      "stance::s1b::c03::9",
+      "stance::s1b::c11::8",
+      "stance::s1bp::c03::9",
+      "stance::s1bp::c07::2",
+      "stance::s1bp::c09::2",
+      "stance::s1bp::c09::4",
+      "stance::s2a::c04::8",
+      "stance::s2a::c07::7",
+      "stance::s2a::c09::1",
+      "stance::s2a::c09::6",
+      "stance::s2a::c12::8",
+      "stance::s2ap::c03::1",
+      "stance::s2ap::c10::6",
+      "stance::s3a::c05::4",
+      "stance::s3a::c05::5",
+      "stance::s3a::c06::9",
+      "stance::s3ap::c01::5",
+      "stance::s4a::c02::1",
+      "stance::s4a::c03::0",
+      "stance::s4a::c04::1",
+      "stance::s4a::c05::6",
+      "stance::s4ap::c02::4",
+      "stance::s4ap::c04::2",
+      "stance::s4ap::c06::7",
+      "stance::s4ap::c07::4",
+      "stance::s4ap::c09::6",
+      "stance::s4ap::c11::0"
+    ],
+    "per_arm": {
+      "hedging": {
+        "intruded": 14,
+        "total": 480
+      },
+      "persona": {
+        "intruded": 80,
+        "total": 1200
+      },
+      "query": {
+        "intruded": 5,
+        "total": 120
+      },
+      "stance": {
+        "intruded": 31,
+        "total": 960
+      }
+    },
+    "total": 2760,
+    "total_intruded": 130
+  },
+  "slot_recounts": {
+    "hedging::h1c": {
+      "axis": "hedging",
+      "denom": 24,
+      "excluded_counts": [
+        19,
+        24
+      ],
+      "n_comply": 19,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "h1c",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "hedging::h1cp": {
+      "axis": "hedging",
+      "denom": 24,
+      "excluded_counts": [
+        22,
+        24
+      ],
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "h1cp",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "hedging::h2a": {
+      "axis": "hedging",
+      "denom": 24,
+      "excluded_counts": [
+        22,
+        23
+      ],
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "value_id": "h2a",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "hedging::h2ap": {
+      "axis": "hedging",
+      "denom": 24,
+      "excluded_counts": [
+        24,
+        24
+      ],
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "h2ap",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p2": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        21,
+        22
+      ],
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 1,
+      "value_id": "p2",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p2p": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        17,
+        20
+      ],
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 4,
+      "n_intruded_comply": 1,
+      "value_id": "p2p",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p3": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        23,
+        23
+      ],
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "value_id": "p3",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p3p": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        24,
+        24
+      ],
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "p3p",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p5": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        21,
+        22
+      ],
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 1,
+      "value_id": "p5",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p5p": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        18,
+        22
+      ],
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 0,
+      "value_id": "p5p",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p6": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        21,
+        21
+      ],
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 2,
+      "value_id": "p6",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p6p": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        19,
+        19
+      ],
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 5,
+      "n_intruded_comply": 3,
+      "value_id": "p6p",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p7": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        20,
+        22
+      ],
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_intruded": 2,
+      "n_intruded_comply": 1,
+      "value_id": "p7",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "persona::p7p": {
+      "axis": "persona",
+      "denom": 24,
+      "excluded_counts": [
+        23,
+        23
+      ],
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 0,
+      "value_id": "p7p",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "stance::s1b": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        18,
+        23
+      ],
+      "n_comply": 19,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "value_id": "s1b",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "stance::s1bp": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        6,
+        24
+      ],
+      "n_comply": 6,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "s1bp",
+      "verdict_excluded": "not_fired",
+      "verdict_orig": "not_fired",
+      "verdict_zeroed": "not_fired"
+    },
+    "stance::s2a": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        22,
+        23
+      ],
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "value_id": "s2a",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "stance::s2ap": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        20,
+        23
+      ],
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "value_id": "s2ap",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "stance::s3a": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        19,
+        24
+      ],
+      "n_comply": 19,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "s3a",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "stance::s3ap": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        19,
+        24
+      ],
+      "n_comply": 19,
+      "n_incomplete": 0,
+      "n_intruded": 0,
+      "n_intruded_comply": 0,
+      "value_id": "s3ap",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    },
+    "stance::s4a": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        16,
+        21
+      ],
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_intruded": 3,
+      "n_intruded_comply": 2,
+      "value_id": "s4a",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "not_fired"
+    },
+    "stance::s4ap": {
+      "axis": "stance",
+      "denom": 24,
+      "excluded_counts": [
+        21,
+        23
+      ],
+      "n_comply": 22,
+      "n_incomplete": 0,
+      "n_intruded": 1,
+      "n_intruded_comply": 1,
+      "value_id": "s4ap",
+      "verdict_excluded": "fired",
+      "verdict_orig": "fired",
+      "verdict_zeroed": "fired"
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "commit": "b259ac85",
+  "render_id": "a5e38d59ef4f4315",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:29Z",
+  "figsize": [
+    5.4,
+    4.4
+  ],
+  "points": [
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9922888127728959,
+      "direction cosine (single-turn frozen map)": 0.7421892848005761,
+      "label": "hedging",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9619438810766285,
+      "direction cosine (single-turn frozen map)": 0.7735029261646471,
+      "label": "persona",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half reliability of the observed shift (Spearman-Brown r10)": 0.9423256755338547,
+      "direction cosine (single-turn frozen map)": 0.36850240887332475,
+      "label": "stance",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 3,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Split-half reliability vs direction recovery",
+        "xlabel": "split-half reliability of the observed shift (Spearman-Brown r10)",
+        "ylabel": "direction cosine (single-turn frozen map)",
+        "annotations": [
+          "hedging",
+          "persona",
+          "stance"
+        ],
+        "xticklabels": [
+          "0.93",
+          "0.94",
+          "0.95",
+          "0.96",
+          "0.97",
+          "0.98",
+          "0.99",
+          "1.00"
+        ],
+        "yticklabels": [
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

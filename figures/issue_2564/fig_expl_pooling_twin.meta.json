@@ -1,0 +1,281 @@
+{
+  "commit": "8265bcd7+dirty",
+  "render_id": "6c55c3a1a7464590",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_arm_agreement.meta.json",
+    "figures/issue_2564/fig_expl_arm_agreement.pdf",
+    "figures/issue_2564/fig_expl_arm_agreement.png",
+    "figures/issue_2564/fig_expl_carrier_transfer.meta.json",
+    "figures/issue_2564/fig_expl_carrier_transfer.pdf",
+    "figures/issue_2564/fig_expl_carrier_transfer.png",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.meta.json",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.pdf",
+    "figures/issue_2564/fig_expl_ceiling_vs_cos.png",
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.meta.json",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.pdf",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_layer_twins.meta.json",
+    "figures/issue_2564/fig_expl_layer_twins.pdf",
+    "figures/issue_2564/fig_expl_layer_twins.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_expl_query_dissociation.meta.json",
+    "figures/issue_2564/fig_expl_query_dissociation.pdf",
+    "figures/issue_2564/fig_expl_query_dissociation.png",
+    "figures/issue_2564/fig_expl_retrieval_acc.meta.json",
+    "figures/issue_2564/fig_expl_retrieval_acc.pdf",
+    "figures/issue_2564/fig_expl_retrieval_acc.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T20:00:44Z",
+  "figsize": [
+    5.0,
+    4.6
+  ],
+  "points": [
+    {
+      "direction cosine, answer-tail pooling": 0.49747541567498366,
+      "direction cosine, span-mean pooling": 0.4775066193301187,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.3621701718184568,
+      "direction cosine, span-mean pooling": 0.3592097772159651,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.4156299252722266,
+      "direction cosine, span-mean pooling": 0.4125717094868951,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.8989838133944595,
+      "direction cosine, span-mean pooling": 0.8997007874701773,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.17208480650441785,
+      "direction cosine, span-mean pooling": 0.17157878493381687,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.5964832924624228,
+      "direction cosine, span-mean pooling": 0.5968993018261612,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.7145733467120705,
+      "direction cosine, span-mean pooling": 0.7143736856136786,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.30400866272404437,
+      "direction cosine, span-mean pooling": 0.30470545093095375,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.5268195977820153,
+      "direction cosine, span-mean pooling": 0.5010150771177617,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.36395409631629205,
+      "direction cosine, span-mean pooling": 0.3607387680617624,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.41422733512915294,
+      "direction cosine, span-mean pooling": 0.4104047451611654,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.9128360436033701,
+      "direction cosine, span-mean pooling": 0.9128851947790446,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.157635780072221,
+      "direction cosine, span-mean pooling": 0.15792910912352298,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.6057655071082446,
+      "direction cosine, span-mean pooling": 0.6056590824819389,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.6679431375816325,
+      "direction cosine, span-mean pooling": 0.6677340012733372,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.326391679669572,
+      "direction cosine, span-mean pooling": 0.32665420223287295,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.3139645792255431,
+      "direction cosine, span-mean pooling": 0.33131469060245083,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.229119852771882,
+      "direction cosine, span-mean pooling": 0.22187490530240808,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.2731171039453366,
+      "direction cosine, span-mean pooling": 0.27104691521164703,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.7280655026408017,
+      "direction cosine, span-mean pooling": 0.7282846553077239,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.1381780839283877,
+      "direction cosine, span-mean pooling": 0.13743082793441755,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.42701941592593884,
+      "direction cosine, span-mean pooling": 0.42680178482144854,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.3042462830504226,
+      "direction cosine, span-mean pooling": 0.303937382517644,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.22111512196235203,
+      "direction cosine, span-mean pooling": 0.2207700083969318,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pooling twin: answer tail vs span mean",
+        "xlabel": "direction cosine, answer-tail pooling",
+        "ylabel": "direction cosine, span-mean pooling",
+        "legend_labels": [
+          "single-turn frozen map",
+          "multi-turn frozen map",
+          "identity baseline"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn frozen map",
+      "multi-turn frozen map",
+      "identity baseline"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1394,6 +1394,7 @@ _BIND_ADOPTION_LITERAL = "assert_args_attributes_defined"
 # a table update instead of silently narrowing the armed population.
 _CO_PASSED_FILE_MAP = {
     ("issue2225_fu1_analysis.py", "pa"): "scripts/issue2225_analysis.py",
+    ("issue2564_gramslot_pilot_run.py", "L"): "scripts/issue2564_langow_pilot_run.py",
 }
 
 

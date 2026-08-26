@@ -1,0 +1,41 @@
+{
+  "commit": "b259ac85",
+  "render_id": "0cd81808032b46d6",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:07Z",
+  "figsize": [
+    8.58,
+    4.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Direction cosine by axis and pair class (single-turn frozen map)",
+        "ylabel": "per-pair direction cosine",
+        "xticklabels": [
+          "hedging",
+          "persona",
+          "stance"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

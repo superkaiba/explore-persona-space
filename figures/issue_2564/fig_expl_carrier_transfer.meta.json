@@ -1,0 +1,97 @@
+{
+  "commit": "8265bcd7+dirty",
+  "render_id": "2664f8e6f2884005",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.meta.json",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.pdf",
+    "figures/issue_2564/fig_expl_flip_vs_para_text.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_expl_retrieval_acc.meta.json",
+    "figures/issue_2564/fig_expl_retrieval_acc.pdf",
+    "figures/issue_2564/fig_expl_retrieval_acc.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T20:00:33Z",
+  "figsize": [
+    9.100000000000001,
+    7.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Direction cosine by axis and carrier question",
+        "xticklabels": [
+          "carrier 1",
+          "carrier 2",
+          "carrier 3",
+          "carrier 4",
+          "carrier 5",
+          "carrier 6",
+          "carrier 7",
+          "carrier 8",
+          "carrier 9",
+          "carrier 10",
+          "carrier 11",
+          "carrier 12"
+        ],
+        "yticklabels": [
+          "content constraint",
+          "output format",
+          "hedging",
+          "marker word",
+          "persona",
+          "tone",
+          "stance",
+          "injected name",
+          "user description",
+          "query content",
+          "query form"
+        ]
+      },
+      {
+        "ylabel": "mean direction cosine",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

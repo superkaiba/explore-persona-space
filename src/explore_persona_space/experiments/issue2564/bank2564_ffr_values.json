@@ -1,0 +1,101 @@
+{
+  "issue": 2564,
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "round": "floor-failed-reelicitation",
+  "frozen_at": "2026-08-25",
+  "plan_version": "v7",
+  "authored_by": "Instruction texts authored by the planning agent (Claude, Anthropic) and transcribed verbatim from plan v7 section 3a; no Qwen-generated text. Token counts verified against the live Qwen-2.5-7B-Instruct tokenizer at freeze.",
+  "parent_values": {
+    "source": "bank2564_values.json",
+    "sha256": "29e6bebc52b91af5e92474d829ab7ee252f6c8b5f067696f3444d41f2454119d"
+  },
+  "axes": {
+    "stance": {
+      "kind": "sentence",
+      "expected_value_tokens": 10,
+      "parent_width": 5,
+      "construct_slots": {
+        "S1": ["s1a", "s1b"],
+        "S2": ["s2a", "s2b"],
+        "S3": ["s3a"],
+        "S4": ["s4a", "s4b"],
+        "S5": ["s5a", "s5b"]
+      },
+      "values": {
+        "s1a": "Commit to a single option and argue for it.",
+        "s1b": "Recommend exactly one option and defend that choice firmly.",
+        "s2a": "Point out the main drawbacks of every single option.",
+        "s2b": "Focus mainly on what is wrong with each option.",
+        "s3a": "Treat every option evenly and pick no favorite.",
+        "s4a": "Make the strongest possible case for each side equally.",
+        "s4b": "Lay out the strongest case for each side.",
+        "s5a": "Argue for the side most people would reject.",
+        "s5b": "Defend whichever side most people would argue against."
+      },
+      "paraphrases": {
+        "s1a": "Choose one option outright and make the case for it.",
+        "s1b": "Name the single best option and stand behind it.",
+        "s2a": "Walk through the downsides of each of the options.",
+        "s2b": "Concentrate on each option's flaws.",
+        "s3a": "Give every option equal weight and endorse none.",
+        "s4a": "Give both sides their strongest possible argument.",
+        "s4b": "Set out the best argument available for every side.",
+        "s5a": "Take up the side that most people would dismiss.",
+        "s5b": "Champion the position most people would push back on."
+      }
+    },
+    "persona": {
+      "kind": "slotted",
+      "slot": "{NP}",
+      "template": "Adopt the persona of a {NP} for your whole reply.",
+      "paraphrase_template": "Write your entire reply in character as a {NP}.",
+      "expected_value_tokens": 15,
+      "parent_width": 5,
+      "construct_slots": {
+        "P1": ["p1"],
+        "P2": ["p2"],
+        "P3": ["p3"],
+        "P4": ["p4"],
+        "P5": ["p5"],
+        "P6": ["p6"],
+        "P7": ["p7"],
+        "P8": ["p8"]
+      },
+      "values": {
+        "p1": "gruff pirate captain",
+        "p2": "prim Victorian butler",
+        "p3": "calm zen meditation teacher",
+        "p4": "manic tech startup founder",
+        "p5": "jaded noir detective",
+        "p6": "cheerful retired sea captain",
+        "p7": "kindly village chess champion",
+        "p8": "seasoned wildlife safari guide"
+      }
+    },
+    "hedging": {
+      "kind": "sentence",
+      "expected_value_tokens": 10,
+      "parent_width": 2,
+      "construct_slots": {
+        "H1": ["h1a", "h1b", "h1c", "h1d"],
+        "H2": ["h2a", "h2b"]
+      },
+      "values": {
+        "h1a": "Answer decisively and do not hedge at all.",
+        "h1b": "Give a single clear recommendation, stated with conviction.",
+        "h1c": "State your recommendation plainly, without adding any qualifiers.",
+        "h1d": "Be direct and firm, skipping every single disclaimer.",
+        "h2a": "Answer with heavy caveats and hedging throughout.",
+        "h2b": "Hedge every claim and qualify your statements throughout."
+      },
+      "paraphrases": {
+        "h1a": "Respond with firm decisiveness and no hedging.",
+        "h1b": "Offer exactly one recommendation and voice it confidently.",
+        "h1c": "Say what you recommend outright, leaving out the qualifiers.",
+        "h1d": "Keep your reply blunt and firm, with disclaimers omitted.",
+        "h2a": "Qualify your reply heavily and hedge on every point.",
+        "h2b": "Express plenty of doubt and add caveats to each claim."
+      }
+    }
+  }
+}
