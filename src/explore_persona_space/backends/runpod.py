@@ -140,6 +140,22 @@ EXIT_STILL_WAITING = 75
 #: tests/test_dispatch_issue_cli.py::test_exit_stopped_pod_collision_matches_pod_lifecycle.
 EXIT_STOPPED_POD_COLLISION = 76
 
+#: pod_lifecycle.py's bootstrap-preflight failure exit (#2606): the provision
+#: subprocess brought the pod up and REGISTERED it, but bootstrap_pod.sh's
+#: step-10 preflight FAILED — the pod is ALIVE and BILLING with a venv/env
+#: that is NOT experiment-ready. The direct-CLI contract deliberately KEEPS
+#: the pod for operator repair; on THIS router path there is no operator, so
+#: :meth:`RunPodBackend.launch` catches this code at the provision relay and
+#: best-effort terminates the just-provisioned pod by EXACT id before
+#: re-raising the ORIGINAL error (the #2038-family disposition). Mirrored
+#: (not imported) from
+#: ``scripts/pod_lifecycle.py::EXIT_BOOTSTRAP_PREFLIGHT_FAILED`` — this
+#: module's imports stay ``base``-only by documented convention (see
+#: EXIT_STILL_WAITING above). 3-way parity (bootstrap_pod.sh /
+#: pod_lifecycle.py / here) pinned by
+#: tests/test_bootstrap_pod_preflight_failloud.py.
+EXIT_BOOTSTRAP_PREFLIGHT_FAILED = 78
+
 
 class PodLifecycleProcessError(subprocess.CalledProcessError):
     """``CalledProcessError`` whose ``str()`` carries the child's stderr tail.
@@ -427,6 +443,61 @@ def _dispose_post_provision_failure(
             pod_name,
             issue,
         )
+
+
+def _provision_relay_with_preflight_disposition(
+    cmd: list[str],
+    *,
+    env: dict[str, str] | None,
+    issue: int,
+    lane_suffix: str | None,
+) -> None:
+    """Run the provision relay with the #2606 rc=78 preflight disposition.
+
+    Delegates to :func:`_run_pod_lifecycle_relay`; returns normally on
+    success. On a :class:`PodLifecycleProcessError` whose ``returncode`` is
+    :data:`EXIT_BOOTSTRAP_PREFLIGHT_FAILED` (78) — the pod is up + REGISTERED
+    but bootstrap's step-10 preflight FAILED, so its venv/env is NOT
+    experiment-ready — the direct-CLI contract keeps the pod alive for
+    operator repair, but THIS router path has no operator: best-effort
+    terminate the just-provisioned pod by EXACT id — never name-keyed /
+    issue-wide (#1739/#1485) — then re-raise the ORIGINAL error.
+    ``_terminate_just_provisioned`` never raises; the extra guard keeps a
+    monkeypatched / future-refactored teardown from ever masking it (the
+    :func:`_dispose_post_provision_failure` mask-guard shape). Every OTHER
+    non-zero rc (75 still-waiting, 76 collision, generic 1) propagates
+    untouched. Named residual (plan #2606): the re-raised error still lands
+    as the re-drivable ``no_compute_available`` terminal — SAFE
+    post-teardown (nothing left billing; a watcher re-drive re-provisions
+    fresh). Module-level helper (not inline in ``launch``) to stay under the
+    C901 complexity cap ``launch`` already sits at.
+    """
+    try:
+        _run_pod_lifecycle_relay(cmd, env=env)
+    except PodLifecycleProcessError as exc:
+        if exc.returncode == EXIT_BOOTSTRAP_PREFLIGHT_FAILED:
+            failed_pod_name = _runpod_pod_name(issue, lane_suffix)
+            try:
+                _terminate_just_provisioned(
+                    pod_id=_provisioned_pod_id(failed_pod_name),
+                    pod_name=failed_pod_name,
+                    issue=issue,
+                    cause=(
+                        "bootstrap preflight failed (exit 78): pod venv/env "
+                        "not experiment-ready; autonomous dispatch has no "
+                        "operator to repair — #2038-family disposition, "
+                        "task #2606"
+                    ),
+                )
+            except Exception:
+                logger.exception(
+                    "emergency teardown wrapper itself raised for pod %s "
+                    "(issue %s) after a preflight-failed provision (rc=78) — "
+                    "pod may still be billing (#2606)",
+                    failed_pod_name,
+                    issue,
+                )
+        raise
 
 
 def _boot_disk_provision_args(spec: RunSpec) -> list[str]:
@@ -1439,7 +1510,16 @@ class RunPodBackend(ComputeBackend):
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT, and as of
         # #2238 that retry covers the CPU legs (create_cpu_pod) too, not
         # only the GPU create_pod path.)
-        _run_pod_lifecycle_relay(cmd, env=env_for_provision)
+        # #2606: the relay is wrapped so an rc=78 (bootstrap-preflight
+        # failure — pod up + registered but NOT experiment-ready) best-effort
+        # terminates the just-provisioned pod by EXACT id before the ORIGINAL
+        # error re-raises; every other non-zero rc propagates untouched.
+        _provision_relay_with_preflight_disposition(
+            cmd,
+            env=env_for_provision,
+            issue=spec.issue,
+            lane_suffix=lane_suffix,
+        )
         # #1698 Item 1(b) — fail-loud post-bootstrap branch assertion. Bind
         # ONLY when a specific non-`main` branch was requested: the default
         # case (empty / explicit `main`) is a no-op so a launch that

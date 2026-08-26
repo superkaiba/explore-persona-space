@@ -3232,6 +3232,147 @@ def test_provision_no_bootstrap_skips_retry_and_verdict(isolated_state, monkeypa
     assert "BOOTSTRAP-OK" not in captured.out + captured.err
     assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
     assert "[bootstrap-retry]" not in captured.err
+    # #2606: the skip path never claims a preflight ran.
+    assert "PREFLIGHT:" not in captured.out + captured.err
+
+
+# ---------------------------------------------------------------------------
+# #2606 bootstrap-preflight fail-loud (rc=78 kept-alive branch)
+# ---------------------------------------------------------------------------
+
+
+def _explode_2606(*_a, **_k):
+    raise AssertionError("the rc=78 preflight branch must not reach this seam (#2606)")
+
+
+def test_provision_preflight_rc78_fails_loud_keeps_pod(isolated_state, monkeypatch, capsys):
+    """rc=78 on both attempts (#2606): the provision exits 78 with the
+    PREFLIGHT: FAIL line + the reason=preflight verdict as the LAST stderr
+    line, the #1931 retry-once still applies, and the pod is KEPT — no
+    bad-placement record, no teardown, no podTerminate mutation, and the
+    registration rows stay (contrast the generic rc!=0 branch)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [78, 78])
+    gql = _stub_graphql(monkeypatch)
+    monkeypatch.setattr(pod_lifecycle, "_teardown_failed_provision", _explode_2606)
+    monkeypatch.setattr(pod_lifecycle, "_record_bad_placement_loud", _explode_2606)
+
+    with pytest.raises(SystemExit) as ei:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert ei.value.code == pod_lifecycle.EXIT_BOOTSTRAP_PREFLIGHT_FAILED == 78
+    assert calls == ["pod-779", "pod-779"]  # retry-once fired for rc=78 too
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry]" in captured.err
+    assert "ALIVE and registered" in captured.err
+    assert (
+        "PREFLIGHT: FAIL rc=78 (mapped sentinel code; raw preflight rc in the "
+        "PREFLIGHT-FAILED-AT-BOOTSTRAP log line)" in captured.err
+    )
+    last_line = captured.err.rstrip().splitlines()[-1]
+    assert last_line == "BOOTSTRAP-FAILED pod=pod-779 rc=78 reason=preflight"
+    assert "BOOTSTRAP-OK" not in captured.out + captured.err
+    assert "BOOTSTRAP-FAILED-TERMINATED" not in captured.out + captured.err
+    assert gql == []  # no podTerminate mutation — the pod is deliberately kept
+
+
+def test_provision_preflight_rc78_suffix_hint(isolated_state, monkeypatch, capsys):
+    """rc=78 on a SUFFIXED pod (#1334 contract carried into the #2606 branch):
+    the discard pointer is --name-suffix-scoped so it can never suggest an
+    issue-wide destroy that takes a healthy sibling with it."""
+    _write_metadata_file({})
+    info = _info("pod-779-b", pod_id="live-779b")
+    _stub_provision_tail(monkeypatch, info, [78, 78])
+    monkeypatch.setattr(pod_lifecycle, "_teardown_failed_provision", _explode_2606)
+    monkeypatch.setattr(pod_lifecycle, "_record_bad_placement_loud", _explode_2606)
+    ns = argparse.Namespace(issue=779, name_suffix="b", ttl_days=7, no_bootstrap=False)
+
+    with pytest.raises(SystemExit) as ei:
+        pod_lifecycle._provision_wait_register_bootstrap(ns, "pod-779-b", info, "lora-7b")
+
+    assert ei.value.code == 78
+    err = capsys.readouterr().err
+    assert "terminate --issue 779 --name-suffix b" in err
+    assert err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779-b rc=78 reason=preflight"
+
+
+def test_provision_preflight_rc78_then_clean_retry_succeeds(isolated_state, monkeypatch, capsys):
+    """rc=78 then rc=0 (#2606): the #1931 retry-once covers the preflight
+    failure class too — the clean retry completes the provision with
+    PREFLIGHT: PASS + BOOTSTRAP-OK and no failure verdict."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    calls = _stub_provision_tail(monkeypatch, info, [78, 0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    assert calls == ["pod-779", "pod-779"]
+    captured = capsys.readouterr()
+    assert "[bootstrap-retry] bootstrap exited rc=78 on pod-779" in captured.err
+    assert "PREFLIGHT: PASS" in captured.out
+    assert "BOOTSTRAP-OK pod=pod-779" in captured.out
+    assert "BOOTSTRAP-FAILED" not in captured.out + captured.err
+
+
+def test_provision_success_emits_preflight_pass_before_ok_verdict(
+    isolated_state, monkeypatch, capsys
+):
+    """Success path (#2606): PREFLIGHT: PASS prints on stdout immediately
+    before the BOOTSTRAP-OK verdict (bootstrap exit 0 implies the pod-side
+    preflight ran and passed — provision/bootstrap never pass
+    --no-preflight)."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    _stub_provision_tail(monkeypatch, info, [0])
+
+    pod_lifecycle._provision_wait_register_bootstrap(
+        _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+    )
+
+    out = capsys.readouterr().out
+    assert "PREFLIGHT: PASS" in out
+    assert out.index("PREFLIGHT: PASS") < out.index("BOOTSTRAP-OK pod=pod-779")
+    assert "PREFLIGHT: FAIL" not in out
+
+
+def test_provision_generic_failure_branch_carries_no_preflight_tokens(
+    isolated_state, monkeypatch, capsys
+):
+    """Generic rc!=0 control arm (#2606): a non-78 bootstrap failure keeps the
+    pre-#2606 behavior byte-identical — bad-placement recorded, teardown
+    fired, verdict line WITHOUT reason=preflight, and no PREFLIGHT: token."""
+    _write_metadata_file({})
+    info = _info("pod-779", pod_id="live-779")
+    _stub_provision_tail(monkeypatch, info, [100, 100])
+    placements: list[dict] = []
+    teardowns: list[tuple] = []
+    monkeypatch.setattr(
+        pod_lifecycle,
+        "_record_bad_placement_loud",
+        lambda **kw: placements.append(kw),
+    )
+    monkeypatch.setattr(
+        pod_lifecycle,
+        "_teardown_failed_provision",
+        lambda info, name, keep, registered: teardowns.append((name, keep, registered)),
+    )
+
+    with pytest.raises(SystemExit) as ei:
+        pod_lifecycle._provision_wait_register_bootstrap(
+            _bootstrap_tail_ns(), "pod-779", info, "lora-7b"
+        )
+
+    assert ei.value.code == 100
+    assert placements and placements[0]["reason"] == "bootstrap-failed"
+    assert teardowns == [("pod-779", False, True)]
+    captured = capsys.readouterr()
+    assert "PREFLIGHT:" not in captured.out + captured.err
+    assert captured.err.rstrip().splitlines()[-1] == "BOOTSTRAP-FAILED pod=pod-779 rc=100"
 
 
 # ---------------------------------------------------------------------------
