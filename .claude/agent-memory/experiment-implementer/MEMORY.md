@@ -108,3 +108,4 @@
 - [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM… (#2378)
 - [Shared Overleaf clone commit race](feedback_shared_overleaf_clone_commit_race.md) — verify landing by blob sha at HEAD, never own commit rc (#1894 sibling)
 - [/tmp script dir shadows stdlib](feedback_tmp_script_dir_shadows_stdlib.md) — rogue /tmp/six.py hijacks imports via sys.path[0] (#2546 r7)
+- [torch.cuda.ipc_collect lazy-inits CUDA](feedback_torch_ipc_collect_lazy_init.md) — gate teardown CUDA calls on is_initialized() (#2546 r12)
