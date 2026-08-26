@@ -1,0 +1,388 @@
+{
+  "regime": {
+    "script_version": "issue2378_retrieval_v1",
+    "layer": 51,
+    "k": 5,
+    "seed": 137,
+    "n_eq": 6601,
+    "fold_map_sha": "6b6ab7578e6f2e85159375d2f268d4628b6ac6a98a94f327745781b39b424185",
+    "conventions": [
+      "raw_euclidean",
+      "raw_cosine",
+      "whiten_cos",
+      "csls_cos",
+      "csls_whiten_cos"
+    ],
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "csls_k": 10,
+    "whiten_lam": 0.1,
+    "fresh_seeds": [
+      138,
+      139,
+      140,
+      141
+    ],
+    "pool": "the cell's full equalized cohort answers, pooled across folds (each row's prediction from its own fold's map); chance = 1/pool",
+    "whiten_cov": "per-fold TRAIN-ONLY (folds != f) shrunk covariance; queries whitened by their target row's fold decomposition (no eval leakage)"
+  },
+  "cell": "chat_user_sim",
+  "status": "ok",
+  "counts": {
+    "n_per_seed": {
+      "138": 998,
+      "139": 996,
+      "140": 997,
+      "141": 997
+    },
+    "n_common_across_seeds": 995,
+    "n_cohort": 6601,
+    "n_covered": 681,
+    "n_dropped_not_in_cohort": 314
+  },
+  "n_pool": 6601,
+  "fresh_reference": {
+    "raw_euclidean": {
+      "acc_at_k": {
+        "1": 0.26615271659324524,
+        "5": 0.32819383259911894,
+        "10": 0.3542584434654919
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 127.5,
+      "mrr": 0.29797392453209803,
+      "n": 2724,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.26615271659324524
+    },
+    "raw_cosine": {
+      "acc_at_k": {
+        "1": 0.2646842878120411,
+        "5": 0.3274596182085169,
+        "10": 0.3568281938325991
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 124.0,
+      "mrr": 0.29768437242525847,
+      "n": 2724,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.2646842878120411
+    },
+    "csls_cos": {
+      "acc_at_k": {
+        "1": 0.26835535976505137,
+        "5": 0.33737151248164465,
+        "10": 0.368575624082232
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 85.5,
+      "mrr": 0.3034638169698186,
+      "n": 2724,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.26835535976505137
+    },
+    "whiten_cos": {
+      "acc_at_k": {
+        "1": 0.4302496328928047,
+        "5": 0.5870044052863436,
+        "10": 0.6512481644640234
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 2.0,
+      "mrr": 0.506831162557403,
+      "n": 2724,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.4302496328928047
+    },
+    "csls_whiten_cos": {
+      "acc_at_k": {
+        "1": 0.38619676945668135,
+        "5": 0.5234948604992657,
+        "10": 0.5811306901615272
+      },
+      "chance_at_k": {
+        "1": 0.0001514921981517952,
+        "5": 0.0007574609907589759,
+        "10": 0.0015149219815179518
+      },
+      "median_rank": 4.0,
+      "mrr": 0.45243915391361506,
+      "n": 2724,
+      "n_pool": 6601,
+      "acc1_ceiling_per_context": 0.38619676945668135
+    }
+  },
+  "avg_target": {
+    "arm": "context",
+    "n_covered": 681,
+    "definition": "pool entry of each covered row replaced by mean(original + 4 fresh draws); queries = the cell's own context-arm map predictions on the covered rows; single_target = the matched read against the unmodified pool (same queries, same covered rows)",
+    "single_target": {
+      "raw_euclidean": {
+        "acc_at_k": {
+          "1": 0.024963289280469897,
+          "5": 0.08663729809104258,
+          "10": 0.12187958883994127
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 282.0,
+        "mrr": 0.059426801817144784,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "raw_cosine": {
+        "acc_at_k": {
+          "1": 0.041116005873715125,
+          "5": 0.11160058737151249,
+          "10": 0.14390602055800295
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 239.0,
+        "mrr": 0.07991557807933955,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "csls_cos": {
+        "acc_at_k": {
+          "1": 0.09104258443465492,
+          "5": 0.22173274596182085,
+          "10": 0.2775330396475771
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 70.0,
+        "mrr": 0.15865611654572598,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "whiten_cos": {
+        "acc_at_k": {
+          "1": 0.007342143906020558,
+          "5": 0.1013215859030837,
+          "10": 0.24375917767988253
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 24.0,
+        "mrr": 0.08095994853812624,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "csls_whiten_cos": {
+        "acc_at_k": {
+          "1": 0.00881057268722467,
+          "5": 0.12187958883994127,
+          "10": 0.28046989720998533
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 19.0,
+        "mrr": 0.0930258005910831,
+        "n": 681,
+        "n_pool": 6601
+      }
+    },
+    "averaged_target": {
+      "raw_euclidean": {
+        "acc_at_k": {
+          "1": 0.2878120411160059,
+          "5": 0.5198237885462555,
+          "10": 0.6079295154185022
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 5.0,
+        "mrr": 0.39787430820727054,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "raw_cosine": {
+        "acc_at_k": {
+          "1": 0.3010279001468429,
+          "5": 0.527165932452276,
+          "10": 0.6152716593245228
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 4.0,
+        "mrr": 0.4117277747898029,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "csls_cos": {
+        "acc_at_k": {
+          "1": 0.4787077826725404,
+          "5": 0.7151248164464024,
+          "10": 0.7812041116005873
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5899009437530863,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "whiten_cos": {
+        "acc_at_k": {
+          "1": 0.05433186490455213,
+          "5": 0.43171806167400884,
+          "10": 0.6696035242290749
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 7.0,
+        "mrr": 0.22822126475266577,
+        "n": 681,
+        "n_pool": 6601
+      },
+      "csls_whiten_cos": {
+        "acc_at_k": {
+          "1": 0.06167400881057269,
+          "5": 0.4669603524229075,
+          "10": 0.6945668135095447
+        },
+        "chance_at_k": {
+          "1": 0.0001514921981517952,
+          "5": 0.0007574609907589759,
+          "10": 0.0015149219815179518
+        },
+        "median_rank": 6.0,
+        "mrr": 0.24624563986809297,
+        "n": 681,
+        "n_pool": 6601
+      }
+    }
+  },
+  "whiten": {
+    "lam": 0.1,
+    "builder": "analysis.null_battery.shrunk_cholesky_from_cov",
+    "cov_source": "per-fold TRAIN-ONLY answers (folds != f): each query is whitened by its target row's fold decomposition, which never saw that row (no evaluation leakage into the whitening transform)",
+    "n_rows": 6601,
+    "n_train_per_fold": {
+      "0": 5280,
+      "1": 5281,
+      "2": 5281,
+      "3": 5281,
+      "4": 5281
+    },
+    "csls_note": "whitened-CSLS neighborhood statistics are computed within each fold's query group (queries sharing a target fold see one whitened space; the target-side r_T averages over that group's queries only — disclosed; k clamped to the group size, which binds only at probe/tiny-n scale); raw (unwhitened) CSLS is unchanged, computed over the full query set"
+  },
+  "unit_wall_s": 52.97,
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T10:58:55-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_retrieval.py",
+      "--phase",
+      "all",
+      "--cells",
+      "chat_user_sim",
+      "--store-root",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/data/issue_2378/p6_stage/simregen_combined",
+      "--ledger-root",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/eval_results/issue_2378/sim-user-regen",
+      "--layer-star-from",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/eval_results/issue_2378/pilot/layer_sweep.json",
+      "--g3-gate-file",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/eval_results/issue_2378/g3_gate.json"
+    ],
+    "git_commit": "de8b38d00eb1d562508bfb94a38d620166802f93",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_retrieval.py"
+  },
+  "fresh_selection": {
+    "predicate": "elicit_rung == 1 (rung-1-kept user_sim conversations only)",
+    "total_sim_kept": 9939,
+    "rung1_eligible": 9939,
+    "rung3_excluded": 0,
+    "requested_rows": 1000,
+    "selected_rows": 1000,
+    "selection_digest": "sha256:ad437aba850f2a30|len=15999",
+    "draw_seeds": [
+      138,
+      139,
+      140,
+      141
+    ],
+    "metadata": {
+      "issue": 2378,
+      "timestamp": "2026-08-26T07:53:52+0000",
+      "python": "3.11.10",
+      "argv": [
+        "/workspace/explore-persona-space/scripts/issue2378_gen.py",
+        "--phase",
+        "user_fresh",
+        "--user-fresh-rows",
+        "1000",
+        "--user-fresh-draws",
+        "4",
+        "--raw-root",
+        "/workspace/explore-persona-space/data/issue_2378/raw_completions_simregen",
+        "--ledger-root",
+        "/workspace/explore-persona-space/eval_results/issue_2378/sim-user-regen",
+        "--stage-pools-from-hf",
+        "--skip-upload",
+        "--shard-index",
+        "0",
+        "--num-shards",
+        "1"
+      ],
+      "git_commit": "4f8e2ecde8d69d4a35cbb90e9f22ec5debfecac6",
+      "git_dirty": false,
+      "git_argv0_state": "tracked",
+      "git_argv0_path": "scripts/issue2378_gen.py"
+    }
+  }
+}

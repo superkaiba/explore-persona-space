@@ -1,0 +1,159 @@
+{
+  "regime": {
+    "script_version": "issue2378_lenmatch_v1",
+    "arm": "context",
+    "layer": 51,
+    "seed": 137,
+    "fold_map_sha": "6b6ab7578e6f2e85159375d2f268d4628b6ac6a98a94f327745781b39b424185",
+    "fold_regime": "user-pair shared intersection folds (sim-user-regen round)",
+    "matching": {
+      "band_tokens": [
+        8,
+        256
+      ],
+      "bin_edges": [
+        8,
+        11,
+        16,
+        23,
+        32,
+        45,
+        64,
+        91,
+        128,
+        181,
+        256
+      ],
+      "per_bin_min": [
+        857,
+        525,
+        144,
+        60,
+        33,
+        20,
+        16,
+        7,
+        3,
+        9
+      ],
+      "n_matched_per_cell": 1674
+    },
+    "length_variable": "answer span tokens (ans_hi - ans_lo, the v_A span-mean window)",
+    "reduced_k": 658,
+    "dof_cap": 0.9,
+    "lambda_grid": [
+      "logspace",
+      -2,
+      4,
+      13
+    ],
+    "bootstrap_draws": 200,
+    "null_battery": "skipped by design (ordering read; tiers live at the round fits)",
+    "seed_derivation": "137-rooted per-(cell,bin|leg) via p6.unit_seed"
+  },
+  "length_ks": {
+    "statistic": 0.5621875473413118,
+    "pvalue_asymptotic": 0.0,
+    "n_a": 6601,
+    "n_b": 6601
+  },
+  "sim_min_tokens_floor": {
+    "min_tokens": 8,
+    "note": "sim arm elicitation floor-censors natural sub-8-token turns (sim-user-regen repair regime); the real arm has no such floor — read the KS with this designed component in mind (matched legs control for it)"
+  },
+  "paired_len_delta_tokens": {
+    "median": -10.0,
+    "p5": -294.0,
+    "p95": 4.0
+  },
+  "per_arm_len_tokens": {
+    "chat_user_real": {
+      "median": 19.0,
+      "p5": 5.0,
+      "p95": 306.0
+    },
+    "chat_user_sim": {
+      "median": 8.0,
+      "p5": 8.0,
+      "p95": 15.0
+    }
+  },
+  "cells": {
+    "chat_user_real": {
+      "matched": {
+        "fold_mean_r2": 0.09325728955276102,
+        "pooled_r2": 0.09521310330851329,
+        "ci95": [
+          0.09126380221575468,
+          0.09898841975102976
+        ],
+        "n_rows": 1674,
+        "median_len_tokens": 10.0
+      },
+      "control": {
+        "fold_mean_r2": 0.0959018086608443,
+        "pooled_r2": 0.09823521927335488,
+        "ci95": [
+          0.09430652979327246,
+          0.1026284535247993
+        ],
+        "n_rows": 1674,
+        "median_len_tokens": 20.0
+      },
+      "unmatched_round_ceiling": {
+        "source": "fits/chat_user_real__context.json",
+        "fold_mean_r2": 0.20474543137946394,
+        "pooled_r2": 0.2052946347440079,
+        "n_rows": 6601
+      }
+    },
+    "chat_user_sim": {
+      "matched": {
+        "fold_mean_r2": 0.14163688323320586,
+        "pooled_r2": 0.14354423383693826,
+        "ci95": [
+          0.13729595591464536,
+          0.14957871157984048
+        ],
+        "n_rows": 1674,
+        "median_len_tokens": 10.0
+      },
+      "control": {
+        "fold_mean_r2": 0.10459297588766352,
+        "pooled_r2": 0.1067304995645636,
+        "ci95": [
+          0.10349187815949265,
+          0.11074679617895494
+        ],
+        "n_rows": 1674,
+        "median_len_tokens": 8.0
+      },
+      "unmatched_round_ceiling": {
+        "source": "fits/chat_user_sim__context.json",
+        "fold_mean_r2": 0.2211906808944007,
+        "pooled_r2": 0.22165620448082868,
+        "n_rows": 6601
+      }
+    }
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T11:02:16-0700",
+    "python": "3.12.13",
+    "argv": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/scripts/issue2378_lenmatch.py",
+      "--pair-user",
+      "--store-root",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/data/issue_2378/p6_stage/simregen_combined",
+      "--ledger-root",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2378/eval_results/issue_2378/sim-user-regen"
+    ],
+    "git_commit": "de8b38d00eb1d562508bfb94a38d620166802f93",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_lenmatch.py"
+  }
+}

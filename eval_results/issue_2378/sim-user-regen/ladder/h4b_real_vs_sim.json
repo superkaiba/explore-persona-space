@@ -686,8 +686,5 @@
     ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_ladder.py"
-  },
-  "round": "sim-user-regen",
-  "round_source": "eval_results/issue_2378/sim-user-regen/ladder/h4b_real_vs_sim.json",
-  "supersedes": "parent single-user-arm N/A record"
+  }
 }

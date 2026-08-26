@@ -17,5 +17,12 @@
     "git_dirty": null,
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_dispatch.py"
+  },
+  "superseded_by": {
+    "round": "sim-user-regen",
+    "paths": [
+      "eval_results/issue_2378/fits/chat_user_sim__context.json",
+      "eval_results/issue_2378/fits/chat_user_sim__prefix.json"
+    ]
   }
 }

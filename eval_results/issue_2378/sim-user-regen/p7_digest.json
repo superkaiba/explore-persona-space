@@ -1,0 +1,40 @@
+{
+  "phase": "p7_simuser_fits",
+  "round": "sim-user-regen",
+  "layer": 51,
+  "fresh_reference_na": false,
+  "plan_named_sync": [
+    "eval_results/issue_2378/fits/chat_user_sim__context.json",
+    "eval_results/issue_2378/fits/chat_user_sim__prefix.json",
+    "eval_results/issue_2378/ladder/h4b_real_vs_sim.json",
+    "eval_results/issue_2378/fits/chat_user_sim__g2b_dropped.json"
+  ],
+  "walls_s": {
+    "p7.fits": 14768.6,
+    "p7.ladder": 18881.7,
+    "p7.h4b": 5.3,
+    "p7.retrieval": 599.4,
+    "p7.lenmatch_pair": 199.1
+  },
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-26T11:03:25-0700",
+    "python": "3.12.13",
+    "argv": [
+      "scripts/issue2378_dispatch.py",
+      "--phase",
+      "p7_simuser_fits",
+      "--sentinel-dir",
+      "/tmp/i2378_fits_sentinels"
+    ],
+    "git_commit": "de8b38d00eb1d562508bfb94a38d620166802f93",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md",
+      "eval_results/issue_2378/fits/chat_user_sim__g2b_dropped.json",
+      "eval_results/issue_2378/ladder/h4b_real_vs_sim.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  }
+}
