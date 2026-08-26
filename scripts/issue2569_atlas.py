@@ -42,7 +42,10 @@ Consumes the paired captures ``issue2569_xmodel_capture.py`` finalizes
   verdict written into the artifact (``h7_demote``): per evaluable pair,
   within-operator split-half distance (1 - floor cosine, max over the two members)
   vs between-operator distance (1 - aligned raw cosine, matched vec-cosine units);
-  noise-dominated for > half of evaluable pairs -> demote (descriptive only).
+  noise-dominated for > half of ALL enumerated pairs -> demote (descriptive only);
+  the registered plan wording is "> half of pairs" with no evaluability qualifier,
+  so excluded pairs stay in the denominator and never in the numerator (the
+  evaluable-only majority survives as ``diagnostic_evaluable_majority``).
   Pair statistics are BATCHED (concern atlas-pair-loop-unbatched-unresumable):
   one SVD per row + ONE shared Haar draw set serving every pair's rotation null
   (``shared_rotation_null_draws`` — exact in distribution via Haar invariance),
