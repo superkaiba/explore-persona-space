@@ -20455,6 +20455,19 @@ def _resolve_file_siblings(
     )
 
 
+def _opportunistic_methodology_doc(issue: int) -> Path | None:
+    """Check-21 helper for ``main()``'s ``--issue`` branch: resolve the
+    on-disk ``docs/methodology/issue_<N>.md`` at the repo root, or None
+    when the root or the doc is absent. Behavior-preserving extraction
+    from ``main()`` (C901 headroom for the #2607 worktree refusal guard).
+    """
+    repo = _resolve_repo_root()
+    if repo is None:
+        return None
+    cand_doc = repo / "docs" / "methodology" / f"issue_{issue}.md"
+    return cand_doc if cand_doc.exists() else None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -20513,11 +20526,7 @@ def main() -> int:
             # doc-table assert actually binds then. Pre-merge gate-time
             # callers still pass the worktree path explicitly above.
             if methodology_doc_path is None:
-                repo = _resolve_repo_root()
-                if repo is not None:
-                    cand_doc = repo / "docs" / "methodology" / f"issue_{args.issue}.md"
-                    if cand_doc.exists():
-                        methodology_doc_path = cand_doc
+                methodology_doc_path = _opportunistic_methodology_doc(args.issue)
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
