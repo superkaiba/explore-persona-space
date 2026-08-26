@@ -69,9 +69,13 @@ EXPECTED_NEW_TOTALS = {"user_fact": 120 * 90, "query": 48 * 90}
 def _stage(args: argparse.Namespace, stage_dir: Path) -> dict[tuple[str, str], Path]:
     """Stage the parent (pinned revision) + k100 (round prefix) anchor shards
     for both cells. Under --smoke the k100 side reads the smoke_k100 twin;
-    the parent side ALWAYS reads the production prefix at the pin (plan v8)."""
+    the parent side ALWAYS reads the production prefix at the pin (plan v8).
+    The parent staging path CARRIES the revision (r1 blocker
+    k100-parent-revision-cache-unkeyed): bytes staged under a different
+    --pin-rev can never satisfy this run's idempotent staging probe."""
     out: dict[tuple[str, str], Path] = {}
     k100_root = A.HF_PREFIX_SMOKE_K100 if args.smoke else A.HF_PREFIX_FULL
+    assert args.pin_rev, "parent staging requires a non-empty --pin-rev"
     for cell in K100_CELLS:
         rel_parent = f"{A.HF_PREFIX_FULL}/raw_completions/anchors/anchors_{cell}.jsonl"
         rel_k100 = f"{k100_root}/raw_completions/{A.K100_ROUND_SEG}/anchors/anchors_{cell}.jsonl"
@@ -79,7 +83,7 @@ def _stage(args: argparse.Namespace, stage_dir: Path) -> dict[tuple[str, str], P
             stage_hub_file(
                 A.HF_DATA_REPO,
                 rel_parent,
-                stage_dir / "parent" / f"anchors_{cell}.jsonl",
+                stage_dir / "parent" / args.pin_rev / f"anchors_{cell}.jsonl",
                 revision=args.pin_rev,
             )
         )
@@ -90,7 +94,12 @@ def _stage(args: argparse.Namespace, stage_dir: Path) -> dict[tuple[str, str], P
 
 
 def scan_shard(path: Path, *, expect_parent: bool) -> tuple[dict[tuple[str, int], bool], int, int]:
-    """(intrusion flags keyed (context_id, draw), n_rows, n_intruded)."""
+    """(intrusion flags keyed (context_id, draw), n_rows, n_intruded).
+
+    Duplicate (context_id, draw) rows RAISE (r1 blocker
+    k100-draw-grid-completeness): a duplicate silently replacing a missing
+    row keeps the row count intact, so the production totals assert alone
+    cannot catch it."""
     flags: dict[tuple[str, int], bool] = {}
     n = n_intr = 0
     for r in IA._read_jsonl(path):
@@ -99,11 +108,61 @@ def scan_shard(path: Path, *, expect_parent: bool) -> tuple[dict[tuple[str, int]
             assert d < A.K100_DRAW_OFFSET, (path.name, d, "parent shard carries new draw ids")
         else:
             assert d >= A.K100_DRAW_OFFSET, (path.name, d, "k100 shard carries parent draw ids")
+        key = (r["context_id"], d)
+        if key in flags:
+            raise RuntimeError(f"duplicate (context_id, draw) row {key!r} in {path.name}")
         hit = IA.CJK_RE.search(r["text"]) is not None
-        flags[(r["context_id"], d)] = hit
+        flags[key] = hit
         n += 1
         n_intr += hit
     return flags, n, n_intr
+
+
+def analysis_parity_check(manip_path: Path, slot_recounts: dict, *, smoke: bool) -> dict:
+    """As-scored fire parity vs the analysis's own recompute
+    (``manipulation_check_k100.json``). r1 blocker
+    k100-intrusion-parity-failopen: production REQUIRES the document (missing
+    = raise, never "skipped"); a smoke-mode document is rejected in
+    production; duplicate value rows raise; and the slot SETS must match
+    EXACTLY before any verdict is compared (a truncated document can never
+    pass by subset iteration)."""
+    if not manip_path.is_file():
+        if smoke:
+            return {"status": "skipped_smoke_missing", "path": str(manip_path)}
+        raise RuntimeError(
+            f"manipulation_check_k100.json missing at {manip_path} — the production "
+            "audit REQUIRES as-scored parity vs the analysis recompute "
+            "(r1 blocker k100-intrusion-parity-failopen)"
+        )
+    mc = json.loads(manip_path.read_text(encoding="utf-8"))
+    if not smoke and mc.get("meta", {}).get("smoke"):
+        raise RuntimeError(
+            f"production audit given a SMOKE-mode manipulation_check_k100.json "
+            f"({manip_path}) — stale/mismatched analysis document"
+        )
+    rows = mc.get("value_rows", [])
+    keys = [f"{r['axis']}::{r['value_id']}" for r in rows]
+    dups = A._dup_keys(keys)
+    if dups:
+        raise RuntimeError(f"duplicate value rows in manipulation_check_k100.json: {dups[:5]}")
+    expected, actual = set(slot_recounts), set(keys)
+    if expected != actual:
+        raise RuntimeError(
+            "as-scored parity slot-set mismatch vs manipulation_check_k100.json: "
+            f"missing {sorted(expected - actual)[:5]}, extra {sorted(actual - expected)[:5]}"
+        )
+    mismatches = [
+        {
+            "slot": k,
+            "analysis_verdict": r["verdict"],
+            "recount_verdict": slot_recounts[k]["verdict_orig"],
+        }
+        for k, r in zip(keys, rows)
+        if slot_recounts[k]["verdict_orig"] != r["verdict"]
+    ]
+    if mismatches:
+        raise RuntimeError(f"as-scored fire parity vs manipulation_check_k100: {mismatches}")
+    return {"status": "pass", "n_slots": len(rows), "path": str(manip_path)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -196,7 +255,11 @@ def main(argv: list[str] | None = None) -> int:
     uf_texts: dict[tuple[str, int], str] = {}
     for source in ("parent", "k100"):
         for r in IA._read_jsonl(paths[(source, "user_fact")]):
-            uf_texts[(r["context_id"], int(r["draw"]))] = r["text"]
+            key = (r["context_id"], int(r["draw"]))
+            if key in uf_texts:
+                # r1 blocker k100-draw-grid-completeness: never last-wins
+                raise RuntimeError(f"duplicate (context_id, draw) row {key!r} in {source} shard")
+            uf_texts[key] = r["text"]
     uf_contexts = sorted(cid for cid, c in bank["contexts"].items() if c["cell"] == "user_fact")
     realized_draws = sorted({d for (cid, d) in uf_texts})
     carriers = sorted({bank["contexts"][cid]["carrier"] for cid in uf_contexts})
@@ -245,24 +308,10 @@ def main(argv: list[str] | None = None) -> int:
         for conv in ("orig", "zeroed", "excluded")
     }
 
-    # as-scored parity vs the analysis's own recompute (when present)
-    analysis_parity: dict = {"status": "skipped", "path": str(args.manip_check_k100)}
-    if args.manip_check_k100.is_file():
-        mc = json.loads(args.manip_check_k100.read_text(encoding="utf-8"))
-        mismatches = []
-        for row in mc.get("value_rows", []):
-            key = f"{row['axis']}::{row['value_id']}"
-            mine = slot_recounts.get(key)
-            if mine is None or mine["verdict_orig"] != row["verdict"]:
-                mismatches.append(
-                    {
-                        "slot": key,
-                        "analysis_verdict": row["verdict"],
-                        "recount_verdict": mine["verdict_orig"] if mine else None,
-                    }
-                )
-        assert not mismatches, f"as-scored fire parity vs manipulation_check_k100: {mismatches}"
-        analysis_parity = {"status": "pass", "n_slots": len(mc.get("value_rows", []))}
+    # as-scored parity vs the analysis's own recompute — REQUIRED in
+    # production, dup-rejecting, exact slot-set equality (r1 blocker
+    # k100-intrusion-parity-failopen)
+    analysis_parity = analysis_parity_check(args.manip_check_k100, slot_recounts, smoke=args.smoke)
 
     doc = {
         "meta": {

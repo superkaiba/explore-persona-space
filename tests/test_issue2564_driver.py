@@ -1049,16 +1049,37 @@ def test_k100_ci_overlap_predicate_and_registered_criterion():
     assert "do NOT overlap" in A.K100_FALLBACK_CRITERION
 
 
-def _k100_verdict_doc(c: float, r100: float, s_flip: float, s_para: float, t_ratio: float) -> dict:
+def _k100_deciding_block(ci: tuple[float, float], threshold: float) -> dict:
+    return {
+        "ci95": list(ci),
+        "threshold": threshold,
+        "fragile": bool(ci[0] <= threshold <= ci[1]),
+        "n_finite_draws": 8,
+        "scheme": "carrier-clustered paired bootstrap (shared resample)",
+    }
+
+
+def _k100_verdict_doc(
+    c: float,
+    r100: float,
+    s_flip: float,
+    s_para: float,
+    t_ratio: float,
+    *,
+    ratio_ci: tuple[float, float] = (0.45, 0.55),
+    g_ci: tuple[float, float] = (0.5, 0.9),
+) -> dict:
     return {
         "axes": {
             "user_fact": {
                 "direction": {"arm_779ce": {"mean_cos_headline": c, "ci95": [c - 0.01, c + 0.01]}},
                 "reliability": {"r100_mean": r100, "r100_ci95": [r100 - 0.001, r100 + 0.001]},
+                "k100_deciding": {"c_over_b": _k100_deciding_block(ratio_ci, A.K100_LATTICE_RATIO)},
             },
             "query_form": {
                 "surface": {"observed": {"flip_norm_mean": s_flip, "para_norm_mean": s_para}},
                 "text_space": {"flip_over_para_ratio": t_ratio},
+                "k100_deciding": {"g": _k100_deciding_block(g_ci, A.K100_DISSOC_G)},
             },
         }
     }
@@ -1375,3 +1396,521 @@ def test_k100_bridge_parent_grid_scores_reproduce_full_grid_halves(k100_world):
     rel_sliced = A.split_half_stats(bridge_st, _uf_pair(st), 4, scores_fn=parent_grid_scores)
     np.testing.assert_allclose(rel_sliced["r_half"][0], rel_full["r_half"][0], atol=1e-12)
     np.testing.assert_allclose(rel_sliced["r_full"][0], rel_full["r_full"][0], atol=1e-12)
+
+
+# ── k100 fix-round 2 pins (r1 review blockers; epm:code-review v7) ───────
+
+
+def test_k100_deciding_ci_fragility_flags():
+    """r1 blocker k100-verdict-fragility-ci: bootstrap draws whose 95% CI
+    straddles the 0.35 ratio / 0.15 g threshold set the fragile flag; clear
+    draws do not; an all-NaN draw set is not evaluable (fragile=None)."""
+    strad = A.k100_deciding_ci(np.linspace(0.30, 0.40, 200), A.K100_LATTICE_RATIO)
+    assert strad["fragile"] is True
+    assert strad["ci95"][0] <= A.K100_LATTICE_RATIO <= strad["ci95"][1]
+    clear = A.k100_deciding_ci(np.linspace(0.40, 0.50, 200), A.K100_LATTICE_RATIO)
+    assert clear["fragile"] is False
+    assert A.k100_deciding_ci(np.linspace(0.10, 0.20, 200), A.K100_DISSOC_G)["fragile"] is True
+    assert A.k100_deciding_ci(np.linspace(0.20, 0.30, 200), A.K100_DISSOC_G)["fragile"] is False
+    nn = A.k100_deciding_ci(np.full(50, np.nan), A.K100_DISSOC_G)
+    assert nn["fragile"] is None and nn["n_finite_draws"] == 0
+
+
+def test_k100_verdicts_emit_paired_deciding_ci_and_fragile():
+    """r1 blocker k100-verdict-fragility-ci: the verdicts consume the PAIRED
+    c/b and g bootstrap CIs from compute_all's k100_deciding blocks — a
+    straddling CI flags fragile even when the marginal b-floor CI is clear,
+    the g verdict now carries g_ci95 + fragile, and a missing deciding block
+    fails loud (never a silent point-only verdict)."""
+    v = A.k100_verdicts(
+        _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2, ratio_ci=(0.30, 0.40), g_ci=(0.10, 0.75)),
+        "pooled",
+        smoke=False,
+    )
+    inj = v["injected_name"]
+    assert inj["c_over_b_ci95"] == [0.30, 0.40]
+    assert inj["fragile"] is True
+    assert inj["fragile_components"]["c_over_b_paired_ci_straddles_ratio"] is True
+    assert inj["fragile_components"]["b_ci_straddles_floor"] is False
+    qf = v["query_form_dissociation"]
+    assert qf["g_ci95"] == [0.10, 0.75] and qf["fragile"] is True
+    v2 = A.k100_verdicts(_k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2), "pooled", smoke=False)
+    assert v2["injected_name"]["fragile"] is False
+    assert v2["query_form_dissociation"]["fragile"] is False
+    doc = _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2)
+    del doc["axes"]["user_fact"]["k100_deciding"]
+    with pytest.raises(RuntimeError, match="k100_deciding"):
+        A.k100_verdicts(doc, "pooled", smoke=False)
+
+
+def test_k100_vc_parity_binds_under_smoke(tmp_path, monkeypatch):
+    """r1 blocker k100-vc-smoke-demotion-unregistered (orchestrator decision:
+    CODE fix): a fresh/parent v_C cosine below K100_VC_PARITY_COS_MIN FAILS
+    the parity gate under --smoke — never a demoted warning (plan v8 §7: the
+    smoke exercises v_C parity); --tiny stays the only demoted (skip) mode."""
+    cfg = D.build_config(
+        D.parse_args(
+            [
+                "--phase",
+                "B",
+                "--round",
+                "k100",
+                "--upload",
+                "none",
+                "--smoke",
+                "--out-root",
+                str(tmp_path / "root"),
+            ]
+        )
+    )
+    assert cfg.smoke and not cfg.tiny
+    rng = np.random.default_rng(0)
+    cid = "user_fact::n01::c01"
+    fresh = torch.tensor(rng.normal(size=(1, len(cfg.layers), 8)), dtype=torch.float32)
+    parent = torch.tensor(rng.normal(size=(1, len(cfg.layers), 8)), dtype=torch.float32)
+    cfg.vc_dir.mkdir(parents=True, exist_ok=True)
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {"layers": list(cfg.layers), "context_ids": [cid], "vc": fresh},
+        cfg.vc_dir / "vc2564_bank.pt",
+    )
+    parent_path = tmp_path / "parent_vc2564_bank.pt"
+    torch.save({"layers": list(cfg.layers), "context_ids": [cid], "vc": parent}, parent_path)
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.stage_hub_file",
+        lambda *a, **k: parent_path,
+    )
+    with pytest.raises(RuntimeError, match="v_C parity vs parent FAILED"):
+        D._k100_vc_parity(cfg, [{"id": cid}])
+    rep = json.loads((cfg.manifest_dir / "k100_vc_parity.json").read_text())
+    assert rep["verdict"] == "fail" and rep["demoted"] is False
+    assert rep["regime_fp"] == D._k100_parity_fp(cfg)
+    assert D._k100_vc_parity_ok(cfg) is False  # a FAIL report never satisfies resume
+
+
+def test_k100_parity_fp_keyed_on_revision_and_threshold(tmp_path, monkeypatch):
+    """r1 blocker k100-parent-revision-cache-unkeyed: the parity-gate fp keys
+    on --parent-revision AND K100_VC_PARITY_COS_MIN, so a report written under
+    one (revision, bar) can never be reused under another."""
+    argv = ["--phase", "all", "--round", "k100", "--upload", "none"]
+    argv += ["--out-root", str(tmp_path / "root")]
+    cfg_a = D.build_config(D.parse_args(argv))
+    cfg_b = D.build_config(D.parse_args([*argv, "--parent-revision", "deadbeef" * 5]))
+    fp_a = D._k100_parity_fp(cfg_a)
+    assert fp_a != D._k100_parity_fp(cfg_b)
+    cfg_a.manifest_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_a.manifest_dir / "k100_vc_parity.json").write_text(
+        json.dumps({"gate": "k100_vc_parity", "regime_fp": fp_a, "verdict": "pass"})
+    )
+    assert D._k100_vc_parity_ok(cfg_a) is True
+    assert D._k100_vc_parity_ok(cfg_b) is False  # same out-root, different pin
+    monkeypatch.setattr(D, "K100_VC_PARITY_COS_MIN", 0.999999)
+    assert D._k100_parity_fp(cfg_a) != fp_a
+    assert D._k100_vc_parity_ok(cfg_a) is False  # tightened bar invalidates too
+
+
+def _pb_completion_state(cfg, cells: list[str]) -> None:
+    """Write every phase-B completion record (VA cells + vc + gate-4 parity +
+    k100 vc parity + sentinel) under CFG's own fingerprints."""
+    from explore_persona_space.atomic_io import write_json_atomic
+
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    cfg.va_dir.mkdir(parents=True, exist_ok=True)
+    cfg.vc_dir.mkdir(parents=True, exist_ok=True)
+    for cell in cells:
+        (cfg.va_dir / f"va2564_{cell}.pt").write_bytes(b"x")
+        write_json_atomic(
+            cfg.manifest_dir / f"va2564_{cell}.done.json",
+            {"regime_fp": D._cell_fp(cfg, "B", cell)},
+        )
+    (cfg.vc_dir / "vc2564_bank.pt").write_bytes(b"x")
+    write_json_atomic(
+        cfg.manifest_dir / "vc2564.done.json",
+        {"regime_fp": D._regime_fp(cfg, {"phase": "B", "leg": "vc"})},
+    )
+    write_json_atomic(
+        cfg.manifest_dir / "parity_gate_report.json",
+        {"regime_fp": D._gate_fp(cfg, "pb_parity"), "verdict": "pass", "demoted": False},
+    )
+    write_json_atomic(
+        cfg.manifest_dir / "k100_vc_parity.json",
+        {"gate": "k100_vc_parity", "regime_fp": D._k100_parity_fp(cfg), "verdict": "pass"},
+    )
+    write_json_atomic(
+        cfg.va_sentinel, {"phase": "B", "regime_fp": D._regime_fp(cfg, {"phase": "B"})}
+    )
+
+
+def test_k100_phase_b_fast_path_requires_current_parity_report(tmp_path):
+    """r1 blocker k100-parent-revision-cache-unkeyed: the phase-B fast-path
+    skip REQUIRES a current-fp k100 vc-parity report — a changed
+    --parent-revision (which leaves every other phase-B fp byte-identical)
+    or a deleted report blocks the skip; parent/ffr predicates unchanged."""
+    argv = ["--phase", "B", "--round", "k100", "--upload", "none"]
+    argv += ["--out-root", str(tmp_path / "root")]
+    cfg_a = D.build_config(D.parse_args(argv))
+    cfg_b = D.build_config(D.parse_args([*argv, "--parent-revision", "deadbeef" * 5]))
+    cells = ["query", "user_fact"]
+    _pb_completion_state(cfg_a, cells)
+    assert D._pb_skip_ok(cfg_a, cells) is True
+    # every non-k100 phase-B fp is identical across the two pins ...
+    assert D._regime_fp(cfg_a, {"phase": "B"}) == D._regime_fp(cfg_b, {"phase": "B"})
+    # ... yet the stale parity report blocks cfg_b's fast path
+    assert D._pb_skip_ok(cfg_b, cells) is False
+    (cfg_a.manifest_dir / "k100_vc_parity.json").unlink()
+    assert D._pb_skip_ok(cfg_a, cells) is False
+
+
+def test_k100_parent_staging_paths_carry_revision(tmp_path, monkeypatch):
+    """r1 blocker k100-parent-revision-cache-unkeyed: analysis parent_pin
+    staging AND the intrusion audit's parent staging key the staged PATH on
+    the pinned revision, so bytes staged under revision A can never satisfy a
+    run pinned to revision B."""
+    import issue2564_intrusion_audit_k100 as K2
+
+    calls: list = []
+
+    def fake_stage(repo, path_in_repo, target, *, revision=None):
+        calls.append((path_in_repo, str(target), revision))
+        Path(target).parent.mkdir(parents=True, exist_ok=True)
+        Path(target).write_text("x")
+        return Path(target)
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.stage_hub_file", fake_stage)
+    monkeypatch.setattr(K2, "stage_hub_file", fake_stage)
+    rev_a, rev_b = A.K100_PARENT_REVISION_DEFAULT, "deadbeef" * 5
+    cfg = _replace(_k100_world(tmp_path).cfg, stage_dir=tmp_path / "stage")
+    rel = "manifests/bank2564_manifest.json"
+    p_a = A.resolve_input(cfg, rel, source="parent")
+    assert rev_a in str(p_a) and calls[-1][2] == rev_a
+    p_b = A.resolve_input(_replace(cfg, parent_revision=rev_b), rel, source="parent")
+    assert rev_b in str(p_b) and calls[-1][2] == rev_b
+    assert p_a != p_b  # rev-A bytes never satisfy a rev-B run
+    n = len(calls)
+    args = SimpleNamespace(pin_rev=rev_b, smoke=False)
+    paths = K2._stage(args, tmp_path / "audit_stage")
+    for cell in K2.K100_CELLS:
+        assert rev_b in str(paths[("parent", cell)])
+    parent_calls = [c for c in calls[n:] if "/anchors/" in c[0] and c[2] == rev_b]
+    assert len(parent_calls) == len(K2.K100_CELLS)
+
+
+def _mutate_store(w, rel: str, source: str, mutate_fn) -> None:
+    p = w.paths[(rel, source)]
+    store = torch.load(p, weights_only=False)
+    mutate_fn(store)
+    torch.save(store, p)
+
+
+def test_k100_load_stores_raises_on_duplicate_round_draw(k100_world):
+    """r1 blocker k100-draw-grid-completeness: one context's draw-99 row
+    re-labeled as a SECOND draw-98 row (same row count, same global draw
+    range — the pre-fix checks all pass) must RAISE in the VA loader."""
+    w = k100_world
+
+    def mut(store):
+        for rec in store["index"]:
+            if rec["context_id"] == "query::E::c01" and rec["draw"] == 99:
+                rec["draw"] = 98
+                return
+        raise AssertionError("fixture row not found")
+
+    _mutate_store(w, "analysis_tensors/va2564/va2564_query.pt", "round", mut)
+    with pytest.raises(AssertionError, match="duplicate \\(context_id, draw\\)"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def test_k100_load_stores_raises_on_missing_percontext_draw(k100_world):
+    """A2b: a context missing ONE fresh draw that another context still
+    carries (global draw set intact) must RAISE per-context coverage."""
+    w = k100_world
+
+    def mut(store):
+        j = next(
+            i
+            for i, rec in enumerate(store["index"])
+            if rec["context_id"] == "query::E::c01" and rec["draw"] == 99
+        )
+        del store["index"][j]
+        keep = [i for i in range(store["va_tail_incl"].shape[0]) if i != j]
+        store["va_tail_incl"] = store["va_tail_incl"][keep]
+        store["va_span"] = store["va_span"][keep]
+
+    _mutate_store(w, "analysis_tensors/va2564/va2564_query.pt", "round", mut)
+    with pytest.raises(AssertionError, match="A2b per-context grid"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def _mutate_perdraw(w, source: str, mutate_fn) -> None:
+    p = w.paths[("analysis_tensors/embeddings_qwen3_8b/perdraw_anchors.npz", source)]
+    with np.load(p, allow_pickle=False) as z:
+        ids = [str(x) for x in z["context_ids"].tolist()]
+        draws = z["draws"].copy()
+        emb = z["emb"].copy()
+    ids, draws, emb = mutate_fn(ids, draws, emb)
+    np.savez(p, context_ids=np.array(ids), draws=np.asarray(draws, dtype=np.int64), emb=emb)
+
+
+def test_k100_load_stores_raises_on_duplicate_perdraw_embedding_row(k100_world):
+    """r1 blocker k100-draw-grid-completeness: a duplicated (context, draw)
+    per-draw embedding row (same row count, same global range) must RAISE —
+    never silently shift the K-pooled mean."""
+    w = k100_world
+
+    def mut(ids, draws, emb):
+        j = next(
+            i
+            for i, (c, d) in enumerate(zip(ids, draws, strict=True))
+            if c == "query::E::c01" and d == 99
+        )
+        draws[j] = 98
+        return ids, draws, emb
+
+    _mutate_perdraw(w, "round", mut)
+    with pytest.raises(AssertionError, match="duplicate \\(context, draw\\) embedding"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def test_k100_load_stores_raises_on_missing_perdraw_embedding_row(k100_world):
+    """The per-draw embedding key set must EQUAL the non-empty anchor-row key
+    set — a dropped row is named missing, never averaged around."""
+    w = k100_world
+
+    def mut(ids, draws, emb):
+        j = next(
+            i
+            for i, (c, d) in enumerate(zip(ids, draws, strict=True))
+            if c == "query::E::c01" and d == 99
+        )
+        keep = [i for i in range(len(ids)) if i != j]
+        return [ids[i] for i in keep], draws[keep], emb[keep]
+
+    _mutate_perdraw(w, "round", mut)
+    with pytest.raises(AssertionError, match="key set != non-empty anchor rows"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def test_k100_fire_recompute_raises_on_duplicate_anchor_key(k100_world, tmp_path, monkeypatch):
+    """r1 blocker k100-draw-grid-completeness: a duplicate (context_id, draw)
+    anchor row RAISES in the fire recompute — never last-wins into the
+    1,200-check denominator."""
+    w = k100_world
+    par = tmp_path / "anchors_user_fact.jsonl"
+    rows = [
+        {"context_id": "user_fact::n01::c01", "draw": 0, "text": "a"},
+        {"context_id": "user_fact::n01::c01", "draw": 0, "text": "b"},
+    ]
+    par.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    monkeypatch.setattr(A, "resolve_input", lambda cfg, rel, *, source="round": par)
+    st = SimpleNamespace(carriers=["c01"])
+    with pytest.raises(RuntimeError, match="duplicate anchor \\(context_id, draw\\)"):
+        A.k100_fire_recompute(w.cfg, st, {"value_rows": {}, "axis_rows": {}})
+
+
+def test_generate_cell_rejects_chunk_with_duplicate_draw(tmp_path, monkeypatch):
+    """Producer side of r1 blocker k100-draw-grid-completeness: a prior chunk
+    whose rows match in COUNT and context-id SET but carry a duplicated draw
+    (one draw missing) is NOT adopted — the chunk regenerates."""
+    cfg = _gen_cfg(tmp_path)
+    monkeypatch.setattr(D.BK, "context_token_ids", lambda tok, ctx: [1, 2, 3])
+    calls: list = []
+    monkeypatch.setattr(D, "generate_batch", _fake_generate_batch(calls))
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    part = cfg.anchors_dir / "anchors_register.max128.partial"
+    fp = D._regime_fp(cfg, {"phase": "A", "cell": "register", "max_new_call": 128})
+    ctxs = _fake_ctxs(3)
+    bad_rows = [
+        # chunk 0 = contexts c01+c02, draws {0, 1}; c02 carries draw 0 TWICE
+        {"chunk": 0, "context_id": "register::v1::c01", "draw": 0},
+        {"chunk": 0, "context_id": "register::v1::c01", "draw": 1},
+        {"chunk": 0, "context_id": "register::v1::c02", "draw": 0},
+        {"chunk": 0, "context_id": "register::v1::c02", "draw": 0},
+    ]
+    part.write_text(
+        "\n".join(
+            [json.dumps({"partial_header": 1, "regime_fp": fp})] + [json.dumps(r) for r in bad_rows]
+        )
+        + "\n"
+    )
+    rows = D._generate_cell(
+        cfg, object(), FakeTokenizer(), [7], "register", ctxs, {"evaluated": True}, 128
+    )
+    assert len(calls) == 2  # count + ctx set matched, draw composition did not
+    assert len(rows) == 3 * cfg.draws
+    keys = [(r["context_id"], r["draw"]) for r in rows]
+    assert len(set(keys)) == len(keys)  # the regenerated rows carry the full grid
+
+
+def test_k100_intrusion_scan_shard_raises_on_duplicate(tmp_path):
+    """r1 blocker k100-draw-grid-completeness (audit leg): a duplicate
+    (context_id, draw) shard row RAISES — totals can no longer pass with a
+    duplicate replacing a missing row."""
+    import issue2564_intrusion_audit_k100 as K2
+
+    p = tmp_path / "anchors_user_fact.jsonl"
+    rows = [
+        {"context_id": "user_fact::n01::c01", "draw": 11, "text": "hello"},
+        {"context_id": "user_fact::n01::c01", "draw": 11, "text": "world"},
+    ]
+    p.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    with pytest.raises(RuntimeError, match="duplicate \\(context_id, draw\\)"):
+        K2.scan_shard(p, expect_parent=False)
+
+
+def test_k100_intrusion_analysis_parity_production_gates(tmp_path):
+    """r1 blocker k100-intrusion-parity-failopen: missing (production),
+    smoke-mode-doc-in-production, duplicated, truncated, and
+    verdict-mismatched manipulation-check documents ALL raise; smoke may skip
+    a missing file; the matching document passes."""
+    import issue2564_intrusion_audit_k100 as K2
+
+    slots = {
+        "user_fact::n01": {"verdict_orig": "fired"},
+        "user_fact::n02": {"verdict_orig": "not_fired"},
+    }
+    mp = tmp_path / "manipulation_check_k100.json"
+
+    def _doc(rows, smoke=False):
+        return {"meta": {"smoke": smoke}, "value_rows": rows}
+
+    row1 = {"axis": "user_fact", "value_id": "n01", "verdict": "fired"}
+    row2 = {"axis": "user_fact", "value_id": "n02", "verdict": "not_fired"}
+    with pytest.raises(RuntimeError, match="REQUIRES as-scored parity"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    assert K2.analysis_parity_check(mp, slots, smoke=True)["status"] == "skipped_smoke_missing"
+    mp.write_text(json.dumps(_doc([row1, row2], smoke=True)))
+    with pytest.raises(RuntimeError, match="SMOKE-mode"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1, row1])))
+    with pytest.raises(RuntimeError, match="duplicate value rows"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1])))  # truncated: subset iteration must not pass
+    with pytest.raises(RuntimeError, match="slot-set mismatch"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    extra = {"axis": "user_fact", "value_id": "n99", "verdict": "fired"}
+    mp.write_text(json.dumps(_doc([row1, row2, extra])))
+    with pytest.raises(RuntimeError, match="slot-set mismatch"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1, {**row2, "verdict": "fired"}])))
+    with pytest.raises(RuntimeError, match="as-scored fire parity"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1, row2])))
+    out = K2.analysis_parity_check(mp, slots, smoke=False)
+    assert out["status"] == "pass" and out["n_slots"] == 2
+
+
+def _swap_pair(st, pair_id: str = "p1") -> A.PairArrays:
+    """Single user_fact SWAP-class pair (the axis-view primary class)."""
+    return A.PairArrays(
+        ids=[pair_id],
+        cls=["swap"],
+        axis=["user_fact"],
+        value_a=["n01"],
+        value_b=["n02"],
+        carrier_str=["c01"],
+        a=np.array([st.row_of["user_fact::n01::c01"]], dtype=np.int64),
+        b=np.array([st.row_of["user_fact::n02::c01"]], dtype=np.int64),
+        ca=np.array([0], dtype=np.int64),
+        cb=np.array([0], dtype=np.int64),
+        dyad=np.array([False]),
+        changed=np.array([1], dtype=np.int64),
+        orientation=["n01->n02"],
+        n=1,
+    )
+
+
+def test_k100_bridge_gate_perpair_and_headline_mismatch_raise(k100_world, tmp_path, monkeypatch):
+    """r1 nit k100-bridge-gate-regression-pin: k100_bridge_gate invoked
+    DIRECTLY on synthetic ridge/perpair fixtures — matching committed values
+    PASS; a 2e-6 perturbation of a committed per-pair value OR of a headline
+    target raises RuntimeError at K100_BRIDGE_TOL (production mode)."""
+    w = k100_world
+    st = _replace(A.load_stores_k100(w.cfg, w.bank), carriers=["c01"])
+    pa = _swap_pair(st)
+    ridge_p = tmp_path / "ridge_779.pt"
+    rng = np.random.default_rng(7)
+    torch.save(
+        {
+            "kind": "ridge",
+            "xmu": torch.zeros(4),
+            "xsd": torch.ones(4),
+            "ymu": torch.zeros(4),
+            "W": torch.tensor(rng.standard_normal((4, 4)), dtype=torch.float32),
+        },
+        ridge_p,
+    )
+    committed = tmp_path / "committed"
+    committed.mkdir()
+    cfg = _replace(w.cfg, ridge_779=ridge_p, parent_delta=committed / "minpair_delta.json")
+
+    # expected values via the SAME public helpers the gate dispatches
+    payload = torch.load(ridge_p, weights_only=False)
+    mean_p = A._k100_parent_only_tail_mean(st, A.PRIMARY_LAYER)
+    obs = mean_p[pa.a] - mean_p[pa.b]
+    mapped = N1M.apply_map(payload, st.vc[A.PRIMARY_LAYER], torch.device("cpu"))
+    cos779 = float(A.rowwise_cos(mapped[pa.a] - mapped[pa.b], obs)[0])
+    cosid = float(
+        A.rowwise_cos(st.vc[A.PRIMARY_LAYER][pa.a] - st.vc[A.PRIMARY_LAYER][pa.b], obs)[0]
+    )
+    bridge_st = _replace(st, tail_draws=st.tail_draws[:, :10], draw_valid=st.draw_valid[:, :10])
+
+    def pg(rng2, n_ctx, k_max):
+        return rng2.random((st.n_parent_ctx_total, k_max))[st.parent_rows]
+
+    r10 = float(A.split_half_stats(bridge_st, pa, cfg.n_splits, scores_fn=pg)["r_full"][0])
+    good_row = {"pair_id": "p1", "r10": r10, "cos": {"arm_779ce": cos779, "arm_iddelta": cosid}}
+    (committed / "perpair.jsonl").write_text(json.dumps(good_row) + "\n")
+    targets = {"user_fact": {"mean_cos_headline": cos779, "r10_mean": r10}}
+    monkeypatch.setattr(A, "K100_BRIDGE_TARGETS", targets)
+    fire_parent = A.fire_tables_from_doc({})
+
+    report = A.k100_bridge_gate(cfg, w.bank, st, pa, fire_parent)
+    assert report["verdict"] == "pass" and report["headline_parity"]["ok"] is True
+
+    bad_row = dict(good_row)
+    bad_row["r10"] = r10 + 2e-6
+    (committed / "perpair.jsonl").write_text(json.dumps(bad_row) + "\n")
+    with pytest.raises(RuntimeError, match="PER-PAIR parity FAILED"):
+        A.k100_bridge_gate(cfg, w.bank, st, pa, fire_parent)
+
+    (committed / "perpair.jsonl").write_text(json.dumps(good_row) + "\n")
+    monkeypatch.setattr(
+        A,
+        "K100_BRIDGE_TARGETS",
+        {"user_fact": {"mean_cos_headline": cos779 + 2e-6, "r10_mean": r10}},
+    )
+    with pytest.raises(RuntimeError, match="HEADLINE parity FAILED"):
+        A.k100_bridge_gate(cfg, w.bank, st, pa, fire_parent)
+
+
+def test_k100_provenance_check_a_rejects_malformed_stale_or_nonpass(
+    k100_world, tmp_path, monkeypatch
+):
+    """r1 blocker k100-parent-revision-cache-unkeyed (analysis leg): the
+    production analysis REQUIRES a well-formed, non-demoted PASS vc-parity
+    report whose parent_revision matches --parent-revision — malformed,
+    demoted/skipped, and stale-revision reports all raise (never read as
+    'not a literal fail')."""
+    w = k100_world
+    rep_path = tmp_path / "k100_vc_parity.json"
+    monkeypatch.setattr(A, "resolve_input", lambda cfg, rel, *, source="round": rep_path)
+    rep_path.write_text(json.dumps({"gate": "something_else"}))
+    with pytest.raises(RuntimeError, match="malformed"):
+        A.k100_provenance_checks(w.cfg, None, None)  # (a) raises before (b) touches stores
+    rep_path.write_text(
+        json.dumps({"gate": "k100_vc_parity", "verdict": "skipped", "demoted": True})
+    )
+    with pytest.raises(RuntimeError, match="non-demoted PASS"):
+        A.k100_provenance_checks(w.cfg, None, None)
+    rep_path.write_text(
+        json.dumps(
+            {
+                "gate": "k100_vc_parity",
+                "verdict": "pass",
+                "demoted": False,
+                "parent_revision": "0000000000000000000000000000000000000000",
+            }
+        )
+    )
+    with pytest.raises(RuntimeError, match="STALE"):
+        A.k100_provenance_checks(w.cfg, None, None)

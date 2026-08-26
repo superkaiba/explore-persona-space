@@ -449,6 +449,15 @@ def main() -> None:
         out_root = out_root.parent / f"smoke_{out_root.name}"
         # Smoke twin mirrors Cfg2564.hf_prefix: the k100 round gets its own
         # smoke_k100 twin so smoke artifacts never touch parent smoke paths.
+        # The twin map is EXPLICIT per round (review r1 minor): a FUTURE round
+        # with a new seg must add its own twin branch here — an unknown seg
+        # refuses loudly rather than landing in the parent smoke twin.
+        if round_seg and round_seg != K100_ROUND_SEG:
+            raise SystemExit(
+                f"unknown --hf-round-seg {round_seg!r} under --smoke: each round needs "
+                "its OWN smoke twin ('' -> smoke, k100 -> smoke_k100); refusing to "
+                "write an unknown round's smoke artifacts into the parent smoke twin"
+            )
         hf_prefix = (
             f"{HF_PREFIX}/smoke_k100" if round_seg == K100_ROUND_SEG else f"{HF_PREFIX}/smoke"
         )

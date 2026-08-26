@@ -793,13 +793,18 @@ def _generate_cell(
     by_chunk: dict[int, list[dict]] = {}
     for r in prior:
         by_chunk.setdefault(int(r["chunk"]), []).append(r)
-    complete = {
-        ci
-        for ci, rs in by_chunk.items()
-        if ci < len(chunks)
-        and len(rs) == len(chunks[ci]) * cfg.draws
-        and {r["context_id"] for r in rs} == {c["id"] for c in chunks[ci]}
-    }
+
+    def _chunk_complete(ci: int, rs: list[dict]) -> bool:
+        # exact (context_id, draw) COMPOSITION, not just row count + context set
+        # (r1 blocker k100-draw-grid-completeness): a duplicated draw replacing a
+        # missing one keeps both the count and the context set — set equality
+        # PLUS count equality together also exclude duplicates.
+        if ci >= len(chunks) or len(rs) != len(chunks[ci]) * cfg.draws:
+            return False
+        want = {(c["id"], cfg.draw_offset + i) for c in chunks[ci] for i in range(cfg.draws)}
+        return {(r["context_id"], int(r["draw"])) for r in rs} == want
+
+    complete = {ci for ci, rs in by_chunk.items() if _chunk_complete(ci, rs)}
     rows: list[dict] = [r for ci in sorted(complete) for r in by_chunk[ci]]
     if complete:
         logger.info(
@@ -1427,11 +1432,26 @@ def _k100_vc_parity_path(cfg: Cfg2564) -> Path:
     return cfg.manifest_dir / "k100_vc_parity.json"
 
 
+def _k100_parity_fp(cfg: Cfg2564) -> str:
+    """k100 vc-parity GATE fingerprint: the regime fp PLUS the parent pin and
+    the parity bar (r2 blocker k100-parent-revision-cache-unkeyed) — a changed
+    ``--parent-revision`` or a tightened K100_VC_PARITY_COS_MIN can never reuse
+    a stale parity report."""
+    return _regime_fp(
+        cfg,
+        {
+            "gate": "k100_vc_parity",
+            "parent_revision": cfg.parent_revision,
+            "vc_parity_cos_min": K100_VC_PARITY_COS_MIN,
+        },
+    )
+
+
 def _k100_vc_parity_ok(cfg: Cfg2564) -> bool:
     rep = _read_json(_k100_vc_parity_path(cfg))
     return (
         rep is not None
-        and rep.get("regime_fp") == _gate_fp(cfg, "k100_vc_parity")
+        and rep.get("regime_fp") == _k100_parity_fp(cfg)
         and (rep.get("verdict") == "pass" or rep.get("demoted"))
     )
 
@@ -1440,12 +1460,14 @@ def _k100_vc_parity(cfg: Cfg2564, contexts: list[dict]) -> None:
     """K100 provenance check (a), pod-side leg (plan v8 §7): per-context cosine of the
     fresh k100 v_C capture vs the PARENT's committed vc bank staged at the pinned
     revision. Runs BEFORE the phase-B sentinel write (and hence before any PE pooled
-    read consumes k100 artifacts); production FAILS LOUD below K100_VC_PARITY_COS_MIN.
+    read consumes k100 artifacts); FAILS LOUD below K100_VC_PARITY_COS_MIN in BOTH
+    production AND --smoke — the plan's smoke slice exercises exactly this parity
+    (plan v8 §7: "capture + v_C parity-vs-parent on the 42 contexts"), so a
+    smoke-scale drift signal halts the chained production leg instead of warning
+    past it (r1 blocker k100-vc-smoke-demotion-unregistered).
 
-    Under --tiny the check is structurally impossible (hidden=64 vs the parent's
-    3584) and is SKIPPED as demoted; under --smoke the comparison runs on the sliced
-    contexts and a miss is demoted to a warning (production-n/bf16-calibrated bar —
-    gotchas.md smoke GATE-CALIBRATION rule).
+    Under --tiny ONLY, the check is structurally impossible (from-config hidden=64
+    vs the parent's 3584) and is SKIPPED as demoted.
 
     NOTE (K6 v_C source, consistency-checker note 1): the fresh k100 capture serves
     ONLY this parity check — every PE pooled/bridge read consumes the PARENT
@@ -1453,13 +1475,13 @@ def _k100_vc_parity(cfg: Cfg2564, contexts: list[dict]) -> None:
     if _k100_vc_parity_ok(cfg):
         logger.info("[k100-vc-parity] prior report fp match — skipping")
         return
-    demoted = cfg.smoke or cfg.tiny
+    demoted = cfg.tiny
     if cfg.tiny:
         write_json_atomic(
             _k100_vc_parity_path(cfg),
             {
                 "gate": "k100_vc_parity",
-                "regime_fp": _gate_fp(cfg, "k100_vc_parity"),
+                "regime_fp": _k100_parity_fp(cfg),
                 "verdict": "skipped",
                 "demoted": True,
                 "skip_reason": "tiny — from-config model hidden dim mismatch vs parent bank",
@@ -1497,7 +1519,7 @@ def _k100_vc_parity(cfg: Cfg2564, contexts: list[dict]) -> None:
         _k100_vc_parity_path(cfg),
         {
             "gate": "k100_vc_parity",
-            "regime_fp": _gate_fp(cfg, "k100_vc_parity"),
+            "regime_fp": _k100_parity_fp(cfg),
             "cos_min_bar": K100_VC_PARITY_COS_MIN,
             "parent_revision": cfg.parent_revision,
             "n_contexts": len(per_context),
@@ -1732,6 +1754,25 @@ def _gate4_parity(
         sys.exit(RC_PARITY_GATE)
 
 
+def _pb_skip_ok(cfg: Cfg2564, cells: list[str]) -> bool:
+    """Phase-B fast-path predicate: every VA cell + vc + the gate-4 parity
+    report + (k100 only) the vc-parity provenance report are complete under
+    the CURRENT regime, AND the phase sentinel fp matches. The k100 term is
+    load-bearing (r2 blocker k100-parent-revision-cache-unkeyed): a changed
+    ``--parent-revision`` / parity bar invalidates the parity report's fp, so
+    a stale phase-B sentinel can never skip provenance check (a)."""
+    if any(not _va_cell_complete(cfg, cell) for cell in cells):
+        return False
+    if not _vc_complete(cfg) or not _parity_report_ok(cfg):
+        return False
+    if cfg.is_k100 and not _k100_vc_parity_ok(cfg):
+        return False
+    if not cfg.va_sentinel.is_file():
+        return False
+    s = _read_json(cfg.va_sentinel)
+    return s is not None and s.get("regime_fp") == _regime_fp(cfg, {"phase": "B"})
+
+
 def phase_capture(cfg: Cfg2564, bank: dict) -> int:
     """PB: teacher-forced v_A + v_C capture, gate-4 parity, HF upload (plan §3.8
     pb_capture)."""
@@ -1741,14 +1782,12 @@ def phase_capture(cfg: Cfg2564, bank: dict) -> int:
     cells = sorted({c["cell"] for c in contexts})
     _require_anchor_shards(cfg, cells)
     sentinel = cfg.va_sentinel
+    if _pb_skip_ok(cfg, cells):
+        logger.info("[capture] all cells + vc + parity complete + sentinel — skipping")
+        return RC_OK
     pending_va = [cell for cell in cells if not _va_cell_complete(cfg, cell)]
     vc_pending = not _vc_complete(cfg)
     parity_pending = not _parity_report_ok(cfg)
-    if not pending_va and not vc_pending and not parity_pending and sentinel.is_file():
-        s = _read_json(sentinel)
-        if s is not None and s.get("regime_fp") == _regime_fp(cfg, {"phase": "B"}):
-            logger.info("[capture] all cells + vc + parity complete + sentinel — skipping")
-            return RC_OK
     if pending_va or vc_pending or parity_pending:
         assert_out_root_headroom(cfg.out_root, need_gb=5.0, phase="pb-capture")
         model, tok = R.load_model_and_tokenizer(cfg)

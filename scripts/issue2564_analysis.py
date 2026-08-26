@@ -582,17 +582,20 @@ def resolve_input(cfg: CfgPE, rel: str, *, source: str = "round") -> Path:
 
     ``source="parent"`` (k100 only, plan v8 K6): stages the PARENT run's copy
     of ``rel`` from the PRODUCTION prefix at the pinned parent revision
-    (``cfg.parent_revision``) into ``stage_dir/parent_pin/<rel>`` —
-    deliberately NO ``in_root`` probe: the k100 pod out-root carries FRESH
-    k100 artifacts at the same producer-layout rel (e.g. the 168-context
-    parity vc), which must never shadow the parent's committed copy the
-    pooled/bridge reads consume; and under ``--smoke`` the parent files STILL
-    come from the production prefix at the pin (plan v8 A8), never
-    ``cfg.hf_prefix``.
+    (``cfg.parent_revision``) into ``stage_dir/parent_pin/<revision>/<rel>``
+    — the staged path CARRIES the revision identity, so bytes staged under a
+    different ``--parent-revision`` can never be reused (r1 blocker
+    k100-parent-revision-cache-unkeyed) — with deliberately NO ``in_root``
+    probe: the k100 pod out-root carries FRESH k100 artifacts at the same
+    producer-layout rel (e.g. the 168-context parity vc), which must never
+    shadow the parent's committed copy the pooled/bridge reads consume; and
+    under ``--smoke`` the parent files STILL come from the production prefix
+    at the pin (plan v8 A8), never ``cfg.hf_prefix``.
     Frozen ridge payloads resolve via resolve_ridge and are round-independent."""
     if source == "parent":
         assert cfg.is_k100, "source='parent' staging is a k100-only path"
-        target = cfg.stage_dir / "parent_pin" / rel
+        assert cfg.parent_revision, "k100 parent staging requires a non-empty parent revision"
+        target = cfg.stage_dir / "parent_pin" / cfg.parent_revision / rel
         if target.exists():
             return target
         from explore_persona_space.orchestrate.hub import stage_hub_file
@@ -845,6 +848,20 @@ def load_stores(cfg: CfgPE, bank: dict) -> Stores:
     )
 
 
+def _dup_keys(keys: list) -> list:
+    """Sorted duplicated entries of ``keys`` (r1 blocker
+    k100-draw-grid-completeness: duplicate (context_id, draw) keys RAISE in
+    every k100 loader — a duplicate silently replacing a missing row keeps
+    counts and global draw ranges intact)."""
+    seen: set = set()
+    dup: set = set()
+    for k in keys:
+        if k in seen:
+            dup.add(k)
+        seen.add(k)
+    return sorted(dup)
+
+
 def load_stores_k100(cfg: CfgPE, bank: dict) -> Stores:
     """k100 stores (plan v8 K6): parent committed vc (984 contexts at the
     pinned revision) + DUAL-SOURCE per-cell va stores — parent draws 0-9 at
@@ -943,14 +960,20 @@ def load_stores_k100(cfg: CfgPE, bank: dict) -> Stores:
             if empty_ids.size:
                 empty_mask[empty_ids] = True
             draw_set = {int(x) for x in draw.tolist()}
+            keys = [(str(rec["context_id"]), int(rec["draw"])) for rec in idx_rows]
+            dup = _dup_keys(keys)
+            assert not dup, (
+                f"[k100] va2564_{cell} ({source}): duplicate (context_id, draw) index "
+                f"rows (r1 blocker k100-draw-grid-completeness): {dup[:5]}"
+            )
+            per_ctx: dict[str, set[int]] = {}
+            for cid2, d2 in keys:
+                per_ctx.setdefault(cid2, set()).add(d2)
             if source == "parent":
                 # A1: parent stores carry EXACTLY draws {0..offset-1}, and every
                 # roster context is present at ALL parent draws (index presence;
                 # empty-completion rows are still excluded from the means below).
                 assert draw_set == set(range(K100_DRAW_OFFSET)), (cell, sorted(draw_set)[:12])
-                per_ctx: dict[str, set[int]] = {}
-                for rec in idx_rows:
-                    per_ctx.setdefault(str(rec["context_id"]), set()).add(int(rec["draw"]))
                 missing_grain = [
                     cid
                     for cid in cell_roster
@@ -967,6 +990,21 @@ def load_stores_k100(cfg: CfgPE, bank: dict) -> Stores:
                     x >= K100_DRAW_OFFSET for x in draw_set
                 ), (cell, sorted(draw_set)[:5])
                 assert max(draw_set) < K100_DRAWS_TOTAL, (cell, max(draw_set))
+                if not cfg.smoke:
+                    # production: the fresh grid is EXACTLY draws {offset..99}
+                    assert draw_set == set(range(K100_DRAW_OFFSET, K100_DRAWS_TOTAL)), (
+                        cell,
+                        sorted(set(range(K100_DRAW_OFFSET, K100_DRAWS_TOTAL)) - draw_set)[:5],
+                    )
+                # A2b (r1 blocker k100-draw-grid-completeness): EVERY roster
+                # context carries the store's FULL fresh draw grid (index
+                # presence) — a context missing one draw another context
+                # carries keeps the GLOBAL set intact and must still raise.
+                bad_grain = [cid for cid in cell_roster if per_ctx.get(cid, set()) != draw_set]
+                assert not bad_grain, (
+                    f"[k100] round va2564_{cell}: contexts missing fresh draws "
+                    f"(A2b per-context grid): {bad_grain[:5]}"
+                )
             n_absent = int((ctx_idx < 0).sum())
             if n_absent:
                 # parent stores legitimately carry non-roster contexts under
@@ -1088,6 +1126,30 @@ def load_stores_k100(cfg: CfgPE, bank: dict) -> Stores:
             dtype=np.int64,
         )
         sel = ridx >= 0
+        # r1 blocker k100-draw-grid-completeness: unique (row, draw) keys AND
+        # exact equality to the non-empty anchor-row key set (draw_valid over
+        # the query roster rows at this source's draw range) — a duplicated or
+        # missing per-draw embedding row must never silently shift a K-pooled
+        # mean while counts still look plausible.
+        keys_emb = [(int(r2), int(d2)) for r2, d2 in zip(ridx[sel], pd_draws[sel])]
+        dup_emb = _dup_keys(keys_emb)
+        assert not dup_emb, (
+            f"[k100] perdraw_anchors ({source}): duplicate (context, draw) embedding "
+            f"rows: {dup_emb[:5]}"
+        )
+        lo2, hi2 = (0, K100_DRAW_OFFSET) if source == "parent" else (K100_DRAW_OFFSET, k_max)
+        expected_emb = {
+            (int(r2), int(d2))
+            for r2 in query_rows.tolist()
+            for d2 in range(lo2, hi2)
+            if draw_valid[r2, d2]
+        }
+        missing_keys = sorted(expected_emb - set(keys_emb))
+        extra_keys = sorted(set(keys_emb) - expected_emb)
+        assert not missing_keys and not extra_keys, (
+            f"[k100] perdraw_anchors ({source}) key set != non-empty anchor rows: "
+            f"missing {missing_keys[:5]}, extra {extra_keys[:5]}"
+        )
         np.add.at(emb_sum, ridx[sel], pd_emb[sel])
         np.add.at(emb_cnt, ridx[sel], 1)
         if source == "round":
@@ -1716,6 +1778,27 @@ def _ci_overlap(ci1: list[float], ci2: list[float]) -> bool | None:
     return not (ci1[0] > ci2[1] or ci2[0] > ci1[1])
 
 
+def k100_deciding_ci(draws: np.ndarray, threshold: float) -> dict:
+    """95% CI + threshold-straddle fragility for a DECIDING quantity's
+    carrier-clustered PAIRED bootstrap draws (plan v8 §3b: "a verdict whose
+    deciding quantity's CI straddles its threshold is narrated as fragile";
+    r1 blocker k100-verdict-fragility-ci — the ratio/gap is formed PER DRAW
+    under the shared carrier resample, so numerator AND denominator
+    uncertainty both enter the CI). NaN draws (zero-denominator or
+    empty-selection resamples) drop out of the percentile read; an all-NaN
+    draw set yields a NaN CI and fragile=None (not evaluable)."""
+    draws = np.asarray(draws, dtype=np.float64)
+    ci = _ci(draws)
+    finite = all(math.isfinite(v) for v in ci)
+    return {
+        "ci95": ci,
+        "threshold": float(threshold),
+        "fragile": bool(ci[0] <= threshold <= ci[1]) if finite else None,
+        "n_finite_draws": int(np.isfinite(draws).sum()),
+        "scheme": "carrier-clustered paired bootstrap (shared resample)",
+    }
+
+
 def k100_bridge_gate(cfg: CfgPE, bank: dict, st: Stores, pa: PairArrays, fire_parent: dict) -> dict:
     """K=10 bridge gate (plan v8 §7 gate 3): the dual-source loader restricted
     to the parent draws 0-9 must reproduce the COMMITTED parent reads.
@@ -1871,11 +1954,35 @@ def k100_provenance_checks(cfg: CfgPE, st: Stores, pa: PairArrays) -> tuple[dict
     re-read, (b) cross-provenance split-half exchangeability, (c) per-context
     answer-length distribution old vs new. Returns ``(block, b_pass)`` —
     ``b_pass`` is None when (b) is not evaluable (smoke draw counts)."""
-    # (a) — re-read the pod-side k100_vc_parity.json (already asserted in K3)
+    # (a) — re-read the pod-side k100_vc_parity.json (already asserted in K3).
+    # r1 blocker k100-parent-revision-cache-unkeyed: production REQUIRES a
+    # well-formed, non-demoted PASS report whose parent_revision matches THIS
+    # run's --parent-revision — a malformed / stale / wrong-revision report is
+    # rejected, never read as "not a literal fail".
     vc_path = resolve_input(cfg, "manifests/k100_vc_parity.json")
     vc_rep = json.loads(vc_path.read_text())
+    if not isinstance(vc_rep, dict) or vc_rep.get("gate") != "k100_vc_parity":
+        raise RuntimeError(f"[k100] malformed pod-side vc parity report at {vc_path}: {vc_rep!r}")
     if vc_rep.get("verdict") == "fail" and not vc_rep.get("demoted"):
         raise RuntimeError(f"[k100] pod-side vc parity report is a FAIL: {vc_rep}")
+    if not cfg.smoke:
+        if vc_rep.get("verdict") != "pass" or vc_rep.get("demoted"):
+            raise RuntimeError(
+                "[k100] production requires a non-demoted PASS vc parity report; got "
+                f"verdict={vc_rep.get('verdict')!r} demoted={vc_rep.get('demoted')!r} "
+                f"at {vc_path}"
+            )
+        if vc_rep.get("parent_revision") != cfg.parent_revision:
+            raise RuntimeError(
+                "[k100] vc parity report is STALE: parent_revision "
+                f"{vc_rep.get('parent_revision')!r} != --parent-revision "
+                f"{cfg.parent_revision!r} (re-run phase B provenance check (a))"
+            )
+    elif vc_rep.get("verdict") == "pass" and vc_rep.get("parent_revision") != cfg.parent_revision:
+        raise RuntimeError(
+            "[k100] smoke vc parity report parent_revision "
+            f"{vc_rep.get('parent_revision')!r} != --parent-revision {cfg.parent_revision!r}"
+        )
     check_a = {
         "source": str(vc_path),
         "verdict": vc_rep.get("verdict"),
@@ -1891,10 +1998,12 @@ def k100_provenance_checks(cfg: CfgPE, st: Stores, pa: PairArrays) -> tuple[dict
     rng = np.random.default_rng([BOOT_SEED, 100])
     idx_draws = rng.integers(0, n_car, size=(cfg.b_boot, n_car))
     mult = carrier_multiplicities(idx_draws, n_car)
-    d_parent = _k100_slot_delta(st, pa, 0, K100_DRAW_OFFSET)
-    d_a = _k100_slot_delta(st, pa, 10, 20)
-    d_b = _k100_slot_delta(st, pa, 20, 30)
-    d_c = _k100_slot_delta(st, pa, 30, 40)
+    # slot bounds derived from the offset (review r1 minor: never hard-coded)
+    off = K100_DRAW_OFFSET
+    d_parent = _k100_slot_delta(st, pa, 0, off)
+    d_a = _k100_slot_delta(st, pa, off, 2 * off)
+    d_b = _k100_slot_delta(st, pa, 2 * off, 3 * off)
+    d_c = _k100_slot_delta(st, pa, 3 * off, 4 * off)
     cross = rowwise_cos(d_parent, d_a)
     within = rowwise_cos(d_b, d_c)
     both = np.isfinite(cross) & np.isfinite(within)
@@ -1919,7 +2028,12 @@ def k100_provenance_checks(cfg: CfgPE, st: Stores, pa: PairArrays) -> tuple[dict
             "cross_provenance_ci95": cr_ci,
             "within_new_mean_cos": wi_pt,
             "within_new_ci95": wi_ci,
-            "slots": {"parent": [0, 10], "new_a": [10, 20], "new_b": [20, 30], "new_c": [30, 40]},
+            "slots": {
+                "parent": [0, off],
+                "new_a": [off, 2 * off],
+                "new_b": [2 * off, 3 * off],
+                "new_c": [3 * off, 4 * off],
+            },
             "n_pairs_used": int(sel.size),
             "n_pairs_excluded_nan": int((~both).sum()),
             "ci_overlap": overlap,
@@ -2065,7 +2179,15 @@ def k100_fire_recompute(cfg: CfgPE, st: Stores, fire_parent: dict) -> tuple[dict
             else:
                 assert d >= K100_DRAW_OFFSET, (d, "round anchors carry parent draw ids")
                 new_draws.add(d)
-            texts[(r["context_id"], d)] = r["text"]
+            key = (r["context_id"], d)
+            if key in texts:
+                # r1 blocker k100-draw-grid-completeness: a duplicate anchor row
+                # must RAISE, never last-wins into the fire denominator.
+                raise RuntimeError(
+                    f"[k100-fire] duplicate anchor (context_id, draw) row {key!r} in "
+                    f"{source} anchors_user_fact.jsonl"
+                )
+            texts[key] = r["text"]
             n_rows += 1
         n_rows_by_source[source] = n_rows
     draws_re = tuple(range(K100_DRAW_OFFSET)) + tuple(sorted(new_draws))
@@ -2155,13 +2277,26 @@ def k100_answer_length_check(bank: dict, st: Stores) -> dict:
 def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
     """Registered verdict lattices (plan v8 §3b), computed from the round's
     own axes block. Point estimates drive the verdicts (the parent's
-    convention); a deciding quantity whose CI straddles its threshold is
-    flagged fragile. Informational under --smoke."""
+    convention); a DECIDING quantity whose carrier-clustered PAIRED-bootstrap
+    CI (compute_all's ``k100_deciding`` blocks) straddles its threshold is
+    flagged fragile (r1 blocker k100-verdict-fragility-ci). Informational
+    under --smoke."""
+
+    def _deciding(block: dict, axis: str, key: str) -> dict:
+        dec = block.get("k100_deciding", {}).get(key) if block else None
+        if block and dec is None:
+            raise RuntimeError(
+                f"[k100] axes.{axis} missing k100_deciding.{key} — verdicts require "
+                "the paired-bootstrap deciding CI (r1 blocker k100-verdict-fragility-ci)"
+            )
+        return dec or {"ci95": [float("nan"), float("nan")], "fragile": None}
+
     uf = doc["axes"].get("user_fact", {})
     c = uf.get("direction", {}).get("arm_779ce", {}).get("mean_cos_headline")
     c_ci = uf.get("direction", {}).get("arm_779ce", {}).get("ci95") or [None, None]
     r100 = uf.get("reliability", {}).get("r100_mean")
     r_ci = uf.get("reliability", {}).get("r100_ci95") or [None, None]
+    dec_ratio = _deciding(uf, "user_fact", "c_over_b")
 
     def _fin(v: object) -> float:
         return float(v) if isinstance(v, (int, float)) and math.isfinite(v) else float("nan")
@@ -2184,21 +2319,17 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
         and math.isfinite(b_ci[1])
         and b_ci[0] <= K100_LATTICE_B_FLOOR <= b_ci[1]
     )
-    ratio_edges = [
-        _fin(c_ci[0]) / b if math.isfinite(_fin(c_ci[0])) and b > 0 else float("nan"),
-        _fin(c_ci[1]) / b if math.isfinite(_fin(c_ci[1])) and b > 0 else float("nan"),
-    ]
-    fragile_ratio = (
-        math.isfinite(ratio_edges[0])
-        and math.isfinite(ratio_edges[1])
-        and ratio_edges[0] <= K100_LATTICE_RATIO <= ratio_edges[1]
-    )
+    # deciding-ratio fragility from the PAIRED bootstrap (c and r100 resampled
+    # together) — the marginal c-CI / point-b form ignored b's uncertainty
+    # (r1 blocker k100-verdict-fragility-ci).
+    fragile_ratio = dec_ratio.get("fragile")
 
     qf = doc["axes"].get("query_form", {})
     surf = qf.get("surface", {}).get("observed", {})
     s_flip, s_para = _fin(surf.get("flip_norm_mean")), _fin(surf.get("para_norm_mean"))
     s_ratio = s_flip / s_para if math.isfinite(s_flip) and s_para else float("nan")
     t_ratio = _fin(qf.get("text_space", {}).get("flip_over_para_ratio"))
+    dec_g = _deciding(qf, "query_form", "g")
     g = s_ratio - t_ratio
     if not math.isfinite(g):
         qf_verdict = "not_evaluable"
@@ -2216,12 +2347,13 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
             "b100": b,
             "b100_ci95_from_r_ci": b_ci,
             "c_over_b": ratio,
+            "c_over_b_ci95": dec_ratio.get("ci95"),
             "thresholds": {"b_floor": K100_LATTICE_B_FLOOR, "ratio": K100_LATTICE_RATIO},
             "verdict": uf_verdict,
-            "fragile": bool(fragile_b or fragile_ratio),
+            "fragile": bool(fragile_b or bool(fragile_ratio)),
             "fragile_components": {
                 "b_ci_straddles_floor": bool(fragile_b),
-                "c_ci_over_b_straddles_ratio": bool(fragile_ratio),
+                "c_over_b_paired_ci_straddles_ratio": fragile_ratio,
             },
             "lattice": "reliability-limited <=> b>=0.55 AND c/b>=0.35; "
             "map-direction-loss <=> b>=0.55 AND c/b<0.35; unresolved otherwise",
@@ -2230,8 +2362,10 @@ def k100_verdicts(doc: dict, reliability_estimator: str, smoke: bool) -> dict:
             "state_flip_over_para": s_ratio,
             "text_flip_over_para": t_ratio,
             "g": g,
+            "g_ci95": dec_g.get("ci95"),
             "threshold_g": K100_DISSOC_G,
             "verdict": qf_verdict,
+            "fragile": dec_g.get("fragile"),
             "lattice": "dissociation-holds <=> g >= 0.15; dissociation-collapses otherwise",
         },
     }
@@ -2886,6 +3020,55 @@ def compute_all(
             for arm in ARMS
         }
 
+        # k100 deciding-statistic CIs (plan v8 §3b; r1 blocker
+        # k100-verdict-fragility-ci): PAIRED per-draw ratios under the SHARED
+        # carrier resample (mult) — c and r100 resample TOGETHER for c/b, and
+        # all four ratio inputs resample together for the dissociation gap g.
+        # Parent/ffr axis blocks gain no key (additive contract).
+        k100_deciding: dict | None = None
+        if cfg.is_k100 and axis == "user_fact":
+            if head.size:
+                c_draws = boot_weighted_mean(
+                    cos_arm["arm_779ce"][head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
+                )
+                r_draws = boot_weighted_mean(
+                    r10[head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
+                )
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    b_draws = np.sqrt(np.clip(r_draws, 0.0, None))
+                    ratio_draws = np.where(b_draws > 0, c_draws / b_draws, np.nan)
+            else:
+                ratio_draws = np.full(mult.shape[0], np.nan)
+            k100_deciding = {"c_over_b": k100_deciding_ci(ratio_draws, K100_LATTICE_RATIO)}
+        elif cfg.is_k100 and axis == "query_form":
+            if head.size and para_head.size and norm_text is not None:
+                s_f = boot_weighted_mean(
+                    norm_obs[PRIMARY_LAYER][head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
+                )
+                s_p = boot_weighted_mean(
+                    norm_obs[PRIMARY_LAYER][para_head],
+                    pa.ca[para_head],
+                    pa.cb[para_head],
+                    pa.dyad[para_head],
+                    mult,
+                )
+                t_f = boot_weighted_mean(
+                    norm_text[head], pa.ca[head], pa.cb[head], pa.dyad[head], mult
+                )
+                t_p = boot_weighted_mean(
+                    norm_text[para_head],
+                    pa.ca[para_head],
+                    pa.cb[para_head],
+                    pa.dyad[para_head],
+                    mult,
+                )
+                with np.errstate(invalid="ignore", divide="ignore"):
+                    g_draws = s_f / s_p - t_f / t_p
+                g_draws = np.where(np.isfinite(g_draws), g_draws, np.nan)
+            else:
+                g_draws = np.full(mult.shape[0], np.nan)
+            k100_deciding = {"g": k100_deciding_ci(g_draws, K100_DISSOC_G)}
+
         axes_out[axis] = {
             "axis": axis,
             "primary_class": view.primary_class,
@@ -2902,6 +3085,7 @@ def compute_all(
             "answer_length": answer_length,
             "layer_twins": layer_twins,
             "pooling_twin_span": span_twin,
+            **({"k100_deciding": k100_deciding} if k100_deciding is not None else {}),
         }
         print(
             f"[pe] axis {k + 1}/{len(views)} {axis} elapsed={time.time() - ta:.1f}s",
