@@ -526,12 +526,18 @@ def _erank(seed: int) -> dict:
     }
 
 
-def _dv3_payload(obs: float, p95: float) -> dict:
-    """One dv3_payload_from_null record for arm name 'write' (#650 nested schema)."""
+def _dv3_payload(obs: float, p95: float, arm: str = "write") -> dict:
+    """One dv3_payload_from_null record (#650 nested schema).
+
+    ``arm`` mirrors the producer's residual-side arm name
+    (``intruder_read(..., arm_name="write" if side == "U" else "read")`` —
+    probed off a real ``analyze_lora_arm`` record 2026-08-26): o_proj/down_proj
+    carry ``write``; q/k/v/gate/up carry ``read``.
+    """
     return {
-        "observed": {"write": {"max_by_layer": {"19": obs}, "band_max": obs, "verdict": "x"}},
+        "observed": {arm: {"max_by_layer": {"19": obs}, "band_max": obs, "verdict": "x"}},
         "null": {
-            "write": {
+            arm: {
                 "per_layer_max_draws": {"19": [p95 * 0.8]},
                 "band_max_draws": [p95 * 0.8],
                 "band_p95": p95,
@@ -555,6 +561,14 @@ def _align_cell(cos: float, p95: float) -> dict:
     }
 
 
+def _align_factor(side: str, alignments: dict) -> dict:
+    """One cmd_align per-module factors record — the NESTED schema the producer
+    writes (``{"side", "k_basis", "alignments": {...}}``; probed off a real
+    ``cmd_align`` run 2026-08-26, fix-round-3
+    ``dwfleet-alignment-consumer-flat-schema-stale``)."""
+    return {"side": side, "k_basis": 8, "alignments": alignments}
+
+
 def _write_dw(root: Path) -> None:
     """dw_fleet/{fleet_table,lora,ft,alignment} (issue2569_dw_fleet shapes)."""
     dw = root / "dw_fleet"
@@ -567,7 +581,14 @@ def _write_dw(root: Path) -> None:
             "down_proj": {"19": _erank(1), "20": _erank(2)},
             "up_proj": {"19": _erank(3)},
         },
-        "intruder": {"down_proj": _dv3_payload(0.21, 0.08), "o_proj": _dv3_payload(0.05, 0.09)},
+        # Arm name is the module's RESIDUAL side: o/down are U-side ("write"),
+        # q/k/v/gate/up are V-side ("read") — one record carries BOTH arms.
+        "intruder": {
+            "down_proj": _dv3_payload(0.21, 0.08),
+            "o_proj": _dv3_payload(0.05, 0.09),
+            "q_proj": _dv3_payload(0.11, 0.09, arm="read"),
+        },
+        "intruder_side": {"down_proj": "U", "o_proj": "U", "q_proj": "V"},
         "regime_key": "rk",
         "metadata": {},
     }
@@ -586,16 +607,23 @@ def _write_dw(root: Path) -> None:
         "arms": {
             "cas-pers-con-lr1e5-s42": {
                 "factors": {
-                    "L19.down_proj": {
-                        "r_B[evil]": _align_cell(0.3, 0.1),
-                        "Ar[evil]": _align_cell(0.05, 0.1),
-                        "delta_tbar": _align_cell(0.5, 0.1),
-                        "c_C": {"skipped": "dim mismatch 3584 vs 4096"},
-                    }
+                    "L19.down_proj": _align_factor(
+                        "U",
+                        {
+                            "r_B[evil]": _align_cell(0.3, 0.1),
+                            "Ar[evil]": _align_cell(0.05, 0.1),
+                            "delta_tbar": _align_cell(0.5, 0.1),
+                        },
+                    ),
+                    # V-side module whose only readable direction (c_C) is
+                    # absent: the producer writes an EMPTY alignments dict.
+                    "L19.q_proj": _align_factor("V", {}),
                 }
             },
             "imp-pers-con-lr3e5-s42": {
-                "factors": {"L19.down_proj": {"r_B[evil]": _align_cell(0.12, 0.1)}}
+                "factors": {
+                    "L19.down_proj": _align_factor("U", {"r_B[evil]": _align_cell(0.12, 0.1)})
+                }
             },
         },
         "seed_noise_anchor": {
@@ -1458,6 +1486,29 @@ def test_learning_curve_undecidable_verdict_suppresses_bands():
     plt.close(fig)
 
 
+def test_learning_curve_delta_panel_excludes_degenerate_points():
+    """Regression: learning-curve-delta-panel-plots-degenerate-points (fix-round-3 NIT).
+
+    On a MIXED n-grid (a degenerate n_train < d point beside well-posed ones)
+    the verdict-grade delta panel draws ONLY the well-posed points against the
+    registered bands — a never-scored degenerate point must not be readable
+    against them. Panel A keeps every point (no bands there).
+    """
+    import matplotlib.pyplot as plt
+
+    doc = _learning_curve_doc(smoke=False)
+    doc["verdict_points"].append(_verdict_point(96, 0.20, 0.90))  # 96 < d=3,584
+    fig = F.build_learning_curve(doc)
+    (delta_line,) = [ln for ln in fig.axes[1].lines if ln.get_label() == "Empirical minus theory"]
+    xs = list(delta_line.get_xdata())
+    assert 96 not in xs and len(xs) == 3  # well-posed points only in the band panel
+    (emp_line,) = [ln for ln in fig.axes[0].lines if "Empirical held-out" in ln.get_label()]
+    assert len(emp_line.get_xdata()) == 4  # panel A keeps the degenerate point
+    band_labels = _labels(fig.axes[1])
+    assert "H2b pass band" in band_labels  # bands still drawn (verdict-grade doc)
+    plt.close(fig)
+
+
 def test_learning_curve_missing_regime_fails_loud():
     """An artifact with no regime.smoke flag raises — never a silent default."""
     doc = _learning_curve_doc()
@@ -1531,9 +1582,80 @@ def test_dw_figures_render(full_root, tmp_path):
         _assert_rendered(tmp_path / "figs", stem)
     lora = F._load_dw_units(full_root, "lora")
     fig = F.build_dw_intruder(lora)
-    assert _n_artists(fig) >= 3  # parity line + 2 labeled points
+    assert _n_artists(fig) >= 4  # parity line + 3 labeled points (both arm names)
     import matplotlib.pyplot as plt
 
+    plt.close(fig)
+
+
+def test_dw_intruder_reads_arm_from_payload_and_guards_empty():
+    """Regression: dwfleet-intruder-consumer-write-key-mismatch (fix-round-3).
+
+    The five V-side modules carry arm ``read`` (never ``write``); the consumer
+    reads the arm off each payload rather than hardcoding either literal. An
+    arm-less payload raises; an observed arm with no matching null raises.
+    """
+    import matplotlib.pyplot as plt
+
+    rec = {
+        "arm_id": "arm1",
+        "intruder": {
+            "o_proj": _dv3_payload(0.05, 0.09),  # U-side: arm "write"
+            "q_proj": _dv3_payload(0.11, 0.09, arm="read"),  # V-side: arm "read"
+        },
+    }
+    fig = F.build_dw_intruder([rec])
+    pts = [ln for ln in fig.axes[0].lines if ln.get_marker() == "o"]
+    assert len(pts) == 2  # both arm names consumed, one point per module
+    plt.close(fig)
+    empty = {"arm_id": "a", "intruder": {"o_proj": {"observed": {}, "null": {}}}}
+    with pytest.raises(ValueError, match="carries no arms"):
+        F.build_dw_intruder([empty])
+    mismatched = {"arm_id": "a", "intruder": {"o_proj": {**_dv3_payload(0.1, 0.2), "null": {}}}}
+    with pytest.raises(ValueError, match="no matching null"):
+        F.build_dw_intruder([mismatched])
+
+
+def test_dw_consumers_accept_real_producer_outputs(tmp_path, monkeypatch):
+    """Cross-driver contract: REAL producer outputs feed both figure consumers.
+
+    Runs the CURRENT producer (``analyze_lora_arm`` + ``cmd_align`` on the tiny
+    committed fixtures from ``test_issue2569_dw_fleet``) and renders both
+    consumers — the fix-round-3 reviewer reproduction
+    (``dwfleet-alignment-consumer-flat-schema-stale`` +
+    ``dwfleet-intruder-consumer-write-key-mismatch``), kept as a standing test
+    so producer and consumers cannot silently drift apart again.
+    """
+    import issue650_analyze as I650
+    import issue2569_dw_fleet as DW
+    import matplotlib.pyplot as plt
+
+    tests_dir = str(Path(__file__).resolve().parent)
+    if tests_dir not in sys.path:  # importlib mode never adds tests/ itself
+        sys.path.insert(0, tests_dir)
+    import test_issue2569_dw_fleet as TDW
+
+    adapter = TDW._write_adapter(tmp_path / "adapter", r=2)
+    base_svd = I650.load_base_svd(TDW._build_tiny_base_svd(tmp_path), modules=DW.LORA_MODULES)
+    rec = DW.analyze_lora_arm(TDW._lora_entry(), adapter, base_svd)
+    arm_names = {a for p in rec["intruder"].values() for a in p["observed"]}
+    assert arm_names == {"write", "read"}  # one record carries BOTH arms
+    fig = F.build_dw_intruder([rec])
+    pts = [ln for ln in fig.axes[0].lines if ln.get_marker() == "o"]
+    assert len(pts) == len(DW.LORA_MODULES)  # all 7 modules, no KeyError
+    plt.close(fig)
+
+    lora = TDW._lora_entry()
+    banked = TDW._rb_banked()
+    banked[f"{DW.DELTA_TF_PREFIX}/{lora.arm_id}/tbar.pt"] = TDW._tbar_payload(layer=0)
+    banked[f"{DW.ANCHORS_PREFIX}/{lora.arm_id}.pt"] = TDW._anchor_payload(layer=0)
+    out_root, dl_root, _ = TDW._setup_align(
+        tmp_path / "align", monkeypatch, banked=banked, entries=[lora]
+    )
+    assert DW.cmd_align(TDW._args(out_root=str(out_root), dl_root=str(dl_root))) == 0
+    align = json.loads((out_root / "dw_fleet" / "alignment.json").read_text())
+    fig = F.build_dw_alignment(align)
+    assert _n_artists(fig) >= 8  # per-direction panels: alignment points + null ticks
     plt.close(fig)
 
 

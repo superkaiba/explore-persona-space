@@ -657,6 +657,51 @@ def test_mean_abs_delta_r2_mixed_scores_wellposed_only():
         GL.mean_abs_delta_r2(pts, d=0)
 
 
+def test_mean_abs_delta_r2_single_survivor_never_yields_verdict():
+    """Regression: h2b-single-survivor-still-yields-population-verdict (fix-round-3).
+
+    ONE surviving well-posed point must never emit a registered pass/kill
+    verdict: same-sign systematicity across n is undefined at one point
+    (``all()`` over a single delta is vacuously True), so a kill-sized single
+    survivor previously emitted ``h2b-kill-candidate``. Kill-sized and
+    pass-sized single survivors both return the distinct
+    insufficient-wellposed token with NO scored statistic and
+    ``same_sign_all`` None (never a vacuous True).
+    """
+    # Kill-sized |delta| = 0.20 > 0.15 survivor beside a degenerate point.
+    pts = [_verdict_point(8, 0.10, 0.90), _verdict_point(100, 0.50, 0.70)]
+    out = GL.mean_abs_delta_r2(pts, d=16)
+    assert out["verdict"] == GL.UNDECIDABLE_INSUFFICIENT_WELLPOSED
+    assert out["mean_abs_dr2"] is None
+    assert out["same_sign_all"] is None
+    assert out["per_point_delta_r2"] == []
+    assert out["underpowered_per_point_delta_r2"] == pytest.approx([-0.20])
+    assert out["degenerate_per_point_delta_r2"] == pytest.approx([-0.80])
+    # bands stay reported (registered constants), unchanged by the gate
+    assert out["bands"] == {"pass_le": GL.MEAN_ABS_DR2_PASS, "kill_gt": GL.MEAN_ABS_DR2_KILL}
+    # Pass-sized single survivor with NO degenerate sibling: same refusal.
+    out2 = GL.mean_abs_delta_r2([_verdict_point(100, 0.50, 0.51)], d=16)
+    assert out2["verdict"] == GL.UNDECIDABLE_INSUFFICIENT_WELLPOSED
+    assert out2["mean_abs_dr2"] is None and out2["same_sign_all"] is None
+    assert "degenerate_per_point_delta_r2" not in out2
+
+
+def test_mean_abs_delta_r2_sign_definition_at_two_plus_points():
+    """Same-sign is a real bool at >= 2 survivors; mixed signs never kill.
+
+    A genuine same-sign kill still fires at two points (``same_sign_all`` is
+    True, not a vacuity artifact); a kill-sized MIXED-sign misfit stays
+    ``large-misfit-not-systematic``.
+    """
+    kill = [_verdict_point(100, 0.50, 0.70), _verdict_point(200, 0.60, 0.80)]
+    out = GL.mean_abs_delta_r2(kill, d=16)
+    assert out["verdict"] == "h2b-kill-candidate" and out["same_sign_all"] is True
+    mixed = [_verdict_point(100, 0.70, 0.50), _verdict_point(200, 0.60, 0.80)]
+    out2 = GL.mean_abs_delta_r2(mixed, d=16)
+    assert out2["verdict"] == "large-misfit-not-systematic"
+    assert out2["same_sign_all"] is False
+
+
 def test_companion_loader_reads_committed_artifacts():
     """Companions come from committed JSONs, labeled off-recipe, never verdict points."""
     comps = GL.load_companion_points(REPO_ROOT)

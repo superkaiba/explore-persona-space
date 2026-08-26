@@ -50,6 +50,24 @@ Two halves, one module (unit 2 of the pre-split build):
    labeled off-recipe COMPANIONS excluded from the statistic, published with
    per-point corpus mix, realized n, selected lambda and ``lambda_grid_edge``.
 
+Smoke blind-spot enumeration:
+- SCALE ONLY — ``--smoke`` reduces the ladder's bootstrap/permutation draw
+  counts to 100 (``b_draws`` / ``n_perm``) through the SAME chain; a smoke
+  PASS certifies chain execution, not band tightness at the production draw
+  counts (10,000).
+- TAG, NOT A GATE — ``--smoke`` is persisted verbatim as ``regime.smoke`` into
+  the ladder output and ``learning_curve.json``; downstream figure renderers
+  (``issue2569_figures`` — see its enumeration) key registered-band
+  SUPPRESSION on that tag, so a smoke artifact can never present as a
+  pre-registered verdict figure.
+- NO DOWNGRADED ASSERTION — no assertion, raise, or verdict computation in
+  this module is skipped or weakened under ``--smoke``; the H2b statistic
+  (``mean_abs_delta_r2``) computes identically in both regimes — smoke-scale
+  grids are refused by the DATA-DEPENDENT well-posedness (n_train < d) and
+  minimum-well-posed-count gates, never by the flag.
+- No implementation is substituted under smoke, and no third-party import is
+  reached only on a production branch.
+
 CLI::
 
     uv run python scripts/issue2569_gateladder.py ladder --out <dir> \
@@ -1052,6 +1070,19 @@ def fit_metadata_parity_check(points: list[dict], reference: dict | None = None)
 
 UNDECIDABLE_UNDERDETERMINED = "undecidable-underdetermined (n_train < d)"
 
+# Minimum well-posed point count for ANY registered H2b verdict (fix-round-3
+# ``h2b-single-survivor-still-yields-population-verdict``). The §7.5 kill predicate
+# is "mean |dR2| > 0.15 with a SAME-SIGN systematic pattern ACROSS n": same-sign
+# systematicity is undefined below two points (vacuously true over one delta), and a
+# mean over one delta is a point read, not a population statistic over the grid.
+# The registered §7.5 grid (five points, n in {4,500..500,000}, all > d=3,584) always
+# clears this floor; it binds only when exclusions collapse the series.
+MIN_WELLPOSED_VERDICT_POINTS = 2
+UNDECIDABLE_INSUFFICIENT_WELLPOSED = (
+    f"undecidable-insufficient-wellposed (fewer than {MIN_WELLPOSED_VERDICT_POINTS} "
+    "well-posed points)"
+)
+
 
 def mean_abs_delta_r2(points: list[dict], *, d: int) -> dict:
     """H2b statistic: mean |empirical - theory| R2 over parity-passing, WELL-POSED points.
@@ -1064,9 +1095,15 @@ def mean_abs_delta_r2(points: list[dict], *, d: int) -> dict:
     well-posed point remains the verdict is ``UNDECIDABLE_UNDERDETERMINED`` —
     structurally distinct from every computed token, so a smoke-scale run
     (e.g. n_grid=[96, 192] against d=3,584) can never present as a measured
-    H2b kill or pass. The registered §7.5 grid (n in {4,500..500,000} vs
-    d=3,584 — plan §0 "all n>d") is well-posed at every point, so production
-    behavior is unchanged; no registered threshold or band is altered.
+    H2b kill or pass. Fewer than ``MIN_WELLPOSED_VERDICT_POINTS`` (= 2)
+    surviving well-posed points yields ``UNDECIDABLE_INSUFFICIENT_WELLPOSED``
+    (also distinct from every computed token, ``mean_abs_dr2`` None): a mean
+    over one delta is a point read, and the kill branch's same-sign
+    systematicity is undefined below two points (``same_sign_all`` is None
+    there, never a vacuous True). The registered §7.5 grid (five points, n in
+    {4,500..500,000} vs d=3,584 — plan §0 "all n>d") is well-posed at every
+    point, so production behavior is unchanged; no registered threshold or
+    band is altered.
 
     Off-recipe companions never enter (callers pass verdict points only); the
     verdict bands are the plan §7.5 registrations (pass <= 0.05; localized misfit
@@ -1114,8 +1151,30 @@ def mean_abs_delta_r2(points: list[dict], *, d: int) -> dict:
             "bands": bands,
             "well_posedness": well_posedness,
         }
+    # Same-sign systematicity is UNDEFINED (None) below two points — ``all()`` over a
+    # single delta is vacuously True, which would trivially satisfy the kill branch's
+    # across-points systematicity condition (fix-round-3
+    # ``h2b-single-survivor-still-yields-population-verdict``).
+    same_sign = (
+        None
+        if len(deltas) < 2
+        else bool(all(d_ > 0 for d_ in deltas) or all(d_ < 0 for d_ in deltas))
+    )
+    if len(wellposed) < MIN_WELLPOSED_VERDICT_POINTS:
+        out = {
+            "mean_abs_dr2": None,
+            "per_point_delta_r2": [],
+            # diagnostic ONLY, never scored — the survivors' deltas stay inspectable
+            "underpowered_per_point_delta_r2": deltas,
+            "same_sign_all": same_sign,
+            "verdict": UNDECIDABLE_INSUFFICIENT_WELLPOSED,
+            "bands": bands,
+            "well_posedness": well_posedness,
+        }
+        if degenerate:
+            out["degenerate_per_point_delta_r2"] = degen_deltas  # diagnostic ONLY
+        return out
     mean_abs = float(np.mean(np.abs(deltas)))
-    same_sign = bool(all(d_ > 0 for d_ in deltas) or all(d_ < 0 for d_ in deltas))
     if mean_abs <= MEAN_ABS_DR2_PASS:
         verdict = "h2b-pass"
     elif mean_abs <= MEAN_ABS_DR2_KILL:

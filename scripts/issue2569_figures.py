@@ -46,6 +46,24 @@ series. A split-half DEFERRAL record (``status != "computed"``) renders the
 hero WITHOUT the stability panel and the sidecar caption names the gap; bands
 are never fabricated.
 
+Smoke blind-spot enumeration:
+- DOWNGRADED GATE — ``build_learning_curve`` panel B: the registered H2b
+  pass/kill band lines (plan §7.5) draw ONLY when the artifact's
+  ``regime.smoke`` is false AND ``h2b.mean_abs_dr2`` is non-null
+  (``verdict_grade``); a smoke-regime or undecidable render is band-free with
+  the regime named in the panel titles. A smoke-regime figure PASS therefore
+  certifies rendering only — never band placement or verdict presentation.
+- DOWNGRADED GATE — ``build_wiring_edge_mass`` alive-row panels: the H3 PASS
+  floor / kill line / k=32 verdict marker draw ONLY when the wiring artifact's
+  ``regime.smoke`` is false (``verdict=not smoke`` legs); smoke-regime rows
+  render band-free with "SMOKE regime (no verdict)" in the panel titles.
+- NOT A DOWNGRADE — ``_regime_smoke`` fail-louds (ValueError) on an artifact
+  missing the ``regime.smoke`` flag; the flag is read from the artifact
+  itself, so neither regime can silently present as the other.
+- No implementation is substituted under smoke, and no third-party import is
+  reached only on a production branch (matplotlib/numpy import at module top
+  on every path).
+
 Usage:
     uv run python scripts/issue2569_figures.py \
         [--results-root eval_results/issue_2569] [--fig-dir figures/issue_2569] \
@@ -346,9 +364,12 @@ def build_learning_curve(doc: dict) -> plt.Figure:
     whose committed lambda sat at a grid edge gets its own marker). Panel B:
     per-point delta (empirical minus theory) against the registered H2b bands —
     drawn ONLY on verdict-grade data: ``regime.smoke`` false AND a computed
-    H2b statistic (``mean_abs_dr2`` non-null; an undecidable-underdetermined
-    verdict has none). A smoke-regime curve renders band-free with the regime
-    in the panel titles, so it can never present as a pre-registered verdict.
+    H2b statistic (``mean_abs_dr2`` non-null; an undecidable verdict has
+    none). On a verdict-grade render, degenerate (n_train < d) points — never
+    scored by the statistic — are excluded from panel B so they cannot be read
+    against the registered bands (they stay in panel A and in the JSON). A
+    smoke-regime curve renders band-free with the regime in the panel titles,
+    so it can never present as a pre-registered verdict.
     Per-point corpus mix / selected lambda / grid-edge metadata stays in
     ``learning_curve.json`` and the caption prose (no on-canvas text).
     """
@@ -399,6 +420,17 @@ def build_learning_curve(doc: dict) -> plt.Figure:
     ax_a.legend()
 
     delta = emp - theory
+    # On a verdict-grade render the registered bands are drawn, so degenerate
+    # (n_train < d) points — never scored by the H2b statistic — are excluded
+    # from the band panel rather than drawn against the bands (fix-round-3 NIT
+    # ``learning-curve-delta-panel-plots-degenerate-points``; unreachable on the
+    # registered all-n>d grid). Panel A and non-verdict renders keep all points.
+    if verdict_grade:
+        d_dim = int(doc["h2b"]["well_posedness"]["d"])
+        wellposed = n >= d_dim
+        n_b, delta_b = n[wellposed], delta[wellposed]
+    else:
+        n_b, delta_b = n, delta
     ax_b.axhline(0.0, color=COLOR_NEUTRAL, lw=1)
     if verdict_grade:
         bands = doc["h2b"]["bands"]
@@ -417,7 +449,7 @@ def build_learning_curve(doc: dict) -> plt.Figure:
                 lw=1,
                 label="H2b kill floor" if sign == 1 else None,
             )
-    ax_b.plot(n, delta, "o-", color=COLOR_PRIMARY, label="Empirical minus theory")
+    ax_b.plot(n_b, delta_b, "o-", color=COLOR_PRIMARY, label="Empirical minus theory")
     ax_b.set_xscale("log")
     ax_b.set_xlabel("Training rows (n)")
     ax_b.set_ylabel("Delta R^2")
@@ -818,20 +850,35 @@ def build_dw_intruder(lora_recs: list[dict]) -> plt.Figure:
     """Intruder read per (arm, module): observed band max vs the matched null p95.
 
     Points above the parity line sit inside the base column space; points below
-    are intruder-like at the max-matched null (the #650 convention). Small-N
-    per-unit plot, so points carry identity labels.
+    are intruder-like at the max-matched null (the #650 convention). The arm
+    name inside each per-module payload is the module's RESIDUAL side —
+    ``write`` for U-side modules (o_proj/down_proj), ``read`` for the five
+    V-side modules (q/k/v/gate/up), per ``intruder_read``'s
+    ``arm_name="write" if side == "U" else "read"`` — so the arm is read off
+    the payload itself, never hardcoded, and one record carries BOTH arm names
+    across its modules (fix-round-3 ``dwfleet-intruder-consumer-write-key-mismatch``).
+    Small-N per-unit plot, so points carry identity labels.
     """
     rows = []
     for rec in lora_recs:
         for mod, payload in rec.get("intruder", {}).items():
-            rows.append(
-                (
-                    rec["arm_id"],
-                    mod,
-                    float(payload["observed"]["write"]["band_max"]),
-                    float(payload["null"]["write"]["band_p95"]),
+            arms_in_payload = sorted(payload["observed"])
+            if not arms_in_payload:
+                raise ValueError(f"{rec['arm_id']}/{mod}: intruder payload carries no arms")
+            for arm in arms_in_payload:
+                if arm not in payload["null"]:
+                    raise ValueError(
+                        f"{rec['arm_id']}/{mod}: observed arm {arm!r} has no matching "
+                        f"null (null arms: {sorted(payload['null'])})"
+                    )
+                rows.append(
+                    (
+                        rec["arm_id"],
+                        mod,
+                        float(payload["observed"][arm]["band_max"]),
+                        float(payload["null"][arm]["band_p95"]),
+                    )
                 )
-            )
     if not rows:
         raise ValueError("no intruder payloads in the LoRA records (base SVD not staged?)")
     labels = arm_labels_deduped(sorted({r[0] for r in rows}))
@@ -860,6 +907,15 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
     One panel per direction (persona-vector reads named per trait); filled
     points cleared the null p95, open points did not; grey ticks mark each
     cell's null p95. The seed-pair anchor, when present, is the dotted line.
+
+    Schema (probed off a real ``cmd_align`` run, fix-round-3
+    ``dwfleet-alignment-consumer-flat-schema-stale``): each
+    ``arms[<arm>]["factors"]["L<layer>.<module>"]`` record is
+    ``{"side", "k_basis", "alignments": {<direction>: <alignment_vs_null cell>}}``
+    — the scored cells live one level down under ``alignments`` (an empty dict
+    for a V-side module whose only readable direction is absent). A missing
+    ``alignments`` key raises KeyError loudly: it means a pre-fix flat-schema
+    (or foreign) artifact, never silently zero directions.
     """
     arms = align_doc["arms"]
     if not arms:
@@ -869,7 +925,7 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
             d
             for arm_rec in arms.values()
             for mod_rec in arm_rec["factors"].values()
-            for d, v in mod_rec.items()
+            for d, v in mod_rec["alignments"].items()
             if isinstance(v, dict) and "max_abs_cos" in v
         }
     )
@@ -895,7 +951,7 @@ def build_dw_alignment(align_doc: dict) -> plt.Figure:
         ax = axes[k // ncols][k % ncols]
         for y, aid in enumerate(arm_ids):
             for mod_key, mod_rec in arms[aid]["factors"].items():
-                cell = mod_rec.get(direction)
+                cell = mod_rec["alignments"].get(direction)
                 if not isinstance(cell, dict) or "max_abs_cos" not in cell:
                     continue
                 mfc = COLOR_PRIMARY if cell["above_null"] else "none"
