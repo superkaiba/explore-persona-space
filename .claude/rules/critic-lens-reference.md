@@ -218,7 +218,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(m) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   check (a)–(n) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse; a
@@ -226,7 +226,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    checklist-item-(l) failure likewise licenses no retrain — its remedy is
    engage-the-registered-mitigation-then-reuse; a checklist-item-(m) failure likewise licenses no
    retrain — its remedy is fix-the-device-seam-at-source, re-smoke on that device class, then
-   reuse).
+   reuse; a checklist-item-(n) failure likewise licenses no retrain and never a shared-core
+   defaults revert — its remedy is pin-the-producing-configuration in the gate (prefer the
+   two-leg form) or re-derive/re-measure the anchor under the current regime, then reuse).
    REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
    behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
    derived from the reused artifact's own committed per-behavior reference values (file + field
@@ -235,6 +237,13 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    § Reuse-validation gate calibration (#813: 3 launch-halts + ~1.6h of 8×H100 on a
    7-module-calibrated 0.01 floor and an ungroundable behavioral bar against a correctly-applied
    4-module marker adapter).
+   REVISE also when the plan ADOPTS an existing gate whose PASS condition is a committed
+   numeric reference without stating the producing estimator configuration (selector / grid /
+   pins, with its recorded location) and without either pinning it or carrying dated
+   current-defaults reproducibility evidence — full rule: `.claude/rules/artifact-reuse.md`
+   check (n) (#2546: an adopted #1336 gate FAILed on a 111-GPU-h primary arm while the reused
+   core reproduced #1336's own committed current-defaults value byte-exactly — the 0.6731
+   anchor belonged to the pre-#1887 legacy-GCV estimator).
    Conclusion-changing because (i) a wrong-recipe /
    saturated / missing-conditions artifact produces numbers that look like results but answer a
    different question, and (ii) gratuitous retraining changes the inherited baseline so the new

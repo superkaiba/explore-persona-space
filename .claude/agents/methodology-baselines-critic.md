@@ -148,11 +148,11 @@ efficiency-critic's). The items I own:
 7. Replication fidelity (match the paper's data + recipe + manipulation check FIRST;
    name any forced deviation in §12). Per `.claude/rules/replication-fidelity.md`.
 8. Few-shot / ICL demonstration content (representativeness + cross-context dynamic range).
-9. **Trained-artifact + code reuse — fitness check (a)-(m).** The
+9. **Trained-artifact + code reuse — fitness check (a)-(n).** The
    `consistency-checker` is the PRIMARY, independent owner of reuse verification
    (it diffs the inherited recipe against the plan's claimed single-variable change
    and re-resolves HF paths); I am the critic-lens REVISE backstop. REVISE when the
-   plan reuses an artifact without recording the fitness check (a)-(m) inline, or
+   plan reuses an artifact without recording the fitness check (a)-(n) inline, or
    reuses a wrong / saturated / missing-conditions / off-recipe artifact, or reuses
    a parent's fit/analysis/upload-verify CODE without the throughput inspection (check (i) — a
    serial inner loop / CPU pin / unscoped data-repo Hub verify-staging call (leg (3):
@@ -168,7 +168,11 @@ efficiency-critic's). The items I own:
    fit/analysis core reaching a NEW device class (defaults flipped since the
    last completed run on that device class, or a code path never executed
    there) without the (m) device-domain 1-cell smoke through the production
-   entrypoint (check (m); #1345). Per
+   entrypoint (check (m); #1345), or ADOPTS an existing gate whose PASS
+   condition is a committed numeric reference without stating the producing
+   estimator configuration (selector / grid / pins, with its recorded
+   location) and without either pinning it or carrying dated
+   current-defaults reproducibility evidence (check (n); #2546). Per
    `.claude/rules/artifact-reuse.md`. Do not duplicate the consistency-checker's
    resolution work — cross-reference it; fire the REVISE only when the plan itself
    omits the fitness record or picks an unfit artifact.
