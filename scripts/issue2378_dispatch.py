@@ -394,8 +394,11 @@ class Runner:
                 env={
                     **os.environ,
                     **cm.LAUNCH_ENV_PINS,  # r8: sampler-probe pin on every shard
-                    "CUDA_VISIBLE_DEVICES": gpus[i],
                     **(env_extra or {}),
+                    # r3 minor (env_extra order): the per-shard CVD pin is
+                    # LAUNCHER-authoritative — composed LAST so no caller env
+                    # can silently clobber it (#545/#523).
+                    "CUDA_VISIBLE_DEVICES": gpus[i],
                 },
             )
             log.close()
@@ -461,8 +464,10 @@ class Runner:
                 env={
                     **os.environ,
                     **cm.LAUNCH_ENV_PINS,  # r8: sampler-probe pin on every shard
-                    "CUDA_VISIBLE_DEVICES": gpus[i % len(gpus)],
                     **(env_extra or {}),
+                    # r3 minor (env_extra order): per-shard CVD pin composed
+                    # LAST — launcher-authoritative (#545/#523).
+                    "CUDA_VISIBLE_DEVICES": gpus[i % len(gpus)],
                 },
             )
             log.close()
@@ -3077,13 +3082,15 @@ def _link_into(src_dir: Path, dst_dir: Path, names: list[str]) -> int:
             if _file_digest(dst) == _file_digest(src):
                 continue
             _log(f"[link] content mismatch at {dst.name} — replacing from {src_dir}")
-        tmp = dst_dir / f".{name}.linktmp"
-        tmp.unlink(missing_ok=True)
-        try:
-            os.link(src, tmp)
-        except OSError:
-            shutil.copy2(src, tmp)
-        os.replace(tmp, dst)
+        # r3 minor: process-unique temp via the canonical helper (#2336) — a
+        # fixed per-name temp is the #1979 concurrency race shape.
+        from explore_persona_space.atomic_io import atomic_replace
+
+        with atomic_replace(dst) as tmp:
+            try:
+                os.link(src, tmp)
+            except OSError:
+                shutil.copy2(src, tmp)
         n += 1
     return n
 
@@ -3257,8 +3264,10 @@ def _simregen_plan_named_sync(round_ledger: Path, parent_ledger: Path) -> list[s
 def phase_p7_simuser_regen(args, runner: Runner) -> int:
     """GPU leg (1x H200): repaired sim-user elicitation (#612 rung 1 mechanical
     non-degeneracy + retries; quota-gated rung 3) -> raw upload (round HF
-    prefix) -> fresh draws -> capture_ready pair reduction -> floor gate ->
-    vcvp-substituted capture (+L* fresh) -> round store upload + report."""
+    prefix) -> real render + capture_ready pair reduction -> floor gate +
+    fresh eligibility (persisted BEFORE any fresh spend; r2 ordering) -> fresh
+    draws (eligible rung-1 cohort only) -> vcvp-substituted capture (+L*
+    fresh) -> round store upload + report."""
     _phase_line("p7_simuser_regen")
     raw_root, round_ledger, store_root = _simregen_paths(args)
     assert_headroom("p7_simuser_regen", raw_root)
@@ -3359,15 +3368,32 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
                 "eligibility": eligibility,
                 "metadata": cm.run_metadata(),
             }
+            if eligibility["verdict"] == "NA":
+                # r3 concern simregen-fresh-verdict-stale-artifacts: a re-run
+                # that flips a prior OK verdict to NA must not leave the stale
+                # fresh_selection.json ledger copy beside the fresh NA record
+                # (SHORT_COVERAGE keeps both by design — fresh legs still run
+                # and overwrite the selection copy).
+                (round_ledger / "fresh_selection.json").unlink(missing_ok=True)
             cm.atomic_write_json(round_ledger / "fresh_reference_na.json", na_payload)
             harvest_paths.append("eval_results/issue_2378/sim-user-regen/fresh_reference_na.json")
             fresh_na = eligibility["verdict"] == "NA"
             _log(f"[p7] fresh eligibility {eligibility['verdict']}: {json.dumps(eligibility)}")
-        git_harvest(
-            harvest_paths,
+        elif verdict["verdict"] == "PASS":
+            # r3 concern simregen-fresh-verdict-stale-artifacts (other flip
+            # direction): eligibility OK invalidates a prior run's stale
+            # NA / short-coverage record before any consumer reads it.
+            (round_ledger / "fresh_reference_na.json").unlink(missing_ok=True)
+        harvest_msg = (
             f"task #{ISSUE}: sim-user-regen floor gate ({verdict['verdict']}, "
-            f"fresh={eligibility['verdict']})",
+            f"fresh={eligibility['verdict']})"
         )
+        # r3 concern simregen-floor-fail-harvest-preempts-rc8: the blocking
+        # sentinel + rc-8 are the designed halt signal, so they are emitted
+        # BEFORE the git harvest — the full floor report rides the sentinel
+        # note either way, and on the floor-FAIL path a git failure is
+        # disclosed loud but never preempts the rc (PASS path keeps the
+        # fail-loud harvest: the fits phase pulls capture_ready via git).
         write_sentinel(
             args,
             "epm:progress",
@@ -3376,8 +3402,13 @@ def phase_p7_simuser_regen(args, runner: Runner) -> int:
             blocks_pipeline=verdict["verdict"] != "PASS",
         )
         if verdict["verdict"] != "PASS":
+            try:
+                git_harvest(harvest_paths, harvest_msg)
+            except Exception as exc:
+                _log(f"[p7] floor-FAIL harvest failed (non-fatal on this path): {exc!r}")
             _log("[p7] sim-user-regen floor FAIL — reported, never backfilled (#612)")
             return RC_SIMREGEN_FLOOR
+        git_harvest(harvest_paths, harvest_msg)
     if fresh_na:
         _log("[p7] fresh reference N/A (zero rung-1 keeps) — fresh gen/upload/capture SKIPPED")
     else:
@@ -3624,10 +3655,50 @@ def phase_p7_simuser_fits(args, runner: Runner) -> int:
         == "N/A"
     )
     if fresh_na:
-        # No fresh draws exist (zero rung-1 keeps) — the N/A artifact is the
-        # durable record; the retrieval battery's fresh-reference legs cannot
-        # run without them (codex blocker 1: explicit N/A, never a crash).
-        _log("[p7-fits] fresh_reference_na.json: N/A — p7.retrieval SKIPPED")
+        # r3 blocker simregen-na-skips-retrieval-battery (reconciler v12): the
+        # plan registers the FULL retrieval battery for BOTH user arms (dual
+        # R^2 + retrieval throughout, plan.md:121; the #2202 whitened-cosine /
+        # CSLS conventions are produced ONLY by the battery), so zero rung-1
+        # keeps drops ONLY the fresh legs — the battery still runs
+        # (--phase battery, the callee's battery/fresh split), and each cell's
+        # fresh leg is persisted as an explicit N/A artifact, never a silent
+        # absence and never a crash inside _load_fresh_draws.
+        runner.cpu_parallel(
+            "p7.retrieval",
+            [
+                _py("issue2378_retrieval.py", "--phase", "battery", "--cells", c, *fit_common)
+                for c in user_cells
+            ],
+        )
+        na_record = json.loads(
+            (round_ledger / "fresh_reference_na.json").read_text(encoding="utf-8")
+        )
+        (round_ledger / "retrieval").mkdir(parents=True, exist_ok=True)
+        for cell, reason in (
+            (
+                "chat_user_real",
+                "deterministic render — no fresh redraws for this cell by design "
+                "(capture FRESH_DEFAULT_CELLS excludes chat_user_real; plan §4.4 "
+                "disclosed field)",
+            ),
+            (
+                "chat_user_sim",
+                "zero rung-1-kept sim-user rows — no fresh draws exist this round "
+                "(fresh_reference_na.json is the eligibility record; #612 "
+                "report-never-backfill)",
+            ),
+        ):
+            cm.atomic_write_json(
+                round_ledger / "retrieval" / f"{cell}__fresh.json",
+                {
+                    "cell": cell,
+                    "status": "N/A",
+                    "reason": reason,
+                    "fresh_reference_na": na_record,
+                    "metadata": cm.run_metadata(),
+                },
+            )
+        _log("[p7-fits] fresh N/A (zero rung-1) — battery RUN; fresh legs persisted N/A")
     else:
         runner.cpu_parallel(
             "p7.retrieval",

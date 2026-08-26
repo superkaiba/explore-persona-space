@@ -510,10 +510,16 @@ def main() -> int:
     _log(f"[lenmatch] matching table: {json.dumps(table)}")
 
     # ONE common reduced k, fixed BEFORE any fit, from the min n_train over
-    # every (cell, leg, fold) — both legs share n so the min is leg-invariant.
+    # every (cell, leg, fold). r3 minor (generic-path k): the control leg is a
+    # seeded UNIFORM draw whose fold composition is NOT matched's, so the two
+    # legs share only total n — the min runs over BOTH selections (numerically
+    # inert at production n, where every per-fold n_train >> 2*REDUCED_K_MAX;
+    # same both-legs floor the pair path gained in r2).
+    sel_control = {c: control_selection(fm, c, n_m) for c in fm["cells"]}
     min_n_train = min(
-        int(np.sum(np.asarray(fm["cells"][c]["folds"])[sel_matched[c]] != f))
+        int(np.sum(np.asarray(fm["cells"][c]["folds"])[sel] != f))
         for c in fm["cells"]
+        for sel in (sel_matched[c], sel_control[c])
         for f in range(int(np.asarray(fm["cells"][c]["folds"]).max()) + 1)
     )
     k = min(REDUCED_K_MAX, min_n_train // 2)
@@ -537,7 +543,9 @@ def main() -> int:
     }
     for cell in cells:
         for leg in legs:
-            sel = sel_matched[cell] if leg == "matched" else control_selection(fm, cell, n_m)
+            # sel_control precomputed above (seeded/deterministic — identical
+            # draw; single computation keeps the k floor and the fit in sync).
+            sel = sel_matched[cell] if leg == "matched" else sel_control[cell]
             run_cell_leg(args, fm, cell, leg, sel, k, regime, lengths[cell])
     return write_summary(ledger_root, fm, cells, edges)
 

@@ -411,7 +411,9 @@ def test_link_into_content_identity(tmp_path):
     assert (dst / "a.json").read_text() == '{"v": "new"}'
     assert (dst / "b.json").read_text() == "AAAA"  # replaced, not silently kept
     assert (dst / "c.json").stat().st_ino == c_inode  # digest skip left it alone
-    assert not list(dst.glob(".*.linktmp"))  # tmp names cleaned by os.replace
+    # r3 minor: temps go through atomic_io.atomic_replace (process-unique
+    # `<name>.<pid>.<uuid8>.tmp`, #2336/#1979) — no temp residue of any shape.
+    assert not list(dst.glob("*.tmp")) and not list(dst.glob(".*.linktmp"))
     with pytest.raises(RuntimeError, match="missing source"):
         dsp._link_into(src, dst, ["nope.json"])
 
@@ -447,6 +449,7 @@ class _RecordingRunner(dsp.Runner):
     def __init__(self, logs_dir, *, side_effects=None, probes=None):
         super().__init__(logs_dir, resume=False, dry=False)
         self.events: list[tuple[str, str]] = []
+        self.argvs: dict[str, list] = {}
         self.side_effects = side_effects or {}
         self.probes = probes or {}
 
@@ -458,16 +461,20 @@ class _RecordingRunner(dsp.Runner):
             self.side_effects[name]()
 
     def run(self, name, argv, *, env_extra=None, ok_rcs=(0,), timeout_s=None, tail_lines=25):
+        self.argvs[name] = list(argv)
         self._record("run", name)
         return 0
 
     def fanout(self, name, base_argv, *, gpus, env_extra=None):
+        self.argvs[name] = list(base_argv)
         self._record("fanout", name)
 
     def parallel(self, name, argv_list, *, gpus, env_extra=None):
+        self.argvs[name] = [list(a) for a in argv_list]
         self._record("parallel", name)
 
     def cpu_parallel(self, name, argv_list, *, threads_each=None, env_extra=None):
+        self.argvs[name] = [list(a) for a in argv_list]
         self._record("cpu_parallel", name)
 
     def names(self) -> list[str]:
@@ -647,6 +654,216 @@ def test_regen_short_coverage_proceeds_after_floor_persisted(tmp_path, monkeypat
     report = json.loads((led / "simregen_report.json").read_text())
     assert report["fresh_reference_na"] is False
     assert report["fresh_selection"] == sel_payload
+
+
+def test_regen_verdict_flip_invalidates_stale_sibling(tmp_path, monkeypatch):
+    """r3 concern simregen-fresh-verdict-stale-artifacts: the mutually
+    exclusive fresh-verdict artifacts (fresh_reference_na.json vs the
+    fresh_selection.json ledger copy) are invalidated across re-runs — a
+    verdict flip in EITHER direction never leaves the stale sibling on disk."""
+    args, led, raw, _events, _harvests, _uploads = _regen_fixture(
+        tmp_path, monkeypatch, n_kept=6501, n_inter=6501, kept_rung1=6501, kept_rung3=0
+    )
+    sel_payload = {"predicate": "elicit_rung == 1", "selected_rows": 6501, "selection_digest": "d"}
+
+    def make_fresh_selection():
+        cm.atomic_write_json(raw / "user_sim_fresh" / "fresh_selection.json", sel_payload)
+
+    # Run 1 — eligibility OK: fresh legs run, ledger fresh_selection copy lands.
+    rc = dsp.phase_p7_simuser_regen(
+        args,
+        _RecordingRunner(
+            tmp_path / "logs", side_effects={"p7.gen_user_fresh": make_fresh_selection}
+        ),
+    )
+    assert rc == 0
+    assert (led / "fresh_selection.json").is_file()
+    assert not (led / "fresh_reference_na.json").exists()
+    # Run 2 — flip OK -> NA (zero rung-1): stale ledger selection copy DELETED.
+    cm.atomic_write_json(
+        raw / "user_sim" / "summary_w1_s0.json",
+        {"elicitation": {"kept_rung1": 0, "kept_rung3": 6501}},
+    )
+    rc = dsp.phase_p7_simuser_regen(args, _RecordingRunner(tmp_path / "logs2"))
+    assert rc == 0
+    assert not (led / "fresh_selection.json").exists()
+    assert json.loads((led / "fresh_reference_na.json").read_text())["fresh_reference"] == "N/A"
+    report = json.loads((led / "simregen_report.json").read_text())
+    assert report["fresh_reference_na"] is True and report["fresh_selection"] is None
+    # Run 3 — flip NA -> OK: stale NA record DELETED, selection copy restored.
+    cm.atomic_write_json(
+        raw / "user_sim" / "summary_w1_s0.json",
+        {"elicitation": {"kept_rung1": 6501, "kept_rung3": 0}},
+    )
+    rc = dsp.phase_p7_simuser_regen(
+        args,
+        _RecordingRunner(
+            tmp_path / "logs3", side_effects={"p7.gen_user_fresh": make_fresh_selection}
+        ),
+    )
+    assert rc == 0
+    assert not (led / "fresh_reference_na.json").exists()
+    assert json.loads((led / "fresh_selection.json").read_text()) == sel_payload
+
+
+def test_regen_floor_fail_harvest_failure_never_preempts_rc8(tmp_path, monkeypatch):
+    """r3 concern simregen-floor-fail-harvest-preempts-rc8: on the floor-FAIL
+    path the blocking sentinel + rc 8 land even when the git harvest RAISES —
+    the sentinel is written first and the harvest is non-fatal there."""
+    args, _led, _raw, _events, _harvests, _uploads = _regen_fixture(
+        tmp_path, monkeypatch, n_kept=6000, n_inter=5900, kept_rung1=6000, kept_rung3=0
+    )
+
+    def raising_harvest(paths, message, *, force_add=False):
+        raise RuntimeError("simulated git failure (push rejected)")
+
+    monkeypatch.setattr(dsp, "git_harvest", raising_harvest)
+    rc = dsp.phase_p7_simuser_regen(args, _RecordingRunner(tmp_path / "logs"))
+    assert rc == dsp.RC_SIMREGEN_FLOOR
+    gates = [s for s in _sentinels(args) if s.get("gate") == "simregen_floor"]
+    assert len(gates) == 1 and gates[0]["blocks_pipeline"] is True
+
+
+def _fits_na_fixture(tmp_path, monkeypatch):
+    """Fixture for the fits-phase fresh-N/A branch: PASS floors + the NA
+    record + minimal parent/round store parts; external boundaries faked
+    signature-conformant (the subprocess seam stays _RecordingRunner's) and
+    per-step side effects standing in for what the recorded subprocesses
+    persist. Returns (args, led, side_effects)."""
+    import issue2378_p6_common as p6
+
+    led = tmp_path / "led"
+    store = tmp_path / "store"
+    parent_led = tmp_path / "parent_led"
+    cm.atomic_write_json(parent_led / "pilot" / "layer_sweep.json", {"selected_layer": 1})
+    cm.atomic_write_json(
+        led / "capture_ready" / "chat_user_sim.json",
+        {"n_kept": 6501, "pair_intersection": {"n_intersection": 6501}},
+    )
+    cm.atomic_write_json(
+        led / "fresh_reference_na.json",
+        {"fresh_reference": "N/A", "eligibility": {"verdict": "NA", "rung1_kept": 0}},
+    )
+    parent_slice = tmp_path / "parent_slice"
+    parent_slice.mkdir(parents=True)
+    for cell in ("chat", "chat_user_real"):
+        cm.atomic_write_json(
+            parent_slice / f"{cell}__part0000__rows.json",
+            {"cell": cell, "part": 0, "rows": [{"row_id": "a"}]},
+        )
+        (parent_slice / f"{cell}__part0000__L1.npz").write_bytes(b"npz-bytes-" + cell.encode())
+    cm.atomic_write_json(
+        store / "chat_user_sim__part0000__rows.json",
+        {"cell": "chat_user_sim", "part": 0, "rows": [{"row_id": "a"}]},
+    )
+    (store / "chat_user_sim__part0000__L1.npz").write_bytes(b"npz-bytes-sim")
+    args = SimpleNamespace(
+        simregen_raw_root=str(tmp_path / "raw"),
+        simregen_ledger_root=str(led),
+        simregen_store_root=str(store),
+        ledger_root=str(parent_led),
+        stage_root=str(tmp_path / "stage"),
+        sentinel_dir=str(tmp_path / "sent"),
+    )
+    monkeypatch.setattr(dsp, "_git_pull_rebase", lambda: None)
+    monkeypatch.setattr(dsp, "assert_headroom", lambda phase, out_root: None)
+
+    def fake_stage_parent_store_slice(a, npz_cells, layers):
+        assert npz_cells == {"chat", "chat_user_real"} and layers == [1]
+        return parent_slice
+
+    monkeypatch.setattr(dsp, "_stage_parent_store_slice", fake_stage_parent_store_slice)
+    monkeypatch.setattr(dsp, "git_harvest", lambda paths, message, *, force_add=False: None)
+    monkeypatch.setattr(cm, "upload_stage_dir", lambda local_dir, prefix_rel: ["ok"])
+
+    def hf_stage_banned(*a, **kw):
+        raise AssertionError("stage_hf_prefix must not run — sim parts are in the round store")
+
+    monkeypatch.setattr(cm, "stage_hf_prefix", hf_stage_banned)
+
+    def write_fits():
+        for arm in p6.ARMS:
+            cm.atomic_write_json(
+                led / "fits" / f"chat_user_sim__{arm}.json", {"pooled_r2": 0.9, "arm": arm}
+            )
+
+    def write_h4b():
+        cm.atomic_write_json(led / "ladder" / "h4b_real_vs_sim.json", {"delta": 0.1})
+
+    def write_battery():
+        for cell in ("chat_user_real", "chat_user_sim"):
+            cm.atomic_write_json(
+                led / "retrieval" / f"{cell}__context.json", {"cell": cell, "arm": "context"}
+            )
+
+    side_effects = {"p7.fits": write_fits, "p7.h4b": write_h4b, "p7.retrieval": write_battery}
+    return args, led, side_effects
+
+
+def test_fits_zero_rung1_battery_runs_and_fresh_na_persisted(tmp_path, monkeypatch):
+    """r3 blocker simregen-na-skips-retrieval-battery (reconciler v12,
+    mechanizable form): on the fits-phase fresh-N/A branch the FULL retrieval
+    battery is composed (--phase battery, BOTH user cells), the per-cell fresh
+    legs are persisted as explicit N/A artifacts, and the battery JSONs exist
+    on disk BEFORE the p7 digest and the completion sentinel are written."""
+    args, led, side_effects = _fits_na_fixture(tmp_path, monkeypatch)
+    battery_files = (
+        "retrieval/chat_user_real__context.json",
+        "retrieval/chat_user_sim__context.json",
+        "retrieval/chat_user_real__fresh.json",
+        "retrieval/chat_user_sim__fresh.json",
+    )
+    real_awj = cm.atomic_write_json
+    digest_probe: list[str] = []
+
+    def probing_awj(path, obj):
+        if Path(path).name == "p7_digest.json":
+            for f in battery_files:
+                assert (led / f).is_file(), f"battery/fresh artifact missing at digest time: {f}"
+            digest_probe.append("battery-before-digest")
+        return real_awj(path, obj)
+
+    monkeypatch.setattr(cm, "atomic_write_json", probing_awj)
+    real_ws = dsp.write_sentinel
+    sentinel_probe: list[str] = []
+
+    def probing_ws(a, kind, note_obj, **kw):
+        if kind == "epm:results":
+            for f in battery_files:
+                assert (led / f).is_file(), f"battery/fresh artifact missing at sentinel time: {f}"
+            assert (led / "p7_digest.json").is_file()
+            sentinel_probe.append("battery-before-sentinel")
+        return real_ws(a, kind, note_obj, **kw)
+
+    monkeypatch.setattr(dsp, "write_sentinel", probing_ws)
+    runner = _RecordingRunner(tmp_path / "logs", side_effects=side_effects)
+    rc = dsp.phase_p7_simuser_fits(args, runner)
+    assert rc == 0
+    # Battery composed for BOTH user cells, --phase battery (never all/fresh).
+    ret_argvs = runner.argvs["p7.retrieval"]
+    assert len(ret_argvs) == 2
+    for argv in ret_argvs:
+        assert argv[argv.index("--phase") + 1] == "battery"
+    assert {argv[argv.index("--cells") + 1] for argv in ret_argvs} == {
+        "chat_user_real",
+        "chat_user_sim",
+    }
+    # Fresh legs persisted as explicit N/A (per-cell artifacts, never absent).
+    for cell in ("chat_user_real", "chat_user_sim"):
+        fr = json.loads((led / "retrieval" / f"{cell}__fresh.json").read_text())
+        assert fr["status"] == "N/A"
+        assert fr["fresh_reference_na"]["fresh_reference"] == "N/A"
+    assert (
+        "rung-1"
+        in json.loads((led / "retrieval" / "chat_user_sim__fresh.json").read_text())["reason"]
+    )
+    # Ordering probes fired: battery artifacts precede digest AND sentinel.
+    assert digest_probe == ["battery-before-digest"]
+    assert sentinel_probe == ["battery-before-sentinel"]
+    digest = json.loads((led / "p7_digest.json").read_text())
+    assert digest["fresh_reference_na"] is True
+    assert len(digest["plan_named_sync"]) >= 3
+    assert "p7.lenmatch_pair" in runner.names()
 
 
 def test_phase_user_fresh_selection_provenance(monkeypatch, tmp_path):
