@@ -212,6 +212,34 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    both-routes adjudication hinged on whether the leaned-on backstop
    (fits.py pilot gate) exists AND is armed by the production invocation.
 
+9c. **Reconciler-BINDING-FAIL fix round, single-BLOCKER both-halves closure
+   (#2587 r4, 2026-08-26):** deltas atop 8c/9b — (a) when the brief names
+   BOTH the twin's own FAIL verdict (it carries the Mechanizable recipes
+   the fix realizes) AND the reconcile record, inline BOTH with an explicit
+   "the record GOVERNS where they differ" line (8c's record-alone lean
+   applies only when the brief doesn't name the verdict); restate the
+   record's empirical reproductions in the envelope preface — they are the
+   bar. (b) ONE ledger id covering two Majors + a test recipe composes as
+   ONE status line with named-half vocabulary (`PARTIALLY-ADDRESSED
+   (<half: queue | manifest | tests>)`), never two pseudo-rows. (c) The
+   twin's own still-OPEN prior CONCERN (not claimed by the confined round)
+   gets a prescribed `OPEN-UNCHANGED — <awaits X>; not claimed by this
+   round` status line + a never-re-emit instruction. (d) A fix that INVERTS
+   an ordering (re-serve → truncate-first = at-least-once → at-most-once)
+   gets an explicit NEW-HAZARD trace duty in the opposite direction. (e) A
+   marker-disclosed in-round harness bug (controls caught fault tests
+   false-passing) becomes an adjudication input: verify assertions now pin
+   error-branch-specific evidence. (f) Bookkeeping commit can sit BELOW the
+   payload (parent → bookkeeping → payload == HEAD): range `parent..HEAD`
+   then includes it — name it in-range-but-out-of-scope; HEAD == payload
+   tip makes worktree reads byte-identical again. (g) ASSERT-SIDE TRAP hit
+   live: extracting the tail with an UNANCHORED `"# Output contract"`
+   matched the head's ADAPTATIONS `## Output contract` mention and silently
+   DUPLICATED the 87 KB rubric (271 KB prompt); caught only by eyeballing
+   the printed part sizes. Always use the newline-anchored index and assert
+   `len(tail) < 15_000` + rubric-anchor-absent-in-tail + rubric-once in the
+   final prompt.
+
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token
 defeats exactly that purpose.
