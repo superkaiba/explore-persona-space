@@ -235,6 +235,27 @@ def _read_json(path: Path) -> dict | None:
     return json.loads(path.read_text()) if path.is_file() else None
 
 
+def _regime_smoke(doc: dict, what: str) -> bool:
+    """Read the artifact's own ``regime.smoke`` flag; fail LOUD when absent.
+
+    Registered pass/kill verdict thresholds (H2b bands, the H3 floor/kill
+    lines) may be drawn ONLY against production-regime data: a smoke-regime
+    artifact renders WITHOUT them, carrying the regime in the panel TITLE (the
+    permitted channel — on-canvas caption blocks are banned). An artifact with
+    no ``regime.smoke`` flag cannot certify either way, so it raises rather
+    than defaulting — a silent default would re-open the smoke-blind rendering
+    this gate exists to close (a smoke curve at n_train << d drew past the
+    registered kill floor and read as a failing pre-registered hypothesis).
+    """
+    regime = doc.get("regime")
+    if not isinstance(regime, dict) or "smoke" not in regime:
+        raise ValueError(
+            f"{what}: artifact carries no regime.smoke flag — cannot decide whether "
+            "registered verdict bands may be drawn (fail loud, never a silent default)"
+        )
+    return bool(regime["smoke"])
+
+
 def _finite(vals) -> np.ndarray:
     """Float array with non-finite entries dropped (guarded aggregation input)."""
     a = np.asarray(vals, np.float64).ravel()
@@ -323,13 +344,19 @@ def build_learning_curve(doc: dict) -> plt.Figure:
     Panel A: empirical verdict series, the closed-form theory prediction at the
     same n, and the committed off-recipe companions (open markers; a companion
     whose committed lambda sat at a grid edge gets its own marker). Panel B:
-    per-point delta (empirical minus theory) against the registered H2b bands.
+    per-point delta (empirical minus theory) against the registered H2b bands —
+    drawn ONLY on verdict-grade data: ``regime.smoke`` false AND a computed
+    H2b statistic (``mean_abs_dr2`` non-null; an undecidable-underdetermined
+    verdict has none). A smoke-regime curve renders band-free with the regime
+    in the panel titles, so it can never present as a pre-registered verdict.
     Per-point corpus mix / selected lambda / grid-edge metadata stays in
     ``learning_curve.json`` and the caption prose (no on-canvas text).
     """
     pts = doc["verdict_points"]
     if not pts:
         raise ValueError("learning_curve.json carries no verdict points")
+    smoke = _regime_smoke(doc, "learning_curve.json")
+    verdict_grade = (not smoke) and doc["h2b"]["mean_abs_dr2"] is not None
     n = np.asarray([p["n_train"] for p in pts], np.float64)
     emp = np.asarray([p["test_r2"] for p in pts], np.float64)
     theory = np.asarray([p["theory"]["predicted_r2"] for p in pts], np.float64)
@@ -368,32 +395,38 @@ def build_learning_curve(doc: dict) -> plt.Figure:
     ax_a.set_xscale("log")
     ax_a.set_xlabel("Training rows (n)")
     ax_a.set_ylabel("Held-out R^2")
-    ax_a.set_title("Learning curve: theory vs measured")
+    ax_a.set_title("Learning curve: theory vs measured" + (" — SMOKE regime" if smoke else ""))
     ax_a.legend()
 
     delta = emp - theory
     ax_b.axhline(0.0, color=COLOR_NEUTRAL, lw=1)
-    bands = doc["h2b"]["bands"]
-    for sign in (1, -1):
-        ax_b.axhline(
-            sign * bands["pass_le"],
-            color=COLOR_NEUTRAL,
-            ls="--",
-            lw=1,
-            label="H2b pass band" if sign == 1 else None,
-        )
-        ax_b.axhline(
-            sign * bands["kill_gt"],
-            color=COLOR_NEUTRAL,
-            ls=":",
-            lw=1,
-            label="H2b kill floor" if sign == 1 else None,
-        )
+    if verdict_grade:
+        bands = doc["h2b"]["bands"]
+        for sign in (1, -1):
+            ax_b.axhline(
+                sign * bands["pass_le"],
+                color=COLOR_NEUTRAL,
+                ls="--",
+                lw=1,
+                label="H2b pass band" if sign == 1 else None,
+            )
+            ax_b.axhline(
+                sign * bands["kill_gt"],
+                color=COLOR_NEUTRAL,
+                ls=":",
+                lw=1,
+                label="H2b kill floor" if sign == 1 else None,
+            )
     ax_b.plot(n, delta, "o-", color=COLOR_PRIMARY, label="Empirical minus theory")
     ax_b.set_xscale("log")
     ax_b.set_xlabel("Training rows (n)")
     ax_b.set_ylabel("Delta R^2")
-    ax_b.set_title("Per-point misfit vs registered bands")
+    if verdict_grade:
+        ax_b.set_title("Per-point misfit vs registered bands")
+    elif smoke:
+        ax_b.set_title("Per-point misfit — SMOKE regime (no verdict; bands suppressed)")
+    else:
+        ax_b.set_title("Per-point misfit — no computed H2b verdict (bands suppressed)")
     ax_b.legend()
     return fig
 
@@ -1517,10 +1550,15 @@ def build_wiring_edge_mass(arrays: dict, wdoc: dict) -> plt.Figure:
     Top row: full-context-column curves and top-32 shares (INFORMATIONAL at
     P-A, per the persisted h3.grain; no decision lines). Bottom row (present
     only on rows-attached runs, read off the ``*_alive`` npz keys): the
-    alive-masked twins, carrying the H3 PASS floor and kill line. Behavior-
-    nearest answer features (is_rb_nearest) are highlighted in both rows; the
-    map-level caveat strings ride the sidecar caption.
+    alive-masked twins, carrying the H3 PASS floor and kill line ONLY when the
+    wiring artifact's own ``regime.smoke`` is false — a smoke-regime run
+    renders the alive row band-free with the regime in the panel titles
+    (registered verdict thresholds never present against smoke-grade data;
+    same gate as the H2b learning-curve bands). Behavior-nearest answer
+    features (is_rb_nearest) are highlighted in both rows; the map-level
+    caveat strings ride the sidecar caption.
     """
+    smoke = _regime_smoke(wdoc, "wiring_L*.json")
     k_grid = np.asarray(arrays["conc_k_grid"], np.int64)
     is_near = np.asarray(arrays["is_rb_nearest"], bool)
     conc = np.asarray(arrays["conc_curve"], np.float64)
@@ -1599,17 +1637,18 @@ def build_wiring_edge_mass(arrays: dict, wdoc: dict) -> plt.Figure:
         verdict=False,
     )
     if have_alive:
+        alive_tag = " — SMOKE regime (no verdict)" if smoke else " (verdict grade)"
         _curves(
             axes[1][0],
             np.asarray(arrays["conc_curve_alive"], np.float64),
-            "Alive context columns (verdict grade)",
-            verdict=True,
+            f"Alive context columns{alive_tag}",
+            verdict=not smoke,
         )
         _hist(
             axes[1][1],
             np.asarray(arrays["top32_absmass_share_alive"], np.float64),
-            "Top-32 share, alive columns (verdict grade)",
-            verdict=True,
+            f"Top-32 share, alive columns{alive_tag}",
+            verdict=not smoke,
         )
     return fig
 

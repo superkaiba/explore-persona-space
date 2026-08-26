@@ -1050,31 +1050,89 @@ def fit_metadata_parity_check(points: list[dict], reference: dict | None = None)
     return {"reference": {k: ref.get(k) for k in PARITY_FIELDS}, "per_point": per_point}
 
 
-def mean_abs_delta_r2(points: list[dict]) -> dict:
-    """H2b statistic: mean |empirical - theory| R2 over parity-passing verdict points.
+UNDECIDABLE_UNDERDETERMINED = "undecidable-underdetermined (n_train < d)"
+
+
+def mean_abs_delta_r2(points: list[dict], *, d: int) -> dict:
+    """H2b statistic: mean |empirical - theory| R2 over parity-passing, WELL-POSED points.
+
+    Well-posedness gate (the #1701 estimator-validity duty): every held-out R2
+    at ``n_train < d`` (``d`` = the fit design's feature dimension) is
+    estimator-degenerate, so such a point can NEVER enter the verdict statistic
+    — it is excluded and NAMED (the same mechanism as a parity exclusion), with
+    n_train, d, and n/d recorded per point under ``well_posedness``. When no
+    well-posed point remains the verdict is ``UNDECIDABLE_UNDERDETERMINED`` —
+    structurally distinct from every computed token, so a smoke-scale run
+    (e.g. n_grid=[96, 192] against d=3,584) can never present as a measured
+    H2b kill or pass. The registered §7.5 grid (n in {4,500..500,000} vs
+    d=3,584 — plan §0 "all n>d") is well-posed at every point, so production
+    behavior is unchanged; no registered threshold or band is altered.
 
     Off-recipe companions never enter (callers pass verdict points only); the
     verdict bands are the plan §7.5 registrations (pass <= 0.05; localized misfit
     0.05-0.15; kill > 0.15 with a same-sign systematic pattern).
     """
-    deltas = [float(p["test_r2"] - p["theory"]["predicted_r2"]) for p in points]
+    d = int(d)
+    if d <= 0:
+        raise ValueError(f"feature dimension d must be positive, got {d}")
+    wp_rows = [
+        {
+            "label": p.get("label", f"n{p.get('n_train')}"),
+            "n_train": int(p["n_train"]),
+            "d": d,
+            "n_over_d": float(int(p["n_train"]) / d),
+            "well_posed": int(p["n_train"]) >= d,
+        }
+        for p in points
+    ]
+    well_posedness = {
+        "d": d,
+        "rule": "n_train < d is estimator-degenerate (#1701); degenerate points are "
+        "excluded from the verdict statistic and NAMED, never scored",
+        "per_point": wp_rows,
+        "degenerate_excluded": [r["label"] for r in wp_rows if not r["well_posed"]],
+    }
+    bands = {"pass_le": MEAN_ABS_DR2_PASS, "kill_gt": MEAN_ABS_DR2_KILL}
+    wellposed = [p for p, r in zip(points, wp_rows, strict=True) if r["well_posed"]]
+    degenerate = [p for p, r in zip(points, wp_rows, strict=True) if not r["well_posed"]]
+    deltas = [float(p["test_r2"] - p["theory"]["predicted_r2"]) for p in wellposed]
+    degen_deltas = [float(p["test_r2"] - p["theory"]["predicted_r2"]) for p in degenerate]
+    if degenerate and not wellposed:
+        return {
+            "mean_abs_dr2": None,
+            "per_point_delta_r2": [],
+            "degenerate_per_point_delta_r2": degen_deltas,  # diagnostic ONLY, never scored
+            "same_sign_all": None,
+            "verdict": UNDECIDABLE_UNDERDETERMINED,
+            "bands": bands,
+            "well_posedness": well_posedness,
+        }
     if not deltas:
-        return {"mean_abs_dr2": None, "verdict": "no-parity-passing-points"}
+        return {
+            "mean_abs_dr2": None,
+            "verdict": "no-parity-passing-points",
+            "bands": bands,
+            "well_posedness": well_posedness,
+        }
     mean_abs = float(np.mean(np.abs(deltas)))
-    same_sign = bool(all(d > 0 for d in deltas) or all(d < 0 for d in deltas))
+    same_sign = bool(all(d_ > 0 for d_ in deltas) or all(d_ < 0 for d_ in deltas))
     if mean_abs <= MEAN_ABS_DR2_PASS:
         verdict = "h2b-pass"
     elif mean_abs <= MEAN_ABS_DR2_KILL:
         verdict = "localized-misfit (no kill)"
     else:
         verdict = "h2b-kill-candidate" if same_sign else "large-misfit-not-systematic"
-    return {
+    out = {
         "mean_abs_dr2": mean_abs,
         "per_point_delta_r2": deltas,
         "same_sign_all": same_sign,
         "verdict": verdict,
-        "bands": {"pass_le": MEAN_ABS_DR2_PASS, "kill_gt": MEAN_ABS_DR2_KILL},
+        "bands": bands,
+        "well_posedness": well_posedness,
     }
+    if degenerate:
+        out["degenerate_per_point_delta_r2"] = degen_deltas  # diagnostic ONLY, never scored
+    return out
 
 
 def load_companion_points(repo_root: Path = REPO_ROOT) -> list[dict]:
@@ -1443,7 +1501,7 @@ def curve_core(
     parity = fit_metadata_parity_check(verdict_points)
     passing = [p for p, pp in zip(verdict_points, parity["per_point"], strict=True) if pp["pass"]]
     excluded = [pp for pp in parity["per_point"] if not pp["pass"]]
-    h2b = mean_abs_delta_r2(passing)
+    h2b = mean_abs_delta_r2(passing, d=int(X.shape[1]))
     companions = [] if skip_companions else load_companion_points(repo_root)
     companion_parity = (
         fit_metadata_parity_check(companions, reference=parity["reference"]) if companions else None

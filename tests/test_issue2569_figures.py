@@ -110,13 +110,20 @@ def _companion(n: int, r2: float, edge: str | None) -> dict:
     }
 
 
-def _learning_curve_doc() -> dict:
-    """A schema-true learning_curve.json document (curve_core output shape)."""
+def _learning_curve_doc(smoke: bool = False) -> dict:
+    """A schema-true learning_curve.json document (curve_core output shape).
+
+    ``smoke`` mirrors the artifact's own ``regime.smoke`` flag (the real
+    producer always writes it — probed on
+    ``smoke-final/leg2_curve_cli/learning_curve.json``): the figure keys its
+    registered-band rendering on it, so both regimes need a fixture.
+    """
     pts = [
         _verdict_point(4_500, 0.62, 0.60),
         _verdict_point(50_000, 0.70, 0.69),
         _verdict_point(500_000, 0.75, 0.76),
     ]
+    d = 3_584
     return {
         "regime": {
             "n_grid": [4_500, 50_000, 500_000],
@@ -127,7 +134,7 @@ def _learning_curve_doc() -> dict:
             "lambda_grid": [1e-5, 1e8, 27],
             "lambda_selection": "val-selected",
             "lmsys_tag": "lmsys",
-            "smoke": True,
+            "smoke": smoke,
         },
         "splits": {"n_lmsys_rows": 1_000, "pool_rows": 800, "eval_split_sha": "abc123"},
         "moments": {
@@ -152,6 +159,21 @@ def _learning_curve_doc() -> dict:
             "same_sign_all": False,
             "verdict": "h2b-pass",
             "bands": {"pass_le": 0.05, "kill_gt": 0.15},
+            "well_posedness": {
+                "d": d,
+                "rule": "n_train < d is estimator-degenerate (#1701)",
+                "per_point": [
+                    {
+                        "label": p["label"],
+                        "n_train": p["n_train"],
+                        "d": d,
+                        "n_over_d": p["n_train"] / d,
+                        "well_posed": True,
+                    }
+                    for p in pts
+                ],
+                "degenerate_excluded": [],
+            },
         },
         "companions_off_recipe": [_companion(3_600, 0.71, None), _companion(963_444, 0.754, "low")],
         "companion_parity_vs_verdict_reference": None,
@@ -1017,8 +1039,14 @@ def _attr_feature(why: str, with_label: bool) -> dict:
     }
 
 
-def _write_weights(root: Path, alive: bool = True) -> None:
-    """weights/{leg1,leg3} P-A driver artifacts (issue2569_weights schemas, tiny d)."""
+def _write_weights(root: Path, alive: bool = True, smoke: bool = False) -> None:
+    """weights/{leg1,leg3} P-A driver artifacts (issue2569_weights schemas, tiny d).
+
+    ``smoke`` mirrors the wiring artifact's own ``regime.smoke`` flag (the real
+    producer always writes a regime block — probed on
+    ``smoke-final/weights/leg3/wiring_L19.json``); the H3 verdict lines key on
+    it, so both regimes need a fixture.
+    """
     import torch
 
     rng = np.random.default_rng(7)
@@ -1235,6 +1263,13 @@ def _write_weights(root: Path, alive: bool = True) -> None:
     (leg3 / "wiring_L19.json").write_text(
         json.dumps(
             {
+                "regime": {
+                    "regime_version": 1,
+                    "layer": 19,
+                    "smoke": smoke,
+                    "top_k": 8,
+                    "n_draws": 100,
+                },
                 "h3": {
                     "statistic": "fixture",
                     "grain": "fixture",
@@ -1360,16 +1395,79 @@ def test_tier_of_bounds():
 # ---------------------------------------------------------------------------
 
 
+def _labels(ax) -> list[str]:
+    return [ln.get_label() for ln in ax.get_lines()]
+
+
+def _title(ax) -> str:
+    """Title text regardless of location (paper style titles at loc='left')."""
+    return ax.get_title() or ax.get_title("left") or ax.get_title("right")
+
+
 def test_learning_curve_builds_and_renders(full_root, tmp_path):
-    """Curve figure carries series artists and renders with a sidecar."""
+    """Curve figure carries series artists and renders with a sidecar.
+
+    Production regime (regime.smoke false): the registered H2b bands ARE drawn
+    — the smoke-suppression gate must not disable the feature.
+    """
     doc = json.loads((full_root / "leg2_curve" / "learning_curve.json").read_text())
+    assert doc["regime"]["smoke"] is False
     fig = F.build_learning_curve(doc)
     assert _n_artists(fig) >= 6  # empirical + theory + companions + band lines
+    band_labels = _labels(fig.axes[1])
+    assert "H2b pass band" in band_labels and "H2b kill floor" in band_labels
+    assert "SMOKE" not in _title(fig.axes[1])
     import matplotlib.pyplot as plt
 
     plt.close(fig)
     stem = F.fig_leg2_learning_curve(full_root, tmp_path / "figs")
     _assert_rendered(tmp_path / "figs", stem)
+
+
+def test_learning_curve_smoke_regime_suppresses_verdict_bands():
+    """Regression: figures-render-verdict-bands-against-smoke-regime.
+
+    A regime.smoke=true artifact renders WITHOUT the registered H2b bands and
+    carries the regime in the panel titles (the permitted channel) — a smoke
+    curve can never present as a pre-registered verdict.
+    """
+    import matplotlib.pyplot as plt
+
+    doc = _learning_curve_doc(smoke=True)
+    fig = F.build_learning_curve(doc)
+    band_labels = _labels(fig.axes[1])
+    assert "H2b pass band" not in band_labels and "H2b kill floor" not in band_labels
+    assert "SMOKE regime" in _title(fig.axes[0])
+    assert "SMOKE regime" in _title(fig.axes[1])
+    # the data series still draw (the figure is suppressed-verdict, not blank)
+    assert "Empirical minus theory" in band_labels
+    plt.close(fig)
+
+
+def test_learning_curve_undecidable_verdict_suppresses_bands():
+    """A non-smoke artifact with NO computed statistic (undecidable) draws no bands."""
+    import matplotlib.pyplot as plt
+
+    doc = _learning_curve_doc(smoke=False)
+    doc["h2b"]["mean_abs_dr2"] = None
+    doc["h2b"]["verdict"] = "undecidable-underdetermined (n_train < d)"
+    fig = F.build_learning_curve(doc)
+    band_labels = _labels(fig.axes[1])
+    assert "H2b pass band" not in band_labels and "H2b kill floor" not in band_labels
+    assert "no computed H2b verdict" in _title(fig.axes[1])
+    plt.close(fig)
+
+
+def test_learning_curve_missing_regime_fails_loud():
+    """An artifact with no regime.smoke flag raises — never a silent default."""
+    doc = _learning_curve_doc()
+    del doc["regime"]
+    with pytest.raises(ValueError, match=r"regime\.smoke"):
+        F.build_learning_curve(doc)
+    doc2 = _learning_curve_doc()
+    del doc2["regime"]["smoke"]
+    with pytest.raises(ValueError, match=r"regime\.smoke"):
+        F.build_learning_curve(doc2)
 
 
 def test_gate_ladder_content_and_marker_render(full_root, tmp_path):
@@ -1521,8 +1619,12 @@ def test_leg3_wiring_renders_alive_and_full_only(full_root, tmp_path):
     with np.load(full_root / "weights" / "leg3" / "wiring_edges_L19.npz") as npz:
         arrays = {k: npz[k] for k in npz.files}
     wdoc = json.loads((full_root / "weights" / "leg3" / "wiring_L19.json").read_text())
+    assert wdoc["regime"]["smoke"] is False
     fig = F.build_wiring_edge_mass(arrays, wdoc)
     assert len(fig.axes) == 4
+    # production regime: the registered H3 verdict lines ARE drawn on the alive row
+    alive_labels = _labels(fig.axes[2])
+    assert "H3 PASS floor (0.50)" in alive_labels and "H3 kill line (0.10)" in alive_labels
     import matplotlib.pyplot as plt
 
     plt.close(fig)
@@ -1533,6 +1635,30 @@ def test_leg3_wiring_renders_alive_and_full_only(full_root, tmp_path):
     fig = F.build_wiring_edge_mass(arrays, wdoc)
     assert len(fig.axes) == 2  # informational panels only, no verdict-grade row
     plt.close(fig)
+
+
+def test_leg3_wiring_smoke_regime_suppresses_h3_verdict_lines(tmp_path):
+    """Class twin of the H2b regression: a smoke-regime rows-attached wiring run
+    renders the alive row WITHOUT the registered H3 floor/kill lines, regime in
+    the panel titles; a wdoc with no regime block fails loud."""
+    import matplotlib.pyplot as plt
+
+    root = tmp_path / "eval"
+    root.mkdir()
+    _write_weights(root, alive=True, smoke=True)
+    with np.load(root / "weights" / "leg3" / "wiring_edges_L19.npz") as npz:
+        arrays = {k: npz[k] for k in npz.files}
+    wdoc = json.loads((root / "weights" / "leg3" / "wiring_L19.json").read_text())
+    assert wdoc["regime"]["smoke"] is True
+    fig = F.build_wiring_edge_mass(arrays, wdoc)
+    assert len(fig.axes) == 4  # the alive row still renders — only the verdict framing goes
+    for ax in (fig.axes[2], fig.axes[3]):
+        labels = _labels(ax)
+        assert "H3 PASS floor (0.50)" not in labels and "H3 kill line (0.10)" not in labels
+        assert "SMOKE regime" in _title(ax)
+    plt.close(fig)
+    with pytest.raises(ValueError, match=r"regime\.smoke"):
+        F.build_wiring_edge_mass(arrays, {k: v for k, v in wdoc.items() if k != "regime"})
 
 
 def test_leg3_attribution_renders_and_defers(full_root, tmp_path):

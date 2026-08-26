@@ -603,15 +603,58 @@ def test_fit_metadata_parity_check_names_mismatches():
 
 
 def test_mean_abs_delta_r2_bands():
-    """H2b verdict bands: pass <= 0.05 < localized <= 0.15 < same-sign kill."""
+    """H2b verdict bands on WELL-POSED points: pass <= 0.05 < localized <= 0.15 < kill."""
     ok = [_verdict_point(100, 0.50, 0.51), _verdict_point(200, 0.60, 0.58)]
-    assert GL.mean_abs_delta_r2(ok)["verdict"] == "h2b-pass"
+    assert GL.mean_abs_delta_r2(ok, d=16)["verdict"] == "h2b-pass"
     mid = [_verdict_point(100, 0.50, 0.60), _verdict_point(200, 0.60, 0.70)]
-    assert GL.mean_abs_delta_r2(mid)["verdict"] == "localized-misfit (no kill)"
+    assert GL.mean_abs_delta_r2(mid, d=16)["verdict"] == "localized-misfit (no kill)"
     kill = [_verdict_point(100, 0.50, 0.70), _verdict_point(200, 0.60, 0.80)]
-    out = GL.mean_abs_delta_r2(kill)
+    out = GL.mean_abs_delta_r2(kill, d=16)
     assert out["verdict"] == "h2b-kill-candidate" and out["same_sign_all"]
-    assert GL.mean_abs_delta_r2([])["verdict"] == "no-parity-passing-points"
+    assert all(r["well_posed"] for r in out["well_posedness"]["per_point"])
+    assert GL.mean_abs_delta_r2([], d=16)["verdict"] == "no-parity-passing-points"
+
+
+def test_mean_abs_delta_r2_underdetermined_refuses_verdict():
+    """The realized #2569 smoke shape (n=96/192 vs d=3584) is UNDECIDABLE, never a kill.
+
+    Regression for h2b-verdict-computed-in-underdetermined-regime: the same
+    kill-sized, same-sign deltas that produce ``h2b-kill-candidate`` on
+    well-posed points must, at n_train < d, produce the structurally distinct
+    undecidable token with NO scored statistic (#1701: every held-out R2 at
+    n_train < d is estimator-degenerate).
+    """
+    pts = [_verdict_point(96, 0.32, 0.61), _verdict_point(192, 0.42, 0.79)]
+    out = GL.mean_abs_delta_r2(pts, d=3584)
+    assert out["verdict"] == GL.UNDECIDABLE_UNDERDETERMINED
+    assert out["mean_abs_dr2"] is None
+    assert out["same_sign_all"] is None
+    assert out["per_point_delta_r2"] == []
+    wp = out["well_posedness"]
+    assert wp["d"] == 3584
+    assert wp["degenerate_excluded"] == ["verdict_n96", "verdict_n192"]
+    assert [r["n_over_d"] for r in wp["per_point"]] == pytest.approx([96 / 3584, 192 / 3584])
+    assert not any(r["well_posed"] for r in wp["per_point"])
+    # diagnostic deltas are carried but clearly labeled as never-scored
+    assert len(out["degenerate_per_point_delta_r2"]) == 2
+    # bands stay reported (registered constants), unchanged by the gate
+    assert out["bands"] == {"pass_le": GL.MEAN_ABS_DR2_PASS, "kill_gt": GL.MEAN_ABS_DR2_KILL}
+
+
+def test_mean_abs_delta_r2_mixed_scores_wellposed_only():
+    """A degenerate point beside well-posed ones is excluded and NAMED, never scored."""
+    pts = [
+        _verdict_point(8, 0.10, 0.90),  # degenerate (n < d): a huge delta that must not enter
+        _verdict_point(100, 0.50, 0.51),
+        _verdict_point(200, 0.60, 0.58),
+    ]
+    out = GL.mean_abs_delta_r2(pts, d=16)
+    assert out["verdict"] == "h2b-pass"  # scored on the two well-posed points only
+    assert out["mean_abs_dr2"] == pytest.approx(0.015)
+    assert out["well_posedness"]["degenerate_excluded"] == ["verdict_n8"]
+    assert out["degenerate_per_point_delta_r2"] == pytest.approx([-0.80])
+    with pytest.raises(ValueError, match="must be positive"):
+        GL.mean_abs_delta_r2(pts, d=0)
 
 
 def test_companion_loader_reads_committed_artifacts():
@@ -666,11 +709,60 @@ def test_run_curve_driver_synthetic_store(tmp_path):
     assert [p["n_train"] for p in out["verdict_points"]] == [200, 400, 800]
     assert all(pp["pass"] for pp in out["parity_check"]["per_point"])
     assert out["h2b"]["mean_abs_dr2"] is not None
+    # well-posed at every point (n_grid > d = 16): a COMPUTED verdict, never undecidable
+    assert out["h2b"]["verdict"] != GL.UNDECIDABLE_UNDERDETERMINED
+    assert out["h2b"]["well_posedness"]["d"] == 16
+    assert all(r["well_posed"] for r in out["h2b"]["well_posedness"]["per_point"])
     for p in out["verdict_points"]:
         assert p["lambda_grid_edge"] is None  # C4: never an edge value
         assert p["corpus_mix"] == {"lmsys": p["n_train"]}
         assert "knn_retrieval" in p and "chance_at_k" in p["knn_retrieval"]
     assert out["regime"]["lambda_selection"] == GL.LAMBDA_SELECTION_PROTOCOL
+
+
+def test_run_curve_driver_underdetermined_grid_refuses_verdict(tmp_path):
+    """The production curve CLI at n_grid < d self-labels UNDECIDABLE (never a kill).
+
+    End-to-end twin of the unit regression: the realized smoke artifact
+    (n_grid=[96,192] vs d=3,584) emitted ``h2b-kill-candidate``; the same
+    driver on any under-determined grid must now emit the undecidable token
+    with the well-posedness block naming every excluded point.
+    """
+    X, Y, corpus, conv = _synth_store()
+    np.save(tmp_path / "x.npy", X)
+    np.save(tmp_path / "y.npy", Y)
+    np.savez(tmp_path / "meta.npz", corpus=corpus, conv_index=conv)
+    out_dir = tmp_path / "out"
+    rc = GL.main(
+        [
+            "curve",
+            "--x",
+            str(tmp_path / "x.npy"),
+            "--y",
+            str(tmp_path / "y.npy"),
+            "--row-meta",
+            str(tmp_path / "meta.npz"),
+            "--out",
+            str(out_dir),
+            "--dev",
+            "cpu",
+            "--n-grid",
+            "8,12",  # both < d = 16: estimator-degenerate by construction
+            "--eval-rows",
+            "300",
+            "--val-rows",
+            "200",
+            "--skip-companions",
+            "--smoke",
+        ]
+    )
+    assert rc == 0
+    out = json.loads((out_dir / "learning_curve.json").read_text())
+    assert out["h2b"]["verdict"] == GL.UNDECIDABLE_UNDERDETERMINED
+    assert out["h2b"]["mean_abs_dr2"] is None
+    wp = out["h2b"]["well_posedness"]
+    assert wp["d"] == 16
+    assert wp["degenerate_excluded"] == ["verdict_n8", "verdict_n12"]
 
 
 def test_import_check_mode():
