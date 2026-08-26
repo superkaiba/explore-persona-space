@@ -86,6 +86,28 @@ Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
   `^---(BEGIN|END) .*---$` collisions — a matching line inside
   SPEC/lens/body would corrupt the envelope strip.
 
+Three more fold-re-gate compose patterns (#2378 r5, 2026-08-25):
+- **Fold re-gates get a COMPOSER DELTA DIFF 4th envelope when the
+  settled->folded body diff is compact** (~40 KB at #2378 r5): diff the
+  last pre-fold set-body commit (the parked body) against the fold
+  commit, inline verbatim, and ATTEST the non-analyzer hunks — the
+  status-move rename header (`tasks/reviewing/...` ->
+  `tasks/followups_running/...`) and lifecycle frontmatter hunks
+  (`add-tag` -> `tags:` change) ride the span and would otherwise read
+  as delta-confinement violations. Extend the Step-4 semantic envelope
+  guard to 4 envelopes; the diff naturally contains the OLD status path
+  (`a/tasks/reviewing/...`), so stale-path sweeps must run on
+  envelope-STRIPPED text.
+- **A mid-cycle upstream SPEC.md edit is caught by the reuse recipe's
+  containment assert and repaired by re-inlining ONLY the SPEC span**
+  (between the `THE CLEAN-RESULT SPEC` banner and the `OUTPUT FORMAT`
+  banner) from the live canonical-main copy — no full rebuild; lens
+  sections 1-12+15 stay containment-asserted as usual.
+- **Status-folder path refresh is a required header replacement on fold
+  rounds**: the follow-up loop holds the task at `followups_running`,
+  so the r-1 base's `tasks/reviewing/<N>/` body+plan paths are dead —
+  re-derive via `task.py find` and replace both header lines.
+
 Two more delta/reconciler-round compose patterns (#1901 mlp-scaling-densify
 r2, 2026-08-25):
 - **Truncated verifier finding-lists get a composer recompute envelope**:
