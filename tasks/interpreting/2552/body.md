@@ -6,7 +6,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-24T20:18:15Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2476
 origin_prompt: 'I want to rerun their thing and then first see if our mapping predicts
   better the higher level things for our Matryoshka one. But I want to run one that
