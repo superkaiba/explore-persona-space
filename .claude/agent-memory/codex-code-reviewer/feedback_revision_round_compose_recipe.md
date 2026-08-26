@@ -2893,3 +2893,57 @@ header. Also: smoke-arch checker attestation runs BOTH modes; when
 sorted(ARMS)`, the driver-recompute arm is structurally unavailable — attest
 grammar as settled and hand SET-EQUALITY to Codex as the fallback arm with
 the members list verbatim.
+
+**FAIL+FAIL union fix round with a sync-only touch of a deferred-concern
+file + a marker RE-POST closure (#2564 FFR r2, 2026-08-25):** three
+wrinkles on the #2332-r2 union shape, all composed clean first-pass. (1)
+When one round commit is a BYTE-SYNC of a file carrying reconciler-DEFERRED
+concerns to origin/main (branch-copy staleness fix), attest byte-identity
+at compose time (`git show <tip>:<file>` vs `git show origin/main:<file>`,
+`diff -q`) and compose the on-next-touch arming as an ADJUDICATION with the
+sync-only framing plus a re-raise ceiling at each concern's OWN severity
+(status vocabulary ARMED-ADDRESSED / ARMED-NOT-ADDRESSED /
+NOT-ARMED-carried-forward) — never let a mechanical sync silently arm a
+FAIL. (2) When a prior-round marker-shape blocker was closed by a marker
+RE-POST (smoke-arch v3→v4 grammar fix), run the machine checker
+(`task.py check-smoke-arch-registry <N> --repo-root <WT>`) at compose time
+and attest rc=0 + verbatim output in the prompt: grammar half SETTLED,
+substance half stays Codex's; the un-ledgered marker-shape item gets a
+pseudo-id status line (`r1-claude-arm-registry-grammar`). (3) The
+tag-strip + blockquote treatment scales to TWO inlined prior verdicts:
+assert blockquoted `> CONCERN:: ` rows == the SUM of both verdicts' rows
+(3+6=9 here) and line-start rows == 1 (template grammar only); dynamic
+SHA arithmetic (`final == template + embeds`, embeds counted at run time)
+absorbs the impl marker carrying both round SHAs verbatim. Also: a
+compose-time parent-constant additivity grep over the range's +/− lines
+can hit a prose COMMENT naming the constant (`# pool sizes (2,778 ...)`)
+— attest it as a non-semantic hit and hand the hunk to Codex, rather than
+dropping or silently passing the additivity claim.
+
+**Reconciler-FAIL fix round where ALL upheld blockers were the twin's own +
+one twin mis-citation (#2588 r3, 2026-08-25):** the ruling inlines as the
+contract envelope (`---BEGIN BINDING RECONCILER RULING (round 2)---`; its
+"Consolidated must-fix list" = the acceptance criteria; its inner
+epm:review-reconcile tags stay verbatim — no extraction collision, but add
+the never-echo-any-marker-tag line). Three additions beyond the discharge
+shapes: (a) a CITATION-DISCIPLINE fence naming the twin's mis-read verbatim
+(which line pinned the CURRENT constant vs the sentinel-selected one) and
+requiring every Evidence field to QUOTE the matched line — "a finding
+resting on an unverified citation will be discarded"; (b) a three-way
+`deferred`-row preface: REJECTED (never re-raise) vs DOWNGRADED-NARROWED
+(the narrowed successor id carries the closure duty; the parent never
+re-opens), with `verified-open` rows explaining why blocker ids carry BOTH a
+round-2 and round-3 addressed row; (c) a split severity fence in the
+closure-ledger bracket — blocker NOT-ADDRESSED = substantive FAIL,
+ride-along-CONCERN NOT-ADDRESSED = CONCERN-row re-raise (the one sanctioned
+re-emit of a persisted id), UNLESS the addressed claim is provably FALSE
+(ordinary bar). Also hit live AGAIN (#2329-r6(a) class): the impl marker's
+own (a) diff-stat disagreed with git numstat in BOTH directions (+1,268/−56
+claimed vs +953/−37 real at the same range) — re-derive at compose time, put
+the truth in the HEAD block AND the Step 0.5 composer note with
+present-but-imperfect routing (at most CONCERNS). Implementer `(d)` eyeball
+items convert to REQUIRED adjudication tail lines in the ledger section
+(odd-sequence membership; judge-fallback prompts_path ordering residual);
+the fix-introduced hunt LEADS with the named precedent ("round 2's fixes
+introduced the odd-pass regen blocker") and pre-traces each new mechanism's
+break shapes without pre-resolving severity.

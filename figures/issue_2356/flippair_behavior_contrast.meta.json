@@ -1,0 +1,267 @@
+{
+  "commit": "919e2e4a+dirty",
+  "render_id": "69c76104bcac4d3b",
+  "git_commit": "919e2e4a3ac1d6b1a8caa5eafda5ef7affd6d7f2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/issue_2356/flippair_behavior_contrast.meta.json",
+    "figures/issue_2356/flippair_behavior_contrast.pdf",
+    "figures/issue_2356/flippair_behavior_contrast.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2054_paper_r2_figs.py",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2356_flippair_figures.py",
+  "created": "2026-08-25T22:35:19Z",
+  "figsize": [
+    10.5,
+    4.3
+  ],
+  "points": [
+    {
+      "category": "Behavior differs\n(one refused, one complied)",
+      "Median distance between the pair's context vectors": 48.778528384865204,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Same behavior\n(both refused)",
+      "Median distance between the pair's context vectors": 31.402503459608283,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Same behavior\n(both complied)",
+      "Median distance between the pair's context vectors": 29.515165279772884,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Median distance between the pair's context vectors": 44.8475015136091,
+      "series": "Prompts from unrelated base queries",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Median distance between the pair's context vectors": 44.8475015136091,
+      "series": "Prompts from unrelated base queries",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.17,
+      "Two-alternative accuracy": 0.9178690344062154,
+      "error": 0.01744285118698713,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.83,
+      "Two-alternative accuracy": 0.7223035627135188,
+      "error": 0.013640522764931828,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.83,
+      "Two-alternative accuracy": 0.7262295081967213,
+      "error": 0.03371679996609278,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.17,
+      "Two-alternative accuracy": 0.7863485016648168,
+      "error": 0.0237970857223736,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.17,
+      "Two-alternative accuracy": 0.7337725719863348,
+      "error": 0.014526917005025786,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.17,
+      "Two-alternative accuracy": 0.6377049180327868,
+      "error": 0.030842037935213118,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.17,
+      "Two-alternative accuracy": 0.8997734671870848,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.83,
+      "Two-alternative accuracy": 0.7087965037186682,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.83,
+      "Two-alternative accuracy": 0.6912875610128126,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.17,
+      "Two-alternative accuracy": 0.9346591695610591,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.83,
+      "Two-alternative accuracy": 0.7360775492485319,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.83,
+      "Two-alternative accuracy": 0.7587211609449982,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.17,
+      "Two-alternative accuracy": 0.7627116353641777,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.17,
+      "Two-alternative accuracy": 0.7190926095980726,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.17,
+      "Two-alternative accuracy": 0.6080135888501742,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.17,
+      "Two-alternative accuracy": 0.8103058068089249,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.17,
+      "Two-alternative accuracy": 0.7481464436081242,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.17,
+      "Two-alternative accuracy": 0.6696976647206004,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Two-alternative accuracy": 0.5,
+      "series": "Chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Two-alternative accuracy": 0.5,
+      "series": "Chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 25,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How far apart are the two prompts?",
+        "ylabel": "Median distance between the pair's context vectors",
+        "legend_labels": [
+          "Prompts from unrelated base queries"
+        ],
+        "xticklabels": [
+          "Behavior differs\n(one refused, one complied)",
+          "Same behavior\n(both refused)",
+          "Same behavior\n(both complied)"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "Does the map tell the pair apart?",
+        "ylabel": "Two-alternative accuracy",
+        "legend_labels": [
+          "Chance (0.5)",
+          "Fitted map",
+          "Identity + bias"
+        ],
+        "xticklabels": [
+          "Behavior differs\n(one refused, one complied)",
+          "Same behavior\n(both refused)",
+          "Same behavior\n(both complied)"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Prompts from unrelated base queries",
+      "Chance (0.5)",
+      "Fitted map",
+      "Identity + bias"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

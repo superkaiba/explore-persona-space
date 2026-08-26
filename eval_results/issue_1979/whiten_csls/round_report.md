@@ -408,6 +408,95 @@ model from unresponsive to fully responsive to in-context demonstrations of it.
 The reverse does not hold — ICL-trained arms leak +0.00 to +0.26 elsewhere.
 This asymmetry is un-analyzed and is not mentioned in any promoted body.
 
+## Item 6 — racing the source-anchored candidates (all 18 arms)
+
+Two candidates anchor on the arm's OWN SOURCE (trained) prefix rather than on
+the training-row centroid every committed candidate uses:
+
+- `p2_ps` = cos(V[target], V[source]) — real source vs real target answers.
+  Computed by the committed race and persisted per arm, never raced.
+- `p3a_ps` = cos(M0·ctx[target], M0·ctx[source]) — mapped source vs mapped
+  target answers. Introduced here.
+
+Raced against the committed 12-candidate set under the committed discipline:
+K = 14 content / 12 marker, per-arm permutation band as the signed max over the
+FULL raced set (20,000 draws), 2,000-draw prefix-resample bootstrap with the
+winner re-selected inside every draw.
+
+**Content (12 arms) — the committed champion is unmoved:**
+
+| candidate | median ρ | clears | winner prob |
+|---|---|---|---|
+| `p3b` (committed champion) | **+0.410** | 7/12 | **0.795** |
+| `p10` | +0.325 | 6/12 | 0.136 |
+| `p2` | +0.301 | 5/12 | 0.015 |
+| `p3a_ps` | +0.195 | 1/12 | 0.000 |
+| `p2_ps` | +0.194 | 2/12 | 0.000 |
+
+**Marker (6 arms) — the champion changes:**
+
+| candidate | median ρ | clears | winner prob |
+|---|---|---|---|
+| `p2_ps` | **+0.480** | 3/6 | **0.582** |
+| `p3a_ps` | +0.475 | 4/6 | 0.259 |
+| `p9` (committed marker champion) | +0.428 | 4/6 | 0.049 |
+| `p3b` (content champion) | −0.011 | 0/6 | 0.000 |
+
+**This WITHDRAWS a generalization made from a 3-arm read.** On the three
+positive-only arms shown in `c5_po_source_target.png`, `p2_ps` read +0.438 /
++0.573 / +0.639 and cleared 3 of 3. Across all 12 content arms the median
+collapses to +0.194 and it clears 2. Those three arms were not representative
+of the content family; the caveat recorded with them was correct and the full
+race falsifies the extrapolation.
+
+**What stands.** Re-anchoring the same map on the source prefix moves the
+mapped read on the MARKER family from `p3a` −0.017 median / 1-of-6 clears to
+`p3a_ps` +0.475 / 4-of-6, and the content champion `p3b` still reads −0.011
+there. So the content-to-marker non-transfer of the trained-on-anchored
+through-map read is real, and a source-anchored read does predict marker
+leakage. This is marker-family-scoped, NOT a general anchor artifact.
+
+Scope limits: winner probability is the PRIMARY prefix-resample family only
+(the committed run used three; the other two need per-query data the banked
+frames do not carry). `p2_ps` at 0.582 is marginal by this project's own
+standard — the committed run called `p9` at 0.558 "replication of the race
+structure rather than a standalone second verdict." Six marker arms share one
+recipe class and one panel, so these are correlated confirmations.
+
+## Item 7 — the same race restricted to the positive-only regime
+
+Positive-only is 4 arms: `cas-pers-po`, `imp-pers-po`, `syc-pers-po` (content)
+and `mk-pers-po` (marker). At that n the across-arm median hides the structure,
+so the per-arm values are the read (band ≈ 0.39 on every arm):
+
+| arm | `p3b` | `p2` | `p10` | `p9` | `p2_ps` | `p3a_ps` |
+|---|---|---|---|---|---|---|
+| cas-pers-po | **+0.778** | +0.708 | +0.642 | +0.413 | +0.438 | +0.351 |
+| imp-pers-po | +0.727 | **+0.742** | +0.691 | +0.646 | +0.573 | +0.524 |
+| syc-pers-po | −0.045 | −0.006 | +0.050 | −0.019 | −0.020 | −0.029 |
+| mk-pers-po | +0.079 | +0.576 | +0.535 | +0.535 | **+0.639** | +0.495 |
+
+1. **`syc-pers-po` is dead on every candidate** (−0.045 to +0.050) — the
+   zero-induced-dose finding of Item 3 surfacing again. Nothing predicts a DV
+   that never moved, so positive-only CONTENT is 2 informative arms, not 3.
+2. **On those two arms the committed champion holds**: `p3b` wins casual
+   (+0.778), `p2` edges impoliteness (+0.742 vs +0.727). The source-anchored
+   candidates clear both but rank 4th–5th. Restricting to positive-only does
+   NOT rescue the content generalization withdrawn in Item 6.
+3. **The marker arm inverts**: `p3b` collapses to +0.079 (below band) while
+   `p2_ps` is highest at +0.639 — same direction as the all-18 marker race, so
+   this is not a regime artifact.
+4. **The mapped source→target candidate loses to its real twin on all four
+   arms** (+0.351 vs +0.438, +0.524 vs +0.573, −0.029 vs −0.020, +0.495 vs
+   +0.639). Pushing both sides through M0 never helps.
+
+Power caveat, binding: 2 informative content arms and 1 marker arm. No champion
+claim is supportable at this n — the all-18 race stays the better-powered read,
+and the marker winner probability here is a WITHIN-arm prefix-resample
+stability read on a single arm, not an across-arm verdict. What this cut does
+establish is that the positive-only regime behaves like the full set rather
+than differently from it.
+
 **Artifacts.** `sweep.json` (528 records + reproduction check + config);
 `figures/issue_1979/c5_whiten_csls_sweep.{png,pdf}` + meta sidecar. Scripts:
 `scripts/issue1979_stage_whitencsls.py`, `scripts/issue1979_whiten_csls_sweep.py`,

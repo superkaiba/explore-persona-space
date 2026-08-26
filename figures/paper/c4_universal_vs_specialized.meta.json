@@ -1,23 +1,14 @@
 {
-  "commit": "09bf0809+dirty",
-  "render_id": "a15bbb7dbfc440b1",
-  "git_commit": "09bf0809523be4ada18ba13d41035c5d1145b011",
+  "commit": "ba127f5a+dirty",
+  "render_id": "46a0557767e64202",
+  "git_commit": "ba127f5a36624af3b4e1f19cfaf6a2f71e8262a9",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/issue_2356/flippair_2afc.meta.json",
-    "figures/issue_2356/flippair_2afc.pdf",
-    "figures/issue_2356/flippair_2afc.png",
-    "figures/paper/c1_stage_ladder_arms.meta.json",
-    "figures/paper/c1_stage_ladder_arms.pdf",
-    "figures/paper/c1_stage_ladder_arms.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
-    "scripts/issue1902_figures.py",
     "scripts/issue2054_paper_r2_figs.py",
-    "scripts/issue2356_flippair_2afc.py",
     "scripts/issue2356_flippair_figures.py",
     "scripts/issue2474_n1m_map.py",
     "tasks/completed/2214/body.md",
@@ -35,7 +26,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2054_paper_r2_figs.py",
-  "created": "2026-08-25T20:11:25Z",
+  "created": "2026-08-25T23:20:29Z",
   "figsize": [
     5.5,
     4.4
@@ -85,7 +76,7 @@
     },
     {
       "x": 0.9,
-      "y": 0.2583914084983648,
+      "y": 0.25839140849836434,
       "_kind": "bar",
       "_group": 1
     },
@@ -121,7 +112,7 @@
     },
     {
       "x": 1.1,
-      "y": null,
+      "y": 0.30661821076508505,
       "_kind": "bar",
       "_group": 2
     },
@@ -157,7 +148,7 @@
     },
     {
       "x": 1.3,
-      "y": null,
+      "y": 0.32463829955492235,
       "_kind": "bar",
       "_group": 3
     },
@@ -235,7 +226,7 @@
           "trained on this speaker alone",
           "trained on everything",
           "trained on everything + constant shift",
-          "trained on everything + global rescaling",
+          "trained on everything + shift and rescaling",
           "identity + bias baseline"
         ],
         "yticklabels": [
@@ -273,7 +264,7 @@
       "trained on this speaker alone",
       "trained on everything",
       "trained on everything + constant shift",
-      "trained on everything + global rescaling"
+      "trained on everything + shift and rescaling"
     ]
   },
   "formats_written": [

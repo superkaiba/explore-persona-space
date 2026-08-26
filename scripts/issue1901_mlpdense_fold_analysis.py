@@ -21,8 +21,16 @@ import hashlib
 import json
 from pathlib import Path
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps BEFORE any heavy import (#847; even credential-free
+# analysis/plot scripts — numpy's BLAS pool freezes at import).
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+from explore_persona_space.orchestrate.hub import retry_transient  # noqa: E402
 
 from explore_persona_space.orchestrate.hub import retry_transient
 

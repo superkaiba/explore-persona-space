@@ -4,7 +4,6 @@ title: Held-out variance explained and retrieval accuracy dissociate in both dir
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-07-30T23:49:53Z'
 has_clean_result: true
 origin_prompt: 'Run this in background with happy coder:

@@ -1,0 +1,180 @@
+{
+  "commit": "8265bcd7+dirty",
+  "render_id": "185ffa1aca32480f",
+  "git_commit": "8265bcd75f781d8e879e924de60063e536e58dcf",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/fig_expl_cross_family_scatter.meta.json",
+    "figures/issue_2564/fig_expl_cross_family_scatter.pdf",
+    "figures/issue_2564/fig_expl_cross_family_scatter.png",
+    "figures/issue_2564/fig_expl_edit_dose.meta.json",
+    "figures/issue_2564/fig_expl_edit_dose.pdf",
+    "figures/issue_2564/fig_expl_edit_dose.png",
+    "figures/issue_2564/fig_expl_identity_heatmaps.meta.json",
+    "figures/issue_2564/fig_expl_identity_heatmaps.pdf",
+    "figures/issue_2564/fig_expl_identity_heatmaps.png",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.meta.json",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.pdf",
+    "figures/issue_2564/fig_expl_install_vs_swap_violin.png",
+    "figures/issue_2564/fig_expl_manip_fire_rates.meta.json",
+    "figures/issue_2564/fig_expl_manip_fire_rates.pdf",
+    "figures/issue_2564/fig_expl_manip_fire_rates.png",
+    "figures/issue_2564/fig_expl_norm_scatter.meta.json",
+    "figures/issue_2564/fig_expl_norm_scatter.pdf",
+    "figures/issue_2564/fig_expl_norm_scatter.png",
+    "figures/issue_2564/fig_expl_retrieval_acc.meta.json",
+    "figures/issue_2564/fig_expl_retrieval_acc.pdf",
+    "figures/issue_2564/fig_expl_retrieval_acc.png",
+    "figures/issue_2564/fig_hero_axis_profile.meta.json",
+    "figures/issue_2564/fig_hero_axis_profile.pdf",
+    "figures/issue_2564/fig_hero_axis_profile.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-25T20:00:29Z",
+  "figsize": [
+    17.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 6.0,
+      "answer-text shift norm (embedding space)": 0.5157229070391982,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "answer-text shift norm (embedding space)": 0.5089607023079991,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "answer-text shift norm (embedding space)": 0.4911916838792803,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "answer-text shift norm (embedding space)": 0.34046209650682047,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "answer-text shift norm (embedding space)": 0.35747277546305856,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "answer-text shift norm (embedding space)": 0.38385497203809377,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.28738940249825623,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.31322557341205853,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.28302723647872063,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.27873659291816616,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "answer-text shift norm (embedding space)": 0.35685489098443357,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.3746291131949106,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.3921757719768538,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.3550765645395674,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "answer-text shift norm (embedding space)": 0.41490564344217945,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Text-space shift: value flips vs paraphrases",
+        "ylabel": "answer-text shift norm (embedding space)",
+        "xticklabels": [
+          "content constraint\nvalue flip",
+          "content constraint\nparaphrase",
+          "output format\nvalue flip",
+          "output format\nparaphrase",
+          "hedging\nvalue flip",
+          "hedging\nparaphrase",
+          "marker word\nvalue flip",
+          "marker word\nparaphrase",
+          "persona\nvalue flip",
+          "persona\nparaphrase",
+          "tone\nvalue flip",
+          "tone\nparaphrase",
+          "stance\nvalue flip",
+          "stance\nparaphrase",
+          "injected name\nvalue flip",
+          "injected name\nparaphrase",
+          "user description\nvalue flip",
+          "user description\nparaphrase",
+          "query content\nvalue flip",
+          "query form\nvalue flip"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

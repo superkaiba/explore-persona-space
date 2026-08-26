@@ -47,4 +47,26 @@ standard-rubric order, satisfy BOTH: keep the standard tri-state
 flag the widening in the return. Reserve literal binary compliance for briefs
 that pin the enum AS the extraction contract (the #2228 shape: an explicit
 output-format block). Either way the return names the divergence.
+
+**Second arm — SUMMARY-style enum vs an explicit pin (#2588 r1, 2026-08-25):**
+the brief asked for "a verdict line `VERDICT: PASS` or `VERDICT: FAIL`" but
+ALSO ordered "inline the standard code-review rubric as usual" — the standard
+contract is tri-state (PASS+CONCERNS auto-advance; Step 5c parses
+`**Verdict:**`). When the enum narrowing reads as a shorthand SUMMARY of the
+ask (no explicit output-contract/extraction framing) and coexists with a
+standard-rubric order, satisfy BOTH: keep the standard tri-state
+`**Verdict:**` field AND add the brief's literal grep-able line
+(`VERDICT: PASS | CONCERNS | FAIL`, required to agree with the field), then
+flag the widening in the return. Reserve literal binary compliance for briefs
+that pin the enum AS the extraction contract (the #2228 shape: an explicit
+output-format block). Either way the return names the divergence.
+
+**Recurrence with a RELABELED middle value + same-task precedent (#2588 r2,
+2026-08-25):** the r2 dispatch asked for "the tri-state `**Verdict:**`
+(PASS / PASS+CONCERNS / FAIL)". When the SAME task's r1 marker already
+established a proven extraction literal (`VERDICT: PASS | CONCERNS | FAIL`,
+extracted successfully by the orchestrator at r1), weight that same-task
+precedent over the brief's paraphrase: compose the r1-proven enum (CONCERNS,
+not PASS+CONCERNS) and flag the relabel in the return. A mid-task literal
+change is the extraction hazard; a paraphrase in dispatch prose is not a pin.
 Related: [[revision-round compose recipe]], [[concerns-machine-rows-2326]].
