@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2598,
+  "highest_id": 2600,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12322,6 +12322,13 @@
       "status": "proposed",
       "title": "workflow_lint: verify test-evidence and diff-stat claims in epm:experiment-implementation markers resolve to real artifacts"
     },
+    "2599": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2599",
+      "status": "proposed",
+      "title": "poll_pipeline.py state cache keyed on issue alone \u2014 concurrent per-arm pollers clobber each other's state (idle-escalation fails open)"
+    },
     "26": {
       "has_clean_result": false,
       "kind": "infra",
@@ -12335,6 +12342,13 @@
       "path": "tasks/archived/260",
       "status": "archived",
       "title": "Finetune model on multi turn conversations and see if that increases leakage"
+    },
+    "2600": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2600",
+      "status": "proposed",
+      "title": "poll_pipeline.py log globs miss /workspace/issue<N>/logs/ out-root layout \u2014 worker progress invisible, stall detection loses its log signal"
     },
     "261": {
       "has_clean_result": false,
