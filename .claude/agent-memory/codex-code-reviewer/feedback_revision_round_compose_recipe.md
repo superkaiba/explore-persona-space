@@ -2947,3 +2947,16 @@ items convert to REQUIRED adjudication tail lines in the ledger section
 the fix-introduced hunt LEADS with the named precedent ("round 2's fixes
 introduced the odd-pass regen blocker") and pre-traces each new mechanism's
 break shapes without pre-resolving severity.
+
+**Reconstruct-from-parts seam duplication (#2607 r3, 2026-08-26):** when the
+donor is split at an anchor token (`ce = donor.find('\n\nYou MUST emit your
+verdict')`; `S4 = donor[ce+2:]`), S4 ALREADY BEGINS with the anchor text — a
+re-concatenation that also inserts the anchor literal
+(`S3 + '\n\nYou MUST emit your verdict' + S4`) ships the phrase DOUBLED
+("...your verdictYou MUST emit your verdict in EXACTLY..."), and NO
+tag/envelope/placeholder count assert catches it (all passed on the corrupted
+prompt; a manual `grep 'You MUST emit your verdict'` did). Rule: after every
+parts rebuild, assert each section-boundary anchor phrase appears EXACTLY once
+in the final prompt (`prompt.count('You MUST emit your verdict') == 1`), same
+as the tag arithmetic. Join with a bare separator (`S3 + '\n\n' + S4`), never
+by re-typing the anchor.
