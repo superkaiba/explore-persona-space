@@ -37,9 +37,14 @@ constant SHIFT and a scalar global RESCALING, both read from the banked
 specialization ladder. They separate a pooled map that genuinely misses this
 speaker from one that merely sits mis-calibrated against it -- across the five
 clean speakers a single constant closes 45-80% of the pooled-to-specialized
-gap (median 62%). The two rungs extend the pooled map INDEPENDENTLY, not
-cumulatively, so "+ global rescaling" is a gain alone rather than a gain on
-top of the shift. Its y-axis is broken: the
+gap (median 62%). The rungs are CUMULATIVE, as in plot 6: the gain rung is
+built as `y_bar + alpha * (z - z_bar)` (issue2054_pool_rungs), i.e. it
+recentres onto the target answer mean AND applies a global gain, so it
+contains the shift. That is why the two bars sit near-identical -- both
+already carry the shift and alpha adds little on top of it. (The
+specialization ladder's "each extend the POOLED map independently" line
+refers to not stacking rotation/rank-k on the gain rung, NOT to the gain
+rung skipping the recentre.) Its y-axis is broken: the
 baseline runs down to -1.51 while every bar sits between 0.09 and 0.58, so one
 linear axis would spend three quarters of its height on the empty space between
 them.
@@ -49,13 +54,18 @@ drawn as a dotted line: the floor a map with no real context-answer pairing
 reaches.
 
 The assistant plain-text instruct bars are plotted at their cap-excluded refits
-rather than their raw values, in BOTH plots and on BOTH of Plot 2's arms. The
-plain-text render carries no end-of-turn token, so 42.5% of that cell's own
+rather than their raw values, in BOTH plots and on ALL FOUR of Plot 2's arms.
+The plain-text render carries no end-of-turn token, so 42.5% of that cell's own
 generations ran to the 4,096-token cap; #2054 banked the own-map exclusion
 refit at 0.390 against the raw 0.209, with a random-removal control at matched
 n moving it the other way (0.195), and the pooled companion refit is 0.258
-against the raw 0.091. A regeneration at the full context window is in flight
-and will replace both substituted values. The substitution is disclosed in the
+against the raw 0.091. The two correction rungs were refit on the same
+cap-excluded rows (2026-08-25, pooled over the banked 56 cells): 0.307 for the
+shift and 0.325 for the shift-and-rescaling, so that speaker group is now drawn
+complete and entirely on kept rows. Every all-rows read of that refit reproduces
+its banked ladder value to machine precision, which is the gate the plotter
+enforces before drawing any of the three. A regeneration at the full context
+window is in flight and will replace all four substituted values. The substitution is disclosed in the
 figures' captions, per Thomas's call (2026-08-25) to draw it as a plain bar
 rather than mark it on the canvas.
 
@@ -168,10 +178,11 @@ def build_series(cells: dict[tuple[str, str, str], dict], loco: dict) -> dict:
             series[model]["ceiling"].append(unit["ceiling_r2"])
             series[model]["pooled"].append(unit["r2"]["pooled"])
             # The two minimal per-cell corrections of the specialization
-            # ladder. Each extends the POOLED map INDEPENDENTLY (see
-            # issue2054_specialization_ladder's docstring): "+gain" is a
-            # scalar gain ALONE, not a gain on top of the bias refit, so the
-            # two are siblings rather than a cumulative ladder.
+            # ladder, CUMULATIVE: `bias` is z + mean(y - z) (shift only),
+            # while `gain` is y_bar + alpha * (z - z_bar) -- a recentre onto
+            # the target answer mean PLUS a global gain, so it already
+            # contains the shift (issue2054_pool_rungs, the same form as
+            # #1902's scale_alpha). Hence the two bars sit near-identical.
             series[model]["bias"].append(unit["r2"]["bias"])
             series[model]["gain"].append(unit["r2"]["gain"])
             series[model]["identity"].append(unit["aux_r2"]["identity_cell"])
@@ -192,25 +203,47 @@ def _substituted_indices() -> list[int]:
     ]
 
 
-def load_cap_pooled() -> dict[tuple[str, str, str], float]:
-    """The pooled cap-excluded read, refused unless its validation gate passed.
+# The refit reads keyed per rung, and the artifact field each one is read from.
+CAP_RUNG_FIELD = {
+    "pooled": "r2_kept_mean",
+    "bias": "r2_kept_bias_mean",
+    "gain": "r2_kept_gain_mean",
+}
 
-    The gate recomputes the ALL-rows pooled read through the same code path and
-    checks it against the banked ladder value. If that does not reproduce, the
-    restricted-row number from the same fit is not trustworthy either, so this
-    raises rather than plotting it.
+
+def load_cap_rungs() -> dict[str, dict[tuple[str, str, str], float]]:
+    """The cap-excluded pooled read and its two correction rungs, one table per
+    rung, each refused unless ITS OWN validation gate passed.
+
+    The gate recomputes every ALL-rows read through the same code path and
+    checks it against the banked ladder value for this cell. If a rung does not
+    reproduce, the restricted-row number from the same fit is not trustworthy
+    either, so this raises rather than plotting it. Gating per rung rather than
+    on one aggregate flag matters: a rung implementation can drift from
+    ``pool_rungs`` while the pooled read still reproduces exactly.
     """
     payload = json.loads(CAP_POOLED_ARTIFACT.read_text())
     result = payload["result"]
     validation = result["validation"]
-    if not validation["passed"]:
-        raise RuntimeError(
-            f"{CAP_POOLED_ARTIFACT}: validation gate did not pass "
-            f"(abs_delta {validation['abs_delta']:.3e} against tol {validation['tol']}) — "
-            "the refit does not reproduce the banked all-rows read, so its "
-            "cap-excluded value is not plottable"
-        )
-    return {("assistant", "bare_text", "instruct"): float(result["r2_kept_mean"])}
+    per_rung = {row["rung"]: row for row in validation["per_rung"]}
+    tables: dict[str, dict[tuple[str, str, str], float]] = {}
+    for rung, field in CAP_RUNG_FIELD.items():
+        row = per_rung.get(rung)
+        if row is None:
+            raise RuntimeError(
+                f"{CAP_POOLED_ARTIFACT}: no validation row for rung {rung!r} — "
+                "the artifact predates the correction-rung refit and cannot "
+                "supply a gated cap-excluded value for it"
+            )
+        if not row["passed"]:
+            raise RuntimeError(
+                f"{CAP_POOLED_ARTIFACT}: validation gate did not pass for rung "
+                f"{rung!r} (abs_delta {row['abs_delta']:.3e} against tol "
+                f"{validation['tol']}) — the refit does not reproduce the banked "
+                "all-rows read, so its cap-excluded value is not plottable"
+            )
+        tables[rung] = {("assistant", "bare_text", "instruct"): float(result[field])}
+    return tables
 
 
 def _apply_cap_excluded(
@@ -227,13 +260,13 @@ def _apply_cap_excluded(
 def _blank_at(values: list[float], indices: list[int]) -> list[float]:
     """NaN out the cap-substituted positions so no bar is drawn there.
 
-    The correction rungs are banked ONLY on the raw (cap-contaminated) rows
-    for the one truncation-affected cell, while that cell's pooled and own-map
-    bars are plotted at their cap-excluded refits. Drawing a raw correction
-    beside a cap-excluded pooled bar would put two different row sets in one
-    speaker group -- the very thing the substitution exists to prevent -- and
-    would read as a correction that LOWERS the map. Blank is the honest render
-    until a matching cap-excluded correction refit is computed.
+    No arm currently reaches this: all four of Plot 2's arms carry a
+    cap-excluded table. It is kept as the guard for any arm added later without
+    one. Drawing a raw value beside a cap-excluded bar would put two different
+    row sets in one speaker group -- the very thing the substitution exists to
+    prevent -- and for a correction rung would read as a correction that LOWERS
+    the map. Blank is the honest render until a matching cap-excluded refit
+    exists.
     """
     out = list(values)
     for idx in indices:
@@ -329,17 +362,28 @@ def figure_universal(series: dict, out_dir: Path) -> None:
     width = 0.20
     model = "instruct"
     substituted = _substituted_indices()
-    cap_pooled = load_cap_pooled()
+    cap_rungs = load_cap_rungs()
 
     # The pooled arm and its two minimal corrections share one hue (one colour
     # = one meaning: the map trained on everything), lightening as a correction
-    # is added. A `None` table marks an arm with no cap-excluded refit: it is
-    # left blank at the substituted position rather than drawn on other rows.
+    # is added. Every arm now carries a cap-excluded table, so the truncation-
+    # affected speaker group is drawn complete and entirely on kept rows; a
+    # `None` table would blank an arm there rather than draw it on other rows.
     arms = [
         ("ceiling", "trained on this speaker alone", CAP_EXCLUDED, paper_color("instruct")),
-        ("pooled", "trained on everything", cap_pooled, paper_color("oracle_answer")),
-        ("bias", "trained on everything + constant shift", None, "#DDA0C0"),
-        ("gain", "trained on everything + global rescaling", None, "#EDC9DC"),
+        ("pooled", "trained on everything", cap_rungs["pooled"], paper_color("oracle_answer")),
+        (
+            "bias",
+            "trained on everything + constant shift",
+            cap_rungs["bias"],
+            "#DDA0C0",
+        ),
+        (
+            "gain",
+            "trained on everything + shift and rescaling",
+            cap_rungs["gain"],
+            "#EDC9DC",
+        ),
     ]
 
     fig, (ax_bar, ax_id) = plt.subplots(
