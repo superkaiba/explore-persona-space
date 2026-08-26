@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2585,
+  "highest_id": 2595,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10360,8 +10360,8 @@
     "2340": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2340",
-      "status": "reviewing",
+      "path": "tasks/completed/2340",
+      "status": "completed",
       "title": "verify_task_body: footer check for SHA-pinned GitHub links on named code/artifacts"
     },
     "2341": {
@@ -10374,8 +10374,8 @@
     "2342": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2342",
-      "status": "running",
+      "path": "tasks/completed/2342",
+      "status": "completed",
       "title": "workflow.yaml markers registry: reconcile marker kinds mismatch with /issue review-loop practice"
     },
     "2343": {
@@ -10445,8 +10445,8 @@
     "2351": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2351",
-      "status": "proposed",
+      "path": "tasks/running/2351",
+      "status": "running",
       "title": "workflow_lint _hf_routing_file_errors false-positives on HF-call text inside docstrings"
     },
     "2352": {
@@ -11962,11 +11962,11 @@
     },
     "2552": {
       "goal": "Determine (1, exploratory) how the context\u2192answer map's per-feature predictability of turn-averaged SAE features ranks across the five Der et al. (arXiv 2606.28548) schema categories (content/form/voice/function/meta) on the #2476 matryoshka SAEs (k=100 + k=200) and on a faithful flat replication of Der et al.'s recipe; (2) whether that replication (BatchTopK 32,768/k=128 on banked layer-19 turn means + their full judged evaluation, judge claude-sonnet-4-6 no-prefill) reproduces their discrimination-vs-coverage inversion; and (3) which feature properties (schema categories + the #1482-inspired turn-grain covariate battery) explain per-feature map predictability, via a forward-selection partial-out ladder as the headline figure.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2552",
-      "status": "running",
-      "title": "Turn-averaged SAE feature predictability: Der et al. replication, category-level map reads, and a partialed covariate ladder"
+      "path": "tasks/reviewing/2552",
+      "status": "reviewing",
+      "title": "Firing activity dominates per-feature map predictability of turn-averaged SAE features, with schema category the strongest surviving content-level covariate (MODERATE confidence)"
     },
     "2553": {
       "has_clean_result": false,
@@ -12056,8 +12056,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2564",
-      "status": "interpreting",
+      "path": "tasks/followups_running/2564",
+      "status": "followups_running",
       "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis that passed its compliance check, beating identity pass-through throughout (MODERATE confidence)"
     },
     "2565": {
@@ -12183,8 +12183,8 @@
     "2580": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2580",
-      "status": "running",
+      "path": "tasks/completed/2580",
+      "status": "completed",
       "title": "gotchas.md: MooseFS errno-116 partial install passes uv audit while import fails (probe-by-import + UV_LINK_MODE=copy recipe)"
     },
     "2581": {
@@ -12211,8 +12211,8 @@
     "2584": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2584",
-      "status": "running",
+      "path": "tasks/reviewing/2584",
+      "status": "reviewing",
       "title": "Clear 3 live-hf-retry-routing errors making no-flags workflow_lint FAIL on clean main (Step 9c gate red fleet-wide)"
     },
     "2585": {
@@ -12222,12 +12222,84 @@
       "status": "proposed",
       "title": "smoke-blind-spots.md: add row-index/data-reach as a fourth coverage-narrowing mechanism"
     },
+    "2586": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2586",
+      "status": "proposed",
+      "title": "Clear pre-existing red test_no_new_torch_before_dotenv_vm_entrypoints on main (4 non-grandfathered violators red the Step 9c gate for every scripts/*.py diff)"
+    },
+    "2587": {
+      "goal": "On Qwen/Qwen3.5-9B with thinking disabled, replicate the #2564 minimal-pair discrimination battery end to end (fresh 20-50k-context context-to-answer ridge map fit with layer sweep; full 984-context bank + the answer_language and query_content_oneword pilot axes at K=10 draws; parent battery reads with the new arms) and compare the per-axis discrimination profile against the Qwen2.5-7B-Instruct parent. Pod-side env upgrade only (transformers/vLLM with qwen3_5 support in the pod venv; repo pins untouched); compat smoke gate before any production wave; thinking-off enforced and asserted in every generation and capture.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2587",
+      "status": "running",
+      "title": "Replicate the #2564 minimal-pair battery on Qwen3.5-9B (thinking disabled)"
+    },
+    "2588": {
+      "goal": "Determine whether linear context-to-answer mapping quality (held-out kNN retrieval primary, R^2 + identity+bias secondary) increases with general model capability (Artificial Analysis Intelligence Index), across a cross-family open-weight panel (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting with the end-of-CoT state as map input), on the generic mapping corpus and GPQA Diamond.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/2588",
+      "status": "approved",
+      "title": "Context-to-answer mapping quality vs general model capability (cross-family ladder, thinking on/off)"
+    },
+    "2589": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2589",
+      "status": "archived",
+      "title": "workflow-fix: Codex review-site dispatches run write-enabled despite declaring read-only"
+    },
     "259": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/259",
       "status": "on_hold",
       "title": "Finetune model to predict really long completions and measure leakage"
+    },
+    "2590": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2590",
+      "status": "running",
+      "title": "verify_plan.py: dry-run plan-embedded jq probes; gate contingent judge waves; require regen-time max_model_len re-pin"
+    },
+    "2591": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2591",
+      "status": "proposed",
+      "title": "arm-registry: state members<->row-key identity, sharpen the mismatch refusal, widen recompute to int-keyed registries"
+    },
+    "2592": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2592",
+      "status": "proposed",
+      "title": "workflow-fix: step9c compare's systemic-breakage refusal advises 'refresh first' when the cause is a dirty root, where refresh cannot work"
+    },
+    "2593": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2593",
+      "status": "proposed",
+      "title": "cron_uv_cache_prune can prune the uvx env under long-running MCP servers (arXiv MCP wedged fleet-wide with [Errno 2])"
+    },
+    "2594": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2594",
+      "status": "proposed",
+      "title": "Pre-split duty: criterion-to-producer traceability, so a registered success-criterion input cannot reach awaiting_promotion with no producer"
+    },
+    "2595": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2595",
+      "status": "proposed",
+      "title": "verify_task_body: caption range-claim (N-M pairs per group) reconciliation coverage"
     },
     "26": {
       "has_clean_result": false,

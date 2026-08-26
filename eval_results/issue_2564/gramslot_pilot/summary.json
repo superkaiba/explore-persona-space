@@ -1,0 +1,246 @@
+{
+  "issue": 2564,
+  "n_contexts": 96,
+  "n_pairs": 72,
+  "n_pairs_by_class": {
+    "query_oneword_subject": 24,
+    "query_oneword_object": 24,
+    "query_oneword_verb": 24
+  },
+  "n_frames": 24,
+  "k_draws": 10,
+  "layer_used": 19,
+  "arms": [
+    "arm_779ce",
+    "arm_1738ce",
+    "arm_iddelta"
+  ],
+  "ridge_paths": {
+    "arm_779ce": "issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+    "arm_1738ce": "issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt"
+  },
+  "cos_median_by_axis_arm": {
+    "arm_779ce": {
+      "query_oneword_subject": 0.5275429798564565,
+      "query_oneword_object": 0.5272631787736806,
+      "query_oneword_verb": 0.4068021335957139
+    },
+    "arm_1738ce": {
+      "query_oneword_subject": 0.49805279018116466,
+      "query_oneword_object": 0.5069825999142864,
+      "query_oneword_verb": 0.3785757667106562
+    },
+    "arm_iddelta": {
+      "query_oneword_subject": 0.2823301124370423,
+      "query_oneword_object": 0.2591967019216185,
+      "query_oneword_verb": 0.21560384029269025
+    }
+  },
+  "norm_ratio_median_by_axis_arm": {
+    "arm_779ce": {
+      "query_oneword_subject": 0.8115038540036199,
+      "query_oneword_object": 0.6310431043049698,
+      "query_oneword_verb": 0.7576611136509344
+    },
+    "arm_1738ce": {
+      "query_oneword_subject": 0.7442563955533591,
+      "query_oneword_object": 0.56453767725328,
+      "query_oneword_verb": 0.7029889464641567
+    },
+    "arm_iddelta": {
+      "query_oneword_subject": 1.8308874009696101,
+      "query_oneword_object": 1.2388120141075882,
+      "query_oneword_verb": 1.9362158097652036
+    }
+  },
+  "retrieval_per_context": {
+    "arm_779ce": {
+      "per_context": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.71875
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8498263888888888
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.75
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8697916666666666
+        }
+      },
+      "chance_at_1": 0.010416666666666666,
+      "n_pool": 96
+    },
+    "arm_1738ce": {
+      "per_context": {
+        "cosine": {
+          "metric": "cosine",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.65625
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8125
+        },
+        "euclidean": {
+          "metric": "euclidean",
+          "n": 96,
+          "n_pool": 96,
+          "acc_at_k": {
+            "1": 0.6666666666666666
+          },
+          "chance_at_k": {
+            "1": 0.010416666666666666
+          },
+          "median_rank": 1.0,
+          "mrr": 0.8185763888888888
+        }
+      },
+      "chance_at_1": 0.010416666666666666,
+      "n_pool": 96
+    }
+  },
+  "retrieval_pair_rank": {
+    "arm_779ce": {
+      "acc_at_1": 0.9166666666666666,
+      "median_rank": 1.0,
+      "chance_at_1": 0.013888888888888888,
+      "by_axis": {
+        "query_oneword_subject": {
+          "acc_at_1": 0.9583333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        },
+        "query_oneword_object": {
+          "acc_at_1": 0.9583333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        },
+        "query_oneword_verb": {
+          "acc_at_1": 0.8333333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        }
+      }
+    },
+    "arm_1738ce": {
+      "acc_at_1": 0.875,
+      "median_rank": 1.0,
+      "chance_at_1": 0.013888888888888888,
+      "by_axis": {
+        "query_oneword_subject": {
+          "acc_at_1": 0.875,
+          "median_rank": 1.0,
+          "n": 24
+        },
+        "query_oneword_object": {
+          "acc_at_1": 0.9583333333333334,
+          "median_rank": 1.0,
+          "n": 24
+        },
+        "query_oneword_verb": {
+          "acc_at_1": 0.7916666666666666,
+          "median_rank": 1.0,
+          "n": 24
+        }
+      }
+    },
+    "arm_iddelta": {
+      "acc_at_1": 0.9166666666666666,
+      "median_rank": 1.0,
+      "chance_at_1": 0.013888888888888888,
+      "by_axis": {
+        "query_oneword_subject": {
+          "acc_at_1": 1.0,
+          "median_rank": 1.0,
+          "n": 24
+        },
+        "query_oneword_object": {
+          "acc_at_1": 1.0,
+          "median_rank": 1.0,
+          "n": 24
+        },
+        "query_oneword_verb": {
+          "acc_at_1": 0.75,
+          "median_rank": 1.0,
+          "n": 24
+        }
+      }
+    }
+  },
+  "calibration_slope": {
+    "arm_779ce": {
+      "query_oneword_subject": 0.7754447860704817,
+      "query_oneword_object": 0.623825665302021,
+      "query_oneword_verb": 0.7302409674542834,
+      "all": 0.70040276887801
+    },
+    "arm_1738ce": {
+      "query_oneword_subject": 0.7029278191467179,
+      "query_oneword_object": 0.5785174623140169,
+      "query_oneword_verb": 0.6636284332434982,
+      "all": 0.6408213839396555
+    },
+    "arm_iddelta": {
+      "query_oneword_subject": 1.6615316413514014,
+      "query_oneword_object": 1.3257820464949672,
+      "query_oneword_verb": 1.7503399718947446,
+      "all": 1.5408003820568577
+    }
+  },
+  "notes": {
+    "norm_text": "null in perpair — parent's text-embedding leg out of pilot scope",
+    "orientation": "base-to-variant (a = variant, b = base; delta = variant - base)",
+    "fired": "query axes — no fired gate; fired_*/pair_fired_70 are None on every row",
+    "carrier": "frame_id (f01..f24) plays the carrier role"
+  },
+  "repro": {
+    "git_commit": "82c46393d936c962b0dbf0bbd835c09768086377",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2474/n1m_map_arms.json",
+      "figures/paper/c1_stage_retention.meta.json",
+      "figures/paper/c1_stage_retention.pdf",
+      "figures/paper/c1_stage_retention.png",
+      "scripts/issue2356_flippair_figures.py",
+      "scripts/issue2474_n1m_map.py",
+      "scripts/issue2564_shift_bars.py",
+      "tasks/completed/2214/body.md",
+      "tasks/completed/2214/comments.jsonl",
+      "tasks/completed/2214/concerns.jsonl",
+      "tasks/completed/2214/events.jsonl",
+      "tasks/completed/2214/plans/plan.md",
+      "tasks/completed/2214/plans/v1.md",
+      "tasks/completed/2214/plans/v2.md",
+      "tasks/completed/2214/plans/v3.md",
+      "tasks/proposed/2416/body.md",
+      "tasks/proposed/2416/comments.jsonl",
+      "tasks/proposed/2416/events.jsonl",
+      "tests/test_issue2094_rev_butler.py"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2564_gramslot_pilot_reads.py",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "timestamp": "2026-08-25T23:24:48.001117+00:00"
+  }
+}

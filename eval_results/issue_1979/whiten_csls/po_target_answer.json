@@ -1,0 +1,80 @@
+{
+  "arms": {
+    "casual writing": {
+      "arm_id": "cas-pers-po-lr1e5-s42",
+      "kind": "content",
+      "layer": 19,
+      "pos": "last_prompt",
+      "rho": {
+        "pmap_tgt": 0.15351740696278512,
+        "p2_tc": 0.7079471788715486,
+        "p3b_tc": 0.7775456795921751,
+        "p1_tc": 0.37234987645489914,
+        "p2_ps": 0.43827130852340934
+      },
+      "n": {
+        "pmap_tgt": 50,
+        "p2_tc": 50,
+        "p3b_tc": 50,
+        "p1_tc": 50,
+        "p2_ps": 50
+      },
+      "band_enlarged": 0.40104716190112416,
+      "band_plus_new": 0.40494599330992154,
+      "k_candidates_plus_new": 32
+    },
+    "impoliteness": {
+      "arm_id": "imp-pers-po-lr1e5-s42",
+      "kind": "content",
+      "layer": 19,
+      "pos": "last_prompt",
+      "rho": {
+        "pmap_tgt": 0.24312124849939976,
+        "p2_tc": 0.7423289315726291,
+        "p3b_tc": 0.7267881583885605,
+        "p1_tc": 0.41753703582349083,
+        "p2_ps": 0.5727250900360145
+      },
+      "n": {
+        "pmap_tgt": 50,
+        "p2_tc": 50,
+        "p3b_tc": 50,
+        "p1_tc": 50,
+        "p2_ps": 50
+      },
+      "band_enlarged": 0.3969382165842986,
+      "band_plus_new": 0.40188456396601874,
+      "k_candidates_plus_new": 32
+    },
+    "marker token": {
+      "arm_id": "mk-pers-po-lr5e6-s42",
+      "kind": "marker",
+      "layer": 25,
+      "pos": "last_prompt",
+      "rho": {
+        "pmap_tgt": 0.26012004801920763,
+        "p2_tc": 0.5760864345738295,
+        "p3b_tc": 0.07851328965743616,
+        "p1_tc": 0.053254579957245696,
+        "p2_ps": 0.6386074429771909
+      },
+      "n": {
+        "pmap_tgt": 50,
+        "p2_tc": 50,
+        "p3b_tc": 50,
+        "p1_tc": 50,
+        "p2_ps": 50
+      },
+      "band_enlarged": 0.4069630293981682,
+      "band_plus_new": 0.4109027611043848,
+      "k_candidates_plus_new": 30
+    }
+  },
+  "preds": [
+    "p2_tc",
+    "p3b_tc",
+    "p1_tc",
+    "pmap_tgt",
+    "p2_ps"
+  ]
+}

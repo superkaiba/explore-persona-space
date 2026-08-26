@@ -1,23 +1,23 @@
 {
-  "commit": "23995af2+dirty",
-  "render_id": "335e7a0c8e844227",
-  "git_commit": "23995af278a89174ca9eac1e0c51c9ffbd49458f",
+  "commit": "392929d3+dirty",
+  "render_id": "76f6c89b0be94335",
+  "git_commit": "392929d3be0eb03b063671489bbebad718f7f743",
   "git_dirty": true,
   "git_dirty_paths": [
+    "eval_results/issue_2356/flippair_2afc/flippair_2afc.json",
     "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.meta.json",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.pdf",
-    "figures/issue_779/plot3_redesign/c3_persona_direction_spectrum_redesign.png",
+    "figures/issue_2356/flippair_2afc.meta.json",
+    "figures/issue_2356/flippair_2afc.pdf",
+    "figures/issue_2356/flippair_2afc.png",
+    "figures/paper/c1_stage_ladder_arms.meta.json",
+    "figures/paper/c1_stage_ladder_arms.png",
     "figures/paper/c1_stage_retention.meta.json",
     "figures/paper/c1_stage_retention.pdf",
     "figures/paper/c1_stage_retention.png",
-    "figures/paper/c3_persona_direction_spectrum.meta.json",
-    "figures/paper/c3_persona_direction_spectrum.pdf",
-    "figures/paper/c3_persona_direction_spectrum.png",
-    "scripts/issue1901_avgtarget_plots.py",
     "scripts/issue1902_figures.py",
+    "scripts/issue2356_flippair_2afc.py",
+    "scripts/issue2356_flippair_figures.py",
     "scripts/issue2474_n1m_map.py",
-    "scripts/issue779_plot3_redesign.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -29,104 +29,141 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2544/events.jsonl",
+    "tasks/running/2546/events.jsonl",
+    "tasks/running/2584/concerns.jsonl",
+    "tasks/running/2584/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "modified",
-  "git_argv0_path": "scripts/issue1902_figures.py",
-  "created": "2026-08-25T15:56:50Z",
+  "git_argv0_state": null,
+  "created": "2026-08-25T20:04:30Z",
   "figsize": [
     5.5,
-    2.2
+    2.75
   ],
   "points": [
     {
-      "x": -0.3,
+      "x": -0.3625,
       "held-out $R^2$": 0.3285527102956418,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.7,
+      "x": 0.6375,
       "held-out $R^2$": 0.36614482589979225,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.7,
+      "x": 1.6375,
       "held-out $R^2$": 0.3795308248774142,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 2.7,
+      "x": 2.6375,
       "held-out $R^2$": 0.3750710168788075,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.9,
+      "x": 0.7825,
       "held-out $R^2$": -0.13071644763661583,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 1.9,
+      "x": 1.7825,
       "held-out $R^2$": 0.22866690796305822,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 2.9,
+      "x": 2.7825,
       "held-out $R^2$": 0.3685874700483821,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 1.1,
+      "x": 0.9275,
+      "held-out $R^2$": 0.20567752845220155,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.9275,
+      "held-out $R^2$": 0.30861111399725527,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.9275,
+      "held-out $R^2$": 0.370854154440325,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.0725,
+      "held-out $R^2$": 0.2210274766585123,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.0725,
+      "held-out $R^2$": 0.3309888396038235,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.0725,
+      "held-out $R^2$": 0.36619065591690236,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2175,
       "held-out $R^2$": 0.37665742831927607,
       "_kind": "bar",
-      "_group": 2
+      "_group": 4
     },
     {
-      "x": 2.1,
+      "x": 2.2175,
       "held-out $R^2$": 0.39745142660158195,
       "_kind": "bar",
-      "_group": 2
+      "_group": 4
     },
     {
-      "x": 3.1,
+      "x": 3.2175,
       "held-out $R^2$": 0.3752229631747279,
       "_kind": "bar",
-      "_group": 2
+      "_group": 4
     },
     {
-      "x": 0.3,
+      "x": 0.3625,
       "held-out $R^2$": 0.0414645874874261,
       "_kind": "bar",
-      "_group": 3
+      "_group": 5
     },
     {
-      "x": 1.3,
+      "x": 1.3625,
       "held-out $R^2$": 0.005575975849533288,
       "_kind": "bar",
-      "_group": 3
+      "_group": 5
     },
     {
-      "x": 2.3,
+      "x": 2.3625,
       "held-out $R^2$": -0.11977930782098012,
       "_kind": "bar",
-      "_group": 3
+      "_group": 5
     },
     {
-      "x": 3.3,
+      "x": 3.3625,
       "held-out $R^2$": -0.1170101291815917,
       "_kind": "bar",
-      "_group": 3
+      "_group": 5
     }
   ],
-  "n_series": 4,
-  "total_points": 14,
+  "n_series": 6,
+  "total_points": 20,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -136,6 +173,8 @@
         "legend_labels": [
           "own map at this stage",
           "previous stage's map, applied as-is",
+          "same map + constant shift",
+          "same map + shift and rescaling",
           "previous contexts $\\to$ this stage's answers",
           "identity + learned bias"
         ],
@@ -160,6 +199,8 @@
     "series": [
       "own map at this stage",
       "previous stage's map, applied as-is",
+      "same map + constant shift",
+      "same map + shift and rescaling",
       "previous contexts $\\to$ this stage's answers",
       "identity + learned bias"
     ]

@@ -1,0 +1,104 @@
+{
+  "arms": {
+    "casual writing": {
+      "arm_id": "cas-pers-po-lr1e5-s42",
+      "kind": "content",
+      "layer": 19,
+      "pos": "last_prompt",
+      "source_prefix": "persona_software_engineer",
+      "source_ix": 0,
+      "rho": {
+        "p2_ps": 0.43827130852340934,
+        "p3a_ps": 0.35074071416386166,
+        "p2_tc": 0.7079471788715486,
+        "p3a_tc": 0.3192393575795937,
+        "p3b_tc": 0.7775456795921751
+      },
+      "rho_drop_source": {
+        "p2_ps": 0.41051020408163263,
+        "p3a_ps": 0.31883466425334506,
+        "p2_tc": 0.6929591836734693,
+        "p3a_tc": 0.3069976275903948,
+        "p3b_tc": 0.768642057445454
+      },
+      "n": {
+        "p2_ps": 50,
+        "p3a_ps": 50,
+        "p2_tc": 50,
+        "p3a_tc": 50,
+        "p3b_tc": 50
+      },
+      "band": 0.4022195066734324,
+      "k_candidates": 32
+    },
+    "impoliteness": {
+      "arm_id": "imp-pers-po-lr1e5-s42",
+      "kind": "content",
+      "layer": 19,
+      "pos": "last_prompt",
+      "source_prefix": "persona_software_engineer",
+      "source_ix": 0,
+      "rho": {
+        "p2_ps": 0.5727250900360145,
+        "p3a_ps": 0.5241422364592757,
+        "p2_tc": 0.7423289315726291,
+        "p3a_tc": 0.26118274155767296,
+        "p3b_tc": 0.7267881583885605
+      },
+      "rho_drop_source": {
+        "p2_ps": 0.5589795918367346,
+        "p3a_ps": 0.5088905330873521,
+        "p2_tc": 0.7330612244897958,
+        "p3a_tc": 0.251230898829168,
+        "p3b_tc": 0.7149161970743911
+      },
+      "n": {
+        "p2_ps": 50,
+        "p3a_ps": 50,
+        "p2_tc": 50,
+        "p3a_tc": 50,
+        "p3b_tc": 50
+      },
+      "band": 0.3981581797850582,
+      "k_candidates": 32
+    },
+    "marker token": {
+      "arm_id": "mk-pers-po-lr5e6-s42",
+      "kind": "marker",
+      "layer": 25,
+      "pos": "last_prompt",
+      "source_prefix": "persona_software_engineer",
+      "source_ix": 0,
+      "rho": {
+        "p2_ps": 0.6386074429771909,
+        "p3a_ps": 0.4945616943008777,
+        "p2_tc": 0.5760864345738295,
+        "p3a_tc": 0.013205599177856235,
+        "p3b_tc": 0.07851328965743616
+      },
+      "rho_drop_source": {
+        "p2_ps": 0.6206122448979591,
+        "p3a_ps": 0.46888951264014095,
+        "p2_tc": 0.5648979591836734,
+        "p3a_tc": -0.009081864336229064,
+        "p3b_tc": 0.08234903954311072
+      },
+      "n": {
+        "p2_ps": 50,
+        "p3a_ps": 50,
+        "p2_tc": 50,
+        "p3a_tc": 50,
+        "p3b_tc": 50
+      },
+      "band": 0.40822324178474356,
+      "k_candidates": 30
+    }
+  },
+  "preds": [
+    "p2_ps",
+    "p3a_ps",
+    "p2_tc",
+    "p3a_tc",
+    "p3b_tc"
+  ]
+}

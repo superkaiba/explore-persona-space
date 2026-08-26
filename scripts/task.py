@@ -715,6 +715,47 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             )
 
 
+def _reconcile_kind_violation(kind: str) -> str | None:
+    """Return the refusal message for a non-canonical reconcile-family
+    marker kind, or None when the kind is allowed.
+
+    Guard (#2342, structurally mirroring the #2309 completion-report
+    gate): reconciler spawns kept improvising role-derived reconcile
+    kinds (fleet census 2026-08-24: 908 canonical rows vs 88 deviant
+    rows across 15 variants), which the resume predicates — keyed on the
+    EXACT kind ``epm:review-reconcile`` — can never see, so a
+    mid-pipeline resume falsely concludes the reconciler never ran and
+    re-spawns it. Predicate: any marker kind containing the substring
+    ``reconcil`` other than the ONE canonical marker-mode kind refuses
+    at the CLI BEFORE ``post_event`` — nothing is appended. Library-level
+    ``post_event`` stays deliberately ungated (the #2309 precedent:
+    programmatic posters are unaffected; the CLI is the chokepoint every
+    reconciler spawn uses). No waiver flag: there is no legitimate
+    non-canonical post in this family.
+    """
+    if "reconcil" not in kind or kind == "epm:review-reconcile":
+        return None
+    if kind == "epm:plan-critique-reconcile":
+        return (
+            f"task.py post-marker {kind}: epm:plan-critique-reconcile is the "
+            "IN-CONTEXT stdout tag (adversarial-planner Phase 2) — print it "
+            "to stdout for the skill's parser; never post it to events.jsonl. "
+            "Marker-mode reconcile verdicts use the LITERAL kind "
+            "epm:review-reconcile with the adjudicated role in the body's "
+            "**Role under adjudication:** field (workflow.yaml section "
+            "markers; reconciler.md). NOTHING was appended."
+        )
+    return (
+        f"task.py post-marker {kind}: marker-mode reconcile posts use the "
+        "LITERAL kind epm:review-reconcile with the adjudicated role in the "
+        "body's **Role under adjudication:** field (workflow.yaml section "
+        "markers; reconciler.md). Never derive the marker kind from the role "
+        "under adjudication. A genuinely new reconcile-family kind requires a "
+        "workflow.yaml section-markers entry AND an extension of this guard's "
+        "allowlist. NOTHING was appended."
+    )
+
+
 def cmd_post_event(args: argparse.Namespace) -> None:
     # Note body comes from either --note (inline string) or --file (path
     # to a file containing the body). Mutually exclusive at the argparse
@@ -723,6 +764,12 @@ def cmd_post_event(args: argparse.Namespace) -> None:
     # char bodies passed via `--note "$(cat ...)"`. The 50_000-char cap
     # is enforced by `post_event` itself (raises ValueError on oversize),
     # so file-read bodies inherit it automatically.
+    # #2342: reconcile-family kind guard — refuse BEFORE any note
+    # resolution or append; see _reconcile_kind_violation above.
+    reconcile_msg = _reconcile_kind_violation(args.marker)
+    if reconcile_msg is not None:
+        print(f"ERROR: {reconcile_msg}", file=sys.stderr)
+        raise SystemExit(2)
     note = args.note
     if args.file is not None:
         # `--file -` reads the body from stdin (mirrors new-plan-version at
