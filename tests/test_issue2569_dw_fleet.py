@@ -1,17 +1,25 @@
 """Unit tests for scripts/issue2569_dw_fleet.py — leg-5 dW geometry (plan #2569 §4 leg 5).
 
 Covers: LoRA scaling-regime reading (rsLoRA alpha/sqrt(r) vs classic alpha/r — artifact-reuse
-check (g)), dW reconstruction, effective-rank summaries on a known spectrum, batched-vs-serial
-svdvals equality, the dv3 nested-schema builder validated by ``issue650_analyze``'s
-load-enforced ``assert_dv3_schema`` (a mismatched aggregation is REJECTED), the max-matched
-alignment read (planted direction above null / random below), fleet enumeration fail-loud
-behavior, and the in-place ``--modules`` extension of ``issue650_analyze.py`` (default
-preserved byte-for-byte: up_proj -> V, down_proj -> U). All synthetic, CPU-fast.
+check (g)), dW reconstruction, the EXACT rank-r factored SVD vs the dense oracle (fix-round-2
+blocker ``dwfleet-lora-dense-svd-vs-rank32``), effective-rank summaries on a known spectrum,
+batched-vs-serial svdvals equality, the dv3 nested-schema builder whose null-symmetry flag is
+COMPUTED (``dwfleet-null-assertion-vacuous``), the max-matched alignment read, full-FT
+intruder + factor outputs (``dwfleet-fullft-analysis-missing``), the all-7-module intruder
+requirement (``dwfleet-oproj-intruder-silently-dropped``), the staged + pinned banked
+directions with explicit absence (``dwfleet-delta-tbar-silent-absence``), the residual-side
+basis routing (``dwfleet-cc-alignment-mismatched-basis``), the FT-pinned pilot
+(``dwfleet-pilot-not-fullft-plan-adherence``), fleet enumeration fail-loud behavior, and the
+in-place ``--modules`` extension of ``issue650_analyze.py``. Banked-payload fixtures mirror
+the REAL schemas probed 2026-08-25 (tbar/anchor/r_B — see the driver docstrings). All
+synthetic, CPU-fast.
 """
 
 from __future__ import annotations
 
+import json
 import sys
+import types
 from pathlib import Path
 
 import numpy as np
@@ -24,6 +32,233 @@ if str(REPO_ROOT / "scripts") not in sys.path:
 
 import issue650_analyze as I650  # noqa: E402
 import issue2569_dw_fleet as DW  # noqa: E402
+
+# Tiny decoder dims shared by every fixture (d_model=6, d_ff=10 — matches _TinyModel).
+_D_MODEL = 6
+_D_FF = 10
+_SHAPES = {
+    "q_proj": (_D_MODEL, _D_MODEL),
+    "k_proj": (_D_MODEL, _D_MODEL),
+    "v_proj": (_D_MODEL, _D_MODEL),
+    "o_proj": (_D_MODEL, _D_MODEL),
+    "gate_proj": (_D_FF, _D_MODEL),
+    "up_proj": (_D_FF, _D_MODEL),
+    "down_proj": (_D_MODEL, _D_FF),
+}
+_ATTN = ("q_proj", "k_proj", "v_proj", "o_proj")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Shared fixtures: tiny fake model / adapter / FT checkpoint pair / banked payloads
+# ──────────────────────────────────────────────────────────────────────────
+
+
+class _W:
+    def __init__(self, shape, seed):
+        g = torch.Generator().manual_seed(seed)
+        self.weight = torch.randn(*shape, generator=g)
+
+
+class _Layer:
+    def __init__(self, seed):
+        d, f = _D_MODEL, _D_FF
+        self.self_attn = type(
+            "SA",
+            (),
+            {
+                "q_proj": _W((d, d), seed),
+                "k_proj": _W((d, d), seed + 1),
+                "v_proj": _W((d, d), seed + 2),
+                "o_proj": _W((d, d), seed + 3),
+            },
+        )()
+        self.mlp = type(
+            "MLP",
+            (),
+            {
+                "gate_proj": _W((f, d), seed + 4),
+                "up_proj": _W((f, d), seed + 5),
+                "down_proj": _W((d, f), seed + 6),
+            },
+        )()
+
+
+class _TinyModel:
+    model = type("M", (), {"layers": [_Layer(0), _Layer(100)]})()
+
+
+def _build_tiny_base_svd(tmp_path: Path, modules=DW.LORA_MODULES) -> Path:
+    """Build a base-svd payload FILE on the tiny fake model via issue650's REAL main()."""
+    import unittest.mock as mock
+
+    fake_auto = mock.MagicMock()
+    fake_auto.from_pretrained.return_value = _TinyModel()
+    out_path = tmp_path / f"base_svd_{len(modules)}.pt"
+    with mock.patch("transformers.AutoModelForCausalLM", fake_auto):
+        rc = I650.main(
+            [
+                "build-base-svd",
+                "--base-model",
+                "fake",
+                "--base-svd",
+                str(out_path),
+                "--modules",
+                ",".join(modules),
+            ]
+        )
+    assert rc == 0 and out_path.is_file()
+    return out_path
+
+
+def _write_adapter(dirpath: Path, *, r=2, layers=(0, 1), modules=DW.LORA_MODULES, seed=0):
+    """Write a synthetic PEFT adapter dir (config + safetensors) at the tiny dims."""
+    from safetensors.torch import save_file
+
+    g = torch.Generator().manual_seed(seed)
+    tensors = {}
+    for layer in layers:
+        for m in modules:
+            d_out, d_in = _SHAPES[m]
+            grp = "self_attn" if m in _ATTN else "mlp"
+            prefix = f"base_model.model.model.layers.{layer}.{grp}.{m}"
+            tensors[f"{prefix}.lora_A.weight"] = torch.randn(r, d_in, generator=g)
+            tensors[f"{prefix}.lora_B.weight"] = torch.randn(d_out, r, generator=g)
+    dirpath.mkdir(parents=True, exist_ok=True)
+    (dirpath / "adapter_config.json").write_text(
+        json.dumps({"r": r, "lora_alpha": 4, "use_rslora": True})
+    )
+    save_file(tensors, str(dirpath / "adapter_model.safetensors"))
+    return dirpath
+
+
+def _write_ft_pair(tmp_path: Path, *, layers=(0, 1), seed=7):
+    """Write base/post HF-format checkpoint dirs (single safetensors file each).
+
+    Includes embed_tokens / lm_head / biases / norms so the decoder-matrix filter is
+    actually exercised (embed + lm_head are 2-D and MUST be excluded).
+    """
+    from safetensors.torch import save_file
+
+    g = torch.Generator().manual_seed(seed)
+    base = {
+        "model.embed_tokens.weight": torch.randn(8, _D_MODEL, generator=g),
+        "lm_head.weight": torch.randn(8, _D_MODEL, generator=g),
+    }
+    for layer in layers:
+        base[f"model.layers.{layer}.input_layernorm.weight"] = torch.randn(_D_MODEL, generator=g)
+        base[f"model.layers.{layer}.self_attn.q_proj.bias"] = torch.randn(_D_MODEL, generator=g)
+        for m in DW.LORA_MODULES:
+            d_out, d_in = _SHAPES[m]
+            grp = "self_attn" if m in _ATTN else "mlp"
+            base[f"model.layers.{layer}.{grp}.{m}.weight"] = torch.randn(d_out, d_in, generator=g)
+    post = {}
+    for kname, t in base.items():
+        if t.ndim == 2:
+            bump = torch.outer(
+                torch.randn(t.shape[0], generator=g), torch.randn(t.shape[1], generator=g)
+            )
+            post[kname] = t + 0.05 * bump
+        else:
+            post[kname] = t + 0.01
+    bdir = tmp_path / "base_ckpt"
+    pdir = tmp_path / "post_ckpt"
+    bdir.mkdir(parents=True, exist_ok=True)
+    pdir.mkdir(parents=True, exist_ok=True)
+    save_file(base, str(bdir / "model.safetensors"))
+    save_file(post, str(pdir / "model.safetensors"))
+    return bdir, pdir
+
+
+def _tbar_payload(layer=0, seed=1, d=_D_MODEL):
+    """Mirror of the PROBED tbar.pt schema (delta_tf @ c07267285d)."""
+    g = torch.Generator().manual_seed(seed)
+    base = torch.randn(d, generator=g)
+    return {
+        "tbar": {layer: base},
+        "tbar_even": {layer: base + 0.05 * torch.randn(d, generator=g)},
+        "tbar_odd": {layer: base - 0.05 * torch.randn(d, generator=g)},
+        "n_rows": 20,
+        "meta": {"issue": 1768},
+    }
+
+
+def _anchor_payload(layer=0, seed=2, d=_D_MODEL):
+    """Mirror of the PROBED anchor .pt schema (issue1900_leakrace/anchors @ b5acdabc79)."""
+    g = torch.Generator().manual_seed(seed)
+    return {
+        "mix_arm_id": "x",
+        "n_rows": 20,
+        "low_n_flag": True,
+        "A_ctx": {layer: torch.randn(d, generator=g)},
+        "A_ans": {layer: torch.randn(d, generator=g)},
+        "split_half_cos_ctx": {layer: 0.98},
+        "meta": {},
+    }
+
+
+def _rb_payload(layers=(0, 1), d=_D_MODEL, seed=3, trait="evil"):
+    """Mirror of the PROBED r_B .pt schema (issue779_monitoring/r_b @ 037fcbb2)."""
+    g = torch.Generator().manual_seed(seed)
+    return {
+        "trait": trait,
+        "r_b": torch.randn(len(layers), d, generator=g),
+        "layers": list(layers),
+        "metadata": {},
+    }
+
+
+def _fake_operator_module(d=_D_MODEL):
+    """sys.modules stand-in for issue2569_operator (cmd_align's B1 entry asserts)."""
+    mod = types.ModuleType("issue2569_operator")
+    a_mat = np.eye(d)
+
+    mod.load_banked_map = lambda layer=19, root=None: {"layer": layer}
+    mod.run_driver_identity_asserts = lambda payload: None
+    mod.row_operator = lambda payload: (a_mat, np.zeros(d))
+    mod.monitor_gradient = lambda A, r: np.asarray(A) @ np.asarray(r)
+    return mod
+
+
+def _args(**kw):
+    base = dict(
+        out_root=None,
+        dl_root=None,
+        align_layer="0",
+        arms=None,
+        no_resume=False,
+        base_svd=None,
+        base_ckpt=None,
+        map_root=None,
+        pilot_wall_cap_h="8.0",
+        extra_arms_json=None,
+        phase=None,
+        import_check=False,
+    )
+    base.update(kw)
+    return types.SimpleNamespace(**base)
+
+
+def _lora_entry(arm_id="arm1", subfolder="sub"):
+    return DW.FleetEntry(arm_id, "content", "cas", "lora", "org/model", subfolder, "arms.json")
+
+
+def _ft_entry(arm_id="ftarm", subfolder="fsub"):
+    return DW.FleetEntry(arm_id, "content", "cas", "ft", "org/overflow", subfolder, "arms.json")
+
+
+def _write_fleet_table(out_root: Path, entries):
+    import dataclasses
+
+    DW._atomic_json(
+        out_root / "dw_fleet" / "fleet_table.json",
+        {
+            "fleet": [dataclasses.asdict(e) for e in entries],
+            "n_lora": sum(1 for e in entries if e.method == "lora"),
+            "n_ft": sum(1 for e in entries if e.method == "ft"),
+            "metadata": {},
+        },
+    )
+
 
 # ──────────────────────────────────────────────────────────────────────────
 # dW construction
@@ -52,6 +287,39 @@ def test_delta_w_from_lora_shape_and_value():
         DW.delta_w_from_lora(torch.ones(2, 5), torch.ones(3, 4), 1.0)
 
 
+def test_lora_svd_factors_matches_dense_exactly():
+    """The r x r core-after-QR SVD is EXACT vs the dense oracle (blocker
+    dwfleet-lora-dense-svd-vs-rank32): singular values match the dense top-r, the
+    reconstruction reproduces dW, top vectors agree up to sign — single AND batched."""
+    g = torch.Generator().manual_seed(11)
+    r, d_in, d_out, s = 3, 9, 7, 1.7
+    a = torch.randn(r, d_in, generator=g)
+    b = torch.randn(d_out, r, generator=g)
+    dw = DW.delta_w_from_lora(a, b, s)
+    u_d, s_d, vh_d = torch.linalg.svd(dw, full_matrices=False)
+    u_f, s_f, vh_f = DW.lora_svd_factors(a, b, s)
+    assert s_f.shape == (r,) and u_f.shape == (d_out, r) and vh_f.shape == (r, d_in)
+    torch.testing.assert_close(s_f, s_d[:r], rtol=1e-4, atol=1e-6)
+    # Dense trailing singular values of the rank-r product are numerically zero.
+    assert float(s_d[r:].max()) < 1e-5 * float(s_d[0])
+    # Exact reconstruction: U diag(S) Vh == dW.
+    torch.testing.assert_close(u_f @ torch.diag(s_f) @ vh_f, dw, rtol=1e-4, atol=1e-5)
+    # Top vectors agree up to sign (generic spectrum => distinct svals).
+    for i in range(r):
+        assert abs(float(u_f[:, i] @ u_d[:, i])) > 0.999
+        assert abs(float(vh_f[i] @ vh_d[i])) > 0.999
+    # Batched: a (L, r, d_in) / (L, d_out, r) stack matches per-slice dense.
+    a_st = torch.randn(4, r, d_in, generator=g)
+    b_st = torch.randn(4, d_out, r, generator=g)
+    u_b, s_b, vh_b = DW.lora_svd_factors(a_st, b_st, s)
+    assert s_b.shape == (4, r)
+    for i in range(4):
+        dw_i = DW.delta_w_from_lora(a_st[i], b_st[i], s)
+        torch.testing.assert_close(
+            u_b[i] @ torch.diag(s_b[i]) @ vh_b[i], dw_i, rtol=1e-4, atol=1e-5
+        )
+
+
 def test_effective_rank_summaries_known_spectrum():
     """Exact values on a hand-computable spectrum; all-zero spectrum fails loud."""
     s = np.array([2.0, 1.0, 1.0])
@@ -67,7 +335,7 @@ def test_effective_rank_summaries_known_spectrum():
 
 
 def test_svdvals_stack_matches_serial():
-    """The batched stack path equals per-matrix svdvals (vectorize-first equivalence)."""
+    """The batched dense reference equals per-matrix svdvals (oracle self-consistency)."""
     rng = np.random.default_rng(0)
     stack = torch.tensor(rng.normal(size=(5, 10, 7)), dtype=torch.float32)
     batched = DW.svdvals_stack(stack)
@@ -94,10 +362,41 @@ def test_dv3_payload_passes_load_enforced_schema():
     )
     payload = DW.dv3_payload_from_null({"write": res})
     I650.assert_dv3_schema(payload)  # load-time validation passes
+    assert payload["assertions"]["null_aggregation_matches_observed"] is True
     bad = dict(res)
     bad["null_aggregation"] = "flat_p95_single_cosines"
     with pytest.raises(AssertionError):
         DW.dv3_payload_from_null({"write": bad})
+
+
+def test_dv3_null_symmetry_flag_is_computed_not_claimed():
+    """The assertions flag is a COMPUTED verification (blocker dwfleet-null-assertion-vacuous):
+    a payload whose band aggregation no longer equals the per-layer band-max — observed OR
+    null side — RAISES instead of shipping a hardcoded True."""
+    rng = np.random.default_rng(9)
+    basis = {5: np.linalg.qr(rng.normal(size=(8, 8)))[0].T.astype(np.float32)}
+    res = I650.dv3_max_matched_null(
+        observed_vec=rng.normal(size=8).astype(np.float32),
+        basis_by_layer=basis,
+        band=(5,),
+        n_draws=50,
+        seed=0,
+    )
+    # Observed-side break: band max no longer equals max over per-layer observed.
+    bad_obs = dict(res)
+    bad_obs["band_observed_max"] = float(res["band_observed_max"]) + 0.1
+    with pytest.raises(AssertionError, match="NOT the registered band-max"):
+        DW.dv3_payload_from_null({"write": bad_obs})
+    # Null-side break: draws re-aggregated by something other than the band max.
+    bad_null = dict(res)
+    bad_null["band_null_max_draws"] = [0.5 * x for x in res["band_null_max_draws"]]
+    with pytest.raises(AssertionError, match="null aggregation is NOT"):
+        DW.dv3_payload_from_null({"write": bad_null})
+    # p95 break: the quoted p95 is not the p95 of the band-max draws.
+    bad_p95 = dict(res)
+    bad_p95["band_null_p95"] = float(res["band_null_p95"]) + 0.2
+    with pytest.raises(AssertionError, match="recomputed p95"):
+        DW.dv3_payload_from_null({"write": bad_p95})
 
 
 def test_intruder_read_planted_vs_random():
@@ -127,6 +426,439 @@ def test_alignment_vs_null_planted_and_random():
     ortho -= factors.T @ (factors @ ortho)
     miss = DW.alignment_vs_null(factors, ortho / np.linalg.norm(ortho), n_draws=200, seed=5)
     assert not miss["above_null"]
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# LoRA battery: exact rank-r path + all-module intruder
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_analyze_lora_arm_rank_r_path_and_all_module_intruder(tmp_path):
+    """Production LoRA analysis is the EXACT rank-r path (n_svals == r, never min(m, n)) and
+    the intruder read covers EVERY module incl. o_proj on its residual side (blockers
+    dwfleet-lora-dense-svd-vs-rank32 + dwfleet-oproj-intruder-silently-dropped)."""
+    r = 2
+    adapter = _write_adapter(tmp_path / "adapter", r=r)
+    base_svd = I650.load_base_svd(_build_tiny_base_svd(tmp_path), modules=DW.LORA_MODULES)
+    rec = DW.analyze_lora_arm(_lora_entry(), adapter, base_svd)
+    assert set(rec["modules"]) == set(DW.LORA_MODULES)
+    for module, by_layer in rec["modules"].items():
+        for layer, summ in by_layer.items():
+            assert summ["n_svals"] == r, (module, layer, summ["n_svals"])
+    # Intruder: ALL 7 modules present, correct residual sides, schema-valid payloads.
+    assert set(rec["intruder"]) == set(DW.LORA_MODULES)
+    assert rec["intruder_side"]["o_proj"] == "U"
+    assert rec["intruder_side"]["down_proj"] == "U"
+    assert rec["intruder_side"]["q_proj"] == "V"
+    assert rec["intruder_side"]["up_proj"] == "V"
+    for module, payload in rec["intruder"].items():
+        I650.assert_dv3_schema(payload)
+        arm = "write" if rec["intruder_side"][module] == "U" else "read"
+        assert arm in payload["observed"]
+    # Factored summaries numerically agree with the dense oracle (trailing zeros inert).
+    deltas = DW.load_adapter_deltas(adapter)
+    dense = DW.effective_rank_summaries(DW.svdvals_robust(deltas[(0, "down_proj")]))
+    fact = rec["modules"]["down_proj"]["0"]
+    for key in ("stable_rank", "participation_ratio", "top1_share_energy", "frobenius"):
+        assert fact[key] == pytest.approx(dense[key], rel=1e-4), key
+
+
+def test_load_base_svd_required_fails_loud_on_subset_payload(tmp_path):
+    """A base-svd payload built WITHOUT the full module list raises with the rebuild
+    command — never a silent module drop (dwfleet-oproj-intruder-silently-dropped)."""
+    subset_path = _build_tiny_base_svd(tmp_path, modules=("up_proj", "down_proj"))
+    with pytest.raises(RuntimeError, match="lacks module"):
+        DW._load_base_svd_required(str(subset_path))
+    with pytest.raises(RuntimeError, match="--base-svd is required"):
+        DW._load_base_svd_required(None)
+    with pytest.raises(FileNotFoundError):
+        DW._load_base_svd_required(str(tmp_path / "nope.pt"))
+
+
+def test_cmd_lora_resume_key_is_content_keyed(tmp_path):
+    """cmd_lora's resume key carries the base-svd payload's _meta (content), so a payload
+    rebuilt differently NEVER resume-skips stale units (the bool(base_svd) trap)."""
+    out_root = tmp_path / "out"
+    dl_root = tmp_path / "dl"
+    entry = _lora_entry()
+    _write_fleet_table(out_root, [entry])
+    _write_adapter(dl_root / "adapters" / entry.arm_id / entry.subfolder, r=2)
+    svd_path = _build_tiny_base_svd(tmp_path)
+    args = _args(out_root=str(out_root), dl_root=str(dl_root), base_svd=str(svd_path))
+    assert DW.cmd_lora(args) == 0
+    unit = json.loads((out_root / "dw_fleet" / "lora" / "arm1.json").read_text())
+    rk1 = unit["regime_key"]
+    assert set(unit["intruder"]) == set(DW.LORA_MODULES)
+    # Rebuild the payload with a DIFFERENT generating recipe (base model string) — the
+    # content-describing _meta changes, so the key changes and the unit recomputes.
+    import unittest.mock as mock
+
+    fake_auto = mock.MagicMock()
+    fake_auto.from_pretrained.return_value = _TinyModel()
+    svd2 = tmp_path / "base_svd_v2.pt"
+    with mock.patch("transformers.AutoModelForCausalLM", fake_auto):
+        assert (
+            I650.main(
+                [
+                    "build-base-svd",
+                    "--base-model",
+                    "fake-v2",
+                    "--base-svd",
+                    str(svd2),
+                    "--modules",
+                    ",".join(DW.LORA_MODULES),
+                ]
+            )
+            == 0
+        )
+    args2 = _args(out_root=str(out_root), dl_root=str(dl_root), base_svd=str(svd2))
+    assert DW.cmd_lora(args2) == 0
+    rk2 = json.loads((out_root / "dw_fleet" / "lora" / "arm1.json").read_text())["regime_key"]
+    assert rk1 != rk2
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Full-FT battery: decoder-matrix filter + intruder + align-layer factors
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_ft_name_parts_decoder_matrices_only():
+    """The FT param regex matches decoder weight matrices only (196/ckpt class)."""
+    assert DW._ft_name_parts("model.layers.17.self_attn.q_proj.weight") == (17, "q_proj")
+    assert DW._ft_name_parts("model.layers.3.mlp.down_proj.weight") == (3, "down_proj")
+    for bad in (
+        "model.embed_tokens.weight",
+        "lm_head.weight",
+        "model.layers.0.input_layernorm.weight",
+        "model.layers.0.self_attn.q_proj.bias",
+    ):
+        assert DW._ft_name_parts(bad) is None
+
+
+def test_analyze_ft_checkpoint_full_outputs(tmp_path):
+    """Full-FT analysis produces spectra for the DECODER matrices only, an intruder read per
+    module, and an align-layer factor sidecar consumable by --phase align (blocker
+    dwfleet-fullft-analysis-missing)."""
+    bdir, pdir = _write_ft_pair(tmp_path)
+    base_svd = I650.load_base_svd(_build_tiny_base_svd(tmp_path), modules=DW.LORA_MODULES)
+    factors_path = tmp_path / "ft_factors_L0.pt"
+    rec = DW.analyze_ft_checkpoint(
+        _ft_entry(), bdir, pdir, base_svd, align_layer=0, factors_path=factors_path
+    )
+    # 2 layers x 7 modules = 14 decoder matrices; embed/lm_head/bias/norm excluded.
+    assert rec["n_matrices"] == 14
+    assert all(DW._ft_name_parts(nm) is not None for nm in rec["matrices"])
+    assert not any("embed_tokens" in nm or "lm_head" in nm for nm in rec["matrices"])
+    # Intruder per module, residual side, schema-valid.
+    assert set(rec["intruder"]) == set(DW.LORA_MODULES)
+    for payload in rec["intruder"].values():
+        I650.assert_dv3_schema(payload)
+    assert rec["intruder_side"]["o_proj"] == "U" and rec["intruder_side"]["gate_proj"] == "V"
+    # Factor sidecar: all 7 modules at the align layer, residual-side rows of width d_model.
+    sidecar = torch.load(factors_path, weights_only=True, map_location="cpu")
+    assert int(sidecar["layer"]) == 0
+    assert set(sidecar["modules"]) == set(DW.LORA_MODULES)
+    for module, blk in sidecar["modules"].items():
+        assert blk["side"] == I650.RESIDUAL_SIDE_BY_MODULE[module]
+        assert blk["factors"].shape[1] == _D_MODEL  # residual space
+    # module_filter narrows the stream (the pilot path) BEFORE any tensor read.
+    rec2 = DW.analyze_ft_checkpoint(
+        _ft_entry(),
+        bdir,
+        pdir,
+        base_svd,
+        align_layer=0,
+        factors_path=None,
+        module_filter=("down_proj", "q_proj"),
+    )
+    assert rec2["n_matrices"] == 4 and set(rec2["intruder"]) == {"down_proj", "q_proj"}
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Banked-direction loaders (fixtures mirror the PROBED real schemas)
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_load_rb_direction_probed_schema(tmp_path):
+    """r_B loads the layer row of the (n_layers, d) stacked payload; a bare tensor or an
+    absent layer fails loud (the pre-fix bare-tensor read crashed on the real file)."""
+    p = tmp_path / "evil.pt"
+    payload = _rb_payload(layers=(0, 1))
+    torch.save(payload, p)
+    vec = DW.load_rb_direction(p, 1)
+    expect = payload["r_b"][1].to(torch.float64).numpy()
+    np.testing.assert_allclose(vec, expect / np.linalg.norm(expect), rtol=1e-12)
+    with pytest.raises(KeyError):
+        DW.load_rb_direction(p, 5)
+    bare = tmp_path / "bare.pt"
+    torch.save(torch.randn(6), bare)
+    with pytest.raises(TypeError):
+        DW.load_rb_direction(bare, 0)
+
+
+def test_load_tbar_directions_records_20_row_basis(tmp_path):
+    """tbar loads delta + even/odd halves and RECORDS the 20-row basis + split-half cosine
+    (concern leg5-delta-inherits-tbar-20row-basis)."""
+    p = tmp_path / "tbar.pt"
+    payload = _tbar_payload(layer=0)
+    torch.save(payload, p)
+    dirs, prov = DW.load_tbar_directions(p, 0)
+    assert set(dirs) == {"delta_tbar", "delta_tbar_even", "delta_tbar_odd"}
+    assert prov["n_rows"] == 20 and "20-training-row" in prov["basis_note"]
+    even = payload["tbar_even"][0].numpy().astype(np.float64)
+    odd = payload["tbar_odd"][0].numpy().astype(np.float64)
+    expect_cos = float(np.dot(even / np.linalg.norm(even), odd / np.linalg.norm(odd)))
+    assert prov["splithalf_cos"] == pytest.approx(expect_cos)
+    with pytest.raises(KeyError):
+        DW.load_tbar_directions(p, 19)  # layer absent in fixture
+
+
+def test_load_anchor_cc_probed_schema(tmp_path):
+    """c_C comes from A_ctx[layer] of the probed anchor schema; the pre-fix c_C/centroid key
+    guess never matched (dwfleet-anchor-payload-schema-unprobed)."""
+    p = tmp_path / "anchor.pt"
+    payload = _anchor_payload(layer=0)
+    torch.save(payload, p)
+    vec, prov = DW.load_anchor_cc(p, 0)
+    expect = payload["A_ctx"][0].to(torch.float64).numpy()
+    np.testing.assert_allclose(vec, expect / np.linalg.norm(expect), rtol=1e-12)
+    assert prov["n_rows"] == 20 and prov["low_n_flag"] is True
+    assert prov["splithalf_cos_ctx"] == pytest.approx(0.98)
+    # The OLD guessed schema (c_C / centroid keys) is rejected loudly, never silently None.
+    old_guess = tmp_path / "old.pt"
+    torch.save({"c_C": torch.randn(6), "centroid": torch.randn(6)}, old_guess)
+    with pytest.raises(TypeError):
+        DW.load_anchor_cc(old_guess, 0)
+
+
+def test_stage_optional_banked_file_absence_vs_error(tmp_path, monkeypatch):
+    """A 404 AT THE PIN returns None (explicit-absence branch); other errors propagate."""
+    from huggingface_hub.errors import EntryNotFoundError
+
+    def raise_404(path_in_repo, dl_root, revision, *, what):
+        raise EntryNotFoundError("404")
+
+    monkeypatch.setattr(DW, "_stage_banked_file", raise_404)
+    assert DW._stage_optional_banked_file("a/b.pt", tmp_path, "rev", what="x") is None
+
+    def raise_other(path_in_repo, dl_root, revision, *, what):
+        raise ValueError("boom")
+
+    monkeypatch.setattr(DW, "_stage_banked_file", raise_other)
+    with pytest.raises(ValueError):
+        DW._stage_optional_banked_file("a/b.pt", tmp_path, "rev", what="x")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# cmd_align: pinned staging, basis routing, explicit absence, ft consumption
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def _setup_align(tmp_path, monkeypatch, *, banked, entries):
+    """Common cmd_align scaffolding: fleet table, adapters, fake operator, staged fakes."""
+    out_root = tmp_path / "out"
+    dl_root = tmp_path / "dl"
+    _write_fleet_table(out_root, entries)
+    for e in entries:
+        if e.method == "lora":
+            _write_adapter(dl_root / "adapters" / e.arm_id / e.subfolder, r=2, layers=(0, 1))
+    monkeypatch.setitem(sys.modules, "issue2569_operator", _fake_operator_module())
+    calls: list[tuple[str, str]] = []
+    served = tmp_path / "served"
+
+    def fake_stage(path_in_repo, dl_root_arg, revision, *, what):
+        calls.append((path_in_repo, revision))
+        if path_in_repo not in banked:
+            from huggingface_hub.errors import EntryNotFoundError
+
+            raise EntryNotFoundError(f"404 {path_in_repo}")
+        p = served / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(banked[path_in_repo], p)
+        return p
+
+    monkeypatch.setattr(DW, "_stage_banked_file", fake_stage)
+    return out_root, dl_root, calls
+
+
+def _rb_banked():
+    return {
+        f"{DW.RB_PREFIX}/{trait}.pt": _rb_payload(layers=(0, 1), trait=trait)
+        for trait in DW.RB_TRAITS
+    }
+
+
+def test_cmd_align_stages_pins_routes_bases_and_records_absence(tmp_path, monkeypatch):
+    """cmd_align stages every banked direction AT ITS PIN (live constants), routes reads by
+    RESIDUAL side (U: all directions; V: c_C only; o_proj input side never aligned), and
+    records per-arm absence EXPLICITLY (blockers dwfleet-delta-tbar-silent-absence +
+    dwfleet-cc-alignment-mismatched-basis + dwfleet-fullft-analysis-missing)."""
+    lora = _lora_entry()
+    ft = _ft_entry()
+    banked = _rb_banked()
+    banked[f"{DW.DELTA_TF_PREFIX}/{lora.arm_id}/tbar.pt"] = _tbar_payload(layer=0)
+    banked[f"{DW.ANCHORS_PREFIX}/{lora.arm_id}.pt"] = _anchor_payload(layer=0)
+    # ft arm: NO tbar / anchor banked (mirrors the probed real state for the 4 FT arms).
+    out_root, dl_root, calls = _setup_align(
+        tmp_path, monkeypatch, banked=banked, entries=[lora, ft]
+    )
+    # ft factor sidecar (what --phase ft persists), hand-built at the correct sides/dims.
+    g = torch.Generator().manual_seed(21)
+    sidecar = {
+        "layer": 0,
+        "arm_id": ft.arm_id,
+        "method": "svd_lowrank-test",
+        "modules": {
+            m: {
+                "side": I650.RESIDUAL_SIDE_BY_MODULE[m],
+                "factors": torch.randn(3, _D_MODEL, generator=g),
+                "svals": torch.rand(3, generator=g),
+            }
+            for m in DW.LORA_MODULES
+        },
+    }
+    ft_dir = out_root / "dw_fleet" / "ft"
+    ft_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(sidecar, ft_dir / f"{ft.arm_id}_factors_L0.pt")
+
+    rc = DW.cmd_align(_args(out_root=str(out_root), dl_root=str(dl_root)))
+    assert rc == 0
+
+    # The pins are LIVE: every staged fetch carried its registered revision constant.
+    revs = dict(calls)
+    assert revs[f"{DW.RB_PREFIX}/evil.pt"] == DW.RB_REV
+    assert revs[f"{DW.DELTA_TF_PREFIX}/{lora.arm_id}/tbar.pt"] == DW.DELTA_TF_REV
+    assert revs[f"{DW.ANCHORS_PREFIX}/{lora.arm_id}.pt"] == DW.ANCHORS_REV
+
+    out = json.loads((out_root / "dw_fleet" / "alignment.json").read_text())
+    arm1 = out["arms"][lora.arm_id]
+    # U-side modules (o/down) read ALL directions incl. delta halves + c_C + r_B + Ar.
+    o_rec = arm1["factors"]["L0.o_proj"]
+    assert o_rec["side"] == "U"
+    assert {
+        "delta_tbar",
+        "delta_tbar_even",
+        "delta_tbar_odd",
+        "c_C",
+        "r_B[evil]",
+        "Ar[evil]",
+    } <= set(o_rec["alignments"])
+    # V-side modules (q/k/v/gate/up) read ONLY the context-space direction c_C — the
+    # o_proj INPUT (head-concat) read no longer exists anywhere.
+    q_rec = arm1["factors"]["L0.q_proj"]
+    assert q_rec["side"] == "V"
+    assert set(q_rec["alignments"]) == {"c_C"}
+    assert arm1["factors"]["L0.down_proj"]["side"] == "U"
+    # Provenance: 20-row tbar basis + split-half noise floor + anchor low-n flag.
+    assert arm1["directions_provenance"]["delta_tbar"]["n_rows"] == 20
+    assert "splithalf_cos" in arm1["directions_provenance"]["delta_tbar"]
+    assert arm1["directions_provenance"]["c_C"]["low_n_flag"] is True
+    # FT arm: factors consumed from the sidecar; absence EXPLICIT, coverage lists it.
+    ftr = out["arms"][ft.arm_id]
+    assert "missing" in ftr["directions_provenance"]["delta_tbar"]
+    assert "missing" in ftr["directions_provenance"]["c_C"]
+    assert {"r_B[evil]", "Ar[evil]"} <= set(ftr["factors"]["L0.o_proj"]["alignments"])
+    assert ftr["factors"]["L0.q_proj"]["alignments"] == {}  # c_C missing => nothing to read
+    assert out["coverage"]["delta_tbar_missing"] == [ft.arm_id]
+    assert out["coverage"]["c_C_missing"] == [ft.arm_id]
+    # Per-arm checkpoint units exist.
+    assert (out_root / "dw_fleet" / "align" / f"{lora.arm_id}.json").is_file()
+    assert (out_root / "dw_fleet" / "align" / f"{ft.arm_id}.json").is_file()
+
+
+def test_cmd_align_raises_when_all_lora_arms_lose_primary(tmp_path, monkeypatch):
+    """ALL LoRA arms missing the banked delta (or c_C) refuses to publish — the silent
+    all-vanish scenario of dwfleet-delta-tbar-silent-absence is now a hard failure."""
+    lora = _lora_entry()
+    banked = _rb_banked()
+    banked[f"{DW.ANCHORS_PREFIX}/{lora.arm_id}.pt"] = _anchor_payload(layer=0)
+    out_root, dl_root, _ = _setup_align(tmp_path, monkeypatch, banked=banked, entries=[lora])
+    with pytest.raises(RuntimeError, match="H5 primary direction lost"):
+        DW.cmd_align(_args(out_root=str(out_root), dl_root=str(dl_root)))
+
+    banked2 = _rb_banked()
+    banked2[f"{DW.DELTA_TF_PREFIX}/{lora.arm_id}/tbar.pt"] = _tbar_payload(layer=0)
+    out_root2, dl_root2, _ = _setup_align(
+        tmp_path / "b", monkeypatch, banked=banked2, entries=[lora]
+    )
+    with pytest.raises(RuntimeError, match="c_C lost"):
+        DW.cmd_align(_args(out_root=str(out_root2), dl_root=str(dl_root2)))
+
+
+def test_cmd_align_dim_mismatch_raises_not_skips(tmp_path, monkeypatch):
+    """A direction whose dim does not match the factor stack RAISES (corrupted input) —
+    never a silent per-row skip."""
+    lora = _lora_entry()
+    banked = _rb_banked()
+    banked[f"{DW.DELTA_TF_PREFIX}/{lora.arm_id}/tbar.pt"] = _tbar_payload(layer=0, d=5)  # wrong d
+    banked[f"{DW.ANCHORS_PREFIX}/{lora.arm_id}.pt"] = _anchor_payload(layer=0)
+    out_root, dl_root, _ = _setup_align(tmp_path, monkeypatch, banked=banked, entries=[lora])
+    with pytest.raises(RuntimeError, match="dim"):
+        DW.cmd_align(_args(out_root=str(out_root), dl_root=str(dl_root)))
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# cmd_pilot: pinned to one FULL-FT checkpoint
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_cmd_pilot_pinned_to_full_ft(tmp_path):
+    """The pilot resolves ft[0] (never lora[0] / synthetic randn), measures REAL deltas via
+    the production analysis function, includes checkpoint-IO fields, and keeps the rc=7
+    refusal (blocker dwfleet-pilot-not-fullft-plan-adherence)."""
+    out_root = tmp_path / "out"
+    dl_root = tmp_path / "dl"
+    lora = _lora_entry()
+    ft = _ft_entry()
+    _write_fleet_table(out_root, [lora, ft])
+    _write_adapter(dl_root / "adapters" / lora.arm_id / lora.subfolder, r=2)
+    bdir, pdir = _write_ft_pair(tmp_path)
+    # Pre-place the post checkpoint where the pilot's resume pre-check looks.
+    post_dest = dl_root / "ft" / ft.arm_id / ft.subfolder
+    post_dest.mkdir(parents=True, exist_ok=True)
+    (post_dest / "model.safetensors").write_bytes((pdir / "model.safetensors").read_bytes())
+    svd_path = _build_tiny_base_svd(tmp_path)
+    args = _args(
+        out_root=str(out_root),
+        dl_root=str(dl_root),
+        base_ckpt=str(bdir),
+        base_svd=str(svd_path),
+        pilot_wall_cap_h="8.0",
+    )
+    assert DW.cmd_pilot(args) == 0
+    report = json.loads((out_root / "dw_fleet" / "pilot.json").read_text())
+    assert report["pilot_method"] == "ft"
+    assert report["pilot_arm"] == ft.arm_id
+    assert report["pilot_repo"] == ft.repo_id  # the overflow-repo path is the pilot target
+    assert report["n_pilot_ft_matrices"] == 4  # 2 layers x (down_proj, q_proj)
+    for key in ("measured_ft_dl_s", "measured_per_call_s_ft", "measured_lora_arm_s"):
+        assert key in report
+    assert report["ft_matrices_per_ckpt"] == DW.FT_MATRICES_PER_CKPT
+    assert report["verdict"] == "pass"
+    # A cap of 0 h always refuses with the DESIGNED rc.
+    args_cap = _args(
+        out_root=str(out_root),
+        dl_root=str(dl_root),
+        base_ckpt=str(bdir),
+        base_svd=str(svd_path),
+        pilot_wall_cap_h="0.0",
+    )
+    assert DW.cmd_pilot(args_cap) == DW.RC_PILOT_REFUSAL
+
+
+def test_cmd_pilot_requires_ft_arm(tmp_path):
+    """A fleet with no full-FT checkpoint cannot satisfy the pilot's pin — fail loud."""
+    out_root = tmp_path / "out"
+    _write_fleet_table(out_root, [_lora_entry()])
+    svd_path = _build_tiny_base_svd(tmp_path)
+    args = _args(
+        out_root=str(out_root),
+        dl_root=str(tmp_path / "dl"),
+        base_ckpt=str(tmp_path),
+        base_svd=str(svd_path),
+    )
+    with pytest.raises(RuntimeError, match="PINNED to one FULL-FT"):
+        DW.cmd_pilot(args)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -236,65 +968,20 @@ def test_issue650_residual_svd_basis_matches_original_math():
     np.testing.assert_allclose(I650._residual_svd_basis(w_down, "U"), u.T)
 
 
-def test_issue650_build_base_svd_modules_on_tiny_model(tmp_path, monkeypatch):
+def test_issue650_build_base_svd_modules_on_tiny_model(tmp_path):
     """cmd_build_base_svd with --modules writes per-module residual-side bases loadable by
     load_base_svd (tiny fake decoder — no real model download)."""
-
-    class _W:
-        def __init__(self, shape, seed):
-            g = torch.Generator().manual_seed(seed)
-            self.weight = torch.randn(*shape, generator=g)
-
-    class _Layer:
-        def __init__(self, seed):
-            d, f = 6, 10
-            self.self_attn = type(
-                "SA",
-                (),
-                {
-                    "q_proj": _W((d, d), seed),
-                    "k_proj": _W((d, d), seed + 1),
-                    "v_proj": _W((d, d), seed + 2),
-                    "o_proj": _W((d, d), seed + 3),
-                },
-            )()
-            self.mlp = type(
-                "MLP",
-                (),
-                {
-                    "gate_proj": _W((f, d), seed + 4),
-                    "up_proj": _W((f, d), seed + 5),
-                    "down_proj": _W((d, f), seed + 6),
-                },
-            )()
-
-    class _Model:
-        model = type("M", (), {"layers": [_Layer(0), _Layer(100)]})()
-
     import unittest.mock as mock
 
-    fake_auto = mock.MagicMock()
-    fake_auto.from_pretrained.return_value = _Model()
-    out_path = tmp_path / "base_svd.pt"
-    with mock.patch("transformers.AutoModelForCausalLM", fake_auto):
-        rc = I650.main(
-            [
-                "build-base-svd",
-                "--base-model",
-                "fake",
-                "--base-svd",
-                str(out_path),
-                "--modules",
-                "q_proj,o_proj,down_proj",
-            ]
-        )
-    assert rc == 0 and out_path.is_file()
+    out_path = _build_tiny_base_svd(tmp_path, modules=("q_proj", "o_proj", "down_proj"))
     loaded = I650.load_base_svd(out_path, modules=("q_proj", "o_proj", "down_proj"))
     assert set(loaded["q_proj"][0]) == {"V"}  # read-side module → V basis
     assert set(loaded["o_proj"][0]) == {"U"}  # write-side module → U basis
     assert set(loaded["down_proj"][0]) == {"U"}
     assert loaded["_meta"]["modules"] == ["q_proj", "o_proj", "down_proj"]
     # Unknown module names fail loud at parse time.
+    fake_auto = mock.MagicMock()
+    fake_auto.from_pretrained.return_value = _TinyModel()
     with (
         pytest.raises(ValueError, match="unknown --modules"),
         mock.patch("transformers.AutoModelForCausalLM", fake_auto),
@@ -318,3 +1005,7 @@ def test_dw_regime_key_stable_and_sensitive():
     b = DW.regime_key(phase="lora", top_k=8, dv3_draws=200)
     c = DW.regime_key(phase="lora", top_k=8, dv3_draws=100)
     assert a == b and a != c
+    # Content-keying: differing base-svd _meta yields differing keys.
+    m1 = DW.regime_key(phase="lora", base_svd_meta={"modules": ["up_proj", "down_proj"]})
+    m2 = DW.regime_key(phase="lora", base_svd_meta={"modules": list(DW.LORA_MODULES)})
+    assert m1 != m2

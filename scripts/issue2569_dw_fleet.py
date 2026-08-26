@@ -5,39 +5,71 @@ manifests passed via ``--extra-arms-json``, enumerated + persisted BEFORE any do
 
 - **dW spectra + effective rank:** LoRA dW = B @ A * s per (layer, module), with s = the
   adapter's OWN scaling from ``adapter_config.json`` (alpha/sqrt(r) under rsLoRA, alpha/r
-  classic — artifact-reuse check (g)); full-FT dW = theta_post - theta_base per 2-D weight
-  matrix (streamed one tensor at a time — never materialized as a whole checkpoint delta).
-  Summaries per matrix: stable rank ||dW||_F^2/||dW||_2^2, participation ratio
-  (sum s_i^2)^2 / sum s_i^4, top-1 share (energy sigma_1^2/sum sigma_i^2, the #1979/#1947
-  convention, plus the plain sigma_1/sum sigma_i companion) — descriptive, never gates.
-- **Intruder read (#650 convention, load-enforced):** max |cos| of top dW singular vectors
-  against the base weight SVD bases built by ``issue650_analyze.py build-base-svd``
-  (extended in place with ``--modules``), aggregated EXACTLY as
-  ``max_over_base_singular_vectors_then_max_over_band`` via ``dv3_max_matched_null``;
-  results are serialized in the nested #650 §6.5 schema and validated by
-  ``assert_dv3_schema`` at write AND load — any other aggregation is rejected.
-- **Factor alignment:** top-8 dW OUTPUT-side singular vectors (down_proj / o_proj U-side,
-  residual-output space) vs delta (the #1768 ``delta_tf/<arm>/tbar.pt`` displacement means),
-  r_B (``issue779_monitoring/r_b/*.pt``), c_C (the arm's training-context centroid from
-  #1979's banked anchors, ``issue1900_leakrace/anchors/<arm_id>.pt``), and the gate
-  direction A r (leg-8 monitor gradient under the row convention — computed locally via
-  ``issue2569_operator`` from the banked ridge.pt, B1; ``run_driver_identity_asserts`` runs
-  at that phase's entry). INPUT-side V vectors vs context-space directions (c_C). Every
-  alignment is read against the max-matched null. Seed-noise anchor: the #1979
-  impoliteness-contrastive seed pair (s42 vs s137) gives the LoRA within-recipe
-  dW-similarity floor; no full-FT seed pair exists (stated scope limit).
-- **Sizing gate (§7 row 2):** ``--phase pilot`` measures ONE checkpoint x TWO modules at
-  production shape and extrapolates the battery wall; a projection > ``--pilot-wall-cap-h``
-  (default 8 h) writes ``pilot.json`` with the arithmetic and exits rc=7 (a DESIGNED
-  artifact-routed halt, never an anonymous rc=1) so the dispatcher splits the fleet across
-  2 pods by checkpoint.
+  classic — artifact-reuse check (g)). LoRA spectra + top vectors are EXACT from the
+  r x r core after QR of the factors (``lora_svd_factors``, O(d*r^2) per matrix) — never
+  a dense d_out x d_in SVD of a rank-32 product (fix-round-2 blocker
+  ``dwfleet-lora-dense-svd-vs-rank32``: the dense path measured ~25-45 s/matrix at
+  (3584, 18944) vs milliseconds factored, 20-30 h vs the 8 h cap). Full-FT dW =
+  theta_post - theta_base per DECODER weight matrix, streamed one tensor at a time
+  (28 layers x 7 modules = 196/ckpt, the plan §9 arithmetic; ``embed_tokens`` /
+  ``lm_head`` are vocab-space (152k x 3584) and deliberately excluded — not module
+  geometry, and never priced). Summaries per matrix: stable rank ||dW||_F^2/||dW||_2^2,
+  participation ratio (sum s_i^2)^2 / sum s_i^4, top-1 share — descriptive, never gates.
+- **Intruder read (#650 convention, load-enforced):** per module, the top dW singular
+  vector ON THE MODULE'S RESIDUAL SIDE (``RESIDUAL_SIDE_BY_MODULE``: U for
+  o_proj/down_proj = "write" arm, V for q/k/v/gate/up = "read" arm) vs the base weight
+  SVD bases built by ``issue650_analyze.py build-base-svd --modules <all 7>``; the
+  extended payload is REQUIRED — a payload lacking a module raises instead of silently
+  dropping the read (fix-round-2 blocker ``dwfleet-oproj-intruder-silently-dropped``).
+  Aggregation is EXACTLY ``max_over_base_singular_vectors_then_max_over_band`` via
+  ``dv3_max_matched_null``; the nested #650 §6.5 payload is validated by
+  ``assert_dv3_schema`` at write AND load, and the
+  ``assertions.null_aggregation_matches_observed`` flag is COMPUTED (observed + null
+  band reductions recomputed and compared at 1e-6), never asserted as a literal
+  (fix-round-2 blocker ``dwfleet-null-assertion-vacuous``). Full-FT vectors come from
+  truncated ``torch.svd_lowrank`` (q<=64, plan §4 leg-5 step 4) and the same reads run
+  per full-FT checkpoint (fix-round-2 blocker ``dwfleet-fullft-analysis-missing``).
+- **Factor alignment (--phase align):** top-8 dW factors per module vs banked directions,
+  ALL staged at PINNED revisions through the returned-path helper
+  (a local-dir hub download preserves the repo-relative path — probed 2026-08-25; hand
+  deriving ``dl_root/<suffix>`` is the fix-round-2 ``dwfleet-delta-tbar-silent-absence``
+  trap): delta = ``delta_tf/<arm>/tbar.pt`` @ ``c07267285d`` (probed payload:
+  ``{"tbar"/"tbar_even"/"tbar_odd": {14|19|25: (3584,)}, "n_rows": 20, "meta"}`` — a
+  20-TRAINING-ROW displacement mean, issue1434 positions, NOT a 16,400-row corpus mean;
+  n_rows + the even/odd split-half cosine ride each arm record as the free within-delta
+  noise floor); r_B = ``issue779_monitoring/r_b/<trait>.pt`` @ ``037fcbb2`` (probed:
+  ``{"trait", "r_b": (28, 3584), "layers": [0..27], ...}``); c_C = the arm's
+  training-context centroid ``A_ctx[layer]`` in ``issue1900_leakrace/anchors/<arm>.pt``
+  @ ``b5acdabc79`` (probed; the earlier ``c_C``/``centroid`` key guess never matched —
+  fix-round-2 ``dwfleet-anchor-payload-schema-unprobed``); gate direction A r computed
+  locally via ``issue2569_operator`` (B1). OUTPUT-side U factors (o/down,
+  residual-output space) read ALL directions; INPUT-side V factors (q/k/v/gate/up,
+  residual-input space) read the context-space direction c_C. o_proj's INPUT side is the
+  head-concat basis — dim 3584 but NOT the residual stream — and is never aligned
+  (fix-round-2 blocker ``dwfleet-cc-alignment-mismatched-basis``). A per-arm banked file
+  missing AT ITS PIN (probed: the 4 full-FT arms have no tbar/anchor) is recorded
+  EXPLICITLY in the arm record and the coverage block; all LoRA arms missing the primary
+  delta raises. Per-arm checkpointed under ``align/`` with a machine-stable resume key.
+  Seed-noise anchor: the #1979 impoliteness-contrastive seed pair (s42 vs s137) gives
+  the LoRA within-recipe dW-similarity floor; no full-FT seed pair exists (scope limit).
+- **Sizing gate (§7 row 2):** ``--phase pilot`` is PINNED to one FULL-FT checkpoint
+  (plan §4 leg-5 step 6 + blind-spot (2): the pilot must certify the
+  private-overflow-repo full-FT download path, which the smoke cannot; fix-round-2
+  blocker ``dwfleet-pilot-not-fullft-plan-adherence``). It stages ft[0] (TIMED —
+  checkpoint IO is part of the basis), runs the PRODUCTION analysis function on TWO
+  production-shape modules (down_proj MLP-wide + q_proj attention-square), stages +
+  analyzes one LoRA arm through the production exact-rank-r path, and extrapolates the
+  battery wall. A projection > ``--pilot-wall-cap-h`` (default 8 h) writes ``pilot.json``
+  and exits rc=7 (a DESIGNED artifact-routed halt) so the dispatcher splits the fleet
+  across 2 pods by checkpoint.
 
 Phases (``--phase``): ``fleet`` (enumerate + persist the realized fleet table), ``pilot``,
 ``lora`` (all LoRA arms), ``ft`` (full-FT checkpoints), ``align`` (factor alignments).
 Checkpoint-per-unit: each (arm) writes its JSON the moment it completes, with a
-machine-stable resume key from generating parameters. ``torch.load(weights_only=False)``
-is never needed here — safetensors + ``weights_only=True`` payloads only, except the
-self-produced tbar/anchor .pt payloads (revision-pinned, #1900 precedent).
+machine-stable resume key from generating parameters (incl. the base-svd payload's
+``_meta`` — content-describing, so a rebuilt payload never resume-skips stale units).
+``torch.load(weights_only=False)`` is only used for the self-produced, revision-pinned
+tbar / anchor / r_B payloads (#1900 precedent); checkpoints are safetensors-only.
 """
 
 from __future__ import annotations
@@ -75,13 +107,16 @@ DATA_REPO = "superkaiba1/explore-persona-space-data"
 ARMS_JSON_PATH = "issue1900_leakrace/config/arms.json"
 ARMS_JSON_REV = "3bb20debe2"
 ANCHORS_PREFIX = "issue1900_leakrace/anchors"
+# Data-repo main resolved at probe time (2026-08-25, this fix round): no earlier pin was
+# registered for the anchors prefix; the payload schema below was probed AT this revision.
+ANCHORS_REV = "b5acdabc791c6991491b085404c959510b6c2c5a"
 DELTA_TF_PREFIX = "issue1768_mapshift/delta_tf"
 DELTA_TF_REV = "c07267285d"
 RB_PREFIX = "issue779_monitoring/r_b"
 RB_REV = "037fcbb2"
 RB_TRAITS = ("evil", "hallucination", "sycophancy")
 
-# The 7 LoRA target modules (r32/alpha64 rsLoRA fleet) + attention modules for full-FT.
+# The 7 LoRA target modules (r32/alpha64 rsLoRA fleet) — also the full-FT decoder module set.
 LORA_MODULES = ("q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj")
 # Residual-OUTPUT-side modules: their dW LEFT singular vectors live in residual space.
 OUTPUT_SIDE_MODULES = ("o_proj", "down_proj")
@@ -90,9 +125,16 @@ DV3_NULL_DRAWS = 200
 DV3_NULL_AGGREGATION = "max_over_base_singular_vectors_then_max_over_band"
 PILOT_WALL_CAP_H = 8.0
 RC_PILOT_REFUSAL = 7  # the #1415 artifact-routed halt convention
+FT_MATRICES_PER_CKPT = 196  # 28 layers x 7 decoder modules (plan §9 P-C row)
+LOWRANK_Q = 64  # plan §4 leg-5 step 4: top-64 truncated SVD where vectors are needed
+LOWRANK_NITER = 8
 
 _ADAPTER_KEY_RE = re.compile(
     r"base_model\.model\.model\.layers\.(\d+)\.(self_attn|mlp)\.(\w+)\.lora_(A|B)\.weight"
+)
+_FT_KEY_RE = re.compile(
+    r"model\.layers\.(\d+)\.(self_attn|mlp)\."
+    r"(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)\.weight$"
 )
 
 
@@ -115,16 +157,49 @@ def lora_scaling(adapter_config: dict) -> float:
 
 
 def delta_w_from_lora(a: torch.Tensor, b: torch.Tensor, scaling: float) -> torch.Tensor:
-    """dW = B @ A * s in fp32; A is (r, d_in), B is (d_out, r)."""
+    """dW = B @ A * s in fp32; A is (r, d_in), B is (d_out, r). DENSE reference only.
+
+    Production paths never materialize dW for spectra/vectors — they use
+    ``lora_svd_factors`` (exact at O(d*r^2)); this stays as the equivalence-test oracle.
+    """
     assert a.shape[0] == b.shape[1], (a.shape, b.shape)
     return (b.to(torch.float32) @ a.to(torch.float32)) * float(scaling)
 
 
-def load_adapter_deltas(adapter_dir: Path) -> dict[tuple[int, str], torch.Tensor]:
-    """Load per-(layer, module) dW from a PEFT adapter directory (ANY rank).
+def lora_svd_factors(
+    a: torch.Tensor, b: torch.Tensor, scaling: float
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """EXACT SVD of dW = B @ A * s from the r x r core after QR — never a dense SVD.
 
-    Unlike ``issue650_analyze.load_adapter_pairs`` (which asserts r == 1 for its rank-1
-    geometry reads), this reconstructs the full-rank dW = B A s for the r32 fleet.
+    ``a`` is (..., r, d_in), ``b`` is (..., d_out, r); batched over leading dims. dW is
+    EXACTLY rank <= r, so with B = Q_B R_B and A^T = Q_A R_A the singular triplets of dW
+    are those of the r x r core C = R_B R_A^T s: dW = (Q_B U_c) diag(S) (Q_A V_c)^T.
+    Returns (U, S, Vh) shaped like ``torch.linalg.svd(dW, full_matrices=False)`` truncated
+    to r: U (..., d_out, r), S (..., r), Vh (..., r, d_in). This is exact (not an
+    approximation) at O(d*r^2) per matrix vs the dense O(d_out*d_in*min) path — the
+    fix-round-2 ``dwfleet-lora-dense-svd-vs-rank32`` blocker; dense agreement is pinned
+    by a committed regression test.
+    """
+    a32 = a.to(torch.float32)
+    b32 = b.to(torch.float32)
+    assert a32.shape[-2] == b32.shape[-1], (a32.shape, b32.shape)
+    qb, rb = torch.linalg.qr(b32, mode="reduced")  # (..., d_out, r), (..., r, r)
+    qa, ra = torch.linalg.qr(a32.transpose(-2, -1), mode="reduced")  # (..., d_in, r), (..., r, r)
+    core = (rb @ ra.transpose(-2, -1)) * float(scaling)  # (..., r, r)
+    uc, s, vch = torch.linalg.svd(core, full_matrices=False)
+    u = qb @ uc  # (..., d_out, r)
+    vh = vch @ qa.transpose(-2, -1)  # (..., r, d_in)
+    return u, s, vh
+
+
+def load_adapter_factors(
+    adapter_dir: Path,
+) -> tuple[dict[tuple[int, str], dict[str, torch.Tensor]], float]:
+    """Load per-(layer, module) LoRA factor pairs {"A": (r, d_in), "B": (d_out, r)} + scaling.
+
+    Factors stay UN-materialized: every production consumer goes through
+    ``lora_svd_factors``; ``load_adapter_deltas`` below is the dense equivalence
+    reference (tests only). Incomplete pairs / empty adapters fail loud.
     """
     from safetensors.torch import load_file
 
@@ -138,21 +213,35 @@ def load_adapter_deltas(adapter_dir: Path) -> dict[tuple[int, str], torch.Tensor
             continue
         layer, _, module, ab = int(m.group(1)), m.group(2), m.group(3), m.group(4)
         pairs.setdefault((layer, module), {})[ab] = t
-    out: dict[tuple[int, str], torch.Tensor] = {}
     for (layer, module), ab in sorted(pairs.items()):
         if "A" not in ab or "B" not in ab:
             raise RuntimeError(f"incomplete LoRA pair at layer {layer} module {module}")
-        out[(layer, module)] = delta_w_from_lora(ab["A"], ab["B"], s)
-    if not out:
+    if not pairs:
         raise RuntimeError(f"no LoRA weight pairs found under {adapter_dir}")
-    return out
+    return pairs, s
 
 
-def iter_ft_deltas(base_dir: Path, post_dir: Path):
-    """Yield (param_name, dW fp32) for every 2-D weight, one tensor at a time (stream-reduce).
+def load_adapter_deltas(adapter_dir: Path) -> dict[tuple[int, str], torch.Tensor]:
+    """DENSE reference: materialized dW = B A s per (layer, module) — equivalence tests ONLY.
+
+    NOT on the production path (production consumes ``load_adapter_factors`` +
+    ``lora_svd_factors``): materializing dW invites the dense-SVD shape the round-2
+    blocker ``dwfleet-lora-dense-svd-vs-rank32`` priced at 20-30 h against the 8 h cap.
+    """
+    pairs, s = load_adapter_factors(adapter_dir)
+    return {
+        (layer, module): delta_w_from_lora(ab["A"], ab["B"], s)
+        for (layer, module), ab in sorted(pairs.items())
+    }
+
+
+def iter_ft_deltas(base_dir: Path, post_dir: Path, name_filter=None):
+    """Yield (param_name, dW fp32) for 2-D weights, one tensor at a time (stream-reduce).
 
     Both directories are HF-format checkpoints (safetensors shards + index). Peak RSS stays
     O(one tensor) — never the whole 15 GB delta (earlyoom stream-reduce rule, #658).
+    ``name_filter`` (predicate on the param name) is applied BEFORE any tensor read so a
+    filtered pilot never pays IO for excluded matrices.
     """
     from safetensors import safe_open
 
@@ -184,11 +273,19 @@ def iter_ft_deltas(base_dir: Path, post_dir: Path):
         return open_handles[path].get_tensor(name)  # type: ignore[union-attr]
 
     for name in sorted(base_map):
+        if name_filter is not None and not name_filter(name):
+            continue
         w_base = _get(base_map, name)
         if w_base.ndim != 2:
             continue
         w_post = _get(post_map, name)
         yield name, (w_post.to(torch.float32) - w_base.to(torch.float32))
+
+
+def _ft_name_parts(name: str) -> tuple[int, str] | None:
+    """(layer, module) for a decoder weight-matrix param name, else None."""
+    m = _FT_KEY_RE.match(name)
+    return (int(m.group(1)), m.group(3)) if m else None
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -207,11 +304,12 @@ def svdvals_robust(w: torch.Tensor) -> np.ndarray:
 
 
 def svdvals_stack(stack: torch.Tensor) -> np.ndarray:
-    """Batched singular values of a (B, m, n) stack; per-slice fallback on non-convergence.
+    """Batched singular values of a (B, m, n) stack — DENSE reference (tests only).
 
-    One batched LAPACK call on the healthy path (vectorize-first); a single bad slice
-    triggers the per-matrix path via ``svdvals_robust`` (gotchas: batched solves raise ONE
-    error for the whole stack).
+    NOT on the production LoRA path (which is ``lora_svd_factors``, exact at rank r);
+    kept as the batched dense oracle for the equivalence tests. A single bad slice
+    triggers the per-matrix path via ``svdvals_robust`` (gotchas: batched solves raise
+    ONE error for the whole stack).
     """
     try:
         return torch.linalg.svdvals(stack).to(torch.float64).numpy()
@@ -221,7 +319,12 @@ def svdvals_stack(stack: torch.Tensor) -> np.ndarray:
 
 
 def effective_rank_summaries(svals: np.ndarray) -> dict:
-    """Descriptive spectral summaries (never gates): stable rank, PR, top-1 shares."""
+    """Descriptive spectral summaries (never gates): stable rank, PR, top-1 shares.
+
+    ``n_svals`` is the count of COMPUTED singular values: min(m, n) on the dense full-FT
+    path, exactly r on the factored LoRA path (trailing exact zeros of a rank-r product
+    carry no mass and are not materialized).
+    """
     s = np.asarray(svals, dtype=np.float64)
     s2 = s**2
     tot2 = float(s2.sum())
@@ -250,16 +353,52 @@ def dv3_payload_from_null(arm_results: dict[str, dict]) -> dict:
     """Wrap per-arm ``dv3_max_matched_null`` results in the registered nested #650 schema.
 
     ``arm_results`` maps arm name ("write" / "read") -> the flat dv3_max_matched_null
-    output. The returned payload carries the ``observed`` / ``null`` / ``assertions``
-    blocks and MUST pass ``issue650_analyze.assert_dv3_schema`` (validated here at write —
-    a mismatched aggregation is rejected before anything is persisted).
+    output. The ``assertions.null_aggregation_matches_observed`` flag is COMPUTED, never
+    a literal (fix-round-2 blocker ``dwfleet-null-assertion-vacuous``): per arm, the
+    observed band max is recomputed from the per-layer observed maxima, every null
+    draw's band max is recomputed from the per-layer null draws, and the band p95 is
+    recomputed from the recomputed draws — each compared numerically at 1e-6. Any
+    mismatch raises BEFORE anything is persisted; the returned payload additionally
+    passes ``issue650_analyze.assert_dv3_schema``.
     """
+    tol = 1e-6
     observed: dict = {}
     null: dict = {}
     for arm, res in arm_results.items():
         if res["null_aggregation"] != DV3_NULL_AGGREGATION:
             raise AssertionError(
                 f"dv3 {arm}: aggregation {res['null_aggregation']!r} != {DV3_NULL_AGGREGATION!r}"
+            )
+        # COMPUTED symmetry check: observed and null must reduce by the IDENTICAL
+        # per-layer-max -> band-max chain. Recompute both sides and compare.
+        obs_band_re = float(max(res["per_layer_observed_max"].values()))
+        if abs(obs_band_re - float(res["band_observed_max"])) > tol:
+            raise AssertionError(
+                f"dv3 {arm}: band_observed_max {res['band_observed_max']!r} != recomputed "
+                f"per-layer band max {obs_band_re!r} — observed aggregation is NOT the "
+                "registered band-max"
+            )
+        per_layer_null = res["per_layer_null_max_draws"]
+        null_band = np.asarray(res["band_null_max_draws"], dtype=np.float64)
+        null_band_re = np.max(
+            np.stack(
+                [np.asarray(per_layer_null[layer], dtype=np.float64) for layer in per_layer_null]
+            ),
+            axis=0,
+        )
+        if null_band.shape != null_band_re.shape or not np.allclose(
+            null_band, null_band_re, atol=tol, rtol=0
+        ):
+            raise AssertionError(
+                f"dv3 {arm}: band_null_max_draws does not equal the per-layer-max band "
+                "reduction of per_layer_null_max_draws — null aggregation is NOT the "
+                "registered band-max"
+            )
+        p95_re = float(np.percentile(null_band_re, 95.0))
+        if abs(p95_re - float(res["band_null_p95"])) > tol:
+            raise AssertionError(
+                f"dv3 {arm}: band_null_p95 {res['band_null_p95']!r} != recomputed p95 "
+                f"{p95_re!r} over the band-max null draws"
             )
         observed[arm] = {
             "max_by_layer": res["per_layer_observed_max"],
@@ -276,6 +415,7 @@ def dv3_payload_from_null(arm_results: dict[str, dict]) -> dict:
     payload = {
         "observed": observed,
         "null": null,
+        # True is EARNED here: every arm above passed the numeric recompute-and-compare.
         "assertions": {"null_aggregation_matches_observed": True},
     }
     _issue650().assert_dv3_schema(payload)
@@ -295,7 +435,7 @@ def intruder_read(
     ``dw_top_vecs``: per layer, the TOP dW singular vector (1-D, len d) on the side whose
     base basis is supplied. Aggregation is EXACTLY max-over-base-singular-vectors then
     max-over-band via ``dv3_max_matched_null`` per observed vector; per-layer results are
-    combined by the same band-max the null uses.
+    combined by the same band-max the null uses (verified numerically at payload build).
     """
     i650 = _issue650()
     band = tuple(sorted(dw_top_vecs))
@@ -499,62 +639,227 @@ def _stage_checkpoint(repo_id: str, subfolder: str, dl_root: Path, tag: str) -> 
     return dest / subfolder
 
 
-def analyze_lora_arm(entry: FleetEntry, adapter_dir: Path, base_svd: dict | None) -> dict:
-    """Spectra + effective rank + intruder read for one LoRA arm (batched per module)."""
-    deltas = load_adapter_deltas(adapter_dir)
-    by_module: dict[str, dict[int, torch.Tensor]] = {}
-    for (layer, module), dw in deltas.items():
-        by_module.setdefault(module, {})[layer] = dw
-    rec: dict = {"arm_id": entry.arm_id, "method": "lora", "modules": {}}
+def _stage_banked_file(path_in_repo: str, dl_root: Path, revision: str, *, what: str) -> Path:
+    """Stage one banked file from the data repo at its PINNED revision; return the REAL path.
+
+    A local-dir hub download PRESERVES ``path_in_repo`` under ``local_dir``
+    (probed 2026-08-25), so consumers MUST use the returned path — hand-deriving
+    ``dl_root/<suffix>`` is the fix-round-2 ``dwfleet-delta-tbar-silent-absence`` trap
+    (every arm silently loses its primary delta alignment).
+    """
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate import hub
+
+    p = hub.retry_transient(
+        lambda: hf_hub_download(
+            DATA_REPO, path_in_repo, repo_type="dataset", revision=revision, local_dir=dl_root
+        ),
+        what=what,
+    )
+    return Path(p)
+
+
+def _stage_optional_banked_file(
+    path_in_repo: str, dl_root: Path, revision: str, *, what: str
+) -> Path | None:
+    """Stage a PER-ARM banked file; a 404 AT THE PIN returns None for EXPLICIT recording.
+
+    Probed 2026-08-25: the 4 full-FT arms have no tbar / anchor banked, so per-arm
+    absence is a REAL state — the caller records it in the arm record + coverage block
+    (never a bare skip). ``EntryNotFoundError`` is non-transient so ``retry_transient``
+    re-raises it immediately; every OTHER failure propagates (fail-loud).
+    """
+    from huggingface_hub.errors import EntryNotFoundError
+
+    try:
+        return _stage_banked_file(path_in_repo, dl_root, revision, what=what)
+    except EntryNotFoundError:
+        return None
+
+
+def _load_base_svd_required(path_str: str | None) -> dict:
+    """Load the #650 base-SVD payload for ALL 7 LoRA target modules (fail-loud, required).
+
+    The intruder read is a plan-registered leg-5 deliverable, so ``--base-svd`` is
+    REQUIRED for the lora/ft/pilot phases; a payload built without a needed module (the
+    fix-round-2 ``dwfleet-oproj-intruder-silently-dropped`` shape) raises with the
+    rebuild command instead of silently skipping the module.
+    """
+    if not path_str:
+        raise RuntimeError(
+            "--base-svd is required (build it: issue650_analyze.py build-base-svd "
+            f"--modules {','.join(LORA_MODULES)})"
+        )
+    p = Path(path_str)
+    if not p.is_file():
+        raise FileNotFoundError(f"--base-svd payload not found at {p}")
+    try:
+        return _issue650().load_base_svd(p, modules=LORA_MODULES)
+    except KeyError as e:
+        raise RuntimeError(
+            f"base-svd payload at {p} lacks module {e} — rebuild with build-base-svd "
+            f"--modules {','.join(LORA_MODULES)}"
+        ) from e
+
+
+def analyze_lora_arm(entry: FleetEntry, adapter_dir: Path, base_svd: dict) -> dict:
+    """Spectra + effective rank + intruder read for one LoRA arm — EXACT rank-r path.
+
+    Per module the layer-stacked factors go through ``lora_svd_factors`` (the r x r core
+    after QR): singular values + top vectors are EXACT for dW = B A s at O(d*r^2) per
+    matrix instead of a dense SVD (fix-round-2 ``dwfleet-lora-dense-svd-vs-rank32``).
+    The intruder read runs per module on the module's RESIDUAL side (o/down: U "write";
+    q/k/v/gate/up: V "read"); a base-svd payload lacking any adapter module or layer
+    RAISES — no module is ever silently dropped (fix-round-2
+    ``dwfleet-oproj-intruder-silently-dropped``).
+    """
+    i650 = _issue650()
+    pairs, scaling = load_adapter_factors(adapter_dir)
+    by_module: dict[str, dict[int, dict[str, torch.Tensor]]] = {}
+    for (layer, module), ab in pairs.items():
+        by_module.setdefault(module, {})[layer] = ab
+    rec: dict = {
+        "arm_id": entry.arm_id,
+        "method": "lora",
+        "modules": {},
+        "intruder": {},
+        "intruder_side": {},
+    }
     for module, by_layer in sorted(by_module.items()):
         layers = sorted(by_layer)
-        stack = torch.stack([by_layer[layer] for layer in layers])
-        svals = svdvals_stack(stack)
+        a_stack = torch.stack([by_layer[layer]["A"] for layer in layers])
+        b_stack = torch.stack([by_layer[layer]["B"] for layer in layers])
+        u, s, vh = lora_svd_factors(a_stack, b_stack, scaling)
+        svals = s.to(torch.float64).numpy()  # (L, r) — the EXACT nonzero spectrum
         rec["modules"][module] = {
             str(layer): effective_rank_summaries(svals[i]) for i, layer in enumerate(layers)
         }
-    if base_svd is not None:
-        rec["intruder"] = {}
-        for module in OUTPUT_SIDE_MODULES:
-            if module not in by_module:
-                continue
-            basis = {
-                layer: base_svd[module][layer]["U"]
-                for layer in sorted(by_module[module])
-                if layer in base_svd.get(module, {})
-            }
-            if not basis:
-                continue
-            top_vecs = {}
-            for layer in basis:
-                u, _, _ = torch.linalg.svd(by_module[module][layer], full_matrices=False)
-                top_vecs[layer] = u[:, 0].numpy()
-            rec["intruder"][module] = intruder_read(top_vecs, basis, arm_name="write")
+        if module not in i650.RESIDUAL_SIDE_BY_MODULE:
+            raise RuntimeError(f"no residual-side convention for adapter module {module!r}")
+        side = i650.RESIDUAL_SIDE_BY_MODULE[module]
+        if module not in base_svd:
+            raise RuntimeError(
+                f"base-svd payload lacks module {module!r} — rebuild with build-base-svd "
+                f"--modules {','.join(LORA_MODULES)}"
+            )
+        top = (u[:, :, 0] if side == "U" else vh[:, 0, :]).numpy()  # (L, d_side)
+        vecs: dict[int, np.ndarray] = {}
+        basis: dict[int, np.ndarray] = {}
+        for i, layer in enumerate(layers):
+            if layer not in base_svd[module]:
+                raise RuntimeError(f"base-svd payload lacks layer {layer} for {module!r}")
+            vecs[layer] = top[i]
+            basis[layer] = base_svd[module][layer][side]
+        rec["intruder"][module] = intruder_read(
+            vecs, basis, arm_name="write" if side == "U" else "read"
+        )
+        rec["intruder_side"][module] = side
     return rec
 
 
-def analyze_ft_checkpoint(entry: FleetEntry, base_dir: Path, post_dir: Path) -> dict:
-    """Spectra + effective rank for every 2-D matrix of one full-FT checkpoint (streamed)."""
-    rec: dict = {"arm_id": entry.arm_id, "method": "ft", "matrices": {}}
+def analyze_ft_checkpoint(
+    entry: FleetEntry,
+    base_dir: Path,
+    post_dir: Path,
+    base_svd: dict,
+    *,
+    align_layer: int,
+    factors_path: Path | None = None,
+    module_filter: tuple[str, ...] | None = None,
+) -> dict:
+    """Spectra + effective rank + intruder + align-layer factors for one full-FT checkpoint.
+
+    Streams theta_post - theta_base one tensor at a time over the DECODER weight matrices
+    (28 layers x 7 modules = 196/ckpt — the plan §9 arithmetic; ``embed_tokens`` /
+    ``lm_head`` are vocab-space (152k x 3584), not module geometry, and each would add a
+    ~150k-row SVD the plan never priced — excluded by construction). Vectors come from
+    truncated ``torch.svd_lowrank`` (q<=64, plan §4 leg-5 step 4; seeded for resume
+    stability). The intruder read runs per module on the module's RESIDUAL side, and the
+    align-layer residual-side top-8 factors are persisted to ``factors_path`` for
+    ``--phase align`` (fix-round-2 blocker ``dwfleet-fullft-analysis-missing``).
+    """
+    i650 = _issue650()
+    rec: dict = {
+        "arm_id": entry.arm_id,
+        "method": "ft",
+        "matrices": {},
+        "intruder": {},
+        "intruder_side": {},
+    }
+    torch.manual_seed(SEED)  # svd_lowrank is randomized — pin for resume stability
+    top_vecs: dict[str, dict[int, np.ndarray]] = {}
+    factors: dict[str, dict] = {}
     n = 0
     t0 = time.time()
-    for name, dw in iter_ft_deltas(base_dir, post_dir):
+
+    def _keep(name: str) -> bool:
+        parts = _ft_name_parts(name)
+        if parts is None:
+            return False
+        return module_filter is None or parts[1] in module_filter
+
+    for name, dw in iter_ft_deltas(base_dir, post_dir, name_filter=_keep):
+        layer_idx, module = _ft_name_parts(name)  # type: ignore[misc]
         svals = svdvals_robust(dw)
         rec["matrices"][name] = effective_rank_summaries(svals)
+        side = i650.RESIDUAL_SIDE_BY_MODULE[module]
+        q = min(LOWRANK_Q, min(dw.shape))
+        u, s, v = torch.svd_lowrank(dw, q=q, niter=LOWRANK_NITER)
+        side_vecs = (u.T if side == "U" else v.T).contiguous()  # (q, d_side) rows
+        top_vecs.setdefault(module, {})[layer_idx] = side_vecs[0].numpy()
+        if layer_idx == align_layer:
+            kk = min(TOP_K_FACTORS, side_vecs.shape[0])
+            factors[module] = {
+                "side": side,
+                "factors": side_vecs[:kk].clone(),
+                "svals": s[:kk].clone(),
+            }
         n += 1
         print(f"[dw-ft] unit {n} {entry.arm_id}/{name} elapsed={time.time() - t0:.0f}s", flush=True)
     if n == 0:
-        raise RuntimeError(f"no 2-D matrices found for {entry.arm_id}")
+        raise RuntimeError(f"no decoder weight matrices found for {entry.arm_id}")
     rec["n_matrices"] = n
+    rec["factor_method"] = f"svd_lowrank(q<={LOWRANK_Q}, niter={LOWRANK_NITER}, seed={SEED})"
+    for module, vecs in sorted(top_vecs.items()):
+        side = i650.RESIDUAL_SIDE_BY_MODULE[module]
+        if module not in base_svd:
+            raise RuntimeError(
+                f"base-svd payload lacks module {module!r} — rebuild with build-base-svd "
+                f"--modules {','.join(LORA_MODULES)}"
+            )
+        basis: dict[int, np.ndarray] = {}
+        for layer_idx in sorted(vecs):
+            if layer_idx not in base_svd[module]:
+                raise RuntimeError(f"base-svd payload lacks layer {layer_idx} for {module!r}")
+            basis[layer_idx] = base_svd[module][layer_idx][side]
+        rec["intruder"][module] = intruder_read(
+            vecs, basis, arm_name="write" if side == "U" else "read"
+        )
+        rec["intruder_side"][module] = side
+    if factors_path is not None:
+        if module_filter is None and set(factors) != set(LORA_MODULES):
+            raise RuntimeError(
+                f"align-layer {align_layer} factors incomplete for {entry.arm_id}: "
+                f"got {sorted(factors)} — the checkpoint stream never saw that layer?"
+            )
+        factors_path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "layer": int(align_layer),
+                "arm_id": entry.arm_id,
+                "method": rec["factor_method"],
+                "modules": factors,
+            },
+            factors_path,
+        )
+        rec["factors_path"] = str(factors_path)
     return rec
 
 
-def top_factors_for_alignment(
-    dw: torch.Tensor, *, k: int = TOP_K_FACTORS
-) -> tuple[np.ndarray, np.ndarray]:
-    """(U_k rows, V_k rows) — top-k output-side and input-side singular vectors of dW."""
-    u, _, vh = torch.linalg.svd(dw.to(torch.float32), full_matrices=False)
-    return u[:, :k].T.numpy(), vh[:k].numpy()
+# ──────────────────────────────────────────────────────────────────────────
+# Banked-direction loaders (schemas PROBED on the real artifacts, 2026-08-25)
+# ──────────────────────────────────────────────────────────────────────────
 
 
 def _unit_vec(x: np.ndarray) -> np.ndarray:
@@ -566,27 +871,97 @@ def _unit_vec(x: np.ndarray) -> np.ndarray:
     return v / n
 
 
-def load_direction_pt(
-    path: Path, *, key: str | None = None, layer: int | None = None
-) -> np.ndarray:
-    """Load a banked direction .pt (tbar / r_B / anchor); self-produced + revision-pinned."""
+def load_rb_direction(path: Path, layer: int) -> np.ndarray:
+    """r_B at one layer from the #779 payload.
+
+    Probed @ ``037fcbb2``: ``{"trait": str, "r_b": (28, 3584) fp32, "layers": [0..27],
+    "counts", "smoke", "metadata"}`` — a DICT with a stacked per-layer matrix, not a bare
+    tensor (schema-from-artifact; the prior bare-tensor read raised TypeError on the real
+    file). Fail-loud on an unexpected shape or an absent layer.
+    """
     payload = torch.load(path, weights_only=False, map_location="cpu")
-    obj = payload
-    if key is not None:
-        obj = obj[key]
-    if layer is not None and isinstance(obj, dict):
-        obj = obj[layer]
-    if torch.is_tensor(obj):
-        return _unit_vec(obj.to(torch.float64).numpy())
-    if isinstance(obj, np.ndarray):
-        return _unit_vec(obj)
-    raise TypeError(f"cannot resolve a direction from {path} (key={key}, layer={layer})")
+    if not isinstance(payload, dict) or "r_b" not in payload or "layers" not in payload:
+        got = sorted(payload) if isinstance(payload, dict) else type(payload).__name__
+        raise TypeError(f"unexpected r_B payload at {path}: {got}")
+    layers = [int(x) for x in payload["layers"]]
+    if layer not in layers:
+        raise KeyError(f"layer {layer} not in r_B payload layers {layers} ({path})")
+    row = payload["r_b"][layers.index(layer)]
+    return _unit_vec(row.to(torch.float64).numpy())
+
+
+def load_tbar_directions(path: Path, layer: int) -> tuple[dict[str, np.ndarray], dict]:
+    """delta (tbar) + split halves at one layer from the #1768 payload.
+
+    Probed @ ``c07267285d``: ``{"tbar"/"tbar_even"/"tbar_odd": {14|19|25: (3584,) fp32},
+    "n_rows": 20, "meta": {...}}``. Returns ({delta_tbar, delta_tbar_even,
+    delta_tbar_odd}, provenance). n_rows == 20: tbar is a 20-TRAINING-ROW displacement
+    mean (issue1434 positions), NOT a 16,400-row corpus mean — recorded per arm, with the
+    even/odd split-half cosine as the free within-delta noise floor (fix-round-2 concern
+    ``leg5-delta-inherits-tbar-20row-basis``).
+    """
+    payload = torch.load(path, weights_only=False, map_location="cpu")
+    for key in ("tbar", "tbar_even", "tbar_odd"):
+        if key not in payload or layer not in payload[key]:
+            have = sorted(payload.get("tbar", {})) if isinstance(payload, dict) else "?"
+            raise KeyError(f"{key}[{layer}] missing in tbar payload {path} (layers={have})")
+    even = payload["tbar_even"][layer].to(torch.float64).numpy()
+    odd = payload["tbar_odd"][layer].to(torch.float64).numpy()
+    dirs = {
+        "delta_tbar": _unit_vec(payload["tbar"][layer].to(torch.float64).numpy()),
+        "delta_tbar_even": _unit_vec(even),
+        "delta_tbar_odd": _unit_vec(odd),
+    }
+    prov = {
+        "n_rows": int(payload["n_rows"]),
+        "splithalf_cos": float(np.dot(_unit_vec(even), _unit_vec(odd))),
+        "basis_note": (
+            "20-training-row displacement mean (issue1434 positions), not a corpus mean"
+        ),
+    }
+    return dirs, prov
+
+
+def load_anchor_cc(path: Path, layer: int) -> tuple[np.ndarray, dict]:
+    """c_C = the arm's training-context centroid ``A_ctx[layer]`` from the #1979 anchor.
+
+    Probed @ ``b5acdabc79``: ``{"mix_arm_id", "n_rows": 20, "low_n_flag", "mix_meta",
+    "A_ctx"/"A_ans"/(+ _even/_odd): {14|19|25: (3584,)}, "split_half_cos_ctx"/"..._ans",
+    "rows_ctx": (20, 3584), "tbar_cos", "meta"}``. The earlier ``c_C``/``centroid`` key
+    guess NEVER matched this schema — c_C silently vanished for every arm (fix-round-2
+    ``dwfleet-anchor-payload-schema-unprobed``). Fail-loud on schema/layer misses.
+    """
+    payload = torch.load(path, weights_only=False, map_location="cpu")
+    if not isinstance(payload, dict) or "A_ctx" not in payload:
+        got = sorted(payload) if isinstance(payload, dict) else type(payload).__name__
+        raise TypeError(f"unexpected anchor payload at {path}: {got}")
+    a_ctx = payload["A_ctx"]
+    if layer not in a_ctx:
+        raise KeyError(f"A_ctx[{layer}] missing in anchor payload {path} (layers={sorted(a_ctx)})")
+    shc = payload.get("split_half_cos_ctx", {})
+    prov = {
+        "n_rows": int(payload.get("n_rows", -1)),
+        "low_n_flag": bool(payload.get("low_n_flag", False)),
+        "splithalf_cos_ctx": float(shc[layer]) if layer in shc else None,
+    }
+    return _unit_vec(a_ctx[layer].to(torch.float64).numpy()), prov
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Phases
+# ──────────────────────────────────────────────────────────────────────────
 
 
 def cmd_align(args) -> int:
     """Factor-alignment phase: top-8 dW factors vs delta / r_B / c_C / A r (+ seed anchor).
 
     Runs OP.run_driver_identity_asserts at entry (the operator-consuming path — B1).
+    Basis routing (fix-round-2 ``dwfleet-cc-alignment-mismatched-basis``): residual-OUTPUT
+    U factors (o_proj/down_proj) read ALL directions; residual-INPUT V factors
+    (q/k/v/gate/up) read the context-space direction c_C. o_proj's input side (head-concat
+    basis) and down_proj's input side (ffn basis) are STRUCTURALLY never aligned — a dim
+    coincidence never licenses a read. Per-arm checkpointed under ``align/``; full-FT arms
+    consume the factor sidecars ``--phase ft`` persisted.
     """
     import issue2569_operator as op
 
@@ -599,52 +974,175 @@ def cmd_align(args) -> int:
     a_mat, _b = op.row_operator(payload)
 
     fleet = _load_fleet_table(out_root)
+    if args.arms:
+        want = {a.strip() for a in args.arms.split(",")}
+        fleet = [e for e in fleet if e.arm_id in want]
+        if not fleet:
+            raise RuntimeError(f"empty fleet after --arms filter: {sorted(want)}")
+
+    # Global directions — staged at their PINS, fail-loud (the pins are LIVE here).
     directions: dict[str, np.ndarray] = {}
     for trait in RB_TRAITS:
-        rb_path = dl_root / "r_b" / f"{trait}.pt"
-        if rb_path.is_file():
-            rb = load_direction_pt(rb_path)
-            directions[f"r_B[{trait}]"] = rb
-            directions[f"Ar[{trait}]"] = _unit_vec(op.monitor_gradient(a_mat, rb))
-    if not directions:
-        raise RuntimeError(f"no r_B directions staged under {dl_root / 'r_b'} — stage them first")
+        rb_path = _stage_banked_file(
+            f"{RB_PREFIX}/{trait}.pt", dl_root, RB_REV, what=f"r_B fetch ({trait}@{RB_REV})"
+        )
+        rb = load_rb_direction(rb_path, layer)
+        directions[f"r_B[{trait}]"] = rb
+        directions[f"Ar[{trait}]"] = _unit_vec(op.monitor_gradient(a_mat, rb))
 
+    align_dir = out_root / "dw_fleet" / "align"
+    rk = regime_key(
+        phase="align",
+        layer=layer,
+        top_k=TOP_K_FACTORS,
+        dv3_draws=DV3_NULL_DRAWS,
+        arms_rev=ARMS_JSON_REV,
+        delta_tf_rev=DELTA_TF_REV,
+        rb_rev=RB_REV,
+        anchors_rev=ANCHORS_REV,
+    )
     results: dict[str, dict] = {}
-    for entry in fleet:
-        if entry.method != "lora":
-            continue  # ft factor alignment consumes the ft battery outputs (matrices on disk)
-        arm_dir = dl_root / "adapters" / entry.arm_id / entry.subfolder
-        if not (arm_dir / "adapter_model.safetensors").is_file():
-            arm_dir = _stage_adapter(entry, dl_root / "adapters")
-        deltas = load_adapter_deltas(arm_dir)
-        arm_rec: dict = {"factors": {}}
-        # Per-arm directions: delta (tbar) + c_C anchor, when staged.
-        arm_dirs = dict(directions)
-        tbar_path = dl_root / "delta_tf" / entry.arm_id / "tbar.pt"
-        if tbar_path.is_file():
-            arm_dirs["delta_tbar"] = load_direction_pt(tbar_path, key="tbar", layer=layer)
-        anchor_path = dl_root / "anchors" / f"{entry.arm_id}.pt"
-        if anchor_path.is_file():
-            anchor = torch.load(anchor_path, weights_only=False, map_location="cpu")
-            vec = anchor.get("c_C", anchor.get("centroid")) if isinstance(anchor, dict) else anchor
-            if torch.is_tensor(vec):
-                arm_dirs["c_C"] = _unit_vec(vec.to(torch.float64).numpy())
-            elif isinstance(vec, dict) and layer in vec:
-                arm_dirs["c_C"] = _unit_vec(vec[layer].to(torch.float64).numpy())
-        for module in OUTPUT_SIDE_MODULES:
-            if (layer, module) not in deltas:
+    t0 = time.time()
+    for k, entry in enumerate(fleet, start=1):
+        unit_path = align_dir / f"{entry.arm_id}.json"
+        if not args.no_resume and unit_path.is_file():
+            try:
+                prior = json.loads(unit_path.read_text())
+            except json.JSONDecodeError:
+                prior = None
+            if prior is not None and prior.get("regime_key") == rk:
+                results[entry.arm_id] = prior
+                print(f"[dw-align] unit {k}/{len(fleet)} {entry.arm_id} resume-skip", flush=True)
                 continue
-            u_k, v_k = top_factors_for_alignment(deltas[(layer, module)])
-            mod_rec: dict = {}
-            for name, d in sorted(arm_dirs.items()):
-                side = v_k if name == "c_C" else u_k  # context directions read input-side V
-                if d.shape[0] != side.shape[1]:
-                    mod_rec[name] = {"skipped": f"dim mismatch {d.shape[0]} vs {side.shape[1]}"}
-                    continue
-                mod_rec[name] = alignment_vs_null(side, d)
-            arm_rec["factors"][f"L{layer}.{module}"] = mod_rec
+
+        arm_rec: dict = {
+            "arm_id": entry.arm_id,
+            "method": entry.method,
+            "factors": {},
+            "directions_provenance": {},
+        }
+        arm_dirs = dict(directions)
+
+        # delta (tbar) — the H5 PRIMARY direction; staged at the pin, absence EXPLICIT.
+        tbar_repo_path = f"{DELTA_TF_PREFIX}/{entry.arm_id}/tbar.pt"
+        tbar_path = _stage_optional_banked_file(
+            tbar_repo_path, dl_root, DELTA_TF_REV, what=f"tbar fetch ({entry.arm_id})"
+        )
+        if tbar_path is None:
+            arm_rec["directions_provenance"]["delta_tbar"] = {
+                "missing": f"no {tbar_repo_path} at {DELTA_TF_REV}"
+            }
+        else:
+            tbar_dirs, tbar_prov = load_tbar_directions(tbar_path, layer)
+            arm_dirs.update(tbar_dirs)
+            arm_rec["directions_provenance"]["delta_tbar"] = tbar_prov
+
+        # c_C — the arm's training-context centroid from the #1979 banked anchors.
+        anchor_repo_path = f"{ANCHORS_PREFIX}/{entry.arm_id}.pt"
+        anchor_path = _stage_optional_banked_file(
+            anchor_repo_path, dl_root, ANCHORS_REV, what=f"anchor fetch ({entry.arm_id})"
+        )
+        if anchor_path is None:
+            arm_rec["directions_provenance"]["c_C"] = {
+                "missing": f"no {anchor_repo_path} at {ANCHORS_REV[:12]}"
+            }
+        else:
+            cc, cc_prov = load_anchor_cc(anchor_path, layer)
+            arm_dirs["c_C"] = cc
+            arm_rec["directions_provenance"]["c_C"] = cc_prov
+
+        # Top-8 factors per module at the align layer.
+        i650 = _issue650()
+        module_factors: dict[str, tuple[str, np.ndarray]] = {}
+        if entry.method == "lora":
+            arm_dir = dl_root / "adapters" / entry.arm_id / entry.subfolder
+            if not (arm_dir / "adapter_model.safetensors").is_file():
+                arm_dir = _stage_adapter(entry, dl_root / "adapters")
+            pairs, scaling = load_adapter_factors(arm_dir)
+            for module in sorted({m for (_l, m) in pairs}):
+                if (layer, module) not in pairs:
+                    raise RuntimeError(
+                        f"{entry.arm_id}: adapter has no (layer={layer}, {module}) pair"
+                    )
+                ab = pairs[(layer, module)]
+                u, s, vh = lora_svd_factors(ab["A"], ab["B"], scaling)
+                side = i650.RESIDUAL_SIDE_BY_MODULE[module]
+                kk = min(TOP_K_FACTORS, s.shape[-1])
+                stack = (u[:, :kk].T if side == "U" else vh[:kk]).numpy()
+                module_factors[module] = (side, stack)
+        else:
+            factors_path = out_root / "dw_fleet" / "ft" / f"{entry.arm_id}_factors_L{layer}.pt"
+            if not factors_path.is_file():
+                raise RuntimeError(
+                    f"ft factor sidecar missing at {factors_path} — run --phase ft "
+                    f"(same --align-layer {layer}) before --phase align"
+                )
+            sidecar = torch.load(factors_path, weights_only=True, map_location="cpu")
+            if int(sidecar["layer"]) != layer:
+                raise RuntimeError(
+                    f"ft factor sidecar layer {sidecar['layer']} != align layer {layer}"
+                )
+            module_factors = {
+                m: (v["side"], v["factors"].numpy()) for m, v in sidecar["modules"].items()
+            }
+
+        for module, (side, stack) in sorted(module_factors.items()):
+            # Basis routing: U-side factors live in residual-OUTPUT space (all directions
+            # read); V-side factors live in residual-INPUT space for q/k/v/gate/up (the
+            # context-space direction c_C reads). o_proj input (head-concat) and
+            # down_proj input (ffn) never appear here — the side selection above already
+            # took the module's RESIDUAL side, so a mismatched-basis cosine is
+            # structurally impossible, not just dim-checked.
+            if side == "U":
+                read_names = sorted(arm_dirs)
+            else:
+                read_names = [n for n in ("c_C",) if n in arm_dirs]
+            reads: dict[str, dict] = {}
+            for name in read_names:
+                d = arm_dirs[name]
+                if d.shape[0] != stack.shape[1]:
+                    raise RuntimeError(
+                        f"{entry.arm_id} L{layer}.{module}: direction {name} dim "
+                        f"{d.shape[0]} != factor dim {stack.shape[1]} (side {side}) — "
+                        "corrupted input, refusing to publish a mismatched-basis cosine"
+                    )
+                reads[name] = alignment_vs_null(stack, d)
+            arm_rec["factors"][f"L{layer}.{module}"] = {
+                "side": side,
+                "k_basis": int(stack.shape[0]),
+                "alignments": reads,
+            }
+
+        arm_rec.update({"regime_key": rk, "metadata": _meta("align")})
+        align_dir.mkdir(parents=True, exist_ok=True)
+        _atomic_json(unit_path, arm_rec)
         results[entry.arm_id] = arm_rec
-        print(f"[dw-align] {entry.arm_id} done", flush=True)
+        print(
+            f"[dw-align] unit {k}/{len(fleet)} {entry.arm_id} elapsed={time.time() - t0:.0f}s",
+            flush=True,
+        )
+
+    # Coverage: absence is recorded per arm above; a PRIMARY direction absent across ALL
+    # LoRA arms is the silent-loss scenario and refuses to publish.
+    def _missing(name: str) -> list[str]:
+        return sorted(
+            a
+            for a, r in results.items()
+            if "missing" in r.get("directions_provenance", {}).get(name, {})
+        )
+
+    coverage = {"delta_tbar_missing": _missing("delta_tbar"), "c_C_missing": _missing("c_C")}
+    lora_ids = [e.arm_id for e in fleet if e.method == "lora"]
+    if lora_ids and all(a in coverage["delta_tbar_missing"] for a in lora_ids):
+        raise RuntimeError(
+            "H5 primary direction lost: NO LoRA arm resolved a banked delta_tbar at "
+            f"{DELTA_TF_PREFIX}@{DELTA_TF_REV} — refusing to publish alignment.json"
+        )
+    if lora_ids and all(a in coverage["c_C_missing"] for a in lora_ids):
+        raise RuntimeError(
+            "c_C lost: NO LoRA arm resolved a banked anchor at "
+            f"{ANCHORS_PREFIX}@{ANCHORS_REV[:12]} — refusing to publish alignment.json"
+        )
 
     # Seed-noise anchor: #1979 impoliteness-contrastive seed pair (s42 vs s137).
     seed_pair = ("imp-pers-con-lr3e5-s42", "imp-pers-con-lr3e5-s137")
@@ -654,16 +1152,18 @@ def cmd_align(args) -> int:
     }
     pair_entries = {e.arm_id: e for e in fleet if e.arm_id in seed_pair}
     if len(pair_entries) == 2:
-        vecs = {}
+        vecs: dict[str, dict[str, np.ndarray]] = {}
         for aid, e in pair_entries.items():
             arm_dir = dl_root / "adapters" / aid / e.subfolder
             if not (arm_dir / "adapter_model.safetensors").is_file():
                 arm_dir = _stage_adapter(e, dl_root / "adapters")
-            deltas = load_adapter_deltas(arm_dir)
+            pairs, scaling = load_adapter_factors(arm_dir)
             for module in OUTPUT_SIDE_MODULES:
-                if (layer, module) in deltas:
-                    u_k, _ = top_factors_for_alignment(deltas[(layer, module)])
-                    vecs.setdefault(module, {})[aid] = u_k
+                if (layer, module) in pairs:
+                    ab = pairs[(layer, module)]
+                    u, s, _vh = lora_svd_factors(ab["A"], ab["B"], scaling)
+                    kk = min(TOP_K_FACTORS, s.shape[-1])
+                    vecs.setdefault(module, {})[aid] = u[:, :kk].T.numpy()
         for module, by_arm in vecs.items():
             if len(by_arm) == 2:
                 u1, u2 = (by_arm[a] for a in seed_pair)
@@ -680,7 +1180,13 @@ def cmd_align(args) -> int:
         {
             "layer": layer,
             "arms": results,
+            "coverage": coverage,
             "seed_noise_anchor": anchor_rec,
+            "pins": {
+                "delta_tf": f"{DELTA_TF_PREFIX}@{DELTA_TF_REV}",
+                "r_b": f"{RB_PREFIX}@{RB_REV}",
+                "anchors": f"{ANCHORS_PREFIX}@{ANCHORS_REV}",
+            },
             "metadata": _meta("align"),
         },
     )
@@ -732,40 +1238,92 @@ def cmd_fleet(args) -> int:
 
 
 def cmd_pilot(args) -> int:
-    """Sizing gate: 1 checkpoint x 2 modules measured at production shape; rc=7 on refusal."""
+    """Sizing gate PINNED to one FULL-FT checkpoint; rc=7 on refusal.
+
+    Plan §4 leg-5 step 6 + blind-spot (2): the pilot exists to certify the
+    private-overflow-repo full-FT download path (the one path the smoke cannot), so it
+    stages ft[0] (TIMED — checkpoint IO is part of the basis), runs the PRODUCTION
+    analysis function on TWO production-shape modules (down_proj MLP-wide + q_proj
+    attention-square), stages + analyzes one LoRA arm through the production exact-rank-r
+    path, and extrapolates the battery wall (fix-round-2 blocker
+    ``dwfleet-pilot-not-fullft-plan-adherence``: the prior pilot resolved lora[0] +
+    a synthetic randn matrix and excluded all checkpoint IO).
+    """
     out_root = Path(args.out_root)
+    dl_root = Path(args.dl_root)
+    layer = int(args.align_layer)
     fleet = _load_fleet_table(out_root)
     lora = [e for e in fleet if e.method == "lora"]
     ft = [e for e in fleet if e.method == "ft"]
-    entry = lora[0]
-    arm_dir = _stage_adapter(entry, Path(args.dl_root) / "adapters" / entry.arm_id)
-    deltas = load_adapter_deltas(arm_dir)
-    # Time TWO production-shape module batteries (one MLP-wide, one attention-square).
-    picks = [m for m in ("down_proj", "q_proj") if any(k[1] == m for k in deltas)][:2]
+    if not ft:
+        raise RuntimeError(
+            "pilot is PINNED to one FULL-FT checkpoint (plan §4 leg-5 blind-spot (2): it "
+            "must certify the private-overflow full-FT download path) — no ft arms in fleet"
+        )
+    if not args.base_ckpt:
+        raise RuntimeError(
+            "--base-ckpt is required: the pilot measures REAL theta_post - theta_base deltas"
+        )
+    base_svd = _load_base_svd_required(args.base_svd)
+
+    entry = ft[0]
+    t_dl0 = time.time()
+    post_dir = dl_root / "ft" / entry.arm_id / entry.subfolder
+    if not any(post_dir.glob("*.safetensors")):
+        post_dir = _stage_checkpoint(entry.repo_id, entry.subfolder, dl_root / "ft", entry.arm_id)
+    ft_dl_s = time.time() - t_dl0
+
+    pilot_modules = ("down_proj", "q_proj")  # one MLP-wide + one attention-square
+    pilot_dir = out_root / "dw_fleet" / "pilot"
     t0 = time.time()
-    n_calls = 0
-    for module in picks:
-        layers = sorted(layer for (layer, m) in deltas if m == module)
-        stack = torch.stack([deltas[(layer, module)] for layer in layers])
-        svdvals_stack(stack)
-        n_calls += len(layers)
-    per_call_s = (time.time() - t0) / max(1, n_calls)
-    # Battery arithmetic: LoRA tiny SVDs + full-FT large SVDs (196 matrices / ckpt at ~28x7).
-    lora_calls = len(lora) * len(LORA_MODULES) * 28
-    ft_calls = len(ft) * 196
-    # Full-FT matrices are up to (3584, 18944) fp32 — measure one large synthetic SVD.
-    t1 = time.time()
-    svdvals_robust(torch.randn(3584, 18944) * 1e-3)
-    large_call_s = time.time() - t1
-    projected_h = (lora_calls * per_call_s + ft_calls * large_call_s) / 3600.0
+    ft_rec = analyze_ft_checkpoint(
+        entry,
+        Path(args.base_ckpt),
+        post_dir,
+        base_svd,
+        align_layer=layer,
+        factors_path=pilot_dir / f"pilot_ft_factors_L{layer}.pt",
+        module_filter=pilot_modules,
+    )
+    ft_elapsed = time.time() - t0
+    n_ft_calls = int(ft_rec["n_matrices"])
+    ft_call_s = ft_elapsed / max(1, n_ft_calls)
+
+    lora_dl_s = 0.0
+    lora_arm_s = 0.0
+    lora_pilot_arm = None
+    if lora:
+        le = lora[0]
+        lora_pilot_arm = le.arm_id
+        t_dl1 = time.time()
+        arm_dir = dl_root / "adapters" / le.arm_id / le.subfolder
+        if not (arm_dir / "adapter_model.safetensors").is_file():
+            arm_dir = _stage_adapter(le, dl_root / "adapters")
+        lora_dl_s = time.time() - t_dl1
+        t1 = time.time()
+        analyze_lora_arm(le, arm_dir, base_svd)
+        lora_arm_s = time.time() - t1
+
+    projected_s = len(ft) * (FT_MATRICES_PER_CKPT * ft_call_s + ft_dl_s) + len(lora) * (
+        lora_arm_s + lora_dl_s
+    )
+    projected_h = projected_s / 3600.0
     verdict = "pass" if projected_h <= float(args.pilot_wall_cap_h) else "split-fleet-2-pods"
     report = {
-        "measured_per_call_s_lora": per_call_s,
-        "measured_per_call_s_ft_large": large_call_s,
-        "n_pilot_calls": n_calls,
-        "pilot_modules": picks,
-        "lora_calls": lora_calls,
-        "ft_calls": ft_calls,
+        "pilot_arm": entry.arm_id,
+        "pilot_method": "ft",
+        "pilot_repo": entry.repo_id,
+        "pilot_subfolder": entry.subfolder,
+        "pilot_modules": list(pilot_modules),
+        "measured_ft_dl_s": ft_dl_s,
+        "measured_per_call_s_ft": ft_call_s,
+        "n_pilot_ft_matrices": n_ft_calls,
+        "lora_pilot_arm": lora_pilot_arm,
+        "measured_lora_dl_s": lora_dl_s,
+        "measured_lora_arm_s": lora_arm_s,
+        "ft_matrices_per_ckpt": FT_MATRICES_PER_CKPT,
+        "n_lora_arms": len(lora),
+        "n_ft_ckpts": len(ft),
         "projected_wall_h": projected_h,
         "wall_cap_h": float(args.pilot_wall_cap_h),
         "verdict": verdict,
@@ -788,15 +1346,16 @@ def cmd_lora(args) -> int:
         fleet = [e for e in fleet if e.arm_id in want]
         if not fleet:
             raise RuntimeError(f"empty fleet after --arms filter: {sorted(want)}")
-    base_svd = None
-    if args.base_svd and Path(args.base_svd).is_file():
-        base_svd = _issue650().load_base_svd(Path(args.base_svd))
+    base_svd = _load_base_svd_required(args.base_svd)
     rk = regime_key(
         phase="lora",
         top_k=TOP_K_FACTORS,
         dv3_draws=DV3_NULL_DRAWS,
         arms_rev=ARMS_JSON_REV,
-        base_svd=bool(base_svd),
+        # Content-describing key: a payload rebuilt with a different module list / base
+        # model changes the key, so stale units recompute (fix-round-2: bool(base_svd)
+        # was blind to content and resume-skipped every stale unit).
+        base_svd_meta=base_svd.get("_meta", {}),
     )
     t0 = time.time()
     for k, entry in enumerate(fleet, start=1):
@@ -810,7 +1369,7 @@ def cmd_lora(args) -> int:
                 pass
         arm_dir = dl_root / "adapters" / entry.arm_id / entry.subfolder
         if not (arm_dir / "adapter_model.safetensors").is_file():
-            arm_dir = _stage_adapter(entry, dl_root / "adapters" / entry.arm_id)
+            arm_dir = _stage_adapter(entry, dl_root / "adapters")
         rec = analyze_lora_arm(entry, arm_dir, base_svd)
         rec.update({"regime_key": rk, "metadata": _meta("lora")})
         _atomic_json(unit_path, rec)
@@ -822,9 +1381,10 @@ def cmd_lora(args) -> int:
 
 
 def cmd_ft(args) -> int:
-    """Full-FT battery: per-checkpoint streamed dW spectra, checkpoint-per-arm."""
+    """Full-FT battery: streamed dW spectra + intruder + align-layer factors, per-arm."""
     out_root = Path(args.out_root)
     dl_root = Path(args.dl_root)
+    layer = int(args.align_layer)
     fleet = [e for e in _load_fleet_table(out_root) if e.method == "ft"]
     if args.arms:
         want = {a.strip() for a in args.arms.split(",")}
@@ -834,7 +1394,16 @@ def cmd_ft(args) -> int:
     if not args.base_ckpt:
         raise RuntimeError("--base-ckpt (staged base-model checkpoint dir) is required for ft")
     base_dir = Path(args.base_ckpt)
-    rk = regime_key(phase="ft", arms_rev=ARMS_JSON_REV)
+    base_svd = _load_base_svd_required(args.base_svd)
+    rk = regime_key(
+        phase="ft",
+        arms_rev=ARMS_JSON_REV,
+        align_layer=layer,
+        top_k=TOP_K_FACTORS,
+        dv3_draws=DV3_NULL_DRAWS,
+        lowrank=(LOWRANK_Q, LOWRANK_NITER),
+        base_svd_meta=base_svd.get("_meta", {}),
+    )
     for k, entry in enumerate(fleet, start=1):
         unit_path = out_root / "dw_fleet" / "ft" / f"{entry.arm_id}.json"
         if not args.no_resume and unit_path.is_file():
@@ -849,7 +1418,14 @@ def cmd_ft(args) -> int:
             post_dir = _stage_checkpoint(
                 entry.repo_id, entry.subfolder, dl_root / "ft", entry.arm_id
             )
-        rec = analyze_ft_checkpoint(entry, base_dir, post_dir)
+        rec = analyze_ft_checkpoint(
+            entry,
+            base_dir,
+            post_dir,
+            base_svd,
+            align_layer=layer,
+            factors_path=out_root / "dw_fleet" / "ft" / f"{entry.arm_id}_factors_L{layer}.pt",
+        )
         rec.update({"regime_key": rk, "metadata": _meta("ft")})
         _atomic_json(unit_path, rec)
         print(f"[dw-ft] unit {k}/{len(fleet)} {entry.arm_id} done", flush=True)
@@ -881,7 +1457,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--base-svd",
         default=None,
-        help="base_svd.pt from issue650_analyze build-base-svd (intruder read)",
+        help=(
+            "base_svd.pt from issue650_analyze build-base-svd --modules <all 7> "
+            "(REQUIRED for lora/ft/pilot — the intruder read is plan-registered)"
+        ),
     )
     ap.add_argument("--base-ckpt", default=None, help="staged base-model checkpoint dir (ft)")
     ap.add_argument("--align-layer", default="19")
