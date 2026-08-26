@@ -1766,7 +1766,110 @@ def _mine_chunks(
 
 
 RAW_CHUNK_RE = re.compile(r"shard\d+_chunk\d+\.json$")  # skips shardNN_skipped.json sidecars
-ANS_LEN_CKPT_EVERY = 200  # partial-checkpoint cadence over the 1,920 HF chunk files
+# Partial-checkpoint + progress cadence over the 1,920 HF chunk files. Measured
+# 0.26 s/file (fix-round-2 pilot) -> one checkpoint/progress line every ~6.5 s,
+# ~77 npz writes over the full stream, max mid-loop loss 24 files (~6 s of work)
+# — vs the pre-fix 200 (up to 199 files / ~52 s discarded on a mid-loop death;
+# concern raw-answer-length-stream-not-per-file-checkpointed).
+ANS_LEN_CKPT_EVERY = 25
+
+
+def _ans_len_hf_fingerprint(entries) -> tuple[str, list[str]]:
+    """Content fingerprint of the HF raw-completions chunk set from its listing
+    triples ``(path, size, blob_id)`` -> ``('hf-blob:<sha256>', sorted paths)``.
+
+    ``blob_id`` is the Hub's git content hash of the file bytes (probed live on
+    ``shard00_chunk0000.json``, 2026-08-26; for an LFS file it hashes the
+    pointer, which embeds the content sha256), so a REGENERATED chunk at the
+    SAME path changes the fingerprint at ZERO extra download cost, while a
+    byte-identical re-upload keeps it (no spurious invalidation). Detects any
+    content / size / file-set change; residual: a git-blob hash collision
+    (negligible). Fails LOUD on an empty set or a missing/None blob_id — a
+    None-for-every-file id would make the fingerprint content-blind (blocker
+    raw-completions-resume-unpinned-content)."""
+    trip = sorted((str(p), int(s), str(b)) for p, s, b in entries)
+    assert trip, "no raw-completions chunk files in the HF listing"
+    for p, _s, b in trip:
+        assert b and b != "None" and len(b) >= 8, (
+            f"missing blob_id for {p} — refusing a content-blind fingerprint"
+        )
+    fp = hashlib.sha256(json.dumps(trip).encode()).hexdigest()
+    return f"hf-blob:{fp}", [p for p, _s, _b in trip]
+
+
+def _ans_len_local_fingerprint(raw_dir: Path) -> tuple[str, list[Path]]:
+    """Content-proxy fingerprint of a LOCAL raw-completions dir ->
+    ``('local-stat:<sha256>', sorted chunk Paths)`` over sorted
+    ``(name, size, mtime_ns)`` triples (sidecars excluded by RAW_CHUNK_RE).
+
+    Detects any file-set / size change and every normal rewrite (regeneration
+    writes a fresh mtime). Does NOT detect a same-size rewrite with a
+    deliberately restored mtime (``touch -r``); the full-content alternative
+    (sha256 over 3.22 GB, ~6-10 s) was rejected as disproportionate for this
+    input-source-override path — the HF production path pins true content
+    hashes (blob ids). Fails loud on an empty dir."""
+    files = [
+        p for p in sorted(Path(raw_dir).glob("shard*_chunk*.json")) if RAW_CHUNK_RE.search(p.name)
+    ]
+    assert files, f"no raw-completions chunk files under {raw_dir}"
+    trip = [(p.name, int(p.stat().st_size), int(p.stat().st_mtime_ns)) for p in files]
+    fp = hashlib.sha256(json.dumps(trip).encode()).hexdigest()
+    return f"local-stat:{fp}", files
+
+
+def _ans_len_source_fingerprint(raw_dir: Path | None) -> tuple[str, list]:
+    """Fingerprint + listing of the leg-8 answer-length SOURCE (the n1m
+    raw-completions chunk files): local-dir override -> stat triples; default
+    HF prefix -> ONE ``list_repo_tree`` call (retry-wrapped) hashed over
+    ``(path, size, blob_id)``. The fingerprint enters the mine regime key AND
+    the partial-checkpoint key, so regenerated chunks at the same paths can
+    never serve stale answer lengths through a 'SKIP (done)' resume (blocker
+    raw-completions-resume-unpinned-content — the v2 source TAG named the
+    artifact but said nothing about its bytes)."""
+    if raw_dir is not None:
+        return _ans_len_local_fingerprint(Path(raw_dir))
+    import issue779_ffc_n1m_generate_capture as N1G
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    prefix = f"{N1G.HF_PREFIX}/raw_completions"
+    entries = hub.retry_transient(
+        lambda: [
+            (f.path, int(f.size), getattr(f, "blob_id", None))
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
+            for f in HfApi().list_repo_tree(
+                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
+            )
+            if getattr(f, "size", None) is not None and RAW_CHUNK_RE.search(f.path)
+        ],
+        what=f"raw-completions listing ({prefix})",
+    )
+    return _ans_len_hf_fingerprint(entries)
+
+
+def _ans_len_partial_key(
+    *, n_files: int, prefix: str, n_rows: int, source_fp: str, need_fp: str
+) -> str:
+    """Regime key for the HF answer-length partial checkpoint. v3 adds
+    ``source_fp`` (chunk-set CONTENT — blocker
+    raw-completions-resume-unpinned-content) and ``need_fp`` (the needed-row
+    join identity — NIT ans-len-partial-key-omits-need-rows: a partial resumed
+    from a narrower need set would under-join; that terminated in the coverage
+    assert — loud — but the key now refuses the resume up front). Every member
+    is file-read / content-derived or a generating parameter — never a
+    recomputed float (machine-stable-key rule)."""
+    return json.dumps(
+        {
+            "n_files": int(n_files),
+            "prefix": str(prefix),
+            "n_rows": int(n_rows),
+            "source_fp": str(source_fp),
+            "need_fp": str(need_fp),
+            "v": 3,
+        },
+        sort_keys=True,
+    )
 
 
 def _ans_len_join_raw_file(path: Path, rev: dict[int, int], out: np.ndarray) -> int:
@@ -1789,7 +1892,14 @@ def _ans_len_join_raw_file(path: Path, rev: dict[int, int], out: np.ndarray) -> 
 
 
 def _ans_len_from_raw_completions(
-    row_ci: np.ndarray, n_pb: int, *, need_rows: np.ndarray, raw_dir: Path | None, stage_dir: Path
+    row_ci: np.ndarray,
+    n_pb: int,
+    *,
+    need_rows: np.ndarray,
+    raw_dir: Path | None,
+    stage_dir: Path,
+    source_fp: str | None = None,
+    listing: list | None = None,
 ) -> np.ndarray:
     """Per-row GENERATED-answer char length over the assembled row space.
 
@@ -1806,17 +1916,29 @@ def _ans_len_from_raw_completions(
     way); the default streams the HF chunk files ONE at a time (download ->
     join -> unlink, peak ~1 file of the 3.22 GB prefix) with a partial
     checkpoint every ``ANS_LEN_CKPT_EVERY`` files keyed on GENERATING
-    PARAMETERS (file count + prefix — never recomputed floats). Both paths
-    early-exit once every needed row is joined."""
+    PARAMETERS + CONTENT fingerprints — the chunk-set fingerprint
+    (``source_fp``, blob-id/stat-derived) and the needed-row join identity
+    (``need_fp``) — never recomputed floats. ``source_fp``/``listing`` are
+    threaded from ``phase_mine``'s single source-fingerprint pass when
+    available (one listing per run), else computed here. Both paths early-exit
+    once every needed row is joined."""
     row_ci = np.asarray(row_ci, np.int64)
     need = np.asarray(need_rows, np.int64)
     need = need[need >= int(n_pb)]
     rev = {int(row_ci[r]): int(r) for r in need}
     assert len(rev) == len(need), "duplicate conversation index among needed rows"
+    if source_fp is None or listing is None:
+        source_fp, listing = _ans_len_source_fingerprint(raw_dir)
+    # join identity content: the needed row ids + their conversation indices
+    # (both file-read int64 arrays — safe to hash; NIT
+    # ans-len-partial-key-omits-need-rows).
+    need_fp = hashlib.sha256(
+        np.ascontiguousarray(need, np.int64).tobytes()
+        + np.ascontiguousarray(row_ci[need], np.int64).tobytes()
+    ).hexdigest()
     out = np.full(len(row_ci), -1, np.int64)
     if raw_dir is not None:
-        files = sorted(Path(raw_dir).glob("shard*_chunk*.json"))
-        files = [p for p in files if RAW_CHUNK_RE.search(p.name)]
+        files = listing
         assert files, f"no raw-completions chunk files under {raw_dir}"
         n_hit = 0
         for fi, p in enumerate(files):
@@ -1827,28 +1949,21 @@ def _ans_len_from_raw_completions(
         return out
     # HF streaming path (production/pod): list -> per-file download/join/unlink.
     import issue779_ffc_n1m_generate_capture as N1G
-    from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub import hf_hub_download
 
     from explore_persona_space.orchestrate import hub
 
     prefix = f"{N1G.HF_PREFIX}/raw_completions"
-    names = hub.retry_transient(
-        lambda: sorted(
-            f.path
-            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here
-            for f in HfApi().list_repo_tree(
-                C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
-            )
-            if getattr(f, "size", None) is not None and RAW_CHUNK_RE.search(f.path)
-        ),
-        what=f"raw-completions listing ({prefix})",
-    )
+    names = listing
     assert names, f"no raw-completions chunk files under HF {prefix}"
     stage_dir.mkdir(parents=True, exist_ok=True)
     ck = stage_dir / "ans_len_partial.npz"
-    key = json.dumps(
-        {"n_files": len(names), "prefix": prefix, "n_rows": int(len(row_ci)), "v": 2},
-        sort_keys=True,
+    key = _ans_len_partial_key(
+        n_files=len(names),
+        prefix=prefix,
+        n_rows=int(len(row_ci)),
+        source_fp=source_fp,
+        need_fp=need_fp,
     )
     start = n_hit = 0
     if ck.exists():
@@ -2138,6 +2253,31 @@ def _residual_floor(payload, x_mm, y_mm, held_pos: np.ndarray, dev) -> dict:
     return {"n_rows": int(n), "n_pairs": int(len(dist)), **qs}
 
 
+def _mine_regime_key(args, ans_len_content_fp: str) -> dict:
+    """Leg-8 mine regime key. Every member is a generating parameter or
+    content-derived — never a recomputed float (machine-stable-key rule).
+    ``ans_len_content_fp`` pins the BYTES of the raw-completions chunk set
+    (blob-id/stat fingerprint): the v2 source TAG below invalidated the pre-fix
+    all-zero manifest join but named only the artifact, so REGENERATED chunks
+    at the same paths would have served stale answer lengths through the
+    'SKIP (done)' resume (blocker raw-completions-resume-unpinned-content —
+    fourth content-vs-identity keying instance on this task)."""
+    return {
+        "pairs": int(args.pairs),
+        "chunk": int(args.pair_chunk),
+        "top_pairs": int(args.top_pairs),
+        "boot_draws": int(args.boot_draws),
+        "seed": LEG8_SEED,
+        "layer": int(args.layer),
+        # source-versioned: wipes any pre-fix ans_len.npy (the manifest join
+        # returned all-zero lengths — blocker
+        # manifest-response-field-absent-answer-lengths-zero), including
+        # under --resume-across-code-sha.
+        "ans_len_source": "n1m_raw_completions_v2",
+        "ans_len_content_fp": str(ans_len_content_fp),
+    }
+
+
 def phase_mine(args) -> None:
     """Leg-8 step 2: kernel-pair mining + matched read (module docstring).
 
@@ -2160,21 +2300,14 @@ def phase_mine(args) -> None:
     regime, resume_ok = T24._enter_phase_regime(
         out, t24, "mine_2569", stale_paths=[*outputs, ans_len_path, chunks_dir]
     )
+    # Fingerprint the answer-length SOURCE before the regime check (every mine
+    # invocation, resume included): one HF listing (~1-3 s) or a local stat
+    # pass — the content pin that makes 'SKIP (done)' safe.
+    raw_dir = Path(args.raw_completions_dir) if args.raw_completions_dir else None
+    ans_src_fp, ans_src_listing = _ans_len_source_fingerprint(raw_dir)
     _check_local_regime(
         out,
-        {
-            "pairs": int(args.pairs),
-            "chunk": int(args.pair_chunk),
-            "top_pairs": int(args.top_pairs),
-            "boot_draws": int(args.boot_draws),
-            "seed": LEG8_SEED,
-            "layer": int(args.layer),
-            # source-versioned: wipes any pre-fix ans_len.npy (the manifest join
-            # returned all-zero lengths — blocker
-            # manifest-response-field-absent-answer-lengths-zero), including
-            # under --resume-across-code-sha.
-            "ans_len_source": "n1m_raw_completions_v2",
-        },
+        _mine_regime_key(args, ans_src_fp),
         wipe=[*outputs, ans_len_path, chunks_dir],
         tag="mine",
     )
@@ -2213,8 +2346,10 @@ def phase_mine(args) -> None:
             row_ci,
             n_pb,
             need_rows=rows_present,
-            raw_dir=Path(args.raw_completions_dir) if args.raw_completions_dir else None,
+            raw_dir=raw_dir,
             stage_dir=T24._stage_dir(t24) / "raw_completions_2569",
+            source_fp=ans_src_fp,
+            listing=ans_src_listing,
         )
         _atomic_np_save(ans_len, ans_len_path)
     assert len(ans_len) == len(row_ci), (len(ans_len), len(row_ci))

@@ -25,7 +25,14 @@ ported #2476 fixes this unit depends on:
   raw-completions chunk files (REAL schema — the sampling manifest has no
   response field) + the C2 coverage guard; the der-eval resume key's CONTENT
   fingerprints; the leg-4 OOD corpus-transfer fold (fit LMSYS -> score
-  per-corpus holdout, #2476 corpus_fold mirror).
+  per-corpus holdout, #2476 corpus_fold mirror);
+- fix-round-3 regression pins: the leg-8 answer-length SOURCE is
+  content-fingerprinted (HF blob-id / local stat triples) into BOTH the mine
+  regime key and the partial-checkpoint key, the partial key also pins the
+  needed-row join identity, and the checkpoint cadence is <= 25 files
+  (blocker raw-completions-resume-unpinned-content + concern
+  raw-answer-length-stream-not-per-file-checkpointed + NIT
+  ans-len-partial-key-omits-need-rows).
 
 All synthetic + CPU-fast (d <= 16); the dense 3584-dim fp64 factorizations stay
 out of every test path (unit brief).
@@ -591,8 +598,25 @@ def test_leg8_ans_len_raw_completions_join(tmp_path):
         ),
         encoding="utf-8",
     )
-    # the over-length-skip sidecar lives under the SAME prefix and must be ignored
-    (tmp_path / "shard00_skipped.json").write_text(_json.dumps({"skipped": []}), encoding="utf-8")
+    # the over-length-skip sidecar lives under the SAME prefix and must be
+    # ignored — fixture mirrors the REAL sidecar schema (probed
+    # shard16_skipped.json, 2026-08-26: gen_max_tokens/length_margin/
+    # max_model_len/n_skipped/num_shards/prompt_token_budget/shard_index/skipped)
+    (tmp_path / "shard00_skipped.json").write_text(
+        _json.dumps(
+            {
+                "gen_max_tokens": 512,
+                "length_margin": 64,
+                "max_model_len": 4096,
+                "n_skipped": 0,
+                "num_shards": 2,
+                "prompt_token_budget": 3520,
+                "shard_index": 0,
+                "skipped": [],
+            }
+        ),
+        encoding="utf-8",
+    )
     row_ci = np.array([-1, -1, 0, 1, 2], np.int64)
     out = RB._ans_len_from_raw_completions(
         row_ci, 2, need_rows=np.arange(5, dtype=np.int64), raw_dir=tmp_path, stage_dir=tmp_path
@@ -653,6 +677,133 @@ def test_leg8_pair_strata_encoding():
     assert s[0] == 0 * 100 + 3  # (0,0), mean 15 == edge -> side="right" puts it in bin 3
     assert s[1] == 1 * 100 - 1  # (0,1), row 2 unknown -> -1 bucket
     assert s[2] == 1 * 100 + 9  # (0,1), mean 510 clips to decile 9
+
+
+# ── fix round 3: leg-8 answer-length source content-keying ────────────────────────
+
+
+def test_leg8_ans_len_local_fingerprint_content_keyed(tmp_path):
+    """The local source fingerprint changes when a chunk is REGENERATED at the
+    same path (blocker raw-completions-resume-unpinned-content), ignores the
+    skipped sidecars, and fails loud on an empty dir."""
+    import json as _json
+
+    import pytest
+
+    (tmp_path / "shard00_chunk0000.json").write_text(
+        _json.dumps(
+            {"shard_index": 0, "chunk": 0, "rows": [{"ci": 0, "prompt": "p", "response": "abcd"}]}
+        ),
+        encoding="utf-8",
+    )
+    fp1, files1 = RB._ans_len_local_fingerprint(tmp_path)
+    assert fp1.startswith("local-stat:") and [p.name for p in files1] == ["shard00_chunk0000.json"]
+    # sidecar under the same prefix does not enter the fingerprint
+    (tmp_path / "shard00_skipped.json").write_text(_json.dumps({"skipped": []}), encoding="utf-8")
+    fp1b, _ = RB._ans_len_local_fingerprint(tmp_path)
+    assert fp1b == fp1
+    # regenerated chunk, SAME path, different content -> different fingerprint
+    (tmp_path / "shard00_chunk0000.json").write_text(
+        _json.dumps(
+            {"shard_index": 0, "chunk": 0, "rows": [{"ci": 0, "prompt": "p", "response": "abcdEF"}]}
+        ),
+        encoding="utf-8",
+    )
+    fp2, _ = RB._ans_len_local_fingerprint(tmp_path)
+    assert fp2 != fp1
+    with pytest.raises(AssertionError, match="no raw-completions chunk files"):
+        RB._ans_len_local_fingerprint(tmp_path / "empty")
+
+
+def test_leg8_ans_len_hf_fingerprint_blob_keyed():
+    """The HF source fingerprint is keyed on the Hub's per-file content hash
+    (blob_id — real listing triple probed 2026-08-26), is order-invariant, and
+    refuses a missing blob_id (a None id would be content-blind)."""
+    import pytest
+
+    real = (
+        "issue779_monitoring/fitter-fair-comparison-n1m/raw_completions/shard00_chunk0000.json",
+        1153322,
+        "1d0a97845c7a3adc4db501e650e35929dad35b8d",
+    )
+    other = (
+        "issue779_monitoring/fitter-fair-comparison-n1m/raw_completions/shard00_chunk0001.json",
+        999,
+        "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12",
+    )
+    fp, names = RB._ans_len_hf_fingerprint([real, other])
+    assert fp.startswith("hf-blob:") and names == sorted([real[0], other[0]])
+    fp_rev, _ = RB._ans_len_hf_fingerprint([other, real])
+    assert fp_rev == fp  # listing order never enters the key
+    # regenerated chunk at the SAME path/size but new bytes -> new blob -> new fp
+    regen = (real[0], real[1], "ffffffffffffffffffffffffffffffffffffffff")
+    fp2, _ = RB._ans_len_hf_fingerprint([regen, other])
+    assert fp2 != fp
+    with pytest.raises(AssertionError, match="content-blind"):
+        RB._ans_len_hf_fingerprint([(real[0], real[1], None)])
+    with pytest.raises(AssertionError, match="no raw-completions chunk files"):
+        RB._ans_len_hf_fingerprint([])
+
+
+def test_leg8_ans_len_partial_key_pins_source_and_need():
+    """The partial-checkpoint key carries the source CONTENT fingerprint AND the
+    needed-row join identity: either changing invalidates a resume (blocker
+    raw-completions-resume-unpinned-content; NIT
+    ans-len-partial-key-omits-need-rows — a narrower-need partial would
+    under-join)."""
+    import json as _json
+
+    base = dict(n_files=1920, prefix="pfx/raw_completions", n_rows=964_844)
+    k = RB._ans_len_partial_key(**base, source_fp="hf-blob:aaaa", need_fp="bbbb")
+    d = _json.loads(k)
+    assert d["source_fp"] == "hf-blob:aaaa" and d["need_fp"] == "bbbb" and d["v"] >= 3
+    assert RB._ans_len_partial_key(**base, source_fp="hf-blob:CHANGED", need_fp="bbbb") != k
+    assert RB._ans_len_partial_key(**base, source_fp="hf-blob:aaaa", need_fp="CHANGED") != k
+
+
+def test_leg8_mine_regime_key_carries_ans_len_content_fp():
+    """The mine regime key pins the raw-completions CONTENT fingerprint — the v2
+    source TAG alone named the artifact but not its bytes, so regenerated
+    chunks at the same paths served stale answer lengths through 'SKIP (done)'
+    (blocker raw-completions-resume-unpinned-content)."""
+    import argparse
+
+    ns = argparse.Namespace(
+        pairs=10**7, pair_chunk=250_000, top_pairs=20_000, boot_draws=2_000, layer=19
+    )
+    k1 = RB._mine_regime_key(ns, "hf-blob:aaaa")
+    k2 = RB._mine_regime_key(ns, "hf-blob:bbbb")
+    assert k1["ans_len_content_fp"] == "hf-blob:aaaa"
+    assert k1["ans_len_source"] == "n1m_raw_completions_v2"  # the v2 wipe is preserved
+    assert k1 != k2 and {**k1, "ans_len_content_fp": None} == {**k2, "ans_len_content_fp": None}
+
+
+def test_leg8_ans_len_join_uses_provided_listing_and_fp(tmp_path):
+    """The join consumes phase_mine's single fingerprint pass (source_fp +
+    listing threaded through) — same result as the self-computed path."""
+    import json as _json
+
+    (tmp_path / "shard00_chunk0000.json").write_text(
+        _json.dumps(
+            {"shard_index": 0, "chunk": 0, "rows": [{"ci": 0, "prompt": "p", "response": "abc"}]}
+        ),
+        encoding="utf-8",
+    )
+    row_ci = np.array([-1, 0], np.int64)
+    fp, listing = RB._ans_len_source_fingerprint(tmp_path)
+    out = RB._ans_len_from_raw_completions(
+        row_ci, 1, need_rows=np.arange(2, dtype=np.int64), raw_dir=tmp_path,
+        stage_dir=tmp_path, source_fp=fp, listing=listing,
+    )  # fmt: skip
+    np.testing.assert_array_equal(out, [-1, 3])
+
+
+def test_leg8_ans_len_ckpt_cadence_tightened():
+    """Checkpoint/progress cadence over the 1,920-file stream is <= 25 files
+    (~6.5 s at the measured 0.26 s/file; max mid-loop loss ~6 s of work) — the
+    pre-fix 200 discarded up to 199 files on a mid-loop death (concern
+    raw-answer-length-stream-not-per-file-checkpointed)."""
+    assert RB.ANS_LEN_CKPT_EVERY <= 25
 
 
 # ── unit 4b: der-eval resume regime key ───────────────────────────────────────────

@@ -70,20 +70,39 @@ def _write_manifest(tmp_path: Path, rows: list[dict], parts: int = 2) -> Path:
     return mdir
 
 
+def _manifest_row(
+    i: int, corpus: str, *, depth: int = 2, n_chars: int = 500, stream_pos: int | None = None
+) -> dict:
+    """SCHEMA-TRUE sampling-manifest fixture row: exactly the 8 producer keys
+    ``{corpus, depth, i, messages, n_chars, source_hash, split, stream_pos}``
+    (probed data/issue_1738/mt100k/fits/sampling_manifest/part_00020.jsonl,
+    2026-08-26 — that key set is the union over ALL 1,387 rows; no ``ci``, no
+    ``response``: the manifest is written at SAMPLING time, before generation;
+    ``ci`` belongs to the raw-completion chunk rows ``{ci, prompt, response}``).
+    Message text is a synthetic placeholder (schema-true = producer field
+    names + types, never real corpus text — content hygiene)."""
+    return {
+        "corpus": corpus,
+        "depth": depth,
+        "i": i,
+        "messages": [{"role": "user", "content": "m"}],
+        "n_chars": n_chars,
+        "source_hash": f"hash{i:031d}",
+        "split": "train",
+        "stream_pos": i if stream_pos is None else stream_pos,
+    }
+
+
 def test_corpus_tags_pass_b_never_lmsys(tmp_path):
     """pass_b rows are tagged 'pass_b' (NOT the #1482 'lmsys' convention); new
-    rows take the manifest corpus by the manifest's own key ``i``.
-
-    Fixture rows mirror the REAL sampling-manifest schema
-    (``{corpus, depth, i, messages, n_chars, source_hash, split, stream_pos}``
-    — probed part_00020.jsonl; there is NO response field: the manifest is
-    written at sampling time, before generation); the ``ci`` spelling belongs
-    to the DERIVED capture/store artifacts.
-    """
+    rows take the manifest corpus by the manifest's own key ``i``. Fixture rows
+    carry the full probed 8-key producer schema (see ``_manifest_row``); the
+    'WildChat' casing probes the join's ``.lower()`` normalization (a
+    value-level tolerance — the probed part is lowercase 'wildchat')."""
     rows = [
-        {"i": 0, "corpus": "lmsys", "depth": 2, "n_chars": 500},
-        {"i": 1, "corpus": "WildChat", "depth": 1, "n_chars": 80},
-        {"i": 2, "corpus": "lmsys", "depth": 3, "n_chars": 1200},
+        _manifest_row(0, "lmsys", depth=2, n_chars=500),
+        _manifest_row(1, "WildChat", depth=1, n_chars=80),
+        _manifest_row(2, "lmsys", depth=3, n_chars=1200),
     ]
     mdir = _write_manifest(tmp_path, rows)
     row_ci = np.array([-1, -1, 0, 1, 2])  # 2 pass_b rows lead
@@ -93,32 +112,38 @@ def test_corpus_tags_pass_b_never_lmsys(tmp_path):
 
 def test_corpus_tags_fail_loud_on_unjoined_row(tmp_path):
     """An assembled new row whose ci is absent from the manifest raises."""
-    mdir = _write_manifest(tmp_path, [{"i": 0, "corpus": "lmsys"}])
+    mdir = _write_manifest(tmp_path, [_manifest_row(0, "lmsys")])
     row_ci = np.array([-1, 0, 7])  # ci=7 has no manifest row
     with pytest.raises(AssertionError, match="no manifest corpus tag"):
         RB._corpus_tags_from_manifest_dir(mdir, row_ci, n_pb=1)
 
 
 def test_manifest_join_reads_i_not_ci(tmp_path):
-    """The manifest join keys on ``i``, never on a ``ci`` field.
+    """The manifest join keys on the manifest's own ``i`` — never on ``ci``
+    (the DERIVED capture/store spelling) or any other in-schema int field.
 
-    Each fixture row carries BOTH keys with DIFFERENT values: ``i`` is the true
-    conversation index and ``ci`` is a decoy pointing elsewhere. Reading the
-    decoy would mis-tag every row, so this test fails on the exact defect it
-    guards (a production ``KeyError``/mis-join when the reader keys on ``ci``).
-    """
+    Fixture rows are SCHEMA-TRUE (``_manifest_row``): the producer NEVER writes
+    a ``ci`` key, so — exactly as on real manifests — a ``rec["ci"]`` mis-reader
+    raises ``KeyError`` here and this test fails. The round-1 fixture instead
+    carried a producer-impossible ``ci`` decoy key, validating against a schema
+    that does not exist (fix-round-3 NIT
+    manifest-key-test-fixture-still-impossible). The IN-SCHEMA decoy is
+    ``stream_pos``, arranged swapped vs ``i``: a join keyed on any other int
+    field mis-tags and fails the tag assert.
+
+    NOTE (fix round 2): answer lengths are NEVER sourced from the manifest —
+    the manifest has no response field; the raw-completions join is pinned in
+    tests/test_issue2569_rowbattery.py (blocker
+    manifest-response-field-absent-answer-lengths-zero)."""
     rows = [
-        {"i": 0, "ci": 1, "corpus": "lmsys", "n_chars": 100},
-        {"i": 1, "ci": 0, "corpus": "WildChat", "n_chars": 200},
+        _manifest_row(0, "lmsys", n_chars=100, stream_pos=1),
+        _manifest_row(1, "wildchat", n_chars=200, stream_pos=0),
     ]
+    assert all("ci" not in r and "response" not in r for r in rows)  # producer-true
     mdir = _write_manifest(tmp_path, rows, parts=1)
     row_ci = np.array([-1, 0, 1])
     tags = RB._corpus_tags_from_manifest_dir(mdir, row_ci, n_pb=1)
     assert list(tags) == ["pass_b", "lmsys", "wildchat"]
-    # NOTE (fix round 2): answer lengths are NEVER sourced from the manifest —
-    # the manifest has no response field; the raw-completions join is pinned in
-    # tests/test_issue2569_rowbattery.py (blocker
-    # manifest-response-field-absent-answer-lengths-zero).
 
 
 # ── curve: fit_point extra_eval + curve_core ──────────────────────────────────────
