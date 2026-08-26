@@ -27,6 +27,20 @@ prefix-seam assert (``full_ids[:prompt_len] == prompt_ids``) guards the BPE seam
 (gotchas.md teacher-forced-capture rules); seam mismatches are DROPPED and counted,
 never coerced.
 
+hidden_states indexing convention (LOAD-BEARING — the #2569 P-D root cause). HF
+returns ``len(hidden_states) == n_layers + 1``, where ``hidden_states[0]`` is the
+EMBEDDING output and ``hidden_states[i]`` is the state AFTER i transformer blocks.
+The banked #779 store numbers its layers 0-based BY BLOCK, so its layer L is the
+state after block L — i.e. ``hidden_states[L + 1]``, NOT ``hidden_states[L]``. The
+``--layers`` values here (14/19/26 Qwen, 16/22/30 Llama) are banked-store layer
+numbers and are read with the +1 (``forward_batches``); ``_parse_layers`` bounds them
+to ``[0, n_layers - 1]`` accordingly. The original implementation read
+``hidden_states[layer]``, one block EARLIER than the banked data it must be
+comparable with: the spot-gate measured rel_l2 0.4633 on v_C L14 against the banked
+oracle (0.40 on v_A), and a layer-neighbour scan matched at offset +1 to
+0.0122 / 0.0026 — bf16 noise. Any change to this convention must be re-derived
+against the store, not inferred from the flag names.
+
 Identity gates (plan §7 rows; BOTH are preconditions of the production pass):
 
 - ``--phase identity-gate`` (B5, mandatory for Llama — the side with NO banked
@@ -34,13 +48,26 @@ Identity gates (plan §7 rows; BOTH are preconditions of the production pass):
   SECOND path that derives token boundaries from the tokenizer's offset mapping on
   the FULL concatenated sequence (independent of the capture path's
   prompt-render/full-render prefix logic) plus an unpadded batch-1 forward; assert
-  identical token-boundary indices, identical layer indices, identical shapes, and
-  numerical agreement within fp16-scale tolerance. Any mismatch HALTS P-D (rc=4).
+  identical token-boundary indices, identical shapes, and numerical agreement within
+  fp16-scale tolerance. Any mismatch HALTS P-D (rc=4).
   Rationale: Qwen has the banked store as an external correctness oracle; Llama has
   none — a systematic Llama span/layer/boundary error degrades the v_C and v_A
   alignments TOGETHER, so the leg-7 correspondence test cannot discriminate it, and
   it would fire the registered leg-7 kill as a FALSE headline that is unrecoverable
   once the pod is terminated.
+  B5 BLIND SPOT (disclosed per ``.claude/rules/smoke-blind-spots.md``): B5 does NOT
+  certify the hidden_states LAYER CONVENTION documented above. Both of its arms call
+  ``forward_batches``, so they share whatever convention that function implements —
+  a layer-index error is invariant across the two arms and B5 PASSES on it BY
+  CONSTRUCTION. Measured with the pre-fix off-by-one live: B5 on qwen passed at
+  worst_rel_diff 0.0142 (48/48) while the spot-gate against the EXTERNAL banked
+  oracle failed at 0.4633 on one of the same rows. B5 covers span / boundary /
+  padding and batched-vs-unpadded numerics only. Consequence for the model with no
+  oracle: a Llama-side layer-convention error is caught by NOTHING in this script —
+  the qwen external-oracle spot-gate is the only layer-convention check, and it is
+  trusted to transfer only because both models are read through the same
+  ``forward_batches`` code path (the prior claim that B5 asserts layer indices was
+  false: its assert compares shapes).
 - ``--phase spot-gate`` (Qwen, G2-style, RETAINED): teacher-forced recompute vs the
   banked ``final_token_capture`` store on 8 rows.
 
@@ -854,7 +881,16 @@ def forward_batches(args, mctx: dict, recs: list[dict], layers: list[int]) -> di
         denom = span.sum(1).clamp_min(1).float()
         bidx = np.asarray(batch)
         for layer in layers:
-            h = hs[layer]
+            # hidden_states INDEXING CONVENTION (load-bearing; #2569 P-D root cause).
+            # `hs` has n_layers+1 entries: hs[0] is the EMBEDDING output and hs[i] is
+            # the state AFTER i transformer blocks. The banked #779 store numbers its
+            # layers 0-based BY BLOCK, so its layer L is the state after block L, i.e.
+            # hs[L + 1]. Reading hs[layer] here indexes one block EARLIER than the
+            # banked data this capture must be comparable with: the #779 spot-gate then
+            # measured rel_l2 ~0.46 on v_C / ~0.40 on v_A against the banked oracle,
+            # while a layer-neighbour scan matched at offset +1 to ~0.012 / ~0.002
+            # (bf16 noise). Do NOT drop the +1 without re-deriving against the store.
+            h = hs[layer + 1]
             v_c = h[rows_t, pos_c].float()
             v_a = (h.float() * span[..., None]).sum(1) / denom[:, None]
             out[layer]["v_C"][bidx] = v_c.cpu().numpy()
@@ -1241,7 +1277,10 @@ def _parse_layers(args, spec: dict) -> list[int]:
         "would be vacuous (pd-gate-cardinality-unenforced; fail loud)"
     )
     for layer in layers:
-        assert 1 <= layer <= spec["n_layers"], (layer, spec["n_layers"])
+        # Layers are 0-based BLOCK indices matching the banked #779 store: layer L is
+        # read as hidden_states[L + 1] (see forward_batches). The top nominal layer is
+        # therefore n_layers - 1, whose read hs[n_layers] is the final block's output.
+        assert 0 <= layer <= spec["n_layers"] - 1, (layer, spec["n_layers"])
     return layers
 
 
