@@ -35,6 +35,8 @@ relates_to:
 # Firing activity dominates per-feature map predictability of turn-averaged SAE features, with schema category the strongest surviving content-level covariate (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2552.md](https://github.com/superkaiba/explore-persona-space/blob/125cbc91131c607fa4baefa4143fcc64078c1459/docs/methodology/issue_2552.md) · [gist](https://gist.github.com/superkaiba/c7aca73cf6369bd5d14ad02efec91eea)
+
 ## Takeaways
 
 - Mean activation when active is selected first in every forward-selection ladder (partial R² 0.29 replication, 0.36 k=100, 0.35 k=200 on the rank-transformed per-feature held-out map R², after a forced log-activity step 0; panels n = 2,974 / 2,149 / 2,658 features), and every competitive step clears its 10,000-draw selection-matched null band (weakest step p = 0.002, the twin match cosine selected sixth in the k=200 dictionary; every other step p ≈ 1e-4).
