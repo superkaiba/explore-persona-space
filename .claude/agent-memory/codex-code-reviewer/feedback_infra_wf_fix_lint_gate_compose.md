@@ -211,28 +211,6 @@ Also validated again here: #2306 plan-verify version nuance (PASS at v3, plan
 amended to v4 — attest both), truthful identical-plan envelope on a brief that
 orders inlining, and pinned-round-parent sha-range diff acquisition.
 
-**#2590 r1 (2026-08-25) sharpenings — SUBPROCESS-EXECUTING gate check +
-paired-escape rounds (verify_plan check that runs an external binary, here
-jq, inside the fleet gate):** (a) the crash-safety stakes leg names the
-subprocess-specific adversarial shapes explicitly — binary absent on PATH,
-child never exits (timeout/join coverage), output exceeding the pump cap,
-stdin feed on a closed pipe, non-UTF-8 output, and failures of the
-`git cat-file`/`git show` target-resolution calls — and instructs the twin
-to adversarially verify any "never raises" code-comment claim from the
-helper chain (`_c71_run_bounded`/`_c71_pump`/`_c71_feed` shape) rather than
-trust it. (b) When the round pairs check code with SKILL.md canonical-escape
-entries, the hollow-gate duty gains a HOLLOW-ESCAPE arm: verify each escape
-literal added to the skill doc is byte-recognized by the check's
-`_standalone_na_declared`-style regex set (cite both line ranges) — an
-escape the check does not recognize is Major `substantive`; this is the #1
-cross-file interaction a whole-round twin sees that per-commit splits
-structurally cannot. (c) A grandfather-cap re-derivation hunk
-(SKILL_DOC_SIZE_GRANDFATHER) composes with a concrete recompute command
-pinned to the last-feature SHA (`git cat-file -s <sha>:<skill path>`) so the
-twin re-derives measured bytes + corridor arithmetic itself. (d) Reconfirmed:
-`{{` residue validation must strip the ENVELOPE CONTENTS first (the plan
-carried `^{{commit}}`-style content; composer-span check only, #2198 lesson).
-
 **#2342 r1 (2026-08-24) sharpenings — second #2309-shape round (reconcile-kind
 guard on `task.py post-marker`):** (a) the origin-prompt arm of TAG-first
 wf-fix detection fired — tags `[]` AND no title prefix, but `origin_prompt`
