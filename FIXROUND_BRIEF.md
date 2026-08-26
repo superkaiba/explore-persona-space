@@ -137,6 +137,26 @@ echo "rc=$?"
 
 `workflow_lint` violations print as `workflow_lint: <file>:<line>:` with **no
 FAIL prefix**, so `grep FAIL` returns 0 on a failing run. Read the exit code.
+
+**Wait this gate out SYNCHRONOUSLY, inside this turn.** A full scan can take
+12-25 minutes under fleet load, and you get exactly one turn — nothing re-invokes
+you when a background job finishes, so a turn that ends with the lint still
+running has orphaned its own gate and reports an rc nobody collected. Run it in
+the foreground (pass an explicit `timeout` on the Bash call, sized past 25 min),
+or poll it to completion with a bounded `Monitor` until-loop; foreground `sleep`
+chains are hook-blocked. A killed or still-running lint is INCONCLUSIVE, never
+clean — say so in the report rather than reporting a verdict you do not have.
+Last round a unit ended its turn on a live background lint, and the violation it
+would have caught reached the join.
+
+Also mind the scan's SCOPE: `--check-*` flags path-local to `scripts/` resolve
+against the cwd's tree, so running from the repo root scans `main` — where a file
+that exists only on this branch is absent, and the check trivially passes. Run
+every gate from the worktree. A PASS that prints no per-file lines cannot
+distinguish "clean" from "never examined"; when a verdict is load-bearing, prove
+the instrument saw your file (a two-sided probe with and without the change is
+the cheap form).
+
 Then run the mapped tests for your changed files:
 
 ```bash
