@@ -1,0 +1,76 @@
+{
+  "commit": "b259ac85",
+  "render_id": "de8f6c8e02b744a7",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:10Z",
+  "figsize": [
+    10.2,
+    3.2
+  ],
+  "text": {
+    "suptitle": "Axis-identity cosine per value pair (single-turn frozen map)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "hedging",
+        "xticklabels": [
+          "value h1c",
+          "value h2a"
+        ],
+        "yticklabels": [
+          "value h1c",
+          "value h2a"
+        ]
+      },
+      {
+        "title_left": "persona",
+        "xticklabels": [
+          "value p2",
+          "value p3",
+          "value p5",
+          "value p6",
+          "value p7"
+        ],
+        "yticklabels": [
+          "value p2",
+          "value p3",
+          "value p5",
+          "value p6",
+          "value p7"
+        ]
+      },
+      {
+        "title_left": "stance",
+        "xticklabels": [
+          "value s1b",
+          "value s2a",
+          "value s3a",
+          "value s4a"
+        ],
+        "yticklabels": [
+          "value s1b",
+          "value s2a",
+          "value s3a",
+          "value s4a"
+        ]
+      },
+      {
+        "ylabel": "axis-identity cosine",
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "commit": "b259ac85",
+  "render_id": "bfa6f2c2ebaa4cd8",
+  "git_commit": "b259ac853d2e2e49e23bcb97afb381adb1c19e5b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T07:45:32Z",
+  "figsize": [
+    5.0,
+    4.6
+  ],
+  "points": [
+    {
+      "direction cosine, answer-tail pooling": 0.7421892848005761,
+      "direction cosine, span-mean pooling": 0.6657055494151797,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.7735029261646471,
+      "direction cosine, span-mean pooling": 0.7734442257489972,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.36850240887332475,
+      "direction cosine, span-mean pooling": 0.3663663942779094,
+      "series": "single-turn frozen map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.7261270794778182,
+      "direction cosine, span-mean pooling": 0.6354759490699312,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.7814724302545181,
+      "direction cosine, span-mean pooling": 0.7813751853994136,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.3560359043817491,
+      "direction cosine, span-mean pooling": 0.35399073108190127,
+      "series": "multi-turn frozen map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.3503323144008972,
+      "direction cosine, span-mean pooling": 0.38302027993527643,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.6373059388789157,
+      "direction cosine, span-mean pooling": 0.6369868761671132,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine, answer-tail pooling": 0.1462426784836614,
+      "direction cosine, span-mean pooling": 0.14602190418246125,
+      "series": "identity baseline",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pooling twin: answer tail vs span mean",
+        "xlabel": "direction cosine, answer-tail pooling",
+        "ylabel": "direction cosine, span-mean pooling",
+        "legend_labels": [
+          "single-turn frozen map",
+          "multi-turn frozen map",
+          "identity baseline"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "single-turn frozen map",
+      "multi-turn frozen map",
+      "identity baseline"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
