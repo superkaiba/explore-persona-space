@@ -1,4 +1,6 @@
 # code-reviewer-lean memory index
+- [Styled open markers at zero edge width](styled_open_marker_zero_edge_width.md) — batch style sets lines.markeredgewidth=0 → mfc="none" plot markers invisible in production PNGs only; tests skip set_paper_style; grep mfc="none" w/o mew + Read styled render (#2569 r1 gF)
+- [Silent .get default beside a fixed KeyError](silent_get_default_beside_fixed_keyerror.md) — a wrong-key fix's SIBLING `.get(field) or default` reads a field the producer never writes; audit every field vs the writer (#2569 gB)
 - [Verdict-assembly status-only source key](verdict_assembly_status_only_source_key.md) — resume key on producer STATUS re-triggers deferred→computed but skips onto stale values on content change; mtime probe (#2569 r1 gA)
 - [Selection-symmetric band review recipe](selection_symmetric_band_review_recipe.md) — shared-selection identity, assert non-vacuity via value-path divergence, (r_a,r_b) orientation probe, committed FPR test (#2569 r2)
 - [Fingerprint resume: ids ≠ content](fingerprint_resume_ids_not_content.md) — regime-fingerprint resume keys hash panel IDS not DV values; live two-run phase probe + resumed_* flags (#2552 r2 g2)
