@@ -259,15 +259,15 @@ CJK intrusion (130 of 2,760 rollouts) flips no axis floor under any recount conv
 
 ### Raising the two noise-limited cells to 100 draws shows the injected-name read was noise, not map failure: the cosine doubles in step with its reliability bound
 
-Plotted: the map's and the identity baseline's direction cosine on the two re-sampled cells at 10 vs 100 draws, beside each cell's split-half reliability bound, null band, and the plan's two injected-name prediction references.
+Plotted: map and identity direction cosines on the two re-sampled cells at 10 vs 100 draws, beside each cell's split-half reliability bound, null band, and the plan's two injected-name prediction references.
 
 ![Draw ladder for the two re-sampled cells; the injected-name reliability bound and map cosine both roughly double and the map stays above identity everywhere](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d260be60c253ef3ce81b30172b4d2b9ff921dcb2/figures/issue_2564/k100-low-reliability-axes/fig_k100_hero_ladder.png)
 
-> **Figure.** *The injected-name read rises in step with its bound.* Whiskers are carrier-clustered bootstrap intervals; grey bands are shuffled-pair null 97.5% ranges; diamonds mark the reliability bound; the shaded band and dotted line are the plan's noise-limited (0.35 to 0.45) and direction-loss (0.17) references; 120 injected-name and 36 query-form pairs per draw level.
+> **Figure.** *The injected-name read rises in step with its bound.* Whiskers are carrier-clustered bootstrap intervals; grey bands are shuffled-pair null 97.5% ranges; diamonds mark the reliability bound; the shaded band and dotted line are the plan's noise-limited (0.35 to 0.45) and direction-loss (0.17) references; 120 injected-name and 36 query-form pairs per draw level. 399 of 15,120 new rollouts (2.6%) carry CJK script; every name-fire verdict holds with intruded draws zeroed or excluded (Methodology).
 
-Pooling 100 draws lifts the injected-name reliability from 0.13 to 0.59 and its perfect-predictor bound from 0.36 to 0.77; the map's cosine rises with it, 0.17 to 0.32, holding 42% of the bound (interval 38% to 46%, above the 35% threshold fixed in the plan; identity holds 34%). The weak parent read was sampling noise, not map-direction loss, and the injected-name axis joins the faithful set.
+Pooling 100 draws lifts the injected-name reliability from 0.13 to 0.59 and its perfect-predictor bound from 0.36 to 0.77; the map's cosine rises with it, 0.17 to 0.32, holding 42% of the bound (interval 38% to 46% against the 35% threshold; identity holds 34%). The weak parent read was sampling noise, not map-direction loss, and the injected-name axis joins the faithful set.
 
-Parent and fresh draws read as exchangeable and the fresh-only fallback estimator never fired; the reliability curve tracks the projection from the parent's 10-draw values ([companion figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d260be60c253ef3ce81b30172b4d2b9ff921dcb2/figures/issue_2564/k100-low-reliability-axes/fig_k100_r_of_k.png)). 399 of the 15,120 new rollouts (2.6%) contain CJK script; every name-fire verdict holds with intruded draws zeroed or excluded (Methodology).
+Parent and fresh draws read as exchangeable, the fresh-only fallback estimator never fired, and the reliability curve tracks the projection from the 10-draw values ([companion figure](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d260be60c253ef3ce81b30172b4d2b9ff921dcb2/figures/issue_2564/k100-low-reliability-axes/fig_k100_r_of_k.png)). Open review residual `k100-paired-bootstrap-wiring-unpinned` (deciding-interval test coverage) is bounded by a fold-time read of the run commit: the intervals come from the paired-draw helpers at their production call sites, 10,000 finite draws each.
 
 ---
 
