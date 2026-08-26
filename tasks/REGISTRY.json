@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2603,
+  "highest_id": 2604,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12370,6 +12370,13 @@
       "path": "tasks/proposed/2603",
       "status": "proposed",
       "title": "EngineCore drain guard fails OPEN on UUID/MIG-form CUDA_VISIBLE_DEVICES pins (fix + UUID-pin test, due since #2546 round 11)"
+    },
+    "2604": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2604",
+      "status": "proposed",
+      "title": "git stash stack is SHARED across worktrees \u2014 a pop from an issue worktree can steal another session's autostash (near-miss on #2546 r15)"
     },
     "261": {
       "has_clean_result": false,
