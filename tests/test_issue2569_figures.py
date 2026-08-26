@@ -1,9 +1,10 @@
 """Issue #2569 figure producers: synthetic-fixture smokes through ``savefig_paper``.
 
 Every fixture mirrors the EXACT schema of the landed producing driver (read off
-the worktree at 57808a6434): ``issue2569_gateladder`` (ladder + curve),
-``issue2569_rowbattery`` (leg4 / leg8 / der), ``issue2569_dw_fleet``,
-``issue2569_leg6``, and ``issue2569_atlas``. Each test drives a REAL figure
+the worktree at 57808a6434; the leg6 cross_arm cell + the weights split-half /
+criterion records read at fb52ed2804): ``issue2569_gateladder`` (ladder +
+curve), ``issue2569_rowbattery`` (leg4 / leg8 / der), ``issue2569_dw_fleet``,
+``issue2569_leg6``, ``issue2569_weights``, and ``issue2569_atlas``. Each test drives a REAL figure
 function end-to-end (matplotlib Agg) and asserts BOTH that the built figure
 carries plotted artists (a silently-empty render fails here, not at review) and
 that the PNG + ``.meta.json`` sidecar landed with non-trivial size. Dimensions
@@ -604,6 +605,140 @@ def _leg6_unit(arm: str, rank: int) -> dict:
     }
 
 
+def _cross_match(i: int, j: int, fcos: float, above_sym: bool, floor: float | None) -> dict:
+    """One cross-arm match record (issue2569_leg6.run_cross_arm shape)."""
+    return {
+        "factor_a": i,
+        "factor_b": j,
+        "cos_context": fcos + 0.03,
+        "cos_shift": fcos,
+        "factor_cos": fcos,
+        "above_symmetric_null": above_sym,
+        "above_rotation_null_percomparison": above_sym,
+        "within_agreement_a": 0.9,
+        "within_agreement_b": floor,
+        "splithalf_floor": floor,
+        "above_splithalf_floor": bool(floor is not None and fcos >= floor),
+        "sigma_a": 1.2,
+        "sigma_b": 1.0,
+    }
+
+
+def _write_cross_arm(root: Path) -> None:
+    """leg6/cross_arm/{L19_last_prompt.json,summary.json} (run_cross_arm shape).
+
+    One admissible same-behavior pair (matches above AND below the symmetric
+    band), one refused basis-mismatched pair, one admissible cross-behavior
+    pair, one skipped arm.
+    """
+    cross = root / "leg6" / "cross_arm"
+    cross.mkdir(parents=True)
+    arms = ["cas-pers-con-lr1e5-s42", "cas-bare-con-lr1e5-s42", "syc-bare-con-lr1e5-s42"]
+    sym_key = "8x8|ra2|rb2"
+    note = "winner's-curse-inflated point estimate (max over greedy matches; fixture)"
+    pairs = [
+        {
+            "arm_a": arms[0],
+            "arm_b": arms[1],
+            "same_behavior": True,
+            "admissible": True,
+            "matches": [
+                _cross_match(0, 0, 0.82, True, 0.88),
+                _cross_match(1, 1, 0.35, False, None),
+            ],
+            "max_matched_cos": 0.82,
+            "max_matched_cos_note": note,
+            "symmetric_null_key": sym_key,
+            "above_symmetric_null_any": True,
+            "null_aggregation_matches_observed": True,
+        },
+        {
+            "arm_a": arms[0],
+            "arm_b": arms[2],
+            "same_behavior": False,
+            "admissible": False,
+            "refusal_reason": (
+                "factor_bases mismatch on ['context'] - recorded skip, no number fabricated"
+            ),
+        },
+        {
+            "arm_a": arms[1],
+            "arm_b": arms[2],
+            "same_behavior": False,
+            "admissible": True,
+            "matches": [_cross_match(0, 1, 0.41, False, 0.9)],
+            "max_matched_cos": 0.41,
+            "max_matched_cos_note": note,
+            "symmetric_null_key": sym_key,
+            "above_symmetric_null_any": False,
+            "null_aggregation_matches_observed": True,
+        },
+    ]
+    cell = {
+        "layer": 19,
+        "context_convention": "last_prompt",
+        "factor_half": "half1 (leading denoised prefix per arm)",
+        "matching_rule": "greedy by min(|cos_context|, |cos_shift|) (fixture)",
+        "factor_orientation": "row-vector map (fixture)",
+        "statistic_classes": {
+            "cross_arm_factor_cosine": "direction-aware (raw factor cosine; fixture)",
+            "symmetric_null": "selection-symmetric max-matched rotation null (fixture)",
+            "rotation_null_percomparison": "two-sided random-rotation chance band (fixture)",
+            "splithalf_floor": "within-arm split-half agreement (NOISE FLOOR; fixture)",
+        },
+        "rotation_null_bands_percomparison": {"8": {"null_p975": 0.62}},
+        "symmetric_null_bands": {sym_key: {"p95_max_matched": 0.72}},
+        "assertions": {"null_aggregation_matches_observed": True},
+        "n_null_draws": 5,
+        "null_seed": 2569,
+        "arms": {
+            a: {"denoised_rank": 2, "n_factors_compared": 2, "unit_regime_key": "rk"} for a in arms
+        },
+        "skipped_arms": [
+            {
+                "arm": "imp-bare-con-lr1e5-s42",
+                "reason": "unit JSON missing (arm halted or unit not run)",
+            }
+        ],
+        "pairs": pairs,
+        "criterion": {
+            "registered": "leg 6: >=1 cross-arm shared factor above the rotation null (fixture)",
+            "shared_factor_definition": "fixture",
+            "n_shared_above_null_same_behavior": 1,
+            "n_shared_above_null_all_pairs": 1,
+            "pairs_above_null_same_behavior": [f"{arms[0]}~{arms[1]}:f0~f0"],
+            "met": True,
+            "n_same_behavior_pairs_tested": 1,
+            "pair_multiplicity_note": "fixture",
+            "per_comparison_uncorrected": {
+                "label": "UNCORRECTED per-comparison read (fixture; NOT the criterion input)",
+                "n_shared_above_percomparison_null_same_behavior": 1,
+                "n_shared_above_percomparison_null_all_pairs": 1,
+            },
+        },
+        "regime_key": "cross-rk",
+        "metadata": {},
+    }
+    (cross / "L19_last_prompt.json").write_text(json.dumps(cell))
+    (cross / "summary.json").write_text(
+        json.dumps(
+            {
+                "cells": [
+                    {
+                        "layer": 19,
+                        "context_convention": "last_prompt",
+                        "n_shared_above_null_same_behavior": 1,
+                        "n_shared_above_null_all_pairs": 1,
+                        "met": True,
+                    }
+                ],
+                "criterion_met_any_cell": True,
+                "metadata": {},
+            }
+        )
+    )
+
+
 def _write_leg6(root: Path) -> None:
     """leg6/<arm>/L19_last_prompt.json unit records + a pooled dir to ignore."""
     for arm, rank in (("cas-pers-con-lr1e5-s42", 3), ("syc-bare-con-lr1e5-s42", 1)):
@@ -616,6 +751,7 @@ def _write_leg6(root: Path) -> None:
     (pooled / "L19_last_prompt.json").write_text(
         json.dumps({**_leg6_unit("cas-pers-con-lr1e5-s42", 2), "target_arm": "x"})
     )
+    _write_cross_arm(root)
 
 
 def _tier1_pair(qL: int, lL: int, base: float) -> dict:
@@ -917,6 +1053,101 @@ def _write_weights(root: Path, alive: bool = True) -> None:
                 "thresholds": {"copied_gain": [0.8, 1.25]},
                 "precedence": "fixture",
                 "data_weighted_mass": "deferred-to-P-B (fixture)",
+            }
+        )
+    )
+    half1 = rng.uniform(0.2, 1.0, size=d)
+    half2 = rng.uniform(0.2, 1.0, size=d)
+    stability = np.minimum(half1, half2)
+    sh_floor = 0.5
+    n_above = int((stability > sh_floor).sum())
+    torch.save(
+        {
+            "stability": torch.from_numpy(stability),
+            "sigma_full": torch.from_numpy(sigma),
+            **{
+                hname: {
+                    "factor_cos": torch.from_numpy(h),
+                    "cos_u": torch.from_numpy(h),
+                    "cos_v": torch.from_numpy(np.minimum(h + 0.05, 1.0)),
+                    "partner": torch.arange(d),
+                    "sigma_half": torch.from_numpy(sigma * 0.97),
+                    "sigma_matched": torch.from_numpy(sigma * 0.97),
+                    "n_rows": 400,
+                }
+                for hname, h in (("half1", half1), ("half2", half2))
+            },
+            "floor": {"analytic": 0.31, "empirical": {"p99": sh_floor}, "floor": sh_floor},
+            "regime": {"fixture": True},
+            "metadata": {},
+        },
+        leg1 / "splithalf_stability_L19.pt",
+    )
+    (leg1 / "splithalf_stability_L19.json").write_text(
+        json.dumps(
+            {
+                "regime": {"fixture": True},
+                "status": "computed",
+                "floor": {"analytic": 0.31, "empirical": {"p99": sh_floor}, "floor": sh_floor},
+                "n_above_floor": n_above,
+                "frac_above_floor": n_above / d,
+                "criterion": {
+                    "clause": ">= 300 singular directions above the split-half stability "
+                    "floor (plan SS7.5)",
+                    "metric": "n_above_floor",
+                    "threshold": 300,
+                    "value": n_above,
+                    "pass": bool(n_above >= 300),
+                },
+                "stability_quantiles": {"p50": float(np.median(stability))},
+                "halves": {
+                    h: {"n_rows": 400, "factor_cos_top1": 0.9, "factor_cos_median": 0.6}
+                    for h in ("half1", "half2")
+                },
+                "series_pt": "splithalf_stability_L19.pt",
+            }
+        )
+    )
+    (leg1 / "criterion_L19.json").write_text(
+        json.dumps(
+            {
+                "regime": {"fixture": True},
+                "status": "computed",
+                "thresholds": {"rho_max": 1.0, "kappa_min": 10.0},
+                "clauses": {
+                    "rho_contraction": {
+                        "metric": "rho(A) (spectral radius)",
+                        "threshold": 1.0,
+                        "op": "<",
+                        "value": 1.2054,
+                        "pass": False,
+                    },
+                    "kappa_nonnormal": {
+                        "metric": "kappa(V) (eigenbasis condition number)",
+                        "threshold": 10.0,
+                        "op": ">=",
+                        "value": 118.4,
+                        "pass": True,
+                    },
+                    "stable_directions": {
+                        "metric": "n_above_floor (split-half stability)",
+                        "threshold": 300,
+                        "op": ">=",
+                        "value": n_above,
+                        "pass": bool(n_above >= 300),
+                    },
+                    "copied_data_share": {
+                        "metric": "copied_dw_share (copied-class data-variance share)",
+                        "threshold": 0.2,
+                        "op": "<",
+                        "value": None,
+                        "pass": None,
+                        "deferral": "dw_mass_L19.json status=deferred (fixture)",
+                    },
+                },
+                "overall": {"n_clauses": 4, "n_evaluated": 3, "n_failed": 2, "verdict": "FAIL"},
+                "kill": {"kappa_lt_10": False, "copied_gt_50": None, "fired": None},
+                "notes": ["fixture"],
             }
         )
     )
@@ -1335,3 +1566,86 @@ def test_render_all_only_subset(full_root, tmp_path):
     """--only narrows the batch to the named figures."""
     manifest = F.render_all(full_root, tmp_path / "figs", only={"leg7_atlas"})
     assert sorted(manifest["rendered"]) == ["leg7_atlas"]
+
+
+# ---------------------------------------------------------------------------
+# Leg-6 cross-arm shared-factor heatmap + leg-1 hero split-half bands
+# ---------------------------------------------------------------------------
+
+
+def test_leg6_shared_factor_heatmap_renders_with_caption(full_root, tmp_path):
+    """Heatmap renders; refusals, skips, and the uncorrected label ride the sidecar."""
+    stem = F.fig_leg6_shared_factor_heatmap(full_root, tmp_path / "figs")
+    assert stem == "leg6_shared_factor_heatmap"
+    _assert_rendered(tmp_path / "figs", stem)
+    cap = json.loads((tmp_path / "figs" / f"{stem}.meta.json").read_text())["caption"]
+    assert "factor_bases mismatch" in cap
+    assert "UNCORRECTED" in cap
+    assert "unit JSON missing" in cap
+    assert "winner's-curse-inflated" in cap
+    assert "criterion_met_any_cell=True" in cap
+
+
+def test_leg6_pair_matrix_refused_and_skipped_are_nan_never_zero(full_root):
+    """No-cosine cells stay NaN (rendered as not-tested), never zero-valued."""
+    cell = json.loads((full_root / "leg6" / "cross_arm" / "L19_last_prompt.json").read_text())
+    pm = F._pair_matrix(cell)
+    order = pm["order"]
+    i = order.index("cas-pers-con-lr1e5-s42")
+    a = order.index("cas-bare-con-lr1e5-s42")
+    j = order.index("syc-bare-con-lr1e5-s42")
+    k = order.index("imp-bare-con-lr1e5-s42")
+    assert np.isnan(pm["mat"][i, j]) and pm["refused"][i, j] and pm["refused"][j, i]
+    assert np.isnan(pm["mat"][k, :]).all() and np.isnan(pm["mat"][:, k]).all()
+    assert pm["mat"][i, a] == pytest.approx(0.82)
+    assert pm["above"][i, a] and pm["above"][a, i]
+    assert np.isnan(np.diag(pm["mat"])).all()
+
+
+def test_leg1_hero_renders_stability_panel_and_criterion_caption(full_root, tmp_path):
+    """Computed split-half record: three panels; criterion + counts in the sidecar."""
+    series, note = F._load_splithalf(full_root)
+    assert series is not None and "n_above_floor=" in note
+    fig = F.build_leg1_anatomy_hero(
+        F._load_anatomy(full_root), F._load_factor_arrays(full_root), series
+    )
+    assert len(fig.axes) == 3
+    F.plt.close(fig)
+    stem = F.fig_leg1_anatomy_hero(full_root, tmp_path / "figs")
+    _assert_rendered(tmp_path / "figs", stem)
+    cap = json.loads((tmp_path / "figs" / f"{stem}.meta.json").read_text())["caption"]
+    assert "n_above_floor=" in cap
+    assert "leg-1 criterion verdict: FAIL" in cap
+    assert "N/A, not tested" in cap  # the deferred copied_dw_share clause
+
+
+def test_leg1_hero_splithalf_deferred_renders_without_bands(full_root, tmp_path):
+    """A deferral record renders the two-panel hero; the caption names the gap."""
+    leg1 = full_root / "weights" / "leg1"
+    (leg1 / "splithalf_stability_L19.pt").unlink()
+    (leg1 / "splithalf_stability_L19.json").write_text(
+        json.dumps(
+            {"regime": {}, "status": "deferred", "deferral_reason": "P-B moments absent (fixture)"}
+        )
+    )
+    series, note = F._load_splithalf(full_root)
+    assert series is None and "not yet computed" in note
+    fig = F.build_leg1_anatomy_hero(
+        F._load_anatomy(full_root), F._load_factor_arrays(full_root), None
+    )
+    assert len(fig.axes) == 2
+    F.plt.close(fig)
+    stem = F.fig_leg1_anatomy_hero(full_root, tmp_path / "figs")
+    _assert_rendered(tmp_path / "figs", stem)
+    cap = json.loads((tmp_path / "figs" / f"{stem}.meta.json").read_text())["caption"]
+    assert "not yet computed (P-B moments absent (fixture))" in cap
+
+
+def test_leg1_hero_stability_length_mismatch_fails_loud(full_root):
+    """A stability series shorter than the sigma spectrum raises, never mis-pairs."""
+    series, _ = F._load_splithalf(full_root)
+    series["stability"] = series["stability"][:5]
+    with pytest.raises(ValueError, match="does not match"):
+        F.build_leg1_anatomy_hero(
+            F._load_anatomy(full_root), F._load_factor_arrays(full_root), series
+        )

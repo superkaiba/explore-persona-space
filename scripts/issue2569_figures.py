@@ -22,6 +22,7 @@ Input schemas were read off the producing code in this worktree at 57808a6434:
 - ``dw_fleet/{lora,ft}/*.json``         issue2569_dw_fleet.analyze_{lora_arm,ft_checkpoint}
 - ``dw_fleet/alignment.json``           issue2569_dw_fleet.cmd_align
 - ``leg6/<arm>/L*_*.json``              issue2569_leg6.fit_split_half / run_arm
+- ``leg6/cross_arm/L*_*.json``          issue2569_leg6.run_cross_arm (@ fb52ed2804)
 - ``leg7/three_tier.json``              issue2569_atlas.phase_report
 - ``leg7/atlas_distances.json``         issue2569_atlas.phase_atlas
 - ``weights/leg1/anatomy_L19.json``     issue2569_weights.phase_anatomy (@ d41a8e8420)
@@ -30,14 +31,18 @@ Input schemas were read off the producing code in this worktree at 57808a6434:
 - ``weights/leg3/wiring_edges_L19.npz``     issue2569_weights.phase_wiring
 - ``weights/leg3/wiring_L19.json``          issue2569_weights.phase_wiring (h3 + caveats)
 - ``weights/leg3/attribution_L19.json``     issue2569_weights.phase_attribution
+- ``weights/leg1/splithalf_stability_L19.{json,pt}``  issue2569_weights.phase_splithalf (@ 01ba8af8ea)
+- ``weights/leg1/criterion_L19.json``       issue2569_weights.phase_criterion (@ 01ba8af8ea)
 
-Deferred by design (no producing code landed, so no schema exists to key on):
-the leg-6 cross-arm shared-factor heatmap. ``issue2569_leg6`` persists factor
-MATCHES and singular values per arm, never the factor vectors themselves, so
-cross-arm factor cosines cannot be plotted without re-deriving fits (concern
-``leg6-cross-arm-factor-vectors-unpersisted`` on the task ledger). The hero
-figure's split-half spread bands are a P-B (rowbattery) product absent from
-P-A artifacts; they are added when that producer lands, never fabricated.
+The two formerly deferred gaps now have landed producers and are wired here:
+the leg-6 cross-arm shared-factor heatmap reads ``run_cross_arm``'s persisted
+pairs/matches (the SELECTION-SYMMETRIC band is the criterion input; the
+per-comparison band renders only under an explicit uncorrected label; refused
+pairs and skipped arms render as not-tested cells, never zeros), and the hero
+gains the split-half stability panel from ``phase_splithalf``'s per-rank
+series. A split-half DEFERRAL record (``status != "computed"``) renders the
+hero WITHOUT the stability panel and the sidecar caption names the gap; bands
+are never fabricated.
 
 Usage:
     uv run python scripts/issue2569_figures.py \
@@ -1146,6 +1151,11 @@ H3_KILL_SHARE = 0.10
 COLOR_H3_PASS = _PAL[12]  # H3 PASS floor line (dark teal, dashed)
 COLOR_H3_KILL = _PAL[15]  # H3 kill line (light yellow-green, dashdot)
 
+# Split-half series (hero stability panel): free slots 13/14 (no other figure
+# in the set assigns either slot a meaning; one color = one meaning holds).
+COLOR_HALF1 = _PAL[13]
+COLOR_HALF2 = _PAL[14]
+
 # Anatomy class precedence order (issue2569_weights.classify_anatomy; first match).
 ANATOMY_CLASS_ORDER = ("ignored", "copied", "damped", "transcoded", "rotated_scaled")
 # Dashboard section -> null-floor side (mirrors the producing writer's nulls[side]).
@@ -1199,22 +1209,29 @@ def _render_with_caption(fig: plt.Figure, stem: str, fig_dir: Path, caption: str
     return stem
 
 
-def build_leg1_anatomy_hero(anatomy: dict, fac: dict) -> plt.Figure:
-    """Hero: sigma and |lambda| spectra + read-direction class fractions (L19).
+def build_leg1_anatomy_hero(anatomy: dict, fac: dict, splithalf: dict | None = None) -> plt.Figure:
+    """Hero: spectra + split-half stability (when computed) + class fractions (L19).
 
     Panel A overlays the full singular spectrum (read gains, anatomy JSON)
     and the eigenvalue-magnitude spectrum (factor .pt), each rank-ordered,
     with the tau threshold (99% of squared-gain mass) and the median singular
     value as references: on this map tau EXCEEDS the median gain, so below-tau
-    directions are read at reduced relative gain, not dropped. Panel B shows
+    directions are read at reduced relative gain, not dropped. When the P-B
+    split-half producer has run (``splithalf`` not None), a middle panel shows
+    the per-rank stability series (min over halves of the matched factor
+    cosine, paired to the full-map singular order), the two per-half series as
+    the low-level view, and the stability floor; a deferral record renders the
+    two-panel form instead (bands are never fabricated). The last panel shows
     each anatomy class's share of squared-gain mass next to its share of
-    directions. Split-half spread bands are a P-B product, absent at P-A.
+    directions.
     """
     sigma = np.asarray(anatomy["sigma"], np.float64)
     abs_lam = np.asarray(fac["abs_lambda"], np.float64)
     if sigma.size == 0 or abs_lam.size == 0:
         raise ValueError("anatomy/factor artifacts carry empty spectra")
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(10.2, 4.0), layout="constrained")
+    n_panels = 3 if splithalf is not None else 2
+    fig, axes = plt.subplots(1, n_panels, figsize=(5.1 * n_panels, 4.0), layout="constrained")
+    ax_a, ax_b = axes[0], axes[-1]
     ax_a.plot(
         np.arange(1, sigma.size + 1),
         sigma,
@@ -1244,6 +1261,39 @@ def build_leg1_anatomy_hero(anatomy: dict, fac: dict) -> plt.Figure:
     ax_a.set_ylabel("gain")
     ax_a.set_title(f"Operator spectra, layer {WEIGHTS_LAYER}", fontsize=9)
     ax_a.legend(fontsize=7)
+
+    if splithalf is not None:
+        st = np.asarray(splithalf["stability"], np.float64)
+        if st.size != sigma.size:
+            raise ValueError(
+                f"split-half stability length {st.size} does not match the "
+                f"sigma spectrum length {sigma.size}"
+            )
+        ax_s = axes[1]
+        ranks = np.arange(1, st.size + 1)
+        # Slots 13/14 are adjacent viridis samples; the linestyle split is what
+        # keeps the two half series tellable apart at production density.
+        for hname, color, ls in (("half1", COLOR_HALF1, "-"), ("half2", COLOR_HALF2, (0, (3, 1)))):
+            ax_s.plot(
+                ranks,
+                np.asarray(splithalf["half_cos"][hname], np.float64),
+                color=color,
+                lw=0.7,
+                ls=ls,
+                alpha=0.75,
+                label=f"{hname.replace('half', 'half ')} matched factor cosine",
+            )
+        ax_s.plot(ranks, st, color=COLOR_PRIMARY, lw=1.1, label="stability (min over halves)")
+        ax_s.axhline(
+            float(splithalf["floor"]),
+            color=COLOR_NEUTRAL,
+            ls="--",
+            label="stability floor (max of analytic and empirical p99)",
+        )
+        ax_s.set_xlabel("rank (matched to the full-map singular order)")
+        ax_s.set_ylabel("matched factor cosine")
+        ax_s.set_title(f"Split-half stability, layer {WEIGHTS_LAYER}", fontsize=9)
+        ax_s.legend(fontsize=6, ncols=2, loc="lower center", framealpha=0.9)
 
     classes = anatomy["classes"]
     order = [c for c in ANATOMY_CLASS_ORDER if c in classes]
@@ -1671,6 +1721,240 @@ def fig_leg6_spectra(root: Path, fig_dir: Path) -> str:
     return _render(build_leg6_spectra(units, LEG6_PRIMARY_CONVENTION), "leg6_half_spectra", fig_dir)
 
 
+def _pair_matrix(cell: dict) -> dict:
+    """Arm-square matrices for the cross-arm heatmap; NaN = no measured cosine.
+
+    A refused (basis-mismatched) pair and a skipped arm carry NO cosine: their
+    cells stay NaN and render as explicit not-tested cells, never zeros (a
+    zero would read as 'measured, no similarity' when the truth is 'not
+    comparable'). Returns the arm order (compared arms then skipped arms),
+    the max-matched-|cos| matrix, the above-symmetric-band mask, and the
+    refused-pair mask.
+    """
+    compared = sorted(cell.get("arms", {}))
+    skipped = sorted({s["arm"] for s in cell.get("skipped_arms", [])} - set(compared))
+    order = compared + skipped
+    if not order:
+        raise ValueError("cross-arm cell carries no arms (compared or skipped)")
+    idx = {a: i for i, a in enumerate(order)}
+    n = len(order)
+    mat = np.full((n, n), np.nan)
+    above = np.zeros((n, n), bool)
+    refused = np.zeros((n, n), bool)
+    for pair in cell.get("pairs", []):
+        i, j = idx[pair["arm_a"]], idx[pair["arm_b"]]
+        if not pair.get("admissible", False):
+            refused[i, j] = refused[j, i] = True
+            continue
+        mat[i, j] = mat[j, i] = float(pair["max_matched_cos"])
+        if pair.get("above_symmetric_null_any", False):
+            above[i, j] = above[j, i] = True
+    return {"order": order, "mat": mat, "above": above, "refused": refused}
+
+
+def build_leg6_shared_factor_heatmap(cell: dict) -> plt.Figure:
+    """Cross-arm shared-factor heatmap + per-match view against both floors.
+
+    Panel A: arm-by-arm max matched |cos| (the direction-aware statistic the
+    selection-symmetric band evaluates; the max is a winner's-curse-inflated
+    point estimate, never a corrected magnitude). Cells with no measured
+    cosine (basis-mismatch refusals, arms with no persisted factors, the
+    diagonal) render as not-tested cells, never zeros; refusals carry an 'x'
+    marker. Panel B: every matched factor cosine for same-behavior admissible
+    pairs (the criterion scope; all admissible pairs when none is
+    same-behavior) against the selection-symmetric max-matched band (the
+    criterion input), the within-arm split-half noise floor, and the
+    per-comparison band (labeled uncorrected, NOT the criterion input).
+    Verdict markers key on the persisted above_symmetric_null booleans.
+    """
+    pm = _pair_matrix(cell)
+    order, mat = pm["order"], pm["mat"]
+    n = len(order)
+    labels = arm_labels_deduped(order)
+    fig, (ax_h, ax_m) = plt.subplots(1, 2, figsize=(12.8, 4.9), layout="constrained")
+    cmap = matplotlib.colormaps["viridis"].copy()
+    cmap.set_bad("0.88")
+    im = ax_h.imshow(np.ma.masked_invalid(mat), vmin=0.0, vmax=1.0, cmap=cmap)
+    ax_h.set_xticks(range(n), [labels[a] for a in order], rotation=45, ha="right", fontsize=6)
+    ax_h.set_yticks(range(n), [labels[a] for a in order], fontsize=6)
+    conv = display(str(cell.get("context_convention", "")))
+    ax_h.set_title(
+        f"Max matched cosine per arm pair, layer {cell.get('layer')}, {conv}", fontsize=9
+    )
+    cbar = fig.colorbar(im, ax=ax_h, shrink=0.85)
+    cbar.set_label("max matched |cos|\n(direction-aware; winner's-curse-inflated)", fontsize=7)
+    ys, xs = np.where(pm["above"])
+    if xs.size:
+        ax_h.scatter(xs, ys, s=16, marker="o", facecolors="white", edgecolors="black", lw=0.5)
+    ys, xs = np.where(pm["refused"])
+    if xs.size:
+        ax_h.scatter(xs, ys, s=24, marker="x", color="black", lw=0.9)
+    handles = [
+        plt.Rectangle(
+            (0, 0), 1, 1, facecolor="0.88", label="N/A: not tested (skipped arm / self pair)"
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="x",
+            ls="none",
+            color="black",
+            label="N/A: not comparable (basis mismatch, recorded refusal)",
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            ls="none",
+            markerfacecolor="white",
+            markeredgecolor="black",
+            label="pair clears the selection-symmetric band (criterion input)",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncols=len(handles), fontsize=6.5)
+
+    adm = [p for p in cell.get("pairs", []) if p.get("admissible")]
+    same = [p for p in adm if p.get("same_behavior")]
+    shown = same if same else adm
+    scope = "same-behavior pairs (criterion scope)" if same else "all admissible pairs"
+    sym_bands = cell.get("symmetric_null_bands", {})
+    pc_bands = cell.get("rotation_null_bands_percomparison", {})
+    seen: set[str] = set()
+
+    def _lbl(text: str) -> str | None:
+        """First-occurrence legend label; repeats return None (one entry each)."""
+        if text in seen:
+            return None
+        seen.add(text)
+        return text
+
+    for x, pair in enumerate(shown):
+        matches = pair.get("matches", [])
+        offs = np.linspace(-0.18, 0.18, max(len(matches), 1))
+        for off, m in zip(offs, matches):
+            if m["above_symmetric_null"]:
+                ax_m.scatter(
+                    x + off,
+                    m["factor_cos"],
+                    s=18,
+                    color=COLOR_PRIMARY,
+                    label=_lbl("matched factor cosine (clears the symmetric band)"),
+                )
+            else:
+                ax_m.scatter(
+                    x + off,
+                    m["factor_cos"],
+                    s=18,
+                    facecolors="none",
+                    edgecolors=COLOR_PRIMARY,
+                    lw=0.8,
+                    label=_lbl("matched factor cosine (below the band)"),
+                )
+            floor = m.get("splithalf_floor")
+            if floor is not None:
+                ax_m.plot(
+                    [x + off - 0.06, x + off + 0.06],
+                    [floor, floor],
+                    color=COLOR_NEUTRAL,
+                    ls=":",
+                    lw=1.0,
+                    label=_lbl("within-arm split-half noise floor (per match)"),
+                )
+        band = sym_bands.get(pair.get("symmetric_null_key", ""), {})
+        if "p95_max_matched" in band:
+            p95 = float(band["p95_max_matched"])
+            ax_m.plot(
+                [x - 0.3, x + 0.3],
+                [p95, p95],
+                color=COLOR_NEUTRAL,
+                ls="--",
+                lw=1.2,
+                label=_lbl("selection-symmetric max-matched band, p95 (criterion input)"),
+            )
+        dims = pair.get("symmetric_null_key", "").split("|", 1)[0].split("x")
+        pc_vals = [float(pc_bands[d]["null_p975"]) for d in dims if d in pc_bands]
+        if pc_vals:
+            pc = max(pc_vals)
+            ax_m.plot(
+                [x - 0.3, x + 0.3],
+                [pc, pc],
+                color=COLOR_NEUTRAL,
+                ls="-.",
+                lw=0.9,
+                label=_lbl("per-comparison band, p97.5 (uncorrected, NOT the criterion input)"),
+            )
+    if shown:
+        ax_m.set_xticks(
+            range(len(shown)),
+            [f"{labels[p['arm_a']]}\nvs {labels[p['arm_b']]}" for p in shown],
+            fontsize=6,
+        )
+        ax_m.set_ylabel("matched factor cosine\nmin(|cos context|, |cos shift|)", fontsize=8)
+        ax_m.set_title(f"Per-match view, {scope}", fontsize=9)
+        ax_m.legend(fontsize=6)
+    else:
+        ax_m.set_title("Per-match view: N/A, no admissible pairs", fontsize=9)
+        ax_m.set_xticks([])
+        ax_m.set_yticks([])
+    return fig
+
+
+def _leg6_cross_caption(cell: dict, summary: dict | None) -> str:
+    """Sidecar caption: criterion verdict, uncorrected label, refusals, skips.
+
+    Producer-shipped strings (refusal reasons, the winner's-curse note, the
+    statistic-class descriptions, the per-comparison label) are joined
+    verbatim, the ``_caveat_caption`` convention.
+    """
+    crit = cell.get("criterion", {})
+    pc = crit.get("per_comparison_uncorrected", {})
+    parts = [
+        f"criterion: {crit.get('registered', '')} | met={crit.get('met')} | "
+        f"n_shared_above_null_same_behavior={crit.get('n_shared_above_null_same_behavior')} "
+        f"over {crit.get('n_same_behavior_pairs_tested')} same-behavior pairs tested; "
+        f"all-pairs companion={crit.get('n_shared_above_null_all_pairs')}",
+        f"per-comparison read: {pc.get('label', '')} | "
+        f"same-behavior={pc.get('n_shared_above_percomparison_null_same_behavior')}, "
+        f"all-pairs={pc.get('n_shared_above_percomparison_null_all_pairs')}",
+    ]
+    notes = [
+        p["max_matched_cos_note"] for p in cell.get("pairs", []) if p.get("max_matched_cos_note")
+    ]
+    if notes:
+        parts.append(f"heatmap statistic: {notes[0]}")
+    for p in cell.get("pairs", []):
+        if not p.get("admissible", True):
+            parts.append(
+                f"refused pair {p['arm_a']} vs {p['arm_b']}: {p.get('refusal_reason', '')}"
+            )
+    for s in cell.get("skipped_arms", []):
+        parts.append(f"skipped arm {s.get('arm')}: {s.get('reason')}")
+    classes = cell.get("statistic_classes", {})
+    if classes:
+        parts.append(
+            "statistic classes: " + "; ".join(f"{k}: {v}" for k, v in sorted(classes.items()))
+        )
+    if summary is not None:
+        parts.append(f"summary criterion_met_any_cell={summary.get('criterion_met_any_cell')}")
+    return " | ".join(parts)
+
+
+def fig_leg6_shared_factor_heatmap(root: Path, fig_dir: Path) -> str:
+    """Cross-arm shared-factor heatmap (primary layer + convention cell)."""
+    cross = root / "leg6" / "cross_arm"
+    cell = _read_json(cross / f"L{LEG6_PRIMARY_LAYER}_{LEG6_PRIMARY_CONVENTION}.json")
+    if cell is None:
+        raise FileNotFoundError(
+            f"leg6/cross_arm/L{LEG6_PRIMARY_LAYER}_{LEG6_PRIMARY_CONVENTION}.json"
+        )
+    return _render_with_caption(
+        build_leg6_shared_factor_heatmap(cell),
+        "leg6_shared_factor_heatmap",
+        fig_dir,
+        _leg6_cross_caption(cell, _read_json(cross / "summary.json")),
+    )
+
+
 def fig_leg7_three_tier(root: Path, fig_dir: Path) -> str:
     """Leg-7 three-tier report figure."""
     doc = _read_json(root / "leg7" / "three_tier.json")
@@ -1695,12 +1979,79 @@ def _load_anatomy(root: Path) -> dict:
     return doc
 
 
+def _load_splithalf(root: Path) -> tuple[dict | None, str]:
+    """Split-half stability series for the hero, plus its sidecar caption note.
+
+    Returns ``(series, note)`` when the P-B producer wrote a computed record;
+    ``(None, note)`` when the record is absent or a deferral (the hero then
+    renders without the stability panel; bands are never fabricated). The
+    ``weights_only=False`` load mirrors the producing driver's own convention
+    for self-produced, regime-pinned project artifacts (#1900).
+    """
+    leg1 = root / "weights" / "leg1"
+    doc = _read_json(leg1 / f"splithalf_stability_L{WEIGHTS_LAYER}.json")
+    if doc is None:
+        return None, "split-half stability: not yet computed (no P-B split-half record)"
+    if doc.get("status") != "computed":
+        reason = doc.get("deferral_reason") or f"status={doc.get('status')}"
+        return None, f"split-half stability: not yet computed ({reason})"
+    pt = torch.load(leg1 / str(doc["series_pt"]), map_location="cpu", weights_only=False)
+    series = {
+        "stability": pt["stability"].numpy().astype(np.float64),
+        "half_cos": {h: pt[h]["factor_cos"].numpy().astype(np.float64) for h in ("half1", "half2")},
+        "floor": float(pt["floor"]["floor"]),
+    }
+    crit = doc.get("criterion", {})
+    note = (
+        f"split-half stability: n_above_floor={int(doc['n_above_floor'])} of "
+        f"{series['stability'].size} ranks (frac={float(doc['frac_above_floor']):.4f}); "
+        f"criterion '{crit.get('clause', '')}': value={crit.get('value')}, "
+        f"pass={crit.get('pass')}"
+    )
+    return series, note
+
+
+def _criterion_note(root: Path) -> str:
+    """One-line leg-1 registered-criterion summary for the hero sidecar caption.
+
+    Clause names come verbatim from the record's own ``metric`` strings; a
+    clause whose inputs are deferred reads 'N/A, not tested' with the
+    producing phase's deferral reason, never a fabricated value.
+    """
+    doc = _read_json(root / "weights" / "leg1" / f"criterion_L{WEIGHTS_LAYER}.json")
+    if doc is None:
+        return "leg-1 criterion record: not yet computed"
+    parts = []
+    for clause in doc.get("clauses", {}).values():
+        if clause.get("pass") is None:
+            parts.append(
+                f"{clause['metric']}: N/A, not tested ({clause.get('deferral', 'pending')})"
+            )
+        else:
+            word = "pass" if clause["pass"] else "fail"
+            parts.append(
+                f"{clause['metric']} {clause['op']} {clause['threshold']}: "
+                f"value={clause['value']:.6g}, {word}"
+            )
+    verdict = doc.get("overall", {}).get("verdict")
+    return f"leg-1 criterion verdict: {verdict} | " + "; ".join(parts)
+
+
 def fig_leg1_anatomy_hero(root: Path, fig_dir: Path) -> str:
-    """Hero anatomy figure: spectra + class fractions (leg-1, primary layer)."""
-    return _render(
-        build_leg1_anatomy_hero(_load_anatomy(root), _load_factor_arrays(root)),
+    """Hero anatomy figure: spectra + stability + class fractions (primary layer).
+
+    The stability panel appears only when the P-B split-half producer wrote a
+    computed record; otherwise the two-panel form renders and the sidecar
+    caption names the not-yet-computed gap. The leg-1 criterion record rides
+    the same sidecar caption (its heterogeneous-unit clauses do not compose
+    into an honest canvas panel without value annotations).
+    """
+    splithalf, sh_note = _load_splithalf(root)
+    return _render_with_caption(
+        build_leg1_anatomy_hero(_load_anatomy(root), _load_factor_arrays(root), splithalf),
         "leg1_anatomy_hero",
         fig_dir,
+        f"{sh_note} | {_criterion_note(root)}",
     )
 
 
@@ -1770,20 +2121,18 @@ FIGURES: dict[str, object] = {
     "leg5_dw_alignment": fig_dw_alignment,
     "leg6_denoised_rank": fig_leg6_ranks,
     "leg6_half_spectra": fig_leg6_spectra,
+    "leg6_shared_factor_heatmap": fig_leg6_shared_factor_heatmap,
     "leg7_three_tier": fig_leg7_three_tier,
     "leg7_atlas": fig_leg7_atlas,
     "leg8_kernel_pairs": fig_leg8_kernel_pairs,
 }
 
-# Plan §6 figures whose PRODUCING artifact does not exist; enumerated so the
-# manifest names the gap instead of silently omitting it.
-DEFERRED_NO_PRODUCER = {
-    "leg6_shared_factor_heatmap": (
-        "issue2569_leg6 persists factor MATCHES and singular values per arm, never the "
-        "factor vectors, and no cross-arm cosine / rotation-null artifact exists; plotting "
-        "would require re-deriving fits (concern leg6-cross-arm-factor-vectors-unpersisted)"
-    ),
-}
+# Plan §6 figures whose PRODUCING artifact does not exist (name -> reason); the
+# manifest names any gap instead of silently omitting it. EMPTY since unit 9b
+# landed the cross-arm producer (issue2569_leg6.run_cross_arm) and this round
+# wired leg6_shared_factor_heatmap onto it; the key stays so the manifest shape
+# is stable for consumers.
+DEFERRED_NO_PRODUCER: dict[str, str] = {}
 
 
 def _manifest_meta() -> dict:
