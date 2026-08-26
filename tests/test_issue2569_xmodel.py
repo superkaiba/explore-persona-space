@@ -307,3 +307,77 @@ def test_spectrum_cosine_truncation_flag():
     same = AT.spectrum_cosine(np.eye(4), np.eye(4))
     assert same["spectrum_cosine"] == pytest.approx(1.0)
     assert same["truncated"] is False
+
+
+def test_stage_texts_tolerates_shard_skip_manifests(tmp_path, monkeypatch):
+    """A shard-level skip manifest among the rows chunks is counted, never
+    row-parsed (final-round smoke: shard16_skipped.json crashed the strict
+    rows assert at file 1021/1936 of the real store); a rows chunk still
+    stages, and an UNRECOGNIZED shape still fails the strict assert."""
+    import json as _json
+
+    chunk = {
+        "rows": [{"ci": 7, "prompt": "p", "response": "r"}],
+        "shard_index": 0,
+        "chunk": 0,
+    }
+    skip = {
+        "skipped": [11],
+        "n_skipped": 1,
+        "num_shards": 32,
+        "shard_index": 16,
+        "gen_max_tokens": 2048,
+    }
+    bogus = {"unexpected": True}
+    store = {
+        "pfx/shard00_chunk0000.json": chunk,
+        "pfx/shard16_skipped.json": skip,
+    }
+
+    def fake_list(api, repo, prefix, repo_type):
+        return sorted(store)
+
+    def fake_stage(repo, repo_path, dest, repo_type):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(_json.dumps(store[repo_path]))
+        return dest
+
+    monkeypatch.setattr(XC.hub, "list_hf_files_under_path", fake_list)
+    monkeypatch.setattr(XC.hub, "stage_hub_file", fake_stage)
+    args = type("A", (), {"out_root": str(tmp_path), "hf_data_repo": "fake/repo"})()
+    sel_meta = {"drops": {}}
+    XC._stage_texts(args, np.asarray([7], dtype=np.int64), {7: "lmsys"}, sel_meta)
+    assert sel_meta["n_texts_kept"] == 1
+    assert sel_meta["drops"]["skip_manifest_files"] == 1
+    kept = (tmp_path / "texts_kept.jsonl").read_text().strip().splitlines()
+    assert len(kept) == 1 and _json.loads(kept[0])["ci"] == 7
+    # unrecognized shape still fails loud (strict schema assert retained)
+    store["pfx/shard99_chunk0000.json"] = bogus
+    args2 = type("A", (), {"out_root": str(tmp_path / "b"), "hf_data_repo": "fake/repo"})()
+    with pytest.raises(AssertionError):
+        XC._stage_texts(args2, np.asarray([7], dtype=np.int64), {7: "lmsys"}, {"drops": {}})
+
+
+def test_phase_sentinel_envelope_is_poller_conformant(tmp_path):
+    """The pd-done sentinel carries poll_pipeline._SENTINEL_REQUIRED_KEYS
+    (schema 1) so the VM drain parses + renames it instead of warn-skipping
+    every tick (final-round smoke _parse_sentinel dry-run, 2026-08-25)."""
+    import json as _json
+
+    import poll_pipeline as PP
+
+    args = type(
+        "A",
+        (),
+        {
+            "sentinel_path": str(tmp_path / "issue-2569-pd-done.json"),
+            "out_root": str(tmp_path),
+        },
+    )()
+    XC.phase_sentinel(args)
+    body = (tmp_path / "issue-2569-pd-done.json").read_text()
+    payload = _json.loads(body)
+    for k in PP._SENTINEL_REQUIRED_KEYS:
+        assert k in payload, k
+    parsed = PP._parse_sentinel("issue-2569-pd-done.json", body)
+    assert parsed is not None and parsed["kind"] == "phase-pd-done"

@@ -402,6 +402,20 @@ def _stage_texts(args, selected_ci: np.ndarray, tags: dict[int, str], sel_meta: 
         dest = scratch / name
         hub.stage_hub_file(args.hf_data_repo, repo_path, dest, repo_type="dataset")
         obj = json.loads(dest.read_text())
+        if "rows" not in obj and {"skipped", "n_skipped"} <= set(obj.keys()):
+            # Shard-level SKIP manifests ride the same prefix as the rows chunks
+            # (the real store carries shard{16..31}_skipped.json among the 1,920
+            # shardNN_chunkNNNN.json files — measured 2026-08-25, final-round
+            # smoke: the strict rows assert crashed at file 1021/1936). They
+            # record generator-skipped rows (never captured, so never
+            # selectable) and carry no text; count them LOUDLY and move on.
+            drops["skip_manifest_files"] += 1
+            dest.unlink()
+            done.add(name)
+            processed.update(files=sorted(done), kept=kept, drops=dict(drops))
+            _atomic_json(sidecar, processed)
+            print(f"[select] skip-manifest {name} ({k + 1}/{len(files)})", flush=True)
+            continue
         assert set(obj.keys()) >= {"rows", "shard_index", "chunk"}, sorted(obj.keys())
         lines = []
         for r in obj["rows"]:
@@ -1210,6 +1224,18 @@ def phase_sentinel(args) -> None:
     emits the terminal ``[phase=done]`` line."""
     assert args.sentinel_path, "--sentinel-path required for --phase sentinel"
     payload = {
+        # poll_pipeline._SENTINEL_REQUIRED_KEYS envelope (schema pinned to
+        # poll_pipeline.SENTINEL_SCHEMA_VERSION_SUPPORTED = 1): without it the
+        # VM drain warn-skips the file every tick and never renames it to
+        # .processed (verified by a _parse_sentinel dry-run, final-round smoke
+        # 2026-08-25). Mirrors issue779_common.write_sentinel's envelope; the
+        # explicit path (the plan-declared /workspace/logs/issue-2569-pd-done
+        # .json) is kept instead of the helper's derived filename.
+        "sentinel_schema_version": 1,
+        "kind": "phase-pd-done",
+        "version": 1,
+        "blocks_pipeline": False,
+        "note": "P-D cross-model capture done",
         "issue": TASK_ID,
         "phase": "done",
         "status": "ok",
