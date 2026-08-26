@@ -40,6 +40,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -80,18 +81,15 @@ def _group_done(path: Path) -> bool:
 
 
 def _write_group_done(path: Path, payload: dict) -> None:
-    tmp = path.parent / f".tmp_{path.name}"
-    tmp.write_text(json.dumps(payload, indent=1))
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
 
 
 def _write_jsonl(rows: list[dict], path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / f".tmp_{path.name}"
-    with tmp.open("w", encoding="utf-8") as fh:
-        for r in rows:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        with tmp.open("w", encoding="utf-8") as fh:
+            for r in rows:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 
 def _log(msg: str) -> None:
@@ -449,11 +447,10 @@ def stage_describe(args, packets: dict[int, dict]) -> int:
         feat_id = int(cid[1:].rsplit("-", 1)[0])
         rows.append({"feat_id": feat_id, **parsed, "prompt_sha16": CM.sha16(user)})
     path = out_dir / "descriptions.jsonl"
-    tmp = path.parent / f".tmp_{path.name}"
-    with tmp.open("w", encoding="utf-8") as fh:
-        for r in rows:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        with tmp.open("w", encoding="utf-8") as fh:
+            for r in rows:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
     meta = {
         **CM.repro_meta(),
         "n_items": len(items),
@@ -579,11 +576,10 @@ def stage_axes(args, packets: dict[int, dict]) -> int:
     out_dir = args.out_root / "labels"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / "axis_labels.jsonl"
-    tmp = path.parent / f".tmp_{path.name}"
-    with tmp.open("w", encoding="utf-8") as fh:
-        for r in rows:
-            fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        with tmp.open("w", encoding="utf-8") as fh:
+            for r in rows:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
     (out_dir / "kappa_report.json").write_text(
         json.dumps({**CM.repro_meta(), "max_tokens": CM.AXES_MAX_TOKENS, "axes": kappa}, indent=1)
     )

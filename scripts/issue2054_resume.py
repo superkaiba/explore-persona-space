@@ -25,8 +25,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from pathlib import Path
+
+from explore_persona_space.atomic_io import atomic_replace
 
 # Dispositions returned by resume_disposition().
 RUN = "run"  # no valid prior output — run the unit
@@ -70,10 +71,8 @@ def write_done(
         "extra": extra or {},
         "utc": datetime.now(tz=timezone.utc).isoformat(),
     }
-    tmp = sp.with_name(sp.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
+    with atomic_replace(sp) as tmp, tmp.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True)
-    os.replace(tmp, sp)
     return sp
 
 

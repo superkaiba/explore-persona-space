@@ -49,6 +49,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM smoke)
@@ -551,16 +552,15 @@ def phase_recon(args) -> None:
             n_fit_seen += int(fit_mask.sum())
         if not shard_resume_ok(out_path, fp):
             rbar = (dense @ sae.w_dec.T + sae.b_dec).cpu().numpy().astype(np.float16)
-            tmp = out_path.parent / f".tmp_{out_path.name}"
-            np.savez(
-                tmp,
-                pos=pos,
-                ci=cis,
-                rbar=rbar,
-                ans_all_out=part["ans_all_out"].astype(np.int8),
-                fingerprint=np.array(_fp_str(fp)),
-            )
-            os.replace(tmp, out_path)
+            with atomic_replace(out_path) as tmp, tmp.open("wb") as fh:
+                np.savez(
+                    fh,
+                    pos=pos,
+                    ci=cis,
+                    rbar=rbar,
+                    ans_all_out=part["ans_all_out"].astype(np.int8),
+                    fingerprint=np.array(_fp_str(fp)),
+                )
         reg["pos"].append(pos)
         reg["ci"].append(cis)
         reg["set_tag"].append(tags)
@@ -955,16 +955,17 @@ def phase_capture_matched(args) -> None:
                 rec["ci"].append(ci)
                 rec["vmask"].append(h_ans.mean(0).numpy().astype(np.float16))
                 rec["all_out"].append(int(all_out))
-        tmp = out_path.parent / f".tmp_{out_path.name}"
-        np.savez(
-            tmp,
-            pos=np.asarray(rec["pos"], np.int64),
-            ci=np.asarray(rec["ci"], np.int64),
-            vmask=np.stack(rec["vmask"]) if rec["vmask"] else np.empty((0, S.ACT_DIM), np.float16),
-            all_out=np.asarray(rec["all_out"], np.int8),
-            fingerprint=np.array(_fp_str(fp)),
-        )
-        os.replace(tmp, out_path)
+        with atomic_replace(out_path) as tmp, tmp.open("wb") as fh:
+            np.savez(
+                fh,
+                pos=np.asarray(rec["pos"], np.int64),
+                ci=np.asarray(rec["ci"], np.int64),
+                vmask=(
+                    np.stack(rec["vmask"]) if rec["vmask"] else np.empty((0, S.ACT_DIM), np.float16)
+                ),
+                all_out=np.asarray(rec["all_out"], np.int8),
+                fingerprint=np.array(_fp_str(fp)),
+            )
         logger.info(
             "[capture-matched] unit %d/%d %s (%d rows) elapsed=%.0fs",
             done_units,

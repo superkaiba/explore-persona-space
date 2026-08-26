@@ -62,6 +62,8 @@ import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 logger = logging.getLogger(__name__)
 
 # Behavior fixed to "evil" for the OOD-spread round (plan v16 §4.4 pilot pool).
@@ -827,9 +829,8 @@ def main() -> int:
         payload_out["any_rung_passed"] = any(v["verdict"] == "PASS" for v in summary.values())
 
     # Atomic write.
-    tmp = output_path.with_name(output_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload_out, indent=1, default=str))
-    os.replace(tmp, output_path)
+    with atomic_replace(output_path) as tmp:
+        tmp.write_text(json.dumps(payload_out, indent=1, default=str))
 
     # Smoke assertions: shape + drop-split fields present, spread-gate boolean
     # present, at least one rung ran, per_arm_drop carries BOTH content and

@@ -588,12 +588,22 @@ def _upload_manifest(manifest_dir: Path, hf_prefix: str) -> None:
     logger.info("[manifest] uploaded %s -> %s/%s", manifest_dir, hf_prefix, MANIFEST_SUBDIR)
 
 
-def _manifest_complete_locally(dest: Path) -> bool:
+MANIFEST_REVISION_SIDECAR = ".manifest_revision.json"
+
+
+def _manifest_complete_locally(dest: Path, *, revision: str | None = None) -> bool:
     """True iff ``dest`` holds meta.json + all ``n_parts`` part files it names.
 
     The completeness predicate for the fleet-safe download short-circuit: a dir
     is complete only when meta.json parses AND the ``part_*.jsonl`` count matches
-    meta's ``n_parts`` (so a half-written dir never reads as complete)."""
+    meta's ``n_parts`` (so a half-written dir never reads as complete).
+
+    When ``revision`` is pinned (#1901 r3, stage-revision residual), the dir is
+    complete ONLY if the revision sidecar ``.manifest_revision.json`` — written
+    by ``_download_manifest`` after a successful download — records the SAME
+    revision: a legacy/unpinned local mirror (or one pulled at a different pin)
+    never short-circuits a pinned fetch. ``revision=None`` keeps the legacy
+    predicate byte-identical."""
     meta_path = dest / "meta.json"
     if not meta_path.exists():
         return False
@@ -604,11 +614,25 @@ def _manifest_complete_locally(dest: Path) -> bool:
     n_parts = meta.get("n_parts")
     if not isinstance(n_parts, int) or n_parts < 0:
         return False
-    return len(list(dest.glob("part_*.jsonl"))) == n_parts
+    if len(list(dest.glob("part_*.jsonl"))) != n_parts:
+        return False
+    if revision is None:
+        return True
+    rev_path = dest / MANIFEST_REVISION_SIDECAR
+    if not rev_path.exists():
+        return False
+    try:
+        rec = json.loads(rev_path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return False
+    return isinstance(rec, dict) and rec.get("revision") == revision
 
 
-def _download_manifest(hf_prefix: str, dest: Path) -> Path:
+def _download_manifest(hf_prefix: str, dest: Path, *, revision: str | None = None) -> Path:
     """Download the HF-hosted manifest folder (parts + meta) to ``dest``.
+
+    ``revision`` pins the listing + downloads to one Hub commit (stage-revision
+    threading, #1901 C1); ``None`` keeps the legacy main-tip read.
 
     Fleet-safe: N shards per pod may call this concurrently against the SAME
     local dir (8 shards raced the same 88 files at fleet launch — the winner's
@@ -625,8 +649,9 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
 
     dest.mkdir(parents=True, exist_ok=True)
 
-    # (1) fast path: already complete locally — no lock, no network.
-    if _manifest_complete_locally(dest):
+    # (1) fast path: already complete locally — no lock, no network. A pinned
+    #     call additionally requires the recorded sidecar revision to match.
+    if _manifest_complete_locally(dest, revision=revision):
         logger.info("[manifest] already complete locally at %s; skipping download", dest)
         return dest
 
@@ -636,7 +661,7 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
         fcntl.flock(lock_f, fcntl.LOCK_EX)
         # (2) re-check under the lock — a concurrent shard we blocked on may have
         #     finished the full download while we waited.
-        if _manifest_complete_locally(dest):
+        if _manifest_complete_locally(dest, revision=revision):
             logger.info("[manifest] completed by a concurrent shard; using %s", dest)
             return dest
 
@@ -648,11 +673,15 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
                 f.path
                 # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient right here (r4)
                 for f in HfApi().list_repo_tree(
-                    C.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                    C.HF_DATA_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    recursive=True,
+                    revision=revision,
                 )
                 if getattr(f, "size", None) is not None
             ],
-            what=f"manifest listing ({prefix})",
+            what=f"manifest listing ({prefix}@{revision or 'main'})",
         )
         if not names:
             raise SystemExit(
@@ -663,7 +692,11 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
             got = Path(
                 hub.retry_transient(
                     lambda name=name: hf_hub_download(
-                        C.HF_DATA_REPO, filename=name, repo_type="dataset", local_dir=dest.parent
+                        C.HF_DATA_REPO,
+                        filename=name,
+                        repo_type="dataset",
+                        local_dir=dest.parent,
+                        revision=revision,
                     ),
                     what=f"manifest download ({name})",
                 )
@@ -678,6 +711,19 @@ def _download_manifest(hf_prefix: str, dest: Path) -> Path:
                 except FileNotFoundError:
                     if not target.exists():
                         raise
+        # Persist the resolved revision beside meta.json (#1901 r3): the fast-path
+        # predicate above keys on it under a pinned call, so a mirror downloaded
+        # at a different (or no) pin re-downloads instead of short-circuiting.
+        # Written INSIDE the flock, after every part landed; ``revision: null``
+        # truthfully records an unpinned (main-tip) download.
+        (dest / MANIFEST_REVISION_SIDECAR).write_text(
+            json.dumps(
+                {
+                    "revision": revision,
+                    "recorded_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+            )
+        )
         logger.info("[manifest] downloaded %d files from HF %s -> %s", len(names), prefix, dest)
         return dest
 
@@ -704,7 +750,11 @@ def build_manifest(args) -> dict:
 def _resolve_manifest_dir(args) -> Path:
     local = args.out_dir / MANIFEST_SUBDIR
     if args.manifest_from_hf:
-        return _download_manifest(args.hf_prefix, local)
+        # Optional revision pin threaded from callers that stage-pin (#1901 C1);
+        # absent attr (every legacy caller) keeps the unpinned main-tip read.
+        return _download_manifest(
+            args.hf_prefix, local, revision=getattr(args, "manifest_revision", None)
+        )
     if not (local / "meta.json").exists():
         raise SystemExit(
             f"manifest {local}/meta.json absent — run --build-sampling-manifest first, "
@@ -1436,10 +1486,16 @@ def _smoke(args) -> int:
             self.size = 1
 
     class _FakeHfApi:
-        def list_repo_tree(self, repo_id, path_in_repo=None, repo_type=None, recursive=False):
+        # revision=None mirrors the production call shape (#1901 r3: _download_manifest
+        # passes revision= unconditionally, so a fake without it TypeErrors the smoke).
+        def list_repo_tree(
+            self, repo_id, path_in_repo=None, repo_type=None, recursive=False, revision=None
+        ):
             return [_FakeTreeEntry(p) for p in remote_files]
 
-    def _fake_hf_hub_download(repo_id, filename=None, repo_type=None, local_dir=None):
+    def _fake_hf_hub_download(
+        repo_id, filename=None, repo_type=None, local_dir=None, revision=None
+    ):
         with dl_calls_lock:
             dl_calls.append(filename)
         time.sleep(0.02)  # widen the race window so both threads reach the flock

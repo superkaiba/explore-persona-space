@@ -69,6 +69,7 @@ for _p in (str(_SCRIPT_DIR), str(_REPO_ROOT / "src")):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -221,20 +222,16 @@ def _read_jsonl(path: Path) -> list[dict]:
 
 
 def _atomic_write_jsonl(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
+    """Atomic JSONL write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    os.replace(tmp, path)
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True, default=float)
-    os.replace(tmp, path)
 
 
 def _metadata(seed: int, n: int) -> dict:
@@ -1018,9 +1015,8 @@ def _shard_large_jsonl_for_upload(files: list[Path]) -> list[Path]:
             if not shard_lines:
                 return
             sp = f.with_name(f"{f.stem}.shard{len(shards):02d}.jsonl")
-            tmp = sp.with_name(sp.name + ".tmp")
-            tmp.write_text("".join(shard_lines), encoding="utf-8")
-            os.replace(tmp, sp)
+            with atomic_replace(sp) as tmp:
+                tmp.write_text("".join(shard_lines), encoding="utf-8")
             shards.append(sp)
             line_counts.append(len(shard_lines))
             shard_lines, shard_bytes = [], 0
@@ -1258,11 +1254,9 @@ def _stage_prejudge_from_hf(out_dir: Path, variant: str) -> None:
                     f"{got[:12]}… != manifest {str(exp)[:12]}…"
                 )
             local_parts.append(lp)
-        tmp = target.with_name(target.name + ".tmp")
-        with tmp.open("wb") as out:
+        with atomic_replace(target) as tmp, tmp.open("wb") as out:
             for lp in local_parts:
                 out.write(lp.read_bytes())
-        os.replace(tmp, target)
         _log(
             f"variant={variant} prejudge reassembled from {len(local_parts)} shard(s) "
             f"({target.stat().st_size} B)"

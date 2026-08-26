@@ -92,6 +92,8 @@ import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 # Import the rubric constant from unit 3c — ONE canonical rubric across
 # pilot + full wave. NOTE: unit 3c's module is a sibling script; add
 # scripts/ to sys.path guarded, mirroring the repo-root helper the
@@ -649,9 +651,8 @@ def _reduce_rung_report(
 
 
 def _atomic_write(path: Path, payload: dict[str, Any]) -> None:
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1, default=str))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1, default=str))
 
 
 # Convention fields recorded in the manifest-level ``spread_gate`` block so a

@@ -57,6 +57,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE torch import (thread caps) + HF token for staging/upload
@@ -392,9 +393,8 @@ def fetch_profile_shard(cfg: HookedConfig, cell_id: str, revisions: dict[str, st
         src = cfg.shard_mirror_root / f"{cell_id}.pt"
         assert src.exists(), f"tiny substrate missing unhooked shard for {cell_id}: {src}"
         target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.parent / (target.name + ".tmp")
-        tmp.write_bytes(src.read_bytes())
-        os.replace(tmp, target)
+        with atomic_replace(target) as tmp:
+            tmp.write_bytes(src.read_bytes())
         return target
     from explore_persona_space.orchestrate import hub
 
@@ -421,9 +421,8 @@ def fetch_delta_store(cfg: HookedConfig, pair_id: str, revisions: dict[str, str]
         src = cfg.hub_mirror_root / TENSOR_PREFIX / f"{pair_id}.pt"
         assert src.exists(), f"tiny substrate missing Δ store for {pair_id}: {src}"
         target.parent.mkdir(parents=True, exist_ok=True)
-        tmp = target.parent / (target.name + ".tmp")
-        tmp.write_bytes(src.read_bytes())
-        os.replace(tmp, target)
+        with atomic_replace(target) as tmp:
+            tmp.write_bytes(src.read_bytes())
         return target
     from explore_persona_space.orchestrate import hub
 

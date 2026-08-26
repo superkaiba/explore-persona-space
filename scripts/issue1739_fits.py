@@ -36,6 +36,8 @@ import sys
 import time
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
+
 
 def _ensure_repo_root_on_syspath() -> Path:
     root = Path(__file__).resolve().parents[1]
@@ -2042,11 +2044,8 @@ def _run_pilot(args: argparse.Namespace) -> int:
         }
     )
     out = args.out_root / "pilot_report.json"
-    tmp = out.with_name(out.name + ".tmp")
-    tmp.write_text(json.dumps(report, indent=1))
-    import os
-
-    os.replace(tmp, out)
+    with atomic_replace(out) as tmp:
+        tmp.write_text(json.dumps(report, indent=1))
     walls_str = " ".join(f"L{b}={w:.1f}s" for b, w in sorted(unit_group_walls.items()))
     print(
         f"[fits] pilot: unit_group_walls[{walls_str}] map_fit_s={map_fit_s:.1f} "

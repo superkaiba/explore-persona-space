@@ -25,6 +25,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 TASK_ID = 1773
 SEED = 17_732_026
 LAYER = 19
@@ -518,9 +520,8 @@ def write_jsonl_sharded(rows: list[dict], out_dir: Path, stem: str, max_bytes: i
         if not buf:
             return
         p = out_dir / f"{stem}.shard{len(shards):02d}.jsonl"
-        tmp = p.parent / f".tmp_{p.name}"
-        tmp.write_text("\n".join(buf) + "\n")
-        tmp.replace(p)
+        with atomic_replace(p) as tmp:
+            tmp.write_text("\n".join(buf) + "\n")
         shards.append(p)
         buf, size = [], 0
 

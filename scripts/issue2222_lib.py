@@ -25,13 +25,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import random
 import sys
 import time
 import urllib.request
 import zipfile
 from pathlib import Path
+
+from explore_persona_space.atomic_io import atomic_replace
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = _SCRIPTS_DIR.parent
@@ -155,12 +156,10 @@ def sha256_text(text: str) -> str:
 
 
 def write_json_atomic(path: Path, obj: dict) -> None:
-    """Atomic JSON write (tmp + os.replace; parents created)."""
+    """Atomic JSON write (shared process-safe tmp + os.replace; parents created)."""
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1))
-    os.replace(tmp, path)
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1))
 
 
 def read_jsonl(path: Path) -> list[dict]:
@@ -217,14 +216,16 @@ def stage_dataset_zip(data_root: Path) -> dict:
     zip_path = data_root / "dataset.zip"
     if not zip_path.exists():
         log_phase("p0_zip", "downloading dataset.zip", url=ZIP_URL)
-        tmp = zip_path.with_name(zip_path.name + ".tmp")
-        with urllib.request.urlopen(ZIP_URL, timeout=120) as resp, open(tmp, "wb") as out:
+        with (
+            atomic_replace(zip_path) as tmp,
+            urllib.request.urlopen(ZIP_URL, timeout=120) as resp,
+            open(tmp, "wb") as out,
+        ):
             while True:
                 chunk = resp.read(1 << 20)
                 if not chunk:
                     break
                 out.write(chunk)
-        os.replace(tmp, zip_path)
     realized_sha = git_blob_sha1(zip_path)
     if realized_sha != ZIP_GIT_BLOB_SHA1:
         raise RuntimeError(

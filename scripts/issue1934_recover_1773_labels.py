@@ -77,6 +77,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -146,21 +147,16 @@ def _log(msg: str) -> None:
 
 
 def _write_json(path: Path, obj: dict) -> None:
-    """Atomic JSON write (tmp + replace)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / f".tmp_{path.name}"
-    tmp.write_text(json.dumps(obj, indent=1))
-    tmp.replace(path)
+    """Atomic JSON write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=1))
 
 
 def _write_jsonl(rows: list[dict], path: Path) -> None:
-    """Atomic single-file JSONL write."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / f".tmp_{path.name}"
-    with tmp.open("w", encoding="utf-8") as fh:
+    """Atomic single-file JSONL write (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp, tmp.open("w", encoding="utf-8") as fh:
         for r in rows:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-    tmp.replace(path)
 
 
 # ── config ───────────────────────────────────────────────────────────────────

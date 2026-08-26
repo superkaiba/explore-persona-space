@@ -50,6 +50,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # load_dotenv() BEFORE numpy/torch (shared-VM thread caps, #847).
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -207,19 +208,17 @@ def _metadata() -> dict:
 
 
 def _atomic_write_json(path: Path, obj: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.tmp")
-    with tmp.open("w") as fh:
-        json.dump(obj, fh, indent=1)
-    tmp.replace(path)
+    with atomic_replace(path) as tmp:
+        with tmp.open("w") as fh:
+            json.dump(obj, fh, indent=1)
 
 
 def _atomic_savez(path: Path, **arrays) -> None:
-    """np.savez APPENDS .npz to non-.npz names — tmp must END in .npz (gotchas)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.stem + ".tmp.npz")
-    np.savez(tmp, **arrays)
-    os.replace(tmp, path)
+    """np.savez APPENDS .npz to non-.npz names — write via an OPEN HANDLE (the
+    yielded tmp ends ".tmp"; numpy never appends to handles — #2336 edge (c))."""
+    with atomic_replace(path) as tmp:
+        with open(tmp, "wb") as fh:
+            np.savez(fh, **arrays)
 
 
 def _haar(d: int, gen) -> "object":
@@ -1558,10 +1557,8 @@ def cmd_write_pairs(args) -> int:
     specs = build_pair_specs(args)
     payload = [[[sm, sc], [tm, tc]] for ((sm, sc), (tm, tc)) in specs]
     out = Path(args.write_pairs_out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out.with_name(f".{out.name}.tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    tmp.replace(out)
+    with atomic_replace(out) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     print(f"[dvf] wrote {len(payload)} pair specs to {args.write_pairs_out}", flush=True)
     return 0
 

@@ -37,6 +37,7 @@ grouping key changes.
 
 from __future__ import annotations
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
@@ -432,9 +433,8 @@ def main() -> int:
         "aggregate": aggregate(records),
     }
     out_path = out_root / args.out_name
-    tmp = out_path.with_name(out_path.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
-    os.replace(tmp, out_path)
+    with atomic_replace(out_path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1), encoding="utf-8")
     _log(f"[loco] wrote {out_path} ({len(records)} units, {time.time() - t_start:.0f}s)")
     _log("[phase=done]")
     sys.stdout.flush()

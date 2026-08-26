@@ -93,6 +93,8 @@ def _ensure_repo_root_on_syspath() -> Path:
 
 _REPO_ROOT = _ensure_repo_root_on_syspath()
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
+
 # ---------------------------------------------------------------------------
 # constants / defaults
 # ---------------------------------------------------------------------------
@@ -989,9 +991,8 @@ def _rescore_behavior(args: argparse.Namespace) -> dict:
         "smoke": smoke,
     }
     summary_path = out_dir / "ood_detection_metrics.json"
-    tmp = summary_path.with_name(summary_path.name + ".tmp")
-    tmp.write_text(json.dumps(summary, indent=1))
-    os.replace(tmp, summary_path)
+    with atomic_replace(summary_path) as tmp:
+        tmp.write_text(json.dumps(summary, indent=1))
     _log(f"summary -> {summary_path} ({len(all_rows)} metric rows)")
 
     return summary

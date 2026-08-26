@@ -165,7 +165,7 @@ EXPECTED_SPLIT_N = {
 
 
 def _stream_ladder_split(
-    hf_prefix: str, split: str, layer: int, cache_dir: Path
+    hf_prefix: str, split: str, layer: int, cache_dir: Path, revision: str | None = None
 ) -> tuple[np.ndarray, np.ndarray, list[int]]:
     """Stream all captured chunks for one (scale-prefix, split, layer)
     combination from HF. Delegates to the parent's ``_stream_hf_chunks`` —
@@ -181,7 +181,7 @@ def _stream_ladder_split(
     # tiny (25k+400+1000+1000 = 27.4k rows) so we stream in one pass with
     # ckpt_dir=None (the parent helper handles that path).
     cx, vx, ci = F._stream_hf_chunks(
-        prefix, layer, cache_dir, ckpt_dir=None, ckpt_every=0, fresh=True
+        prefix, layer, cache_dir, ckpt_dir=None, ckpt_every=0, fresh=True, revision=revision
     )
     return cx, vx, list(ci)
 
@@ -196,6 +196,7 @@ def _assemble_scale_layer(
     layer: int,
     cache_dir: Path,
     expected_split_n: dict[str, int] | None = EXPECTED_SPLIT_N,
+    revision: str | None = None,
 ) -> dict:
     """Assemble one (X, Y) for one (scale, layer) from the FOUR ladder splits.
 
@@ -222,7 +223,7 @@ def _assemble_scale_layer(
     ranges: dict[str, tuple[int, int]] = {}
     n_so_far = 0
     for s in splits:
-        cx, vx, ci = _stream_ladder_split(hf_prefix, s, layer, cache_dir)
+        cx, vx, ci = _stream_ladder_split(hf_prefix, s, layer, cache_dir, revision)
         n = int(cx.shape[0])
         ranges[s] = (n_so_far, n_so_far + n)
         cxs.append(cx)

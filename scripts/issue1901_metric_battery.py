@@ -445,8 +445,16 @@ def _assert_mirror_root_arithmetic(cfg: Cfg) -> None:
 
 def _realized_keys_check(path: Path, kind: str) -> list[str]:
     """#1073 duty: the payload's REALIZED key set must cover the apply_map
-    contract keys — mmap read, fail loud on any miss (kill criterion 3)."""
-    payload = torch.load(path, map_location="cpu", mmap=True, weights_only=False)
+    contract keys — mmap read, fail loud on any miss (kill criterion 3).
+    ``weights_only=True`` (#1901 M7): the ``_persist_weights`` payloads are
+    tensors + str/int primitives, all safe-loader-allowed — never unpickle
+    arbitrary objects from a Hub-fetched blob."""
+    payload = torch.load(path, map_location="cpu", mmap=True, weights_only=True)
+    if not isinstance(payload, dict):
+        raise RuntimeError(
+            f"realized-keys check FAILED for {path}: payload is {type(payload).__name__}, "
+            "expected a dict (apply_map weight-payload contract)"
+        )
     realized = set(payload.keys())
     missing = CONTRACT_KEYS[kind] - realized
     if missing:

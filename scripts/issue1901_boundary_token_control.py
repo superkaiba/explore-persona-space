@@ -111,6 +111,7 @@ import torch  # noqa: E402
 from issue779_ffc_n1m_generate_capture import NearDupeGate, _norm  # noqa: E402
 
 from explore_persona_space.analysis import mapping_baselines as MB  # noqa: E402
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate import hub  # noqa: E402
 from explore_persona_space.orchestrate.preflight import assert_out_root_headroom  # noqa: E402
 from explore_persona_space.orchestrate.provenance import (  # noqa: E402
@@ -440,18 +441,17 @@ def _build_armc_chunked(args, tokenizer) -> dict:
                     break
                 out = _build_chunk(tokenizer, raw, n_raw_done, args)
                 name = f"chunk_{len(chunks):05d}.pt"
-                tmp = cache / (name + ".tmp")
-                torch.save(
-                    {
-                        "fingerprint": fp,
-                        "start": n_raw_done,
-                        "n_raw": len(raw),
-                        "articles": out["articles"],
-                        "pairs": out["pairs"],
-                    },
-                    tmp,
-                )
-                tmp.replace(cache / name)
+                with atomic_replace(cache / name) as tmp:
+                    torch.save(
+                        {
+                            "fingerprint": fp,
+                            "start": n_raw_done,
+                            "n_raw": len(raw),
+                            "articles": out["articles"],
+                            "pairs": out["pairs"],
+                        },
+                        tmp,
+                    )
                 chunks.append({"name": name, "start": n_raw_done, "n_raw": len(raw)})
                 n_raw_done += len(raw)
                 if len(raw) < take:
@@ -723,9 +723,8 @@ def _b0_build(args, tokenizer, man_dir: Path, regime_key: dict) -> dict:  # noqa
         if not buf:
             return
         name = f"manifest_shard{shard_i:03d}.jsonl"
-        tmp = man_dir / (name + ".tmp")
-        tmp.write_text("\n".join(buf) + "\n")
-        tmp.replace(man_dir / name)
+        with atomic_replace(man_dir / name) as tmp:
+            tmp.write_text("\n".join(buf) + "\n")
         shard_files.append(name)
         buf, buf_bytes, shard_i = [], 0, shard_i + 1
 
@@ -745,9 +744,8 @@ def _b0_build(args, tokenizer, man_dir: Path, regime_key: dict) -> dict:  # noqa
             "input_ids": [torch.as_tensor(ids_by_art[g], dtype=torch.int32) for g in chunk],
         }
         name = f"articles_shard{k // 2000:03d}.pt"
-        tmp = man_dir / (name + ".tmp")
-        torch.save(payload, tmp)
-        tmp.replace(man_dir / name)
+        with atomic_replace(man_dir / name) as tmp:
+            torch.save(payload, tmp)
         art_shard_files.append(name)
 
     per_type = {

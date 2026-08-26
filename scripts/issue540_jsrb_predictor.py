@@ -89,6 +89,7 @@ import numpy as np  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 
 from explore_persona_space.analysis import js_canonical as jsc  # noqa: E402
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.i406_conditions import (  # noqa: E402
     MARKER_ID,
     MARKER_TEXT,
@@ -256,11 +257,11 @@ def _metadata(extra: dict | None = None) -> dict:
 
 
 def _write_json_atomic(path: Path, payload: dict, indent: int | None = None) -> None:
-    """Write JSON via tmp + os.replace so a killed worker never leaves a
-    partial/0-byte ``.json`` behind (the resume-skip contamination vector)."""
-    tmp = path.parent / f"{path.name}.tmp"
-    tmp.write_text(json.dumps(payload, indent=indent))
-    os.replace(tmp, path)
+    """Write JSON via a shared process-safe tmp + os.replace so a killed worker
+    never leaves a partial/0-byte ``.json`` behind (the resume-skip
+    contamination vector)."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(payload, indent=indent))
 
 
 # ── Artifact compatibility (round-2 review fix: resume-skip validation) ────

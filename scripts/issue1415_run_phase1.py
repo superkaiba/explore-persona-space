@@ -85,6 +85,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from explore_persona_space.atomic_io import atomic_replace
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()  # BEFORE torch import (shared-VM thread caps + API keys)
@@ -363,19 +364,15 @@ def build_config(args: argparse.Namespace) -> RunConfig:
 
 
 def _write_json_atomic(path: Path, obj) -> None:
-    """Atomic JSON write (tmp + os.replace) — checkpoint-per-cell safety."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
-    os.replace(tmp, path)
+    """Atomic JSON write (shared process-safe atomic_replace) — checkpoint-per-cell safety."""
+    with atomic_replace(path) as tmp:
+        tmp.write_text(json.dumps(obj, indent=2, ensure_ascii=False))
 
 
 def _save_pt_atomic(path: Path, obj) -> None:
-    """Atomic torch.save (tmp + os.replace)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.parent / (path.name + ".tmp")
-    torch.save(obj, tmp)
-    os.replace(tmp, path)
+    """Atomic torch.save (shared process-safe atomic_replace)."""
+    with atomic_replace(path) as tmp:
+        torch.save(obj, tmp)
 
 
 def _fmt(alpha: float) -> str:

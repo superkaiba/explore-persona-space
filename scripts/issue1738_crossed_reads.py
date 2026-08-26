@@ -57,6 +57,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # #847: thread caps land BEFORE numpy/torch import on the shared VM
@@ -684,8 +685,10 @@ def run_reads(args) -> int:  # noqa: C901 — the six-read pipeline is one linea
                 mse_tbl = {
                     lam: v / max(1, len(tr_p)) for lam, v in cv_meta["cv_sse_by_lambda"].items()
                 }
-            np.savez(pred_dir / f"{cell}.tmp.npz", pred16=pred_ho.astype(np.float16))
-            (pred_dir / f"{cell}.tmp.npz").replace(pred_dir / f"{cell}_ridge.npz")
+            # Handle-form np.savez (yielded tmp ends ".tmp" — #2336 recipe edge (c)).
+            with atomic_replace(pred_dir / f"{cell}_ridge.npz") as tmp:
+                with open(tmp, "wb") as fh:
+                    np.savez(fh, pred16=pred_ho.astype(np.float16))
             true_b = Ya[ho_p] if arm == "avg" else y_ho
             baselines_out["cells"][cell] = _baselines_cell(
                 Xtr_b,
@@ -728,8 +731,9 @@ def run_reads(args) -> int:  # noqa: C901 — the six-read pipeline is one linea
         payload = _ridge_payload(ctx["fac"], ctx["meta"]["selected_lambda"])
         pred_ind = PF.apply_map(payload, Xa[ho_p], dev)
         ind_summ = _cell_summary(pred_ind, ya_ho, args.n_boot)
-        np.savez(pred_dir / f"induced_avg_L{li}.tmp.npz", pred16=pred_ind.astype(np.float16))
-        (pred_dir / f"induced_avg_L{li}.tmp.npz").replace(pred_dir / f"induced_avg_L{li}_ridge.npz")
+        with atomic_replace(pred_dir / f"induced_avg_L{li}_ridge.npz") as tmp:
+            with open(tmp, "wb") as fh:
+                np.savez(fh, pred16=pred_ind.astype(np.float16))
         baselines_out["cells"][f"induced_avg_L{li}"] = _baselines_cell(
             Xa[tr_p], Ya[tr_p], Xa[ho_p], ya_ho, {"induced": pred_ind}
         )
@@ -762,8 +766,9 @@ def run_reads(args) -> int:  # noqa: C901 — the six-read pipeline is one linea
             X_st, Y, tr, val, ho, dev, args.ridge_block
         )
         st_summ = _cell_summary(pred_st, y_ho, args.n_boot)
-        np.savez(pred_dir / f"stitch_L{li}.tmp.npz", pred16=pred_st.astype(np.float16))
-        (pred_dir / f"stitch_L{li}.tmp.npz").replace(pred_dir / f"stitch_L{li}_ridge.npz")
+        with atomic_replace(pred_dir / f"stitch_L{li}_ridge.npz") as tmp:
+            with open(tmp, "wb") as fh:
+                np.savez(fh, pred16=pred_st.astype(np.float16))
         baselines_out["cells"][f"stitch_L{li}"] = _baselines_cell(
             None,
             np.asarray(Y[tr]),

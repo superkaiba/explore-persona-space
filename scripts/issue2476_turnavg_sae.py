@@ -99,6 +99,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM smoke)
@@ -460,19 +461,18 @@ def _extract_chunk_l19(path: Path) -> tuple[np.ndarray, np.ndarray, list[int]]:
 
 
 def _write_cursor(path: Path, fp: str, regime: dict, cursor_chunk: int, cursor_row: int) -> None:
-    tmp = path.parent / (path.name + ".tmp")
-    tmp.write_text(
-        json.dumps(
-            {
-                "fingerprint": fp,
-                "config_hash": regime["config_hash"],
-                "code_sha": regime["code_sha"],
-                "cursor_chunk": int(cursor_chunk),
-                "cursor_row": int(cursor_row),
-            }
+    with atomic_replace(path) as tmp:
+        tmp.write_text(
+            json.dumps(
+                {
+                    "fingerprint": fp,
+                    "config_hash": regime["config_hash"],
+                    "code_sha": regime["code_sha"],
+                    "cursor_chunk": int(cursor_chunk),
+                    "cursor_row": int(cursor_row),
+                }
+            )
         )
-    )
-    os.replace(tmp, path)
 
 
 def _load_scratch_meta(args) -> tuple[np.ndarray, np.ndarray, dict[str, np.ndarray]]:
@@ -921,8 +921,8 @@ def _gate_g2b(args, model, tok, dns, names, needed_ci, prefix_chars) -> dict:
 
 
 def _flush_vbar_shard(rec: dict[str, list], path: Path) -> None:
-    """Atomic per-group shard write (tmp name keeps the .npz suffix — the
-    np.savez suffix-append trap, #1092)."""
+    """Atomic per-group shard write (open-handle np.savez — the yielded tmp ends
+    .tmp, and np.savez APPENDS .npz to path-typed names; #1092 trap)."""
     arrays = {
         "row_idx": np.asarray(rec["row_idx"], np.int64),
         "set_tag": np.asarray(rec["set_tag"], np.int8),
@@ -945,9 +945,8 @@ def _flush_vbar_shard(rec: dict[str, list], path: Path) -> None:
             else np.empty((0, C.EXPECTED_HIDDEN), np.float16)
         ),
     }
-    tmp = path.parent / f".tmp_{path.name}"
-    np.savez(tmp, **arrays)
-    tmp.replace(path)
+    with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+        np.savez(fh, **arrays)
 
 
 def _reapply_recorded_gate_verdicts(gates: dict, production: bool, phase: str) -> None:
@@ -1313,7 +1312,10 @@ def phase_recapture(args) -> None:
             store_path,
             gates_path,
             *out.glob("vbar_g*.npz"),
-            *out.glob(".tmp_*"),  # crash-orphaned tmp shards (g1 r1 Minor 4)
+            # crash-orphaned tmp shards (g1 r1 Minor 4): legacy hidden .tmp_*
+            # names + the atomic_replace *.tmp shape (#2336 migration)
+            *out.glob(".tmp_*"),
+            *out.glob("*.tmp"),
         ],
     )
     if resume_ok and store_path.exists() and gates_path.exists():
@@ -1455,7 +1457,9 @@ def phase_recapture(args) -> None:
 def _consolidate_and_gate(args, out, rows_all, set_tag, gates, gates_path, store_path) -> None:
     """Consolidate per-group shards -> vbar_store.npz; evaluate G2a + D2c;
     write gates_p2.json FIRST, then halt on a production gate failure."""
-    for p in out.glob(".tmp_*"):  # crash-orphaned partial shards never consolidate/upload
+    # Crash-orphaned partial shards never consolidate/upload: legacy hidden
+    # .tmp_* names + the atomic_replace *.tmp shape (#2336 migration).
+    for p in (*out.glob(".tmp_*"), *out.glob("*.tmp")):
         logger.warning("[recapture] removing crash-orphaned tmp shard %s", p.name)
         p.unlink()
     shards = sorted(out.glob("vbar_g*.npz"))
@@ -1484,9 +1488,8 @@ def _consolidate_and_gate(args, out, rows_all, set_tag, gates, gates_path, store
         logger.warning(
             "[recapture] smoke: %d/%d rows missing (informational)", len(missing), len(expected)
         )
-    tmp = store_path.parent / f".tmp_{store_path.name}"
-    np.savez(tmp, **arr)
-    tmp.replace(store_path)
+    with atomic_replace(store_path) as tmp, tmp.open("wb") as fh:
+        np.savez(fh, **arr)
 
     # ── G2a (v2 quantile ladder) + D2c — the SHARED evaluation code path the
     # gate_version recompute (_recheck_p2_gates) also calls ──
@@ -2423,16 +2426,15 @@ def _ib_arm_c(args, maps_dir: Path, scratch: Path) -> None:
     parity = float(np.abs(b_helper - b_sub).max())
     assert np.allclose(b_helper, b_sub, atol=1e-8), f"ib bias parity failed: {parity}"
     pred = np.asarray(X[hold], np.float64) + b
-    tmp = out.parent / f".tmp_{out.name}"
-    np.savez(
-        tmp,
-        rows=hold,
-        pred16=pred.astype(np.float16),
-        bias=b.astype(np.float64),
-        parity_max_abs=np.float64(parity),
-        n_train=np.int64(len(tr)),
-    )
-    tmp.replace(out)
+    with atomic_replace(out) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            rows=hold,
+            pred16=pred.astype(np.float16),
+            bias=b.astype(np.float64),
+            parity_max_abs=np.float64(parity),
+            n_train=np.int64(len(tr)),
+        )
     logger.info("[maps] ib_c done (n_train=%d, parity=%.2e)", len(tr), parity)
 
 
@@ -2637,21 +2639,20 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     ib = identity_bias_predict(
         np.asarray(Z[tr], np.float64), np.asarray(vbar20[tr], np.float64), np.asarray(Z[te])
     )
-    tmp = out_maps.parent / f".tmp_{out_maps.name}"
-    np.savez(
-        tmp,
-        row_idx_score=row_idx[te],
-        row_idx_fit=row_idx[fit_pos],
-        pred16=pt.astype(np.float16),
-        pred16_inlier=pt_in.astype(np.float16),
-        ib_pred16=ib.astype(np.float16),
-        selected_lambda=np.float64(meta["selected_lambda"]),
-        val_r2=np.float64(meta["val_r2"]),
-        selected_lambda_inlier=np.float64(meta_in["selected_lambda"]),
-        n_train=np.int64(len(tr)),
-        carve=np.int64(carve),
-    )
-    tmp.replace(out_maps)
+    with atomic_replace(out_maps) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            row_idx_score=row_idx[te],
+            row_idx_fit=row_idx[fit_pos],
+            pred16=pt.astype(np.float16),
+            pred16_inlier=pt_in.astype(np.float16),
+            ib_pred16=ib.astype(np.float16),
+            selected_lambda=np.float64(meta["selected_lambda"]),
+            val_r2=np.float64(meta["val_r2"]),
+            selected_lambda_inlier=np.float64(meta_in["selected_lambda"]),
+            n_train=np.int64(len(tr)),
+            carve=np.int64(carve),
+        )
 
     # chanind lmsys: alive PANEL on TRUE fit-side encodes + f_true over all rows
     # (floor-clearing capped at the registered 16,384 tier-stratified panel)
@@ -2664,33 +2665,30 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     f_true = _encode_restricted(sae, vbar20, np.arange(len(row_idx)), alive)
     f_true_in = _encode_restricted(sae, vbar20_in, te, alive)  # inlier twin, te rows only
     train_mean = np.asarray(f_true[fit_pos], np.float64).mean(0)
-    tmp = out_alive.parent / f".tmp_{out_alive.name}"
-    np.savez(
-        tmp,
-        alive_ids=alive,
-        counts=counts.astype(np.int64),
-        floor=np.int64(floor),
-        n_fit_rows=np.int64(len(fit_pos)),
-        train_mean=train_mean.astype(np.float32),
-        tier=S.tier_of(alive),
-    )
-    tmp.replace(out_alive)
-    tmp = out_ftrue.parent / f".tmp_{out_ftrue.name}"
-    np.savez(tmp, row_idx=row_idx, f_true=f_true, f_true_inlier_te=f_true_in)
-    tmp.replace(out_ftrue)
+    with atomic_replace(out_alive) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            alive_ids=alive,
+            counts=counts.astype(np.int64),
+            floor=np.int64(floor),
+            n_fit_rows=np.int64(len(fit_pos)),
+            train_mean=train_mean.astype(np.float32),
+            tier=S.tier_of(alive),
+        )
+    with atomic_replace(out_ftrue) as tmp, tmp.open("wb") as fh:
+        np.savez(fh, row_idx=row_idx, f_true=f_true, f_true_inlier_te=f_true_in)
 
     # dense-input companion (plan §4 P5): c20 -> f_true20, same carve, ONE Gram
     pt_d, meta_d = _gram_ridge_single(Z, f_true, tr, va, te, N1M.LAMBDAS_N1M, args.device)
-    tmp = out_dense.parent / f".tmp_{out_dense.name}"
-    np.savez(
-        tmp,
-        pred16=pt_d.astype(np.float16),
-        feat_ids=alive,
-        rows=row_idx[te],
-        selected_lambda=np.float64(meta_d["selected_lambda"]),
-        val_r2=np.float64(meta_d["val_r2"]),
-    )
-    tmp.replace(out_dense)
+    with atomic_replace(out_dense) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            pred16=pt_d.astype(np.float16),
+            feat_ids=alive,
+            rows=row_idx[te],
+            selected_lambda=np.float64(meta_d["selected_lambda"]),
+            val_r2=np.float64(meta_d["val_r2"]),
+        )
     del sae
     print(f"[maps] unit armb done (alive={len(alive)}, lam={meta['selected_lambda']})", flush=True)
     return {
@@ -2737,17 +2735,16 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     for s in range(0, n_fit, 8192):
         tm += np.asarray(yc[s : s + 8192], np.float64).sum(0)
     train_mean = tm / max(1, n_fit)
-    tmp = alive_path.parent / f".tmp_{alive_path.name}"
-    np.savez(
-        tmp,
-        alive_ids=alive,
-        counts=counts.astype(np.int64),
-        floor=np.int64(floor),
-        n_fit_rows=np.int64(n_fit),
-        train_mean=train_mean.astype(np.float32),
-        tier=S.tier_of(alive),
-    )
-    tmp.replace(alive_path)
+    with atomic_replace(alive_path) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            alive_ids=alive,
+            counts=counts.astype(np.int64),
+            floor=np.int64(floor),
+            n_fit_rows=np.int64(n_fit),
+            train_mean=train_mean.astype(np.float32),
+            tier=S.tier_of(alive),
+        )
     Xc = np.asarray(X[rows_c], np.float16)
     carve = min(M.PROD_VAL_CARVE, max(1, n_fit // 6))
     perm = np.random.default_rng(M.CARVE_SEED).permutation(n_fit)
@@ -2755,16 +2752,15 @@ def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) ->
     te = np.arange(n_fit, len(rows_c))
     EL._assert_estimator_validity(len(tr), Xc.shape[1], args.smoke)
     pt, meta = _gram_ridge_single(Xc, yc, tr, va, te, N1M.LAMBDAS_N1M, args.device)
-    tmp = dense_path.parent / f".tmp_{dense_path.name}"
-    np.savez(
-        tmp,
-        pred16=pt.astype(np.float16),
-        feat_ids=alive,
-        rows=hold,
-        selected_lambda=np.float64(meta["selected_lambda"]),
-        val_r2=np.float64(meta["val_r2"]),
-    )
-    tmp.replace(dense_path)
+    with atomic_replace(dense_path) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            pred16=pt.astype(np.float16),
+            feat_ids=alive,
+            rows=hold,
+            selected_lambda=np.float64(meta["selected_lambda"]),
+            val_r2=np.float64(meta["val_r2"]),
+        )
     del sae
     print(f"[maps] unit densein_c done (alive={len(alive)})", flush=True)
     return {
@@ -3006,21 +3002,20 @@ def _write_perfeature(path: Path, *, feat_ids, pred, true, counts_sel, te_prov, 
             corpus[label] = _r2_only(pred[m], true[m])
         else:
             corpus[label] = np.full(pred.shape[1], np.nan)
-    tmp = path.parent / f".tmp_{path.name}"
-    np.savez(
-        tmp,
-        feat_ids=np.asarray(feat_ids, np.int64),
-        r2=pf["r2"],
-        spearman=pf["spearman"],
-        ss_tot=pf["ss_tot"],
-        activity=np.asarray(counts_sel, np.float64),
-        r2_lmsys=corpus["lmsys"],
-        r2_wildchat=corpus["wildchat"],
-        tier=S.tier_of(feat_ids),
-        n_fit_rows=np.int64(n_fit),
-        alive_floor=np.int64(floor),
-    )
-    tmp.replace(path)
+    with atomic_replace(path) as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            feat_ids=np.asarray(feat_ids, np.int64),
+            r2=pf["r2"],
+            spearman=pf["spearman"],
+            ss_tot=pf["ss_tot"],
+            activity=np.asarray(counts_sel, np.float64),
+            r2_lmsys=corpus["lmsys"],
+            r2_wildchat=corpus["wildchat"],
+            tier=S.tier_of(feat_ids),
+            n_fit_rows=np.int64(n_fit),
+            alive_floor=np.int64(floor),
+        )
     return pf
 
 
@@ -3375,15 +3370,14 @@ def _arm_battery(
             "p97_5": hi,
             "frac_above": float((rr > hi).mean()) if len(rr) else None,
         }
-    tmp = out / f".tmp_shuffle_null_{tag}.npz"
-    np.savez(
-        tmp,
-        feat_ids=feat_ids,
-        tier=tier,
-        seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
-        **null_arrays,
-    )
-    tmp.replace(out / f"shuffle_null_{tag}.npz")
+    with atomic_replace(out / f"shuffle_null_{tag}.npz") as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            feat_ids=feat_ids,
+            tier=tier,
+            seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
+            **null_arrays,
+        )
 
     stats = _tier_stats(pf_map["r2"], pf_ib["r2"], tier, counts_sel, n_perm, n_boot, rng)
     bins = (0,) + tuple(S.MATRYOSHKA_TIER_BOUNDS)
@@ -3502,16 +3496,15 @@ def _bridge_b(out: Path, feat_ids_b: np.ndarray, r2_b: np.ndarray) -> dict:
             float(np.nanmedian(r2_ours - r2_com)) if len(inter) else None
         ),
     }
-    tmp = out / ".tmp_bridge_b.npz"
-    np.savez(
-        tmp,
-        feat_ids=inter,
-        tier=tier_i,
-        r2_turnavg=r2_ours,
-        r2_token_committed=r2_com,
-        activity_committed=com_act[ic],
-    )
-    tmp.replace(out / "bridge_b.npz")
+    with atomic_replace(out / "bridge_b.npz") as tmp, tmp.open("wb") as fh:
+        np.savez(
+            fh,
+            feat_ids=inter,
+            tier=tier_i,
+            r2_turnavg=r2_ours,
+            r2_token_committed=r2_com,
+            activity_committed=com_act[ic],
+        )
     return {"pooled": pooled, "per_tier": per_tier}
 
 
@@ -3613,10 +3606,11 @@ def phase_eval(args) -> None:
     C.phase("eval")
     out = _eval_dir(args)
     out.mkdir(parents=True, exist_ok=True)
-    # g1 r2 Minor 3: dot-prefixed .tmp_* crash orphans are invisible to "*" globs
+    # g1 r2 Minor 3: dot-prefixed .tmp_* crash orphans are invisible to "*" globs;
+    # *.tmp covers the atomic_replace temp shape (#2336 migration).
     stale = [
         p
-        for p in (*out.glob("*.npz"), *out.glob("*.json"), *out.glob(".tmp_*"))
+        for p in (*out.glob("*.npz"), *out.glob("*.json"), *out.glob(".tmp_*"), *out.glob("*.tmp"))
         if p.name != "regime.json"
     ]
     regime, resume_ok = _enter_phase_regime(out, args, "eval", stale_paths=stale)
@@ -3832,15 +3826,14 @@ def phase_eval(args) -> None:
         )
         tier_pile = S.tier_of(alive_pile)
         null_pile = _shuffle_null_r2(fp_pile, ft_pile, SHUFFLE_SEEDS_2476, what=" b/pile")
-        tmp = out / ".tmp_shuffle_null_b_pile.npz"
-        np.savez(
-            tmp,
-            feat_ids=alive_pile,
-            tier=tier_pile,
-            seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
-            r2_pile=null_pile,
-        )
-        tmp.replace(out / "shuffle_null_b_pile.npz")
+        with atomic_replace(out / "shuffle_null_b_pile.npz") as tmp, tmp.open("wb") as fh:
+            np.savez(
+                fh,
+                feat_ids=alive_pile,
+                tier=tier_pile,
+                seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
+                r2_pile=null_pile,
+            )
         hi_pile = float(np.nanpercentile(null_pile.astype(np.float64), 97.5))
         rr_pile = pf_pile["r2"][np.isfinite(pf_pile["r2"])]
         tests_b["pile_exploratory"] = {

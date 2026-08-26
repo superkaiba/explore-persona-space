@@ -31,6 +31,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -73,9 +74,8 @@ def cmd_stage_meta(args: argparse.Namespace) -> int:
         "git_commit": _git_commit(),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    tmp = out.with_name(out.name + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=1))
-    tmp.replace(out)
+    with atomic_replace(out) as tmp:
+        tmp.write_text(json.dumps(payload, indent=1))
     print(f"[newarm-box] stage-meta: {DATA_REPO}@{sha[:12]} -> {out}", flush=True)
     return 0
 

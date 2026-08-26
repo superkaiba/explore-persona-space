@@ -40,6 +40,7 @@ if str(PROJECT_ROOT / "scripts") not in sys.path:
 
 import hashlib  # noqa: E402
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # BEFORE torch/numpy: shared-VM thread caps bind at import (#847)
@@ -329,9 +330,8 @@ def write_reductions(store_dir: Path, red_dir: Path, n_ctx: int, layers: list[in
             g_empty[ci] = bool(shard["response_empty"][row])
     meta = I.reproducibility_metadata({"script": "issue1073_capture", "artifact": "reductions"})
     for name, tensor in (("vbar10", vbar10), ("v_greedy", vg), ("stoch1_new", s1new)):
-        tmp = red_dir / f"{name}.pt.tmp"
-        torch.save({"tensor": tensor, "layers": layers, "metadata": meta}, tmp)
-        tmp.replace(red_dir / f"{name}.pt")
+        with atomic_replace(red_dir / f"{name}.pt") as tmp:
+            torch.save({"tensor": tensor, "layers": layers, "metadata": meta}, tmp)
     torch.save(
         {
             "stoch_rollout_counts": cnt,

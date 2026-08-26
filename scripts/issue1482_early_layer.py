@@ -67,6 +67,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # thread caps + credentials BEFORE numpy/torch (shared-VM smoke)
@@ -911,18 +912,20 @@ def phase_capture(args) -> None:
                 arrays[kk] = np.concatenate(vals) if vals else np.empty(0, np.int32)
             else:
                 arrays[kk] = np.concatenate(vals) if vals else np.empty(0, np.float16)
-        tmp = shard_path.parent / f".tmp_{shard_path.name}"
-        np.savez(tmp, **arrays)
-        tmp.replace(shard_path)
-        dtmp = dense_path.parent / f".tmp_{dense_path.name}"
-        np.savez(
-            dtmp,
-            row_idx=np.asarray(dense["row_idx"], np.int64),
-            c19=np.stack(dense["c19"]) if dense["c19"] else np.empty((0, 3584), np.float16),
-            c3=np.stack(dense["c3"]) if dense["c3"] else np.empty((0, 3584), np.float16),
-            hp3=np.stack(dense["hp3"]) if dense["hp3"] else np.empty((0, 3584), np.float16),
-        )
-        dtmp.replace(dense_path)
+        # Handle-form np.savez (the yielded tmp ends ".tmp"; numpy appends ".npz"
+        # to path-typed names lacking it — #2336 recipe edge (c)).
+        with atomic_replace(shard_path) as tmp:
+            with open(tmp, "wb") as fh:
+                np.savez(fh, **arrays)
+        with atomic_replace(dense_path) as dtmp:
+            with open(dtmp, "wb") as fh:
+                np.savez(
+                    fh,
+                    row_idx=np.asarray(dense["row_idx"], np.int64),
+                    c19=np.stack(dense["c19"]) if dense["c19"] else np.empty((0, 3584), np.float16),
+                    c3=np.stack(dense["c3"]) if dense["c3"] else np.empty((0, 3584), np.float16),
+                    hp3=np.stack(dense["hp3"]) if dense["hp3"] else np.empty((0, 3584), np.float16),
+                )
         n_done += len(rec["row_idx"])
         el = time.time() - t_loop
         print(
