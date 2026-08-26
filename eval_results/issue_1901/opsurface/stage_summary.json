@@ -1,0 +1,15 @@
+{
+ "n_texts": 9941,
+ "n_chunks_scanned": 224,
+ "metadata": {
+  "git_commit": "346b2fca353a198d327b464f96edff795536d116",
+  "git_dirty": false,
+  "phase": "stage",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_opsurface.py",
+  "script": "issue1901_opsurface",
+  "issue": 1901,
+  "round": "opsurface-rebase",
+  "timestamp_utc": "2026-08-26T04:55:18Z"
+ }
+}
