@@ -507,6 +507,21 @@ assert_file "$P0B_SENTINEL" "P0b gates (template_pin+length_scan+hook_probe)"
 
 # ── P1: compat smoke gate (§4.7 full check set) ─────────────────────────────
 phase p1_smoke
+# Crash-fix r6: P1 resume skip. The block below re-runs every P1 leg on
+# every launch; on a resumed launch AFTER production uploads landed, the
+# smoke gen leg's Hub-keyed resume false-skipped all rows (gen_rows=0 ->
+# compose_p1 FAIL). When the v2 sentinel still VERIFIES (schema + report
+# sha256 + map-code sha256 — the exact require_p1 check), the P1 verdict
+# stands and the legs are skipped; otherwise the smoke scratch is wiped so
+# the legs regenerate fresh. DRYRUN always takes the run branch so the
+# dry-run structural suite sees every leg.
+if [ -z "$DRYRUN" ] && require_p1 p1_resume_probe; then
+  echo "[workload] P1 sentinel verified (report+code identity) — skipping P1 re-run (resume)"
+else
+if [ -z "$DRYRUN" ]; then
+  echo "[workload] P1 sentinel absent/invalid — fresh P1 run (wiping smoke scratch)"
+  rm -rf "$P1_SMOKE_ROOT" "$P1_BATTERY_ROOT" "$COMPAT_SENTINEL" "$COMPAT_REPORT"
+fi
 # (a) 500-row smoke shard, BOTH sub-phases, production entrypoint at reduced
 #     shard arithmetic (--num-shards 50 --shard-index 0 --shard-size 500
 #     --no-upload — the driver's documented smoke/sweep-parity shape). The
@@ -566,6 +581,7 @@ run_logged "$LOGS_DIR/issue-2587-p1-compose.log" \
   --sentinel-path "$P0B_SENTINEL" --split-ids "$SPLIT_IDS" -v
 assert_file "$COMPAT_SENTINEL" "P1 compose (compat_smoke_done)"
 assert_file "$COMPAT_REPORT" "P1 compose (compat_smoke_report)"
+fi
 
 # ── P2: map-fit generation (vLLM; 12 tasks, 2 work-conserving GPU workers) ──
 require_p1 p2_map_gen

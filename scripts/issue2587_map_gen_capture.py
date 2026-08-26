@@ -2067,8 +2067,18 @@ def run_capture(args) -> int:
     scratch.mkdir(parents=True, exist_ok=True)
 
     # 2. Resume — chunks already on the Hub are skipped (mode-scoped below).
-    done_pt = set(_remote_index(f"{stage_prefix}/final_token_capture"))
-    done_raw = set(_remote_index(f"{gen_stage_prefix}/raw_completions"))
+    # --no-upload (the P1 smoke) must NOT key resume on the Hub: the Hub
+    # prefix holds the PRODUCTION grain's chunks (num-shards=2) under the
+    # same shardNN_chunkNNNN filename namespace as the smoke grain
+    # (num-shards=50), so Hub-keyed done-sets false-skip every smoke chunk
+    # once any production upload lands (gen_rows=0 -> compose_p1 FAIL).
+    # Local-only runs start from empty done-sets; the launcher wipes the
+    # smoke scratch before any fresh P1 run.
+    if args.no_upload:
+        done_pt, done_raw = set(), set()
+    else:
+        done_pt = set(_remote_index(f"{stage_prefix}/final_token_capture"))
+        done_raw = set(_remote_index(f"{gen_stage_prefix}/raw_completions"))
 
     # 3. Load models (mode governs which we hold at once — phase_split keeps
     # the 9B HF fp32 model and the vLLM engine on SEPARATE invocations).
