@@ -337,6 +337,10 @@ confidence in the H1 title tag only. The checks branch per generation:
 - **check 14** (`check_concerns_audit`): v3 mechanism 1 → `### ` findings
   under `## Findings` + `## Takeaways` bullets; mechanism 2 (Confidence
   paragraph) RETIRES for v3 (confidence is title-tag-only).
+  Worktree-staleness guard (#2607): a worktree-resident ledger path
+  hard-FAILs regardless of `exists()` (a worktree's `tasks/` tree is
+  frozen at the branch-cut base commit — silently stale), and the CLI
+  `--file` leg refuses a worktree task-layout body outright (exit 2).
 - **check 14b** (fabricated-deferral detection, inside
   `check_concerns_audit`; generation-agnostic, #2219): a
   `<!-- concern-deferred: <id> -->` comment whose id IS in the ledger
@@ -1510,6 +1514,7 @@ import argparse
 import fnmatch
 import functools
 import io
+import itertools
 import json
 import math
 import os
@@ -16655,11 +16660,36 @@ def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-
     inherit the WARN instead of the FAIL; task-id keying is a deliberate
     non-goal.
 
+    Worktree-staleness backstop (#2607): a non-None ``concerns_path``
+    that is worktree-resident (``_worktree_resident``) hard-FAILs BEFORE
+    the None/missing skip below — a worktree's ``tasks/`` tree is frozen
+    at the branch-cut base commit (per-task state mutates ONLY on the
+    main checkout via task.py), so a worktree-resolved ledger is ALWAYS
+    stale (incident #2378 r7: the analyzer's worktree-resolved run
+    reported OVERALL PASS while both clean-result-critic twins' main-root
+    runs FAILed Lens 14 on 5 unacknowledged concerns). The FAIL fires
+    regardless of ``exists()`` — a frozen tree whose ledger predates the
+    task's FIRST concern row would otherwise skip-PASS, the same
+    false-PASS shape. Reachability contract: the CALLER passes the path
+    and exists-gating is the caller's choice — this backstop covers any
+    direct ``verify_text(..., concerns_path=...)`` caller that passes a
+    worktree path; a caller that pre-gates on ``exists()`` and passes
+    None for a missing worktree ledger is covered by the CLI ``--file``
+    refusal only.
+
     Skipped (PASS) when ``concerns_path`` is None or missing
     (``--body-stdin`` invocations, freshly created tasks with no concerns
     ledger). Full Lens 14 fires only when invoked with ``--issue <N>``
     or when ``--file`` resolves to a sibling ``concerns.jsonl``.
     """
+    if concerns_path is not None and _worktree_resident(concerns_path):
+        return CheckResult(
+            "concerns audit (Lens 14)",
+            False,
+            f"worktree-frozen concerns.jsonl at {concerns_path} — per-task "
+            "ledgers mutate only on the main checkout; rerun via --issue / "
+            "the main checkout path (#2607)",
+        )
     if concerns_path is None or not concerns_path.exists():
         return CheckResult(
             "concerns audit (Lens 14)",
@@ -20340,6 +20370,64 @@ def _load_text_for_issue(number: int) -> tuple[str, Path]:
     return body_path.read_text(), body_path
 
 
+def _worktree_resident(p: Path) -> bool:
+    """True when the resolved path lives inside a linked git worktree of
+    this repo — the worktree-staleness detection predicate (#2607).
+
+    Arm A (pure path, always available): consecutive
+    ``('.claude', 'worktrees')`` components in ``p.resolve().parts`` —
+    the canonical ``new_worktree.sh`` layout every /issue session uses.
+    Arm B (best-effort): ``p`` is under a NON-PRIMARY worktree path from
+    ``git worktree list --porcelain`` run at ``_resolve_repo_root()``
+    (reuses ``_parse_worktree_list``, #2288); any subprocess / resolution
+    failure degrades silently to arm A alone.
+
+    Known residual (named, non-blocking): a worktree reached via a raw
+    mount alias (e.g. a live ``/mnt/eps-data`` bind, #681/#2132 —
+    ``Path.resolve()`` does not resolve bind mounts) or a scratch
+    worktree outside ``.claude/worktrees/`` evades arm A; arm B catches
+    the scratch case only while the subprocess probe succeeds. Neither
+    is a sanctioned caller shape today; the incident channel (#2378 r7 —
+    an issue worktree's frozen ``tasks/`` tree) is fully covered by
+    arm A.
+    """
+    try:
+        resolved = p.resolve()
+    except OSError:
+        resolved = p
+    parts = resolved.parts
+    for a, b in itertools.pairwise(parts):
+        if a == ".claude" and b == "worktrees":
+            return True
+    # Arm B: non-primary worktrees from `git worktree list` (best-effort).
+    root = _resolve_repo_root()
+    if root is None:
+        return False
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "worktree", "list", "--porcelain"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    if proc.returncode != 0:
+        return False
+    records = _parse_worktree_list(proc.stdout)
+    for wt_path, _branch in records[1:]:  # records[0] is the PRIMARY worktree
+        try:
+            wt_resolved = wt_path.resolve()
+        except OSError:
+            wt_resolved = wt_path
+        try:
+            if resolved.is_relative_to(wt_resolved):
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
+
+
 def _resolve_file_siblings(
     body_source_path: Path,
 ) -> tuple[Path | None, Path | None, Path | None, int | None]:
@@ -20437,6 +20525,27 @@ def main() -> int:
         raw = Path(args.file).read_text()
         source = args.file
         body_source_path = Path(args.file).resolve()
+        # Worktree-staleness refusal (#2607): a worktree's tasks/ tree is
+        # frozen at the branch-cut base commit — per-task state mutates
+        # ONLY on the main checkout via task.py — so sibling resolution
+        # against a worktree task-layout body silently audits stale
+        # ledgers (incident #2378 r7: a worktree-resolved run false-PASSed
+        # Lens 14 while both CRC twins' main-root runs FAILed on 5
+        # unacknowledged concerns). Non-task-layout worktree paths
+        # (e.g. a worktree .claude/cache/ draft) are UNCHANGED.
+        if body_source_path.parent.name.isdigit() and _worktree_resident(body_source_path.parent):
+            print(
+                f"verify_task_body: REFUSED — {body_source_path} is a worktree-frozen "
+                "tasks/ tree (per-task state mutates only on the main checkout; this "
+                "copy is frozen at the branch-cut base commit and its "
+                "concerns.jsonl/plans/original-body.md siblings are silently stale — "
+                "#2607, incident #2378 r7). Re-run with "
+                f"--issue {body_source_path.parent.name} (resolves via the "
+                "branch-guarded task_workflow registry against the main checkout) "
+                "or pass the main checkout's tasks/<status>/<N>/body.md path.",
+                file=sys.stderr,
+            )
+            return 2
         concerns_path, plan_path, original_body_path, file_issue = _resolve_file_siblings(
             body_source_path
         )

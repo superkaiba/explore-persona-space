@@ -477,6 +477,13 @@ uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file .claude/cache/expe
 uv run python "$REPO_ROOT"/scripts/audit_clean_results_body_discipline.py .claude/cache/experiment-<N>-clean-result.md
 ```
 
+Never point `--file` at a `tasks/<status>/<N>/body.md` inside a worktree —
+that tree is frozen at the branch-cut base commit and its `concerns.jsonl`
+sibling is silently stale (the #2378 r7 false PASS); the verifier now
+REFUSES such paths (#2607). The gate run on the REAL task body is
+`--issue <N>`, which resolves via the branch-guarded task_workflow registry
+against the main checkout.
+
 The discipline audit is the SAME pre-pass the clean-result-critic runs — a
 finding here (bracketed-CI `[lo, hi]`, opaque codes, `byte identical`) is a
 guaranteed round-1 bounce (#641 et al.). The verifier's check catalog

@@ -8355,6 +8355,121 @@ def test_concerns_audit_skip_path_ignores_markers(tmp_path):
     assert "skipped" in result.detail.lower()
 
 
+def _worktree_staleness_fixture(tmp_path):
+    """The #2378 r7 shape (#2607): the MAIN-root task 99 carries one OPEN
+    CONCERN row NOT acknowledged in GOOD_BODY, while the issue worktree's
+    frozen copy of the same task has a stale ledger with ZERO open rows
+    (it predates the main-root row). Returns
+    ``(main_task_dir, worktree_task_dir)``."""
+    main_task = tmp_path / "main" / "tasks" / "reviewing" / "99"
+    main_task.mkdir(parents=True)
+    (main_task / "body.md").write_text(GOOD_BODY)
+    (main_task / "concerns.jsonl").write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "probe-position-undefined",
+                "severity": "CONCERN",
+                "summary": "Probe position is undefined.",
+            }
+        )
+        + "\n"
+    )
+    wt_task = (
+        tmp_path / "main" / ".claude" / "worktrees" / "issue-99" / "tasks" / "reviewing" / "99"
+    )
+    wt_task.mkdir(parents=True)
+    (wt_task / "body.md").write_text(GOOD_BODY)
+    (wt_task / "concerns.jsonl").write_text("")  # frozen — zero open rows
+    return main_task, wt_task
+
+
+def test_concerns_audit_worktree_frozen_ledger_fails(tmp_path):
+    """#2607 regression (incident #2378 r7): a worktree-resident
+    concerns.jsonl is frozen at the branch-cut base commit, so auditing
+    it is ALWAYS a stale read — hard-FAIL naming the path. Previously
+    this stale zero-open-rows ledger PASSed."""
+    _main_task, wt_task = _worktree_staleness_fixture(tmp_path)
+    cp = wt_task / "concerns.jsonl"
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert not result.passed
+    assert "worktree-frozen" in result.detail
+    assert str(cp) in result.detail
+
+
+def test_concerns_audit_worktree_missing_ledger_still_fails(tmp_path):
+    """#2607: the worktree-staleness backstop fires REGARDLESS of
+    exists() — a frozen tree whose ledger predates the task's FIRST
+    concern row would otherwise take the skip-PASS branch (the same
+    false-PASS shape as #2378 r7)."""
+    missing = (
+        tmp_path
+        / "main"
+        / ".claude"
+        / "worktrees"
+        / "issue-98"
+        / "tasks"
+        / "reviewing"
+        / "98"
+        / "concerns.jsonl"
+    )
+    assert not missing.exists()
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=missing)
+    assert not result.passed
+    assert "worktree-frozen" in result.detail
+
+
+def test_file_invocation_worktree_task_body_refused(tmp_path, monkeypatch, capsys):
+    """#2607: `--file` on a worktree tasks/<status>/<N>/body.md is
+    REFUSED (exit 2) with stderr naming the frozen path + the `--issue`
+    remedy — the body text itself is frozen too, so redirecting siblings
+    would still verify a stale body."""
+    _main_task, wt_task = _worktree_staleness_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body_path = wt_task / "body.md"
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(body_path)])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "REFUSED" in captured.err
+    assert str(body_path.resolve()) in captured.err
+    assert "--issue 99" in captured.err
+
+
+def test_file_invocation_main_root_task_body_unchanged(tmp_path, monkeypatch, capsys):
+    """#2607: the guard is INERT on a main-root task body — and Lens 14
+    actually RAN against the sibling ledger (it FAILs here on the
+    unacknowledged open concern, proving the audit executed rather than
+    being refused or skipped)."""
+    main_task, _wt_task = _worktree_staleness_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(main_task / "body.md")])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    assert "probe-position-undefined" in captured.out
+    assert "worktree-frozen" not in captured.out
+
+
+def test_file_invocation_worktree_cache_draft_unchanged(tmp_path, monkeypatch, capsys):
+    """#2607: a worktree `.claude/cache/` draft is a legitimate `--file`
+    target (verifying draft bytes the caller just wrote) — no refusal
+    (parent is not digit-named), and Lens 14 skip-PASSes exactly as
+    before (no sibling ledger)."""
+    cache_dir = tmp_path / "main" / ".claude" / "worktrees" / "issue-99" / ".claude" / "cache"
+    cache_dir.mkdir(parents=True)
+    draft = cache_dir / "draft.md"
+    draft.write_text(GOOD_BODY)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(draft)])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    assert "no concerns.jsonl sibling" in captured.out
+
+
 def test_concerns_audit_stale_marker_warns_alongside_acknowledged_open_concern(tmp_path):
     """Pins the SECOND warns-only return site: `open_binding` is
     non-empty (a raised CONCERN, acknowledged in the body via
