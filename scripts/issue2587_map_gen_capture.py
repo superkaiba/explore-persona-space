@@ -832,12 +832,15 @@ def _resolve_decoder_blocks(model):
 def _extract_layer_activations(
     model, input_ids: torch.Tensor, layers: list[int], attention_mask: torch.Tensor
 ) -> dict[int, torch.Tensor]:
-    """{block index L: (B, T, H)} via forward hooks (block-L-output semantics ==
-    output_hidden_states[L+1] for every non-last block — the parent
-    convention; #2330's layers {16,22,30} of 32 / {14,19,26} of 28 never
-    include the last block, so the pre-/post-final-norm divergence is moot).
-    Falls back to the full-tuple read when no block chain resolves (CPU test
-    stubs)."""
+    """{block index L: (B, T, H)} via forward hooks. Hooks capture each
+    block's RAW output: captured[L] == output_hidden_states[L+1] for every
+    NON-last block (the hook_probe gate pins that parity on {16,22,30}),
+    while the LAST block (31 of 32) is the RAW pre-final-RMSNorm output —
+    the battery capture's documented store convention
+    (issue2587_battery_run store_common ``layer_convention``); plan §4.3
+    sweeps all 32 blocks. Falls back to the full-tuple read when no block
+    chain resolves (CPU test stubs) — on that path ONLY, the last block's
+    value is hidden_states[-1] (post-final-norm), a stub-only divergence."""
     blocks, _depth = _resolve_decoder_blocks(model)
     ltk = _logits_to_keep_kwargs(model)
     if blocks is None:
@@ -851,9 +854,9 @@ def _extract_layer_activations(
 
     n_blocks = len(blocks)
     for L in layers:
-        assert 0 <= int(L) < n_blocks - 1, (
-            f"layer {L} out of the hook-safe range [0, {n_blocks - 2}] — the LAST block's "
-            "hook output diverges from hidden_states[-1] (pre- vs post-final-norm)"
+        assert 0 <= int(L) < n_blocks, (
+            f"layer {L} out of the block range [0, {n_blocks - 1}] — hooks capture each "
+            "block's raw output; block n-1 is the pre-final-RMSNorm state by convention"
         )
     captured: dict[int, torch.Tensor] = {}
     handles = []
