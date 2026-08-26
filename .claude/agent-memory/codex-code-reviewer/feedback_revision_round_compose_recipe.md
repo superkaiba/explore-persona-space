@@ -2951,3 +2951,19 @@ you commit this memory to the branch under review, the prompt's out-of-scope
 fact needs the generic "and any later `.claude/agent-memory/**` bookkeeping
 commit" clause (the r17 form) — a named-SHAs-only list goes stale the moment
 your own commit lands.
+
+**Brief-ordered digest-not-body union round (#2378 sim-user-regen r2, 2026-08-26):**
+when a FAIL+FAIL-union brief orders "inline digests, not bodies" for the prior
+verdicts, the #2332-r2 inline-both-and-strip-tags form is OVERRIDDEN: restate each
+prior finding's Evidence/Fix acceptance contract inside the per-item CLOSURE LEDGER
+duties instead (the digest IS the contract), and the tag arithmetic collapses to
+own-head==1 / close==1 / every-prior-tag==0. Two traps hit live: (a) this task's
+CLAUDE markers carry a posted-version/head-sentinel offset (posted v20, note head
+`v21`; the impl marker cites "v21 (Claude v20-marker)") — state the mapping in the
+prompt or Codex chases a phantom marker; the CODEX convention on the same task is
+head==posted (max+1 rule unaffected). (b) composer-span full-SHA count is 1, not 2,
+when the git commands use the 12-char short form — label the count assert. Also:
+when the prior Claude FAIL was marker-shape-only on a smoke-arch line, re-run
+`task.py check-smoke-arch-registry` at compose time and attest the green output
+verbatim — that converts the whole Claude Critical into a settled fact instead of a
+re-derivation duty.
