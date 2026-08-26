@@ -25,4 +25,10 @@ later as a round bounce (#1388 shape).
 the output; pre-existing red elsewhere never blocks). Design-side corollary:
 NEVER wire an issue-scoped upload prefix as an argparse default / `or`-fallback
 — `default=None` + fail-loud when uploads are enabled and the flag is absent;
-callers (pod driver, smoke) pass it explicitly. Related: [[hf-fallback-pod-side-data-inputs]].
+callers (pod driver, smoke) pass it explicitly. When the fallback is genuinely
+the parent contract (mid-issue argv-sha stability), the `UPLOAD_PREFIX_EXEMPT:
+<reason ≥10 chars>` waiver keys to the upload CALL line (`call.lineno` — e.g.
+`cm.upload_stage_dir(...)`), NOT the `x or CONST` assignment above it: place it
+on the call line or the immediately-preceding non-blank line (#2378 sim-user-regen
+r1: waiver above the assignment left the finding live; one edit cycle lost).
+Related: [[hf-fallback-pod-side-data-inputs]].
