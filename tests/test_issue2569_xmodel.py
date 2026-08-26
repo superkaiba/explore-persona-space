@@ -312,6 +312,31 @@ def test_spectrum_cosine_truncation_flag():
     assert same["truncated"] is False
 
 
+def _fake_stage_from(store):
+    """Signature-conformant stage_hub_file fake serving a dict store (mirrors
+    the real keyword-only repo_type/revision surface)."""
+    import json as _json
+
+    calls = []
+
+    def fake_stage(repo, repo_path, dest, *, repo_type, revision=None, **kw):
+        calls.append((repo_path, revision))
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(_json.dumps(store[repo_path]))
+        return dest
+
+    return fake_stage, calls
+
+
+def _snap(store, blob_prefix="blob0"):
+    """Snapshot tuple for a fake store (blob ids derived from the prefix so a
+    'regenerated' store is expressed as a different blob_prefix)."""
+    return (
+        f"rev-{blob_prefix}",
+        [(p, f"{blob_prefix}-{p}", None) for p in sorted(store)],
+    )
+
+
 def test_stage_texts_tolerates_shard_skip_manifests(tmp_path, monkeypatch):
     """A shard-level skip manifest among the rows chunks is counted, never
     row-parsed (final-round smoke: shard16_skipped.json crashed the strict
@@ -332,33 +357,27 @@ def test_stage_texts_tolerates_shard_skip_manifests(tmp_path, monkeypatch):
         "gen_max_tokens": 2048,
     }
     bogus = {"unexpected": True}
+    pfx = XC.RAW_COMPLETIONS_PREFIX
     store = {
-        "pfx/shard00_chunk0000.json": chunk,
-        "pfx/shard16_skipped.json": skip,
+        f"{pfx}/shard00_chunk0000.json": chunk,
+        f"{pfx}/shard16_skipped.json": skip,
     }
-
-    def fake_list(api, repo, prefix, repo_type):
-        return sorted(store)
-
-    def fake_stage(repo, repo_path, dest, repo_type):
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(_json.dumps(store[repo_path]))
-        return dest
-
-    monkeypatch.setattr(XC.hub, "list_hf_files_under_path", fake_list)
+    fake_stage, _calls = _fake_stage_from(store)
     monkeypatch.setattr(XC.hub, "stage_hub_file", fake_stage)
     args = type("A", (), {"out_root": str(tmp_path), "hf_data_repo": "fake/repo"})()
     sel_meta = {"drops": {}}
-    XC._stage_texts(args, np.asarray([7], dtype=np.int64), {7: "lmsys"}, sel_meta)
+    XC._stage_texts(args, np.asarray([7], dtype=np.int64), {7: "lmsys"}, sel_meta, _snap(store))
     assert sel_meta["n_texts_kept"] == 1
     assert sel_meta["drops"]["skip_manifest_files"] == 1
     kept = (tmp_path / "texts_kept.jsonl").read_text().strip().splitlines()
     assert len(kept) == 1 and _json.loads(kept[0])["ci"] == 7
     # unrecognized shape still fails loud (strict schema assert retained)
-    store["pfx/shard99_chunk0000.json"] = bogus
+    store[f"{pfx}/shard99_chunk0000.json"] = bogus
     args2 = type("A", (), {"out_root": str(tmp_path / "b"), "hf_data_repo": "fake/repo"})()
     with pytest.raises(AssertionError):
-        XC._stage_texts(args2, np.asarray([7], dtype=np.int64), {7: "lmsys"}, {"drops": {}})
+        XC._stage_texts(
+            args2, np.asarray([7], dtype=np.int64), {7: "lmsys"}, {"drops": {}}, _snap(store)
+        )
 
 
 def _write_finalize_meta(tmp_path, model, realized):
@@ -472,6 +491,28 @@ def _pparams(args, model=None):
     return XC._pilot_params(args, spec, XC._parse_layers(args, spec))
 
 
+def _bound_spot_gate_record(tmp_path, *, layers_flag=None, tol=None, texts=None):
+    """A spot-gate PASS record BOUND through the REAL ``_gate_regime`` over the
+    staged selection (never a hand-rolled regime — the round-2 fixture trap).
+    ``texts`` overrides the selection the regime is computed over (to express a
+    record measured on OTHER content)."""
+    flags = []
+    if layers_flag is not None:
+        flags += ["--layers", layers_flag]
+    if tol is not None:
+        flags += ["--gate-rel-tol", str(tol)]
+    gargs = _cli_args(tmp_path, phase="spot-gate", model="qwen", rows="8", extra=tuple(flags))
+    spec = XC.MODEL_SPECS["qwen"]
+    regime = XC._gate_regime(
+        gargs,
+        spec,
+        XC._parse_layers(gargs, spec),
+        texts if texts is not None else XC.load_selection(gargs),
+        extra={"spot_chunk": gargs.spot_chunk},
+    )
+    return {"verdict": "PASS", "regime": regime}
+
+
 # --- blocker 1: pilot-gate-halt-erased-by-resume ---------------------------
 
 
@@ -571,7 +612,8 @@ def test_capture_production_scale_requires_pilot_pass(tmp_path):
 def test_capture_smoke_scale_is_the_pilot_no_self_precondition(tmp_path):
     """The smoke-scale capture IS the pilot — it must not demand its own record
     (smoke/production gate-calibration parity, the #1345 class): it proceeds
-    past the gate checks to the selection load."""
+    past the pilot precondition to the selection load (the live-regime gate
+    binding runs AFTER the selection is loaded, since it hashes the texts)."""
     _write_gate(tmp_path, "spot_gate_qwen", {"verdict": "PASS"})
     args = _cli_args(tmp_path, rows="32")
     with pytest.raises(AssertionError, match="texts_kept"):
@@ -638,7 +680,7 @@ def test_finalize_requires_gate_and_pilot_pass(tmp_path):
     args = _cli_args(tmp_path, phase="finalize", rows="8", extra=("--skip-upload",))
     with pytest.raises(AssertionError, match="run the gate phase"):
         XC.phase_finalize(args)
-    _write_gate(tmp_path, "spot_gate_qwen", {"verdict": "PASS"})
+    _write_gate(tmp_path, "spot_gate_qwen", _bound_spot_gate_record(tmp_path, layers_flag="14"))
     with pytest.raises(AssertionError, match="pilot"):
         XC.phase_finalize(args)
     _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "FAIL"})
@@ -842,7 +884,7 @@ def test_capture_production_refuses_unbound_or_mismatched_pilot_pass(tmp_path, m
     past the precondition (to the model-load boundary — seam-stubbed so a
     wrongly-accepted PASS would fail the test by touching the model)."""
     _seed_texts(tmp_path)
-    _write_gate(tmp_path, "spot_gate_qwen", {"verdict": "PASS"})
+    _write_gate(tmp_path, "spot_gate_qwen", _bound_spot_gate_record(tmp_path))
     args = _cli_args(tmp_path, rows="0")
 
     def boom(*a, **k):
@@ -863,3 +905,155 @@ def test_capture_production_refuses_unbound_or_mismatched_pilot_pass(tmp_path, m
     _write_gate(tmp_path, "pilot_gate_qwen", {"verdict": "PASS", "capture_params": good})
     with pytest.raises(RuntimeError, match="model load attempted"):
         XC.phase_capture(args)  # binding satisfied — proceeds to the real work
+
+
+# ---------------------------------------------------------------------------
+# Step 5 fix round v4 — pd-gate-pass-not-bound-to-live-regime (BLOCKER) +
+# select-stage-texts-resume-content-unpinned (CONCERN)
+# ---------------------------------------------------------------------------
+
+
+def test_capture_refuses_unbound_or_regime_drifted_gate_pass(tmp_path, monkeypatch):
+    """(pd-gate-pass-not-bound-to-live-regime) The capture consumer refuses a
+    gate PASS that is UNBOUND (no regime), bound to DIFFERENT text content at
+    the same ci selection, bound to different layers, or measured at a LOOSER
+    tolerance than the live bar — each refusal naming its cause. Pre-fix, all
+    four proceeded to the model load (the monkeypatched sentinel here)."""
+    _seed_texts(tmp_path, n=10)
+    args = _cli_args(tmp_path, rows="8")  # smoke scale: pilot-exempt, gate-checked
+    texts = XC.load_selection(args)
+
+    def boom(*a, **k):
+        raise RuntimeError("model-load reached")
+
+    monkeypatch.setattr(XC, "_load_model_ctx", boom)
+
+    # (i) legacy/unbound PASS — refused loud
+    _write_gate(tmp_path, "spot_gate_qwen", {"verdict": "PASS"})
+    with pytest.raises(AssertionError, match="carries no regime"):
+        XC.phase_capture(args)
+
+    # (ii) PASS measured over REGENERATED text at the same cis — refused naming the field
+    stale = [dict(r, response=r["response"] + " REGENERATED") for r in texts]
+    _write_gate(tmp_path, "spot_gate_qwen", _bound_spot_gate_record(tmp_path, texts=stale))
+    with pytest.raises(AssertionError, match="texts_sha256"):
+        XC.phase_capture(args)
+
+    # (iii) PASS measured at other layers than the live run's — refused naming the field
+    _write_gate(tmp_path, "spot_gate_qwen", _bound_spot_gate_record(tmp_path, layers_flag="14"))
+    with pytest.raises(AssertionError, match="layers"):
+        XC.phase_capture(args)
+
+    # (iv) PASS measured at a LOOSER tolerance than the live bar — refused
+    _write_gate(tmp_path, "spot_gate_qwen", _bound_spot_gate_record(tmp_path, tol=0.05))
+    with pytest.raises(AssertionError, match="LOOSER"):
+        XC.phase_capture(args)
+
+
+def test_capture_honours_bound_gate_pass_allowed_differences(tmp_path, monkeypatch):
+    """(the too-strict/deadlock direction) A PASS bound to the live regime is
+    honoured — capture proceeds to the model-load boundary — including when the
+    ALLOWED-to-differ members differ: a different spot_chunk (gate-internal
+    oracle identity) and a TIGHTER recorded tolerance (certifies the live bar
+    a fortiori)."""
+    _seed_texts(tmp_path, n=10)
+    args = _cli_args(tmp_path, rows="8")
+
+    def boom(*a, **k):
+        raise RuntimeError("model-load reached")
+
+    monkeypatch.setattr(XC, "_load_model_ctx", boom)
+    rec = _bound_spot_gate_record(tmp_path, tol=0.01)  # tighter than the live default 2e-2
+    rec["regime"]["spot_chunk"] = "shard31_chunk9999.pt"  # differs from args default — allowed
+    _write_gate(tmp_path, "spot_gate_qwen", rec)
+    with pytest.raises(RuntimeError, match="model-load reached"):
+        XC.phase_capture(args)  # gate binding satisfied — proceeds to the real work
+
+
+def test_finalize_gate_binding_store_knobs_and_live_texts(tmp_path):
+    """(pd-gate-pass-not-bound-to-live-regime, finalize consumer) Finalize
+    verifies the gate PASS against the chunk store's OWN knobs + the staged
+    selection NOW on disk: a matching bound record proceeds; regenerated
+    texts_kept content refuses naming texts_sha256; a record whose batch
+    packing differs from the store refuses naming batch_tokens; a pre-binding
+    chunk regime fails loud in _gate_binding_from_store."""
+    regime = _seed_chunk_store(tmp_path)
+    args = _cli_args(tmp_path, phase="finalize", rows="8", extra=("--skip-upload",))
+    bound = _bound_spot_gate_record(tmp_path, layers_flag="14")
+    _write_gate(tmp_path, "spot_gate_qwen", bound)
+    _write_gate(
+        tmp_path,
+        "pilot_gate_qwen",
+        {"verdict": "PASS", "capture_params": XC._pilot_binding_from_regime(regime)},
+    )
+    XC.phase_finalize(args)  # bound record honoured
+    assert (tmp_path / "final" / "qwen_finalize_meta.json").is_file()
+
+    # regenerated staged texts (same cis) — finalize refuses naming the content field
+    orig = (tmp_path / "texts_kept.jsonl").read_text()
+    regen = [dict(json.loads(ln), response="REGEN") for ln in orig.split("\n") if ln.strip()]
+    (tmp_path / "texts_kept.jsonl").write_text("\n".join(json.dumps(r) for r in regen) + "\n")
+    with pytest.raises(AssertionError, match="texts_sha256"):
+        XC.phase_finalize(args)
+    (tmp_path / "texts_kept.jsonl").write_text(orig)
+
+    # record whose packing knobs differ from the store's OWN regime — refused
+    drifted = {"verdict": "PASS", "regime": dict(bound["regime"], batch_tokens=4096)}
+    _write_gate(tmp_path, "spot_gate_qwen", drifted)
+    with pytest.raises(AssertionError, match="batch_tokens"):
+        XC.phase_finalize(args)
+
+    # pre-binding chunk regime (knob fields absent) — fails loud, never "any PASS will do"
+    with pytest.raises(AssertionError, match="gate-binding fields"):
+        XC._gate_binding_from_store(args, {"layers": [14], "template_sha": "x"})
+
+
+def test_stage_texts_restages_on_source_content_change_resumes_on_match(tmp_path, monkeypatch):
+    """(select-stage-texts-resume-content-unpinned) The staging resume
+    fingerprint pins SOURCE CONTENT at blob grain: an identical snapshot
+    resume-skips with zero re-stages; a regenerated source blob at the SAME
+    path mismatches the sidecar and the stream re-stages, so texts_kept.jsonl
+    carries the NEW content instead of certifying stale text end-to-end. Every
+    stage call is pinned to the snapshot revision."""
+    import json as _json
+
+    pfx = XC.RAW_COMPLETIONS_PREFIX
+    store = {
+        f"{pfx}/shard00_chunk0000.json": {
+            "rows": [{"ci": 7, "prompt": "p", "response": "OLD"}],
+            "shard_index": 0,
+            "chunk": 0,
+        }
+    }
+    fake_stage, calls = _fake_stage_from(store)
+    monkeypatch.setattr(XC.hub, "stage_hub_file", fake_stage)
+    args = type("A", (), {"out_root": str(tmp_path), "hf_data_repo": "fake/repo"})()
+    ci = np.asarray([7], dtype=np.int64)
+    snap1 = _snap(store, blob_prefix="blobA")
+    XC._stage_texts(args, ci, {7: "lmsys"}, {"drops": {}}, snap1)
+    assert calls == [(f"{pfx}/shard00_chunk0000.json", "rev-blobA")]  # revision-pinned stage
+    assert _json.loads((tmp_path / "texts_kept.jsonl").read_text())["response"] == "OLD"
+    sidecar = _json.loads((tmp_path / "texts_processed.json").read_text())
+    assert "source_content_sha256" in sidecar["fingerprint"]
+
+    # identical snapshot -> resume-skip: no new stage calls, staged text unchanged
+    XC._stage_texts(args, ci, {7: "lmsys"}, {"drops": {}}, snap1)
+    assert len(calls) == 1
+    assert _json.loads((tmp_path / "texts_kept.jsonl").read_text())["response"] == "OLD"
+
+    # regenerated source content at the SAME path (new blob id) -> re-stage + fresh text
+    store[f"{pfx}/shard00_chunk0000.json"]["rows"][0]["response"] = "NEW"
+    snap2 = _snap(store, blob_prefix="blobB")
+    XC._stage_texts(args, ci, {7: "lmsys"}, {"drops": {}}, snap2)
+    assert len(calls) == 2
+    assert _json.loads((tmp_path / "texts_kept.jsonl").read_text())["response"] == "NEW"
+
+
+def test_entries_fingerprint_keys_on_blob_content_not_revision():
+    """The fingerprint changes iff a file's blob identity changes — stable under
+    order permutation (sorted) and independent of the repo revision (unrelated
+    fleet commits must not restart the stream)."""
+    a = [("p/x.json", "blob1", 10), ("p/y.json", "blob2", 20)]
+    assert XC._entries_fingerprint(a) == XC._entries_fingerprint(list(reversed(a)))
+    changed = [("p/x.json", "blob1-regen", 10), ("p/y.json", "blob2", 20)]
+    assert XC._entries_fingerprint(a) != XC._entries_fingerprint(changed)

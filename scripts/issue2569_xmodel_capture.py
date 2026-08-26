@@ -45,10 +45,17 @@ Identity gates (plan §7 rows; BOTH are preconditions of the production pass):
   banked ``final_token_capture`` store on 8 rows.
 
 Phases: ``select`` (row selection + corpus tags + text staging, stream-reduced with
-per-file checkpoint/resume) → ``identity-gate``/``spot-gate`` (regime-keyed PASS
-resume-skip — the regime keys carry the selection TEXT-CONTENT fingerprint, not
-just the ci identity, so regenerated prompts/responses re-run the gate; fixed
-8-row roster + full comparison cardinality asserted) → ``capture`` (chunked,
+per-file checkpoint/resume; the staging resume fingerprint pins SOURCE CONTENT —
+blob-grain identity of the raw-completions + sampling-manifest files, staged at one
+per-run-pinned repo revision — so a regenerated banked chunk at the same path
+re-stages instead of resume-skipping over stale text;
+select-stage-texts-resume-content-unpinned) → ``identity-gate``/``spot-gate``
+(regime-keyed PASS resume-skip — the regime keys carry the selection TEXT-CONTENT
+fingerprint, not just the ci identity, so regenerated prompts/responses re-run the
+gate; fixed 8-row roster + full comparison cardinality asserted; every CONSUMER of
+a gate PASS re-verifies the record's regime against its LIVE inputs before
+honouring it — ``_require_gate`` + ``_GATE_BINDING_FIELDS``,
+pd-gate-pass-not-bound-to-live-regime) → ``capture`` (chunked,
 regime-keyed resume incl. the content fingerprint; the built-in pilot-gate report
 is measured on FRESH forward rows ONLY — a resume that did no work can never
 overwrite a recorded FAIL, and a zero-fresh-work smoke resume with NO record
@@ -65,7 +72,12 @@ Observed banked schemas (probed 2026-08-25, keys only):
 ``sampling_manifest/part_NNNNN.jsonl`` rows = ``{"i": int, "corpus": str,
 "stream_pos": int, "prompt": str}`` (87 parts + meta.json; ``i`` IS the conversation
 index the raw-completions ``ci`` keys — verified by matching row 0) — NOTE the key is
-``i``, not ``ci``. Content hygiene: prompt/response text is NEVER printed or logged.
+``i``, not ``ci``. Scoped ``list_repo_tree`` entries for BOTH prefixes carry
+``blob_id`` (git content address) + ``size`` (probed 2026-08-26 at revision
+``e156135bc11c821f5ae76ee352ae715186b895c4``; e.g. ``shard00_chunk0000.json`` →
+``blob_id 1d0a97845c7a3adc4db501e650e35929dad35b8d, size 1153322, lfs False``) —
+the basis of the staging content fingerprint. Content hygiene: prompt/response
+text is NEVER printed or logged.
 """
 
 from __future__ import annotations
@@ -354,22 +366,76 @@ def select_rows(args) -> dict:
     }
 
 
-def _stage_corpus_tags(args, selected_ci: np.ndarray) -> dict[int, str]:
+def _entries_fingerprint(entries: list[tuple[str, str | None, int | None]]) -> str:
+    """sha256 over sorted ``(path, blob_id, size)`` lines — the BLOB-grain content
+    identity of the source file set. blob_id is git's content address, so the
+    digest changes iff any listed file's CONTENT changes, and is STABLE under
+    unrelated commits elsewhere in the repo."""
+    h = hashlib.sha256()
+    for path, blob_id, size in sorted(entries, key=lambda e: e[0]):
+        h.update(f"{path}\t{blob_id}\t{size}\n".encode())
+    return h.hexdigest()
+
+
+def _source_snapshot(args) -> tuple[str, list[tuple[str, str | None, int | None]]]:
+    """Resolve the source-data snapshot ONCE per select run: the data repo's
+    current revision sha plus ONE scoped tree walk per source prefix at that
+    revision, as ``(path, blob_id, size)`` entries covering BOTH the
+    raw-completions chunks AND the sampling-manifest parts — both are content
+    inputs of ``texts_kept.jsonl`` (prompts/responses from the former, corpus
+    tags from the latter).
+
+    Within-run consistency: every select-phase ``stage_hub_file`` call passes
+    ``revision=`` this sha, so all staged files come from ONE snapshot (the
+    #2061 revision=None paired-file snapshot-split trap). Cross-run resume
+    keys on the BLOB-grain ``_entries_fingerprint``, NOT this repo revision:
+    the shared data repo takes constant unrelated fleet commits, so a
+    repo-revision pin in the resume fingerprint would restart the ~1,936-file
+    stream on every unrelated upload (the too-strict/deadlock direction of
+    select-stage-texts-resume-content-unpinned), while the blob fingerprint
+    changes exactly when a source file's content is regenerated."""
+    from huggingface_hub import HfApi
+    from huggingface_hub.hf_api import RepoFile
+
+    api = HfApi()
+    rev = str(api.repo_info(args.hf_data_repo, repo_type="dataset").sha)
+    entries: list[tuple[str, str | None, int | None]] = []
+    for prefix in (RAW_COMPLETIONS_PREFIX, SAMPLING_MANIFEST_PREFIX):
+
+        def _walk(prefix=prefix):
+            return [
+                (e.path, getattr(e, "blob_id", None), getattr(e, "size", None))
+                for e in api.list_repo_tree(
+                    repo_id=args.hf_data_repo,
+                    repo_type="dataset",
+                    revision=rev,
+                    recursive=True,
+                    path_in_repo=prefix,
+                )
+                if isinstance(e, RepoFile)
+            ]
+
+        got = hub._retry_upload(_walk, what=f"list_repo_tree({args.hf_data_repo}/{prefix})")
+        assert got, f"no files under {prefix} at revision {rev}"
+        entries.extend(got)
+    return rev, sorted(entries, key=lambda e: e[0])
+
+
+def _stage_corpus_tags(args, selected_ci: np.ndarray, snapshot: tuple[str, list]) -> dict[int, str]:
     """Stream the sampling-manifest parts (one at a time, delete after read) and
     join corpus tags for the SELECTED conversation indices ONLY.
 
     Manifest rows carry ``i`` (NOT ``ci`` — observed schema, module docstring) +
-    ``corpus``; text fields are never retained or logged."""
-    from huggingface_hub import HfApi
-
+    ``corpus``; text fields are never retained or logged. Files + revision come
+    from the per-run ``_source_snapshot`` so the fingerprint and the staged
+    bytes cannot diverge."""
+    rev, entries = snapshot
     want = set(int(c) for c in selected_ci)
     tags: dict[int, str] = {}
     files = sorted(
-        f
-        for f in hub.list_hf_files_under_path(
-            HfApi(), args.hf_data_repo, SAMPLING_MANIFEST_PREFIX, repo_type="dataset"
-        )
-        if Path(f).name.startswith("part_")
+        p
+        for p, _blob, _size in entries
+        if p.startswith(SAMPLING_MANIFEST_PREFIX + "/") and Path(p).name.startswith("part_")
     )
     assert files, f"no sampling-manifest parts under {SAMPLING_MANIFEST_PREFIX}"
     scratch = Path(args.out_root) / "stage_manifest"
@@ -377,7 +443,7 @@ def _stage_corpus_tags(args, selected_ci: np.ndarray) -> dict[int, str]:
     t0 = time.time()
     for k, repo_path in enumerate(files):
         dest = scratch / Path(repo_path).name
-        hub.stage_hub_file(args.hf_data_repo, repo_path, dest, repo_type="dataset")
+        hub.stage_hub_file(args.hf_data_repo, repo_path, dest, repo_type="dataset", revision=rev)
         with open(dest, encoding="utf-8") as fh:
             for line in fh:  # text-mode iteration, never .splitlines() (#825/#950)
                 if not line.strip():
@@ -397,12 +463,23 @@ def _stage_corpus_tags(args, selected_ci: np.ndarray) -> dict[int, str]:
     return tags
 
 
-def _stage_texts(args, selected_ci: np.ndarray, tags: dict[int, str], sel_meta: dict) -> None:
+def _stage_texts(
+    args,
+    selected_ci: np.ndarray,
+    tags: dict[int, str],
+    sel_meta: dict,
+    snapshot: tuple[str, list],
+) -> None:
     """Stream the raw-completions chunks (stage one file, keep selected rows,
     delete — stream-reduce) into ``texts_kept.jsonl`` with per-file checkpoint +
-    fingerprint-gated resume (code-style external-stream presumption, #1092)."""
-    from huggingface_hub import HfApi
-
+    fingerprint-gated resume (code-style external-stream presumption, #1092).
+    The resume fingerprint pins SOURCE CONTENT via the snapshot's blob-grain
+    ``_entries_fingerprint`` (select-stage-texts-resume-content-unpinned): a
+    regenerated banked chunk or manifest part at the SAME path changes its
+    blob_id, so the sidecar mismatches and the stream re-stages instead of
+    resume-skipping over stale staged text — while unrelated repo commits
+    leave the fingerprint untouched (resume stays satisfiable)."""
+    rev, entries = snapshot
     out = Path(args.out_root)
     texts_path = out / "texts_kept.jsonl"
     sidecar = out / "texts_processed.json"
@@ -410,6 +487,7 @@ def _stage_texts(args, selected_ci: np.ndarray, tags: dict[int, str], sel_meta: 
         "prefix": RAW_COMPLETIONS_PREFIX,
         "selected_sha": _sha_int64(selected_ci),
         "n_selected": int(len(selected_ci)),
+        "source_content_sha256": _entries_fingerprint(entries),
     }
     processed: dict = {"fingerprint": fingerprint, "files": [], "kept": 0, "drops": {}}
     if sidecar.exists():
@@ -422,11 +500,7 @@ def _stage_texts(args, selected_ci: np.ndarray, tags: dict[int, str], sel_meta: 
     done = set(processed["files"])
     want = set(int(c) for c in selected_ci)
     drops = Counter({k: int(v) for k, v in processed["drops"].items()})
-    files = sorted(
-        hub.list_hf_files_under_path(
-            HfApi(), args.hf_data_repo, RAW_COMPLETIONS_PREFIX, repo_type="dataset"
-        )
-    )
+    files = sorted(p for p, _blob, _size in entries if p.startswith(RAW_COMPLETIONS_PREFIX + "/"))
     assert files, f"no raw-completions chunks under {RAW_COMPLETIONS_PREFIX}"
     scratch = out / "stage_texts"
     scratch.mkdir(parents=True, exist_ok=True)
@@ -437,7 +511,7 @@ def _stage_texts(args, selected_ci: np.ndarray, tags: dict[int, str], sel_meta: 
         if name in done:
             continue
         dest = scratch / name
-        hub.stage_hub_file(args.hf_data_repo, repo_path, dest, repo_type="dataset")
+        hub.stage_hub_file(args.hf_data_repo, repo_path, dest, repo_type="dataset", revision=rev)
         obj = json.loads(dest.read_text())
         if "rows" not in obj and {"skipped", "n_skipped"} <= set(obj.keys()):
             # Shard-level SKIP manifests ride the same prefix as the rows chunks
@@ -511,8 +585,9 @@ def phase_select(args) -> None:
         "drops": dict(sel["drops"]),
         "metadata": _meta("select"),
     }
-    tags = _stage_corpus_tags(args, sel["ci"])
-    _stage_texts(args, sel["ci"], tags, sel_meta)
+    snapshot = _source_snapshot(args)  # ONE revision + blob listing for the whole select run
+    tags = _stage_corpus_tags(args, sel["ci"], snapshot)
+    _stage_texts(args, sel["ci"], tags, sel_meta, snapshot)
     # persist the selected (row_index, ci) join for downstream provenance
     with atomic_replace(out / "selection_rows.npz") as tmp, open(tmp, "wb") as fh:
         np.savez(fh, row_index=sel["row_index"], ci=sel["ci"])
@@ -875,11 +950,16 @@ def _gate_regime(
     float-last-bit rule). The ci sha alone pins only WHICH rows were selected;
     without the content sha, regenerated prompts/responses at the same ci
     selection would reuse a stale gate PASS
-    (gpu-gate-resume-key-omits-text-content)."""
+    (gpu-gate-resume-key-omits-text-content). ``device`` is a member because
+    the gate measures THAT device's kernels — a cpu-measured PASS certifies
+    nothing about the cuda path. This regime is ALSO the consumer-side binding
+    reference: ``_require_gate`` compares the recorded regime against the live
+    one on ``_GATE_BINDING_FIELDS`` (pd-gate-pass-not-bound-to-live-regime)."""
     cis = np.asarray([int(r["ci"]) for r in texts], dtype=np.int64)
     key = {
         "model_id": spec["model_id"],
         "layers": [int(x) for x in layers],
+        "device": str(args.device),
         "gate_rel_tol": float(args.gate_rel_tol),
         "max_capture_tokens": int(args.max_capture_tokens),
         "batch_tokens": int(args.batch_tokens),
@@ -892,6 +972,51 @@ def _gate_regime(
     if extra:
         key.update(extra)
     return key
+
+
+# The gate-regime subset a recorded gate PASS certifies for a CONSUMER
+# (pd-gate-pass-not-bound-to-live-regime): compared by EXACT equality between
+# the PASS record's ``regime`` and the consumer's LIVE regime. MUST match:
+#   model_id            — the gate certifies THIS model's capture path;
+#   layers              — the verdict is per (layer x slot) cell; a capture at
+#                         ungated layers has zero certified cells there;
+#   device              — the gate measured THIS device's kernels (a cpu PASS
+#                         certifies nothing about the cuda path);
+#   max_capture_tokens  — the certified token boundaries were computed under
+#                         this truncation cap;
+#   batch_tokens / max_batch_rows — the identity claim is batched == batch-1
+#                         UNDER this packing geometry (padded-batch bf16
+#                         numerics vary with shape);
+#   gate_rows           — the registered fixed roster cardinality;
+#   selection_ci_sha256 / n_texts — the gate rows were drawn deterministically
+#                         from THIS selection identity;
+#   texts_sha256        — the selection text CONTENT (the blocker: regenerated
+#                         prompts/responses at the same cis mean the PASS was
+#                         measured on OTHER text).
+# ALLOWED to differ, with reasons:
+#   gate_rel_tol — DIRECTIONAL, not exact: a PASS at the recorded tol certifies
+#                  worst rel-diff <= that tol, so an equal-or-looser live bar is
+#                  certified a fortiori; a TIGHTER live bar is refused (checked
+#                  separately in _require_gate — exact equality here would
+#                  needlessly refuse a deliberate tolerance loosening);
+#   spot_chunk   — gate-internal oracle identity: WHICH banked chunk the spot
+#                  gate compared against does not change what the PASS
+#                  certifies for the consumer; it stays in the record for the
+#                  gate phase's OWN resume idempotency + audit (binding it
+#                  would refuse a capture/finalize run whose --spot-chunk argv
+#                  it never consumes — the too-strict/deadlock direction).
+_GATE_BINDING_FIELDS = (
+    "model_id",
+    "layers",
+    "device",
+    "max_capture_tokens",
+    "batch_tokens",
+    "max_batch_rows",
+    "gate_rows",
+    "selection_ci_sha256",
+    "texts_sha256",
+    "n_texts",
+)
 
 
 def _gate_resume_skip(args, name: str, regime: dict) -> bool:
@@ -1191,13 +1316,93 @@ def _capture_regime(
     }
 
 
-def _require_gate(args, name: str) -> None:
-    """Assert a PASS gate record exists for this out-root (a PRECONDITION of the
-    production pass — plan §7; smoke-scale runs enforce it too, same path)."""
+def _require_gate(args, name: str, live_regime: dict) -> None:
+    """Assert a PASS gate record exists for this out-root AND that the PASS was
+    measured under THIS run's live regime (a PRECONDITION of the production
+    pass — plan §7; smoke-scale runs enforce it too, same path). Binding =
+    exact equality on ``_GATE_BINDING_FIELDS`` (see the constant's enumeration
+    of must-match vs allowed-to-differ members) plus the DIRECTIONAL tolerance
+    rule: recorded gate_rel_tol <= live gate_rel_tol — a PASS at a looser bar
+    does not certify a tighter live one. The tolerance rule fires only when
+    the live regime CARRIES a tolerance (capture: argv-derived; finalize:
+    deliberately absent — ``_gate_binding_from_store``). An unbound
+    (regime-less) PASS is refused loud: a historical PASS whose inputs are
+    unknown certifies nothing (pd-gate-pass-not-bound-to-live-regime)."""
     path = Path(args.out_root) / "gates" / f"{name}.json"
     assert path.exists(), f"gate record {path} missing — run the gate phase first (plan §7)"
     rec = json.loads(path.read_text())
     assert rec.get("verdict") == "PASS", f"{path}: verdict {rec.get('verdict')!r} != PASS"
+    recorded = rec.get("regime")
+    assert recorded is not None, (
+        f"{path}: PASS record carries no regime — an UNBOUND gate PASS cannot certify the "
+        "live inputs (pd-gate-pass-not-bound-to-live-regime); re-run the gate phase"
+    )
+    diffs = {
+        k: {"recorded": recorded.get(k), "live": live_regime.get(k)}
+        for k in _GATE_BINDING_FIELDS
+        if recorded.get(k) != live_regime.get(k)
+    }
+    if diffs:
+        raise AssertionError(
+            f"{path}: gate PASS was measured under a DIFFERENT regime than this run's live "
+            f"inputs — mismatched fields: {diffs} — re-run the gate phase "
+            "(pd-gate-pass-not-bound-to-live-regime)"
+        )
+    live_tol = live_regime.get("gate_rel_tol")
+    if live_tol is not None:
+        rec_tol = recorded.get("gate_rel_tol")
+        assert rec_tol is not None, (
+            f"{path}: gate regime carries no gate_rel_tol — not a producer-written regime; "
+            "re-run the gate phase (pd-gate-pass-not-bound-to-live-regime)"
+        )
+        assert float(rec_tol) <= float(live_tol), (
+            f"{path}: gate PASS was measured at tolerance {rec_tol} LOOSER than this run's "
+            f"{live_tol} — it does not certify the tighter live bar; re-run the gate phase "
+            "(pd-gate-pass-not-bound-to-live-regime)"
+        )
+
+
+# Chunk-store regime fields that double as the finalize-side gate-binding knobs
+# (all written by _capture_regime via _pilot_params, plus layers).
+_GATE_STORE_KNOB_FIELDS = (
+    "model_id",
+    "layers",
+    "device",
+    "max_capture_tokens",
+    "batch_tokens",
+    "max_batch_rows",
+)
+
+
+def _gate_binding_from_store(args, chunk_regime: dict) -> dict:
+    """Live gate-binding reference at FINALIZE
+    (pd-gate-pass-not-bound-to-live-regime): execution-shape knobs come from
+    the chunk store's OWN regime — what the capture ACTUALLY ran with, never
+    finalize's argv (the pilot-binding principle,
+    pd-pilot-pass-not-bound-to-production-regime) — while selection identity +
+    content are RECOMPUTED from the staged texts NOW on disk (the FULL
+    selection, mirroring the gate phases' own regime computation, so a
+    texts_kept.jsonl regenerated after the gate ran refuses here), and the
+    roster cardinality comes from the code constant. ``gate_rel_tol`` is
+    deliberately ABSENT: finalize has no non-argv live tolerance, and the
+    directional tolerance rule already bound at capture time where the argv IS
+    the live regime. A chunk regime lacking the knob fields predates the
+    binding contract: fail loud."""
+    missing = [k for k in _GATE_STORE_KNOB_FIELDS if k not in chunk_regime]
+    assert not missing, (
+        f"chunk-store regime lacks gate-binding fields {missing} — a pre-binding chunk "
+        "store cannot be verified against the gate record "
+        "(pd-gate-pass-not-bound-to-live-regime); re-run --phase capture"
+    )
+    texts = load_selection(args)
+    cis = np.asarray([int(r["ci"]) for r in texts], dtype=np.int64)
+    return {
+        **{k: chunk_regime[k] for k in _GATE_STORE_KNOB_FIELDS},
+        "gate_rows": GATE_ROWS,
+        "selection_ci_sha256": _sha_int64(cis),
+        "texts_sha256": _texts_content_sha(texts),
+        "n_texts": int(len(cis)),
+    }
 
 
 def _require_pilot_pass(args, pilot_params: dict) -> None:
@@ -1243,10 +1448,6 @@ def phase_capture(args) -> None:
     spec = MODEL_SPECS[args.model]
     layers = _parse_layers(args, spec)
     print(f"[phase=capture] model={args.model} layers={layers} rows={args.rows}", flush=True)
-    if args.model == "llama" and not args.skip_gate_check:
-        _require_gate(args, "identity_gate_llama")  # B5 PRECONDITION of the production pass
-    if args.model == "qwen" and not args.skip_gate_check:
-        _require_gate(args, "spot_gate_qwen")
     smoke_scale = 0 < int(args.rows) <= SMOKE_ROWS_CEILING
     pilot_params = _pilot_params(args, spec, layers)
     if not smoke_scale and not args.skip_gate_check:
@@ -1256,6 +1457,15 @@ def phase_capture(args) -> None:
         # the pilot — exempt (a self-precondition would make it unrunnable).
         _require_pilot_pass(args, pilot_params)
     texts = load_selection(args)
+    if not args.skip_gate_check:
+        # B5/G2 PRECONDITION of the pass, BOUND to the live regime: the recorded
+        # PASS must have been measured over THIS out-root's staged selection
+        # (content included) at THIS run's execution shape. The live regime is
+        # computed over the FULL selection BEFORE the --rows truncation,
+        # mirroring the gate phases' own computation
+        # (pd-gate-pass-not-bound-to-live-regime). Runs before any model load.
+        gate_name = "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen"
+        _require_gate(args, gate_name, _gate_regime(args, spec, layers, texts))
     if int(args.rows) > 0:
         texts = texts[: int(args.rows)]
     assert texts, (
@@ -1452,8 +1662,15 @@ def phase_finalize(args) -> None:
         # must refuse rather than bundle+upload past a FAIL/missing verdict
         # (pd-gate-precondition-bypass). The pilot binding is checked against the
         # chunk store's OWN regime — what the capture ACTUALLY ran with — never
-        # finalize's argv (pd-pilot-pass-not-bound-to-production-regime).
-        _require_gate(args, "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen")
+        # finalize's argv (pd-pilot-pass-not-bound-to-production-regime); the
+        # gate binding composes the same store knobs with the selection content
+        # recomputed from the staged texts NOW on disk
+        # (pd-gate-pass-not-bound-to-live-regime).
+        _require_gate(
+            args,
+            "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen",
+            _gate_binding_from_store(args, regime),
+        )
         _require_pilot_pass(args, _pilot_binding_from_regime(regime))
 
     ci_parts, corpus_parts, drops = [], [], Counter()
@@ -1674,6 +1891,7 @@ def main(argv: list[str] | None = None) -> None:
 
         import issue2476_turnavg_sae as _t24  # noqa: F401
         from huggingface_hub import HfApi as _HfApi  # noqa: F401
+        from huggingface_hub.hf_api import RepoFile as _RepoFile  # noqa: F401
         from transformers import (  # noqa: F401
             AutoModelForCausalLM as _AM,
             AutoTokenizer as _AT,
