@@ -2115,3 +2115,285 @@ def test_2246_two_tip_sibling_aliasing_through_execute_remediation_retains(tmp_p
     assert d.remove is False
     assert d.reason.startswith(f"became unsafe mid-audit: {_UNMERGED}")
     assert "no patch-equivalent on origin/main" in d.reason
+
+
+# --- #2354: follow-up shield (incident #2223) ---------------------------------
+#
+# The shield keeps an otherwise-reapable issue worktree while its parent task
+# has a provably in-flight follow-up round: the keep-running tag (tri-state
+# via task_workflow.keep_running_tag_state; UNBOUNDED by design), or a
+# follow-up signal marker newer than the latest done-transition AND younger
+# than the 168h signal-age ceiling. Kind sets MIRROR the watcher's
+# session-reconcile predicate (anti-drift equality test below — the audit
+# never imports the watcher at runtime).
+
+_SHIELD = worktree_audit._FOLLOWUP_SHIELD_REASON
+_SHIELD_UNKNOWN = worktree_audit._FOLLOWUP_SHIELD_UNKNOWN_REASON
+
+
+def _iso2354(epoch: float) -> str:
+    return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _event_row2354(kind: str, ts: object) -> dict:
+    """Field SHAPE mirrors tasks/awaiting_promotion/2223/events.jsonl rows
+    (by/kind/note/ts/version) — SYNTHETIC content only."""
+    return {"ts": ts, "kind": kind, "version": 1, "by": "unknown", "note": "synthetic"}
+
+
+# Signature-conformant keep_running_tag_state fakes (the boundary fake
+# mirrors the real (task_id) -> bool | None signature by construction).
+def _tag_true(task_id):
+    return True
+
+
+def _tag_false(task_id):
+    return False
+
+
+def _tag_none(task_id):
+    return None
+
+
+def _boom_unmerged(*_a, **_k):
+    raise AssertionError("shield keep must short-circuit the unmerged probe")
+
+
+def _shield_worktree(
+    tmp_path: Path, monkeypatch, name: str = "issue-9021", status: str = "completed"
+) -> Path:
+    """_matrix_worktree shape + a hermetic default-ceiling env and a
+    tag-arm-False default (individual tests re-patch the tag fake)."""
+    child = tmp_path / name
+    child.mkdir()
+    _backdate(child, 2.0)  # 48h old, past the 6h grace at now=_NOW
+    monkeypatch.delenv("EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H", raising=False)
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(worktree_audit, "_has_tracked_changes", lambda _p: False)
+    monkeypatch.setattr(worktree_audit, "keep_running_tag_state", _tag_false)
+    return child
+
+
+def _shield_events(
+    tmp_path: Path, rows: list, issue: int = 9021, status: str = "completed"
+) -> Path:
+    events_dir = tmp_path / "tasks" / status / str(issue)
+    events_dir.mkdir(parents=True)
+    return _events_file(events_dir, rows)
+
+
+def test_2354_followup_shield_signal_keeps_otherwise_reapable(tmp_path, monkeypatch):
+    # The task-body regression pin (#2223 shape): a fresh epm:run-launched
+    # NEWER than the latest done-transition -> KEEP at awaiting_promotion
+    # with no live process, past grace, clean tree — and independent of the
+    # branch merge state: the boom-stubbed _branch_unmerged pins that a
+    # shield keep short-circuits the expensive unmerged walk entirely.
+    # Executes the REAL _followup_shield body (real events-file read; the
+    # tag boundary faked signature-conformant).
+    child = _shield_worktree(tmp_path, monkeypatch, status="awaiting_promotion")
+    _shield_events(
+        tmp_path,
+        [
+            _event_row2354("epm:status-changed", _iso2354(_NOW - 72 * 3600.0)),
+            _event_row2354("epm:run-launched", _iso2354(_NOW - 1800.0)),
+        ],
+        status="awaiting_promotion",
+    )
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _boom_unmerged)
+    d = worktree_audit._classify(child, {9021: "awaiting_promotion"}, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert d.reason.startswith(_SHIELD)
+    assert "epm:run-launched newer than latest done-transition" in d.reason
+
+
+def test_2354_followup_shield_keep_running_tag_keeps(tmp_path, monkeypatch):
+    # Tag arm: keeps BEFORE any events read (no events file exists here) and
+    # before the unmerged walk.
+    child = _shield_worktree(tmp_path, monkeypatch)
+    monkeypatch.setattr(worktree_audit, "keep_running_tag_state", _tag_true)
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _boom_unmerged)
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert d.reason == f"{_SHIELD}: keep-running tag set"
+
+
+def test_2354_followup_shield_unknowable_tag_keeps(tmp_path, monkeypatch):
+    # Tri-state None (registry corruption / branch-guard error) keeps with
+    # its OWN fail-toward-keep reason, never collapsed to falsy.
+    child = _shield_worktree(tmp_path, monkeypatch)
+    monkeypatch.setattr(worktree_audit, "keep_running_tag_state", _tag_none)
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _boom_unmerged)
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert d.reason == f"{_SHIELD_UNKNOWN}: keep-running tag state unknowable"
+
+
+def test_2354_followup_signal_older_than_done_transition_reapable(tmp_path, monkeypatch):
+    # Settled business: signal OLDER than the latest done-transition does
+    # NOT keep — the worktree stays reapable (today's remove path).
+    child = _shield_worktree(tmp_path, monkeypatch)
+    _shield_events(
+        tmp_path,
+        [
+            _event_row2354("epm:run-launched", _iso2354(_NOW - 7200.0)),
+            _event_row2354("epm:status-changed", _iso2354(_NOW - 3600.0)),
+        ],
+    )
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", lambda *_a, **_k: (False, "clean"))
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is True
+    assert d.reason == "idle and reapable (status=completed)"
+
+
+def test_2354_followup_signal_over_age_ceiling_reapable(tmp_path, monkeypatch):
+    # Age-bound arm (acceptance 4): a signal newer than the done-transition
+    # but OLDER than the 168h ceiling does not keep — a terminal-parent
+    # inline round posts no done-transition after its last epm:run-launched,
+    # so an unbounded signal arm would immortalize the worktree. Signal 8d
+    # old, done-transition 30d old, status completed -> remove=True.
+    child = _shield_worktree(tmp_path, monkeypatch)
+    _shield_events(
+        tmp_path,
+        [
+            _event_row2354("epm:status-changed", _iso2354(_NOW - 30 * 86400.0)),
+            _event_row2354("epm:run-launched", _iso2354(_NOW - 8 * 86400.0)),
+        ],
+    )
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", lambda *_a, **_k: (False, "clean"))
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is True
+    assert d.reason == "idle and reapable (status=completed)"
+    # ... while the keep-running TAG still keeps at ANY age (unbounded).
+    monkeypatch.setattr(worktree_audit, "keep_running_tag_state", _tag_true)
+    d2 = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d2.remove is False
+    assert d2.reason == f"{_SHIELD}: keep-running tag set"
+
+
+def test_2354_naive_signal_ts_contributes_no_evidence_reap_directed(tmp_path, monkeypatch):
+    # Deliberate degradation pin: a NAIVE (tz-less) signal ts contributes NO
+    # evidence (_aware_epoch returns None), so the shield reads settled and
+    # the worktree stays reapable — a recorded choice, not an accident.
+    child = _shield_worktree(tmp_path, monkeypatch)
+    naive_fresh = datetime.fromtimestamp(_NOW - 1800.0, tz=UTC).strftime("%Y-%m-%dT%H:%M:%S")
+    _shield_events(
+        tmp_path,
+        [
+            _event_row2354("epm:status-changed", _iso2354(_NOW - 72 * 3600.0)),
+            _event_row2354("epm:run-launched", naive_fresh),  # naive: no tz
+        ],
+    )
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", lambda *_a, **_k: (False, "clean"))
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is True
+    assert d.reason == "idle and reapable (status=completed)"
+
+
+def test_2354_followup_shield_orphan_and_nonissue_unchanged(tmp_path, monkeypatch):
+    # (a) Pure probe: a non-issue name is never shielded.
+    monkeypatch.setattr(worktree_audit, "keep_running_tag_state", _tag_false)
+    assert worktree_audit._followup_shield("agent-abc123", {}, now=_NOW) == (False, "")
+    # (b) Orphan issue (task folder gone): _issue_events_path returns None ->
+    # no signal evidence; keep_running_tag_state returns False for a missing
+    # task (its documented contract, faked here) -> no shield, nothing
+    # becomes immortal.
+    verdict, detail = worktree_audit._followup_shield("issue-9021", {}, now=_NOW)
+    assert verdict is False
+    assert "no events file" in detail
+    # (c) Non-issue names never probe the shield through _classify — the arm
+    # is issue-name-gated (byte-unchanged behavior). The boom stub is
+    # installed AFTER the direct probes above.
+    child = tmp_path / "agent-abc123"
+    child.mkdir()
+    _backdate(child, 2.0)
+    monkeypatch.setattr(worktree_audit, "_has_tracked_changes", lambda _p: False)
+
+    def _boom_shield(*_a, **_k):
+        raise AssertionError("shield must not run for agent-/wf- worktrees")
+
+    monkeypatch.setattr(worktree_audit, "_followup_shield", _boom_shield)
+    d = worktree_audit._classify(child, {}, {}, 6.0, _NOW)
+    assert d.remove is True
+
+
+def test_2354_followup_kind_sets_match_watcher():
+    # Anti-drift pin (acceptance 6): the audit's mirrored kind sets MUST
+    # equal the watcher's canonical session-reconcile sets. Test-time import
+    # only — the audit itself never imports the watcher at runtime.
+    scripts = Path(__file__).resolve().parent.parent / "scripts"
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
+    import autonomous_session_watch as asw
+
+    assert worktree_audit._FOLLOWUP_SIGNAL_KINDS == asw._SESSION_FOLLOWUP_SIGNAL_KINDS
+    assert worktree_audit._FOLLOWUP_DONE_TRANSITION_KINDS == asw._SESSION_DONE_TRANSITION_KINDS
+
+
+def test_2354_followup_shield_blocks_remediation_removal(tmp_path, monkeypatch):
+    # Acceptance 7: a shield-active worktree can enter remediation via a
+    # live orphan-codex holder; the fresh re-derivation must refuse the
+    # post-kill removal (and short-circuit the unmerged walk).
+    child = _remediation_env(tmp_path, monkeypatch)
+    monkeypatch.setattr(worktree_audit, "keep_running_tag_state", _tag_true)
+    holder_snapshots = iter([{"issue-9021": [(4242, "codex app-server --port 1")]}, {}])
+    monkeypatch.setattr(
+        worktree_audit, "_live_worktree_holders", lambda _rel: next(holder_snapshots)
+    )
+    monkeypatch.setattr(worktree_audit, "_kill_orphan_pids", lambda pids: (list(pids), []))
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _boom_unmerged)
+    d = worktree_audit._execute_remediation(
+        child, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+    )
+    assert d.remove is False
+    assert d.reason == f"became unsafe mid-audit: {_SHIELD}: keep-running tag set"
+
+
+def test_2354_shield_keep_is_not_remediable():
+    # _remediation_kind keys on the exact live-process reason / the
+    # tracked-changes substring, so a shield keep is structurally
+    # un-remediable (plain keep; venv-arm-eligible like the #2246 reasons).
+    d = Decision("issue-9021", False, f"{_SHIELD}: epm:run-launched newer (0.5h old)")
+    assert worktree_audit._remediation_kind("issue-9021", d, "completed", [], "/x") is None
+    d2 = Decision("issue-9021", False, f"{_SHIELD_UNKNOWN}: keep-running tag state unknowable")
+    assert worktree_audit._remediation_kind("issue-9021", d2, "completed", [], "/x") is None
+
+
+def test_2354_should_remove_shield_tri_state_cells():
+    kw = dict(status="completed", is_live=False, age_hours=999, has_tracked_changes=False)
+    d_true = should_remove("issue-9021", followup_shield=True, **kw)
+    assert not d_true.remove
+    assert d_true.reason == _SHIELD
+    d_none = should_remove("issue-9021", followup_shield=None, **kw)
+    assert not d_none.remove
+    assert d_none.reason == _SHIELD_UNKNOWN
+    # False AND the omitted default are byte-identical to today's remove path.
+    d_false = should_remove("issue-9021", followup_shield=False, **kw)
+    d_default = should_remove("issue-9021", **kw)
+    assert d_false.remove and d_default.remove
+    assert d_false.reason == d_default.reason == "idle and reapable (status=completed)"
+
+
+def test_2354_should_remove_shield_guard_ordering():
+    kw = dict(is_live=False, age_hours=999, has_tracked_changes=False)
+    # Placement pin 1: the status guard beats the shield (an in-flight
+    # status keeps with its OWN reason first).
+    d = should_remove("issue-9021", status="running", followup_shield=True, **kw)
+    assert not d.remove
+    assert d.reason == "issue status not reapable (running)"
+    # Placement pin 2: the shield beats the unmerged guard (both keep; the
+    # shield reason is reported).
+    d2 = should_remove(
+        "issue-9021", status="completed", followup_shield=True, branch_unmerged=True, **kw
+    )
+    assert d2.reason == _SHIELD
+    d3 = should_remove(
+        "issue-9021", status="completed", followup_shield=None, branch_unmerged=True, **kw
+    )
+    assert d3.reason == _SHIELD_UNKNOWN
+
+
+def test_2354_shield_max_age_env_override(monkeypatch):
+    monkeypatch.delenv("EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H", raising=False)
+    assert worktree_audit._followup_shield_max_age_h() == 168.0
+    monkeypatch.setenv("EPM_WORKTREE_FOLLOWUP_SHIELD_MAX_AGE_H", "240")
+    assert worktree_audit._followup_shield_max_age_h() == 240.0
