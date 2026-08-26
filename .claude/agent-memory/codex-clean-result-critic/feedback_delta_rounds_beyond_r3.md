@@ -116,6 +116,27 @@ compose time and pass the /tmp path with a blob-identity attestation —
 the sandbox may deny git, and a delta commit that is ancestor-of-worktree
 + on origin/issue-<N> but NOT yet on origin/main is the NORMAL pre-merge
 state: attest it so the twin doesn't FAIL footer-link liveness on it.
+
+**Targeted-fix re-gate after a FAIL+FAIL union (confirmed #2378 r6,
+2026-08-25):** no reconciler exists — the two critics' fix UNION (applied
+by the analyzer as an interpretation vN note) IS the round's adjudication
+standard. Compose shape: (1) the output template's "### Delta
+verification" becomes "### Fix verification (round N)" — one line per
+union fix + a delta-confinement line; (2) the COMPOSER DELTA DIFF
+brackets two `set-body` commits (r-1-reviewed body -> corrected body) and
+carries NO lifecycle hunks — attest that explicitly; (3) analyzer-
+addressed concerns from round r-1 are ABSENT from the open-only envelope
+— instruct that fix verification IS the discharge re-adjudication
+(re-persist the SAME kebab-case id on NOT-VERIFIED, never a new id);
+(4) verify each expected corrected value against the pinned artifacts at
+compose time and quote the ground truth in the scope block (screen/
+confirm n_pairs, cap_hit_fractions cells); (5) when one union critic's
+SUGGESTED edit was stricter than the binding finding (Codex r5 suggested
+bold + <=30 words; the finding's grounds were "does not lead with or
+bold"), scope the fix bar to the FINDING's grounds and name the
+not-a-bar residue (bullet length = acknowledged check-70 WARN class) so
+the twin doesn't FAIL an applied fix on the suggestion's extras.
+
 / spec-breaking; round-N quoting rule for applied/absent claims) — but when
 the brief carries a FULL focus-question set rather than a narrow delta (e.g.
 #823 r8 fold consolidation), compose the full 15-lens review with the focus
