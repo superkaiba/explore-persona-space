@@ -1,6 +1,7 @@
 ---
-title: 'Turn-averaged SAE feature predictability: Der et al. replication, category-level
-  map reads, and a partialed covariate ladder'
+title: Firing activity dominates per-feature map predictability of turn-averaged SAE
+  features, with schema category the strongest surviving content-level covariate (MODERATE
+  confidence)
 kind: experiment
 tags:
 - trigger-dense
