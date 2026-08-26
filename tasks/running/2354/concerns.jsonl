@@ -1,0 +1,1 @@
+{"ts": "2026-08-26T05:06:52Z", "event": "raised", "concern_id": "followup-probe-fail-closed", "severity": "BLOCKER", "summary": "Probe/read/schema/config failures can reap active worktrees or abort the fleet sweep instead of returning the unknown keep verdict.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
