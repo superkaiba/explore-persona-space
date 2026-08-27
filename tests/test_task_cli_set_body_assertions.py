@@ -186,6 +186,7 @@ def _set_body_namespace(**overrides) -> argparse.Namespace:
         snapshot=False,
         allow_stub=True,  # skip the length guard; these tests target the goal-drop path
         allow_goal_drop=False,
+        allow_noop=False,
     )
     for key, value in overrides.items():
         setattr(ns, key, value)
@@ -209,7 +210,9 @@ def test_cli_set_body_threads_allow_goal_drop_flag(monkeypatch):
     _autospec_get_task_raising(monkeypatch)
     ns = _set_body_namespace(allow_goal_drop=True)
     task_cli.cmd_set_body(ns)
-    stub.assert_called_once_with(ns.number, "x", snapshot_original=False, allow_goal_drop=True)
+    stub.assert_called_once_with(
+        ns.number, "x", snapshot_original=False, allow_goal_drop=True, allow_noop=False
+    )
 
 
 def test_cli_set_body_goal_drop_refusal_is_clean_systemexit(monkeypatch):
@@ -245,3 +248,98 @@ def test_cli_set_body_parser_registers_allow_goal_drop(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, "argv", ["task.py", "set-body", "1", "--file", str(body_file)])
     task_cli.main()
     assert captured["args"].allow_goal_drop is False
+
+
+# ─── Byte-identical no-op guard: CLI threading (incident #2333) ─────────────
+#
+# The guard itself lives in the library (`task_workflow.set_body`, covered by
+# tests/test_task_workflow.py — the real body is executed there, so the
+# seam-stub obligation is satisfied); these tests pin the CLI layer: flag
+# threading through `cmd_set_body`, the clean SystemExit on refusal, the REAL
+# argparse registration of `--allow-noop`, and the task_state shim's
+# mechanical-writer `allow_noop=True` threading.
+
+
+def test_cli_set_body_threads_allow_noop_flag(monkeypatch):
+    """`cmd_set_body` forwards `allow_noop` to the library `set_body`."""
+    stub = mock.create_autospec(task_cli.set_body)
+    monkeypatch.setattr(task_cli, "set_body", stub)
+    _autospec_get_task_raising(monkeypatch)
+    ns = _set_body_namespace(allow_noop=True)
+    task_cli.cmd_set_body(ns)
+    stub.assert_called_once_with(
+        ns.number, "x", snapshot_original=False, allow_goal_drop=False, allow_noop=True
+    )
+
+
+def test_cli_set_body_noop_refusal_is_clean_systemexit(monkeypatch):
+    """A `SetBodyNoOpError` from the library surfaces as a clean SystemExit
+    carrying the refusal message (no raw traceback path) — the same style
+    as the GoalH2DropError refusal above."""
+    refusal = task_cli.SetBodyNoOpError(
+        "set-body refused for task #1: the body handed to set-body does not "
+        "differ from the current body.md (incident #2333); pass "
+        "allow_noop=True / --allow-noop for a deliberate re-application."
+    )
+    stub = mock.create_autospec(task_cli.set_body, side_effect=refusal)
+    monkeypatch.setattr(task_cli, "set_body", stub)
+    _autospec_get_task_raising(monkeypatch)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_set_body(_set_body_namespace())
+    assert str(refusal) in str(exc.value)
+    assert exc.value.__cause__ is refusal
+
+
+def test_cli_help_lists_allow_noop_flag():
+    """`task.py set-body --help` advertises the `--allow-noop` escape and
+    names the incident it guards against."""
+    rc, stdout, _ = _run_cli("set-body", "--help")
+    assert rc == 0
+    assert "--allow-noop" in stdout
+    assert "#2333" in stdout
+
+
+def test_cli_set_body_parser_registers_allow_noop(monkeypatch, tmp_path):
+    """Parse through the REAL argparse parser `main()` builds — a forgotten
+    subparser registration would pass the namespace-built tests above and
+    crash production on `args.allow_noop` (AttributeError)."""
+    captured: dict = {}
+    monkeypatch.setattr(task_cli, "cmd_set_body", lambda args: captured.update(args=args))
+    body_file = tmp_path / "b.md"
+    body_file.write_text("x")
+    monkeypatch.setattr(
+        sys, "argv", ["task.py", "set-body", "1", "--file", str(body_file), "--allow-noop"]
+    )
+    task_cli.main()
+    assert captured["args"].allow_noop is True
+    monkeypatch.setattr(sys, "argv", ["task.py", "set-body", "1", "--file", str(body_file)])
+    task_cli.main()
+    assert captured["args"].allow_noop is False
+
+
+def test_task_state_patch_threads_allow_noop(monkeypatch):
+    """AC4: the sagan-compat shim (`scripts/task_state.py`) serves mechanical
+    state-sync writers (post_step_completed / pod_watch /
+    recent_clean_results) — its body patch threads `allow_noop=True`
+    (idempotent re-application semantics, not the #2333 phantom-edit
+    channel)."""
+    ts_script = Path(__file__).resolve().parents[1] / "scripts" / "task_state.py"
+    ts_spec = importlib.util.spec_from_file_location("task_state_under_test", ts_script)
+    assert ts_spec is not None and ts_spec.loader is not None
+    task_state = importlib.util.module_from_spec(ts_spec)
+    sys.modules["task_state_under_test"] = task_state
+    try:
+        ts_spec.loader.exec_module(task_state)
+        stub = mock.create_autospec(task_state.tw.set_body)
+        monkeypatch.setattr(task_state.tw, "set_body", stub)
+        # The terminal `get_experiment(n)` re-read is out of scope here —
+        # autospec it so the test needs no real task on disk.
+        monkeypatch.setattr(
+            task_state,
+            "get_experiment",
+            mock.create_autospec(task_state.get_experiment, return_value={}),
+        )
+        task_state.patch_experiment(123, body="some body")
+        stub.assert_called_once_with(123, "some body", allow_noop=True)
+    finally:
+        sys.modules.pop("task_state_under_test", None)
