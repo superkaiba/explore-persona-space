@@ -46,6 +46,12 @@ from explore_persona_space.analysis.paper_plots import paper_palette, savefig_pa
 FIG_DIR = _REPO_ROOT / "figures" / "issue_2588"
 
 ARM_LABEL = {"a": "no-think read (prompt end)", "b": "thinking read (end of CoT)"}
+POS_LABEL = {
+    "prompt_last": "prompt-end read",
+    "cot_boundary": "end-of-CoT read",
+    "pre_think": "pre-think read",
+}
+REFERENCE_LABEL = "repeat-draw reference (cal.)"  # repeatability comparator, NOT a bound
 MODEL_LABEL = {
     "q35_0p8b": "Qwen3.5-0.8B",
     "q35_2b": "Qwen3.5-2B",
@@ -91,11 +97,45 @@ def _trend_points(summary: dict) -> list[tuple[str, str, float, dict]]:
     return pts
 
 
+SHORT_LABEL = {
+    "q35_0p8b": "Qwen3.5 0.8B",
+    "q35_2b": "Qwen3.5 2B",
+    "q35_4b": "Qwen3.5 4B",
+    "q35_9b": "Qwen3.5 9B",
+    "q35_27b": "Qwen3.5 27B",
+    "q36_27b": "Qwen3.6 27B",
+    "q38_27b": "Qwen3.8 27B",
+    "o3_7b_i": "OLMo 7B Instruct",
+    "o3_7b_t": "OLMo 7B Think",
+    "o31_32b_i": "OLMo 32B Instruct",
+    "o31_32b_t": "OLMo 32B Think",
+    "q25_7b": "Qwen2.5 7B",
+}
+
+
 def _point_label(mk: str, arm: str) -> str:
-    lbl = MODEL_LABEL[mk]
+    lbl = SHORT_LABEL[mk]
     if arm == "a" and PC.PANEL[mk].banked_arm_a:
         lbl += " (banked gen)"  # banked-generation seam marker (plan §6 hero register)
     return lbl
+
+
+def _annotate_staggered(ax, pts: list[tuple[float, float, str]]) -> None:
+    """Point labels with per-x-cluster left/right alternation (declutter)."""
+    from collections import defaultdict
+
+    groups: dict[float, list[tuple[float, float, str]]] = defaultdict(list)
+    for x, y, lbl in pts:
+        groups[round(x / 4.0)].append((x, y, lbl))
+    two_side = [(5, 4, "left"), (-5, 4, "right"), (5, -10, "left"), (-5, -10, "right")]
+    right_only = [(5, 4, "left"), (5, -10, "left"), (5, 12, "left"), (5, -18, "left")]
+    for g in groups.values():
+        g.sort(key=lambda t: -t[1])
+        # leftmost x-clusters: leftward labels would run off the axis edge
+        offsets = right_only if min(x for x, _, _ in g) < 10 else two_side
+        for k, (x, y, lbl) in enumerate(g):
+            dx, dy, ha = offsets[k % 4]
+            ax.annotate(lbl, (x, y), fontsize=6, xytext=(dx, dy), textcoords="offset points", ha=ha)
 
 
 def _scatter_point(ax, x: float, y: float, color, aa_measured: bool) -> None:
@@ -119,6 +159,7 @@ def fig_capability_trend(summary: dict, out_dir: Path) -> None:
         band = 2.0 * float(np.median(null_sds))
         ax.axhspan(-band, band, color="grey", alpha=0.15, lw=0, label="null ±2·median SD")
     ax.axhline(0.0, color="grey", lw=0.8)
+    labels_left: list[tuple[float, float, str]] = []
     for mk, arm, pin, rec in pts:
         aa_measured = PC.AA_PIN[mk][2] == "measured"
         y = rec["acc1_cos_calibrated"]
@@ -134,12 +175,11 @@ def fig_capability_trend(summary: dict, out_dir: Path) -> None:
                 alpha=0.6,
                 zorder=2,
             )
-        ax.annotate(
-            _point_label(mk, arm), (pin, y), fontsize=7, xytext=(4, 4), textcoords="offset points"
-        )
+        labels_left.append((pin, y, _point_label(mk, arm)))
+    _annotate_staggered(ax, labels_left)
     for arm in ("a", "b"):
         ax.scatter([], [], color=colors[arm], label=ARM_LABEL[arm])
-    ax.scatter([], [], marker="_", s=110, color="grey", label="repeat-draw ceiling (cal.)")
+    ax.scatter([], [], marker="_", s=110, color="grey", label=REFERENCE_LABEL)
     ax.scatter([], [], facecolors="none", edgecolors="grey", s=36, label="AA estimated (open)")
     ax.set_xlabel("Artificial Analysis capability index")
     ax.set_ylabel("Calibrated retrieval acc@1 (cosine, excess over null)")
@@ -147,6 +187,7 @@ def fig_capability_trend(summary: dict, out_dir: Path) -> None:
 
     # Right panel: length-residualized acc@1 (the resid read BESIDE the primary).
     resid = summary.get("resid", {})
+    labels_right: list[tuple[float, float, str]] = []
     for mk, arm, pin, rec in pts:
         rrec = resid.get(rec["map_id"])
         if rrec is None or rrec.get("resid_acc1_cos") is None:
@@ -154,13 +195,8 @@ def fig_capability_trend(summary: dict, out_dir: Path) -> None:
         _scatter_point(
             axr, pin, rrec["resid_acc1_cos"], colors[arm], PC.AA_PIN[mk][2] == "measured"
         )
-        axr.annotate(
-            _point_label(mk, arm),
-            (pin, rrec["resid_acc1_cos"]),
-            fontsize=7,
-            xytext=(4, 4),
-            textcoords="offset points",
-        )
+        labels_right.append((pin, rrec["resid_acc1_cos"], _point_label(mk, arm)))
+    _annotate_staggered(axr, labels_right)
     axr.set_xlabel("Artificial Analysis capability index")
     axr.set_ylabel("Length-residualized retrieval acc@1 (cosine)")
     savefig_paper(fig, "c1_capability_trend", dir=out_dir)
@@ -198,20 +234,34 @@ def fig_h2_paired_deltas(summary: dict, out_dir: Path) -> None:
     shifted 95% paired-bootstrap CIs; calibrated stays a trend.py sensitivity."""
     h2 = summary["h2_qwen_thinking"]
     pairs = {k: v for k, v in h2["pairs"].items() if isinstance(v, dict)}
+    qcl = summary.get("gpqa_qclustered", {}).get("pairs", {})
     names = list(pairs)
-    surfaces = [("gap_generic_raw", "generic (test_1000)"), ("gap_gpqa_raw", "GPQA transfer")]
+    gpqa_label = "GPQA transfer (question-clustered CI)" if qcl else "GPQA transfer (row-level CI)"
+    surfaces = [
+        ("gap_generic_raw", "generic corpus (held-out user prompts)"),
+        ("gap_gpqa_raw", gpqa_label),
+    ]
     colors = dict(zip([s for s, _ in surfaces], paper_palette(2), strict=True))
-    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    fig, ax = plt.subplots(figsize=(8.0, 4.4))
+
+    def _ci(k: str, field: str) -> list[float]:
+        # GPQA CIs: prefer the question-clustered recompute (rollouts of one
+        # question travel together); generic prompts are independent rows.
+        if field == "gap_gpqa_raw" and k in qcl:
+            return qcl[k]["gap_gpqa_raw_ci95_qclustered"]
+        return pairs[k][f"{field}_ci95"]
+
     for j, (field, label) in enumerate(surfaces):
         xs = [i + (0.18 if j else -0.18) for i in range(len(names))]
         ys = [pairs[k][field] for k in names]
-        los = [max(0.0, y - pairs[k][f"{field}_ci95"][0]) for y, k in zip(ys, names, strict=True)]
-        his = [max(0.0, pairs[k][f"{field}_ci95"][1] - y) for y, k in zip(ys, names, strict=True)]
+        los = [max(0.0, y - _ci(k, field)[0]) for y, k in zip(ys, names, strict=True)]
+        his = [max(0.0, _ci(k, field)[1] - y) for y, k in zip(ys, names, strict=True)]
         ax.errorbar(xs, ys, yerr=[los, his], fmt="o", color=colors[field], capsize=3, label=label)
     ax.axhline(0.0, color="grey", lw=0.8)
     ax.set_xticks(
-        range(len(names)), [MODEL_LABEL[k] for k in names], rotation=30, ha="right", fontsize=8
+        range(len(names)), [SHORT_LABEL[k] for k in names], rotation=20, ha="right", fontsize=8
     )
+    ax.set_xlim(-0.7, len(names) - 0.3)
     ax.set_ylabel("Raw Δ acc@1 (end-of-CoT − prompt-end, shared rows)")
     ax.legend(frameon=False, fontsize=8)
     savefig_paper(fig, "c3_h2_paired_deltas", dir=out_dir)
@@ -220,19 +270,27 @@ def fig_h2_paired_deltas(summary: dict, out_dir: Path) -> None:
 
 def fig_gpqa_transfer(summary: dict, out_dir: Path) -> None:
     recs = summary["gpqa_transfer"]
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    fig, ax = plt.subplots(figsize=(9.2, 6.0))
     names, vals, chances = [], [], []
+    pos_short = {
+        "prompt_last": "prompt-end",
+        "cot_boundary": "end-of-CoT",
+        "pre_think": "pre-think",
+    }
     for map_id in sorted(recs):
         r = recs[map_id]
-        names.append(f"{MODEL_LABEL[_model_of(map_id)]} ({_pos_of(map_id)})")
+        names.append(f"{SHORT_LABEL[_model_of(map_id)]} · {pos_short[_pos_of(map_id)]}")
         vals.append(r["same_question_acc1_cos"])
         chances.append(r["same_question_chance"])
-    xs = range(len(names))
-    ax.bar(xs, vals, color=paper_palette(1)[0], label="same-question acc@1 (transfer)")
-    ax.plot(xs, chances, "k--", lw=0.9, label="chance")
-    ax.set_xticks(xs, names, rotation=40, ha="right", fontsize=7)
-    ax.set_ylabel("GPQA same-question retrieval acc@1 (cosine)")
-    ax.legend(frameon=False, fontsize=8)
+    ys = range(len(names))
+    ax.barh(ys, vals, color=paper_palette(1)[0], label="same-question acc@1 (transfer)")
+    ax.plot(chances, ys, "k--", lw=0.9, label="chance")
+    ax.set_yticks(ys, names, fontsize=7)
+    ax.set_ylim(len(names) - 0.3, -0.7)  # top-to-bottom in sorted map order
+    ax.set_xlabel("GPQA same-question retrieval acc@1 (cosine)")
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    fig.set_constrained_layout(False)
+    fig.subplots_adjust(left=0.26, bottom=0.09, right=0.97, top=0.97)
     savefig_paper(fig, "c4_gpqa_transfer", dir=out_dir)
     plt.close(fig)
 
@@ -268,7 +326,7 @@ def fig_column_verdict(summary: dict, out_dir: Path, fits_dir: Path) -> None:
             edgecolors=colors[arm],
             linewidths=1.2,
         )
-    ax.scatter([], [], marker="_", s=140, color="grey", label="repeat-draw ceiling (cal.)")
+    ax.scatter([], [], marker="_", s=140, color="grey", label=REFERENCE_LABEL)
     ax.scatter(
         [],
         [],

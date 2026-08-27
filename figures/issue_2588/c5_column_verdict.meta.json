@@ -1,13 +1,27 @@
 {
-  "commit": "b6dc2f6f+dirty",
-  "render_id": "c41e4810cad14877",
-  "git_commit": "b6dc2f6f88346b2e59393687f2c90feccced5238",
+  "commit": "fd946ccd+dirty",
+  "render_id": "584d9c96a183459d",
+  "git_commit": "fd946ccdcf97913daa5f2c8610eb44e8da659d17",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2588_figures.py"
+    "eval_results/issue_2588/trend_summary.json",
+    "figures/issue_2588/c1_capability_trend.meta.json",
+    "figures/issue_2588/c1_capability_trend.pdf",
+    "figures/issue_2588/c1_capability_trend.png",
+    "figures/issue_2588/c3_h2_paired_deltas.meta.json",
+    "figures/issue_2588/c3_h2_paired_deltas.pdf",
+    "figures/issue_2588/c3_h2_paired_deltas.png",
+    "figures/issue_2588/c4_gpqa_transfer.meta.json",
+    "figures/issue_2588/c4_gpqa_transfer.pdf",
+    "figures/issue_2588/c4_gpqa_transfer.png",
+    "figures/issue_2588/c5_column_verdict.meta.json",
+    "figures/issue_2588/c5_column_verdict.pdf",
+    "figures/issue_2588/c5_column_verdict.png",
+    "scripts/issue2588_figures.py",
+    "scripts/issue2588_trend.py"
   ],
   "git_argv0_state": null,
-  "created": "2026-08-27T16:46:34Z",
+  "created": "2026-08-27T17:30:16Z",
   "figsize": [
     11.5,
     4.4
@@ -296,7 +310,7 @@
         "legend_labels": [
           "no-think read (prompt end)",
           "thinking read (end of CoT)",
-          "repeat-draw ceiling (cal.)",
+          "repeat-draw reference (cal.)",
           "length-residualized"
         ],
         "xticklabels": [
@@ -347,7 +361,7 @@
     "series": [
       "no-think read (prompt end)",
       "thinking read (end of CoT)",
-      "repeat-draw ceiling (cal.)",
+      "repeat-draw reference (cal.)",
       "length-residualized",
       "thinking read (end of CoT) (drop-degraded)"
     ]

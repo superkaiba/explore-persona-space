@@ -1,21 +1,28 @@
 {
-  "commit": "07d4002c",
-  "render_id": "0d5ee84f24a7426e",
-  "git_commit": "07d4002ccd13d40844bac5694509eba37db6fefe",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2588_figures.py",
-  "created": "2026-08-27T16:30:27Z",
+  "commit": "fd946ccd+dirty",
+  "render_id": "87b82c36cc8b4d91",
+  "git_commit": "fd946ccdcf97913daa5f2c8610eb44e8da659d17",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2588/trend_summary.json",
+    "figures/issue_2588/c1_capability_trend.meta.json",
+    "figures/issue_2588/c1_capability_trend.pdf",
+    "figures/issue_2588/c1_capability_trend.png",
+    "scripts/issue2588_figures.py",
+    "scripts/issue2588_trend.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-27T17:25:13Z",
   "figsize": [
-    7.4,
-    4.2
+    8.0,
+    4.4
   ],
   "points": [
     {
       "x": -0.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.1108786610878661,
       "error": 0.04679664841084061,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -23,7 +30,7 @@
       "x": 0.8200000000000001,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.031928480204342274,
       "error": 0.03689658260223824,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -31,7 +38,7 @@
       "x": 1.82,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.10434782608695652,
       "error": 0.029982279639441875,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -39,7 +46,7 @@
       "x": 2.82,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0934873949579832,
       "error": 0.030471078332826012,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -47,7 +54,7 @@
       "x": 3.82,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0,
       "error": 0.02681396033713148,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -55,7 +62,7 @@
       "x": 4.82,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06619144602851323,
       "error": 0.030375332902602376,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -63,63 +70,63 @@
       "x": 5.82,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.05944055944055944,
       "error": 0.031309575962695096,
-      "series": "generic (test_1000)",
+      "series": "generic corpus (held-out user prompts)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "x": 0.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.01818181818181818,
-      "error": 0.14587264150943396,
-      "series": "GPQA transfer",
+      "error": 0.23628091397849454,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 1.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.03125,
-      "error": 0.07886213169145942,
-      "series": "GPQA transfer",
+      "error": 0.14913344866812017,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 2.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07782101167315175,
-      "error": 0.055093306120977036,
-      "series": "GPQA transfer",
+      "error": 0.11687303869639833,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 3.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.05080213903743316,
-      "error": 0.045389091067420846,
-      "series": "GPQA transfer",
+      "error": 0.09602053785052804,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 4.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07399103139013453,
-      "error": 0.04050816879895402,
-      "series": "GPQA transfer",
+      "error": 0.08249861246427753,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 5.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06300813008130081,
-      "error": 0.034975558160634856,
-      "series": "GPQA transfer",
+      "error": 0.0631204117459304,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
     {
       "x": 6.18,
       "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.09929078014184398,
-      "error": 0.021304937831934934,
-      "series": "GPQA transfer",
+      "error": 0.049800604960646394,
+      "series": "GPQA transfer (question-clustered CI)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -293,85 +300,85 @@
     },
     {
       "x": 0.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.1667452830188679,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.25025,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 1.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.04656834940442428,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.12308441558441557,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 2.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.02238391376451078,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.038143741851368956,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 3.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.09610771581359817,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.14591242836676216,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 4.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.03547085771218145,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.006371135288811128,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 5.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.02867695663670016,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 6.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.12069087970219436,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.15253193153631603,
       "_kind": "line",
       "_group": 6
     },
     {
       "x": 0.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.125,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.22231182795698914,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 1.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.11115591397849457,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.1751824817518248,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 2.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.13257052600646485,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.1956023355414277,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 3.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.005329533678756479,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.04612864733429393,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 4.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.11648719531008948,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.15862608963974392,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 5.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.09862807295796987,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.1262408234918608,
       "_kind": "line",
       "_group": 7
     },
     {
       "x": 6.18,
-      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.07808100403832449,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.05293072161502325,
       "_kind": "line",
       "_group": 7
     }
@@ -385,34 +392,32 @@
       {
         "ylabel": "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)",
         "legend_labels": [
-          "generic (test_1000)",
-          "GPQA transfer"
+          "generic corpus (held-out user prompts)",
+          "GPQA transfer (question-clustered CI)"
         ],
         "xticklabels": [
-          "Qwen3.5-0.8B",
-          "Qwen3.5-2B",
-          "Qwen3.5-4B",
-          "Qwen3.5-9B",
-          "Qwen3.5-27B",
-          "Qwen3.6-27B",
-          "Qwen3.8-27B"
+          "Qwen3.5 0.8B",
+          "Qwen3.5 2B",
+          "Qwen3.5 4B",
+          "Qwen3.5 9B",
+          "Qwen3.5 27B",
+          "Qwen3.6 27B",
+          "Qwen3.8 27B"
         ],
         "yticklabels": [
-          "\u22120.20",
-          "\u22120.15",
-          "\u22120.10",
-          "\u22120.05",
-          "0.00",
-          "0.05",
-          "0.10",
-          "0.15",
-          "0.20"
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
         ]
       }
     ],
     "series": [
-      "generic (test_1000)",
-      "GPQA transfer"
+      "generic corpus (held-out user prompts)",
+      "GPQA transfer (question-clustered CI)"
     ]
   },
   "formats_written": [

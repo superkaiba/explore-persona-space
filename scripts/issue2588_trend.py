@@ -982,6 +982,406 @@ def _stage_judge_fallback_inputs(fits_root: Path, revision: str) -> dict[str, li
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Round-2 augmentation (interpretation-critique round 1): registered secondary
+# reads materialized into the summary artifact, question-clustered GPQA CIs,
+# the Step-3.7 language-intrusion audit, and the repeat-draw-reference
+# relabeling. Reads the EXISTING trend_summary.json and ADDS keys — never
+# recomputes or perturbs the verified round-1 fields.
+# ---------------------------------------------------------------------------
+
+_CJK_RE = None  # compiled lazily (re import stays top-level-free here)
+
+
+def _cjk_re():
+    global _CJK_RE
+    if _CJK_RE is None:
+        import re
+
+        _CJK_RE = re.compile(r"[一-鿿㐀-䶿豈-﫿぀-ヿ가-힯]")
+    return _CJK_RE
+
+
+def _cell_parsed_dir(parsed_root: Path, cell_key: str) -> Path:
+    model, arm = cell_key.rsplit("_", 1)
+    return parsed_root / PC.PANEL_PREFIX / model / ("nothink" if arm == "a" else "think") / "parsed"
+
+
+def _iter_jsonl(path: Path):
+    with path.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line:
+                yield json.loads(line)
+
+
+def _behavioral_acc(rec: dict) -> float:
+    b = rec["behavioral"]
+    return float(b.get("acc_judge_corrected", b["acc_exact_match"]))
+
+
+def augment_registered_secondary(summary: dict, fits_dir: Path, parsed_root: Path) -> dict:
+    """Materialize the three registered secondary reads (plan §5/§6) that the
+    round-1 assembly omitted: the own-GPQA-accuracy Spearman axis, the
+    measured-only AA variant (N=3, labeled underpowered), and the GPQA
+    correct/incorrect transfer split."""
+    from scipy.stats import spearmanr
+
+    pm, gt = summary["per_map"], summary["gpqa_transfer"]
+    block: dict = {}
+
+    # (i) Spearman of calibrated generic acc@1 vs own-measured GPQA accuracy.
+    arms = {
+        "a": [m for m in pm if m.endswith("_a.prompt_last")],
+        "b": [m for m in pm if m.endswith("_b.cot_boundary") or m.endswith("_b.pre_think")],
+    }
+    sp = {}
+    for arm, members in arms.items():
+        xs = [_behavioral_acc(gt[m]) for m in members]
+        ys = [pm[m]["acc1_cos_calibrated"] for m in members]
+        rho, p = spearmanr(xs, ys)
+        sp[arm] = {
+            "rho": float(rho),
+            "p": float(p),
+            "n": len(members),
+            "members": members,
+            "capability_axis": "own GPQA exact-match accuracy (judge-corrected where flagged)",
+            "note": "descriptive; fully-measured in-mode capability axis (plan §5)",
+        }
+    block["spearman_vs_own_gpqa"] = sp
+
+    # (ii) Measured-only AA variant: the exactly-three measured pins, arm-b maps
+    # (all three measured values are reasoning-mode). Registered as N=3
+    # single-mode, underpowered (plan §5).
+    measured = [
+        (mk, PC.AA_PIN[mk][0])
+        for mk in ("q35_9b", "q36_27b", "q38_27b")
+        if PC.AA_PIN[mk][2] == "measured"
+    ]
+    assert len(measured) == 3, measured
+    mo_members = [f"{mk}_b.cot_boundary" for mk, _ in measured]
+    xs = [float(aa) for _, aa in measured]
+    ys = [pm[m]["acc1_cos_calibrated"] for m in mo_members]
+    rho, p = spearmanr(xs, ys)
+    block["measured_only_aa"] = {
+        "rho": float(rho),
+        "p": float(p),
+        "n": 3,
+        "members": mo_members,
+        "acc1_cos_calibrated": ys,
+        "aa_values": xs,
+        "note": "N=3 single-mode, registered underpowered (plan §5); descriptive only",
+    }
+
+    # (iii) GPQA correct/incorrect transfer split (plan §4.2 secondary read):
+    # per-row correctness = anchored exact-match extraction on the answer span,
+    # overridden by the judge-fallback verdict where one exists; rows with no
+    # extractable letter and no judge verdict are EXCLUDED and counted.
+    split = {}
+    for ref in all_maps():
+        rec = gt.get(ref.map_id)
+        if rec is None:
+            continue
+        pd = _cell_parsed_dir(parsed_root, ref.cell_key)
+        if not pd.is_dir():
+            split[ref.map_id] = {"status": f"parsed pool not staged: {pd}"}
+            continue
+        correct_by_id: dict[str, bool] = {}
+        unparseable: set[str] = set()
+        for f in sorted(pd.glob("gpqa_s*.jsonl")):
+            for row in _iter_jsonl(f):
+                a0, a1 = row["ans_char_span"]
+                ok, letter = PC.gpqa_letter_correct(row["text"][a0:a1], row["gold"])
+                if letter is None:
+                    unparseable.add(row["row_id"])
+                else:
+                    correct_by_id[row["row_id"]] = bool(ok)
+        jv_path = fits_dir / ref.cell_key / "gpqa_judge_verdicts.json"
+        n_judge = 0
+        if jv_path.exists():
+            jv = json.loads(jv_path.read_text())["verdicts"]
+            for rid, v in jv.items():
+                if v.get("letter") and v["letter"] != "UNPARSEABLE":
+                    correct_by_id[rid] = bool(v["correct"])
+                    unparseable.discard(rid)
+                    n_judge += 1
+        perrow = json.loads((fits_dir / ref.cell_key / f"gpqa_perrow_{ref.pos}.json").read_text())
+        hits = dict(zip(perrow["row_ids"], perrow["same_q_hit"], strict=True))
+        joined = [(rid, h) for rid, h in hits.items() if rid in correct_by_id]
+        cor = [h for rid, h in joined if correct_by_id[rid]]
+        inc = [h for rid, h in joined if not correct_by_id[rid]]
+        # self-check vs the shipped behavioral aggregate (exact-match basis):
+        em_acc_recomputed = (
+            sum(correct_by_id[rid] for rid in hits if rid in correct_by_id) / len(hits)
+            if hits
+            else None
+        )
+        split[ref.map_id] = {
+            "acc1_same_q_correct_rows": (sum(cor) / len(cor)) if cor else None,
+            "n_correct_rows": len(cor),
+            "acc1_same_q_incorrect_rows": (sum(inc) / len(inc)) if inc else None,
+            "n_incorrect_rows": len(inc),
+            "n_excluded_unparseable": len([r for r in hits if r in unparseable]),
+            "n_judge_overridden": n_judge,
+            "acc_recomputed_check": em_acc_recomputed,
+            "acc_shipped": _behavioral_acc(rec),
+        }
+    block["gpqa_correct_incorrect_split"] = split
+    return block
+
+
+def augment_gpqa_qclustered(
+    summary: dict, fits_dir: Path, draws: int = 1000, seed: int = 42
+) -> dict:
+    """Question-clustered GPQA bootstrap for the 7 Qwen H2 pairs: resample
+    whole qid clusters (all seed rows of a sampled question travel together)
+    instead of correlated rollout rows. Point estimates are unchanged; the
+    row-level CIs stay in h2_qwen_thinking as the round-1 record."""
+    rng = np.random.default_rng(seed)
+    out = {}
+    for mk in QWEN_THINKING_KEYS:
+        pa = json.loads((fits_dir / f"{mk}_a" / "gpqa_perrow_prompt_last.json").read_text())
+        pb = json.loads((fits_dir / f"{mk}_b" / "gpqa_perrow_cot_boundary.json").read_text())
+        qa = dict(zip(pa["row_ids"], zip(pa["qids"], pa["same_q_hit"], strict=True), strict=True))
+        qb = dict(zip(pb["row_ids"], zip(pb["qids"], pb["same_q_hit"], strict=True), strict=True))
+        shared = sorted(set(qa) & set(qb))
+        by_q: dict[str, list[tuple[int, int]]] = {}
+        for rid in shared:
+            (q, ha), (_, hb) = qa[rid], qb[rid]
+            by_q.setdefault(q, []).append((int(ha), int(hb)))
+        qids = sorted(by_q)
+        gap_pt = float(
+            np.mean([hb for rows in by_q.values() for _, hb in rows])
+            - np.mean([ha for rows in by_q.values() for ha, _ in rows])
+        )
+        gaps = np.empty(draws)
+        for d in range(draws):
+            pick = rng.choice(len(qids), size=len(qids), replace=True)
+            rows = [r for i in pick for r in by_q[qids[i]]]
+            arr = np.asarray(rows, dtype=float)
+            gaps[d] = arr[:, 1].mean() - arr[:, 0].mean()
+        # generic prompt-level component for the surface delta (independent draws)
+        ga = json.loads((fits_dir / f"{mk}_a" / "perrow_prompt_last.json").read_text())
+        gb = json.loads((fits_dir / f"{mk}_b" / "perrow_cot_boundary.json").read_text())
+        ha = dict(zip(ga["row_ids"], ga["hit1_cos"], strict=True))
+        hb = dict(zip(gb["row_ids"], gb["hit1_cos"], strict=True))
+        gshared = sorted(set(ha) & set(hb))
+        gdiff = np.asarray([hb[r] - ha[r] for r in gshared], dtype=float)
+        gidx = rng.integers(0, len(gdiff), size=(draws, len(gdiff)))
+        ggaps = gdiff[gidx].mean(axis=1)
+        surface = gaps - ggaps
+        hit_qs_a = sorted({q for rid in shared if qa[rid][1] for q in [qa[rid][0]]})
+        hit_qs_b = sorted({q for rid in shared if qb[rid][1] for q in [qb[rid][0]]})
+        out[mk] = {
+            "n_shared_rows": len(shared),
+            "n_distinct_questions_shared": len(qids),
+            "gap_gpqa_raw_point": gap_pt,
+            "gap_gpqa_raw_ci95_qclustered": [
+                float(np.percentile(gaps, 2.5)),
+                float(np.percentile(gaps, 97.5)),
+            ],
+            "surface_delta_ci95_qclustered": [
+                float(np.percentile(surface, 2.5)),
+                float(np.percentile(surface, 97.5)),
+            ],
+            "n_distinct_hit_questions_arm_a": len(hit_qs_a),
+            "n_distinct_hit_questions_arm_b": len(hit_qs_b),
+        }
+    return {
+        "pairs": out,
+        "note": (
+            "qid-clustered bootstrap (sampled questions carry all their rollout rows; "
+            f"{draws} draws, seed {seed}); generic component resamples independent prompts. "
+            "Row-level CIs in h2_qwen_thinking treat correlated rollouts as independent "
+            "and can understate widths."
+        ),
+    }
+
+
+def _span_has_cjk(text: str, span) -> bool:
+    a, b = span
+    return bool(_cjk_re().search(text[a:b]))
+
+
+def augment_language_intrusion(summary: dict, fits_dir: Path, parsed_root: Path) -> dict:
+    """Step-3.7 language-intrusion audit over the staged parsed pools
+    (Qwen-family cells; OLMo cells are exempt by the non-Qwen escape but the
+    round-1 critics' advisory OLMo counts are recorded in the marker).
+
+    LMSYS is a mixed-language corpus, so the generic scan CONDITIONS on the
+    prompt: a row is intruded iff its completion matches the CJK class while
+    its prompt does not. GPQA prompts are English; the same rule applies.
+    """
+    audit: dict = {"cells": {}}
+    qwen_cells = [c for c in {r.cell_key for r in all_maps()} if c.startswith("q")]
+    for cell in sorted(qwen_cells):
+        pd = _cell_parsed_dir(parsed_root, cell)
+        rec: dict = {}
+        # generic test rows (fresh cells only; the two banked cells carry
+        # #2330 substrate — labeled residual, GPQA still scanned)
+        test_f = pd / "test_1000.jsonl"
+        if test_f.exists():
+            rows = list(_iter_jsonl(test_f))
+            intr, cjk_prompt, ans_intr = [], 0, []
+            for r in rows:
+                if _cjk_re().search(r["prompt"]):
+                    cjk_prompt += 1
+                    continue
+                if _cjk_re().search(r["text"]):
+                    intr.append(r["row_id"])
+                    if _span_has_cjk(r["text"], r["ans_char_span"]):
+                        ans_intr.append(r["row_id"])
+            rec["generic_test"] = {
+                "n_rows": len(rows),
+                "n_cjk_prompt_excluded": cjk_prompt,
+                "n_intruded": len(intr),
+                "n_intruded_answer_span": len(ans_intr),
+                "intruded_row_ids": intr,
+            }
+            pos = "prompt_last" if cell.endswith("_a") else "cot_boundary"
+            pr_path = fits_dir / cell / f"perrow_{pos}.json"
+            if pr_path.exists() and intr:
+                pr = json.loads(pr_path.read_text())
+                hits = dict(zip(pr["row_ids"], pr["hit1_cos"], strict=True))
+                in_pool = [r for r in intr if r in hits]
+                overlap = sum(hits[r] for r in in_pool)
+                n_pool = len(hits)
+                raw = sum(hits.values()) / n_pool
+                zeroed = (sum(hits.values()) - overlap) / n_pool
+                kept = {r: h for r, h in hits.items() if r not in set(in_pool)}
+                rec["generic_test"]["fired_overlap"] = int(overlap)
+                rec["generic_test"]["acc1_raw"] = raw
+                rec["generic_test"]["acc1_zeroed"] = zeroed
+                rec["generic_test"]["acc1_excluded"] = (
+                    sum(kept.values()) / len(kept) if kept else None
+                )
+        elif cell in ("q35_9b_a", "q25_7b_a"):
+            rec["generic_test"] = {
+                "status": "banked #2330 substrate — generic pool not restaged this round; "
+                "gpqa scanned below"
+            }
+        # column train pools (substrate hygiene, counts only)
+        train_f = pd / "train_10k.jsonl"
+        if train_f.exists():
+            n = intr_n = cjk_p = 0
+            for r in _iter_jsonl(train_f):
+                n += 1
+                if _cjk_re().search(r["prompt"]):
+                    cjk_p += 1
+                elif _cjk_re().search(r["text"]):
+                    intr_n += 1
+            rec["generic_train"] = {
+                "n_rows": n,
+                "n_cjk_prompt_excluded": cjk_p,
+                "n_intruded": intr_n,
+            }
+        # GPQA pools
+        gp_files = sorted(pd.glob("gpqa_s*.jsonl"))
+        if gp_files:
+            n = cjk_p = 0
+            intr = []
+            for f in gp_files:
+                for r in _iter_jsonl(f):
+                    n += 1
+                    if _cjk_re().search(r["prompt"]):
+                        cjk_p += 1
+                    elif _cjk_re().search(r["text"]):
+                        intr.append(r["row_id"])
+            rec["gpqa"] = {
+                "n_rows": n,
+                "n_cjk_prompt_excluded": cjk_p,
+                "n_intruded": len(intr),
+                "intruded_row_ids": intr[:50],
+            }
+            pos = "prompt_last" if cell.endswith("_a") else "cot_boundary"
+            gpr_path = fits_dir / cell / f"gpqa_perrow_{pos}.json"
+            if gpr_path.exists() and intr:
+                pr = json.loads(gpr_path.read_text())
+                hits = dict(zip(pr["row_ids"], pr["same_q_hit"], strict=True))
+                in_pool = [r for r in intr if r in hits]
+                overlap = sum(hits[r] for r in in_pool)
+                raw = sum(hits.values()) / len(hits)
+                zeroed = (sum(hits.values()) - overlap) / len(hits)
+                kept = {r: h for r, h in hits.items() if r not in set(in_pool)}
+                rec["gpqa"]["fired_overlap"] = int(overlap)
+                rec["gpqa"]["acc1_raw"] = raw
+                rec["gpqa"]["acc1_zeroed"] = zeroed
+                rec["gpqa"]["acc1_excluded"] = sum(kept.values()) / len(kept) if kept else None
+        audit["cells"][cell] = rec
+
+    # Endpoint-contrast recount (arm a, the headline): shared rows minus the
+    # union of intruded test rows, plus the zeroed variant.
+    def _pr_hits(cell: str, pos: str) -> dict[str, int]:
+        pr = json.loads((fits_dir / cell / f"perrow_{pos}.json").read_text())
+        return dict(zip(pr["row_ids"], pr["hit1_cos"], strict=True))
+
+    ha, hb = _pr_hits("q35_27b_a", "prompt_last"), _pr_hits("q38_27b_a", "prompt_last")
+    shared = sorted(set(ha) & set(hb))
+    intr_union = set(
+        audit["cells"]["q35_27b_a"].get("generic_test", {}).get("intruded_row_ids", [])
+    ) | set(audit["cells"]["q38_27b_a"].get("generic_test", {}).get("intruded_row_ids", []))
+    raw = float(np.mean([hb[r] - ha[r] for r in shared]))
+    zeroed = float(
+        np.mean(
+            [(0 if r in intr_union else hb[r]) - (0 if r in intr_union else ha[r]) for r in shared]
+        )
+    )
+    kept = [r for r in shared if r not in intr_union]
+    audit["endpoint_contrast_recount_arm_a"] = {
+        "pair": ["q38_27b_a.prompt_last", "q35_27b_a.prompt_last"],
+        "n_shared": len(shared),
+        "n_intruded_union": len(intr_union & set(shared)),
+        "delta_raw": raw,
+        "delta_zeroed": zeroed,
+        "delta_excluded": float(np.mean([hb[r] - ha[r] for r in kept])),
+        "n_kept": len(kept),
+    }
+    audit["scan_spec"] = (
+        "row intruded iff completion matches [\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff"
+        "\\u3040-\\u30ff\\uac00-\\ud7af] AND its prompt does not (LMSYS is mixed-language; "
+        "CJK-prompt rows are excluded from the intrusion denominator and counted). "
+        "OLMo cells exempt (non-Qwen evaluated model)."
+    )
+    return audit
+
+
+def augment_repeat_draw_reference(summary: dict) -> dict:
+    exceeds = {
+        m: rec["acc1_cos_ceiling_normalized"]
+        for m, rec in summary["per_map"].items()
+        if rec.get("acc1_cos_ceiling_normalized") is not None
+        and rec["acc1_cos_ceiling_normalized"] > 1
+    }
+    return {
+        "semantics": (
+            "seed-43 answer vectors retrieving seed-44 targets is a REPEATABILITY REFERENCE, "
+            "not an attainable upper bound: a map fit to THIS draw's answers conditions on the "
+            "realized rollout and can exceed cross-draw repeatability. 'ceiling' field names "
+            "are retained for round-1 compatibility."
+        ),
+        "maps_exceeding_reference": exceeds,
+    }
+
+
+def run_augment(args) -> int:
+    summary = json.loads(args.out.read_text(encoding="utf-8"))
+    parsed_root = args.parsed_mirror
+    fits_dir = args.fits_dir
+    summary["registered_secondary"] = augment_registered_secondary(summary, fits_dir, parsed_root)
+    summary["gpqa_qclustered"] = augment_gpqa_qclustered(summary, fits_dir)
+    summary["language_intrusion_audit"] = augment_language_intrusion(summary, fits_dir, parsed_root)
+    summary["repeat_draw_reference"] = augment_repeat_draw_reference(summary)
+    summary["meta"]["augmented"] = {
+        "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "round": "interp-critique round 1 fixes",
+        "parsed_mirror": str(parsed_root),
+        "parsed_mirror_revision": summary["meta"].get("harvest_revision_resolved"),
+    }
+    args.out.write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    logger.info("[i2588] augmented summary written -> %s", args.out)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(
@@ -1007,6 +1407,20 @@ def main(argv: list[str] | None = None) -> int:
         help="HF data-repo revision pin for --harvest (default: main is resolved to ONE sha "
         "via HfApi().repo_info up front and threaded into every staging call — the realized "
         "sha is logged and persisted as meta.harvest_revision_resolved)",
+    )
+    ap.add_argument(
+        "--augment",
+        action="store_true",
+        help="round-2: ADD the registered secondary reads, question-clustered GPQA CIs, "
+        "language-intrusion audit, and repeat-draw-reference relabeling to the EXISTING "
+        "summary at --out (round-1 fields are never recomputed)",
+    )
+    ap.add_argument(
+        "--parsed-mirror",
+        type=Path,
+        default=_REPO_ROOT / "data" / "issue_2588" / "hf_dl" / "parsed_mirror",
+        help="staged parsed-pool mirror root (revision-pinned hf_hub_download cache) "
+        "consumed by --augment",
     )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
@@ -1035,6 +1449,8 @@ def main(argv: list[str] | None = None) -> int:
 
         print("[import-check] OK")
         return 0
+    if args.augment:
+        return run_augment(args)
     if args.judge_fallback:
         assert args.pending and args.parsed_dir, "--judge-fallback needs --pending + --parsed-dir"
         # Verdicts land BESIDE the pending file (the harvested cell fits dir),

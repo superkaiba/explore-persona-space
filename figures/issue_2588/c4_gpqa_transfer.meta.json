@@ -1,285 +1,301 @@
 {
-  "commit": "07d4002c",
-  "render_id": "49c1ddd7954141a8",
-  "git_commit": "07d4002ccd13d40844bac5694509eba37db6fefe",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2588_figures.py",
-  "created": "2026-08-27T16:30:28Z",
+  "commit": "fd946ccd+dirty",
+  "render_id": "b700a78286ec4e6c",
+  "git_commit": "fd946ccdcf97913daa5f2c8610eb44e8da659d17",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2588/trend_summary.json",
+    "figures/issue_2588/c1_capability_trend.meta.json",
+    "figures/issue_2588/c1_capability_trend.pdf",
+    "figures/issue_2588/c1_capability_trend.png",
+    "figures/issue_2588/c3_h2_paired_deltas.meta.json",
+    "figures/issue_2588/c3_h2_paired_deltas.pdf",
+    "figures/issue_2588/c3_h2_paired_deltas.png",
+    "figures/issue_2588/c4_gpqa_transfer.meta.json",
+    "figures/issue_2588/c4_gpqa_transfer.pdf",
+    "figures/issue_2588/c4_gpqa_transfer.png",
+    "figures/issue_2588/c5_column_verdict.meta.json",
+    "figures/issue_2588/c5_column_verdict.pdf",
+    "figures/issue_2588/c5_column_verdict.png",
+    "scripts/issue2588_figures.py",
+    "scripts/issue2588_trend.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-27T17:29:53Z",
   "figsize": [
-    7.2,
-    4.2
+    9.2,
+    6.0
   ],
   "points": [
     {
-      "category": "OLMo-3.1-32B-Instruct (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.06775407779171895,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.033877,
+      "y": 0.06775407779171895,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "OLMo-3.1-32B-Think (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.04154727793696275,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.020774,
+      "y": 0.04154727793696275,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "OLMo-3.1-32B-Think (pre_think)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.09312320916905444,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.046562,
+      "y": 0.09312320916905444,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "OLMo-3-7B-Instruct (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.16489361702127658,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.082447,
+      "y": 0.16489361702127658,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "OLMo-3-7B-Think (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.3383084577114428,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.169154,
+      "y": 0.3383084577114428,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "OLMo-3-7B-Think (pre_think)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.263681592039801,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.131841,
+      "y": 0.263681592039801,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen2.5-7B-Instruct (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.20222446916076844,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.101112,
+      "y": 0.20222446916076844,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-0.8B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.0972972972972973,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.048649,
+      "y": 0.0972972972972973,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-0.8B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.1076923076923077,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.053846,
+      "y": 0.1076923076923077,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-27B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.10101010101010101,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.050505,
+      "y": 0.10101010101010101,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-27B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.1970649895178197,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.098532,
+      "y": 0.1970649895178197,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-2B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.05519053876478318,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.027595,
+      "y": 0.05519053876478318,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-2B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.1297709923664122,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.064885,
+      "y": 0.1297709923664122,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-4B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.1243455497382199,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.062173,
+      "y": 0.1243455497382199,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-4B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.18631178707224336,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.093156,
+      "y": 0.18631178707224336,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-9B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.11925465838509317,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.059627,
+      "y": 0.11925465838509317,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.5-9B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.09114583333333333,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.045573,
+      "y": 0.09114583333333333,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.6-27B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.0948905109489051,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.047445,
+      "y": 0.0948905109489051,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.6-27B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.15182186234817813,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.075911,
+      "y": 0.15182186234817813,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.8-27B (prompt_last)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.10256410256410256,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.051282,
+      "y": 0.10256410256410256,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Qwen3.8-27B (cot_boundary)",
-      "GPQA same-question retrieval acc@1 (cosine)": 0.008264462809917356,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.004132,
+      "y": 0.008264462809917356,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.006273525721455458,
+      "y": 0.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 1.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
+      "y": 1.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 2.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
+      "y": 2.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 3.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.005319148936170213,
+      "y": 3.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 4.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
+      "y": 4.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 5.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
+      "y": 5.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 6.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.005055611729019211,
+      "y": 6.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 7.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.009009009009009009,
+      "y": 7.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 8.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.07692307692307693,
+      "y": 8.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 9.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.006313131313131313,
+      "y": 9.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 10.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.010482180293501049,
+      "y": 10.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 11.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.006570302233902759,
+      "y": 11.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 12.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.03816793893129771,
+      "y": 12.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 13.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.006544502617801047,
+      "y": 13.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 14.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.019011406844106463,
+      "y": 14.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 15.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.006211180124223602,
+      "y": 15.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 16.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.013020833333333334,
+      "y": 16.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 17.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.005213764337851929,
+      "y": 17.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 18.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.010121457489878543,
+      "y": 18.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 19.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.005341880341880342,
+      "y": 19.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "x": 20.0,
       "GPQA same-question retrieval acc@1 (cosine)": 0.006887052341597796,
+      "y": 20.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
@@ -292,35 +308,12 @@
     "fig_texts": [],
     "axes": [
       {
-        "ylabel": "GPQA same-question retrieval acc@1 (cosine)",
+        "xlabel": "GPQA same-question retrieval acc@1 (cosine)",
         "legend_labels": [
           "chance",
           "same-question acc@1 (transfer)"
         ],
         "xticklabels": [
-          "OLMo-3.1-32B-Instruct (prompt_last)",
-          "OLMo-3.1-32B-Think (cot_boundary)",
-          "OLMo-3.1-32B-Think (pre_think)",
-          "OLMo-3-7B-Instruct (prompt_last)",
-          "OLMo-3-7B-Think (cot_boundary)",
-          "OLMo-3-7B-Think (pre_think)",
-          "Qwen2.5-7B-Instruct (prompt_last)",
-          "Qwen3.5-0.8B (prompt_last)",
-          "Qwen3.5-0.8B (cot_boundary)",
-          "Qwen3.5-27B (prompt_last)",
-          "Qwen3.5-27B (cot_boundary)",
-          "Qwen3.5-2B (prompt_last)",
-          "Qwen3.5-2B (cot_boundary)",
-          "Qwen3.5-4B (prompt_last)",
-          "Qwen3.5-4B (cot_boundary)",
-          "Qwen3.5-9B (prompt_last)",
-          "Qwen3.5-9B (cot_boundary)",
-          "Qwen3.6-27B (prompt_last)",
-          "Qwen3.6-27B (cot_boundary)",
-          "Qwen3.8-27B (prompt_last)",
-          "Qwen3.8-27B (cot_boundary)"
-        ],
-        "yticklabels": [
           "0.00",
           "0.05",
           "0.10",
@@ -330,6 +323,29 @@
           "0.30",
           "0.35",
           "0.40"
+        ],
+        "yticklabels": [
+          "OLMo 32B Instruct \u00b7 prompt-end",
+          "OLMo 32B Think \u00b7 end-of-CoT",
+          "OLMo 32B Think \u00b7 pre-think",
+          "OLMo 7B Instruct \u00b7 prompt-end",
+          "OLMo 7B Think \u00b7 end-of-CoT",
+          "OLMo 7B Think \u00b7 pre-think",
+          "Qwen2.5 7B \u00b7 prompt-end",
+          "Qwen3.5 0.8B \u00b7 prompt-end",
+          "Qwen3.5 0.8B \u00b7 end-of-CoT",
+          "Qwen3.5 27B \u00b7 prompt-end",
+          "Qwen3.5 27B \u00b7 end-of-CoT",
+          "Qwen3.5 2B \u00b7 prompt-end",
+          "Qwen3.5 2B \u00b7 end-of-CoT",
+          "Qwen3.5 4B \u00b7 prompt-end",
+          "Qwen3.5 4B \u00b7 end-of-CoT",
+          "Qwen3.5 9B \u00b7 prompt-end",
+          "Qwen3.5 9B \u00b7 end-of-CoT",
+          "Qwen3.6 27B \u00b7 prompt-end",
+          "Qwen3.6 27B \u00b7 end-of-CoT",
+          "Qwen3.8 27B \u00b7 prompt-end",
+          "Qwen3.8 27B \u00b7 end-of-CoT"
         ]
       }
     ],
