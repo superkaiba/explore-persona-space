@@ -10665,10 +10665,11 @@ _I2617_BANK_JSON = json.dumps(
 )
 
 
-def _make_repo_with_banks(tmp_path, files: dict[str, str]):
+def _make_repo_with_banks(tmp_path, files: dict[str, str | bytes]):
     """Throwaway git repo whose HEAD commit carries every ``files``
-    entry (rel_path -> text) — the check-62 artifact fixtures; returns
-    ``(repo_path, head_sha)``."""
+    entry (rel_path -> text; bytes values are written raw, for the r2
+    non-UTF8-blob fail-soft fixture) — the check-62 artifact fixtures;
+    returns ``(repo_path, head_sha)``."""
     repo = tmp_path / "bankrepo"
     repo.mkdir()
 
@@ -10681,7 +10682,10 @@ def _make_repo_with_banks(tmp_path, files: dict[str, str]):
     for rel, text in files.items():
         p = repo / rel
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(text, encoding="utf-8")
+        if isinstance(text, bytes):
+            p.write_bytes(text)
+        else:
+            p.write_text(text, encoding="utf-8")
     git("add", "-A")
     git("commit", "-q", "-m", "add bank fixtures")
     sha = subprocess.run(
@@ -11021,6 +11025,202 @@ def test_verbatim_check_in_registry():
     """Check 62 is registered in CHECKS (body-only signature — plain
     membership, the check-39/54 precedent)."""
     assert verify_task_body.check_v4_verbatim_sample_stems in verify_task_body.CHECKS
+
+
+# ─── Check 62, round-2 hardening (#2635 r2 concerns) ─────────────────────────
+
+
+def test_verbatim_attempt_cap_bounds_failed_probes_and_loads(tmp_path, monkeypatch):
+    """r2 `artifact-attempt-cap`: the 8-unit budget counts ATTEMPTS —
+    committed-path git probes and failed pinned-git loads spend it — so a
+    pathological body with many candidates can never drive more than 8
+    expensive git attempts; overflow candidates degrade to unsearched
+    notes (the WARN arm), never a fleet-gate wedge."""
+    files = {f"banks/b{i}.json": json.dumps({"q": f"filler row {i}"}) for i in range(10)}
+    repo, _sha = _make_repo_with_banks(tmp_path, files)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    fake_sha = "0" * 40
+    links = " ".join(_gh_bank_link(fake_sha, f"missing/m{i}.json", f"m{i}") for i in range(10))
+    ticks = " ".join(f"`banks/b{i}.json`" for i in range(10))
+    slot = 'Rows (verbatim): "How do you build a shed?" — ' + links + " " + ticks
+    real_run = subprocess.run
+    calls = {"n": 0}
+
+    def counting_run(*args, **kwargs):
+        calls["n"] += 1
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", counting_run)
+    res = _verbatim_check(slot)
+    assert calls["n"] <= verify_task_body._VERBATIM_STEM_MAX_LOADS
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "artifact-probe cap" in res.detail or "artifact-load cap" in res.detail
+
+
+def test_verbatim_wc_load_covered_by_probe_unit_no_double_charge(tmp_path, monkeypatch):
+    """r2 `artifact-attempt-cap` companion: a committed backtick path pays
+    ONE budget unit (its probe) — the working-copy load is covered by it,
+    so a legitimate body with several committed paths is not halved to
+    4 artifacts by double-charging."""
+    files = {
+        f"banks/c{i}.json": json.dumps({"q": f"genuine row number {i} text"}) for i in range(6)
+    }
+    repo, _sha = _make_repo_with_banks(tmp_path, files)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    ticks = ", ".join(f"`banks/c{i}.json`" for i in range(6))
+    slot = 'Rows (verbatim): "genuine row number 3 text" — banks: ' + ticks
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "1 verbatim stem(s) verified against 6 linked artifact(s)" in res.detail
+
+
+def test_verbatim_nonutf8_git_blob_degrades_to_warn_not_crash(tmp_path, monkeypatch):
+    """r2 `artifact-fail-soft`: a committed non-UTF8 blob makes the reused
+    text-mode git loader raise UnicodeDecodeError — the load/view-build
+    boundary catches it, records the reason, and the miss degrades to WARN
+    (never a verifier crash)."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"bank.json": b'{"q": "caf\xe9 latin-1 bytes"}'})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = 'Row (verbatim): "How do you build a house today?" — bank: ' + _gh_bank_link(
+        sha, "bank.json"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "load error: UnicodeDecodeError" in res.detail
+
+
+def test_verbatim_recursion_depth_json_degrades_to_raw_view(tmp_path, monkeypatch):
+    """r2 `artifact-fail-soft`: syntactically valid JSON nested beyond the
+    interpreter recursion limit raises RecursionError at decode — caught at
+    the decode site, view R (raw text) survives and still verifies the
+    stem (no crash, no lost artifact)."""
+    deep = "[" * 20000 + '"the quick brown fox stem sentence"' + "]" * 20000
+    repo, sha = _make_repo_with_banks(tmp_path, {"deep.json": deep})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = 'Row (verbatim): "the quick brown fox stem sentence" — bank: ' + _gh_bank_link(
+        sha, "deep.json"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "1 verbatim stem(s) verified" in res.detail
+
+
+@pytest.mark.parametrize(
+    "token", ["sanitized", "redacted", "paraphrased", "renamed", "substituted"]
+)
+def test_verbatim_sanitization_token_in_quoted_stem_still_checked(tmp_path, monkeypatch, token):
+    """r2 `sanitization-label-scope`: a sanitization-family word INSIDE the
+    quoted sample content must not skip the group — the guard reads only
+    the label prose (quoted/backtick spans masked), so a fabricated stem
+    containing e.g. 'renamed' still FAILs against a sole committed bank."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        f'Sample (verbatim): "How should {token} files be handled today?" — bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert token in res.detail.casefold()
+
+
+def test_verbatim_sanitization_token_in_summary_quoted_span_still_checked(tmp_path, monkeypatch):
+    """r2 `sanitization-label-scope` (details arm): a quoted span inside
+    the `<summary>` text carrying a sanitization word does not skip the
+    block — only label prose counts, so the group's fabricated stem still
+    FAILs."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        '<details>\n<summary>Panel rows (verbatim), incl. "how renamed things go"</summary>\n\n'
+        '"totally fabricated stem nowhere in the bank"\n\n</details>\n\nFull bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "totally fabricated stem" in res.detail.casefold()
+
+
+def test_verbatim_tilde_fence_prelude_extracted(tmp_path, monkeypatch):
+    """r2 `extraction-shape-blind-spots` (tilde fences): the fence-prelude
+    arm recognizes `~~~` fences exactly like ``` fences — a fabricated
+    quoted stem inside a tilde fence FAILs instead of silently yielding
+    zero stems."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        "Eval transcript (verbatim), first row:\n\n~~~\n"
+        'Q: "How do you build a mansion quickly?"\n~~~\n\nFull bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "how do you build a mansion quickly" in res.detail.casefold()
+
+
+def test_verbatim_escaped_quote_span_extracted_and_checked(tmp_path, monkeypatch):
+    """r2 `extraction-shape-blind-spots` (escaped quotes): a `\\"` inside a
+    quoted span no longer terminates extraction early — the full stem is
+    extracted, unescapes to the decoded text (view D match on the genuine
+    row), and a fabricated variant FAILs instead of zero-stem PASSing."""
+    bank = json.dumps({"rows": ['She said "hello there" to the quiet librarian.']})
+    repo, sha = _make_repo_with_banks(tmp_path, {"bank.json": bank})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    link = _gh_bank_link(sha, "bank.json")
+    ok = _verbatim_check(
+        'Row (verbatim): "She said \\"hello there\\" to the quiet librarian." — bank: ' + link
+    )
+    assert ok.passed is True
+    assert ok.is_warn is False
+    bad = _verbatim_check(
+        'Row (verbatim): "She said \\"good morning\\" to the quiet librarian." — bank: ' + link
+    )
+    assert bad.passed is False
+    assert "good morning" in bad.detail.casefold()
+
+
+def test_verbatim_nested_details_inner_verbatim_group_scanned(tmp_path, monkeypatch):
+    """r2 `extraction-shape-blind-spots` (nested details): an inner
+    `(verbatim)` `<details>` block nested inside a NON-verbatim outer block
+    is scanned — round 1's flat regex silently dropped it while a sibling
+    group kept the PASS clean."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        "<details>\n<summary>All 30 rows</summary>\n\n"
+        "<details>\n<summary>Pair A (verbatim)</summary>\n\n"
+        '"a fabricated nested stem question?"\n\n</details>\n\n</details>\n\n'
+        'Also (verbatim): "How do you build a shed?" — full bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "fabricated nested stem" in res.detail.casefold()
+
+
+def test_verbatim_stem_cap_overflow_disclosed(tmp_path, monkeypatch):
+    """r2 (round-1 BLOCKER close record): when more than 40 stems are
+    extracted, the detail DISCLOSES the unverified overflow instead of
+    silently truncating — a clean PASS can no longer overstate complete
+    verification."""
+    sentences = [f"unique sample sentence number {i:02d} for the cap test." for i in range(41)]
+    repo, sha = _make_repo_with_banks(tmp_path, {"bank.json": json.dumps(sentences)})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        "Rows (verbatim): "
+        + " ".join(f'"{s}"' for s in sentences)
+        + " — full bank: "
+        + _gh_bank_link(sha, "bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "40 verbatim stem(s) verified" in res.detail
+    assert "1 additional stem(s) beyond the 40-stem cap unverified" in res.detail
 
 
 # ─── Check 17 (v4 lineage-token sub-check, #1014) ──────────────────────────

@@ -1184,15 +1184,32 @@ Forward-only: each check branches on the sentinel. The v4 checks
     (`…` / `...` / `[…]` / `[truncated]`) are split at the marker and
     each above-floor literal run must match independently — a stem whose
     runs all sit below the floor (12 chars / 2 tokens) is skipped with a
-    note. Disclosed NON-coverage: (a) `## Results` sample blocks are NOT
-    scanned (Sample-slot-only by design — checks 10/11 own Results-side
-    sample-link discipline); (b) samples presented as bare markdown
-    TABLE cells yield no quoted/backtick stems, so a table-only verbatim
-    group passes with the no-extractable-stems note; (c) sub-floor
-    truncation fragments go unverified (the skip note discloses the
-    count). (#2635; incident #2617 r1: an object-swap pair labeled
-    "(verbatim)" quoted `How do you build a house?` while the pinned
-    bank held `... a shed?`; family #657.)
+    note. A miss with ANY unsearched candidate remaining degrades to
+    WARN BY DESIGN (precision-first): the mixed-link shape (a committed
+    bank beside HF raw completions) legitimately holds stems only in the
+    remote artifact, so the WARN names the missing stems + the
+    unsearched links as the critic/human triage surface — that
+    follow-through stays binding. Sanitization tokens count only in
+    LABEL prose (quoted/backtick sample spans are masked first — a
+    sample sentence containing "renamed" never skips its group).
+    Expensive probe/load work is bounded by a shared 8-attempt per-body
+    budget (failed attempts count; overflow candidates become unsearched
+    WARN notes), and any load exception degrades that artifact to an
+    unsearched note — never a verifier crash. When more than 40 stems
+    are extracted, the detail discloses "N additional stem(s) beyond
+    the 40-stem cap unverified". Disclosed NON-coverage: (a)
+    `## Results` sample blocks are NOT scanned (Sample-slot-only by
+    design — checks 10/11 own Results-side sample-link discipline);
+    (b) samples presented as bare markdown TABLE cells yield no
+    quoted/backtick stems, so a table-only verbatim group passes with
+    the no-extractable-stems note; (c) sub-floor truncation fragments go
+    unverified (the skip note discloses the count); (d) text assembled
+    across two distinct JSON fields never matches (the decoded-strings
+    view joins fields with a non-matching sentinel); (e) `<details>`
+    nesting deeper than 5 levels is not descended. (#2635; incident
+    #2617 r1: an object-swap pair labeled "(verbatim)" quoted `How do
+    you build a house?` while the pinned bank held `... a shed?`;
+    family #657.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque
