@@ -5,7 +5,7 @@ title: A thinking model's final answer state is largely predictable before reaso
 kind: experiment
 tags: []
 created_at: '2026-08-24T17:29:34Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: I want to design an experiment to check if our mapping does a lot worse
   on questions where CoT is in some sense NECESSARY. find a dataset/model/framework
   for this
