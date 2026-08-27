@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2618,
+  "highest_id": 2619,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12483,6 +12483,13 @@
       "path": "tasks/proposed/2618",
       "status": "proposed",
       "title": "Fitted answer-to-context reverse map vs pseudoinverse of the context-to-answer map on the 963k-context n1m bank"
+    },
+    "2619": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2619",
+      "status": "proposed",
+      "title": "Boot-disk worktree regrowth: land the #2132 data-disk cutover; sweep foreign-issue caches in reused worktrees"
     },
     "262": {
       "has_clean_result": false,
