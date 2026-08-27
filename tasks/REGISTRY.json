@@ -12473,8 +12473,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping safety valence (e.g. 'how to build a bomb' vs 'how to build a house'), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine, magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context; the question is whether the map's pre-generation geometry encodes the refusal DECISION (transport tracks whether behavior flipped) or merely surface content.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/2617",
-      "status": "verifying",
+      "path": "tasks/interpreting/2617",
+      "status": "interpreting",
       "title": "Safety-valence minimal pairs: does the frozen context\u2192answer map encode the refusal decision or just surface text? [verifying / run complete, uploads verifying]"
     },
     "2618": {
