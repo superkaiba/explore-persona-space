@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2626,
+  "highest_id": 2627,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12546,6 +12546,13 @@
       "path": "tasks/archived/2626",
       "status": "archived",
       "title": "Curate code-reviewer-lean agent-memory index under the 24KB lint cap (live no-flags FAIL redding Step 9c gates)"
+    },
+    "2627": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2627",
+      "status": "proposed",
+      "title": "Agent-memory index FAIL gate can be tripped by the MERGE itself, blocking a Step-10d landing"
     },
     "263": {
       "has_clean_result": true,
