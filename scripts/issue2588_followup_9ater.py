@@ -281,19 +281,27 @@ def _stage_banked_test_text(model_key: str, text_root: Path) -> list[Path]:
         return chunks
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path, retry_transient
+
     api = HfApi()
-    tree = api.list_repo_tree(
-        PC.HF_DATA_REPO, path_in_repo=rel_dir, repo_type="dataset", revision=PC.BANKED_REVISION
+    names = sorted(
+        p
+        for p in list_hf_files_under_path(
+            api, PC.HF_DATA_REPO, rel_dir, repo_type="dataset", revision=PC.BANKED_REVISION
+        )
+        if p.endswith(".json")
     )
-    names = sorted(t.path for t in tree if t.path.endswith(".json"))
     assert names, f"no raw-completion chunks under {rel_dir}@{PC.BANKED_REVISION}"
     for name in names:
-        hf_hub_download(
-            PC.HF_DATA_REPO,
-            name,
-            repo_type="dataset",
-            revision=PC.BANKED_REVISION,
-            local_dir=str(text_root),
+        retry_transient(
+            lambda name=name: hf_hub_download(
+                PC.HF_DATA_REPO,
+                name,
+                repo_type="dataset",
+                revision=PC.BANKED_REVISION,
+                local_dir=str(text_root),
+            ),
+            what=f"hf_hub_download banked chunk {name}",
         )
     chunks = sorted(local_dir.glob("shard*_chunk*.json"))
     assert chunks, f"staging failed for {rel_dir}"
