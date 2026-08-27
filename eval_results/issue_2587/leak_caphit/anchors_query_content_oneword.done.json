@@ -1,0 +1,31 @@
+{
+  "cell": "query_content_oneword",
+  "regime_fp": "c7d1694b4c5a8f0a",
+  "n_contexts": 48,
+  "n_rows": 480,
+  "cap_hit_frac": 0.0,
+  "cap_hit_frac_regen": null,
+  "max_new_tokens_final": 2048,
+  "think_leak": {
+    "n": 480,
+    "n_leaked": 0,
+    "frac": 0.0
+  },
+  "max_ctx_len": 27,
+  "capture_max_model_len_floor": 4123,
+  "repro": {
+    "git_commit": "5b8f60081a0ee9b5e6a5dea2e5420c9d06550b67",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2587_battery_run.py",
+    "torch": "2.13.0+cu130",
+    "transformers": "5.15.1",
+    "parent_pin": "8265bcd75f781d8e879e924de60063e536e58dcf",
+    "pin_2162_sha256": "6f77924461c04b3532a38c199fb96aec88d479d5359daec0ab73aad10c62538c",
+    "langow_commit": "6894503746d924133bde3188d85ca712ea622a9a",
+    "phase": "gen",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "timestamp": "2026-08-26T23:44:09.883002+00:00"
+  }
+}
