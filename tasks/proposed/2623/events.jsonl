@@ -1,1 +1,2 @@
 {"ts": "2026-08-27T09:39:38Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-27T09:40:47Z", "kind": "epm:progress", "version": 1, "by": "issue-orchestrator", "note": "urgent-park routable record (Step 9c 1e, #1713/#1742): urgency: main-red; failing_test: tests/test_workflow_lint_prod_import_lockfile.py::test_live_tree_clean; wf_fix: true — filed by the #2620 session at its Step 9c compare (stripped pre-existing main-red on a workflow-invariant test)."}
