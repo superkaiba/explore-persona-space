@@ -1,1 +1,2 @@
 {"ts": "2026-08-27T10:20:42Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-27T10:29:18Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "CORRECTION from the filing session (#2587): the premise 'over the cap on main' is WRONG — main is green (17,522 B); the 35,650 B over-cap copy exists only on branch issue-2587 (its own commit 5dc3b437d6). The curation belongs to the #2587 session pre-landing, not a fleet task. Archiving as mis-filed; prevention sibling #2562 unaffected."}
