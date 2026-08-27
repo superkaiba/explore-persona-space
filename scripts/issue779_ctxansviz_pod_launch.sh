@@ -21,4 +21,6 @@ export PYTHONUNBUFFERED=1
 mkdir -p /workspace/logs
 # $$ becomes the python PID after the exec chain (shell -> uv run -> python).
 echo $$ > /workspace/logs/issue-779-ctxansviz.pid
-exec uv run python scripts/issue779_ctxansviz_pod.py --phase all "$@"
+# --extra viz: umap-learn lives behind the project's viz extra; a bare
+# `uv run` on a fresh pod env omits it (P4 died ModuleNotFoundError: umap).
+exec uv run --extra viz python scripts/issue779_ctxansviz_pod.py --phase all "$@"
