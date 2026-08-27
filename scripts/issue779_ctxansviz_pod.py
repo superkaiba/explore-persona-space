@@ -1,13 +1,22 @@
 """Pod-side context->answer joint-embedding pipeline for issue #779 (inline viz round).
 
-Produces, on a dedicated RunPod CPU pod (cpu5m-16-128, /workspace), a joint
-2D-embedding + clustering + map-error dataset over the #779 n1m final-token
-capture (cx_last + v_x at L19), with the banked mixed_1m ridge applied
-READ-ONLY (vhat = ((cx - xmu)/xsd) @ W + ymu, the #2474 registered path), plus
-the #1739 sycophancy-labeling judged overlay (context_end L19 -> same
-embedding, dv attached). Exports compactly for VM-side figure/dashboard
-rendering to HF ``issue779_monitoring/ctxansviz/`` (smoke:
-``issue779_monitoring/ctxansviz-smoke/``).
+Produces, on a dedicated RunPod pod (1x H100 ``eval`` intent; CPU fallback
+throughout), a joint 2D-embedding + clustering + map-error dataset over the
+#779 n1m final-token capture (cx_last + v_x at L19), with the banked mixed_1m
+ridge applied READ-ONLY (vhat = ((cx - xmu)/xsd) @ W + ymu, the #2474
+registered path), plus the #1739 sycophancy-labeling judged overlay
+(context_end L19 -> same embedding, dv attached), a dimensionality battery
+(P8 ``dim``), and a cross-layer vector-similarity battery (P9 ``xlayer``).
+Exports compactly for VM-side figure/dashboard rendering to HF
+``issue779_monitoring/ctxansviz/`` (smoke: ``issue779_monitoring/ctxansviz-smoke/``).
+
+Disk venue (GPU pod): /workspace is MooseFS with a ~130 GB per-pod EDQUOT
+quota (gotchas.md) — the two big pulls (capture chunks, the 52 GB labeling
+tar) and all working memmaps live on a CONTAINER-LOCAL big root (probed at
+runtime between /root and /tmp, choice logged); only small durables (export
+shards, pilot JSONs, logs, pid, sentinel) live on /workspace. Device: cuda
+when available for the chunked GEMM/cdist legs (cpu-vs-gpu parity probe at
+first use, fail-loud), CPU BLAS otherwise; UMAP always CPU.
 
 Phases (argparse ``--phase`` over PHASES; every phase checkpoints its output the
 moment it completes; resume predicates key on GENERATING PARAMETERS — chunk-name
@@ -38,9 +47,32 @@ listings, layer, seeds, sample sizes — never hashes of recomputed float arrays
   judged     context_end L19 (+ t1 answer-side if present in the store) for the
              #1739 sycophancy labeling contexts -> standardize into the SAME
              PCA/UMAP embedding; join dv from the committed labeling.json.
-  export     coords npz + cluster_stats.json + walltime log + meta.json
-             (git provenance, params, row counts, per-file sha256) -> ONE
-             upload_folder commit to HF; results sentinel written LAST.
+  dim        (P8, scope extension) FULL exact PCA spectra per space
+             {cx, vx, vhat} from chunked fp64 second moments + eigh
+             (participation ratio, dims to 50/90/99%, log-log tail fit ranks
+             10..1000), (cx, vx) CCA correlation spectrum (diag-regularized,
+             top-500, descriptive — not a new predictor), and an ambient-3584d
+             intrinsic-dimension battery per space {cx, vx, vhat, judged_cx}:
+             TwoNN, Levina-Bickel MLE k=10/20 (mean-of-local-MLEs AND the
+             MacKay-Ghahramani (k-2)/mean(s) form, both named in the export),
+             Grassberger-Procaccia correlation dimension, and local-PCA ID
+             (500 anchors, k=100, 90% variance), at n in {5k, 20k, 50k} x 5
+             subsample draws (judged_cx: {5k, full}).
+  xlayer     (P9, scope extension) cross-layer VECTOR similarity. n1m tier
+             (layers 14/19/26, all rows, ONE extra chunk stream — each chunk
+             packs all 3 layers): 6x6 linear CKA over {cx,vx}x{14,19,26} from
+             fp64 means + cross moments (rotation-invariant), per-row cosine
+             histograms for 9 named pairs (raw + global-mean-centered;
+             meaningful because all layers share the d=3584 residual-stream
+             basis), and a row-shuffled null (seed 42) computed on a retained
+             deterministic 100k-row subsample (disclosed). 28-layer tier from
+             the #1739 store: 28x28 context_end CKA + adjacent-layer per-row
+             cosine curve (answer-side 28-layer coverage does not exist in
+             that store — recorded as a limitation, never substituted).
+  export     coords npz + cluster_stats.json + dim/xlayer artifacts + walltime
+             log + meta.json (git provenance, params, row counts, per-file
+             sha256) -> ONE upload_folder commit to HF; results sentinel
+             written LAST.
 
 Split semantics (the #779 fits split, reproduced): the sha-pinned val/test rows
 of ``fixed_split(5000, 3600, 400, 1000, 42)`` are pass_b rows (combined-array
@@ -58,9 +90,10 @@ Smoke blind-spot enumeration:
     smoke/production GATE CALIBRATION) — production asserts are byte-identical.
   - the chunk universe is capped to the first --smoke-chunks capture chunks
     (an lmsys-region subset of the corpus) and judged rows to --smoke-judged
-    labeling contexts; sample/cluster size knobs scale down (values only).
-  Every code path — staging, streaming, predict, PCA/UMAP/cluster/judged/export,
-  upload — is the production implementation in both modes.
+    labeling contexts; sample/cluster/ID-battery/xlayer-subsample size knobs
+    scale down (values only; estimator k values stay production).
+  Every code path — staging, streaming, predict, PCA/UMAP/cluster/judged/
+  dim/xlayer/export, upload — is the production implementation in both modes.
 
 Refusal-safety: context/rollout TEXT (manifest prompts, raw responses, chunk
 ``prompts`` fields) is NEVER printed or logged — text lands only in the export
@@ -79,6 +112,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import logging
 import os
@@ -158,7 +192,8 @@ DV_LABELING = PROJECT_ROOT / "eval_results/issue_1739/dv_dataset/sycophancy/labe
 # t1<->answer_k_t1).
 STORE_MEMBER_RE = re.compile(
     r"^(?:"
-    r"(?:context_end|context_k|t1|answer_k_t1)_L19(?:_shard\d+)?\.npy"
+    r"(?:context_end|context_k)_L\d{2}(?:_shard\d+)?\.npy"  # ALL layers (P6 L19 + P9 28-layer)
+    r"|(?:t1|answer_k_t1)_L19(?:_shard\d+)?\.npy"
     r"|row_index.*\.jsonl"
     r"|manifest\.jsonl"
     r"|meta.*\.json"
@@ -211,22 +246,91 @@ def assert_headroom(need_bytes: int, at: Path, what: str) -> None:
 
 # ── roots + phase state ──────────────────────────────────────────────────────────
 
+_BIG_BASE_CACHE: Path | None = None
+_DEVICE: torch.device | None = None
 
-def out_root(args) -> Path:
+
+def durable_root(args) -> Path:
+    """Small durable outputs (export shards, pilot JSONs, sentinel fallback).
+    On a pod this lives on /workspace; heavy staging + working arrays do NOT
+    (MooseFS ~130 GB per-pod EDQUOT quota, gotchas.md)."""
     if args.out_root:
         return Path(args.out_root)
-    # Per-leg out-roots: smoke never shares resume state with the full run.
-    return Path("/workspace/ctxansviz-smoke" if args.smoke else "/workspace/ctxansviz")
+    base = Path("/workspace") if Path("/workspace").exists() else Path.cwd()
+    return base / ("ctxansviz-smoke" if args.smoke else "ctxansviz")
+
+
+def _big_base(args) -> Path:
+    """Container-local big root (staging + memmaps). Probes candidate
+    filesystems and picks the one with the most free bytes; both probes and
+    the choice are logged. Overridable via --big-root."""
+    global _BIG_BASE_CACHE
+    if _BIG_BASE_CACHE is not None:
+        return _BIG_BASE_CACHE
+    if args.big_root:
+        chosen = Path(args.big_root)
+    elif Path("/workspace").exists():
+        cands = [Path("/root/ctxansviz-big"), Path("/tmp/ctxansviz-big")]
+        frees: dict[Path, int] = {}
+        for c in cands:
+            c.mkdir(parents=True, exist_ok=True)
+            frees[c] = shutil.disk_usage(c).free
+        chosen = max(cands, key=lambda c: frees[c])
+        logger.info(
+            "[disk] big-root probe: %s | /workspace free %.1f GB (big pulls NOT staged there)",
+            ", ".join(f"{c}={frees[c] / 1e9:.1f}GB" for c in cands),
+            shutil.disk_usage("/workspace").free / 1e9,
+        )
+    else:
+        chosen = durable_root(args).parent / (durable_root(args).name + "-big")
+    chosen.mkdir(parents=True, exist_ok=True)
+    logger.info("[disk] big root = %s (free %.1f GB)", chosen, shutil.disk_usage(chosen).free / 1e9)
+    _BIG_BASE_CACHE = chosen
+    return chosen
+
+
+def big_leg_root(args) -> Path:
+    # Per-leg working roots: smoke never shares resume state with the full run.
+    return _big_base(args) / ("smoke" if args.smoke else "full")
 
 
 def stage_root(args) -> Path:
     # Staged INPUTS are mode-independent (read-only mirrors, per-file idempotent
     # skips), so smoke and full share the stage dir; the tar is downloaded once.
-    return Path(args.stage_root) if args.stage_root else Path("/workspace/ctxansviz-stage")
+    return Path(args.stage_root) if args.stage_root else _big_base(args) / "stage"
 
 
 def state_dir(args) -> Path:
-    return out_root(args) / "state"
+    return big_leg_root(args) / "state"
+
+
+def compute_device() -> torch.device:
+    """cuda when available (1x H100 venue), else CPU BLAS. First cuda
+    resolution runs a cpu-vs-gpu numerics parity probe (fp64 GEMM + fp32
+    cdist) and fails loud on mismatch — never a silent numeric drift."""
+    global _DEVICE
+    if _DEVICE is not None:
+        return _DEVICE
+    if not torch.cuda.is_available():
+        _DEVICE = torch.device("cpu")
+        logger.info("[device] cuda unavailable — CPU BLAS path")
+        return _DEVICE
+    dev = torch.device("cuda")
+    g = torch.Generator().manual_seed(SEED)
+    a = torch.randn(256, 512, dtype=torch.float64, generator=g)
+    b = torch.randn(512, 384, dtype=torch.float64, generator=g)
+    d64 = float(((a @ b) - (a.to(dev) @ b.to(dev)).cpu()).abs().max())
+    x = torch.randn(128, 512, generator=g)
+    d32 = float((torch.cdist(x, x) - torch.cdist(x.to(dev), x.to(dev)).cpu()).abs().max())
+    if d64 > 1e-9 or d32 > 1e-3:
+        raise RuntimeError(
+            f"cuda parity probe FAILED: fp64 GEMM max|d|={d64:.2e}, fp32 cdist max|d|={d32:.2e}"
+        )
+    logger.info(
+        "[device] cuda parity probe OK: fp64 GEMM max|d|=%.2e, fp32 cdist max|d|=%.2e", d64, d32
+    )
+    _DEVICE = dev
+    return dev
 
 
 def phase_key(args, extra: dict | None = None) -> dict:
@@ -432,7 +536,9 @@ def phase_stage(args) -> None:
         "--stage-root",
         str(sroot),
         "--out-root",
-        str(out_root(args)),
+        str(durable_root(args)),
+        "--big-root",
+        str(_big_base(args)),
     ]
     if args.smoke:
         cmd += ["--smoke", "--smoke-chunks", str(args.smoke_chunks)]
@@ -446,6 +552,9 @@ def phase_stage(args) -> None:
     sentinel = sroot / "labeling_store.extracted.json"
     if sentinel.exists():
         rec = json.loads(sentinel.read_text(encoding="utf-8"))
+        if rec.get("member_re") != STORE_MEMBER_RE.pattern:
+            logger.warning("[stage] extraction sentinel regex MISMATCHED; re-extracting")
+            rec = {"members": ["<forced-miss>"]}
         missing = [m for m in rec.get("members", []) if not (extract_dir / m).exists()]
         if not missing:
             logger.info(
@@ -466,7 +575,15 @@ def phase_stage(args) -> None:
         # 50e9-byte cap (gotchas.md HF accelerator failure matrix — big-file leg).
         dl(LABELING_TAR, sroot, "sycophancy_labeling tar (52 GB)")
     members = _extract_store_members(local_tar, extract_dir)
-    write_json_atomic(sentinel, {"members": members, "tar_sha_bytes": tar_size, "ts": _utc()})
+    write_json_atomic(
+        sentinel,
+        {
+            "members": members,
+            "member_re": STORE_MEMBER_RE.pattern,
+            "tar_sha_bytes": tar_size,
+            "ts": _utc(),
+        },
+    )
     local_tar.unlink()  # frees 52 GB; sentinel + members are the durable record
     logger.info("[stage] extracted %d store members; tar deleted", len(members))
 
@@ -482,7 +599,7 @@ def _open_or_create_memmap(path: Path, shape: tuple[int, ...], dtype) -> np.memm
 
 
 def arrays_dir(args) -> Path:
-    return out_root(args) / "arrays"
+    return big_leg_root(args) / "arrays"
 
 
 def load_stream_state(args) -> dict:
@@ -705,16 +822,17 @@ def phase_predict(args) -> None:
     if phase_done(args, "predict", key):
         return
     t0 = time.time()
-    comp = load_ridge_payload(args, LAYER)
+    dev = compute_device()
+    comp = {k: v.to(dev) for k, v in load_ridge_payload(args, LAYER).items()}
     cx, vx = mm(args, "cx_L19.npy"), mm(args, "vx_L19.npy")
     adir = arrays_dir(args)
 
     # Pass A: global per-dim variance of vx (population, ddof=0) for the
     # per-row normalized-sqerr metric.
-    s = torch.zeros(H_DIM, dtype=torch.float64)
-    ss = torch.zeros(H_DIM, dtype=torch.float64)
+    s = torch.zeros(H_DIM, dtype=torch.float64, device=dev)
+    ss = torch.zeros(H_DIM, dtype=torch.float64, device=dev)
     for lo in range(0, n, BLOCK):
-        yb = torch.as_tensor(np.asarray(vx[lo : lo + BLOCK]), dtype=torch.float64)
+        yb = torch.as_tensor(np.asarray(vx[lo : lo + BLOCK]), dtype=torch.float64).to(dev)
         s += yb.sum(0)
         ss += (yb * yb).sum(0)
     var_sum = float((ss / n - (s / n) ** 2).clamp(min=0.0).sum())
@@ -733,8 +851,8 @@ def phase_predict(args) -> None:
     sqerr_total = 0.0
     for lo in range(start, n, BLOCK):
         hi = min(lo + BLOCK, n)
-        xb = torch.as_tensor(np.asarray(cx[lo:hi]), dtype=torch.float64)
-        yb = torch.as_tensor(np.asarray(vx[lo:hi]), dtype=torch.float64)
+        xb = torch.as_tensor(np.asarray(cx[lo:hi]), dtype=torch.float64).to(dev)
+        yb = torch.as_tensor(np.asarray(vx[lo:hi]), dtype=torch.float64).to(dev)
         yh = ((xb - comp["xmu"]) / comp["xsd"]) @ comp["W"] + comp["ymu"]  # apply_map ridge path
         ib = xb + ib_shift
         eps = 1e-12
@@ -755,8 +873,8 @@ def phase_predict(args) -> None:
             yb.norm(dim=1),
             yh.norm(dim=1),
         ]
-        vhat[lo:hi] = yh.to(torch.float32).numpy()
-        met[lo:hi] = torch.stack(cols, dim=1).to(torch.float32).numpy()
+        vhat[lo:hi] = yh.to(torch.float32).cpu().numpy()
+        met[lo:hi] = torch.stack(cols, dim=1).to(torch.float32).cpu().numpy()
         write_json_atomic(cur_p, {"n_rows": n, "done_rows": hi, "var_sum": var_sum})
         logger.info(
             "[phase=predict] block %d/%d rows=%d elapsed=%.1fs",
@@ -788,6 +906,11 @@ def sizes(args, n: int) -> dict:
             "kmeans_k": 8,
             "hdbscan_sub": min(5_000, n),
             "silhouette_n": min(2_000, n),
+            "id_scales": (500, 1_000),
+            "id_scales_judged": (200, 500),
+            "id_resamples": 2,
+            "id_anchors": 50,
+            "xlayer_sub": 2_000,
         }
     return {
         "pca_fit_per_side": min(200_000, n),
@@ -796,6 +919,11 @@ def sizes(args, n: int) -> dict:
         "kmeans_k": 50,
         "hdbscan_sub": min(150_000, n),
         "silhouette_n": min(20_000, n),
+        "id_scales": (5_000, 20_000, 50_000),
+        "id_scales_judged": (5_000, 17_304),
+        "id_resamples": 5,
+        "id_anchors": 500,
+        "xlayer_sub": 100_000,
     }
 
 
@@ -831,11 +959,24 @@ def phase_pca(args) -> None:
     )
     adir = arrays_dir(args)
     vhat = mm(args, "vhat_L19.npy")
+    dev = compute_device()
+    comp_t = torch.as_tensor(pca.components_, dtype=torch.float32, device=dev)
+    mean_t = torch.as_tensor(pca.mean_, dtype=torch.float32, device=dev)
+    parity_checked = False
     for name, src in (("pca_cx.npy", cx), ("pca_vx.npy", vx), ("pca_vhat.npy", vhat)):
         dst = _open_or_create_memmap(adir / name, (n, dim), np.float32)
         for lo in range(0, n, BLOCK):
             hi = min(lo + BLOCK, n)
-            dst[lo:hi] = pca.transform(np.asarray(src[lo:hi], dtype=np.float32))
+            xb = torch.as_tensor(np.asarray(src[lo:hi], dtype=np.float32), device=dev)
+            out = ((xb - mean_t) @ comp_t.T).cpu().numpy()
+            if not parity_checked:
+                ref = pca.transform(np.asarray(src[lo : lo + 256], dtype=np.float32))
+                d = float(np.abs(out[: ref.shape[0]] - ref).max())
+                if d > 1e-3:
+                    raise RuntimeError(f"pca transform device parity FAILED: max|d|={d:.2e}")
+                logger.info("[pca] device transform parity vs sklearn: max|d|=%.2e", d)
+                parity_checked = True
+            dst[lo:hi] = out
         dst.flush()
         logger.info("[phase=pca] block done %s rows=%d elapsed=%.1fs", name, n, time.time() - t0)
     mark_done(args, "pca", key, t0, {"evr_sum": float(pca.explained_variance_ratio_.sum())})
@@ -852,7 +993,8 @@ def pca_transform_np(args, X: np.ndarray) -> np.ndarray:
 def _umap_model(args, sz: dict):
     import umap
 
-    n_jobs = 16 if args.umap_relax_seed else 1  # fixed random_state forces n_jobs=1 in umap
+    # fixed random_state forces n_jobs=1 in umap-learn; the relax lever parallelizes
+    n_jobs = (os.cpu_count() or 1) if args.umap_relax_seed else 1
     return umap.UMAP(
         n_neighbors=15,
         min_dist=0.1,
@@ -915,7 +1057,7 @@ def phase_umap(args) -> None:
         "n_fit": n_fit,
         "n_transform": n_trans,
     }
-    write_json_atomic(out_root(args) / "umap_pilot.json", pilot_rec)
+    write_json_atomic(durable_root(args) / "umap_pilot.json", pilot_rec)
     logger.info("[umap] pilot: %s", json.dumps(pilot_rec))
     if proj_total > float(args.umap_wall_budget_s):
         logger.error(
@@ -936,7 +1078,7 @@ def phase_umap(args) -> None:
     model = _umap_model(args, sz)
     model.fit(fit_X)
     del fit_X
-    models_dir = out_root(args) / "models"
+    models_dir = big_leg_root(args) / "models"
     models_dir.mkdir(parents=True, exist_ok=True)
     import pickle
 
@@ -1044,7 +1186,7 @@ def phase_cluster(args) -> None:
     )
     if proj_n2 > 3 * 3600 and not args.force_hdbscan:
         write_json_atomic(
-            out_root(args) / "hdbscan_pilot.json",
+            durable_root(args) / "hdbscan_pilot.json",
             {"pilot_n": pilot_n, "pilot_wall_s": pilot_wall, "proj_n2_s": proj_n2},
         )
         logger.error(
@@ -1096,40 +1238,18 @@ def _find_store_root(extract_dir: Path) -> Path:
     return next(iter(hits))
 
 
-def _context_id_key(meta_row: dict) -> str:
-    for k in ("context_id", "ci", "id"):
-        if k in meta_row:
-            return k
-    raise RuntimeError(f"no context-id key in store row_index rows; keys={sorted(meta_row)}")
-
-
-def phase_judged(args) -> None:
-    n = realized_rows(args)
-    key = phase_key(args, {"n_rows": n, "labeling": str(DV_LABELING.relative_to(PROJECT_ROOT))})
-    if phase_done(args, "judged", key):
-        return
-    t0 = time.time()
-    from explore_persona_space.experiments.issue_1739 import store_io
-
+def _labeling_by_id(args) -> dict[str, dict]:
     labeling = json.loads(DV_LABELING.read_text(encoding="utf-8"))
     lab_rows = labeling["rows"]
     if args.smoke:
         lab_rows = lab_rows[: int(args.smoke_judged)]
-    lab_by_id = {str(r["context_id"]): r for r in lab_rows}
-    logger.info("[judged] labeling rows: %d (of %d total)", len(lab_by_id), len(labeling["rows"]))
+    logger.info("[judged] labeling rows: %d (of %d total)", len(lab_rows), len(labeling["rows"]))
+    return {str(r["context_id"]): r for r in lab_rows}
 
-    root = _find_store_root(stage_root(args) / "labeling_store")
-    arrs, meta = store_io.load_summaries(root, ("context_end",), (LAYER,))
-    ctx = arrs[("context_end", LAYER)]
-    t1_arr = None
-    try:
-        arrs_t1, _ = store_io.load_summaries(root, ("t1",), (LAYER,))
-        t1_arr = arrs_t1[("t1", LAYER)]
-    except FileNotFoundError:
-        logger.info(
-            "[judged] no answer-side (t1) L19 shards in the store — context-side only "
-            "(DISCLOSED in meta.json)"
-        )
+
+def _judged_store_rows(args, meta, lab_by_id):
+    """Dedupe store rows to the first row per context_id + the labeling join
+    gate (informational under --smoke). Returns (keep_ids, row_indices, lab_by_id)."""
     id_key = _context_id_key(meta[0])
     first_row_for: dict[str, int] = {}
     for i, r in enumerate(meta):
@@ -1147,11 +1267,56 @@ def phase_judged(args) -> None:
             raise RuntimeError(f"identity gate FAILED: {msg}")
     keep_ids = sorted(lab_by_id)
     rows = np.asarray([first_row_for[c] for c in keep_ids], dtype=np.int64)
+    return keep_ids, rows, lab_by_id
+
+
+def _store_layers(root: Path) -> list[int]:
+    """Layer ids with context-side summary shards on disk (probed, never assumed)."""
+    layers = set()
+    for f in root.glob("*.npy"):
+        m = re.match(r"(?:context_end|context_k)_L(\d{2})(?:_shard\d+)?\.npy$", f.name)
+        if m:
+            layers.add(int(m.group(1)))
+    if not layers:
+        raise RuntimeError(f"no context-side summary shards under {root}")
+    return sorted(layers)
+
+
+def _context_id_key(meta_row: dict) -> str:
+    for k in ("context_id", "ci", "id"):
+        if k in meta_row:
+            return k
+    raise RuntimeError(f"no context-id key in store row_index rows; keys={sorted(meta_row)}")
+
+
+def phase_judged(args) -> None:
+    n = realized_rows(args)
+    key = phase_key(args, {"n_rows": n, "labeling": str(DV_LABELING.relative_to(PROJECT_ROOT))})
+    if phase_done(args, "judged", key):
+        return
+    t0 = time.time()
+    from explore_persona_space.experiments.issue_1739 import store_io
+
+    lab_by_id = _labeling_by_id(args)
+    root = _find_store_root(stage_root(args) / "labeling_store")
+    arrs, meta = store_io.load_summaries(root, ("context_end",), (LAYER,))
+    ctx = arrs[("context_end", LAYER)]
+    t1_arr = None
+    try:
+        arrs_t1, _ = store_io.load_summaries(root, ("t1",), (LAYER,))
+        t1_arr = arrs_t1[("t1", LAYER)]
+    except FileNotFoundError:
+        logger.info(
+            "[judged] no answer-side (t1) L19 shards in the store — context-side only "
+            "(DISCLOSED in meta.json)"
+        )
+    keep_ids, rows, lab_by_id = _judged_store_rows(args, meta, lab_by_id)
     ctx32 = ctx[rows].astype(np.float32)
+    np.save(arrays_dir(args) / "judged_ctx_L19.npy", ctx32)  # P8 dim battery input
     pca_j = pca_transform_np(args, ctx32)
     import pickle
 
-    with open(out_root(args) / "models" / "umap_model.pkl", "rb") as f:
+    with open(big_leg_root(args) / "models" / "umap_model.pkl", "rb") as f:
         umap_model = pickle.load(f)
     umap_j = np.empty((len(keep_ids), 2), dtype=np.float32)
     for lo in range(0, len(keep_ids), BLOCK):
@@ -1227,11 +1392,703 @@ def phase_judged(args) -> None:
     )
 
 
+# ── phase: dim (P8 — spectra + intrinsic-dimension battery; scope extension) ─────
+
+KNN_K = 101  # self + the k=100 local-PCA neighborhood; also covers MLE_KS
+MLE_KS = (10, 20)
+LOCAL_PCA_K = 100
+CORR_RADII_N = 20
+
+
+def _spectrum_stats(evals: np.ndarray) -> dict:
+    """Descriptive spectrum stats + log-log power-law tail fit (ranks 10..1000)."""
+    ev = np.sort(np.clip(np.asarray(evals, dtype=np.float64), 0.0, None))[::-1]
+    tot = float(ev.sum())
+    cum = np.cumsum(ev) / max(tot, 1e-300)
+
+    def _ndim(q: float) -> int:
+        return int(np.searchsorted(cum, q) + 1)
+
+    lo, hi = 10, min(1000, ev.shape[0])
+    ranks = np.arange(lo, hi + 1, dtype=np.float64)
+    vals = ev[lo - 1 : hi]
+    pos = vals > 0
+    slope = float(np.polyfit(np.log(ranks[pos]), np.log(vals[pos]), 1)[0])
+    return {
+        "participation_ratio": float(ev.sum() ** 2 / max((ev**2).sum(), 1e-300)),
+        "n_dims_50": _ndim(0.50),
+        "n_dims_90": _ndim(0.90),
+        "n_dims_99": _ndim(0.99),
+        "powerlaw_exponent": slope,
+        "powerlaw_fit_ranks": [int(lo), int(hi)],
+        "total_variance": tot,
+    }
+
+
+def _accumulate_moments(args, srcs: dict, n: int) -> dict:
+    """ONE chunked fp64 pass: per-space mean + second moment; the (cx, vx)
+    cross moment rides the same pass (paired rows). Device-routed."""
+    dev = compute_device()
+    t0 = time.time()
+    sums = {k: torch.zeros(H_DIM, dtype=torch.float64, device=dev) for k in srcs}
+    moms = {k: torch.zeros(H_DIM, H_DIM, dtype=torch.float64, device=dev) for k in srcs}
+    cross = torch.zeros(H_DIM, H_DIM, dtype=torch.float64, device=dev)
+    n_blocks = (n + BLOCK - 1) // BLOCK
+    for lo in range(0, n, BLOCK):
+        hi = min(lo + BLOCK, n)
+        blocks = {
+            k: torch.as_tensor(np.asarray(v[lo:hi]), dtype=torch.float64).to(dev)
+            for k, v in srcs.items()
+        }
+        for k, xb in blocks.items():
+            sums[k] += xb.sum(0)
+            moms[k] += xb.T @ xb
+        if "cx" in blocks and "vx" in blocks:
+            cross += blocks["cx"].T @ blocks["vx"]
+        logger.info(
+            "[phase=dim] block %d/%d moments elapsed=%.1fs",
+            lo // BLOCK + 1,
+            n_blocks,
+            time.time() - t0,
+        )
+    return {
+        "sums": {k: v.cpu().numpy() for k, v in sums.items()},
+        "moms": {k: v.cpu().numpy() for k, v in moms.items()},
+        "cross_cx_vx": cross.cpu().numpy(),
+        "n": n,
+    }
+
+
+def _cov_from_moments(S: np.ndarray, mu: np.ndarray, n: int) -> np.ndarray:
+    C = S / n - np.outer(mu, mu)
+    return (C + C.T) / 2.0
+
+
+def _cca_spectrum(acc: dict, top: int = 500) -> tuple[np.ndarray, dict]:
+    """(cx, vx) canonical-correlation spectrum from the accumulated moments.
+    Descriptive spectrum, NOT a new predictor (no fit is banked or reused)."""
+    n = acc["n"]
+    mu_c = acc["sums"]["cx"] / n
+    mu_a = acc["sums"]["vx"] / n
+    Ccc = _cov_from_moments(acc["moms"]["cx"], mu_c, n)
+    Caa = _cov_from_moments(acc["moms"]["vx"], mu_a, n)
+    Cca = acc["cross_cx_vx"] / n - np.outer(mu_c, mu_a)
+    reg_c = 1e-6 * float(np.trace(Ccc)) / H_DIM
+    reg_a = 1e-6 * float(np.trace(Caa)) / H_DIM
+    Ccc[np.diag_indices_from(Ccc)] += reg_c
+    Caa[np.diag_indices_from(Caa)] += reg_a
+
+    def _inv_sqrt(C: np.ndarray) -> np.ndarray:
+        w, V = np.linalg.eigh(C)
+        w = np.clip(w, 1e-12, None)
+        return (V * (w**-0.5)) @ V.T
+
+    K = _inv_sqrt(Ccc) @ Cca @ _inv_sqrt(Caa)
+    sv = np.clip(np.linalg.svd(K, compute_uv=False), 0.0, 1.0)
+    return sv[:top], {"reg_c": reg_c, "reg_a": reg_a, "n": n}
+
+
+def _corr_radii(X: torch.Tensor) -> np.ndarray:
+    """~20 log-spaced radii between the 1st and 50th percentile of POSITIVE
+    pairwise distances on a 2k-row pilot (zero distances = duplicate rows,
+    excluded from the radius derivation)."""
+    m = min(2000, X.shape[0])
+    d = torch.cdist(X[:m], X[:m])
+    iu = torch.triu_indices(m, m, offset=1)
+    vals = d[iu[0], iu[1]].cpu().numpy()
+    pos = vals[vals > 0]
+    if pos.size < 100:
+        raise RuntimeError("corr-dim radius pilot: fewer than 100 positive pairwise distances")
+    return np.geomspace(np.percentile(pos, 1), np.percentile(pos, 50), CORR_RADII_N)
+
+
+def _knn_and_paircounts(X: torch.Tensor, radii: np.ndarray, k: int):
+    """Chunked cdist over the sample: per-row k smallest distances + indices,
+    plus unordered pair counts below each radius (self-pairs excluded)."""
+    n = X.shape[0]
+    k_eff = min(k, n)
+    q = max(256, min(8192, int(1.5e9 / max(n * 4, 1))))
+    dists = np.empty((n, k_eff), dtype=np.float32)
+    idxs = np.empty((n, k_eff), dtype=np.int64)
+    counts = np.zeros(len(radii), dtype=np.float64)
+    for lo in range(0, n, q):
+        hi = min(lo + q, n)
+        d = torch.cdist(X[lo:hi], X)
+        vals, ix = torch.topk(d, k=k_eff, dim=1, largest=False)
+        dists[lo:hi] = vals.cpu().numpy()
+        idxs[lo:hi] = ix.cpu().numpy()
+        for ri, r in enumerate(radii):
+            counts[ri] += float((d < float(r)).sum())
+        del d
+    pair_counts = (counts - n) / 2.0  # remove self-pairs, halve double counting
+    return dists, idxs, pair_counts
+
+
+def _id_twonn(dists: np.ndarray) -> dict:
+    """TwoNN (Facco et al. 2017): fit -log(1-F) = d * log(mu) through the
+    origin, discarding the top 10% of mu per the paper."""
+    r1, r2 = dists[:, 1], dists[:, 2]
+    valid = r1 > 0
+    mu = np.sort(r2[valid] / r1[valid])
+    n = mu.shape[0]
+    keep = max(10, int(np.floor(n * 0.9)))
+    x = np.log(mu[:keep])
+    y = -np.log(1.0 - np.arange(1, n + 1)[:keep] / n)
+    return {
+        "id": float((x * y).sum() / max((x * x).sum(), 1e-300)),
+        "n_used": int(n),
+        "n_zero_r1_dropped": int((~valid).sum()),
+    }
+
+
+def _id_lb_mle(dists: np.ndarray, k: int) -> dict:
+    """Levina-Bickel MLE at k. Two named aggregate forms are reported:
+    mean_of_local_mles = mean_x[(k-1)/s(x)] (the standard form) and
+    mackay_ghahramani = (k-2)/mean_x[s(x)] (averaging inverse local estimates
+    with the MacKay-Ghahramani k-2 correction), s(x) = sum_j log(T_k/T_j)."""
+    T = dists[:, 1 : k + 1]
+    ok = T[:, 0] > 0
+    T = np.clip(T[ok], 1e-30, None)
+    s = np.log(T[:, -1:] / T[:, :-1]).sum(axis=1)
+    s = s[s > 0]
+    if s.size == 0:
+        raise RuntimeError(f"lb-mle k={k}: no valid rows (all-zero neighbor distances)")
+    return {
+        "id_mean_of_local_mles": float(((k - 1) / s).mean()),
+        "id_mackay_ghahramani": float((k - 2) / s.mean()),
+        "k": int(k),
+        "n_used": int(s.size),
+        "n_dropped": int(dists.shape[0] - s.size),
+    }
+
+
+def _id_corrdim(pair_counts: np.ndarray, radii: np.ndarray, n: int) -> dict:
+    """Grassberger-Procaccia: slope of log C(r) vs log r over the linear
+    region (preferring 1e-4 <= C <= 0.5); the fit window is reported."""
+    n_pairs = n * (n - 1) / 2.0
+    C = np.clip(pair_counts, 0.0, None) / max(n_pairs, 1.0)
+    valid = (C > 0) & (C < 1)
+    win = valid & (C >= 1e-4) & (C <= 0.5)
+    if win.sum() < 3:
+        win = valid
+    if win.sum() < 3:
+        return {"id": None, "note": "fewer than 3 usable radii", "n_radii_fit": int(win.sum())}
+    slope = float(np.polyfit(np.log(radii[win]), np.log(C[win]), 1)[0])
+    return {
+        "id": slope,
+        "fit_r_lo": float(radii[win].min()),
+        "fit_r_hi": float(radii[win].max()),
+        "n_radii_fit": int(win.sum()),
+    }
+
+
+def _id_local_pca(X_np: np.ndarray, idxs: np.ndarray, rng, n_anchors: int, k: int) -> dict:
+    """Local-PCA ID: per-anchor #eigenvalues to 90% variance of the k-NN
+    neighborhood; median + IQR across anchors."""
+    n = X_np.shape[0]
+    k_eff = min(k, idxs.shape[1] - 1)
+    anchors = rng.choice(n, size=min(n_anchors, n), replace=False)
+    dims = []
+    for a in anchors:
+        Y = X_np[idxs[a, 1 : k_eff + 1]].astype(np.float64)
+        Y -= Y.mean(0)
+        ev = np.linalg.svd(Y, compute_uv=False) ** 2
+        cum = np.cumsum(ev) / max(ev.sum(), 1e-300)
+        dims.append(int(np.searchsorted(cum, 0.90) + 1))
+    d = np.asarray(dims)
+    return {
+        "id_median": float(np.median(d)),
+        "id_iqr": [float(np.percentile(d, 25)), float(np.percentile(d, 75))],
+        "k": int(k_eff),
+        "n_anchors": int(anchors.size),
+    }
+
+
+def phase_dim(args) -> None:
+    n = realized_rows(args)
+    sz = sizes(args, n)
+    key = phase_key(
+        args,
+        {
+            "n_rows": n,
+            "id_scales": list(sz["id_scales"]),
+            "id_scales_judged": list(sz["id_scales_judged"]),
+            "id_resamples": sz["id_resamples"],
+            "knn_k": KNN_K,
+            "mle_ks": list(MLE_KS),
+            "anchors": sz["id_anchors"],
+        },
+    )
+    if phase_done(args, "dim", key):
+        return
+    t0 = time.time()
+    dev = compute_device()
+    export = export_dir(args)
+    export.mkdir(parents=True, exist_ok=True)
+    srcs = {
+        "cx": mm(args, "cx_L19.npy"),
+        "vx": mm(args, "vx_L19.npy"),
+        "vhat": mm(args, "vhat_L19.npy"),
+    }
+
+    # (a) full exact spectra + CCA, sub-checkpointed (the moment pass is the
+    # expensive leg; the ID battery below has its own per-unit resume).
+    spec_key = phase_key(args, {"n_rows": n, "leg": "spectra"})
+    if not phase_done(args, "dim_spectra", spec_key):
+        acc = _accumulate_moments(args, srcs, n)
+        spectra: dict[str, np.ndarray] = {}
+        stats: dict[str, dict] = {}
+        for k in srcs:
+            mu = acc["sums"][k] / n
+            C = _cov_from_moments(acc["moms"][k], mu, n)
+            ev = np.linalg.eigh(C)[0][::-1].copy()
+            spectra[f"evals_{k}"] = ev
+            stats[k] = _spectrum_stats(ev)
+            logger.info("[dim] %s spectrum: %s", k, json.dumps(stats[k]))
+        cca, cca_meta = _cca_spectrum(acc)
+        np.savez(export / "dim_spectra.npz", cca_corrs_cx_vx=cca, **spectra)
+        write_json_atomic(
+            state_dir(args) / "dim_spectra_stats.json", {"spectra": stats, "cca": cca_meta}
+        )
+        mark_done(args, "dim_spectra", spec_key, t0)
+
+    # (b) intrinsic-dimension battery, AMBIENT 3584-d fp32, per-unit JSONL resume.
+    judged_path = arrays_dir(args) / "judged_ctx_L19.npy"
+    if not judged_path.exists():
+        raise RuntimeError("phase dim needs judged_ctx_L19.npy — run --phase judged first")
+    pools = dict(srcs)
+    pools["judged_cx"] = np.load(judged_path, mmap_mode="r")
+    out_jsonl = export / "dim_id_estimates.jsonl"
+    done_units = set()
+    if out_jsonl.exists():
+        done_units = {(r["space"], r["n"], r["resample"]) for r in iter_jsonl(out_jsonl)}
+    units = []
+    for si, (space, pool) in enumerate(sorted(pools.items())):
+        pool_n = int(pool.shape[0])
+        scales = sz["id_scales_judged"] if space == "judged_cx" else sz["id_scales"]
+        for n_s in scales:
+            n_eff = min(int(n_s), pool_n)
+            n_res = 1 if n_eff == pool_n else int(sz["id_resamples"])
+            for r in range(n_res):
+                units.append((si, space, n_eff, r))
+    for ui, (si, space, n_eff, r) in enumerate(units):
+        if (space, n_eff, r) in done_units:
+            continue
+        tu = time.time()
+        rng = np.random.default_rng([SEED, si, n_eff, r])
+        pool = pools[space]
+        idx = np.sort(rng.choice(int(pool.shape[0]), size=n_eff, replace=False))
+        X_np = np.asarray(pool[idx], dtype=np.float32)
+        X = torch.as_tensor(X_np, device=dev)
+        radii = _corr_radii(X)
+        dists, idxs, pair_counts = _knn_and_paircounts(X, radii, KNN_K)
+        row = {
+            "space": space,
+            "n": n_eff,
+            "resample": r,
+            "seed": [SEED, si, n_eff, r],
+            "ambient_dim": H_DIM,
+            "twonn": _id_twonn(dists),
+            "lb_mle": {str(k): _id_lb_mle(dists, k) for k in MLE_KS},
+            "corr_dim": _id_corrdim(pair_counts, radii, n_eff),
+            "local_pca": _id_local_pca(X_np, idxs, rng, sz["id_anchors"], LOCAL_PCA_K),
+            "elapsed_s": round(time.time() - tu, 1),
+        }
+        with open(out_jsonl, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        logger.info(
+            "[phase=dim] block %d/%d space=%s n=%d r=%d elapsed=%.1fs",
+            ui + 1,
+            len(units),
+            space,
+            n_eff,
+            r,
+            time.time() - t0,
+        )
+
+    # headline summary: percentile bands across resamples per (space, estimator, n).
+    rows = list(iter_jsonl(out_jsonl))
+    summary: dict = {}
+    for space in sorted({r["space"] for r in rows}):
+        summary[space] = {}
+        for n_s in sorted({r["n"] for r in rows if r["space"] == space}):
+            sub = [r for r in rows if r["space"] == space and r["n"] == n_s]
+
+            def _band(vals: list) -> dict | None:
+                v = np.asarray([x for x in vals if x is not None], dtype=np.float64)
+                if v.size == 0:
+                    return None
+                return {
+                    "p2_5": float(np.percentile(v, 2.5)),
+                    "median": float(np.percentile(v, 50)),
+                    "p97_5": float(np.percentile(v, 97.5)),
+                    "n_resamples": int(v.size),
+                }
+
+            summary[space][str(n_s)] = {
+                "twonn": _band([r["twonn"]["id"] for r in sub]),
+                **{
+                    f"lb_mle_k{k}_mean_of_local_mles": _band(
+                        [r["lb_mle"][str(k)]["id_mean_of_local_mles"] for r in sub]
+                    )
+                    for k in MLE_KS
+                },
+                **{
+                    f"lb_mle_k{k}_mackay_ghahramani": _band(
+                        [r["lb_mle"][str(k)]["id_mackay_ghahramani"] for r in sub]
+                    )
+                    for k in MLE_KS
+                },
+                "corr_dim": _band([r["corr_dim"]["id"] for r in sub]),
+                "local_pca_median": _band([r["local_pca"]["id_median"] for r in sub]),
+            }
+    spec_stats_p = state_dir(args) / "dim_spectra_stats.json"
+    write_json_atomic(
+        export / "dim_summary.json",
+        {
+            "spectra": json.loads(spec_stats_p.read_text(encoding="utf-8")),
+            "id_estimates": summary,
+            "notes": [
+                "CCA correlation spectrum is a descriptive spectrum, not a new predictor.",
+                "ID battery runs on AMBIENT 3584-d fp32 inputs, never PCA-reduced.",
+                "lb_mle forms: mean_of_local_mles = mean[(k-1)/s]; "
+                "mackay_ghahramani = (k-2)/mean[s], s = sum_j log(T_k/T_j).",
+                "subsample draws are without replacement; n == pool size runs once.",
+            ],
+        },
+    )
+    mark_done(args, "dim", key, t0, {"n_units": len(units)})
+
+
+# ── phase: xlayer (P9 — cross-layer vector similarity; scope extension) ──────────
+
+XL_LAYERS = (14, 19, 26)
+XL_OBJ = tuple(f"{kind}{layer}" for kind in ("cx", "vx") for layer in XL_LAYERS)
+XL_MOM_PAIRS = tuple((i, j) for i in range(len(XL_OBJ)) for j in range(len(XL_OBJ)) if i <= j)  # 21
+XL_COS_PAIRS = (
+    ("cx14", "cx19"),
+    ("cx19", "cx26"),
+    ("cx14", "cx26"),
+    ("vx14", "vx19"),
+    ("vx19", "vx26"),
+    ("vx14", "vx26"),
+    ("cx14", "vx14"),
+    ("cx19", "vx19"),
+    ("cx26", "vx26"),
+)
+XL_HIST_BINS = 400
+XL_CKPT_EVERY = 256
+
+
+class _HistAcc:
+    """Streaming cosine-distribution accumulator: fixed [-1, 1] histogram +
+    exact mean/sd moments; percentiles read off the histogram (bin width 0.005)."""
+
+    def __init__(self, state: dict | None = None):
+        self.edges = np.linspace(-1.0, 1.0, XL_HIST_BINS + 1)
+        if state is None:
+            self.counts = np.zeros(XL_HIST_BINS, dtype=np.int64)
+            self.n, self.s, self.ss = 0, 0.0, 0.0
+        else:
+            self.counts = np.asarray(state["counts"], dtype=np.int64)
+            self.n, self.s, self.ss = int(state["n"]), float(state["s"]), float(state["ss"])
+
+    def update(self, vals: np.ndarray) -> None:
+        v = np.clip(np.asarray(vals, dtype=np.float64), -1.0, 1.0)
+        self.counts += np.histogram(v, bins=self.edges)[0]
+        self.n += v.size
+        self.s += float(v.sum())
+        self.ss += float((v**2).sum())
+
+    def state(self) -> dict:
+        return {"counts": self.counts.tolist(), "n": self.n, "s": self.s, "ss": self.ss}
+
+    def stats(self) -> dict:
+        cum = np.cumsum(self.counts)
+
+        def _q(p: float) -> float:
+            i = min(int(np.searchsorted(cum, p * self.n)), XL_HIST_BINS - 1)
+            return float((self.edges[i] + self.edges[i + 1]) / 2)
+
+        mean = self.s / max(self.n, 1)
+        return {
+            "n": int(self.n),
+            "mean": mean,
+            "sd": float(np.sqrt(max(self.ss / max(self.n, 1) - mean**2, 0.0))),
+            "p2_5": _q(0.025),
+            "median": _q(0.5),
+            "p97_5": _q(0.975),
+            "hist_counts": self.counts.tolist(),
+            "hist_edges": {"lo": -1.0, "hi": 1.0, "bins": XL_HIST_BINS},
+        }
+
+
+def _cos_pair_np(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    num = (a * b).sum(1)
+    den = np.linalg.norm(a, axis=1) * np.linalg.norm(b, axis=1)
+    return num / np.clip(den, 1e-12, None)
+
+
+def _np_stats(vals: np.ndarray) -> dict:
+    return {
+        "n": int(vals.size),
+        "mean": float(vals.mean()),
+        "sd": float(vals.std()),
+        "p2_5": float(np.percentile(vals, 2.5)),
+        "median": float(np.percentile(vals, 50)),
+        "p97_5": float(np.percentile(vals, 97.5)),
+    }
+
+
+def _cka_from_centered_moments(Cij, Cii, Cjj) -> float:
+    num = float((Cij**2).sum())
+    den = float(np.sqrt((Cii**2).sum()) * np.sqrt((Cjj**2).sum()))
+    return num / max(den, 1e-300)
+
+
+def _cka_direct(A: np.ndarray, B: np.ndarray) -> float:
+    Ac = A - A.mean(0)
+    Bc = B - B.mean(0)
+    return _cka_from_centered_moments(Ac.T @ Bc, Ac.T @ Ac, Bc.T @ Bc)
+
+
+def phase_xlayer(args) -> None:
+    n = realized_rows(args)
+    sz = sizes(args, n)
+    names = capture_chunk_names(args)
+    fp = universe_fp(names)
+    sub_n = min(int(sz["xlayer_sub"]), n)
+    key = phase_key(
+        args,
+        {
+            "universe_fp": fp,
+            "layers": list(XL_LAYERS),
+            "sub_n": sub_n,
+            "bins": XL_HIST_BINS,
+        },
+    )
+    if phase_done(args, "xlayer", key):
+        return
+    t0 = time.time()
+    dev = compute_device()
+    adir = arrays_dir(args)
+    export = export_dir(args)
+    export.mkdir(parents=True, exist_ok=True)
+    ci_all = mm(args, "ci.npy")
+
+    # (a) n1m tier: ONE extra stream over the packed 3-layer chunks.
+    sub_idx = np.sort(np.random.default_rng(SEED + 3).choice(n, size=sub_n, replace=False))
+    sub_mm = _open_or_create_memmap(
+        adir / "xlayer_sub.npy", (sub_n, len(XL_OBJ), H_DIM), np.float32
+    )
+    acc_pt = adir / "xlayer_acc.pt"
+    cur_p = state_dir(args) / "xlayer_cursor.json"
+    start, row_base, sub_ptr = 0, 0, 0
+    sums = torch.zeros(len(XL_OBJ), H_DIM, dtype=torch.float64, device=dev)
+    moms = torch.zeros(len(XL_MOM_PAIRS), H_DIM, H_DIM, dtype=torch.float64, device=dev)
+    hists = {pair: _HistAcc() for pair in XL_COS_PAIRS}
+    if cur_p.exists() and acc_pt.exists():
+        cur = json.loads(cur_p.read_text(encoding="utf-8"))
+        if cur.get("universe_fp") == fp and cur.get("sub_n") == sub_n:
+            blob = torch.load(acc_pt, map_location="cpu", weights_only=False)
+            sums = blob["sums"].to(dev)
+            moms = blob["moms"].to(dev)
+            hists = {pair: _HistAcc(blob["hists"][f"{pair[0]}|{pair[1]}"]) for pair in XL_COS_PAIRS}
+            start, row_base, sub_ptr = (
+                int(cur["chunks_done"]),
+                int(cur["row_base"]),
+                int(cur["sub_ptr"]),
+            )
+            logger.info("[xlayer] RESUMED accumulators at chunk %d/%d", start, len(names))
+        elif cur:
+            logger.warning("[xlayer] cursor MISMATCHED (universe/sub_n changed); re-streaming")
+
+    def _ckpt(done: int) -> None:
+        with atomic_replace(acc_pt) as tmp:
+            torch.save(
+                {
+                    "sums": sums.cpu(),
+                    "moms": moms.cpu(),
+                    "hists": {f"{p[0]}|{p[1]}": h.state() for p, h in hists.items()},
+                },
+                tmp,
+            )
+        write_json_atomic(
+            cur_p,
+            {
+                "universe_fp": fp,
+                "sub_n": sub_n,
+                "chunks_done": done,
+                "row_base": row_base,
+                "sub_ptr": sub_ptr,
+            },
+        )
+
+    cache = stage_root(args) / "chunk_cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    obj_index = {k: i for i, k in enumerate(XL_OBJ)}
+    for i in range(start, len(names)):
+        got = dl(f"{CAPTURE_PREFIX}/{names[i]}", cache, f"xlayer chunk {names[i]}")
+        b = torch.load(got, mmap=True, weights_only=False, map_location="cpu")
+        cols = {layer: list(b["layers"]).index(layer) for layer in XL_LAYERS}
+        objs = {}
+        for field, kname in (("cx_last", "cx"), ("v_x", "vx")):
+            for layer in XL_LAYERS:
+                objs[f"{kname}{layer}"] = b[field][:, cols[layer], :].to(torch.float32)
+        nrows = int(objs["cx19"].shape[0])
+        ci_chunk = np.asarray([int(x) for x in b["ci"]], dtype=np.int64)
+        got_ci = np.asarray(ci_all[row_base : row_base + nrows])
+        if not (got_ci == ci_chunk).all():
+            raise RuntimeError(f"xlayer/assemble row misalignment at chunk {names[i]}")
+        t_objs = {k: v.to(dev, torch.float64) for k, v in objs.items()}
+        for k, oi in obj_index.items():
+            sums[oi] += t_objs[k].sum(0)
+        for pi, (i2, j2) in enumerate(XL_MOM_PAIRS):
+            moms[pi] += t_objs[XL_OBJ[i2]].T @ t_objs[XL_OBJ[j2]]
+        for pair in XL_COS_PAIRS:
+            a, c = t_objs[pair[0]], t_objs[pair[1]]
+            cosv = (a * c).sum(1) / ((a.norm(dim=1) * c.norm(dim=1)).clamp(min=1e-12))
+            hists[pair].update(cosv.cpu().numpy())
+        while sub_ptr < sub_n and sub_idx[sub_ptr] < row_base + nrows:
+            j = int(sub_idx[sub_ptr] - row_base)
+            for k, oi in obj_index.items():
+                sub_mm[sub_ptr, oi] = objs[k][j].numpy()
+            sub_ptr += 1
+        row_base += nrows
+        del b, objs, t_objs
+        got.unlink()
+        if (i + 1) % XL_CKPT_EVERY == 0:
+            _ckpt(i + 1)
+        if (i + 1) % 100 == 0 or i + 1 == len(names):
+            logger.info(
+                "[phase=xlayer] block %d/%d rows=%d elapsed=%.1fs",
+                i + 1,
+                len(names),
+                row_base,
+                time.time() - t0,
+            )
+    if row_base != n or sub_ptr != sub_n:
+        raise RuntimeError(f"xlayer stream incomplete: rows {row_base}/{n}, sub {sub_ptr}/{sub_n}")
+    _ckpt(len(names))
+    sub_mm.flush()
+
+    sums_np = sums.cpu().numpy()
+    moms_np = moms.cpu().numpy()
+    means = sums_np / n
+    cent = {}
+    for pi, (i2, j2) in enumerate(XL_MOM_PAIRS):
+        cent[(i2, j2)] = moms_np[pi] - n * np.outer(means[i2], means[j2])
+    cka6 = np.eye(len(XL_OBJ))
+    for i2 in range(len(XL_OBJ)):
+        for j2 in range(i2 + 1, len(XL_OBJ)):
+            cka6[i2, j2] = cka6[j2, i2] = _cka_from_centered_moments(
+                cent[(i2, j2)], cent[(i2, i2)], cent[(j2, j2)]
+            )
+
+    # Subsample post-pass: centered cosines + one row-shuffled null (seed 42).
+    sub = np.asarray(sub_mm, dtype=np.float64)
+    perm = np.random.default_rng(SEED).permutation(sub_n)
+    cos_stats: dict[str, dict] = {}
+    for pair in XL_COS_PAIRS:
+        ai, bi = obj_index[pair[0]], obj_index[pair[1]]
+        A, B = sub[:, ai, :], sub[:, bi, :]
+        Ac, Bc = A - means[ai], B - means[bi]
+        cos_stats[f"{pair[0]}~{pair[1]}"] = {
+            "raw_full": hists[pair].stats(),
+            "centered_sub": _np_stats(_cos_pair_np(Ac, Bc)),
+            "null_raw_sub": _np_stats(_cos_pair_np(A, B[perm])),
+            "null_centered_sub": _np_stats(_cos_pair_np(Ac, Bc[perm])),
+        }
+    cka6_sub = np.eye(len(XL_OBJ))
+    cka6_null = np.eye(len(XL_OBJ))
+    for i2 in range(len(XL_OBJ)):
+        for j2 in range(i2 + 1, len(XL_OBJ)):
+            A, B = sub[:, i2, :], sub[:, j2, :]
+            cka6_sub[i2, j2] = cka6_sub[j2, i2] = _cka_direct(A, B)
+            cka6_null[i2, j2] = cka6_null[j2, i2] = _cka_direct(A, B[perm])
+
+    # (b) 28-layer tier from the #1739 labeling store (context side only).
+    from explore_persona_space.experiments.issue_1739 import store_io
+
+    root = _find_store_root(stage_root(args) / "labeling_store")
+    layers28 = _store_layers(root)
+    arrs, meta = store_io.load_summaries(root, ("context_end",), tuple(layers28))
+    keep_ids, rows_idx, _ = _judged_store_rows(args, meta, _labeling_by_id(args))
+    stack = [
+        torch.as_tensor(arrs[("context_end", layer)][rows_idx].astype(np.float32), device=dev)
+        for layer in layers28
+    ]
+    stack = [x - x.mean(0) for x in stack]
+    frobsq = {}
+    cka28 = np.eye(len(layers28))
+    for i2 in range(len(layers28)):
+        frobsq[i2] = float(((stack[i2].T @ stack[i2]).double() ** 2).sum())
+    for i2 in range(len(layers28)):
+        for j2 in range(i2 + 1, len(layers28)):
+            num = float(((stack[i2].T @ stack[j2]).double() ** 2).sum())
+            cka28[i2, j2] = cka28[j2, i2] = num / max(
+                np.sqrt(frobsq[i2]) * np.sqrt(frobsq[j2]), 1e-300
+            )
+        logger.info(
+            "[phase=xlayer] block cka28 row %d/%d elapsed=%.1fs",
+            i2 + 1,
+            len(layers28),
+            time.time() - t0,
+        )
+    raw28 = {
+        layer: torch.as_tensor(arrs[("context_end", layer)][rows_idx].astype(np.float32))
+        for layer in layers28
+    }
+    adj_curve = []
+    for a_l, b_l in itertools.pairwise(layers28):
+        A = raw28[a_l].numpy().astype(np.float64)
+        B = raw28[b_l].numpy().astype(np.float64)
+        adj_curve.append(
+            {
+                "layers": [int(a_l), int(b_l)],
+                "raw": _np_stats(_cos_pair_np(A, B)),
+                "centered": _np_stats(_cos_pair_np(A - A.mean(0), B - B.mean(0))),
+            }
+        )
+
+    np.savez(
+        export / "xlayer_cka.npz",
+        cka6=cka6,
+        cka6_sub=cka6_sub,
+        cka6_null=cka6_null,
+        labels6=np.asarray(XL_OBJ),
+        sub_n=np.int64(sub_n),
+        cka28=cka28,
+        layers28=np.asarray(layers28, dtype=np.int64),
+        n_judged=np.int64(len(keep_ids)),
+    )
+    write_json_atomic(
+        export / "xlayer_cosine_stats.json",
+        {
+            "pairs": cos_stats,
+            "adjacent_layer_curve_28": adj_curve,
+            "notes": [
+                "Per-row cosines are meaningful because all layers share the d=3584 "
+                "residual-stream basis.",
+                "CKA is rotation-invariant similarity (linear CKA from centered "
+                "cross-moments); it can never support 'same vector up to sign/scale' — "
+                "the cosine rows carry the direction-aware read.",
+                f"Shuffle-null + centered variants computed on a deterministic "
+                f"{sub_n}-row subsample (seed {SEED + 3}; null permutation seed {SEED}); "
+                "raw full-corpus distributions come from the stream histograms.",
+                "28-layer tier is CONTEXT-side only: the #1739 labeling store carries no "
+                "answer-side 28-layer summaries (limitation recorded, not substituted).",
+            ],
+        },
+    )
+    mark_done(args, "xlayer", key, t0, {"sub_n": sub_n, "n_layers28": len(layers28)})
+
+
 # ── phase: export ────────────────────────────────────────────────────────────────
 
 
 def export_dir(args) -> Path:
-    return out_root(args) / "export"
+    return durable_root(args) / "export"
 
 
 def _read_meta_texts(export: Path) -> tuple[list[str], list[str], list[str]]:
@@ -1272,6 +2129,11 @@ def phase_export(args) -> None:
     adir = arrays_dir(args)
     export = export_dir(args)
     export.mkdir(parents=True, exist_ok=True)
+    key["inputs"] = sorted(
+        p.name for p in state_dir(args).glob("*.done.json") if p.name != "export.done.json"
+    )
+    if phase_done(args, "export", key):
+        return
 
     met = np.asarray(mm(args, "metrics.npy"))
     coords = {
@@ -1341,7 +2203,7 @@ def phase_export(args) -> None:
     for p in sorted(state_dir(args).glob("*.done.json")):
         rec = json.loads(p.read_text(encoding="utf-8"))
         walls[p.stem.replace(".done", "")] = rec.get("elapsed_s")
-    pilot_p = out_root(args) / "umap_pilot.json"
+    pilot_p = durable_root(args) / "umap_pilot.json"
     write_json_atomic(
         export / "walltime.json",
         {
@@ -1412,7 +2274,7 @@ def phase_export(args) -> None:
     )
     sentinel_dir = Path("/workspace/logs")
     if not sentinel_dir.exists():
-        sentinel_dir = out_root(args)  # VM-side smoke runs have no /workspace
+        sentinel_dir = durable_root(args)  # VM-side smoke runs have no /workspace
     write_json_atomic(
         sentinel_dir / sentinel_name,
         {
@@ -1442,9 +2304,22 @@ PHASES: dict[str, object] = {
     "umap": phase_umap,
     "cluster": phase_cluster,
     "judged": phase_judged,
+    "dim": phase_dim,
+    "xlayer": phase_xlayer,
     "export": phase_export,
 }
-ALL_ORDER = ("stage", "assemble", "predict", "pca", "umap", "cluster", "judged", "export")
+ALL_ORDER = (
+    "stage",
+    "assemble",
+    "predict",
+    "pca",
+    "umap",
+    "cluster",
+    "judged",
+    "dim",
+    "xlayer",
+    "export",
+)
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -1455,7 +2330,10 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument("--smoke", action="store_true", help="tiny-N full-path smoke")
     ap.add_argument("--smoke-chunks", type=int, default=10, help="capture chunks under --smoke")
     ap.add_argument("--smoke-judged", type=int, default=500, help="judged contexts under --smoke")
-    ap.add_argument("--out-root", default=None, help="override the per-mode output root")
+    ap.add_argument("--out-root", default=None, help="override the durable (export) root")
+    ap.add_argument(
+        "--big-root", default=None, help="override the container-local staging/arrays root"
+    )
     ap.add_argument("--stage-root", default=None, help="override the shared staging root")
     ap.add_argument(
         "--umap-relax-seed",

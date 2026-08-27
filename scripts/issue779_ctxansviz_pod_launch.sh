@@ -13,8 +13,9 @@ set -a
 [ -f .env ] && source .env
 set +a
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
-# Dedicated 16-vCPU CPU pod: full-width BLAS threads + the glibc arena cap.
-export OMP_NUM_THREADS=16 MKL_NUM_THREADS=16 OPENBLAS_NUM_THREADS=16 NUMEXPR_NUM_THREADS=16
+# Dedicated pod: full-width BLAS threads derived at runtime + the glibc arena cap.
+NPROC="$(nproc)"
+export OMP_NUM_THREADS="$NPROC" MKL_NUM_THREADS="$NPROC" OPENBLAS_NUM_THREADS="$NPROC" NUMEXPR_NUM_THREADS="$NPROC"
 export MALLOC_ARENA_MAX=2
 export PYTHONUNBUFFERED=1
 mkdir -p /workspace/logs
