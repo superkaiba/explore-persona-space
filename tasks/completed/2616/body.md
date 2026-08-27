@@ -1,5 +1,6 @@
 ---
-title: Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads
+title: 'Background per-stem Hub uploader: overlap capture-phase uploads with next-stem
+  compute (shipped; adoption deferred to a future capture round)'
 kind: infra
 tags: []
 created_at: '2026-08-27T05:59:21Z'
