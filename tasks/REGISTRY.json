@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2623,
+  "highest_id": 2624,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12525,6 +12525,13 @@
       "path": "tasks/proposed/2623",
       "status": "proposed",
       "title": "main-red: test_workflow_lint_prod_import_lockfile::test_live_tree_clean pins 7 live-tree WARNs, main emits 11 (dangling first-party import roots unreconciled)"
+    },
+    "2624": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2624",
+      "status": "proposed",
+      "title": "No check verifies a GPU-lane-routed phase actually allocates a CUDA context (P5 ran 4xH100 at 0 MiB)"
     },
     "263": {
       "has_clean_result": true,
