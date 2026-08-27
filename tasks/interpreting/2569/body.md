@@ -5,7 +5,7 @@ title: The layer-19 context-answer map reaches its population linear ceiling wit
 kind: experiment
 tags: []
 created_at: '2026-08-25T06:45:51Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1774
 origin_prompt: 'User-approved 8-leg battery from the 2026-08-24 one-at-a-time theory
   walk: eigen/fixed-point analysis, gate-metric ladder (''ok this works''), wiring
