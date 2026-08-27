@@ -36,7 +36,14 @@ import issue2587_common as C  # noqa: E402
 
 def test_pins_reexported_by_import_identity():
     assert C.MODEL_VENV_PINS is cm2378.MODEL_VENV_PINS
-    assert C.MODEL_VENV_EXTRA_PINS is cm2378.MODEL_VENV_EXTRA_PINS
+    # EXTRA_PINS deliberately EXTENDS the #2378 set (crash-fix r1, commit
+    # 3ac3feddc1: transformers 5.15.1 device_map loads require accelerate).
+    # The carried prefix stays identity-reexported per element; the delta is
+    # exactly the accelerate pin.
+    base = cm2378.MODEL_VENV_EXTRA_PINS
+    assert C.MODEL_VENV_EXTRA_PINS[: len(base)] == base
+    assert all(a is b for a, b in zip(C.MODEL_VENV_EXTRA_PINS, base, strict=False))
+    assert C.MODEL_VENV_EXTRA_PINS[len(base) :] == ("accelerate==1.14.0",)
     assert C.MODEL_VENV_BANNED_DISTS is cm2378.MODEL_VENV_BANNED_DISTS
     assert C.ENGINE_KWARG_PINS is cm2378.ENGINE_KWARG_PINS
     assert C.MODEL_VENV_DEFAULT is cm2378.MODEL_VENV_DEFAULT
@@ -45,7 +52,11 @@ def test_pins_reexported_by_import_identity():
 
 
 def test_venv_builder_and_driver_gate_are_the_2378_functions():
-    assert C.build_model_venv is d2378._build_model_venv
+    # build_model_venv WRAPS the #2378 builder since crash-fix r1: the
+    # delegate is held by import identity and the wrapper only installs the
+    # issue-local delta pins after it.
+    assert C._build_model_venv_2378 is d2378._build_model_venv
+    assert "_build_model_venv_2378(logs_dir)" in inspect.getsource(C.build_model_venv)
     assert C.assert_driver_compat is d2378._assert_driver_compat
 
 

@@ -1264,6 +1264,12 @@ def _upload_names_once(scratch: Path, path_in_repo: str, names: list[str], verif
     for .pt). Raises on any miss — the caller purges only after this returns."""
     api = _hf_api()
     local_shas = {n: _sha256_file(scratch / n) for n in names} if verify_sha else {}
+    # Upload-time secret gate on the exact Hub-bound files (parent process has
+    # the repo package via issue2587_common; the package-free constraint covers
+    # only the model-step subprocess).
+    from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
+
+    assert_upload_clean([scratch / n for n in names], what=f"upload_folder {path_in_repo}")
     _retry_transient(
         # HUB_DIR_FILECOUNT_EXEMPT: shard dirs hold <= ~40 files, far below the 10k cap
         lambda: api.upload_folder(  # NO_RETRY: wrapped in the module's own _retry_transient port
