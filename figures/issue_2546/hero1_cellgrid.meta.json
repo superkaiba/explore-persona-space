@@ -1,15 +1,11 @@
 {
-  "commit": "16247687+dirty",
-  "render_id": "8de002a7f19145f6",
-  "git_commit": "16247687f94a04a53c2ff00b4499aa0cb54d6997",
-  "git_dirty": true,
-  "git_dirty_paths": [
-    ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
-    "scripts/issue2546_figures.py"
-  ],
-  "git_argv0_state": "modified",
+  "commit": "2ad752e4",
+  "render_id": "8253abd6afc54abc",
+  "git_commit": "2ad752e4ee966d3c8e6f5734b5c09b204549d424",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T19:25:06Z",
+  "created": "2026-08-27T20:28:54Z",
   "figsize": [
     14.100000000000001,
     11.0

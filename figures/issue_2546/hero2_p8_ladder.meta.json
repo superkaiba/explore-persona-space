@@ -1,18 +1,11 @@
 {
-  "commit": "16247687+dirty",
-  "render_id": "661e8717883f43e3",
-  "git_commit": "16247687f94a04a53c2ff00b4499aa0cb54d6997",
-  "git_dirty": true,
-  "git_dirty_paths": [
-    ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
-    "figures/issue_2546/hero1_cellgrid.meta.json",
-    "figures/issue_2546/hero1_cellgrid.pdf",
-    "figures/issue_2546/hero1_cellgrid.png",
-    "scripts/issue2546_figures.py"
-  ],
-  "git_argv0_state": "modified",
+  "commit": "2ad752e4",
+  "render_id": "eadc1c1af6174684",
+  "git_commit": "2ad752e4ee966d3c8e6f5734b5c09b204549d424",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T19:25:12Z",
+  "created": "2026-08-27T20:29:00Z",
   "figsize": [
     10.8,
     13.0
