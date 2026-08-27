@@ -1482,6 +1482,49 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   link and the verifier read PASS (reconciler item
   `footer-github-artifact-links`).
 
+- **check 62** (`check_figure_caption_grain_claims_vs_sidecar`, WARN,
+  generation-agnostic, #2367): a figure whose beat-1 window / blockquote
+  caption / alt text claims per-draw or per-row point GRAIN ("each point
+  is one <up to 3 modifiers> draw|row", "one point per <mods> draw|row",
+  "per-draw points"; in the adjective form 'marker' is accepted as the
+  glyph noun for per-DRAW only — "per-row marker ..." is the marker-token
+  domain term, #399/#471) is cross-checked against its `.meta.json`
+  sidecar's per-series point counts: WARN when a series count n matches a
+  body-declared pair-flavored count (singles + pairwise sums of
+  `<N> <mods> pairs|survivors` and pair-adjacent `n=<N>` tokens; numeric
+  RANGE endpoints — dash-spelled "n=26-36 pairs per cell" AND worded
+  "N = 50 to 550 pairs" (#207) / "26 through 36" — are excluded: per-cell
+  ranges are not plotted-total candidates, and the #2333 endpoint 26 would
+  spuriously veto the incident via 26x3x5=390) times a small multiplier
+  s in {1..4} within max(2, 2%) tolerance, while matching NO such product
+  times any body-declared decode-K (`K=<k> draws` / `x <k> draws`,
+  resampling-guarded, 2 <= K <= 64) — the #2333 signature (n=388 ~ 195x2,
+  not x5). A draw-product match always vetoes (leniency wins ties).
+  Silent skip (check-24 convention) on missing/truncated/rowless
+  sidecars, non-sha-pinned/non-same-repo URLs, disarmed bodies (no K /
+  no non-range pair counts — zero git reads), and series n < 5;
+  per-figure opt-out literal `<!-- caption-grain: manual -->` (honored
+  from the beat-1 window / caption, NOT from alt text); WARN never FAIL.
+  Named recall/discrimination sacrifices: possessive/hyphenated unit
+  nouns ("one probe row's ...", "draw-averaged"), digit- or x-bridged
+  modifiers ("one pair at greedy 1 draw" #2162, "one cell x estimator
+  row" #602), "one of the N rows" (a counted shape — check 45 territory,
+  #504), line/trace grain ("one thin line per pair"), "per-row markers"
+  as glyphs (the row+marker exclusion above), range-only pair
+  declarations (a body declaring pair counts ONLY as ranges disarms),
+  K vocabulary the two decode forms miss ("10 on-policy rollouts per
+  question", "5 samples per prompt", table-cell "| Draws per cell | 5 |",
+  spelled-out "five draws" — all disarm), non-pair-unit designs
+  (question/context/persona-grain bodies are never armed), setup-line-only
+  claims in LEGACY layouts (beat1=None falls back to caption + alt, so a
+  claim living only in a v2 setup line is missed), small-K self-veto
+  (for declared K in {2,3,4} a drift whose scheme multiplier s equals K
+  or a multiple of K is structurally vetoed — the draw set is a superset
+  of agg x K there; discriminating power effectively needs K >= 5), and
+  any caption whose truthful unit noun is not draw/row. Incident: #2333
+  r2 — caption "Each point is one steered prefill draw" over
+  per-(pair x donor-scheme) cells with K=5 draws pre-averaged (#2367).
+
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
   task #1881; unnumbered — dispatched outside CHECKS next to the #732
@@ -16135,6 +16178,407 @@ def check_figure_caption_count_claims_vs_sidecar(body: str) -> CheckResult:
     )
 
 
+# ─── Check 62: caption grain claims (per-draw/per-row) vs sidecar counts ───
+# Sibling of check 45 (same figure iteration, same `_read_figure_meta_json`
+# sidecar read, same fail-soft skip conventions) with a different claim
+# recognizer (unit-GRAIN idioms, not count shapes), a wider scan window
+# (beat-1 + alt text, not caption-only), and a per-series point-COUNT read
+# (not per-column value pools). Incident #2333 round 2: the caption said
+# "Each point is one steered prefill draw" while the plotted rows were
+# per-(pair, arm) cells with K=5 draws pre-averaged — n per series was
+# 388 ~ pairs x schemes, NOT x K. Check 62 makes that arithmetic
+# signature mechanically visible: WARN when a series count matches a
+# body-declared pair-count product WITHOUT the declared K-draw factor.
+# Conjunctive fire condition, draw-product veto always wins, WARN never
+# FAIL (check 41's forward-only argument); the clean-result-critic Lens 3
+# figure-load read stays the binding arm (#2367).
+
+_GRAIN_CLAIM_OPTOUT = "<!-- caption-grain: manual -->"
+
+# The per-point unit head noun must be draw/row, reached from the glyph
+# token through <=3 letter-leading modifier tokens ("one steered prefill
+# draw"; "one single steered prefill draw"). A digit token, a non-letter
+# symbol (the multiplication sign), or punctuation breaks the modifier
+# bridge — "one pair at greedy 1 draw" (#2162; the digit token rejects
+# it), "one cell x estimator row" (#602), and "one of the 432 pooled
+# rows" (#504) never match. The trailing negative lookahead blocks
+# possessive and hyphen-modifier usage ("one probe row's paired margin
+# delta" #1489; "draw-averaged").
+_GRAIN_MOD = r"(?:[a-z][\w-]{0,24}\s+){0,3}?"
+_GRAIN_EACH_RE = re.compile(
+    r"\b(?:each|every)\s+(?:point|dot|marker)s?\s+"
+    r"(?:is|=|represents|shows|corresponds\s+to)\s+"
+    r"(?:one|a|an)\s+" + _GRAIN_MOD + r"(?P<unit>draw|row)s?\b(?!['’-])",  # noqa: RUF001
+    re.IGNORECASE,
+)
+_GRAIN_PER_RE = re.compile(
+    r"\bone\s+(?:point|dot|marker)\s+per\s+" + _GRAIN_MOD + r"(?P<unit>draw|row)\b(?!['’-])",  # noqa: RUF001
+    re.IGNORECASE,
+)
+# Adjective form: row+marker is EXCLUDED — "per-row marker ..." is the
+# marker-token domain term (#399 "per-row marker-loss contribution",
+# hyphenated, defeating any whitespace-anchored noun lookahead; #471
+# "Per-row marker count"); 'marker' stays accepted for per-DRAW only.
+_GRAIN_ADJ_RE = re.compile(
+    r"\bper[- ](?:(?P<unit_d>draw)\s+(?:point|dot|marker|scatter)s?"
+    r"|(?P<unit_r>row)\s+(?:point|dot|scatter)s?)\b",
+    re.IGNORECASE,
+)
+# Markdown image alt-text capture (local to check 62; supports `]` inside
+# the alt as long as it is not the closing `](`).
+_GRAIN_IMG_ALT_RE = re.compile(r"!\[((?:[^\]]|\](?!\())*)\]\(")
+# Decode-K harvest: ONLY the two strongly decode-flavored forms. Judge
+# draws ("N=5 draws") and hyphenated bootstrap forms ("10,000-draw")
+# never match by construction.
+_GRAIN_K_RES = (
+    re.compile(r"\bK\s*=\s*(\d{1,2})\s*draws?\b", re.IGNORECASE),
+    re.compile(r"(?<![A-Za-z0-9])[×x]\s*(\d{1,2})\s+draws?\b", re.IGNORECASE),  # noqa: RUF001
+)
+_GRAIN_K_GUARD_RE = re.compile(r"bootstrap|permutation|resampl|null[- ]draw", re.IGNORECASE)
+_GRAIN_K_MIN, _GRAIN_K_MAX = 2, 64
+_GRAIN_PAIRCOUNT_RE = re.compile(
+    r"\b(\d{1,4})\s+(?:[a-z][\w-]{0,24}\s+){0,3}?(?:pairs|survivors)\b", re.IGNORECASE
+)
+_GRAIN_NEQ_RE = re.compile(r"\bn\s*=\s*(\d{1,4})\b", re.IGNORECASE)
+_GRAIN_PAIRISH_RE = re.compile(r"\bpairs?\b|\bsurviv", re.IGNORECASE)
+_GRAIN_PAIR_MIN, _GRAIN_PAIR_MAX = 2, 5000
+_GRAIN_PAIR_CAP = 24
+_GRAIN_PAIRISH_WINDOW = 60
+_GRAIN_RANGE_WINDOW = 16
+_GRAIN_RANGE_TAIL_RE = re.compile(
+    r"\s*[–—−-]\s*\d|\s+(?:to|through)\s+\d",  # noqa: RUF001
+    re.IGNORECASE,
+)
+_GRAIN_RANGE_HEAD_RE = re.compile(
+    r"\d\s*[–—−-]\s*$|\d\s+(?:to|through)\s+$",  # noqa: RUF001
+    re.IGNORECASE,
+)
+
+
+def _grain_is_range_endpoint(text: str, start: int, end: int) -> bool:
+    """True when the number at ``text[start:end]`` is an endpoint of a
+    numeric RANGE — dash-spelled ("n=26-36 pairs per cell") or worded
+    ("N = 50 to 550 pairs", "26 through 36") — read from a bounded
+    16-char context window on either side. En dash, em dash, unicode
+    minus, and ASCII hyphen all count as range dashes; a DIGIT is
+    required on the far side of the dash/word, so hyphenated compounds
+    ("2-token") and prepositional "compared to 36 pairs" / "scaled up to
+    36 pairs" are never rejected (#2367)."""
+    after = text[end : end + _GRAIN_RANGE_WINDOW]
+    before = text[max(0, start - _GRAIN_RANGE_WINDOW) : start]
+    return bool(_GRAIN_RANGE_TAIL_RE.match(after)) or bool(_GRAIN_RANGE_HEAD_RE.search(before))
+
+
+def _caption_grain_claims(window: str) -> list[dict]:
+    """Registered unit-GRAIN claims in a figure's scan window, as
+    ``{"unit": "draw"|"row", "raw": <matched text>}`` dicts. Three
+    idioms: the copular EACH form ("each point is one steered prefill
+    draw"), the PER form ("one point per row"), and the adjective form
+    ("per-draw points"). Named recall sacrifice: a genuine per-row glyph
+    caption spelled "per-row markers" is missed (the #399/#471 row+marker
+    exclusion); the EACH/PER copular forms still accept 'marker' with
+    unit=row."""
+    claims: list[dict] = []
+    for rx in (_GRAIN_EACH_RE, _GRAIN_PER_RE):
+        for m in rx.finditer(window):
+            claims.append({"unit": m.group("unit").casefold(), "raw": m.group(0)})
+    for m in _GRAIN_ADJ_RE.finditer(window):
+        unit = "draw" if m.group("unit_d") else "row"
+        claims.append({"unit": unit, "raw": m.group(0)})
+    return claims
+
+
+def _body_grain_declarations(body: str) -> tuple[set[int], set[int], bool]:
+    """Harvest body-declared pair-flavored counts + decode-K values.
+
+    Returns ``(pair_counts, ks, pair_cap_hit)``. K: only the two strongly
+    decode-flavored forms (``K=<k> draws`` / ``x <k> draws``), rejected
+    when the preceding 40 chars carry resampling vocabulary
+    (bootstrap/permutation/resampl/null-draw) and bounded
+    2 <= K <= 64 (K=1 makes draw grain equal cell grain — nothing to
+    discriminate). Pair counts: ``<N> <mods> pairs|survivors`` plus
+    pair-adjacent ``n=<N>`` tokens (a pairs/surviv token within +-60
+    chars; the pairs token is word-bounded so "paired" alone never arms
+    it, while "surviv" is a deliberate stem), bounded 2 <= P <= 5000,
+    numeric RANGE endpoints excluded in both dash and worded spellings
+    (``_grain_is_range_endpoint``), capped at the first 24 distinct
+    values in document order (``pair_cap_hit`` flags the cap so the WARN
+    detail can disclose a possibly-dropped late veto)."""
+    ks: set[int] = set()
+    for rx in _GRAIN_K_RES:
+        for m in rx.finditer(body):
+            if _GRAIN_K_GUARD_RE.search(body[max(0, m.start() - 40) : m.start()]):
+                continue
+            k = int(m.group(1))
+            if _GRAIN_K_MIN <= k <= _GRAIN_K_MAX:
+                ks.add(k)
+    pair_hits: list[tuple[int, int]] = []  # (position, value) → document order
+    for rx in (_GRAIN_PAIRCOUNT_RE, _GRAIN_NEQ_RE):
+        for m in rx.finditer(body):
+            if rx is _GRAIN_NEQ_RE:
+                lo = max(0, m.start() - _GRAIN_PAIRISH_WINDOW)
+                hi = m.end() + _GRAIN_PAIRISH_WINDOW
+                if not _GRAIN_PAIRISH_RE.search(body[lo:hi]):
+                    continue
+            if _grain_is_range_endpoint(body, m.start(1), m.end(1)):
+                continue
+            p = int(m.group(1))
+            if _GRAIN_PAIR_MIN <= p <= _GRAIN_PAIR_MAX:
+                pair_hits.append((m.start(1), p))
+    pair_hits.sort()
+    pair_counts: set[int] = set()
+    pair_cap_hit = False
+    for _pos, p in pair_hits:
+        if p in pair_counts:
+            continue
+        if len(pair_counts) >= _GRAIN_PAIR_CAP:
+            pair_cap_hit = True
+            break
+        pair_counts.add(p)
+    return pair_counts, ks, pair_cap_hit
+
+
+def _grain_products(
+    pair_counts: set[int], ks: set[int]
+) -> tuple[dict[int, tuple[str, int]], set[int]]:
+    """Candidate products from the harvested declarations. ``agg`` maps
+    an aggregated-count candidate — a pair count or a pairwise pair-set
+    SUM (pooled pair sets: the #2333 figure pools 180 fmt + 15 mq = 195),
+    times a small scheme/arm multiplier s in {1..4} — to a display
+    ``(repr, s)`` pair for the WARN text; ``draw`` is every agg product
+    times every declared K (parsing the true donor-scheme count from
+    prose is fragile, so a bounded any-candidate set is used — the
+    check-45 posture). Iteration is sorted for a deterministic repr on
+    value collisions."""
+    cands: dict[int, str] = {}
+    for p in sorted(pair_counts):
+        cands.setdefault(p, str(p))
+    for a, b in itertools.combinations(sorted(pair_counts), 2):
+        cands.setdefault(a + b, f"({a}+{b})")
+    agg: dict[int, tuple[str, int]] = {}
+    for p, rep in sorted(cands.items()):
+        for s in (1, 2, 3, 4):
+            agg.setdefault(p * s, (rep, s))
+    draw = {m * k for m in agg for k in ks}
+    return agg, draw
+
+
+def _grain_near(n: int, m: int) -> bool:
+    """The check-62 "approximately equals": within max(2, 2% of m) — the
+    absolute floor of 2 absorbs the incident's judge-drop attrition
+    (388 vs 390); the 2% arm scales it for larger products."""
+    return abs(n - m) <= max(2, round(0.02 * m))
+
+
+def _sidecar_series_point_counts(meta: dict) -> dict[str, int] | None:
+    """Per-series plotted point counts from the sidecar's ``points``
+    (canonical) / ``rows`` (legacy) dict-rows; None on a truncated
+    sidecar (counts over truncated rows are not figure truth — check-45
+    parity) or when no countable dict rows exist. Grain claims are about
+    POINTS, so when any ``_kind == "scatter"`` row exists the count is
+    scatter-rows-only (bar/line rows dropped). Keying: the ``series``
+    legend-label string when present, else ``str(_group)`` — ANONYMOUS
+    rows (neither key) deliberately coalesce under the ``""`` key, and
+    multi-``_group`` figures with REPEATED legend labels likewise
+    coalesce into one count (both acceptable at today's sidecar shapes
+    and pinned by the helper test; diagnose future sidecar-shape drift
+    here first). Non-finite scatter rows still count as plotted points
+    (#2367)."""
+    if meta.get("data_truncated") or meta.get("truncated"):
+        return None
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list):
+        return None
+    rows = [p for p in pts if isinstance(p, dict)]
+    kinds = {p.get("_kind") for p in rows if isinstance(p.get("_kind"), str)}
+    if "scatter" in kinds:
+        rows = [p for p in rows if p.get("_kind") == "scatter"]
+    counts: dict[str, int] = {}
+    for p in rows:
+        key = p["series"] if isinstance(p.get("series"), str) else str(p.get("_group", ""))
+        counts[key] = counts.get(key, 0) + 1
+    return counts or None
+
+
+def _grain_claims_for_one_figure(
+    repo: Path,
+    m: re.Match,
+    rlines: list[str],
+    img_idx: int,
+    json_cache: dict,
+    agg_products: dict[int, tuple[str, int]],
+    draw_products: set[int],
+    ks: set[int],
+    pair_cap_hit: bool,
+) -> tuple[list[str], int, str]:
+    """Process ONE same-repo figure for check 62 (the check-45
+    ``_count_claims_for_one_figure`` frame). Returns
+    ``(warn_msgs, n_checked, status)`` with ``status`` in
+    {"scanned", "opted-out", "skipped"}; mutates ``json_cache`` in place.
+    The scan window is alt text + the beat-1 window (which already
+    includes the blockquote caption); when ``_beat1_prose_window``
+    returns None (no ``### `` H3 above — v2/legacy layouts) it falls
+    back to alt text + the blockquote caption alone, so a claim living
+    only in a legacy setup line is silently missed (named sacrifice).
+    Claims are parsed BEFORE any git read; the opt-out literal is
+    honored from the prose window (beat-1 / caption) only, NOT from alt
+    text (named asymmetry — an opt-out inside alt text is inert)."""
+    alt_m = _GRAIN_IMG_ALT_RE.search(rlines[img_idx])
+    alt = alt_m.group(1) if alt_m else ""
+    beat1 = _beat1_prose_window(rlines, img_idx)
+    prose = beat1 if beat1 is not None else _figure_caption_after(rlines, img_idx)
+    claims = _caption_grain_claims(f"{alt} {prose}")
+    if not claims:
+        return [], 0, "skipped"
+    if _GRAIN_CLAIM_OPTOUT in prose:
+        return [], 0, "opted-out"
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return [], 0, "skipped"  # no sidecar at that sha — check-24 convention
+    counts = _sidecar_series_point_counts(meta)
+    if counts is None:
+        return [], 0, "skipped"  # truncated sidecar / no countable rows
+    basename = m.group("path").rsplit("/", 1)[-1]
+    offenders: list[tuple[str, int, int, str, int]] = []
+    for series, n in counts.items():
+        if n < 5:
+            continue  # tiny-series coincidence floor
+        hits = [
+            (abs(n - prod), prod, rep, s)
+            for prod, (rep, s) in agg_products.items()
+            if _grain_near(n, prod)
+        ]
+        if not hits:
+            continue  # matches no aggregated product — the normal truthful case
+        if any(_grain_near(n, d) for d in draw_products):
+            continue  # a draw-grain product is also plausible — the veto
+        _dist, prod, rep, s = min(hits)
+        offenders.append((series, n, prod, rep, s))
+    if not offenders:
+        return [], len(claims), "scanned"
+    series, n, prod, rep, s = offenders[0]
+    unit = claims[0]["unit"]
+    k_show = min(ks)
+    tol = max(2, round(0.02 * prod))
+    sibling_note = (
+        f" ({len(offenders) - 1} sibling series match the same shape)" if len(offenders) > 1 else ""
+    )
+    cap_note = " (pair-count harvest capped at 24 distinct values)" if pair_cap_hit else ""
+    warn = (
+        f'`{basename}` claims per-{unit} points ("{claims[0]["raw"]}") but series '
+        f"`{series}` plots n={n} ~ {rep}x{s}={prod} (body-declared pair count x small "
+        f"multiplier, tol +-{tol}){sibling_note} — at K={k_show} draws per cell, "
+        f"per-{unit} grain would be ~{prod * k_show}; fix the caption unit or state "
+        f"the aggregation ({_GRAIN_CLAIM_OPTOUT} opts out){cap_note}"
+    )
+    return [warn], len(claims), "scanned"
+
+
+def check_figure_caption_grain_claims_vs_sidecar(body: str) -> CheckResult:
+    """Check 62 (WARN, generation-agnostic): a figure whose beat-1 window /
+    blockquote caption / alt text claims per-draw or per-row point GRAIN
+    is cross-checked against its ``.meta.json`` sidecar's per-series
+    point counts — WARN when a series count n matches a body-declared
+    pair-flavored count times a small multiplier s in {1..4} (within
+    max(2, 2%) tolerance) while matching NO such product times any
+    body-declared decode-K: the #2333 signature (n=388 ~ 195x2, not x5 —
+    the caption claimed "Each point is one steered prefill draw" over
+    per-(pair, arm) cells with K=5 draws pre-averaged). A draw-product
+    match always vetoes. Fail-soft skip ladder: no scan section / no
+    inline figures / no acceptable K / no non-range pair counts (the
+    disarms — zero git reads), non-same-repo URLs, no grain claim
+    (no git read), the ``<!-- caption-grain: manual -->`` opt-out,
+    missing/truncated/rowless sidecars, series n < 5. WARN never FAIL
+    (#2367)."""
+    label = "figure caption grain claims vs sidecar per-series counts (grain drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for im in _IMAGE_RE.finditer(line):
+            url = im.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    pair_counts, ks, pair_cap_hit = _body_grain_declarations(body)
+    if not ks:
+        return CheckResult(
+            label, True, "grain arithmetic disarmed — no decode-K declared (zero git reads)"
+        )
+    if not pair_counts:
+        return CheckResult(
+            label,
+            True,
+            "grain arithmetic disarmed — no non-range pair-flavored counts declared "
+            "(zero git reads)",
+        )
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin body)")
+    agg_products, draw_products = _grain_products(pair_counts, ks)
+    warns: list[str] = []
+    scanned = 0
+    opted_out = 0
+    n_checked_total = 0
+    json_cache: dict[str, dict | None] = {}
+    for url, img_idx in fig_at:
+        um = _RAW_GITHUB_FIGURE_RE.match(url)
+        if (
+            um is None
+            or (um.group("owner").casefold(), um.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
+            continue  # only same-repo sha-pinned figures resolve from git
+        fig_warns, n_checked, status = _grain_claims_for_one_figure(
+            repo,
+            um,
+            rlines,
+            img_idx,
+            json_cache,
+            agg_products,
+            draw_products,
+            ks,
+            pair_cap_hit,
+        )
+        if status == "opted-out":
+            opted_out += 1
+        elif status == "scanned":
+            scanned += 1
+            n_checked_total += n_checked
+        warns.extend(fig_warns)
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} caption grain-claim drift(s) across {scanned} scanned "
+            f"figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        note = f" ({opted_out} opted out)" if opted_out else ""
+        return CheckResult(
+            label,
+            True,
+            f"no figure caption with a registered grain claim AND a countable sidecar{note}",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{n_checked_total} caption grain claim(s) across {scanned} figure(s) consistent "
+        "with sidecar per-series point counts",
+    )
+
+
 # ─── Check 46: brace-expanded backtick HF paths vs the adjacent /tree pin ──
 # (#1520; incident #1426: the pre-fix footer cited `sampled_rollout/seed{42,137}/`
 # under a prefix link pinned at `c244377f…` — the robustness round's upload
@@ -20101,6 +20545,12 @@ CHECKS = [
     # point-value pools; contradiction-only, any-size-matching-pool-satisfies
     # (#1511; incident #1426):
     check_figure_caption_count_claims_vs_sidecar,
+    # check 62 (WARN, generation-agnostic) — per-draw / per-row point-GRAIN
+    # caption claims cross-checked against sidecar per-series point counts:
+    # WARN when a series n matches a body-declared pair-count product x small
+    # multiplier but NO declared-K draw product (draw match always vetoes)
+    # (#2367; incident #2333 r2):
+    check_figure_caption_grain_claims_vs_sidecar,
     # check 46 (WARN, generation-agnostic) — brace-expanded backtick HF paths
     # adjacent to a pinned /tree/<sha> link resolve at that revision
     # (#1520; incident #1426):
