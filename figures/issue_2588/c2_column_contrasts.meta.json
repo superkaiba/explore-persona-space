@@ -1,11 +1,17 @@
 {
-  "commit": "07d4002c",
-  "render_id": "41407144e0504ac0",
-  "git_commit": "07d4002ccd13d40844bac5694509eba37db6fefe",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "beb14caf+dirty",
+  "render_id": "81b1aa68ba4a4c58",
+  "git_commit": "beb14cafab422a8905aebb8c42ed857ae1d675f5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2588/c1_capability_trend.meta.json",
+    "figures/issue_2588/c1_capability_trend.pdf",
+    "figures/issue_2588/c1_capability_trend.png",
+    "scripts/issue2588_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2588_figures.py",
-  "created": "2026-08-27T16:30:26Z",
+  "created": "2026-08-27T19:12:52Z",
   "figsize": [
     6.4,
     4.2

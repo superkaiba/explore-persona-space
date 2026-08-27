@@ -1,18 +1,20 @@
 {
-  "commit": "fd946ccd+dirty",
-  "render_id": "87b82c36cc8b4d91",
-  "git_commit": "fd946ccdcf97913daa5f2c8610eb44e8da659d17",
+  "commit": "beb14caf+dirty",
+  "render_id": "82ac8bb5c4124f00",
+  "git_commit": "beb14cafab422a8905aebb8c42ed857ae1d675f5",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2588/trend_summary.json",
     "figures/issue_2588/c1_capability_trend.meta.json",
     "figures/issue_2588/c1_capability_trend.pdf",
     "figures/issue_2588/c1_capability_trend.png",
-    "scripts/issue2588_figures.py",
-    "scripts/issue2588_trend.py"
+    "figures/issue_2588/c2_column_contrasts.meta.json",
+    "figures/issue_2588/c2_column_contrasts.pdf",
+    "figures/issue_2588/c2_column_contrasts.png",
+    "scripts/issue2588_figures.py"
   ],
-  "git_argv0_state": null,
-  "created": "2026-08-27T17:25:13Z",
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T19:12:53Z",
   "figsize": [
     8.0,
     4.4

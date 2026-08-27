@@ -38,6 +38,7 @@ import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker as mticker  # noqa: E402
 import numpy as np  # noqa: E402
 
 import issue2588_panel_common as PC  # noqa: E402
@@ -126,13 +127,14 @@ def _annotate_staggered(ax, pts: list[tuple[float, float, str]]) -> None:
 
     groups: dict[float, list[tuple[float, float, str]]] = defaultdict(list)
     for x, y, lbl in pts:
-        groups[round(x / 4.0)].append((x, y, lbl))
+        # half-octave clusters: matches the log-x rendering of the trend panels
+        groups[round(np.log2(x) * 2.0)].append((x, y, lbl))
     two_side = [(5, 4, "left"), (-5, 4, "right"), (5, -10, "left"), (-5, -10, "right")]
     right_only = [(5, 4, "left"), (5, -10, "left"), (5, 12, "left"), (5, -18, "left")]
     for g in groups.values():
         g.sort(key=lambda t: -t[1])
         # leftmost x-clusters: leftward labels would run off the axis edge
-        offsets = right_only if min(x for x, _, _ in g) < 10 else two_side
+        offsets = right_only if min(x for x, _, _ in g) < 3 else two_side
         for k, (x, y, lbl) in enumerate(g):
             dx, dy, ha = offsets[k % 4]
             ax.annotate(lbl, (x, y), fontsize=6, xytext=(dx, dy), textcoords="offset points", ha=ha)
@@ -152,6 +154,12 @@ def fig_capability_trend(summary: dict, out_dir: Path) -> None:
     colors = dict(zip(("a", "b"), paper_palette(2), strict=True))
     pts = _trend_points(summary)
     fig, (ax, axr) = plt.subplots(1, 2, figsize=(11.5, 4.6), sharex=True)
+    for a in (ax, axr):
+        # log-x spreads the low-AA cluster (AA 2-8) that overlapped point labels
+        a.set_xscale("log")
+        a.set_xticks([2, 5, 10, 20, 50])
+        a.xaxis.set_major_formatter(mticker.ScalarFormatter())
+        a.minorticks_off()
 
     # Left panel: calibrated (excess over the layer-star shuffled null).
     null_sds = [r["null_sd"] for _, _, _, r in pts if r.get("null_sd") is not None]
@@ -424,6 +432,52 @@ def fig_column_layer_sweeps(summary: dict, out_dir: Path, fits_dir: Path) -> Non
     plt.close(fig)
 
 
+def fig_endpoint_percell(summary: dict, out_dir: Path, fits_dir: Path) -> None:
+    """c7: per-prompt outcome classes behind the endpoint contrast (both arms).
+
+    Exhaustive counts over each arm's shared test prompts (no sampling), so the
+    bars carry no error bars by construction; asserts the arm-a class counts
+    reconcile with the committed endpoint delta ((only-new - only-old)/n).
+    """
+    pairs = {
+        "a": ("q35_27b_a", "q38_27b_a", "perrow_prompt_last.json"),
+        "b": ("q35_27b_b", "q38_27b_b", "perrow_cot_boundary.json"),
+    }
+    classes = ["hit under both", "only Qwen3.5 27B", "only Qwen3.8 27B", "miss under both"]
+    counts: dict[str, list[int]] = {}
+    n_shared: dict[str, int] = {}
+    for arm, (old, new, fname) in pairs.items():
+        rows_old = json.loads((fits_dir / old / fname).read_text(encoding="utf-8"))
+        rows_new = json.loads((fits_dir / new / fname).read_text(encoding="utf-8"))
+        h_old = dict(zip(rows_old["row_ids"], rows_old["hit1_cos"], strict=True))
+        h_new = dict(zip(rows_new["row_ids"], rows_new["hit1_cos"], strict=True))
+        shared = sorted(set(h_old) & set(h_new))
+        n_shared[arm] = len(shared)
+        both = sum(1 for r in shared if h_old[r] and h_new[r])
+        only_old = sum(1 for r in shared if h_old[r] and not h_new[r])
+        only_new = sum(1 for r in shared if h_new[r] and not h_old[r])
+        neither = len(shared) - both - only_old - only_new
+        counts[arm] = [both, only_old, only_new, neither]
+    # reconcile with the committed contrast (raw delta = (only_new - only_old)/n)
+    cv = summary["column_verdicts"]["a"]["contrast_38_minus_35"]
+    got = (counts["a"][2] - counts["a"][1]) / n_shared["a"]
+    assert abs(got - cv["delta_raw"]) < 1e-9, (got, cv["delta_raw"])
+    assert n_shared["a"] == cv["n_shared_rows"], (n_shared["a"], cv["n_shared_rows"])
+
+    colors = dict(zip(("a", "b"), paper_palette(2), strict=True))
+    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    x = np.arange(len(classes))
+    w = 0.38
+    ax.bar(x - w / 2, counts["a"], width=w, color=colors["a"], label=ARM_LABEL["a"])
+    ax.bar(x + w / 2, counts["b"], width=w, color=colors["b"], label=ARM_LABEL["b"])
+    ax.set_xticks(x)
+    ax.set_xticklabels(classes)
+    ax.set_ylabel("held-out test prompts (count)")
+    ax.legend(frameon=False)
+    savefig_paper(fig, "c7_endpoint_percell", dir=out_dir)
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__.replace("%", "%%"), formatter_class=argparse.RawDescriptionHelpFormatter
@@ -461,6 +515,7 @@ def main(argv: list[str] | None = None) -> int:
     fig_gpqa_transfer(summary, args.out_dir)
     fig_column_verdict(summary, args.out_dir, args.fits_dir)
     fig_column_layer_sweeps(summary, args.out_dir, args.fits_dir)
+    fig_endpoint_percell(summary, args.out_dir, args.fits_dir)
     print(f"[phase=done] figures written -> {args.out_dir}")
     return 0
 

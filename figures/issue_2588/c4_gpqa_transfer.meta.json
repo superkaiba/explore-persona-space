@@ -1,27 +1,23 @@
 {
-  "commit": "fd946ccd+dirty",
-  "render_id": "b700a78286ec4e6c",
-  "git_commit": "fd946ccdcf97913daa5f2c8610eb44e8da659d17",
+  "commit": "beb14caf+dirty",
+  "render_id": "7f23518c450c48f1",
+  "git_commit": "beb14cafab422a8905aebb8c42ed857ae1d675f5",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2588/trend_summary.json",
     "figures/issue_2588/c1_capability_trend.meta.json",
     "figures/issue_2588/c1_capability_trend.pdf",
     "figures/issue_2588/c1_capability_trend.png",
+    "figures/issue_2588/c2_column_contrasts.meta.json",
+    "figures/issue_2588/c2_column_contrasts.pdf",
+    "figures/issue_2588/c2_column_contrasts.png",
     "figures/issue_2588/c3_h2_paired_deltas.meta.json",
     "figures/issue_2588/c3_h2_paired_deltas.pdf",
     "figures/issue_2588/c3_h2_paired_deltas.png",
-    "figures/issue_2588/c4_gpqa_transfer.meta.json",
-    "figures/issue_2588/c4_gpqa_transfer.pdf",
-    "figures/issue_2588/c4_gpqa_transfer.png",
-    "figures/issue_2588/c5_column_verdict.meta.json",
-    "figures/issue_2588/c5_column_verdict.pdf",
-    "figures/issue_2588/c5_column_verdict.png",
-    "scripts/issue2588_figures.py",
-    "scripts/issue2588_trend.py"
+    "scripts/issue2588_figures.py"
   ],
-  "git_argv0_state": null,
-  "created": "2026-08-27T17:29:53Z",
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T19:12:53Z",
   "figsize": [
     9.2,
     6.0

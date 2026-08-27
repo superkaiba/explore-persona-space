@@ -1,0 +1,123 @@
+{
+  "commit": "beb14caf+dirty",
+  "render_id": "bf65b84aee2f4932",
+  "git_commit": "beb14cafab422a8905aebb8c42ed857ae1d675f5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2588/c1_capability_trend.meta.json",
+    "figures/issue_2588/c1_capability_trend.pdf",
+    "figures/issue_2588/c1_capability_trend.png",
+    "figures/issue_2588/c2_column_contrasts.meta.json",
+    "figures/issue_2588/c2_column_contrasts.pdf",
+    "figures/issue_2588/c2_column_contrasts.png",
+    "figures/issue_2588/c3_h2_paired_deltas.meta.json",
+    "figures/issue_2588/c3_h2_paired_deltas.pdf",
+    "figures/issue_2588/c3_h2_paired_deltas.png",
+    "figures/issue_2588/c4_gpqa_transfer.meta.json",
+    "figures/issue_2588/c4_gpqa_transfer.pdf",
+    "figures/issue_2588/c4_gpqa_transfer.png",
+    "figures/issue_2588/c5_column_verdict.meta.json",
+    "figures/issue_2588/c5_column_verdict.pdf",
+    "figures/issue_2588/c5_column_verdict.png",
+    "figures/issue_2588/c6_column_layer_sweeps.meta.json",
+    "figures/issue_2588/c6_column_layer_sweeps.pdf",
+    "figures/issue_2588/c6_column_layer_sweeps.png",
+    "scripts/issue2588_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T19:12:55Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out test prompts (count)": 661.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out test prompts (count)": 117.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out test prompts (count)": 64.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out test prompts (count)": 145.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out test prompts (count)": 583.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out test prompts (count)": 76.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out test prompts (count)": 78.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out test prompts (count)": 109.0,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out test prompts (count)",
+        "legend_labels": [
+          "no-think read (prompt end)",
+          "thinking read (end of CoT)"
+        ],
+        "xticklabels": [
+          "hit under both",
+          "only Qwen3.5 27B",
+          "only Qwen3.8 27B",
+          "miss under both"
+        ],
+        "yticklabels": [
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ]
+      }
+    ],
+    "series": [
+      "no-think read (prompt end)",
+      "thinking read (end of CoT)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
