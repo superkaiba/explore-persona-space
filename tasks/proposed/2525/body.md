@@ -2,7 +2,8 @@
 title: 'Fix three fleet-wide test invariants broken by sibling landings on main (ungated
   HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)'
 kind: infra
-tags: []
+tags:
+- urgent-main-red
 created_at: '2026-08-24T07:58:55Z'
 has_clean_result: false
 origin_prompt: 'Surfaced by #2336 batch-0 verification: three pre-existing reds on
