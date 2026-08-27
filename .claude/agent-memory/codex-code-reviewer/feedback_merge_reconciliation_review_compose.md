@@ -21,4 +21,55 @@ For a Step 10d pre-merge divergence-delta reconciliation round (#1771→#2201), 
 
 **How to apply:** any round whose brief names a reconciliation/merge commit and parent SHAs. See also [[revision-round-compose-recipe]] and [[stale-base-mb-pin-and-fixture-remeasure]].
 
+**HAND-RESOLVED + NO-MARKER combo, id-collision renumber (#2363 r2, 2026-08-27):**
+the two variants compose together — a gate-dispatched reconciliation merge with
+semantic conflict resolutions (check-id renumber c73→c74) and NO round-matched
+`epm:results` (round record = `[divergence-probe]` notes + the merge commit
+message; prior `epm:results` inlined FENCED as context; tags narrowed to
+`substantive`|`git-provenance`|`data-access-blocked`). Four live catches:
+(a) **renumber-completeness expectation tables need the SPELLED-OUT grain** — a
+`c73`-literal grep came back clean while `grep -niE 'check[ _-]?73'` found two
+stale optional-phase-binding references (`verify_plan.py:471` "check 73" in the
+N/A-escape docs; `adversarial-planner/SKILL.md:527` in a CLEAN-merged r1 file
+the literal-grain renumber never visited — post-merge "check 73" points at the
+WRONG check since main's colliding check keeps the id); never compose a
+"zero residue" expectation from one grain. (b) **Own-memory-file duplication:
+probe BOTH parents — the #2263-r9 outcome INVERTED here**: headings 1×/1× at
+the parents, 2× at the merge ⇒ merge-CREATED duplication, a real Q4 resolution
+artifact; state counts neutrally + consequence-based severity (bookkeeping
+prose vs always-loaded MEMORY.md index), never a blanket "stat-only, never a
+finding" fence on hand-resolved files. (c) **Brief's file/line counts can
+exclude the composer's own agent-memory commits** (brief "9 files +488" vs live
+11/+544 — delta exactly the 2 memory files): reconcile arithmetically, keep
+them in scope as Q4 subjects. (d) Mid-compose ledger drift fired again
+(#2326-r3): the parallel Claude reviewer's round-2 BLOCKER rows landed in
+concerns.jsonl between reads — pin the snapshot to round-1 rows AND assert the
+excluded ids are absent from the final prompt. Also: p2-baseline pin arithmetic
+(main's own 70/63/73/enum vs merged 71/64/74/enum+74) composes as settled
+facts with the tree-verification duty handed over; pin every command to the
+MERGE SHA, never bare HEAD (the composer's own same-turn memory commit advances
+the branch tip post-freeze).
+
 **HAND-RESOLVED variant (#2263 r9, 2026-08-23) — conflict resolutions present, so the zero-hand-edit premise INVERTS:** the combined `--cc` diff is non-empty and IS the review surface (`git show <merge>`; verify the exact file list via `git diff-tree --cc --name-only` — the merge's `git show --stat` list is first-parent-relative and misleading). Structure the prompt as four charges: (Q1) both-sides preservation per semantic file — composer verifies the main-added-line DENOMINATOR (grep '^+' non-empty on merge-base..main-tip) and hands the presence sweep to the twin as own-enumeration; (Q2) each DECLARED contradiction choice gets a soundness + splice-point-coherence duty with the dropped line quoted verbatim in a FENCED block (the lines carry backticks — never nest them in prose backticks); (Q3) a hook-forced memory rebuild gets a no-lost-row duty vs BOTH parents' blobs (`- [` rows for MEMORY.md indexes, `**`-led headings for feedback files), with the transient union size declared unverifiable — evaluate the REBUILD; (Q4) no-new-defects: re-measured grandfather arithmetic on the merged tree, composer-attested ruff, conflict-marker greps, combined-diff closure + branch-deliverable files verified untouched via `<branch-parent>..<merge>` empty diffs. Three traps re-hit live: the r4 bare-substring trap (grep "plus any" hit 1 UNRELATED line while the exact dropped line counted 0 — always probe the EXACT line and pre-clear the substring hit in the prompt); duplicated entries in the composer's OWN memory file looked merge-created but pre-existed on main's blob (probe counts at both parents before flagging — pre-seed Step 0.9 pre-existing-on-trunk); open NITs from prior rounds get the #2205 three-way vocabulary with ONE merge-armed check when a merge hunk touches a NIT's subject file (NIT-capped). Tags narrowed to `substantive`|`git-provenance`|`data-access-blocked`; marker-shape/smoke invalidated (reconciliation-report shape); sentinel = review-round number per brief (== max-posted+1 continuity).
+
+**Fix-round follow-on (#2363 r3, 2026-08-27):** the round after a
+reconciliation FAIL composes as closure charges keyed on the ledger's
+raised-row `evidence` fields (again NO round `epm:results` — record = fix
+commit + the orchestrator's `addressed` rows, which are CLAIMS to verify;
+tags stay narrowed to `substantive`|`git-provenance`|`data-access-blocked`).
+Three duties validated live: (a) **prescribed-fix-deviation adjudication** —
+the raised row's literal Fix ("reset both files to origin/main") was not what
+shipped (feedback file reset; MEMORY.md surgically deduped to preserve the r2
+composer's own db81115b row extension): hand the consequence-over-literal
+read (#2147-cr4 pattern) with the composer's diff-vs-main table as the
+expectation. (b) **Probe the dup-row table at BOTH origin/main and the fix
+SHA** — the ledger's "one pre-existing dup" UNDERCOUNTED (two pairs pre-exist
+on main: selector-self-edit AND reconcile-record); attest the full table or
+the twin flags the second pair as an unfixed round defect. (c) **A file
+"reset to origin/main" needs a HEADING-LOSS probe** (parent-1 headings ⊆
+main's copy ⇒ the reset destroyed no branch-unique content) — without it the
+reset reads as potential content loss. Also: pre-classify the
+correct-by-design spelled-out-grain residue (main's own "Check 73" banner;
+other verifiers' check-N.M artifacts like `_CHECK732_*`), and instruct that a
+NOT-ADDRESSED closure IS a changed disposition ⇒ re-emit that id as a
+`CONCERN::` row so the ledger re-arms.

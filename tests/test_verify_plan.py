@@ -240,10 +240,13 @@ def test_good_plan_passes_all():
         # GOOD_PLAN's compute prose ("One A100 ...") carries no GPU-lane
         # routing token (no --gpu-type/--gpu-count/--intent/Nx<GPU-class>).
         "c73_gpu_lane_cuda_context": "PASS",
+        # SKIP: GOOD_PLAN pairs no `Phase <ID>` token with an optionality
+        # marker on any line — trigger-conditional (#2363).
+        "c74_optional_phase_binding": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 70
+    assert len(results) == 71
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6414,12 +6417,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   trigger-conditional, #2590)
     # (c73 does NOT join the skip set: its no-trigger branch renders PASS by
     #   design — GOOD_PLAN carries no GPU-lane routing token; #2624)
-    assert payload["n_skip"] == 63
+    # + c74 (SKIP: GOOD_PLAN pairs no `Phase <ID>` token with an
+    #   optionality marker; trigger-conditional, #2363)
+    assert payload["n_skip"] == 64
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 73
-    assert len({c["id"] for c in payload["checks"]}) == 73
+    assert len(payload["checks"]) == 74
+    assert len({c["id"] for c in payload["checks"]}) == 74
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")

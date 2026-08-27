@@ -221,14 +221,17 @@ Check catalog (id — classification — kind scope)
       its cuda-context: claim   (no-trigger renders       analysis
                                 PASS, not SKIP — never
                                 passed=False)
+  c74 gates-section binding to  WARN-only, conditional    all kinds
+      an optionality-marked
+      phase
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72) also
-SKIP when their content trigger does not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74)
+also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -465,6 +468,12 @@ labeled-line forms):
     (check 72 — the wave is real but its instrument is the SAME
     already-piloted rubric as an unconditional primary wave in the same
     plan; the inheritance claim is the reviewer-auditable declaration)
+  - ``N/A — no acceptance binding to an optional phase`` (check 74 — the
+    gates-section mention of the optionality-marked phase is genuinely
+    informational, not a binding; a plan whose criterion IS bound to the
+    optional phase instead strikes the optionality marker (the #2360 v3
+    resolution), re-binds the criterion to a non-optional evidence
+    source, or explicitly demotes/conditions the criterion)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -15158,6 +15167,179 @@ def check_gpu_lane_cuda_context(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 74 — gates-section binding to an optionality-marked phase ───────
+
+# c74 — §7 binding to an optionality-marked phase (#2363, incident #2360 v2).
+_C74_PHASE_ID_RE = re.compile(r"(?i)\bphase[-\s]+([0-9]{1,2}|[ivxl]{1,4}|[a-z])\b")
+_C74_OPTIONAL_RE = re.compile(
+    r"(?i)\boptional\b|\bif time permits\b|\bnice[-\s]to[-\s]have\b"
+    r"|\bstretch\s+(?:goal|phase)\b|\(stretch\)|\bbest[-\s]effort\b"
+)
+_C74_NEGATION_RE = re.compile(
+    r"(?i)\brequired\b|\bnot optional\b|\bno longer optional\b"
+    r"|\bwas\s+[\"“']?optional|\bstruck\b|\bmandatory\b"
+)
+_C74_GATES_HEADING_RE = re.compile(
+    r"(?i)\bdecision gates?\b|\bkill criteri|\bacceptance criteria\b|\bsuccess criteria\b"
+)
+_C74_PROXIMITY_CHARS = 80
+# In-sample calibration (c32 convention; DEVELOPMENT-SET numbers: the regexes
+# were tuned on the same persisted-plan corpus they were measured on — read
+# the rates as in-sample, not held-out; ANY future c74-regex change re-runs
+# the corpus scan and updates the numbers here). Scan 2026-08-27
+# (implementation-time, shipped regexes) over 4,720 persisted plan-versions
+# (tasks/*/*/plans/v*.md, main corpus @ 965716e03e): 9 WARNs in 5 distinct
+# plans. TP: #2360 v1+v2 (the founding incident — 'Phase V (optional but
+# planned)' bound by §7; v2 fires, the corrected v3 is CLEAN via the
+# negation guard). FP: 7 plan-versions / 4 distinct plans, per-FP causes —
+# #444 v4/v5 (generic-vocabulary: an '**OPTIONAL v4 diversification**'
+# clause about paraphrase counts lands within 80 chars of an unrelated
+# Phase-0 token); #506 v1/v2 (generic-vocabulary + id collision: optional
+# 'LoRA r=256 Phase 1/2 (optional)' VARIANT table rows share bare ids with
+# the mandatory main phases, joined to a wall-arithmetic narration line);
+# #507 v1/v2 (generic-vocabulary: a chained-phase enumeration
+# 'Phase 1 → ... → optional Phase 5' attributes Phase 5's marker to the
+# Phase 1 window); #2363 v1 (self-family/incident-quote: this check's own
+# plan quotes the founding declaration + fixture prose un-negated).
+# Posture rule (plan #2363 D3): FPs in 4 distinct plans < the ~10-plan
+# narrowing trigger — WARN-only ships as drafted, no anchor narrowing.
+
+
+def _c74_gates_spans(plan: str) -> list[tuple[int, int]]:
+    """Line spans (start, end) of gates sections: headings matching
+    Decision Gates / kill criteria / acceptance criteria / success
+    criteria (heading line index .. exclusive section end)."""
+    return [(h.line, h.end) for h in _headings(plan) if _C74_GATES_HEADING_RE.search(h.text)]
+
+
+def _c74_anchor_scan(
+    lines: list[str], mask: list[bool], in_gates: list[bool]
+) -> dict[str, tuple[int, str]]:
+    """Optionality-marked phase declarations OUTSIDE the gates sections:
+    a non-fenced line pairing a ``Phase <ID>`` token with an optionality
+    marker whose match starts within 80 chars AFTER the phase-id match
+    start, with no negation token anywhere on the line. Returns
+    ``{ID: (line_idx, line)}`` keeping the first declaration per id."""
+    anchors: dict[str, tuple[int, str]] = {}
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or in_gates[i] or _C74_NEGATION_RE.search(line):
+            continue
+        for pm in _C74_PHASE_ID_RE.finditer(line):
+            near = any(
+                pm.start() <= om.start() <= pm.start() + _C74_PROXIMITY_CHARS
+                for om in _C74_OPTIONAL_RE.finditer(line)
+            )
+            if near:
+                anchors.setdefault(pm.group(1).upper(), (i, line))
+    return anchors
+
+
+def _c74_first_binding(
+    pid: str, lines: list[str], mask: list[bool], gates_spans: list[tuple[int, int]]
+) -> tuple[int, str] | None:
+    """First non-fenced gates-section line referencing ``Phase <pid>``,
+    space- or hyphen-joined (``Phase V`` / ``Phase-V`` — the #2360 v2
+    hyphenated form); returns (line_idx, line) or None."""
+    ref_re = re.compile(rf"(?i)\bphase[-\s]{{1,2}}{re.escape(pid)}\b")
+    for lo, hi in gates_spans:
+        for j in range(lo, min(hi, len(lines))):
+            if not mask[j] and ref_re.search(lines[j]):
+                return j, lines[j]
+    return None
+
+
+def _c74_offender_detail(offenders: list[tuple[str, int, str, int, str]]) -> str:
+    """Render the c74 WARN detail: per offending phase the declaration
+    line + excerpt and the first gates-section binding line + excerpt,
+    then the two remedies and the standalone escape."""
+    parts = [
+        f"Phase {pid}: optionality-marked declaration at line {di + 1} "
+        f"('{dline.strip()[:90]}') is referenced by gates-section line {bi + 1} "
+        f"('{bline.strip()[:120]}')"
+        for pid, di, dline, bi, bline in offenders[:3]
+    ]
+    more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+    return (
+        "; ".join(parts)
+        + more
+        + " — an acceptance criterion whose ONLY evidence source is a phase the plan "
+        "marks skippable is not a criterion, and a kill criterion bound to a skippable "
+        "phase can never fire (#2360 v2: 'Phase V (optional but planned)' carried "
+        "Acceptance 2's pod half, Acceptance 3's count check, and kill (a); the v3 "
+        "resolution made the phase REQUIRED). Remedies: strike the optionality marker, "
+        "re-bind the criterion to a non-optional evidence source, or explicitly "
+        "demote/condition the criterion; a genuinely informational gates-section "
+        "mention declares 'N/A — no acceptance binding to an optional phase' on its "
+        "own line, unwrapped (no backticks/quotes)"
+    )
+
+
+def check_optional_phase_binding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, ALL kinds (#2363, incident #2360 v2): a plan
+    whose gates section (Decision Gates / acceptance criteria / kill
+    criteria / success criteria heading) references a phase whose own
+    DECLARATION carries a non-negated optionality marker WARNs — an
+    acceptance criterion whose only evidence source can be
+    sanctioned-skipped is not a criterion, and a kill criterion bound to
+    a skippable phase can never fire (#2360 v2 headed its ONLY acceptance
+    evidence 'Phase V (optional but planned)' while §7 bound Acceptance
+    2+3 and kill (a) to it, and verify_plan PASSed 0 FAIL / 0 WARN).
+    Anchor grammar: ``_c74_anchor_scan`` (same-line ``Phase <ID>`` +
+    marker within 80 chars after the id start, negation-guarded, OUTSIDE
+    gates sections). Binding grammar: ``_c74_first_binding``
+    (``Phase V`` / ``Phase-V``). Armed for ALL kinds — the founding
+    incident is ``kind: infra``, and phases + gates sections appear in
+    every kind (c46/c47 precedent). Honest-scope gaps (Statistics &
+    Measurement lens item 19 owns the semantic residue): a phase marked
+    optional only in prose WITHOUT a ``Phase <ID>`` token on the same
+    line is invisible (SKIP — the c29 prose-only-fence gap class); an
+    optionality marker only INSIDE a gates-section row does not anchor
+    (declarations are keyed outside gates sections, both to avoid
+    self-triggering on pasted remedy quotes and because an optional
+    CRITERION is a different defect); named phases (``Phase extract``)
+    do not anchor (id grammar is digits / roman ivxl / single letter);
+    whether a gates-section mention is genuinely a BINDING vs narration
+    is semantic and stays with the lens item + the escape. Escape
+    (standalone, unwrapped):
+    ``N/A — no acceptance binding to an optional phase``."""
+    del kind  # armed for ALL kinds (the founding incident is kind: infra)
+    cid = "c74_optional_phase_binding"
+    name = "gates-section binding to an optionality-marked phase"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    gates_spans = _c74_gates_spans(plan)
+    in_gates = [False] * len(lines)
+    for lo, hi in gates_spans:
+        for i in range(lo, min(hi, len(lines))):
+            in_gates[i] = True
+    anchors = _c74_anchor_scan(lines, mask, in_gates)
+    if not anchors:
+        return _skip(cid, name, "no optionality-marked phase declaration detected")
+    if _standalone_na_declared(plan, r"no acceptance binding to an optional phase\b"):
+        return _pass(
+            cid, name, "explicit N/A declared (no acceptance binding to an optional phase)"
+        )
+    if not gates_spans:
+        return _skip(cid, name, "no Decision-Gates/acceptance/kill-criteria section detected")
+    offenders: list[tuple[str, int, str, int, str]] = []
+    unbound: list[str] = []
+    for pid, (decl_i, decl_line) in sorted(anchors.items()):
+        bind = _c74_first_binding(pid, lines, mask, gates_spans)
+        if bind is None:
+            unbound.append(f"Phase {pid}")
+        else:
+            offenders.append((pid, decl_i, decl_line, bind[0], bind[1]))
+    if offenders:
+        return _warn(cid, name, _c74_offender_detail(offenders))
+    return _pass(
+        cid,
+        name,
+        "optionality-marked phase(s) "
+        + ", ".join(unbound)
+        + " referenced by no gates-section line",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -15230,6 +15412,7 @@ CHECKS = [
     check_jq_probe_dryrun,
     check_contingent_judge_pilot,
     check_gpu_lane_cuda_context,
+    check_optional_phase_binding,
 ]
 
 
