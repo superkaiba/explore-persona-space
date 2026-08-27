@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2626,
+  "highest_id": 2632,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10530,8 +10530,8 @@
     "2363": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2363",
-      "status": "reviewing",
+      "path": "tasks/completed/2363",
+      "status": "completed",
       "title": "workflow-fix: a plan can mark its ONLY source of acceptance evidence optional and still PASS verify_plan"
     },
     "2364": {
@@ -10544,22 +10544,22 @@
     "2365": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2365",
-      "status": "proposed",
+      "path": "tasks/running/2365",
+      "status": "running",
       "title": "Cloudflare email obfuscation silently rewrites model-generation text in every eps.superkaiba.com dashboard (served bytes != committed bytes)"
     },
     "2366": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2366",
-      "status": "proposed",
+      "path": "tasks/running/2366",
+      "status": "running",
       "title": "eval/capability.py: same narrow PackageNotFoundError catch breaks on the announced importlib.metadata KeyError"
     },
     "2367": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2367",
-      "status": "proposed",
+      "path": "tasks/planning/2367",
+      "status": "planning",
       "title": "verify_task_body: flag caption-unit vs figure-sidecar count drift (check-45 family)"
     },
     "2368": {
@@ -12233,8 +12233,8 @@
       "goal": "On Qwen/Qwen3.5-9B with thinking disabled, replicate the #2564 minimal-pair discrimination battery end to end (fresh 20-50k-context context-to-answer ridge map fit with layer sweep; full 984-context bank + the answer_language and query_content_oneword pilot axes at K=10 draws; parent battery reads with the new arms) and compare the per-axis discrimination profile against the Qwen2.5-7B-Instruct parent. Pod-side env upgrade only (transformers/vLLM with qwen3_5 support in the pod venv; repo pins untouched); compat smoke gate before any production wave; thinking-off enforced and asserted in every generation and capture.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/2587",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/2587",
+      "status": "awaiting_promotion",
       "title": "The minimal-pair discrimination profile of the context-to-answer map carries over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)"
     },
     "2588": {
@@ -12423,8 +12423,8 @@
     "2610": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2610",
-      "status": "reviewing",
+      "path": "tasks/completed/2610",
+      "status": "completed",
       "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
     },
     "2611": {
@@ -12465,9 +12465,9 @@
     "2616": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2616",
-      "status": "reviewing",
-      "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
+      "path": "tasks/completed/2616",
+      "status": "completed",
+      "title": "Background per-stem Hub uploader: overlap capture-phase uploads with next-stem compute (shipped; adoption deferred to a future capture round)"
     },
     "2617": {
       "goal": "On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping safety valence (e.g. 'how to build a bomb' vs 'how to build a house'), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine, magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context; the question is whether the map's pre-generation geometry encodes the refusal DECISION (transport tracks whether behavior flipped) or merely surface content.",
@@ -12529,8 +12529,8 @@
     "2624": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2624",
-      "status": "running",
+      "path": "tasks/reviewing/2624",
+      "status": "reviewing",
       "title": "No check verifies a GPU-lane-routed phase actually allocates a CUDA context (P5 ran 4xH100 at 0 MiB)"
     },
     "2625": {
@@ -12547,12 +12547,54 @@
       "status": "archived",
       "title": "Curate code-reviewer-lean agent-memory index under the 24KB lint cap (live no-flags FAIL redding Step 9c gates)"
     },
+    "2627": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2627",
+      "status": "proposed",
+      "title": "Agent-memory index FAIL gate can be tripped by the MERGE itself, blocking a Step-10d landing"
+    },
+    "2628": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2628",
+      "status": "proposed",
+      "title": "Autonomous sessions must paste raw concern-id slugs into clean-result prose \u2014 Lens 14 vs the no-opaque-codes rule"
+    },
+    "2629": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2629",
+      "status": "proposed",
+      "title": "Extend the byte/bit-identical ban family to nominalized forms (byte-identity slipped the audit in #2587)"
+    },
     "263": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/263",
       "status": "archived",
       "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than \u22645 (LOW confidence)"
+    },
+    "2630": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2630",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c selector does not map .claude/agents prose files to their token-pin tests"
+    },
+    "2631": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2631",
+      "status": "proposed",
+      "title": "Step 10d TG mapped-test leg maps sibling-sync imports via raw own-diff \u2014 subtract base-identical paths (#2302 class)"
+    },
+    "2632": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2632",
+      "status": "proposed",
+      "title": "step9c scan-violation set-diff extracts --tb=short traceback header as branch-added violation path (false gate BLOCK)"
     },
     "264": {
       "has_clean_result": false,
