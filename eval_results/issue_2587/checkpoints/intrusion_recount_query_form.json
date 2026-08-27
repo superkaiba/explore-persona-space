@@ -1,0 +1,43 @@
+{
+  "axis": "query_form",
+  "delta_vs_7b_after": {
+    "ci95": [
+      0.17030446483801676,
+      1.1042273399127467
+    ],
+    "point": 0.6045329117650289
+  },
+  "delta_vs_7b_before": {
+    "ci95": [
+      0.278588438969605,
+      1.2054621599355262
+    ],
+    "point": 0.7222337880426368
+  },
+  "drops": {
+    "n_ctx_all_draws_lost": 0,
+    "n_ctx_in_selection": 36,
+    "n_pairs_noise_nan": 0,
+    "n_pairs_obs_nan": 0,
+    "n_rows_dropped": 24
+  },
+  "excluded": 2.3972474317599746,
+  "excluded_minus_unexcluded": -0.11770087627760795,
+  "gain_survives_exclusion": true,
+  "kind": "parent",
+  "s_7b": 1.7927145199949457,
+  "selection": {
+    "fire": {
+      "n_dropped_7b_only": 0,
+      "n_dropped_9b_only": 0,
+      "n_missing_fire_rows_7b": 0,
+      "n_missing_fire_rows_9b": 0,
+      "n_shared_primary": 36,
+      "n_symmetric_fired": 36,
+      "symmetric_headline": true
+    },
+    "n_pairs": 36,
+    "rule": "symmetric-fired shared primary pairs"
+  },
+  "unexcluded": 2.5149483080375825
+}

@@ -1,0 +1,771 @@
+{
+  "axes": {
+    "answer_language": {
+      "axis": "answer_language",
+      "compliant_intrusions_kept": 110,
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 36,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 46
+      },
+      "excluded": 5.966221529694142,
+      "excluded_minus_unexcluded": -0.5468281280003371,
+      "kind": "pilot",
+      "selection": {
+        "n_pairs": 36,
+        "rule": "ALL primary pairs (pilot-placement statistic; no 7B counterpart)"
+      },
+      "separation_ci95_excluded": [
+        5.365208419263444,
+        6.555500238453421
+      ],
+      "separation_ci95_unexcluded": [
+        5.901075962099635,
+        7.081660955084885
+      ],
+      "unexcluded": 6.513049657694479
+    },
+    "content_constraint": {
+      "axis": "content_constraint",
+      "delta_vs_7b_after": {
+        "ci95": [
+          -0.78978830074036,
+          -0.16058620313991426
+        ],
+        "point": -0.4872095791768212
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          -0.8010521543699024,
+          -0.16033000062400737
+        ],
+        "point": -0.4922709452922778
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 60,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 8
+      },
+      "excluded": 5.145374025067151,
+      "excluded_minus_unexcluded": 0.0050613661154566,
+      "gain_survives_exclusion": false,
+      "kind": "parent",
+      "s_7b": 5.6325836042439725,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 120,
+          "symmetric_headline": true
+        },
+        "n_pairs": 120,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 5.140312658951695
+    },
+    "format": {
+      "axis": "format",
+      "delta_vs_7b_after": {
+        "ci95": [
+          -0.6181167711584613,
+          0.10029083540223654
+        ],
+        "point": -0.26439543734501036
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          -0.556415845047846,
+          0.10350854552990088
+        ],
+        "point": -0.22860723719937948
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 36,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 7
+      },
+      "excluded": 3.941672422861841,
+      "excluded_minus_unexcluded": -0.03578820014563089,
+      "gain_survives_exclusion": false,
+      "kind": "parent",
+      "s_7b": 4.2060678602068515,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 36,
+          "symmetric_headline": true
+        },
+        "n_pairs": 36,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 3.977460623007472
+    },
+    "hedging": {
+      "axis": "hedging",
+      "delta_vs_7b_after": {
+        "ci95": [
+          1.9530908308269386,
+          3.0169374025582982
+        ],
+        "point": 2.524555977877834
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          2.1874810709572836,
+          3.382339926456247
+        ],
+        "point": 2.8211012020806363
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 24,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 18
+      },
+      "excluded": 6.8382658656489665,
+      "excluded_minus_unexcluded": -0.29654522420280216,
+      "gain_survives_exclusion": true,
+      "kind": "parent",
+      "s_7b": 4.313709887771132,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 12,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 12,
+          "n_symmetric_fired": 0,
+          "symmetric_headline": false
+        },
+        "n_pairs": 12,
+        "rule": "ALL shared primary pairs (committed fallback: symmetric_headline false)"
+      },
+      "unexcluded": 7.134811089851769
+    },
+    "lexical_marker": {
+      "axis": "lexical_marker",
+      "delta_vs_7b_after": {
+        "ci95": [
+          -0.6971157789334524,
+          -0.4199611050060243
+        ],
+        "point": -0.5600660010804064
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          -0.6794044688634687,
+          -0.3974106755522913
+        ],
+        "point": -0.5387629997349193
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 60,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 10
+      },
+      "excluded": 1.5448838603456125,
+      "excluded_minus_unexcluded": -0.021303001345487127,
+      "gain_survives_exclusion": false,
+      "kind": "parent",
+      "s_7b": 2.104949861426019,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 120,
+          "symmetric_headline": true
+        },
+        "n_pairs": 120,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 1.5661868616910997
+    },
+    "persona": {
+      "axis": "persona",
+      "delta_vs_7b_after": {
+        "ci95": [
+          1.3483892886369209,
+          2.082690911541363
+        ],
+        "point": 1.7035280213467008
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          2.271046249510184,
+          2.8799174433375243
+        ],
+        "point": 2.5588433760715947
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 60,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 96
+      },
+      "excluded": 7.533007275495358,
+      "excluded_minus_unexcluded": -0.855315354724894,
+      "gain_survives_exclusion": true,
+      "kind": "parent",
+      "s_7b": 5.829479254148657,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 60,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 12,
+          "symmetric_headline": false
+        },
+        "n_pairs": 120,
+        "rule": "ALL shared primary pairs (committed fallback: symmetric_headline false)"
+      },
+      "unexcluded": 8.388322630220252
+    },
+    "query_content": {
+      "axis": "query_content",
+      "delta_vs_7b_after": {
+        "ci95": [
+          1.2117424548810283,
+          3.354662264731937
+        ],
+        "point": 2.193706842820932
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          1.4507038069323321,
+          3.6298859584088228
+        ],
+        "point": 2.4536262253882093
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 12,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 6
+      },
+      "excluded": 9.946163324070938,
+      "excluded_minus_unexcluded": -0.2599193825672774,
+      "gain_survives_exclusion": true,
+      "kind": "parent",
+      "s_7b": 7.752456481250006,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 66,
+          "n_symmetric_fired": 66,
+          "symmetric_headline": true
+        },
+        "n_pairs": 66,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 10.206082706638215
+    },
+    "query_content_oneword": {
+      "axis": "query_content_oneword",
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 48,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 36
+      },
+      "excluded": 4.112098350943643,
+      "excluded_minus_unexcluded": -0.1828336809320188,
+      "kind": "pilot",
+      "selection": {
+        "n_pairs": 24,
+        "rule": "ALL primary pairs (pilot-placement statistic; no 7B counterpart)"
+      },
+      "separation_ci95_excluded": [
+        3.500519850136435,
+        4.783853657194529
+      ],
+      "separation_ci95_unexcluded": [
+        3.6691919629362153,
+        4.975025431753293
+      ],
+      "unexcluded": 4.294932031875661
+    },
+    "query_form": {
+      "axis": "query_form",
+      "delta_vs_7b_after": {
+        "ci95": [
+          0.17030446483801676,
+          1.1042273399127467
+        ],
+        "point": 0.6045329117650289
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          0.278588438969605,
+          1.2054621599355262
+        ],
+        "point": 0.7222337880426368
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 36,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 24
+      },
+      "excluded": 2.3972474317599746,
+      "excluded_minus_unexcluded": -0.11770087627760795,
+      "gain_survives_exclusion": true,
+      "kind": "parent",
+      "s_7b": 1.7927145199949457,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 36,
+          "n_symmetric_fired": 36,
+          "symmetric_headline": true
+        },
+        "n_pairs": 36,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 2.5149483080375825
+    },
+    "register": {
+      "axis": "register",
+      "delta_vs_7b_after": {
+        "ci95": [
+          0.9331672298388733,
+          3.582657698557914
+        ],
+        "point": 2.300680444936736
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          1.9419756340861498,
+          4.650528902977885
+        ],
+        "point": 3.344642688410918
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 24,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 33
+      },
+      "excluded": 13.210219712888955,
+      "excluded_minus_unexcluded": -1.0439622434741818,
+      "gain_survives_exclusion": true,
+      "kind": "parent",
+      "s_7b": 10.90953926795222,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 12,
+          "n_symmetric_fired": 12,
+          "symmetric_headline": true
+        },
+        "n_pairs": 12,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 14.254181956363137
+    },
+    "stance": {
+      "axis": "stance",
+      "delta_vs_7b_after": {
+        "ci95": [
+          -0.3629920934505162,
+          0.6875422806778838
+        ],
+        "point": 0.15053909275001498
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          -0.17768837933157955,
+          0.8695188568490695
+        ],
+        "point": 0.32839115611967973
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 60,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 40
+      },
+      "excluded": 4.607612947349836,
+      "excluded_minus_unexcluded": -0.17785206336966475,
+      "gain_survives_exclusion": false,
+      "kind": "parent",
+      "s_7b": 4.457073854599821,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 120,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 0,
+          "symmetric_headline": false
+        },
+        "n_pairs": 120,
+        "rule": "ALL shared primary pairs (committed fallback: symmetric_headline false)"
+      },
+      "unexcluded": 4.785465010719501
+    },
+    "user_fact": {
+      "axis": "user_fact",
+      "delta_vs_7b_after": {
+        "ci95": [
+          -0.07294475624154553,
+          0.13059451439023229
+        ],
+        "point": 0.031149824914263435
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          -0.0579380210146536,
+          0.14905548939233532
+        ],
+        "point": 0.04739734967164133
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 60,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 19
+      },
+      "excluded": 1.1454531968939365,
+      "excluded_minus_unexcluded": -0.016247524757377896,
+      "gain_survives_exclusion": false,
+      "kind": "parent",
+      "s_7b": 1.114303371979673,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 0,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 120,
+          "symmetric_headline": true
+        },
+        "n_pairs": 120,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 1.1617007216513144
+    },
+    "user_profile": {
+      "axis": "user_profile",
+      "delta_vs_7b_after": {
+        "ci95": [
+          1.5743363105906907,
+          3.089386017401127
+        ],
+        "point": 2.385307668260607
+      },
+      "delta_vs_7b_before": {
+        "ci95": [
+          2.1473778654837616,
+          3.515485637539244
+        ],
+        "point": 2.8745176718715033
+      },
+      "drops": {
+        "n_ctx_all_draws_lost": 0,
+        "n_ctx_in_selection": 36,
+        "n_pairs_noise_nan": 0,
+        "n_pairs_obs_nan": 0,
+        "n_rows_dropped": 39
+      },
+      "excluded": 6.393687271018086,
+      "excluded_minus_unexcluded": -0.4892100036108964,
+      "gain_survives_exclusion": true,
+      "kind": "parent",
+      "s_7b": 4.008379602757479,
+      "selection": {
+        "fire": {
+          "n_dropped_7b_only": 84,
+          "n_dropped_9b_only": 0,
+          "n_missing_fire_rows_7b": 0,
+          "n_missing_fire_rows_9b": 0,
+          "n_shared_primary": 120,
+          "n_symmetric_fired": 36,
+          "symmetric_headline": true
+        },
+        "n_pairs": 36,
+        "rule": "symmetric-fired shared primary pairs"
+      },
+      "unexcluded": 6.8828972746289825
+    }
+  },
+  "bootstrap": {
+    "B": 10000,
+    "kind": "carrier-clustered, ONE shared 12-carrier resample per draw (committed multiplicities regenerated deterministically)",
+    "n_splits": 20,
+    "seed": 2215,
+    "split_seed": 2564
+  },
+  "exclusion": {
+    "n_compliant_kept_answer_language_chinese": 110,
+    "n_contexts_all_draws_lost": 0,
+    "n_excluded_applied": 711,
+    "n_excluded_removed_from_valid_draws": 711,
+    "n_intruded_total": 821,
+    "n_rows_total": 10800,
+    "per_cell": {
+      "answer_language": {
+        "intruded": 167,
+        "total": 480
+      },
+      "content_constraint": {
+        "intruded": 18,
+        "total": 1200
+      },
+      "format": {
+        "intruded": 38,
+        "total": 1200
+      },
+      "hedging": {
+        "intruded": 37,
+        "total": 480
+      },
+      "lexical_marker": {
+        "intruded": 14,
+        "total": 1200
+      },
+      "persona": {
+        "intruded": 201,
+        "total": 1200
+      },
+      "query": {
+        "intruded": 34,
+        "total": 480
+      },
+      "query_content_oneword": {
+        "intruded": 36,
+        "total": 480
+      },
+      "register": {
+        "intruded": 59,
+        "total": 480
+      },
+      "stance": {
+        "intruded": 84,
+        "total": 1200
+      },
+      "user_fact": {
+        "intruded": 40,
+        "total": 1200
+      },
+      "user_profile": {
+        "intruded": 93,
+        "total": 1200
+      }
+    },
+    "regex": "[\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af]",
+    "scan_parity": "per-cell + per-value counts asserted equal to the committed scan"
+  },
+  "inputs": {
+    "anchor_shard_dirs": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/judge_work/anchors_staging/issue2587_minpair/raw_completions/anchors",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/anchors_extra/issue2587_minpair/raw_completions/anchors"
+    ],
+    "bank_manifest": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/eval_results/issue_2587/bank_manifest.json",
+      "sha256": "a582735aa8eebbd0e18198b2b8c71743f3a3a233d1be97cdafa77f6dfe2b6ea0"
+    },
+    "crossmodel_contrasts": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/eval_results/issue_2587/crossmodel_contrasts.json",
+      "sha256": "0696d359b99d121c5c7906dcb9e20210500075f5d09e1038ee82de85a5b9e999"
+    },
+    "crossmodel_perdraw_npz": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/eval_results/issue_2587/crossmodel_perdraw/obs_separation_snr.npz",
+      "sha256": "8f61bba88ce0c209ac614d0ebe535be43a07fff404648bd55d64a50beb4f98e7"
+    },
+    "intrusion_scan": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/eval_results/issue_2587/intrusion_scan_2587.json",
+      "sha256": "2dce5b3a97845789b6b74c3a4ef8adca429b644e3268ecf0090674d01215f6ba"
+    },
+    "manipulation_check": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/eval_results/issue_2587/manipulation_check_2587.json",
+      "sha256": "9e82101409156873e0b466b3a3c08d66e8109d6dcac9ab221262c23613316364"
+    },
+    "perpair": {
+      "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/eval_results/issue_2587/perpair_2587.jsonl",
+      "sha256": "d9adc50d828e5a49f27c401678795593354c29871c84fcf0aa8a1bed2f6c6989"
+    },
+    "stores": {
+      "means_anchors.npz": {
+        "bytes": 8990970,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/embeddings_qwen3_8b/means_anchors.npz"
+      },
+      "va2587_answer_language.pt": {
+        "bytes": 503393589,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/answer_language.pt"
+      },
+      "va2587_content_constraint.pt": {
+        "bytes": 1258477197,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/content_constraint.pt"
+      },
+      "va2587_format.pt": {
+        "bytes": 1258450861,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/format.pt"
+      },
+      "va2587_hedging.pt": {
+        "bytes": 503383797,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/hedging.pt"
+      },
+      "va2587_lexical_marker.pt": {
+        "bytes": 1258466413,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/lexical_marker.pt"
+      },
+      "va2587_persona.pt": {
+        "bytes": 1258455541,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/persona.pt"
+      },
+      "va2587_query.pt": {
+        "bytes": 503382437,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/query.pt"
+      },
+      "va2587_query_content_oneword.pt": {
+        "bytes": 503398309,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/query_content_oneword.pt"
+      },
+      "va2587_register.pt": {
+        "bytes": 503384957,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/register.pt"
+      },
+      "va2587_stance.pt": {
+        "bytes": 1258451885,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/stance.pt"
+      },
+      "va2587_user_fact.pt": {
+        "bytes": 1258460293,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/user_fact.pt"
+      },
+      "va2587_user_profile.pt": {
+        "bytes": 1258467549,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/va2587/user_profile.pt"
+      },
+      "vc2587_answer_language.pt": {
+        "bytes": 25170655,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/answer_language.pt"
+      },
+      "vc2587_content_constraint.pt": {
+        "bytes": 62922036,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/content_constraint.pt"
+      },
+      "vc2587_format.pt": {
+        "bytes": 62920480,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/format.pt"
+      },
+      "vc2587_hedging.pt": {
+        "bytes": 25170023,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/hedging.pt"
+      },
+      "vc2587_lexical_marker.pt": {
+        "bytes": 62921496,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/lexical_marker.pt"
+      },
+      "vc2587_persona.pt": {
+        "bytes": 62920615,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/persona.pt"
+      },
+      "vc2587_query.pt": {
+        "bytes": 25169945,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/query.pt"
+      },
+      "vc2587_query_content_oneword.pt": {
+        "bytes": 25170889,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/query_content_oneword.pt"
+      },
+      "vc2587_register.pt": {
+        "bytes": 25170094,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/register.pt"
+      },
+      "vc2587_stance.pt": {
+        "bytes": 62920480,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/stance.pt"
+      },
+      "vc2587_user_fact.pt": {
+        "bytes": 62920821,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/user_fact.pt"
+      },
+      "vc2587_user_profile.pt": {
+        "bytes": 62921226,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2587/data/issue_2587/hf_dl/an_stage/issue2587_minpair/analysis_tensors/vc2587/user_profile.pt"
+      }
+    }
+  },
+  "layer_pair": {
+    "qwen25_7b": 19,
+    "qwen35_9b": 18
+  },
+  "meta": {
+    "generated_utc": "2026-08-27T09:55:25.537629+00:00",
+    "git_argv0_path": "scripts/issue2587_intrusion_excluded_recount.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "4bfc64909e5202f959d8b5e71be60758796a625b",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2587/checkpoints/intrusion_recount_answer_language.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_content_constraint.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_format.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_hedging.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_lexical_marker.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_persona.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_query_content.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_query_content_oneword.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_query_form.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_register.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_stance.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_user_fact.json",
+      "eval_results/issue_2587/checkpoints/intrusion_recount_user_profile.json",
+      "eval_results/issue_2587/intrusion_excluded_recount.json"
+    ],
+    "numpy": "2.2.6",
+    "phase": "intrusion-excluded-recount",
+    "torch": "2.8.0+cu128",
+    "wall_seconds": 95.3
+  },
+  "note": "9B-side CJK-intrusion-excluded recount: intruded draws removed from the per-context tail means + split-half noise at the frozen primary layer; pair selections, fire verdicts, and the 7B side are FROZEN to the committed run (crossmodel_contrasts.json + crossmodel_perdraw/obs_separation_snr.npz). answer_language instructed-Chinese rows are compliant and KEPT.",
+  "schema": "issue2587_intrusion_excluded_recount_v1",
+  "statistic": "observed-space separation, ceiling-adjusted: mean ||obs delta|| / mean split-half noise norm (symmetric-fired shared primary pairs)",
+  "verification": {
+    "delta_draws_identity_max_abs_dev": 0.0,
+    "draws_max_abs_dev": 0.0,
+    "perpair_noise_max_abs_dev": 0.0,
+    "perpair_obs_max_abs_dev": 0.0,
+    "point_max_abs_dev": 0.0,
+    "row_bank_mean_max_abs_dev": 0.0
+  }
+}

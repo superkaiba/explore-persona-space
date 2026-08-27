@@ -1,0 +1,27 @@
+{
+  "axis": "answer_language",
+  "compliant_intrusions_kept": 110,
+  "drops": {
+    "n_ctx_all_draws_lost": 0,
+    "n_ctx_in_selection": 36,
+    "n_pairs_noise_nan": 0,
+    "n_pairs_obs_nan": 0,
+    "n_rows_dropped": 46
+  },
+  "excluded": 5.966221529694142,
+  "excluded_minus_unexcluded": -0.5468281280003371,
+  "kind": "pilot",
+  "selection": {
+    "n_pairs": 36,
+    "rule": "ALL primary pairs (pilot-placement statistic; no 7B counterpart)"
+  },
+  "separation_ci95_excluded": [
+    5.365208419263444,
+    6.555500238453421
+  ],
+  "separation_ci95_unexcluded": [
+    5.901075962099635,
+    7.081660955084885
+  ],
+  "unexcluded": 6.513049657694479
+}
