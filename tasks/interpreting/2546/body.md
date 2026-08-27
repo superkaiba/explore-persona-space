@@ -298,7 +298,7 @@ The plan predicted a monotone rise of at least +0.10 R² on needs-reasoning corp
 
 ### Within single corpora the context-to-answer map reads R² 0.46 to 0.56 versus 0.69 pooled
 
-Plotted: held-out R² at the headline layer for each within-model map on the four per-corpus fit cells, one heatmap per setting; the corpus-grain view behind the stratum bars above.
+Plotted: held-out R² at the headline layer for each within-model map on the four per-corpus fit cells, one heatmap per setting; the low-level corpus-grain view behind the stratum bars above.
 
 ![Per-corpus heatmap of held-out R squared for the four maps in each setting](https://raw.githubusercontent.com/superkaiba/explore-persona-space/42308cc7522dcb0a2a76b332b0c24d981de4b585/figures/issue_2546/exp_percorpus_heatmap.png)
 
@@ -323,6 +323,8 @@ Plotted: held-out R² of each stratum-fit context-to-answer map evaluated on the
 ![Cross-stratum and train-to-test transfer bars for the context-to-answer map in each setting](https://raw.githubusercontent.com/superkaiba/explore-persona-space/42308cc7522dcb0a2a76b332b0c24d981de4b585/figures/issue_2546/exp_ood_transfer.png)
 
 > **Figure.** *Transfer is asymmetric.* Fitting on needs-reasoning corpora scores R² 0.13 on the other stratum's held-out rows, 0.45 in the reverse direction, and 0.47 for the decontaminated GSM8K train-to-test transfer (OpenThinker3 pair; same ordering in the other settings, with the needs-to-none direction dipping negative there).
+
+Per-unit exemption: the two exploratory transfer arms persist no per-question predictions (aggregate-only by plan design); the per-question grain behind the underlying maps is in results 1 and 5.
 
 Coverage was complete: 185 registry jobs finished `ok` with zero dropped or degraded units, so no planned cell is silently absent from any figure. Fourteen review-round concern ids remain open; each maps to a disclosure in this body or is a process-record residual:
 
@@ -374,7 +376,7 @@ Direction-aware operator cosine reads 0.053 / 0.196 against a near-zero rotation
 
 ### On-model necessity moves retrieval more than R², and thinking-off answer states are as predictable as thinking-on (0.696 versus 0.699)
 
-Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
+Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate, the low-level per-corpus read behind the stratum aggregates; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
 
 ![Per-corpus R squared and retrieval lift against corpus necessity rate for all settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/42308cc7522dcb0a2a76b332b0c24d981de4b585/figures/issue_2546/backing_necessity.png)
 
