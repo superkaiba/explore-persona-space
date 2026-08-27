@@ -3038,3 +3038,39 @@ items convert to REQUIRED adjudication tail lines in the ledger section
 the fix-introduced hunt LEADS with the named precedent ("round 2's fixes
 introduced the odd-pass regen blocker") and pre-traces each new mechanism's
 break shapes without pre-resolving severity.
+
+**Reconciled-FAIL fix round with a full 12-id closure ledger (#2617 r2,
+2026-08-27):** deltas beyond the standing recipe, all validated live. (a)
+**Pinned-range templates carry the range inside the RUBRIC too** — the r1
+composer had customized Step 0 classify, Step 0.70's `.sh` check, Step 0.9's
+three probe forms, AND the verdict header with the round range; span-wiping
+the target/facts/diff-acq sections left SIX live old-range refs (5 short + 1
+full-SHA `git show <parent>:<path>` at Step 0.9). Grep ALL SHA occurrences
+across the whole template BEFORE writing the count asserts; every remaining
+hit is "round range / round parent" semantics and repoints wholesale. (b)
+**Contract = reconcile record inlined tags-stripped** in its own
+`---BEGIN REVIEW-RECONCILE RECORD (r1, binding)---` envelope; its
+per-row disposition table supersedes both r1 verdicts' severities in BOTH
+directions, so pair the author-neutrality line with a two-sided fence:
+NOT-ADDRESSED on an UPHELD BLOCKER = substantive FAIL; a
+reconciler-DOWNGRADED (BLOCKER→CONCERN) or native CONCERN/NIT found
+unaddressed re-raises at its OWN severity via a status line, never a fresh
+FAIL absent NEW diff evidence; a materially FALSE closure claim stays
+ordinary substantive. (c) **Build the per-id digest from the ledger JSON
+itself** — latest `raised` row summary = acceptance criteria, `addressed`
+row summary = the claim (it carries the implementer's fix-site line cites,
+which become the verification anchors); pin rows to `ts <= impl marker ts`.
+When ALL ids are claim-addressed, the open-only fetch is empty — say so
+(fact 3) and route the header line to
+`0 open — N addressed-claimed (audited below)`, with a
+`## Prior-concern closure audit` section INSERTED into the verdict template
+(one status line per id + already-persisted ids NEVER re-emitted as
+`CONCERN:: ` rows). (d) **Mine the reconcile record's side sections**: an
+"Observed but not raised" item becomes a REQUIRED named check with its own
+audit line (here jdir `shard_glob` vs `judge_cache/`); "Standing
+recommendations on PASS" becomes an opportunistic-never-gating fence
+(absence of an unimplemented suggestion is not a finding; a BROKEN
+implementation of a claimed one is ordinary). (e) Reconcile-record line
+cites are PRE-ROUND frames — recompute the post-round anchors at compose
+time (grep `def _margin_fp` etc.) and hand Codex both, with "a shifted line
+number is never a finding".
