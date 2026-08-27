@@ -366,6 +366,50 @@ failed-then-fixed lockstep item (cap snapshot pin caught by the round's
 pin-sweep, fixed in commit 2) pre-adjudicates as within-round fix — Step 0.9
 certain-introduced-AND-fixed, no git-provenance tag.
 
+**#2365 r1 (2026-08-27) sharpenings — deploy-deferred serving-infra variant
+(diff = Next.js config header + a new served-vs-committed integrity probe;
+production deploy deliberately POST-merge per a plan sequencing note):**
+(a) a plan-sanctioned deferred-acceptance round composes THREE coupled facts —
+the sequencing note is quoted as compose-time fact ("absence of deploy is not
+a blocker; the live negative control legitimately exits rc=1 until deploy"),
+the implementer-raised deploy-pending concern gets the
+[[brief-named-concern-adjudication]] required line with expected disposition
+= consistent-with-plan (re-emit ONLY on changed disposition), and the
+execution ban is WIDENED to name the deploy surface explicitly (systemctl
+restart, npm build, next start, running the probe against live CDN or local
+ports, curl to the production host) — a generic "never run smoke commands"
+ban does not obviously cover a reviewer "harmlessly" curling the live URL.
+(b) An untracked REPO-ROOT-side probe artifact the plan creates
+(`dashboard/public/cf-obfuscation-probe.html`) is attested deliberate +
+outside the worktree so the twin neither flags scope creep nor tries to read
+it. (c) A round-new NETWORK-probe script (~88-unit fetch loop) gets an
+explicit Step 3.6 honest-adjudication steer (minutes-scale read-only
+idempotent verdict probe — state the adjudication, don't skip the step) and
+a hollow-gate mapping = "documented human procedure": verify the README
+deploy block actually carries the command AND that it resolves from the
+block's stated cwd (`cd dashboard && uv run python ../scripts/...`).
+(d) Hub-call duty (#1805) on a stdlib-urllib probe: attest "no Hub calls —
+duty trivially discharges; re-arms if you find one". Roster SKIP + floor
+EXEMPT + plan-verify-present dual attest all fired again (tags [],
+origin_prompt = sibling-task surfacing).
+
+**#2366 r1 (2026-08-27) sharpening — src-LIBRARY bug-fix variant (diff widens
+an exception catch in `src/**` + adds tests; no workflow helper touched):**
+the recipe generalizes with two adaptations. (a) A marker that VOLUNTARILY
+carries a `## Smoke run` H2 (a pytest digest) on a type-exempt kind:infra task
+gets an explicit pre-triage line — "voluntary extra evidence, not a Step 0.6
+surface; can only help, never grounds `smoke-run-missing`" (the type-exempt
+sibling of [[data-hardening-round-compose]]'s brief-bound smoke H2). (b) An
+exception-WIDENING fix gets a routed review-questions block: catch-width vs
+the plan's must-ask fence, healthy-path invariance of the normalization
+(`ver if ver is not None else sentinel`), and breadth adjudication (the
+widened class swallows more than the announced instance — route as at most
+CONCERNS + `CONCERN::` row when the plan pins the exact diff and the helper is
+informational-only, never a FAIL on the plan's own pinned hunk). Roster-SKIP +
+floor-EXEMPT-with-plan-verify-present dual attest + three-grain recount with a
+grain-artifact extra (a docstring citing a DIFFERENT `*_capability.py` file)
+all fired again, per the validated patterns.
+
 **#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
 verify_plan-check round (diff adds a GPU-state advisory family to
 poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
