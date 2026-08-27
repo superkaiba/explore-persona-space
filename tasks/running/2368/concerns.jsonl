@@ -1,0 +1,1 @@
+{"ts": "2026-08-27T18:28:32Z", "event": "raised", "concern_id": "sweep-quote-locator-undispositioned", "severity": "CONCERN", "summary": "Report says one quote-char extraction call, but line 289 is a second safe locator that needs an explicit disposition.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
