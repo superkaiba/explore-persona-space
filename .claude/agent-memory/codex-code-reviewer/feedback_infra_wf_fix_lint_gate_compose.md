@@ -393,6 +393,23 @@ duty trivially discharges; re-arms if you find one". Roster SKIP + floor
 EXEMPT + plan-verify-present dual attest all fired again (tags [],
 origin_prompt = sibling-task surfacing).
 
+**#2366 r1 (2026-08-27) sharpening — src-LIBRARY bug-fix variant (diff widens
+an exception catch in `src/**` + adds tests; no workflow helper touched):**
+the recipe generalizes with two adaptations. (a) A marker that VOLUNTARILY
+carries a `## Smoke run` H2 (a pytest digest) on a type-exempt kind:infra task
+gets an explicit pre-triage line — "voluntary extra evidence, not a Step 0.6
+surface; can only help, never grounds `smoke-run-missing`" (the type-exempt
+sibling of [[data-hardening-round-compose]]'s brief-bound smoke H2). (b) An
+exception-WIDENING fix gets a routed review-questions block: catch-width vs
+the plan's must-ask fence, healthy-path invariance of the normalization
+(`ver if ver is not None else sentinel`), and breadth adjudication (the
+widened class swallows more than the announced instance — route as at most
+CONCERNS + `CONCERN::` row when the plan pins the exact diff and the helper is
+informational-only, never a FAIL on the plan's own pinned hunk). Roster-SKIP +
+floor-EXEMPT-with-plan-verify-present dual attest + three-grain recount with a
+grain-artifact extra (a docstring citing a DIFFERENT `*_capability.py` file)
+all fired again, per the validated patterns.
+
 **#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
 verify_plan-check round (diff adds a GPU-state advisory family to
 poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
