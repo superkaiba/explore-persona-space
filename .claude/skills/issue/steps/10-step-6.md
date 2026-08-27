@@ -1416,18 +1416,31 @@ while True:
     #                                  PER-WORKLOAD success, NOT run-level
     #                                  done: preserve the local
     #                                  `current_phase` (never synthesize a
-    #                                  run-level done milestone), do NOT
+    #                                  run-level done milestone) in both
+    #                                  arms below, then branch on whether
+    #                                  a planned phase remains:
+    #                                  (a) NEXT PHASE REMAINS — the
+    #                                  run-level exclusions bind THIS
+    #                                  non-final arm only: do NOT
     #                                  transition to status:verifying, and
     #                                  do NOT enter Step 8 pod-termination.
-    #                                  The driving orchestrator then
-    #                                  dispatches the NEXT planned phase (a
-    #                                  fresh epm:run-launched per the
-    #                                  pid-file launch contract) and re-arms
-    #                                  the poll chain for that launch; when
-    #                                  the completed phase was the LAST
-    #                                  planned phase, proceed to the
-    #                                  orchestrator's own results-landed
-    #                                  handling instead.
+    #                                  The driving orchestrator dispatches
+    #                                  the NEXT planned phase (a fresh
+    #                                  epm:run-launched per the pid-file
+    #                                  launch contract) and re-arms the
+    #                                  poll chain for that launch.
+    #                                  (b) LAST PLANNED PHASE — still
+    #                                  preserve `current_phase`, then enter
+    #                                  Step 7's canonical `epm:results`
+    #                                  check (the 11-step-7.md route: if
+    #                                  `epm:results` exists, proceed to
+    #                                  Step 8) — never Step 8's
+    #                                  results-landed parallel-spawn block
+    #                                  directly. Only a landed
+    #                                  `epm:results` marker licenses the
+    #                                  verifying transition into Step 8,
+    #                                  whose upload-PASS branch owns pod
+    #                                  termination.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
     #                                  `gate` field; the poller has ALREADY
     #                                  posted the carried marker (e.g.
@@ -1541,9 +1554,12 @@ The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
-exit the completed phase's wait + dispatch the next planned phase on
-`status=phase-done` (its branch-table row above — per-workload success:
-keep `current_phase`, never run-level verifying / Step 8 termination),
+exit the completed phase's wait on `status=phase-done` (its branch-table
+row above — per-workload success: keep `current_phase`; with a next
+planned phase remaining, dispatch it — never run-level verifying / Step 8
+termination on that non-final arm; on the LAST planned phase, enter Step
+7's `epm:results` check instead — a landed `epm:results` is what licenses
+verifying and Step 8),
 dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
 a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), post
 `epm:failure v1` on `status=stalled` or `status=dead`, and run the

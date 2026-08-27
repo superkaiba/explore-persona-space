@@ -17588,16 +17588,17 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
     # 100_300 (#2158, 97,590 B).
     "issue/steps/09-step-5.md": 121_500,
-    # measured 150,928 B @ #2610 r2 2026-08-26 (Step 6d.2 `phase-done`
-    # branch-table row + post-tick-duties summary clause — the round-1
-    # reconciler's unhandled-terminal-status fix; +1,911 B); corridor-max
-    # ((measured+2_800)//100)*100 = 153_700, headroom 2,772.
-    # Prior: 151_800 (#2263 r8, 149,017 B) / 151_200 (#2263 r7, 148,457 B) /
-    # 151_000 (#2263 r6, 148,238 B) / 150_500 (#2263 r4, 147,791 B) /
-    # 149_500 (#2263 r3, 146,704 B) / 148_300 (#2263 r2, 145,553 B) /
-    # 147_400 (#2263 r1, 144,671 B) / 145_400 (#2350, 142,643 B) /
-    # 144_200 (#2155 split, 141,432 B).
-    "issue/steps/10-step-6.md": 153_700,
+    # measured 152,008 B @ #2610 r3 2026-08-26 (Step 6d.2 `phase-done` row
+    # split into explicitly scoped next-phase-remains / last-planned-phase
+    # arms + the post-tick-duties summary's matching last-phase clause —
+    # the round-2 reconciler's contradictory-last-phase fix; +1,080 B);
+    # corridor-max ((measured+2_800)//100)*100 = 154_800, headroom 2,792.
+    # Prior: 153_700 (#2610 r2, 150,928 B) / 151_800 (#2263 r8, 149,017 B) /
+    # 151_200 (#2263 r7, 148,457 B) / 151_000 (#2263 r6, 148,238 B) /
+    # 150_500 (#2263 r4, 147,791 B) / 149_500 (#2263 r3, 146,704 B) /
+    # 148_300 (#2263 r2, 145,553 B) / 147_400 (#2263 r1, 144,671 B) /
+    # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 154_800,
     # measured 250,132 B @ #2315 Step 10d 2026-08-24 RE-MEASURED against the
     # MERGED tree, per the #1727 landing-bytes rule; corridor-max
     # ((measured+2_800)//100)*100 = 252_900, headroom 2,768 — clears
