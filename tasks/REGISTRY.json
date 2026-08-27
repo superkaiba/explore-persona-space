@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2629,
+  "highest_id": 2630,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12574,6 +12574,13 @@
       "path": "tasks/archived/263",
       "status": "archived",
       "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than \u22645 (LOW confidence)"
+    },
+    "2630": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2630",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c selector does not map .claude/agents prose files to their token-pin tests"
     },
     "264": {
       "has_clean_result": false,
