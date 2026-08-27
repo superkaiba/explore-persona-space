@@ -12430,8 +12430,8 @@
     "2611": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2611",
-      "status": "reviewing",
+      "path": "tasks/completed/2611",
+      "status": "completed",
       "title": "git_provenance()'s 5s-timeout git status orphans .git/index.lock on slow filesystems, breaking every later git op in the run (fix: --no-optional-locks)"
     },
     "2612": {
