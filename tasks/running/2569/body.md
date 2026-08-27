@@ -3,8 +3,7 @@ title: 'Linear-map theory battery: operator eigenstructure, null-space fibers, t
   gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and
   a cross-model operator atlas'
 kind: experiment
-tags:
-- keep-running
+tags: []
 created_at: '2026-08-25T06:45:51Z'
 has_clean_result: false
 parent_id: 1774
