@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2616,
+  "highest_id": 2617,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12468,6 +12468,13 @@
       "path": "tasks/proposed/2616",
       "status": "proposed",
       "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
+    },
+    "2617": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2617",
+      "status": "proposed",
+      "title": "Safety-valence minimal pairs: does the frozen context->answer map encode the refusal decision or just surface text?"
     },
     "262": {
       "has_clean_result": false,
