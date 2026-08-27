@@ -556,3 +556,21 @@ LIVE_WORKFLOW_HELPERS at once = one roster fact naming both line numbers.
 (e) plan-verify version nuance NEGATIVE case: marker verified v2 AND the
 symlink IS v2 — attest "no version gap" explicitly so the twin doesn't go
 hunting.
+
+**#2367 r1 (2026-08-27) sharpening — verify_task_body CHECK-ADDITION variant
+(diff adds a WARN-grade check + count-pin updates; the full #2291 recipe fired
+cleanly):** one genuinely new duty — a committed test pinned to a REAL-REPO
+git object (`git show <sha>^:tasks/<status>/<N>/body.md` with no repo-root
+monkeypatch) gets an explicit ENVIRONMENT-ROBUSTNESS adjudication: how does
+the test resolve the repo root from an arbitrary worktree/pytest cwd, and
+does the pinned object resolve there (worktrees share the odb; a test that
+passes locally but cannot pass in the Step 9c gate env is substantive).
+Also validated again: fail-soft/WARN-grade fleet body-gate checks take the
+crash-safety third leg with named adversarial sidecar/regex hypotheses
+(missing/unparseable/wrong-shape meta.json, catastrophic backtracking,
+boundary K/P/s values); map-files 7-hit list vs three-grain extras composed
+with the #2525(a) superset + run-anyway/deferred-invariant pre-triage;
+ledger-empty + plan-HANDED concerns distinction (verify handed items 1–5 as
+plan-adherence rows, never ledger closures; header = `**Prior-concerns
+ledger:** empty`); plan-verify no-version-gap negative attest (v3 PASS,
+symlink v3) per #2624(e).
