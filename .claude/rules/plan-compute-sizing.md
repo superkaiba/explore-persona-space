@@ -672,6 +672,27 @@ per-cell block's output-growth health-read rule (never CPU% alone,
 #1738).
 
 
+**CUDA-context claim per GPU-lane phase — a falsifiable routing declaration
+(#2624; incident #2546).** Every §9 phase routed to a GPU lane (a GPU intent,
+an explicit `--gpu-type`/`--gpu-count`, or a SLURM GPU allocation) carries one
+`cuda-context:` line naming WHAT allocates GPU memory and via WHICH mechanism
+— e.g. `cuda-context: yes — vLLM LLM() TP=4 loads the 7B across all 4 GPUs at
+engine start` or `cuda-context: yes — torch ridge fits run on cuda:0..3
+(tensors moved in _fit_cells())`. This is a falsifiable claim: the RunPod
+poller samples per-GPU `memory.used` every tick and posts a loud
+`[gpu-no-cuda-context]` marker + push when every card stays <=
+`EPM_GPU_NOCTX_MEM_MAX_MIB` (64) MiB for `EPM_GPU_NOCTX_ADVISORY_MIN` (20) min
+of a healthy running phase (#2546: a 4x H100 pod ran `p5_fits` entirely
+CPU-bound — the dispatcher logged `alloc=0,1,2,3` while nvidia-smi read 0 MiB
+on all four; an allocation string in a log is not GPU use). A phase that
+cannot answer "yes — <mechanism>" is a CPU phase: route it per the CPU-intent
+tables (pods.md). This VERIFIES the routing decision — it does not weaken the
+route-TO-GPU carve-outs (the iterative-optimization fit rule and the
+~15–30 min floor are unchanged) and adds no mid-run gate (advisory only;
+mid-run response: pods.md § Mid-run discovery). Enforcement: `verify_plan.py`
+c73 (WARN-only) + the runtime probe.
+
+
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +
 upload wall-time; compression defaults OFF for fp16 → Xet.** Any phase that
 WRITES >~10^3 output files OR >~50 GB total (per-cell activation stores,
