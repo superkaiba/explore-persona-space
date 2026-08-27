@@ -4,7 +4,7 @@ title: The minimal-pair discrimination profile of the context-to-answer map carr
 kind: experiment
 tags: []
 created_at: '2026-08-25T19:44:34Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2564
 origin_prompt: can we rerun this same experiment on qwen3.5-9B without thinking
 workflow: v1
