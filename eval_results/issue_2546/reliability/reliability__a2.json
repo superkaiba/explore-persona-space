@@ -1,0 +1,65 @@
+{
+  "status": "ok",
+  "unit_id": "reliability__a2",
+  "arm": 2,
+  "per_stratum": {
+    "does": {
+      "status": "ok",
+      "n_prompts": 374,
+      "split_half_r2": 0.7476263514097481,
+      "split_half_r2_ab": 0.7519816081818922,
+      "split_half_r2_ba": 0.743271094637604,
+      "ceiling_spearman_brown": 0.8555906138708248,
+      "convention": "#779 4-draw split-half (2/2) at the headline layer"
+    },
+    "doesnt": {
+      "status": "ok",
+      "n_prompts": 323,
+      "split_half_r2": 0.5601780791419333,
+      "split_half_r2_ab": 0.5637308865511219,
+      "split_half_r2_ba": 0.5566252717327446,
+      "ceiling_spearman_brown": 0.7180950516238762,
+      "convention": "#779 4-draw split-half (2/2) at the headline layer"
+    }
+  },
+  "fingerprint": "2b25f3ec14985088",
+  "fit_params": {
+    "lambdas": null,
+    "n_folds": 5,
+    "seed": 0,
+    "inner_lambda_folds": null,
+    "null_draws": 20,
+    "n_boot": 1000,
+    "smoke": false,
+    "recipe_rev": "planv4",
+    "fit_params_schema": "v16-realized-estimator",
+    "store_key": "6ca1a2c7f086de81",
+    "prefill_fallback": false,
+    "decode_fallback": false,
+    "regime": "no_ridge_fit",
+    "lambda_selector": null,
+    "estimator_realized": {
+      "regime": "no_ridge_fit",
+      "machinery": null,
+      "lambda_grid_values": null,
+      "lambda_grid_params": null,
+      "n_lambdas": null,
+      "inner_lambda_folds": null,
+      "lambda_selector_requested": null,
+      "selector_realized_counts": null,
+      "note": "split-half target consistency; no ridge estimator runs here"
+    }
+  },
+  "repro": {
+    "git_commit": "add7f6058691bef3b9be159447b7dde27a321d09",
+    "git_dirty": false,
+    "phase": "p5_fits",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-27T16:49:35Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

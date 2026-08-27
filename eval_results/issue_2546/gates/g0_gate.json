@@ -1,13 +1,13 @@
 {
   "metadata": {
-    "git_commit": "76ac8d57c0a0c0da699b7a9d76f8c2e9daeb1564",
+    "git_commit": "add7f6058691bef3b9be159447b7dde27a321d09",
     "git_dirty": false,
     "phase": "ge_gate",
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2546_fit_cells.py",
     "task": 2546,
     "recipe_rev": "planv4",
-    "timestamp": "2026-08-26T14:47:37Z",
+    "timestamp": "2026-08-27T08:43:55Z",
     "numpy": "2.2.6",
     "torch": "2.8.0+cu128",
     "seed": 0,

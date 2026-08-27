@@ -1,0 +1,170 @@
+{
+  "status": "ok",
+  "unit_id": "ladder__contexthub__a2",
+  "arm": 2,
+  "subset": "corpus:contexthub",
+  "ladder_corpus": "contexthub",
+  "n_rows": 5632,
+  "headline_layer": 19,
+  "tiers_r2": {
+    "t0_direct_transfer": -1.1119147267290006,
+    "t1_context_offset": -0.8936608396745302,
+    "t2_answer_offset": -0.31312892095765,
+    "t3_bias_offset": -0.0281050073010789,
+    "t4_global_scaling": 0.033413240730421845,
+    "t5_mapping_rotation": 0.19113666208742797,
+    "t6_reparam_contexts": 0.10230808722302087,
+    "t7_reparam_answers": 0.08042489701060729,
+    "t8_reparam_both": 0.29866535382216364
+  },
+  "tier_names": [
+    "t0_direct_transfer",
+    "t1_context_offset",
+    "t2_answer_offset",
+    "t3_bias_offset",
+    "t4_global_scaling",
+    "t5_mapping_rotation",
+    "t6_reparam_contexts",
+    "t7_reparam_answers",
+    "t8_reparam_both"
+  ],
+  "within_post_reference_r2": 0.3379144551431492,
+  "sufficient_tier": null,
+  "band_value": 0.010040542419942036,
+  "band_source_corpus": "contexthub",
+  "band_source_corpora_realized": [
+    "contexthub"
+  ],
+  "band_rule": "DELTA_ELICIT_BAND(0.02) x rate; rate = R2_F(subset)/0.6731 (#1336 anchor)",
+  "exchange_rate": 0.5020271209971018,
+  "committed_anchor_r2": 0.6731,
+  "prior_pooled_band_anchor": 0.0207,
+  "battery": {
+    "ceilings": {
+      "within_instruct": 0.3379144551431492,
+      "within_base": 0.3876305433442382,
+      "repswap_b2i": 0.3211589521537327,
+      "repswap_i2b": 0.3175804638232299
+    },
+    "alignment_r2": {
+      "linear": {
+        "A_ctx": 0.588238881025352,
+        "A_ctx_rev": 0.5186171584650403,
+        "A_ans": 0.3192576464634884,
+        "A_ans_rev": 0.309583698571712
+      },
+      "orthogonal": {
+        "A_ctx": 0.23882444915070844,
+        "A_ctx_rev": -0.2485973855095449,
+        "A_ans": -0.018505187536904888,
+        "A_ans_rev": -0.9124846628243606
+      },
+      "scaled_orthogonal": {
+        "A_ctx": 0.27965862340917047,
+        "A_ctx_rev": 0.27966768707015555,
+        "A_ans": 0.11447750637521281,
+        "A_ans_rev": 0.11411292151962904
+      }
+    },
+    "composition": {
+      "linear": {
+        "comp_repmap_b2i": 0.31719456983239236,
+        "comp_repmap_i2b": 0.32577366498321525,
+        "comp_samefn_b2i": 0.29866535382216364,
+        "comp_samefn_i2b": 0.29312668298140265
+      },
+      "orthogonal": {
+        "comp_repmap_b2i": 0.2249906870958679,
+        "comp_repmap_i2b": 0.0830151649821751,
+        "comp_samefn_b2i": 0.15406802405253506,
+        "comp_samefn_i2b": 0.1635951321031025
+      },
+      "scaled_orthogonal": {
+        "comp_repmap_b2i": 0.22215844100640825,
+        "comp_repmap_i2b": 0.2524966148579856,
+        "comp_samefn_b2i": 0.146045304845542,
+        "comp_samefn_i2b": 0.13620903252524652
+      }
+    }
+  },
+  "gap_f_vs_t8_bootstrap": {
+    "ci_lo": 0.03489193234927172,
+    "ci_hi": 0.0432076396295076,
+    "n_draws": 1000
+  },
+  "battery_provenance": "ma._ridge_prep/_orth_fit/_fold_reads/_assemble_battery (run_pair core)",
+  "fingerprint": "0ae1ae7b586c87b9",
+  "fit_params": {
+    "lambdas": [
+      "logspace",
+      -2.0,
+      4.0,
+      13
+    ],
+    "n_folds": 5,
+    "seed": 0,
+    "inner_lambda_folds": 4,
+    "null_draws": 20,
+    "n_boot": 1000,
+    "smoke": false,
+    "recipe_rev": "planv4",
+    "fit_params_schema": "v16-realized-estimator",
+    "store_key": "6ca1a2c7f086de81",
+    "prefill_fallback": false,
+    "decode_fallback": false,
+    "regime": "ma_battery_legacy",
+    "lambda_selector": "inner-group-cv",
+    "estimator_realized": {
+      "regime": "ma_battery_legacy",
+      "machinery": "issue825_map_alignment._ridge_prep/_ridge_predict (run_pair core)",
+      "lambda_grid_values": [
+        0.01,
+        0.03162277660168379,
+        0.1,
+        0.31622776601683794,
+        1.0,
+        3.1622776601683795,
+        10.0,
+        31.622776601683793,
+        100.0,
+        316.2277660168379,
+        1000.0,
+        3162.2776601683795,
+        10000.0
+      ],
+      "lambda_grid_params": [
+        "logspace",
+        -2.0,
+        4.0,
+        13
+      ],
+      "n_lambdas": 13,
+      "inner_lambda_folds": 4,
+      "lambda_selector_requested": "inner-group-cv",
+      "selector_realized_counts": {
+        "inner-group-cv": 165
+      },
+      "lambda_selection_counts": {
+        "inner-group-cv": {
+          "3162.28": 105,
+          "10000": 60
+        }
+      },
+      "gcv_dof_cap": 0.9,
+      "legacy_unguarded_gcv": false,
+      "derived_from": "issue825_map_alignment module globals read at this unit's fit calls + SELECTOR_LOG delta over the unit (v16)"
+    }
+  },
+  "repro": {
+    "git_commit": "add7f6058691bef3b9be159447b7dde27a321d09",
+    "git_dirty": false,
+    "phase": "p5_fits",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-27T16:34:00Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}
