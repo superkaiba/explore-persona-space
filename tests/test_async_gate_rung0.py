@@ -50,7 +50,22 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     open_async_ask,
 )
 
-NOW = time.time()
+# #2369: NOW is a PER-TEST clock anchor, refreshed by the autouse fixture
+# below. A module-level `time.time()` capture silently ages every "fresh"
+# fixture event in long gate sessions (20-40 min collection→execution
+# drift; incidents #2158/#2168 — this file's current consumers are
+# append-order/explicit-age predicates, so the fix is defense-in-depth
+# against future age-sensitive tests inheriting the trap). The 0.0
+# placeholder fails loudly (~56-year ages) if the fixture is ever removed.
+NOW: float = 0.0
+
+
+@pytest.fixture(autouse=True)
+def _fresh_now():
+    """Refresh the clock anchor at TEST SETUP so fixture ages are measured
+    from test execution, not module import (#2369)."""
+    global NOW
+    NOW = time.time()
 
 
 def _iso(epoch: float) -> str:
