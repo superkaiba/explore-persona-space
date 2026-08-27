@@ -50,3 +50,4 @@ This entry is the PRIMARY index pointer for its theme; the sibling index rows be
 
 - [Long-running analysis needs per-unit atomic writes + --resume](feedback_long_running_analysis_needs_resume.md) — a multi-iteration CPU/GPU analysis script with wall-time ≥1h that writes only end-of-run loses ALL completed work on any mid-run crash; on a shared contended VM (load avg 60+) crashes are likely. Always per-unit atomic JSON + opt-in --resume with fail-loud substrate match. #722 r2.
 - [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
+- [--resume pins every regime key](feedback_resume_metadata_pin_every_regime_key.md) — --resume pins EVERY output-affecting regime key in the manifest; a substrate fingerprint hashing only seed/data/dims silently mixes cross-regime caches (cross-regime resume reuses wrong rows)
