@@ -12501,8 +12501,8 @@
     "2620": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2620",
-      "status": "approved",
+      "path": "tasks/running/2620",
+      "status": "running",
       "title": "curate .claude/agent-memory/code-reviewer-lean/MEMORY.md under the 24KB agent-memory index FAIL cap (41KB on main; reds worktree spec-freshness sync commits + silently truncates the lean twin's loaded lessons)"
     },
     "263": {
