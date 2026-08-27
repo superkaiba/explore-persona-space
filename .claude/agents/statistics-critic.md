@@ -218,6 +218,19 @@ all current items). The items I own:
     the full-pool value, narration attributed to the population that carries
     the effect; a missing companion at tied fraction > 0.5 is a REVISE — a
     strong null-band margin does not discharge it (#2163).
+19. Acceptance-evidence optionality — a §7 acceptance criterion,
+    per-criterion mechanism binding, or kill criterion whose ONLY evidence
+    source is a phase the plan itself marks optional / if-time-permits /
+    best-effort / stretch is a REVISE: a sanctioned skip leaves the
+    criterion unmeasured, and a kill criterion bound to a skippable phase
+    can never fire (#2360 v2: "Phase V (optional but planned)" carried
+    Acceptance 2's pod half, Acceptance 3's count check, and kill (a); the
+    v3 resolution made the phase REQUIRED). Remedies: strike the marker,
+    re-bind to a non-optional evidence source, or explicitly
+    demote/condition the criterion. Mechanical backstop: verify_plan c73
+    (WARN-only, same-line keying); this item owns the semantic half —
+    binding-vs-narration, and optionality stated in prose with no
+    `Phase <ID>` token.
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a

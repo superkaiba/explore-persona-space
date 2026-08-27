@@ -83,6 +83,7 @@ Rows are honest: a check with no v2 owner is a `GAP:` row, never papered over.
 | 16 Unit of analysis / measurement grain | critic.md Statistics 16 | v2-owner: statistics-critic |
 | 17 Rate-denominator provenance (measured vs application denominator; stage-chained rates) | critic.md Statistics 17 | v2-owner: statistics-critic |
 | 18 Matched-covariate support (support-restricted companion) | critic.md Statistics 18 | v2-owner: statistics-critic |
+| 19 Acceptance-evidence optionality (§7 binding to an optionality-marked phase) | critic.md Statistics 19 | v2-owner: statistics-critic |
 
 ## C. Monolithic `critic` — Alternative Explanations lens items
 

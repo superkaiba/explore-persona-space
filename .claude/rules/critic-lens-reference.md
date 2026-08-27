@@ -1246,6 +1246,28 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     committed JSON. N/A escape: no matched / partialled / stratified
     headline, or tied fraction ≤ 0.5 — write "N/A — matching covariate
     non-degenerate (tied fraction <X> on n=<N>)".
+19. **Acceptance-evidence optionality (§7 binding to a skippable phase).** For
+    every §7 acceptance criterion, per-criterion mechanism binding, and kill
+    criterion, locate the phase/run that produces its evidence and read that
+    phase's own declaration (§4/§6/§9). REVISE when a criterion's ONLY
+    evidence source is a phase the plan marks optional / if-time-permits /
+    best-effort / stretch: an acceptance criterion that a sanctioned skip can
+    leave unmeasured is not a criterion, and a kill criterion bound to a
+    skippable phase can never fire (#2360 v2: "Phase V (optional but
+    planned)" carried Acceptance 2's pod half, Acceptance 3's count check,
+    and kill criterion (a) — it PASSed verify_plan 0 FAIL / 0 WARN and only a
+    per-round critic read caught it; resolution: v3 made the phase REQUIRED).
+    Remedies: strike the optionality marker, re-bind the criterion to a
+    non-optional evidence source, or explicitly demote/condition the
+    criterion. Mechanical backstop: verify_plan c73 (WARN-only; same-line
+    `Phase <ID>` + optionality-marker keying, negation-guarded, declarations
+    read outside the gates sections); THIS item owns the semantic half c73
+    cannot judge — whether a gates-section mention is genuinely a binding vs
+    narration, and optionality expressed in prose without a `Phase <ID>`
+    token on the line. N/A escape: no §7 binding names an optionality-marked
+    phase — a genuinely informational gates-section mention declares the
+    standalone "N/A — no acceptance binding to an optional phase" (also
+    c73's escape).
 
 ### Alternative Explanations lens
 
