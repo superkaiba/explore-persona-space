@@ -94,6 +94,7 @@ DEFAULT_PILOT_CEILING_H = 2.0
 EXIT_PILOT_GATE = 7  # distinct rc — a designed halt the dispatcher routes (gotchas.md pilot-gate)
 ANCHOR_CELLS: tuple[str, ...] = tuple(BK.INSTRUCTION_AXES) + ("query",)
 SMOKE_CELLS: tuple[str, ...] = ("register", "query")  # mirrors issue2564_run.SMOKE_CELLS
+K100_ROUND_SEG = "k100_low_reliability_axes"  # mirrors issue2564_run.K100_ROUND_SEG (plan v8 §5)
 
 
 def log(msg: str) -> None:
@@ -117,8 +118,18 @@ def _read_jsonl(path: Path) -> list[dict]:
 
 
 def anchors_rel(cell: str) -> str:
-    """Repo-relative anchors path for one cell (the PA layout)."""
+    """Repo-relative anchors path for one cell (the PA layout; local out-root
+    layout is round-INDEPENDENT — rounds isolate via separate out-roots)."""
     return f"raw_completions/anchors/anchors_{cell}.jsonl"
+
+
+def hf_anchors_rel(cell: str, round_seg: str = "") -> str:
+    """HF repo-relative anchors path — a round nests the segment INSIDE the
+    kind (mirrors ``Cfg2564.hf_round_prefix``: parent ``raw_completions/anchors``;
+    round ``raw_completions/<seg>/anchors``; plan v8 §5)."""
+    if round_seg:
+        return f"raw_completions/{round_seg}/anchors/anchors_{cell}.jsonl"
+    return anchors_rel(cell)
 
 
 _SENTINEL_NAMES = ("embed_done.local.json", "embed_uploaded.json")
@@ -164,11 +175,14 @@ def stage_anchor_files(
     anchors_root: Path | None,
     hf_prefix: str,
     staging_dir: Path,
+    round_seg: str = "",
 ) -> dict[str, Path]:
     """Resolve each cell's anchors JSONL: local root first, else HF fetch.
 
     Fails loud on a missing cell (empty-selection rule: PD/PC never proceed on
     a partial anchor set — the plan's off_pod_phases reads name every cell).
+    The LOCAL layout is round-independent; only the HF fetch path nests the
+    round segment (``hf_anchors_rel``).
     """
     from huggingface_hub import hf_hub_download
 
@@ -179,7 +193,7 @@ def stage_anchor_files(
             if local.is_file():
                 out[cell] = local
                 continue
-        fn = f"{hf_prefix}/{anchors_rel(cell)}"
+        fn = f"{hf_prefix}/{hf_anchors_rel(cell, round_seg)}"
         got = hub.retry_transient(
             lambda fn=fn: hf_hub_download(
                 HF_DATA_REPO, filename=fn, repo_type="dataset", local_dir=str(staging_dir)
@@ -214,13 +228,16 @@ def load_rows(paths: dict[str, Path]) -> tuple[list[dict], int]:
     return rows, n_empty
 
 
-def _regime_fp(rows: list[dict], chunk: int, max_model_len: int, revision: str) -> str:
+def _regime_fp(
+    rows: list[dict], chunk: int, max_model_len: int, revision: str, round_seg: str = ""
+) -> str:
     """Resume fingerprint: generating params + file-read row identities.
 
     Hashes the (context_id, draw, sha16(text)) triples — bit-exact inputs read
     from files (safe per the float-last-bit rule; no recomputed floats) — plus
     the RESOLVED embed-model revision (a checkpoint embedded under different
-    model bytes is a different regime; r2 blocker 8).
+    model bytes is a different regime; r2 blocker 8). ``round_seg`` joins the
+    payload ONLY when nonzero, so parent fps stay byte-identical (plan v8 §4).
     """
     ids = [
         (
@@ -230,9 +247,10 @@ def _regime_fp(rows: list[dict], chunk: int, max_model_len: int, revision: str) 
         )
         for r in rows
     ]
-    payload = json.dumps(
-        [EMBED_MODEL, revision, EMBED_DIM, max_model_len, chunk, ids], sort_keys=True
-    )
+    parts: list = [EMBED_MODEL, revision, EMBED_DIM, max_model_len, chunk, ids]
+    if round_seg:
+        parts.append(round_seg)
+    payload = json.dumps(parts, sort_keys=True)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
@@ -392,6 +410,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--out-root in production; HF fetch under --smoke)",
     )
     ap.add_argument("--cells", default=None, help="comma list override of anchor cells")
+    ap.add_argument(
+        "--hf-round-seg",
+        default="",
+        help="HF round path segment (e.g. 'k100_low_reliability_axes'): nests the "
+        "anchors fetch + embeddings upload under <kind>/<seg> and rebinds the smoke "
+        "twin to smoke_k100 (plan v8 §5). Empty (default) = parent layout, byte-unchanged.",
+    )
     ap.add_argument("--chunk", type=int, default=None)
     ap.add_argument("--max-model-len", type=int, default=DEFAULT_MAX_MODEL_LEN)
     ap.add_argument("--pilot-ceiling-h", type=float, default=DEFAULT_PILOT_CEILING_H)
@@ -416,12 +441,26 @@ def main() -> None:
         raise SystemExit(0)
 
     out_root = Path(args.out_root)
+    round_seg = str(args.hf_round_seg or "").strip().strip("/")
     hf_prefix = HF_PREFIX
     cells = ANCHOR_CELLS
     chunk = args.chunk if args.chunk is not None else DEFAULT_CHUNK
     if args.smoke:
         out_root = out_root.parent / f"smoke_{out_root.name}"
-        hf_prefix = f"{HF_PREFIX}/smoke"
+        # Smoke twin mirrors Cfg2564.hf_prefix: the k100 round gets its own
+        # smoke_k100 twin so smoke artifacts never touch parent smoke paths.
+        # The twin map is EXPLICIT per round (review r1 minor): a FUTURE round
+        # with a new seg must add its own twin branch here — an unknown seg
+        # refuses loudly rather than landing in the parent smoke twin.
+        if round_seg and round_seg != K100_ROUND_SEG:
+            raise SystemExit(
+                f"unknown --hf-round-seg {round_seg!r} under --smoke: each round needs "
+                "its OWN smoke twin ('' -> smoke, k100 -> smoke_k100); refusing to "
+                "write an unknown round's smoke artifacts into the parent smoke twin"
+            )
+        hf_prefix = (
+            f"{HF_PREFIX}/smoke_k100" if round_seg == K100_ROUND_SEG else f"{HF_PREFIX}/smoke"
+        )
         cells = SMOKE_CELLS
         if args.chunk is None:
             chunk = SMOKE_CHUNK
@@ -435,9 +474,12 @@ def main() -> None:
         anchors_root = out_root.parent
     out_root.mkdir(parents=True, exist_ok=True)
 
-    log(f"[phase=pc_embed] start out_root={out_root} hf_prefix={hf_prefix} cells={list(cells)}")
+    seg_note = f" round_seg={round_seg}" if round_seg else ""  # parent log stays byte-identical
+    log(
+        f"[phase=pc_embed] start out_root={out_root} hf_prefix={hf_prefix}{seg_note} cells={list(cells)}"
+    )
     staging = out_root / "anchors_staging"
-    paths = stage_anchor_files(cells, anchors_root, hf_prefix, staging)
+    paths = stage_anchor_files(cells, anchors_root, hf_prefix, staging, round_seg=round_seg)
     rows, n_empty = load_rows(paths)
     texts = [r["text"] for r in rows]
     log(f"[pc_embed] loaded {len(rows)} rows across {len(cells)} cells (skipped_empty={n_empty})")
@@ -450,7 +492,7 @@ def main() -> None:
     # Phase-entry idempotency skip (r3 concern phase-c-not-idempotent):
     # fp-keyed, mode-matched, BEFORE tokenizer/engine init — a completed-C
     # re-run never repeats tokenize+derive+upload. --force quarantines instead.
-    fp = _regime_fp(rows, chunk, args.max_model_len, revision)
+    fp = _regime_fp(rows, chunk, args.max_model_len, revision, round_seg=round_seg)
     if args.force:
         _quarantine_sentinels(out_root)
     elif _completed_sentinel(out_root, args.skip_upload, fp) is not None:
@@ -543,6 +585,8 @@ def main() -> None:
         "cells": list(cells),
         "regime_fp": fp,
         "smoke": args.smoke,
+        # round key joins meta ONLY on a round run (parent meta stays byte-identical)
+        **({"hf_round_seg": round_seg} if round_seg else {}),
         **as_metadata_dict(git_provenance(), phase="pc-embed"),
     }
     _write_json_atomic(emb_dir / "meta.json", meta)
@@ -552,7 +596,9 @@ def main() -> None:
         _write_json_atomic(out_root / "embed_done.local.json", meta)
         log("[phase=pc_embed] --skip-upload: local sentinel embed_done.local.json written")
     else:
-        dest_prefix = f"{hf_prefix}/analysis_tensors/embeddings_qwen3_8b"
+        # A round nests the segment INSIDE the kind (Cfg2564.hf_round_prefix parity).
+        seg_dir = f"analysis_tensors/{round_seg}" if round_seg else "analysis_tensors"
+        dest_prefix = f"{hf_prefix}/{seg_dir}/embeddings_qwen3_8b"
         res = upload_dir_sharded(
             emb_dir,
             HF_DATA_REPO,

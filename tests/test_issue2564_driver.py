@@ -850,3 +850,1252 @@ def test_ffr_pilot_selection_fp_pins_judge_instrument_and_upload(
     # satisfy a later --upload hf run)
     pcfg = D._pilot_cfg(cfg)
     assert D._pilot_selection_fp(_replace(pcfg, upload="hf")) != D._pilot_selection_fp(pcfg)
+
+
+# ── k100 round pins (plan v8; follow-up k100-low-reliability-axes) ──────
+
+import issue2564_analysis as A  # noqa: E402
+
+
+def test_k100_build_config_production_defaults():
+    """--round k100 production: roster cells, 90 fresh draws, draw offset 10,
+    dedicated out-root, pinned parent revision, k100-named sentinels."""
+    cfg = D.build_config(D.parse_args(["--phase", "all", "--round", "k100", "--upload", "hf"]))
+    assert cfg.is_k100 and not cfg.is_ffr
+    assert cfg.cells == D.K100_CELLS == ("user_fact", "query")
+    assert cfg.carriers is None  # full 12-carrier roster in production
+    assert cfg.draws == D.K100_DRAWS == 90
+    assert cfg.draw_offset == D.K100_DRAW_OFFSET == 10
+    assert cfg.parent_revision == D.K100_PARENT_REVISION_DEFAULT
+    assert cfg.out_root == Path(D.K100_OUT_ROOT_DEFAULT) == Path("/workspace/eps2564k100")
+    assert cfg.hf_prefix == "issue2564_minpair"
+    assert cfg.anchors_sentinel.name == "k100_anchors_done.json"
+    assert cfg.va_sentinel.name == "k100_va_uploaded.json"
+
+
+def test_k100_build_config_smoke_keeps_round_cells_slices_carriers():
+    """k100 smoke keeps the ROUND's cells (parent SMOKE_CELLS carries
+    'register', outside the k100 roster) and slices carriers/draws only;
+    generated artifacts rebind to the smoke twin root + smoke_k100 prefix."""
+    cfg = D.build_config(
+        D.parse_args(
+            [
+                "--phase",
+                "all",
+                "--round",
+                "k100",
+                "--out-root",
+                "/tmp/eps2564k100x",
+                "--smoke",
+                "--upload",
+                "none",
+            ]
+        )
+    )
+    assert cfg.cells == D.K100_CELLS  # NOT D.SMOKE_CELLS
+    assert cfg.carriers == D.SMOKE_CARRIERS == ("c01", "c02", "c03")
+    assert cfg.draws == D.SMOKE_DRAWS == 2
+    assert cfg.draw_offset == D.K100_DRAW_OFFSET
+    assert cfg.out_root.name == "smoke_eps2564k100x"
+    assert cfg.hf_prefix == "issue2564_minpair/smoke_k100"
+
+
+def test_k100_gen_row_draw_and_seed_bookkeeping():
+    """Fresh rows carry draw ids 10..99 with the parent seed invariant
+    seed = seed_base + draw (plan v8 §3a: seeds 52..141 at seed_base 42)."""
+    cfg = D.build_config(D.parse_args(["--phase", "all", "--round", "k100", "--upload", "none"]))
+    assert cfg.seed_base == 42
+    ctx = {
+        "id": "user_fact::n01::c01",
+        "cell": "user_fact",
+        "kind": "value",
+        "value_id": "n01",
+        "carrier": "c01",
+        "form": "stmt",
+    }
+    for i in (0, 41, 89):
+        row = D._gen_row(cfg, ctx, 7, 1, cfg.draw_offset + i, 0, "text", 3, 128)
+        assert row["draw"] == 10 + i
+        assert row["seed"] == 42 + 10 + i  # seed = seed_base + draw
+
+
+def test_k100_regime_fp_includes_draw_offset():
+    """The generation regime fingerprint changes when the draw offset does —
+    a parent-regime partial can never satisfy a k100 resume (plan v8 §3a)."""
+    cfg = D.build_config(D.parse_args(["--phase", "all", "--round", "k100", "--upload", "none"]))
+    assert D._regime_fp(cfg) != D._regime_fp(_replace(cfg, draw_offset=0))
+
+
+def test_k100_prefix_isolation_never_writes_parent_or_ffr():
+    """k100 write surfaces (HF kind prefixes, out-roots, sentinels, smoke
+    prefix, embed anchors rel) are disjoint from the parent's AND the ffr
+    round's — a k100 run can never clobber a committed prefix (plan v8 §5)."""
+    assert A.K100_ROUND_SEG == D.K100_ROUND_SEG == E.K100_ROUND_SEG
+    assert A.K100_DRAW_OFFSET == D.K100_DRAW_OFFSET and A.K100_DRAWS_TOTAL == 100
+
+    def _cfg(extra: list[str]) -> D.Cfg2564:
+        return D.build_config(D.parse_args(["--phase", "all", *extra, "--upload", "hf"]))
+
+    k100, parent, ffr = _cfg(["--round", "k100"]), _cfg([]), _cfg(["--round", "ffr"])
+    kinds = ("raw_completions", "analysis_tensors", "manifests")
+    k_set = {k100.hf_round_prefix(k) for k in kinds}
+    other = {c.hf_round_prefix(k) for c in (parent, ffr) for k in kinds}
+    assert not (k_set & other), k_set & other
+    for k in kinds:
+        assert k100.hf_round_prefix(k) == f"issue2564_minpair/{k}/k100_low_reliability_axes"
+    assert len({k100.out_root, parent.out_root, ffr.out_root}) == 3
+    k_sent = {k100.anchors_sentinel.name, k100.va_sentinel.name}
+    o_sent = {
+        parent.anchors_sentinel.name,
+        parent.va_sentinel.name,
+        ffr.anchors_sentinel.name,
+        ffr.va_sentinel.name,
+    }
+    assert k_sent.isdisjoint(o_sent)
+    # smoke prefixes are round-distinct too
+    smoke = {
+        r: _cfg([*(["--round", r] if r != "parent" else []), "--smoke"]).hf_prefix
+        for r in ("parent", "ffr", "k100")
+    }
+    assert len(set(smoke.values())) == 3 and smoke["k100"].endswith("/smoke_k100")
+    # embed-side anchors rel nests the round segment inside raw_completions
+    assert (
+        E.hf_anchors_rel("query", E.K100_ROUND_SEG)
+        == "raw_completions/k100_low_reliability_axes/anchors/anchors_query.jsonl"
+    )
+    assert E.hf_anchors_rel("query") == "raw_completions/anchors/anchors_query.jsonl"
+
+
+def test_k100_phase_embed_forces_query_cells_and_threads_round_seg(monkeypatch, tmp_path):
+    """k100 phase C embeds ONLY the query cell (user_fact is programmatic;
+    plan v8 §5) and threads --hf-round-seg so the subprocess uploads to the
+    round-nested prefix; a bank without the query cell fails loud."""
+    args = D.parse_args(
+        [
+            "--phase",
+            "C",
+            "--round",
+            "k100",
+            "--out-root",
+            str(tmp_path / "rootk"),
+            "--smoke",
+            "--upload",
+            "none",
+        ]
+    )
+    cfg = D.build_config(args)
+    bank = {
+        "contexts": [
+            {"id": "u", "cell": "user_fact", "carrier": "c01"},
+            {"id": "q", "cell": "query", "carrier": "c01"},
+        ],
+        "pairs": [],
+    }
+    monkeypatch.setattr(D, "_anchor_cell_complete", lambda cfg, cell: True)
+    captured: dict = {}
+
+    def fake_run(cmd, env):  # signature mirror of the subprocess.run call site
+        captured["cmd"] = [str(c) for c in cmd]
+        out = D._embed_out_root(cfg)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "embed_done.local.json").write_text("{}")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(D.subprocess, "run", fake_run)
+    assert D.phase_embed(cfg, bank) == D.RC_OK
+    cmd = captured["cmd"]
+    assert cmd[cmd.index("--cells") + 1] == "query"  # user_fact never reaches the embed leg
+    assert cmd[cmd.index("--hf-round-seg") + 1] == D.K100_ROUND_SEG
+    # no query cell in the bank -> loud refusal, not a silent empty embed
+    bank_uf = {"contexts": [{"id": "u", "cell": "user_fact", "carrier": "c01"}], "pairs": []}
+    with pytest.raises(RuntimeError, match="requires the query cell"):
+        D.phase_embed(cfg, bank_uf)
+
+
+def test_k100_vc_parity_report_names_k6_vc_source():
+    """Consistency note 1 (plan v8 K6): the parity manifest states that the
+    fresh k100 v_C feeds ONLY provenance check (a) — pooled/bridge reads
+    consume the PARENT committed bank at the pinned revision."""
+    src = inspect.getsource(D._k100_vc_parity)
+    assert '"k6_vc_source"' in src
+    assert "feeds ONLY this provenance check" in src
+
+
+def test_k100_sb_project_arithmetic_and_edge_cases():
+    """sb_project matches the closed-form r1 projection, reduces to the
+    spearman_brown step-up at 1->2, is the identity at k_from == k_to, and
+    is NaN-safe (plan v8 §3b)."""
+    r10 = 0.13102069808322983  # committed parent user_fact r10 (bridge target)
+    r1 = r10 / (10 - 9 * r10)
+    manual = 100 * r1 / (1 + 99 * r1)
+    assert abs(A.sb_project(r10, 10, 100) - manual) < 1e-12
+    assert 0.55 < manual < 0.65  # the plan's ~0.60 projected pooled r100
+    assert abs(A.sb_project(0.3, 1, 2) - A.spearman_brown(0.3)) < 1e-15
+    assert abs(A.sb_project(0.4, 10, 10) - 0.4) < 1e-15
+    out = A.sb_project(np.array([0.4, np.nan]), 10, 100)
+    assert np.isfinite(out[0]) and np.isnan(out[1])
+
+
+def test_k100_ci_overlap_predicate_and_registered_criterion():
+    """Fallback criterion mechanics (consistency note 2): strict CI
+    non-overlap, touching edges overlap, non-finite -> None; the
+    pre-registered criterion string is pinned in-code."""
+    assert A._ci_overlap([0.1, 0.3], [0.25, 0.5]) is True
+    assert A._ci_overlap([0.1, 0.2], [0.21, 0.5]) is False
+    assert A._ci_overlap([0.21, 0.5], [0.1, 0.2]) is False
+    assert A._ci_overlap([0.1, 0.2], [0.2, 0.3]) is True  # non-overlap is STRICT
+    assert A._ci_overlap([0.1, float("nan")], [0.2, 0.3]) is None
+    assert "PRE-REGISTERED" in A.K100_FALLBACK_CRITERION
+    assert "do NOT overlap" in A.K100_FALLBACK_CRITERION
+
+
+def _k100_deciding_block(ci: tuple[float, float], threshold: float) -> dict:
+    return {
+        "ci95": list(ci),
+        "threshold": threshold,
+        "fragile": bool(ci[0] <= threshold <= ci[1]),
+        "n_finite_draws": 8,
+        "scheme": "carrier-clustered paired bootstrap (shared resample)",
+    }
+
+
+def _k100_verdict_doc(
+    c: float,
+    r100: float,
+    s_flip: float,
+    s_para: float,
+    t_ratio: float,
+    *,
+    ratio_ci: tuple[float, float] = (0.45, 0.55),
+    g_ci: tuple[float, float] = (0.5, 0.9),
+) -> dict:
+    return {
+        "axes": {
+            "user_fact": {
+                "direction": {"arm_779ce": {"mean_cos_headline": c, "ci95": [c - 0.01, c + 0.01]}},
+                "reliability": {"r100_mean": r100, "r100_ci95": [r100 - 0.001, r100 + 0.001]},
+                "k100_deciding": {"c_over_b": _k100_deciding_block(ratio_ci, A.K100_LATTICE_RATIO)},
+            },
+            "query_form": {
+                "surface": {"observed": {"flip_norm_mean": s_flip, "para_norm_mean": s_para}},
+                "text_space": {"flip_over_para_ratio": t_ratio},
+                "k100_deciding": {"g": _k100_deciding_block(g_ci, A.K100_DISSOC_G)},
+            },
+        }
+    }
+
+
+def test_k100_verdict_lattice_arms():
+    """All three injected-name lattice arms + both dissociation arms fire on
+    point estimates exactly as registered (plan v8 §3b)."""
+    # b = sqrt(0.36) = 0.6 >= 0.55; c/b = 0.30/0.6 = 0.5 >= 0.35
+    v = A.k100_verdicts(_k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2), "pooled", smoke=False)
+    assert v["injected_name"]["verdict"] == "reliability-limited"
+    assert v["query_form_dissociation"]["verdict"] == "dissociation-holds"  # g = 0.7
+    assert v["reliability_estimator"] == "pooled" and v["informational_smoke"] is False
+    # c/b = 0.15/0.6 = 0.25 < 0.35
+    v = A.k100_verdicts(_k100_verdict_doc(0.15, 0.36, 0.9, 1.0, 0.85), "pooled", smoke=False)
+    assert v["injected_name"]["verdict"] == "map-direction-loss"
+    assert v["query_form_dissociation"]["verdict"] == "dissociation-collapses"  # g = 0.05
+    # b = sqrt(0.25) = 0.5 < 0.55
+    v = A.k100_verdicts(_k100_verdict_doc(0.30, 0.25, 0.9, 1.0, 0.2), "new_only", smoke=True)
+    assert v["injected_name"]["verdict"] == "unresolved"
+    assert v["informational_smoke"] is True
+    # fragile flag: r CI straddling the b floor (b = 0.5501.. within +-ci)
+    doc = _k100_verdict_doc(0.30, 0.5501**2, 0.9, 1.0, 0.2)
+    doc["axes"]["user_fact"]["reliability"]["r100_ci95"] = [0.54**2, 0.57**2]
+    v = A.k100_verdicts(doc, "pooled", smoke=False)
+    assert v["injected_name"]["fragile"] is True
+
+
+# ── k100 pooled loader + split-half pins (synthetic dual-source stores) ─
+
+
+def _k100_world(tmp_path):
+    """Synthetic dual-source k100 store fixture: 6-context parent vc grid
+    (non-roster extras first + last, pinning parent_rows slicing), 4 roster
+    contexts (2 user_fact + 2 query), parent draws 0-9 / round draws 10-99,
+    tail[r, k, :] = base_r + k * dir_r (+ per-layer offset)."""
+    d, e = 4, 3
+    rng = np.random.default_rng(0)
+    vc_ids = [
+        "register::x1::c01",
+        "user_fact::n01::c01",
+        "query::E::c01",
+        "user_fact::n02::c01",
+        "query::E::c02",
+        "register::x2::c01",
+    ]
+    cells_of = {cid: cid.split("::")[0] for cid in vc_ids}
+    roster = vc_ids[1:5]
+    base = rng.normal(size=(6, d))
+    dirv = rng.normal(size=(6, d))
+    li_off = {L: 100.0 * i for i, L in enumerate(A.LAYERS)}
+    contexts = {
+        cid: {"id": cid, "cell": cells_of[cid], "carrier": cid.split("::")[2]} for cid in vc_ids
+    }
+    bank = {"contexts": contexts, "pairs": []}
+    paths: dict[tuple[str, str], Path] = {}
+    root = tmp_path / "stores"
+    root.mkdir(parents=True, exist_ok=True)
+
+    vc = np.stack([np.stack([base[r] + li_off[L] for L in A.LAYERS]) for r in range(6)])
+    vc_p = root / "vc.pt"
+    torch.save(
+        {
+            "layers": list(A.LAYERS),
+            "context_ids": vc_ids,
+            "vc": torch.tensor(vc, dtype=torch.float32),
+        },
+        vc_p,
+    )
+    paths[("analysis_tensors/vc2564/vc2564_bank.pt", "parent")] = vc_p
+
+    for cell in ("user_fact", "query"):
+        cell_ids = [cid for cid in roster if cells_of[cid] == cell]
+        for source, drange, ncomp in (("parent", range(0, 10), 5), ("round", range(10, 100), 7)):
+            index, tails = [], []
+            for cid in cell_ids:
+                r = vc_ids.index(cid)
+                for k in drange:
+                    index.append({"context_id": cid, "draw": k, "n_completion_tokens": ncomp})
+                    row = base[r] + k * dirv[r]
+                    tails.append(np.stack([row + li_off[L] for L in A.LAYERS]))
+            tail = torch.tensor(np.array(tails), dtype=torch.float32)
+            p = root / f"va_{cell}_{source}.pt"
+            torch.save(
+                {
+                    "layers": list(A.LAYERS),
+                    "index": index,
+                    "va_tail_incl": tail,
+                    "va_span": tail + 0.5,
+                },
+                p,
+            )
+            paths[(f"analysis_tensors/va2564/va2564_{cell}.pt", source)] = p
+
+    emb_mean = rng.normal(size=(6, e))
+    means_p = root / "means.npz"
+    np.savez(means_p, context_ids=np.array(vc_ids), emb_mean=emb_mean)
+    paths[("analysis_tensors/embeddings_qwen3_8b/means_anchors.npz", "parent")] = means_p
+    q_ids = [cid for cid in roster if cells_of[cid] == "query"]
+    for source, drange in (("parent", range(0, 10)), ("round", range(10, 100))):
+        ids, draws, embs = [], [], []
+        for cid in q_ids:
+            r = vc_ids.index(cid)
+            for k in drange:
+                ids.append(cid)
+                draws.append(k)
+                embs.append(emb_mean[r] + k)
+        if source == "parent":
+            # a user_fact per-draw row the query-only pooling must IGNORE
+            ids.append("user_fact::n01::c01")
+            draws.append(0)
+            embs.append(np.full(e, 999.0))
+        p = root / f"perdraw_{source}.npz"
+        np.savez(
+            p, context_ids=np.array(ids), draws=np.array(draws, dtype=np.int64), emb=np.array(embs)
+        )
+        paths[("analysis_tensors/embeddings_qwen3_8b/perdraw_anchors.npz", source)] = p
+
+    cfg = A.CfgPE(
+        in_root=None,
+        out_dir=tmp_path / "out",
+        stage_dir=tmp_path / "stage",
+        manip_check=tmp_path / "mc.json",
+        ridge_779=None,
+        ridge_1738=None,
+        smoke=False,
+        upload="none",
+        b_boot=8,
+        b_null=8,
+        n_splits=4,
+        hf_prefix="issue2564_minpair",
+        round="k100",
+    )
+    return SimpleNamespace(
+        cfg=cfg,
+        bank=bank,
+        paths=paths,
+        vc_ids=vc_ids,
+        roster=roster,
+        base=base,
+        dirv=dirv,
+        emb_mean=emb_mean,
+        li_off=li_off,
+    )
+
+
+@pytest.fixture()
+def k100_world(tmp_path, monkeypatch):
+    w = _k100_world(tmp_path)
+    monkeypatch.setattr(
+        A, "resolve_input", lambda cfg, rel, *, source="round": w.paths[(rel, source)]
+    )
+    return w
+
+
+def test_k100_load_stores_pooled_concat_and_new_only_accumulators(k100_world):
+    """load_stores_k100 pools parent draws 0-9 + round draws 10-99 into a
+    (n_ctx, 100, d) grid in PARENT vc row order, reconstructs parent-only
+    means exactly, fills the *_new accumulators, and K-pools query text
+    embeddings while user_fact keeps the parent means (plan v8 K4/K6)."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    rows = np.array([1, 2, 3, 4])  # roster rows in the 6-context parent grid
+    assert st.ctx_ids == w.roster
+    np.testing.assert_array_equal(st.parent_rows, rows)
+    assert st.n_parent_ctx_total == 6
+    assert st.tail_draws.shape == (4, 100, 4) and st.draw_valid.all()
+    np.testing.assert_array_equal(st.n_valid, np.full(4, 100))
+    np.testing.assert_array_equal(st.n_valid_new, np.full(4, 90))
+    # pooled / new-only / parent-only per-context means at the primary layer
+    off = w.li_off[A.PRIMARY_LAYER]
+    exp_pooled = w.base[rows] + 49.5 * w.dirv[rows] + off  # mean draw over 0..99
+    exp_new = w.base[rows] + 54.5 * w.dirv[rows] + off  # mean draw over 10..99
+    exp_parent = w.base[rows] + 4.5 * w.dirv[rows] + off  # mean draw over 0..9
+    np.testing.assert_allclose(st.va_tail_mean[A.PRIMARY_LAYER], exp_pooled, atol=1e-4)
+    np.testing.assert_allclose(st.va_tail_mean_new[A.PRIMARY_LAYER], exp_new, atol=1e-4)
+    np.testing.assert_allclose(
+        A._k100_parent_only_tail_mean(st, A.PRIMARY_LAYER), exp_parent, atol=1e-3
+    )
+    # answer lengths: pooled (10*5 + 90*7)/100; new-only 7
+    np.testing.assert_allclose(st.ans_len_mean, np.full(4, 6.8), atol=1e-12)
+    np.testing.assert_allclose(st.ans_len_mean_new, np.full(4, 7.0), atol=1e-12)
+    # embeddings: query rows K-pooled (parent + round per-draw), user_fact parent means
+    uf_rows = [0, 2]  # uf1, uf2 in roster order [uf1, q1, uf2, q2]
+    q_rows = [1, 3]
+    np.testing.assert_allclose(st.emb_mean[uf_rows], w.emb_mean[[1, 3]], atol=1e-12)
+    np.testing.assert_allclose(st.emb_mean[q_rows], w.emb_mean[[2, 4]] + 49.5, atol=1e-9)
+    np.testing.assert_allclose(st.emb_mean_new[q_rows], w.emb_mean[[2, 4]] + 54.5, atol=1e-9)
+    np.testing.assert_allclose(st.emb_mean_new[uf_rows], w.emb_mean[[1, 3]], atol=1e-12)
+    # dual-source provenance recorded per input
+    assert st.input_files["va2564_user_fact.parent.pt"]["source"] == "parent"
+    assert st.input_files["va2564_user_fact.pt"]["source"] == "round"
+
+
+def _uf_pair(st) -> A.PairArrays:
+    return A.PairArrays(
+        ids=["p1"],
+        cls=["value_swap"],
+        axis=["user_fact"],
+        value_a=["n01"],
+        value_b=["n02"],
+        carrier_str=["c01"],
+        a=np.array([st.row_of["user_fact::n01::c01"]], dtype=np.int64),
+        b=np.array([st.row_of["user_fact::n02::c01"]], dtype=np.int64),
+        ca=np.array([0], dtype=np.int64),
+        cb=np.array([0], dtype=np.int64),
+        dyad=np.array([False]),
+        changed=np.array([1], dtype=np.int64),
+        orientation=["n01->n02"],
+        n=1,
+    )
+
+
+def test_k100_split_half_runs_at_nv100_with_5050_halves(k100_world):
+    """At the pooled nv=100 grid the split is 50/50: with deterministic
+    ascending scores half1 = draws 0..49, so the per-pair r equals the
+    manually computed cosine of the two half-mean deltas."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    pa = _uf_pair(st)
+    seen: list[tuple[int, int]] = []
+
+    def det_scores(rng, n_ctx, k_max):
+        seen.append((n_ctx, k_max))
+        return np.broadcast_to(np.arange(k_max, dtype=float), (n_ctx, k_max)).copy()
+
+    rel = A.split_half_stats(st, pa, 2, scores_fn=det_scores)
+    assert seen == [(4, 100), (4, 100)]  # split drawn at the POOLED 100-draw grid
+    a, b = 1, 3  # vc rows of the pair's contexts
+    d1 = (w.base[a] - w.base[b]) + 24.5 * (w.dirv[a] - w.dirv[b])  # mean draws 0..49
+    d2 = (w.base[a] - w.base[b]) + 74.5 * (w.dirv[a] - w.dirv[b])  # mean draws 50..99
+    manual = float(d1 @ d2 / (np.linalg.norm(d1) * np.linalg.norm(d2)))
+    np.testing.assert_allclose(rel["r_half"][0], manual, atol=1e-5)
+    np.testing.assert_allclose(rel["r_full"][0], 2 * manual / (1 + manual), atol=1e-5)
+
+
+def test_k100_split_half_analytic_zero_noise_reliability(k100_world):
+    """Zero draw noise -> split-half r == 1 and noise norm == 0 exactly (the
+    analytic-reliability sanity pin on the pooled 100-draw grid)."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    rows = np.array([1, 2, 3, 4])
+    const = np.repeat(w.base[rows][:, None, :], 100, axis=1).astype(np.float32)
+    st0 = _replace(st, tail_draws=const)
+    rel = A.split_half_stats(st0, _uf_pair(st), 3)
+    np.testing.assert_allclose(rel["r_half"][0], 1.0, atol=1e-6)
+    np.testing.assert_allclose(rel["r_full"][0], 1.0, atol=1e-6)
+    np.testing.assert_allclose(rel["noise_norm"][0], 0.0, atol=1e-5)
+
+
+def test_k100_new_only_stores_swaps_means_and_slices_draw_axis(k100_world):
+    """The registered-fallback twin swaps every pooled read to the new-only
+    estimator and slices the draw axis past the offset (plan v8 §4)."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    st_new = A.k100_new_only_stores(st)
+    assert st_new.tail_draws.shape == (4, 90, 4)
+    assert st_new.draw_valid.shape == (4, 90)
+    np.testing.assert_array_equal(st_new.n_valid, st.n_valid_new)
+    np.testing.assert_allclose(
+        st_new.va_tail_mean[A.PRIMARY_LAYER], st.va_tail_mean_new[A.PRIMARY_LAYER]
+    )
+    np.testing.assert_allclose(st_new.ans_len_mean, st.ans_len_mean_new)
+    np.testing.assert_allclose(st_new.emb_mean, st.emb_mean_new)
+    np.testing.assert_array_equal(st_new.tail_draws, st.tail_draws[:, 10:])
+
+
+def _min_split_stores(tail: np.ndarray) -> A.Stores:
+    n = tail.shape[0]
+    valid = np.ones(tail.shape[:2], dtype=bool)
+    return A.Stores(
+        ctx_ids=[f"c{i}" for i in range(n)],
+        row_of={},
+        cells=[],
+        carriers=[],
+        va_tail_mean={},
+        va_span_mean={},
+        tail_draws=tail.astype(np.float32),
+        draw_valid=valid,
+        n_valid=valid.sum(1),
+        ans_len_mean=np.zeros(n),
+        vc={},
+        emb_mean=None,
+        d=tail.shape[2],
+    )
+
+
+def test_k100_bridge_parent_grid_scores_reproduce_full_grid_halves(k100_world):
+    """The bridge's scores_fn contract (plan v8 K6): drawing split scores at
+    the FULL parent grid and slicing parent_rows reproduces the full-grid
+    run's per-pair r exactly — every context keeps its parent-realized half
+    assignment despite the roster restriction."""
+    w = k100_world
+    st = A.load_stores_k100(w.cfg, w.bank)
+    rows = st.parent_rows
+    # full 6-context parent-draw grid (draws 0..9), same values as the loader saw
+    full_tail = np.stack(
+        [
+            np.stack([w.base[r] + k * w.dirv[r] + w.li_off[A.PRIMARY_LAYER] for k in range(10)])
+            for r in range(6)
+        ]
+    )
+    full_st = _min_split_stores(full_tail)
+    pa_full = _uf_pair(st)
+    pa_full = _replace(pa_full, a=np.array([1], dtype=np.int64), b=np.array([3], dtype=np.int64))
+    rel_full = A.split_half_stats(full_st, pa_full, 4)
+
+    bridge_st = _replace(st, tail_draws=st.tail_draws[:, :10], draw_valid=st.draw_valid[:, :10])
+
+    def parent_grid_scores(rng, n_ctx, k_max):
+        assert (n_ctx, k_max) == (4, 10)
+        return rng.random((st.n_parent_ctx_total, k_max))[rows]
+
+    rel_sliced = A.split_half_stats(bridge_st, _uf_pair(st), 4, scores_fn=parent_grid_scores)
+    np.testing.assert_allclose(rel_sliced["r_half"][0], rel_full["r_half"][0], atol=1e-12)
+    np.testing.assert_allclose(rel_sliced["r_full"][0], rel_full["r_full"][0], atol=1e-12)
+
+
+# ── k100 fix-round 2 pins (r1 review blockers; epm:code-review v7) ───────
+
+
+def test_k100_deciding_ci_fragility_flags():
+    """r1 blocker k100-verdict-fragility-ci: bootstrap draws whose 95% CI
+    straddles the 0.35 ratio / 0.15 g threshold set the fragile flag; clear
+    draws do not; an all-NaN draw set is EXPLICITLY not evaluable —
+    fragile=None + not_evaluable=True + a durable reason, never a silently
+    clean record (r2 nit k100-deciding-ci-degenerate-failopen)."""
+    strad = A.k100_deciding_ci(np.linspace(0.30, 0.40, 200), A.K100_LATTICE_RATIO)
+    assert strad["fragile"] is True
+    assert strad["ci95"][0] <= A.K100_LATTICE_RATIO <= strad["ci95"][1]
+    assert "not_evaluable" not in strad
+    clear = A.k100_deciding_ci(np.linspace(0.40, 0.50, 200), A.K100_LATTICE_RATIO)
+    assert clear["fragile"] is False
+    assert "not_evaluable" not in clear
+    assert A.k100_deciding_ci(np.linspace(0.10, 0.20, 200), A.K100_DISSOC_G)["fragile"] is True
+    assert A.k100_deciding_ci(np.linspace(0.20, 0.30, 200), A.K100_DISSOC_G)["fragile"] is False
+    nn = A.k100_deciding_ci(np.full(50, np.nan), A.K100_DISSOC_G)
+    assert nn["fragile"] is None and nn["n_finite_draws"] == 0
+    assert nn["not_evaluable"] is True and "not evaluable" in nn["reason"]
+
+
+def test_k100_verdicts_emit_paired_deciding_ci_and_fragile():
+    """r1 blocker k100-verdict-fragility-ci: the verdicts consume the PAIRED
+    c/b and g bootstrap CIs from compute_all's k100_deciding blocks — a
+    straddling CI flags fragile even when the marginal b-floor CI is clear,
+    the g verdict now carries g_ci95 + fragile, and a missing deciding block
+    fails loud (never a silent point-only verdict)."""
+    v = A.k100_verdicts(
+        _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2, ratio_ci=(0.30, 0.40), g_ci=(0.10, 0.75)),
+        "pooled",
+        smoke=False,
+    )
+    inj = v["injected_name"]
+    assert inj["c_over_b_ci95"] == [0.30, 0.40]
+    assert inj["fragile"] is True
+    assert inj["fragile_components"]["c_over_b_paired_ci_straddles_ratio"] is True
+    assert inj["fragile_components"]["b_ci_straddles_floor"] is False
+    qf = v["query_form_dissociation"]
+    assert qf["g_ci95"] == [0.10, 0.75] and qf["fragile"] is True
+    v2 = A.k100_verdicts(_k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2), "pooled", smoke=False)
+    assert v2["injected_name"]["fragile"] is False
+    assert v2["query_form_dissociation"]["fragile"] is False
+    doc = _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2)
+    del doc["axes"]["user_fact"]["k100_deciding"]
+    with pytest.raises(RuntimeError, match="k100_deciding"):
+        A.k100_verdicts(doc, "pooled", smoke=False)
+
+
+def test_k100_verdicts_force_not_evaluable_on_degenerate_deciding_ci():
+    """r2 nit k100-deciding-ci-degenerate-failopen: a deciding block built by
+    the REAL k100_deciding_ci from an all-NaN draw set forces the associated
+    verdict to not_evaluable with a durable verdict_reason and keeps
+    fragile=None — never bool(None) -> fragile: false; a real b-floor
+    fragility still dominates (fragile=True) even with the paired CI
+    unknown."""
+    doc = _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2)
+    doc["axes"]["user_fact"]["k100_deciding"]["c_over_b"] = A.k100_deciding_ci(
+        np.full(50, np.nan), A.K100_LATTICE_RATIO
+    )
+    v = A.k100_verdicts(doc, "pooled", smoke=False)
+    inj = v["injected_name"]
+    assert inj["verdict"] == "not_evaluable"
+    assert "not evaluable" in inj["verdict_reason"]
+    assert inj["fragile"] is None  # unknown, never coerced to False
+    assert inj["fragile_components"]["c_over_b_paired_ci_straddles_ratio"] is None
+    qf = v["query_form_dissociation"]  # healthy qf side untouched
+    assert qf["verdict"] == "dissociation-holds" and qf["verdict_reason"] is None
+    # b-floor fragility dominates: fragile True even with the paired CI unknown
+    doc_b = _k100_verdict_doc(0.30, 0.5501**2, 0.9, 1.0, 0.2)
+    doc_b["axes"]["user_fact"]["reliability"]["r100_ci95"] = [0.54**2, 0.57**2]
+    doc_b["axes"]["user_fact"]["k100_deciding"]["c_over_b"] = A.k100_deciding_ci(
+        np.full(50, np.nan), A.K100_LATTICE_RATIO
+    )
+    v_b = A.k100_verdicts(doc_b, "pooled", smoke=False)
+    assert v_b["injected_name"]["verdict"] == "not_evaluable"
+    assert v_b["injected_name"]["fragile"] is True
+    # query_form side: degenerate g CI forces the dissociation verdict
+    doc2 = _k100_verdict_doc(0.30, 0.36, 0.9, 1.0, 0.2)
+    doc2["axes"]["query_form"]["k100_deciding"]["g"] = A.k100_deciding_ci(
+        np.full(50, np.nan), A.K100_DISSOC_G
+    )
+    v2 = A.k100_verdicts(doc2, "pooled", smoke=False)
+    qf2 = v2["query_form_dissociation"]
+    assert qf2["verdict"] == "not_evaluable" and qf2["fragile"] is None
+    assert "not evaluable" in qf2["verdict_reason"]
+    assert v2["injected_name"]["verdict"] == "reliability-limited"  # uf side untouched
+
+
+def test_k100_paired_deciding_draws_share_one_resample():
+    """r2 concern k100-paired-bootstrap-wiring-unpinned: the deciding-draw
+    builders form EVERY component from ONE shared multiplicity matrix —
+    per-draw brute-force oracles recompute c/b (both from mult[i]) and g (all
+    FOUR components from mult[i]) and must match exactly; an implementation
+    that resampled any component independently, or dropped one, diverges from
+    the oracle for generic data. compute_all's deciding blocks are wired
+    through these named helpers (source pin below)."""
+    rng = np.random.default_rng(7)
+    n_car, n_pairs, b_boot = 5, 12, 6
+    ca = rng.integers(0, n_car, size=n_pairs).astype(np.int64)
+    cb = rng.integers(0, n_car, size=n_pairs).astype(np.int64)
+    dyad = np.zeros(n_pairs, dtype=bool)
+    dyad[::3] = True
+    mult = A.carrier_multiplicities(rng.integers(0, n_car, size=(b_boot, n_car)), n_car)
+    cos_vals = rng.normal(0.4, 0.1, size=n_pairs)
+    r_vals = rng.uniform(0.2, 0.9, size=n_pairs)
+    state = rng.uniform(0.5, 2.0, size=n_pairs)
+    text = rng.uniform(0.5, 2.0, size=n_pairs)
+    head = np.array([0, 2, 3, 5, 7, 9], dtype=np.int64)
+    para_head = np.array([1, 4, 6, 8], dtype=np.int64)
+
+    def wmean(vals: np.ndarray, sel: np.ndarray, i: int) -> float:
+        w = np.where(dyad[sel], mult[i, ca[sel]] * mult[i, cb[sel]], mult[i, ca[sel]])
+        return float(np.sum(w * vals[sel]) / np.sum(w)) if np.sum(w) > 0 else float("nan")
+
+    got_ratio = A.k100_paired_ratio_draws(cos_vals, r_vals, head, ca, cb, dyad, mult)
+    got_g = A.k100_paired_g_draws(state, text, head, para_head, ca, cb, dyad, mult)
+    assert got_ratio.shape == got_g.shape == (b_boot,)
+    for i in range(b_boot):
+        c_i = wmean(cos_vals, head, i)
+        b_i = max(wmean(r_vals, head, i), 0.0) ** 0.5
+        exp_ratio = c_i / b_i if b_i > 0 else float("nan")
+        np.testing.assert_allclose(got_ratio[i], exp_ratio, atol=1e-12)
+        exp_g = wmean(state, head, i) / wmean(state, para_head, i) - wmean(text, head, i) / wmean(
+            text, para_head, i
+        )
+        np.testing.assert_allclose(got_g[i], exp_g, atol=1e-12)
+    # a zero-weight resample (no head carrier drawn) yields a NaN draw, and an
+    # all-negative r pool zeroes b -> all-NaN -> not_evaluable via the CI
+    zero_row = np.zeros((1, n_car))
+    assert np.isnan(A.k100_paired_ratio_draws(cos_vals, r_vals, head, ca, cb, dyad, zero_row))[0]
+    all_neg = A.k100_paired_ratio_draws(cos_vals, -r_vals, head, ca, cb, dyad, mult)
+    assert np.isnan(all_neg).all()
+    assert A.k100_deciding_ci(all_neg, A.K100_LATTICE_RATIO)["not_evaluable"] is True
+    # degenerate selections / absent text embeddings -> all-NaN draws
+    empty = np.array([], dtype=np.int64)
+    assert np.isnan(A.k100_paired_ratio_draws(cos_vals, r_vals, empty, ca, cb, dyad, mult)).all()
+    assert np.isnan(A.k100_paired_g_draws(state, None, head, para_head, ca, cb, dyad, mult)).all()
+    assert np.isnan(A.k100_paired_g_draws(state, text, head, empty, ca, cb, dyad, mult)).all()
+    # wiring pin: compute_all builds its deciding blocks THROUGH the helpers
+    # (pairing is by construction — each helper takes exactly ONE mult).
+    src = inspect.getsource(A.compute_all)
+    assert "k100_paired_ratio_draws(" in src and "k100_paired_g_draws(" in src
+
+
+def test_k100_vc_parity_binds_under_smoke(tmp_path, monkeypatch):
+    """r1 blocker k100-vc-smoke-demotion-unregistered (orchestrator decision:
+    CODE fix): a fresh/parent v_C cosine below K100_VC_PARITY_COS_MIN FAILS
+    the parity gate under --smoke — never a demoted warning (plan v8 §7: the
+    smoke exercises v_C parity); --tiny stays the only demoted (skip) mode.
+    Fix round 4 additionally pins the persisted FULL per-context cosine map
+    (n == captured context count) — the 2026-08-26 deterministic-drift
+    diagnostic needed a GPU recompute because only min_cos survived to disk."""
+    cfg = D.build_config(
+        D.parse_args(
+            [
+                "--phase",
+                "B",
+                "--round",
+                "k100",
+                "--upload",
+                "none",
+                "--smoke",
+                "--out-root",
+                str(tmp_path / "root"),
+            ]
+        )
+    )
+    assert cfg.smoke and not cfg.tiny
+    rng = np.random.default_rng(0)
+    cid_ok = "user_fact::n01::c01"
+    cid_bad = "user_fact::n01::c02"
+    # cid_ok: bit-identical fresh/parent rows (cos == 1.0). cid_bad: a
+    # constructed cos ~= 0.99 — below the re-grounded bar (asserted against
+    # the constant, never a re-hardcoded literal) yet far above a real
+    # pad/row-mapping bug's ~0.39-0.84 read (gotchas.md).
+    cos_bad = 0.99
+    assert cos_bad < D.K100_VC_PARITY_COS_MIN
+    d = len(cfg.layers) * 8
+    v = rng.normal(size=d)
+    u = rng.normal(size=d)
+    u -= (u @ v) / (v @ v) * v  # orthogonalize u against v
+    v /= np.linalg.norm(v)
+    u /= np.linalg.norm(u)
+    bad = cos_bad * v + np.sqrt(1.0 - cos_bad**2) * u
+    shape = (len(cfg.layers), 8)
+    parent = torch.tensor(np.stack([v.reshape(shape), v.reshape(shape)]), dtype=torch.float32)
+    fresh = torch.tensor(np.stack([v.reshape(shape), bad.reshape(shape)]), dtype=torch.float32)
+    cfg.vc_dir.mkdir(parents=True, exist_ok=True)
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {"layers": list(cfg.layers), "context_ids": [cid_ok, cid_bad], "vc": fresh},
+        cfg.vc_dir / "vc2564_bank.pt",
+    )
+    parent_path = tmp_path / "parent_vc2564_bank.pt"
+    torch.save(
+        {"layers": list(cfg.layers), "context_ids": [cid_ok, cid_bad], "vc": parent},
+        parent_path,
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.hub.stage_hub_file",
+        lambda *a, **k: parent_path,
+    )
+    with pytest.raises(RuntimeError, match="v_C parity vs parent FAILED"):
+        D._k100_vc_parity(cfg, [{"id": cid_ok}, {"id": cid_bad}])
+    rep = json.loads((cfg.manifest_dir / "k100_vc_parity.json").read_text())
+    assert rep["verdict"] == "fail" and rep["demoted"] is False
+    assert rep["regime_fp"] == D._k100_parity_fp(cfg)
+    assert rep["cos_min_bar"] == D.K100_VC_PARITY_COS_MIN
+    # fix round 4 pin: FULL per-context cosine map, n == captured context count
+    assert set(rep["per_context_cos"]) == {cid_ok, cid_bad}
+    assert len(rep["per_context_cos"]) == rep["n_contexts"] == 2
+    assert rep["min_cos_context"] == cid_bad
+    assert rep["per_context_cos"][cid_bad] == rep["min_cos"]
+    assert rep["per_context_cos"][cid_bad] == pytest.approx(cos_bad, abs=1e-4)
+    assert rep["per_context_cos"][cid_ok] == pytest.approx(1.0, abs=1e-6)
+    assert D._k100_vc_parity_ok(cfg) is False  # a FAIL report never satisfies resume
+
+
+def test_k100_parity_fp_keyed_on_revision_and_threshold(tmp_path, monkeypatch):
+    """r1 blocker k100-parent-revision-cache-unkeyed: the parity-gate fp keys
+    on --parent-revision AND K100_VC_PARITY_COS_MIN, so a report written under
+    one (revision, bar) can never be reused under another."""
+    argv = ["--phase", "all", "--round", "k100", "--upload", "none"]
+    argv += ["--out-root", str(tmp_path / "root")]
+    cfg_a = D.build_config(D.parse_args(argv))
+    cfg_b = D.build_config(D.parse_args([*argv, "--parent-revision", "deadbeef" * 5]))
+    fp_a = D._k100_parity_fp(cfg_a)
+    assert fp_a != D._k100_parity_fp(cfg_b)
+    cfg_a.manifest_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_a.manifest_dir / "k100_vc_parity.json").write_text(
+        json.dumps({"gate": "k100_vc_parity", "regime_fp": fp_a, "verdict": "pass"})
+    )
+    assert D._k100_vc_parity_ok(cfg_a) is True
+    assert D._k100_vc_parity_ok(cfg_b) is False  # same out-root, different pin
+    monkeypatch.setattr(D, "K100_VC_PARITY_COS_MIN", 0.999999)
+    assert D._k100_parity_fp(cfg_a) != fp_a
+    assert D._k100_vc_parity_ok(cfg_a) is False  # tightened bar invalidates too
+
+
+def _pb_completion_state(cfg, cells: list[str]) -> None:
+    """Write every phase-B completion record (VA cells + vc + gate-4 parity +
+    k100 vc parity + sentinel) under CFG's own fingerprints."""
+    from explore_persona_space.atomic_io import write_json_atomic
+
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    cfg.va_dir.mkdir(parents=True, exist_ok=True)
+    cfg.vc_dir.mkdir(parents=True, exist_ok=True)
+    for cell in cells:
+        (cfg.va_dir / f"va2564_{cell}.pt").write_bytes(b"x")
+        write_json_atomic(
+            cfg.manifest_dir / f"va2564_{cell}.done.json",
+            {"regime_fp": D._cell_fp(cfg, "B", cell)},
+        )
+    (cfg.vc_dir / "vc2564_bank.pt").write_bytes(b"x")
+    write_json_atomic(
+        cfg.manifest_dir / "vc2564.done.json",
+        {"regime_fp": D._regime_fp(cfg, {"phase": "B", "leg": "vc"})},
+    )
+    write_json_atomic(
+        cfg.manifest_dir / "parity_gate_report.json",
+        {"regime_fp": D._gate_fp(cfg, "pb_parity"), "verdict": "pass", "demoted": False},
+    )
+    write_json_atomic(
+        cfg.manifest_dir / "k100_vc_parity.json",
+        {"gate": "k100_vc_parity", "regime_fp": D._k100_parity_fp(cfg), "verdict": "pass"},
+    )
+    write_json_atomic(
+        cfg.va_sentinel, {"phase": "B", "regime_fp": D._regime_fp(cfg, {"phase": "B"})}
+    )
+
+
+def test_k100_phase_b_fast_path_requires_current_parity_report(tmp_path):
+    """r1 blocker k100-parent-revision-cache-unkeyed: the phase-B fast-path
+    skip REQUIRES a current-fp k100 vc-parity report — a changed
+    --parent-revision (which leaves every other phase-B fp byte-identical)
+    or a deleted report blocks the skip; parent/ffr predicates unchanged."""
+    argv = ["--phase", "B", "--round", "k100", "--upload", "none"]
+    argv += ["--out-root", str(tmp_path / "root")]
+    cfg_a = D.build_config(D.parse_args(argv))
+    cfg_b = D.build_config(D.parse_args([*argv, "--parent-revision", "deadbeef" * 5]))
+    cells = ["query", "user_fact"]
+    _pb_completion_state(cfg_a, cells)
+    assert D._pb_skip_ok(cfg_a, cells) is True
+    # every non-k100 phase-B fp is identical across the two pins ...
+    assert D._regime_fp(cfg_a, {"phase": "B"}) == D._regime_fp(cfg_b, {"phase": "B"})
+    # ... yet the stale parity report blocks cfg_b's fast path
+    assert D._pb_skip_ok(cfg_b, cells) is False
+    (cfg_a.manifest_dir / "k100_vc_parity.json").unlink()
+    assert D._pb_skip_ok(cfg_a, cells) is False
+
+
+def test_k100_parent_staging_paths_carry_revision(tmp_path, monkeypatch):
+    """r1 blocker k100-parent-revision-cache-unkeyed: analysis parent_pin
+    staging AND the intrusion audit's parent staging key the staged PATH on
+    the pinned revision, so bytes staged under revision A can never satisfy a
+    run pinned to revision B."""
+    import issue2564_intrusion_audit_k100 as K2
+
+    calls: list = []
+
+    def fake_stage(repo, path_in_repo, target, *, revision=None):
+        calls.append((path_in_repo, str(target), revision))
+        Path(target).parent.mkdir(parents=True, exist_ok=True)
+        Path(target).write_text("x")
+        return Path(target)
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.stage_hub_file", fake_stage)
+    monkeypatch.setattr(K2, "stage_hub_file", fake_stage)
+    rev_a, rev_b = A.K100_PARENT_REVISION_DEFAULT, "deadbeef" * 5
+    cfg = _replace(_k100_world(tmp_path).cfg, stage_dir=tmp_path / "stage")
+    rel = "manifests/bank2564_manifest.json"
+    p_a = A.resolve_input(cfg, rel, source="parent")
+    assert rev_a in str(p_a) and calls[-1][2] == rev_a
+    p_b = A.resolve_input(_replace(cfg, parent_revision=rev_b), rel, source="parent")
+    assert rev_b in str(p_b) and calls[-1][2] == rev_b
+    assert p_a != p_b  # rev-A bytes never satisfy a rev-B run
+    n = len(calls)
+    args = SimpleNamespace(pin_rev=rev_b, smoke=False)
+    paths = K2._stage(args, tmp_path / "audit_stage")
+    for cell in K2.K100_CELLS:
+        assert rev_b in str(paths[("parent", cell)])
+    parent_calls = [c for c in calls[n:] if "/anchors/" in c[0] and c[2] == rev_b]
+    assert len(parent_calls) == len(K2.K100_CELLS)
+
+
+def test_k100_pod_parent_vc_staging_keyed_on_revision(tmp_path, monkeypatch):
+    """r2 blocker k100-parent-revision-cache-unkeyed (final leg): the POD-side
+    v_C parity gate stages the parent bank under parent_vc/<revision>/, so a
+    same-out-root run pinned to revision B receives a DISTINCT path holding
+    B's bytes. The staging fake honors the REAL stage_hub_file existing-target
+    short-circuit (hub.py: an existing target returns WITHOUT a download) —
+    under the pre-fix revision-independent target, the second call would
+    silently reuse A's cached bytes and record no download."""
+    argv = ["--phase", "B", "--round", "k100", "--upload", "none"]
+    argv += ["--out-root", str(tmp_path / "root")]
+    cfg_a = D.build_config(D.parse_args(argv))
+    rev_b = "deadbeef" * 5
+    cfg_b = D.build_config(D.parse_args([*argv, "--parent-revision", rev_b]))
+    rev_a = cfg_a.parent_revision
+    assert rev_a and rev_a != rev_b
+
+    cid = "user_fact::n01::c01"
+    rng = np.random.default_rng(0)
+    vc = torch.tensor(rng.normal(size=(1, len(cfg_a.layers), 8)), dtype=torch.float32)
+    cfg_a.vc_dir.mkdir(parents=True, exist_ok=True)
+    cfg_a.manifest_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {"layers": list(cfg_a.layers), "context_ids": [cid], "vc": vc},
+        cfg_a.vc_dir / "vc2564_bank.pt",
+    )
+
+    downloads: list[tuple[str, str, str | None]] = []
+
+    def fake_stage(repo, path_in_repo, target, *, revision=None):
+        target = Path(target)
+        if target.exists():  # the REAL helper's existing-target short-circuit
+            return target
+        downloads.append((path_in_repo, str(target), revision))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {"layers": list(cfg_a.layers), "context_ids": [cid], "vc": vc, "rev": revision},
+            target,
+        )
+        return target
+
+    monkeypatch.setattr("explore_persona_space.orchestrate.hub.stage_hub_file", fake_stage)
+    D._k100_vc_parity(cfg_a, [{"id": cid}])
+    assert len(downloads) == 1 and downloads[0][2] == rev_a and rev_a in downloads[0][1]
+    # same out-root, new pin: the gate re-runs (fp mismatch) and must download
+    # B's bytes to a DISTINCT revision-keyed path — never reuse A's file.
+    D._k100_vc_parity(cfg_b, [{"id": cid}])
+    assert len(downloads) == 2 and downloads[1][2] == rev_b and rev_b in downloads[1][1]
+    path_a, path_b = Path(downloads[0][1]), Path(downloads[1][1])
+    assert path_a != path_b
+    # self-produced revision-tagged bundle (torch>=2.6 weights_only convention)
+    assert torch.load(path_b, map_location="cpu", weights_only=False)["rev"] == rev_b
+    rep = json.loads((cfg_b.manifest_dir / "k100_vc_parity.json").read_text())
+    assert rep["parent_revision"] == rev_b and rep["verdict"] == "pass"
+
+
+def _mutate_store(w, rel: str, source: str, mutate_fn) -> None:
+    p = w.paths[(rel, source)]
+    store = torch.load(p, weights_only=False)
+    mutate_fn(store)
+    torch.save(store, p)
+
+
+def test_k100_load_stores_raises_on_duplicate_round_draw(k100_world):
+    """r1 blocker k100-draw-grid-completeness: one context's draw-99 row
+    re-labeled as a SECOND draw-98 row (same row count, same global draw
+    range — the pre-fix checks all pass) must RAISE in the VA loader."""
+    w = k100_world
+
+    def mut(store):
+        for rec in store["index"]:
+            if rec["context_id"] == "query::E::c01" and rec["draw"] == 99:
+                rec["draw"] = 98
+                return
+        raise AssertionError("fixture row not found")
+
+    _mutate_store(w, "analysis_tensors/va2564/va2564_query.pt", "round", mut)
+    with pytest.raises(AssertionError, match="duplicate \\(context_id, draw\\)"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def test_k100_load_stores_raises_on_missing_percontext_draw(k100_world):
+    """A2b: a context missing ONE fresh draw that another context still
+    carries (global draw set intact) must RAISE per-context coverage."""
+    w = k100_world
+
+    def mut(store):
+        j = next(
+            i
+            for i, rec in enumerate(store["index"])
+            if rec["context_id"] == "query::E::c01" and rec["draw"] == 99
+        )
+        del store["index"][j]
+        keep = [i for i in range(store["va_tail_incl"].shape[0]) if i != j]
+        store["va_tail_incl"] = store["va_tail_incl"][keep]
+        store["va_span"] = store["va_span"][keep]
+
+    _mutate_store(w, "analysis_tensors/va2564/va2564_query.pt", "round", mut)
+    with pytest.raises(AssertionError, match="A2b per-context grid"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def _mutate_perdraw(w, source: str, mutate_fn) -> None:
+    p = w.paths[("analysis_tensors/embeddings_qwen3_8b/perdraw_anchors.npz", source)]
+    with np.load(p, allow_pickle=False) as z:
+        ids = [str(x) for x in z["context_ids"].tolist()]
+        draws = z["draws"].copy()
+        emb = z["emb"].copy()
+    ids, draws, emb = mutate_fn(ids, draws, emb)
+    np.savez(p, context_ids=np.array(ids), draws=np.asarray(draws, dtype=np.int64), emb=emb)
+
+
+def test_k100_load_stores_raises_on_duplicate_perdraw_embedding_row(k100_world):
+    """r1 blocker k100-draw-grid-completeness: a duplicated (context, draw)
+    per-draw embedding row (same row count, same global range) must RAISE —
+    never silently shift the K-pooled mean."""
+    w = k100_world
+
+    def mut(ids, draws, emb):
+        j = next(
+            i
+            for i, (c, d) in enumerate(zip(ids, draws, strict=True))
+            if c == "query::E::c01" and d == 99
+        )
+        draws[j] = 98
+        return ids, draws, emb
+
+    _mutate_perdraw(w, "round", mut)
+    with pytest.raises(AssertionError, match="duplicate \\(context, draw\\) embedding"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def test_k100_load_stores_raises_on_missing_perdraw_embedding_row(k100_world):
+    """The per-draw embedding key set must EQUAL the non-empty anchor-row key
+    set — a dropped row is named missing, never averaged around."""
+    w = k100_world
+
+    def mut(ids, draws, emb):
+        j = next(
+            i
+            for i, (c, d) in enumerate(zip(ids, draws, strict=True))
+            if c == "query::E::c01" and d == 99
+        )
+        keep = [i for i in range(len(ids)) if i != j]
+        return [ids[i] for i in keep], draws[keep], emb[keep]
+
+    _mutate_perdraw(w, "round", mut)
+    with pytest.raises(AssertionError, match="key set != non-empty anchor rows"):
+        A.load_stores_k100(w.cfg, w.bank)
+
+
+def test_k100_fire_recompute_raises_on_duplicate_anchor_key(k100_world, tmp_path, monkeypatch):
+    """r1 blocker k100-draw-grid-completeness: a duplicate (context_id, draw)
+    anchor row RAISES in the fire recompute — never last-wins into the
+    1,200-check denominator."""
+    w = k100_world
+    par = tmp_path / "anchors_user_fact.jsonl"
+    rows = [
+        {"context_id": "user_fact::n01::c01", "draw": 0, "text": "a"},
+        {"context_id": "user_fact::n01::c01", "draw": 0, "text": "b"},
+    ]
+    par.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    monkeypatch.setattr(A, "resolve_input", lambda cfg, rel, *, source="round": par)
+    st = SimpleNamespace(carriers=["c01"])
+    with pytest.raises(RuntimeError, match="duplicate anchor \\(context_id, draw\\)"):
+        A.k100_fire_recompute(w.cfg, st, {"value_rows": {}, "axis_rows": {}})
+
+
+def test_generate_cell_rejects_chunk_with_duplicate_draw(tmp_path, monkeypatch):
+    """Producer side of r1 blocker k100-draw-grid-completeness: a prior chunk
+    whose rows match in COUNT and context-id SET but carry a duplicated draw
+    (one draw missing) is NOT adopted — the chunk regenerates."""
+    cfg = _gen_cfg(tmp_path)
+    monkeypatch.setattr(D.BK, "context_token_ids", lambda tok, ctx: [1, 2, 3])
+    calls: list = []
+    monkeypatch.setattr(D, "generate_batch", _fake_generate_batch(calls))
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    part = cfg.anchors_dir / "anchors_register.max128.partial"
+    fp = D._regime_fp(cfg, {"phase": "A", "cell": "register", "max_new_call": 128})
+    ctxs = _fake_ctxs(3)
+    bad_rows = [
+        # chunk 0 = contexts c01+c02, draws {0, 1}; c02 carries draw 0 TWICE
+        {"chunk": 0, "context_id": "register::v1::c01", "draw": 0},
+        {"chunk": 0, "context_id": "register::v1::c01", "draw": 1},
+        {"chunk": 0, "context_id": "register::v1::c02", "draw": 0},
+        {"chunk": 0, "context_id": "register::v1::c02", "draw": 0},
+    ]
+    part.write_text(
+        "\n".join(
+            [json.dumps({"partial_header": 1, "regime_fp": fp})] + [json.dumps(r) for r in bad_rows]
+        )
+        + "\n"
+    )
+    rows = D._generate_cell(
+        cfg, object(), FakeTokenizer(), [7], "register", ctxs, {"evaluated": True}, 128
+    )
+    assert len(calls) == 2  # count + ctx set matched, draw composition did not
+    assert len(rows) == 3 * cfg.draws
+    keys = [(r["context_id"], r["draw"]) for r in rows]
+    assert len(set(keys)) == len(keys)  # the regenerated rows carry the full grid
+
+
+def test_k100_intrusion_scan_shard_raises_on_duplicate(tmp_path):
+    """r1 blocker k100-draw-grid-completeness (audit leg): a duplicate
+    (context_id, draw) shard row RAISES — totals can no longer pass with a
+    duplicate replacing a missing row."""
+    import issue2564_intrusion_audit_k100 as K2
+
+    p = tmp_path / "anchors_user_fact.jsonl"
+    rows = [
+        {"context_id": "user_fact::n01::c01", "draw": 11, "text": "hello"},
+        {"context_id": "user_fact::n01::c01", "draw": 11, "text": "world"},
+    ]
+    p.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    with pytest.raises(RuntimeError, match="duplicate \\(context_id, draw\\)"):
+        K2.scan_shard(p, expect_parent=False)
+
+
+def test_k100_intrusion_analysis_parity_production_gates(tmp_path):
+    """r1 blocker k100-intrusion-parity-failopen: missing (production),
+    smoke-mode-doc-in-production, duplicated, truncated, and
+    verdict-mismatched manipulation-check documents ALL raise; smoke may skip
+    a missing file; the matching document passes."""
+    import issue2564_intrusion_audit_k100 as K2
+
+    slots = {
+        "user_fact::n01": {"verdict_orig": "fired"},
+        "user_fact::n02": {"verdict_orig": "not_fired"},
+    }
+    mp = tmp_path / "manipulation_check_k100.json"
+
+    def _doc(rows, smoke=False):
+        return {"meta": {"smoke": smoke}, "value_rows": rows}
+
+    row1 = {"axis": "user_fact", "value_id": "n01", "verdict": "fired"}
+    row2 = {"axis": "user_fact", "value_id": "n02", "verdict": "not_fired"}
+    with pytest.raises(RuntimeError, match="REQUIRES as-scored parity"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    assert K2.analysis_parity_check(mp, slots, smoke=True)["status"] == "skipped_smoke_missing"
+    mp.write_text(json.dumps(_doc([row1, row2], smoke=True)))
+    with pytest.raises(RuntimeError, match="SMOKE-mode"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1, row1])))
+    with pytest.raises(RuntimeError, match="duplicate value rows"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1])))  # truncated: subset iteration must not pass
+    with pytest.raises(RuntimeError, match="slot-set mismatch"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    extra = {"axis": "user_fact", "value_id": "n99", "verdict": "fired"}
+    mp.write_text(json.dumps(_doc([row1, row2, extra])))
+    with pytest.raises(RuntimeError, match="slot-set mismatch"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1, {**row2, "verdict": "fired"}])))
+    with pytest.raises(RuntimeError, match="as-scored fire parity"):
+        K2.analysis_parity_check(mp, slots, smoke=False)
+    mp.write_text(json.dumps(_doc([row1, row2])))
+    out = K2.analysis_parity_check(mp, slots, smoke=False)
+    assert out["status"] == "pass" and out["n_slots"] == 2
+
+
+def _swap_pair(st, pair_id: str = "p1") -> A.PairArrays:
+    """Single user_fact SWAP-class pair (the axis-view primary class)."""
+    return A.PairArrays(
+        ids=[pair_id],
+        cls=["swap"],
+        axis=["user_fact"],
+        value_a=["n01"],
+        value_b=["n02"],
+        carrier_str=["c01"],
+        a=np.array([st.row_of["user_fact::n01::c01"]], dtype=np.int64),
+        b=np.array([st.row_of["user_fact::n02::c01"]], dtype=np.int64),
+        ca=np.array([0], dtype=np.int64),
+        cb=np.array([0], dtype=np.int64),
+        dyad=np.array([False]),
+        changed=np.array([1], dtype=np.int64),
+        orientation=["n01->n02"],
+        n=1,
+    )
+
+
+def test_k100_bridge_gate_perpair_and_headline_mismatch_raise(k100_world, tmp_path, monkeypatch):
+    """r1 nit k100-bridge-gate-regression-pin: k100_bridge_gate invoked
+    DIRECTLY on synthetic ridge/perpair fixtures — matching committed values
+    PASS; a 2e-6 perturbation of a committed per-pair value OR of a headline
+    target raises RuntimeError at K100_BRIDGE_TOL (production mode)."""
+    w = k100_world
+    st = _replace(A.load_stores_k100(w.cfg, w.bank), carriers=["c01"])
+    pa = _swap_pair(st)
+    ridge_p = tmp_path / "ridge_779.pt"
+    rng = np.random.default_rng(7)
+    torch.save(
+        {
+            "kind": "ridge",
+            "xmu": torch.zeros(4),
+            "xsd": torch.ones(4),
+            "ymu": torch.zeros(4),
+            "W": torch.tensor(rng.standard_normal((4, 4)), dtype=torch.float32),
+        },
+        ridge_p,
+    )
+    committed = tmp_path / "committed"
+    committed.mkdir()
+    cfg = _replace(w.cfg, ridge_779=ridge_p, parent_delta=committed / "minpair_delta.json")
+
+    # expected values via the SAME public helpers the gate dispatches
+    payload = torch.load(ridge_p, weights_only=False)
+    mean_p = A._k100_parent_only_tail_mean(st, A.PRIMARY_LAYER)
+    obs = mean_p[pa.a] - mean_p[pa.b]
+    mapped = N1M.apply_map(payload, st.vc[A.PRIMARY_LAYER], torch.device("cpu"))
+    cos779 = float(A.rowwise_cos(mapped[pa.a] - mapped[pa.b], obs)[0])
+    cosid = float(
+        A.rowwise_cos(st.vc[A.PRIMARY_LAYER][pa.a] - st.vc[A.PRIMARY_LAYER][pa.b], obs)[0]
+    )
+    bridge_st = _replace(st, tail_draws=st.tail_draws[:, :10], draw_valid=st.draw_valid[:, :10])
+
+    def pg(rng2, n_ctx, k_max):
+        return rng2.random((st.n_parent_ctx_total, k_max))[st.parent_rows]
+
+    r10 = float(A.split_half_stats(bridge_st, pa, cfg.n_splits, scores_fn=pg)["r_full"][0])
+    good_row = {"pair_id": "p1", "r10": r10, "cos": {"arm_779ce": cos779, "arm_iddelta": cosid}}
+    (committed / "perpair.jsonl").write_text(json.dumps(good_row) + "\n")
+    targets = {"user_fact": {"mean_cos_headline": cos779, "r10_mean": r10}}
+    monkeypatch.setattr(A, "K100_BRIDGE_TARGETS", targets)
+    fire_parent = A.fire_tables_from_doc({})
+
+    report = A.k100_bridge_gate(cfg, w.bank, st, pa, fire_parent)
+    assert report["verdict"] == "pass" and report["headline_parity"]["ok"] is True
+
+    bad_row = dict(good_row)
+    bad_row["r10"] = r10 + 2e-6
+    (committed / "perpair.jsonl").write_text(json.dumps(bad_row) + "\n")
+    with pytest.raises(RuntimeError, match="PER-PAIR parity FAILED"):
+        A.k100_bridge_gate(cfg, w.bank, st, pa, fire_parent)
+
+    (committed / "perpair.jsonl").write_text(json.dumps(good_row) + "\n")
+    monkeypatch.setattr(
+        A,
+        "K100_BRIDGE_TARGETS",
+        {"user_fact": {"mean_cos_headline": cos779 + 2e-6, "r10_mean": r10}},
+    )
+    with pytest.raises(RuntimeError, match="HEADLINE parity FAILED"):
+        A.k100_bridge_gate(cfg, w.bank, st, pa, fire_parent)
+
+
+def test_k100_provenance_check_a_rejects_malformed_stale_or_nonpass(
+    k100_world, tmp_path, monkeypatch
+):
+    """r1 blocker k100-parent-revision-cache-unkeyed (analysis leg): the
+    production analysis REQUIRES a well-formed, non-demoted PASS vc-parity
+    report whose parent_revision matches --parent-revision — malformed,
+    demoted/skipped, and stale-revision reports all raise (never read as
+    'not a literal fail')."""
+    w = k100_world
+    rep_path = tmp_path / "k100_vc_parity.json"
+    monkeypatch.setattr(A, "resolve_input", lambda cfg, rel, *, source="round": rep_path)
+    rep_path.write_text(json.dumps({"gate": "something_else"}))
+    with pytest.raises(RuntimeError, match="malformed"):
+        A.k100_provenance_checks(w.cfg, None, None)  # (a) raises before (b) touches stores
+    rep_path.write_text(
+        json.dumps({"gate": "k100_vc_parity", "verdict": "skipped", "demoted": True})
+    )
+    with pytest.raises(RuntimeError, match="non-demoted PASS"):
+        A.k100_provenance_checks(w.cfg, None, None)
+    rep_path.write_text(
+        json.dumps(
+            {
+                "gate": "k100_vc_parity",
+                "verdict": "pass",
+                "demoted": False,
+                "parent_revision": "0000000000000000000000000000000000000000",
+            }
+        )
+    )
+    with pytest.raises(RuntimeError, match="STALE"):
+        A.k100_provenance_checks(w.cfg, None, None)
