@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2624,
+  "highest_id": 2625,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12532,6 +12532,13 @@
       "path": "tasks/planning/2624",
       "status": "planning",
       "title": "No check verifies a GPU-lane-routed phase actually allocates a CUDA context (P5 ran 4xH100 at 0 MiB)"
+    },
+    "2625": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2625",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan WARNs when a plan edits a byte-capped workflow surface without a post-edit byte count or cap-raise"
     },
     "263": {
       "has_clean_result": true,
