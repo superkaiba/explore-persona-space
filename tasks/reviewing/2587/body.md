@@ -20,6 +20,8 @@ goal: 'On Qwen/Qwen3.5-9B with thinking disabled, replicate the #2564 minimal-pa
 # The minimal-pair discrimination profile of the context-to-answer map carries over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2587.md](https://github.com/superkaiba/explore-persona-space/blob/055cfa20f53a9db32e7c9928cebb4f174d0b268f/docs/methodology/issue_2587.md) · [gist](https://gist.github.com/superkaiba/f770f68cd873c5211a5aed576de81bac)
+
 ## Takeaways
 
 - Across the 11 shared axes the per-axis discrimination ordering rank-correlates 0.89 between the two models on observed separation (p = 0.0005) and 0.93 on map direction (p = 0.0001), with zero sign disagreements among the eight screened axes; an answer-text control reproduces the ordering (0.95) over the eight axes with text reads on both sides (the compliance-limited persona, hedging and stance drop out), so separation-profile agreement is not specific to representation space.
