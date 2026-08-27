@@ -786,6 +786,9 @@ def main() -> None:
     if not args.skip_hf_upload and args.text_space == "openai":
         from huggingface_hub import HfApi
 
+        from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
+
+        assert_upload_clean([emb_dir], what="upload_folder(sepcmp embeddings)")
         assert_hub_dir_filecounts(emb_dir, EMBED_HF_PREFIX, ignore_patterns=["_hf/**"])
         retry_transient(
             lambda: HfApi().upload_folder(

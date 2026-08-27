@@ -919,11 +919,13 @@ def _scan_track_s(path: Path) -> tuple[list[dict], dict]:
     return rows, stats
 
 
-def _list_armg_step_files(api, model: str, shard: str) -> list[str]:
+def _list_armg_step_files(model: str, shard: str) -> list[str]:
+    from huggingface_hub import HfApi
     from huggingface_hub.hf_api import RepoFile
 
     from explore_persona_space.orchestrate import hub
 
+    api = HfApi()
     root = f"{ARMG_ROOT}/{model}/{shard}"
     entries = hub.retry_transient(
         lambda: list(
@@ -944,12 +946,12 @@ def _list_armg_step_files(api, model: str, shard: str) -> list[str]:
     return files
 
 
-def _load_armg_rows(api, model: str, shards: list[str]) -> dict[tuple[str, int], dict]:
+def _load_armg_rows(model: str, shards: list[str]) -> dict[tuple[str, int], dict]:
     """(conv_id, depth) -> row for alive rows with non-empty user+answer (depth-1 excluded
     naturally by user=None). Duplicate keys fail loud (plan assumes uniqueness)."""
     out: dict[tuple[str, int], dict] = {}
     for shard in shards:
-        step_files = _list_armg_step_files(api, model, shard)
+        step_files = _list_armg_step_files(model, shard)
         t0 = time.monotonic()
         for k, repo_path in enumerate(step_files, start=1):
             # Per-unit progress line (code-style intra-phase contract; round-1 CONCERN).
@@ -1113,16 +1115,16 @@ def phase_sample(args: argparse.Namespace) -> None:
     ]
 
     shards = ["shard0of3"]
-    pre = _load_armg_rows(api, "pretrained", shards)
-    ins = _load_armg_rows(api, "instruct", shards)
+    pre = _load_armg_rows("pretrained", shards)
+    ins = _load_armg_rows("instruct", shards)
     matched = sorted(set(pre) & set(ins))
     for extra in ("shard1of3", "shard2of3"):
         if len(matched) >= n_pairs:
             break
         _log(f"[sample] matched intersection {len(matched)} < {n_pairs}; extending to {extra}")
         shards.append(extra)
-        _merge_shard_rows(pre, _load_armg_rows(api, "pretrained", [extra]), "pretrained", extra)
-        _merge_shard_rows(ins, _load_armg_rows(api, "instruct", [extra]), "instruct", extra)
+        _merge_shard_rows(pre, _load_armg_rows("pretrained", [extra]), "pretrained", extra)
+        _merge_shard_rows(ins, _load_armg_rows("instruct", [extra]), "instruct", extra)
         matched = sorted(set(pre) & set(ins))
     realized_pairs = min(n_pairs, len(matched))
     if realized_pairs < n_pairs:
