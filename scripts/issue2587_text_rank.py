@@ -19,7 +19,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scipy.stats import spearmanr
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # shared-VM thread caps BEFORE the scipy import (#847; code-style.md)
+
+from scipy.stats import spearmanr  # noqa: E402
 
 EVAL_DIR = Path("eval_results/issue_2587")
 
