@@ -224,6 +224,22 @@ def _identity_tick(ax, x: float, y: float | None, w: float = 0.32) -> None:
     ax.plot([x - w / 2, x + w / 2], [y, y], color="black", lw=1.4, zorder=5)
 
 
+def _set_symlog_y(ax, linthresh: float = 1.0) -> None:
+    """Symlog y for panels mixing held-out R² with identity(+bias) / raw ladder tiers.
+
+    R² lives in [0, 1] while the mandated identity(+bias) baseline (and arm 1's raw
+    ladder tiers) reaches ~-10^2..-10^5; a shared LINEAR axis crushes the R² bars
+    into a hairline at y=0 (defect A, #2546). Symlog keeps [-linthresh, linthresh]
+    linear (bars legible) and puts the baselines on log decades, so arm 1's ~-10^2
+    baseline and arm 2's ~-10^0 stay readable AND distinguishable. Axis treatment
+    only — plotted values are untouched. Top is capped at 1.5 because R² (and its
+    ceilings/CIs) is bounded above by 1: symlog autoscale otherwise pads to the
+    next full decade (10^1..10^3 of empty headroom over the informative band).
+    """
+    ax.set_yscale("symlog", linthresh=linthresh)
+    ax.set_ylim(top=1.5)
+
+
 def _assert_nonempty(fig) -> None:
     """Refuse to save a figure with no artists OR no finite plotted datum.
 
@@ -314,6 +330,11 @@ def fig_hero1(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
         for row in range(4):
             ax = fig.add_subplot(gs[row, col_of[a]])
             any_ceiling = any(v is not None for v in ceil.values())
+            # row-3 same-template pool census (defect B, #2546): count present /
+            # populated / degenerate (chance = 1.0 => lift == 0 by construction)
+            # blocks so an all-degenerate or all-below-floor panel states WHY it
+            # carries no signal instead of rendering blank.
+            stp_present = stp_pop = stp_degen = 0
             for c in cells:
                 for j, s in enumerate(STRATA):
                     d = units[(c, s)]
@@ -333,6 +354,14 @@ def fig_hero1(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
                         _bar(ax, x, float(d["r2_headline"]) / cv, c, s)
                     else:
                         pool = "corpus_pool" if row == 2 else "same_template_pool"
+                        if row == 3:
+                            raw = ((d.get("knn_content") or {}).get("euclidean") or {}).get(pool)
+                            if raw:
+                                stp_present += 1
+                                if "acc_at_1" in raw:
+                                    stp_pop += 1
+                                    if float(raw.get("chance_mean", 0.0)) >= 1.0:
+                                        stp_degen += 1
                         blk = _content_pool(d, pool)
                         if blk is None:
                             continue  # cot/out targets: content identity undefined
@@ -354,11 +383,22 @@ def fig_hero1(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             ax.set_xticks([xs[c] for c in cells])
             ax.set_xticklabels([CELL_LABEL[c] for c in cells], rotation=30, ha="right", fontsize=7)
             ax.axhline(0.0, color="0.7", lw=0.8, gid="refline")
+            if row == 0:
+                _set_symlog_y(ax)
             if col_of[a] == 0:
                 ax.set_ylabel(row_label[row], fontsize=8)
             title = ARM_TITLE[a] if row == 0 else ""
             if row == 1 and not any_ceiling:
                 title = "N/A — split-half ceiling missing"
+            if row == 3:
+                if stp_pop and stp_pop == stp_degen:
+                    title = "same-template pool degenerate:\nchance = 1.0 → lift ≡ 0"
+                elif stp_pop == 0:
+                    title = (
+                        "N/A — same-template pool:\ninsufficient template rows"
+                        if stp_present
+                        else "N/A — same-template pool:\nnot defined for these cells"
+                    )
             if title:
                 ax.set_title(title, fontsize=8)
     handles = [
@@ -407,6 +447,7 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
         ax.set_xticks(range(len(P8_CELLS)))
         ax.set_xticklabels([CELL_LABEL[c] for c in P8_CELLS], rotation=30, ha="right", fontsize=7)
         ax.set_title(ARM_TITLE[a], fontsize=8)
+        _set_symlog_y(ax)
         if ci == 0:
             ax.set_ylabel("held-out R² (headline layer)", fontsize=8)
         # rows 1-2: ladder tier curves + sufficient tier per corpus
@@ -439,6 +480,7 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
                 _DROPPED.append(f"ladder__{slug}__a{a}: no sufficient tier within band")
         ax1.set_xticks(range(9))
         ax1.set_xticklabels(LADDER_TIER_LABELS, rotation=35, ha="right", fontsize=7)
+        _set_symlog_y(ax1)
         if ci == 0:
             ax1.set_ylabel("pre→post map R² at tier", fontsize=8)
             ax2.set_ylabel("sufficient tier\n(within elicitation band)", fontsize=8)
@@ -584,6 +626,7 @@ def fig_hero3(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             )
             ax_acc.plot(x, ser["chance"], ls=":", color=scol[s], alpha=0.7, lw=1.0)
         ax_r2.set_title(ARM_TITLE[a], fontsize=8)
+        _set_symlog_y(ax_r2)
         ax_acc.set_xlabel("CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)")
         if ci == 0:
             ax_r2.set_ylabel(
