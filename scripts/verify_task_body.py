@@ -9954,8 +9954,11 @@ def _read_figure_meta_text(repo: Path, sha: str, fig_path: str) -> str | None:
     Reads from the git OBJECT DB (``git show <sha>:<meta_path>``) rather than
     the working tree, because the body pins figures to a specific commit and a
     worktree shares the object database with the main checkout. FAIL-SOFT
-    throughout: any subprocess / decode / JSON error → None (the check skips
-    that figure rather than blocking). One ``git show`` per unique figure.
+    throughout: any subprocess / decode / JSON / recursion error → None (the
+    check skips that figure rather than blocking). Output is read as BYTES and
+    decoded inside the guarded block so undecodable committed bytes cannot
+    raise inside ``subprocess.run(text=True)`` (#2367 r2). One ``git show``
+    per unique figure.
     """
     base, _, ext = fig_path.rpartition(".")
     meta_path = (base if ext else fig_path) + ".meta.json"
@@ -9964,7 +9967,6 @@ def _read_figure_meta_text(repo: Path, sha: str, fig_path: str) -> str | None:
             ["git", "show", f"{sha}:{meta_path}"],
             cwd=str(repo),
             capture_output=True,
-            text=True,
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
@@ -9972,10 +9974,13 @@ def _read_figure_meta_text(repo: Path, sha: str, fig_path: str) -> str | None:
     if proc.returncode != 0:
         return None  # no sidecar at that sha, or sha unresolvable
     try:
-        meta = json.loads(proc.stdout)
-    except (ValueError, json.JSONDecodeError):
+        meta = json.loads(proc.stdout.decode("utf-8"))
+        strings = _flatten_meta_strings(meta)
+    except (ValueError, json.JSONDecodeError, RecursionError):
+        # ValueError covers UnicodeDecodeError (undecodable committed bytes)
+        # and JSONDecodeError; RecursionError covers pathologically nested
+        # documents (json.loads and the recursive flatten alike) — #2367 r2.
         return None
-    strings = _flatten_meta_strings(meta)
     if not strings:
         return None
     return " ".join(strings)
@@ -10144,7 +10149,9 @@ def _read_figure_meta_json_tristate(repo: Path, sha: str, fig_path: str) -> tupl
 
     - ``("parsed", meta)`` — the sidecar read and parsed to a dict;
     - ``("malformed", None)`` — bytes were served but are not a JSON dict
-      (JSON parse failure, or a non-dict document);
+      (JSON parse failure, undecodable UTF-8 bytes, recursion-depth
+      overflow on a pathologically nested document, or a non-dict
+      document);
     - ``("indeterminate", None)`` — the content read itself failed
       (``git show`` raised OSError/SubprocessError incl. timeout, or
       exited non-zero: no sidecar at that sha, sha unresolvable, or a
@@ -10164,7 +10171,6 @@ def _read_figure_meta_json_tristate(repo: Path, sha: str, fig_path: str) -> tupl
             ["git", "show", f"{sha}:{meta_path}"],
             cwd=str(repo),
             capture_output=True,
-            text=True,
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
@@ -10175,8 +10181,13 @@ def _read_figure_meta_json_tristate(repo: Path, sha: str, fig_path: str) -> tupl
         # (`_git_object_exists`) is what disambiguates ABSENT.
         return "indeterminate", None
     try:
-        meta = json.loads(proc.stdout)
-    except (ValueError, json.JSONDecodeError):
+        meta = json.loads(proc.stdout.decode("utf-8"))
+    except (ValueError, json.JSONDecodeError, RecursionError):
+        # Bytes were SERVED but do not parse: output is read as BYTES and
+        # decoded here so undecodable UTF-8 (UnicodeDecodeError, a
+        # ValueError) cannot raise inside `subprocess.run(text=True)`;
+        # RecursionError covers pathologically nested documents. Both are
+        # "malformed" — the git read itself succeeded (#2367 r2).
         return "malformed", None
     return ("parsed", meta) if isinstance(meta, dict) else ("malformed", None)
 
@@ -16225,7 +16236,9 @@ _GRAIN_ADJ_RE = re.compile(
     re.IGNORECASE,
 )
 # Markdown image alt-text capture (local to check 62; supports `]` inside
-# the alt as long as it is not the closing `](`).
+# the alt as long as it is not the closing `](`). Applied with `.match(line,
+# pos)` anchored at each `_IMAGE_RE` match start, so every image on a line
+# binds its OWN alt (same alt grammar as `_IMAGE_RE`; #2367 r2).
 _GRAIN_IMG_ALT_RE = re.compile(r"!\[((?:[^\]]|\](?!\())*)\]\(")
 # Decode-K harvest: ONLY the two strongly decode-flavored forms. Judge
 # draws ("N=5 draws") and hyphenated bootstrap forms ("10,000-draw")
@@ -16407,6 +16420,7 @@ def _grain_claims_for_one_figure(
     m: re.Match,
     rlines: list[str],
     img_idx: int,
+    alt: str,
     json_cache: dict,
     agg_products: dict[int, tuple[str, int]],
     draw_products: set[int],
@@ -16417,16 +16431,16 @@ def _grain_claims_for_one_figure(
     ``_count_claims_for_one_figure`` frame). Returns
     ``(warn_msgs, n_checked, status)`` with ``status`` in
     {"scanned", "opted-out", "skipped"}; mutates ``json_cache`` in place.
-    The scan window is alt text + the beat-1 window (which already
-    includes the blockquote caption); when ``_beat1_prose_window``
-    returns None (no ``### `` H3 above — v2/legacy layouts) it falls
-    back to alt text + the blockquote caption alone, so a claim living
-    only in a legacy setup line is silently missed (named sacrifice).
-    Claims are parsed BEFORE any git read; the opt-out literal is
-    honored from the prose window (beat-1 / caption) only, NOT from alt
-    text (named asymmetry — an opt-out inside alt text is inert)."""
-    alt_m = _GRAIN_IMG_ALT_RE.search(rlines[img_idx])
-    alt = alt_m.group(1) if alt_m else ""
+    The scan window is THIS image's ``alt`` text (bound per image match by
+    the caller — two images on one line each carry their OWN alt, #2367
+    r2) + the beat-1 window (which already includes the blockquote
+    caption); when ``_beat1_prose_window`` returns None (no ``### `` H3
+    above — v2/legacy layouts) it falls back to alt text + the blockquote
+    caption alone, so a claim living only in a legacy setup line is
+    silently missed (named sacrifice). Claims are parsed BEFORE any git
+    read; the opt-out literal is honored from the prose window (beat-1 /
+    caption) only, NOT from alt text (named asymmetry — an opt-out inside
+    alt text is inert)."""
     beat1 = _beat1_prose_window(rlines, img_idx)
     prose = beat1 if beat1 is not None else _figure_caption_after(rlines, img_idx)
     claims = _caption_grain_claims(f"{alt} {prose}")
@@ -16501,13 +16515,19 @@ def check_figure_caption_grain_claims_vs_sidecar(body: str) -> CheckResult:
     if text is None:
         return CheckResult(label, True, f"no `## {section}` section to scan")
     rlines = text.splitlines()
-    fig_at: list[tuple[str, int]] = []
+    fig_at: list[tuple[str, int, str]] = []
     for idx, line in enumerate(rlines):
         for im in _IMAGE_RE.finditer(line):
             url = im.group(1).strip()
             url = url.split(None, 1)[0] if url else url
             if url:
-                fig_at.append((url, idx))
+                # Bind the alt to THIS image match by position (anchored at
+                # the match start) so two images on one line each carry
+                # their own alt — a whole-line search binds the FIRST
+                # image's alt to every image on the line (#2367 r2,
+                # concern check62-same-line-alt-binding).
+                alt_m = _GRAIN_IMG_ALT_RE.match(line, im.start())
+                fig_at.append((url, idx, alt_m.group(1) if alt_m else ""))
     if not fig_at:
         return CheckResult(label, True, "no inline figures to scan")
     pair_counts, ks, pair_cap_hit = _body_grain_declarations(body)
@@ -16531,7 +16551,7 @@ def check_figure_caption_grain_claims_vs_sidecar(body: str) -> CheckResult:
     opted_out = 0
     n_checked_total = 0
     json_cache: dict[str, dict | None] = {}
-    for url, img_idx in fig_at:
+    for url, img_idx, alt in fig_at:
         um = _RAW_GITHUB_FIGURE_RE.match(url)
         if (
             um is None
@@ -16543,6 +16563,7 @@ def check_figure_caption_grain_claims_vs_sidecar(body: str) -> CheckResult:
             um,
             rlines,
             img_idx,
+            alt,
             json_cache,
             agg_products,
             draw_products,

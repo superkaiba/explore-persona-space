@@ -20388,6 +20388,115 @@ def test_check62_boundary_conventions(tmp_path, monkeypatch):
     assert res_s5.passed and not res_s5.is_warn, res_s5.render()
 
 
+# The exact single result-figure line of `_V4_GOOD_BODY` (swapped out by the
+# two-images-on-one-line alt-binding tests below).
+_C62_IMG_LINE = (
+    "![Bar chart of mean alignment with 95% CI across three seeds; baseline 70.4% vs "
+    "tulu-25 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    "0123456789abcdef/figures/issue_999/hero.png)"
+)
+
+
+def _run_check62_two_images(tmp_path, monkeypatch, alt1: str, alt2: str):
+    """Run check 62 on a body whose single result-figure line is replaced by
+    TWO same-line images (`hero.png`, `second.png` — the existing check-26
+    `_make_repo_with_two_figure_metas` fixture), EACH with a sidecar whose
+    388-point series matches the incident aggregated product; the caption and
+    beat-1 prose are claim-free, so only ALT text can arm either figure."""
+    sub = tmp_path / f"c62two_{len(list(tmp_path.iterdir()))}"
+    sub.mkdir()
+    repo, sha = _make_repo_with_two_figure_metas(
+        sub, _grain_scatter_sidecar({"s1": 388}), _grain_scatter_sidecar({"s2": 388})
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _grain_body(
+        "> **Figure.** *Neutral caption with no unit-grain idiom.*",
+        _C62_INCIDENT_DECLARATIONS,
+    )
+    assert _C62_IMG_LINE in body, "fixture drift: _V4_GOOD_BODY figure line changed"
+    base_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        "0123456789abcdef/figures/issue_999"
+    )
+    two_line = f"![{alt1}]({base_url}/hero.png) ![{alt2}]({base_url}/second.png)"
+    body = body.replace(_C62_IMG_LINE, two_line).replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body)
+
+
+def test_check62_two_images_one_line_bind_alt_per_image(tmp_path, monkeypatch):
+    """Two images on ONE line, each with its own countable sidecar (both
+    388-point series): a grain claim in ONE image's alt arms ONLY that image
+    — regression for #2367 r2 concern `check62-same-line-alt-binding` (the
+    whole-line alt search bound the FIRST image's alt to every image on the
+    line: claim-in-first warned on BOTH figures; claim-in-second armed
+    NEITHER). Covers both claim orderings."""
+    claim = "Each point is one steered prefill draw"
+    res_first = _run_check62_two_images(tmp_path, monkeypatch, claim, "")
+    assert res_first.passed is True and res_first.is_warn is True, res_first.render()
+    assert res_first.detail.startswith("1 caption grain-claim drift"), res_first.detail
+    assert "`hero.png`" in res_first.detail and "second.png" not in res_first.detail
+
+    res_second = _run_check62_two_images(tmp_path, monkeypatch, "Overview panel", claim)
+    assert res_second.passed is True and res_second.is_warn is True, res_second.render()
+    assert res_second.detail.startswith("1 caption grain-claim drift"), res_second.detail
+    assert "`second.png`" in res_second.detail and "`hero.png`" not in res_second.detail
+
+
+def _run_check62_raw_sidecar(tmp_path, monkeypatch, raw: bytes):
+    """Run the ARMED check 62 (incident caption + declarations) against a
+    sidecar committed with RAW bytes — the shared-reader fail-soft tests
+    (#2367 r2 concern `check62-sidecar-decode-failsoft`). Returns
+    ``(result, repo, sha)`` so callers can also probe the readers directly."""
+    sub = tmp_path / f"c62raw_{len(list(tmp_path.iterdir()))}"
+    sub.mkdir()
+    repo, _ = _make_repo_with_figure_meta(sub, {"points": []})
+    (repo / "figures" / "issue_999" / "hero.meta.json").write_bytes(raw)
+    subprocess.run(
+        ["git", "-C", str(repo), "commit", "-aqm", "raw sidecar"],
+        check=True,
+        capture_output=True,
+    )
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _grain_body(_C62_INCIDENT_CAPTION, _C62_INCIDENT_DECLARATIONS)
+    body = body.replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body), repo, sha
+
+
+def test_check62_undecodable_sidecar_bytes_skip_clean(tmp_path, monkeypatch):
+    """A committed sidecar with invalid UTF-8 bytes must not crash the
+    verifier: pre-fix, `subprocess.run(text=True)` raised UnicodeDecodeError
+    OUTSIDE the readers' `(OSError, SubprocessError)` envelope (#2367 r2
+    BLOCKER `check62-sidecar-decode-failsoft`). Post-fix the armed check
+    PASS-skips and all three shared readers degrade (tristate → malformed)."""
+    raw = b'{"points": [\xff\xfe\x9d]}'
+    res, repo, sha = _run_check62_raw_sidecar(tmp_path, monkeypatch, raw)
+    assert res.passed is True and res.is_warn is False, res.render()
+    fig = "figures/issue_999/hero.png"
+    assert verify_task_body._read_figure_meta_json(repo, sha, fig) is None
+    assert verify_task_body._read_figure_meta_json_tristate(repo, sha, fig) == ("malformed", None)
+    assert verify_task_body._read_figure_meta_text(repo, sha, fig) is None
+
+
+def test_check62_deeply_nested_sidecar_skips_clean(tmp_path, monkeypatch):
+    """A pathologically nested committed sidecar must not crash the verifier:
+    pre-fix, `json.loads` raised RecursionError past the `(ValueError,
+    JSONDecodeError)` catch (#2367 r2 BLOCKER `check62-sidecar-decode-failsoft`).
+    Post-fix the armed check PASS-skips and the shared readers degrade."""
+    raw = b"[" * 100_000 + b"]" * 100_000
+    res, repo, sha = _run_check62_raw_sidecar(tmp_path, monkeypatch, raw)
+    assert res.passed is True and res.is_warn is False, res.render()
+    fig = "figures/issue_999/hero.png"
+    assert verify_task_body._read_figure_meta_json(repo, sha, fig) is None
+    assert verify_task_body._read_figure_meta_json_tristate(repo, sha, fig) == ("malformed", None)
+    assert verify_task_body._read_figure_meta_text(repo, sha, fig) is None
+
+
 # ─── Check 46: brace-expanded backtick HF paths vs the adjacent /tree pin ───
 #
 # (#1520; incident #1426.) Conventions: `_stub_tree` / inline `_hf_tree_get`
