@@ -1,0 +1,2645 @@
+{
+  "commit": "62640b11",
+  "render_id": "2cdc2ecd434649ce",
+  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2617_svmp_figures.py",
+  "created": "2026-08-27T18:01:17Z",
+  "figsize": [
+    8.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.2661551131651835,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8493098562949641,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28532198515563195,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5413046377598448,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2553857558174867,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7350824552830276,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28358038154822474,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6273770764794103,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.346807144808369,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7872072461346535,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3040550193223366,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7824761246487956,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2675629398634593,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7531460482026191,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2965885066644247,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7072586432010746,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3026902324292424,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6552383763541801,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.33103960538376076,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6370592842929251,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2651608640855622,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7528205786872285,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25206124233746896,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4935262849314395,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3133175667436497,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.667998274654775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28887413762172576,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6512261336391033,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2618372851054566,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8278147128586391,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2765863431184064,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6576097979438246,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2705301778140064,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6246447729857703,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25097028571785907,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6560055204387222,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.33179965414948276,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6336457183120394,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.33756351425422954,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7234808304422343,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.29346065429348456,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.717054411821248,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3228405746800712,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7589645980299251,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2955514460512655,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8231116165523918,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2757008428963348,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.833958073841454,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3414446369453009,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.6843249921400577,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3207315748005962,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.660595345971274,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2729492665681865,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.7965088110969839,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3465956548756622,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.08332560498096404,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.34458842465942685,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.7885067450179057,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.26653069758204,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7321137547085722,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.26554800194142814,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7111772026687241,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2595162047110127,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.30860056332999775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.304174969538988,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7841564293819459,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.29993993535820296,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8029193135712731,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3365845044761954,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8722660825991443,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3484541925399963,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.30760211330306353,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3208884396238464,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8672044642286152,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.25861941299634633,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.45881821886419677,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3363614979796798,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.32538207954599463,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28569973576985125,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8047427968830965,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2978613610000448,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.710095018749406,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3043593838923823,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4278294520200625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28078488686268743,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6106255964092463,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3061047152735624,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4043150217253551,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2519510402194538,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5698754536184122,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2664234143458401,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1302657619668837,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28351084390106446,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.39771040792405976,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2937247401581577,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.09427995050406308,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.32767747183575596,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.46617052059372777,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.34097914914700367,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1652231349320142,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3436954026066294,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5401556849078116,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3321106348121907,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7638957043640138,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.26235975272373835,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7573543478038106,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3402065608653929,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8254377736049635,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.34512782369663014,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7534586279718628,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.30046597187293284,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6992284263927838,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.29114430203818836,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3798578736197461,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.28482961903332243,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.32786973048984236,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3289690566313407,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5615543286488245,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3078941117055652,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7217454966121563,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14793127307871937,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8513656700536711,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1333057413891045,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.620222190807101,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06519170168246378,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7946554911837023,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.08970644858531697,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6603899578358088,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.10626276572074371,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7985754120065891,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06117858143723982,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8185403392931818,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11946339978112525,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7404909374517666,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0546028383555409,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7156798375364433,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06915887854239648,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6337990306668689,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.08666537114367923,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6509117152284302,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.10176177985133543,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7141748845630627,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06348368958957482,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4744351460152304,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1263185157583041,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6965922462264758,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.054159698828559075,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6706912441339592,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.09416651443848996,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8273740072989012,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13143760524096137,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7109074336879516,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12416837463069381,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6796306879788041,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13128925602576222,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.722337953400209,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05891698123399074,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6880983573874654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.051680765191195036,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7417998466893856,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1401565149555873,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7534711705269612,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06853901902867209,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7864485918492546,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07379132054582406,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8054123702400017,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11630886485408573,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.821836788711043,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11132581158430815,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.603414845117128,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07413095826305506,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7367650754382583,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.09911690700231131,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.7541141280965682,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1348375546777191,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.02296856014724824,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12249072285214008,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.753750759395153,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06765069266601699,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7127302235314846,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1083076917732077,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7465288479657507,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07273587606677077,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3935447709669396,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12032905764115923,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7975486850460048,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05575382587319286,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8043109827583197,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05187366125945107,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8470717384427603,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07518573740751044,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.37927814843122676,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.10186055270135976,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8575236713467435,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.08157337136013476,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4718018411669539,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.08094981887353325,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3515580922097259,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.14303839480328776,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7829203608176805,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11284588969667156,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7315920688878658,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05373613280901536,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.40711474163815115,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11053762706421819,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.596231216940673,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11975770615269082,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4600919556925017,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12888154084270864,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5202357149659098,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1338659526479545,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.007976577827820129,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1477260870958998,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3708526180384487,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11784473707647691,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1653213087224228,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12366422849962967,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5488190454187496,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.056043664908382654,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.13545511941022867,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1352666842712435,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6090200391249467,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13551506869128033,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7651954204779622,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11814437333943204,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7569747436728808,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.12321111561836351,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.803625914396674,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.07341978391262978,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7131595777749146,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.13786817199795848,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6681179404184011,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.1011822156123286,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4885239870065229,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0792345048886118,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3216815494493694,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11010660400535253,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.616644234261024,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.10586293034570375,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6996717397354866,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.1498481099367253,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.44453998155067076,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11427153155251019,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.301729315400923,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10942172956979279,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3579050762096459,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09015043530159805,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.29045368138129063,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11865410140974421,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4732939733009362,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09623455998771617,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.40706657101130705,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0596567858356257,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.433675532682895,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09410919982637783,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.371428759683384,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11741281908708745,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3333957375303951,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.11559992087749603,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.37122927205835266,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.062416655580300476,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.35344500275604884,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.14743472994278306,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2266981523274141,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1200345731741608,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2800974463310303,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12379058787366136,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3073561703891768,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09291700033696243,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4345214559488834,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09980782520825114,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3552223030519758,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.13974830471638694,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.41635330584735236,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1269908957714344,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.41901105200675326,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0827652357332444,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3618562398595523,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06996641207129839,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.38761096138302753,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.05250852138136874,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4110308624565381,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07640402243788488,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.40225520892740535,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0653505568114354,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.413189177119616,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07107170451437024,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.45269355482099666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.13949840852302112,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.2339520472931554,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09202857978156853,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.384531149960421,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07860507786373296,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.3666781614330985,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07457588149617922,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.010174004484193673,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06318088047464822,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.3419874100450642,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12150493914440512,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.342358264108441,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07788487118434434,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3932282486909636,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08168667555905962,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2662590954492868,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08738735547070986,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.45561914688498756,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07946037644736305,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4416819493006615,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10729841171404114,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4779317579526067,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08748910743078289,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.24412723071902903,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.14994572805180795,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5102583406937314,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06214735977160527,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2577580139093026,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06953816719821561,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.22799110709901516,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10295493539519751,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4469509137253677,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0796653659123837,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3709122478210656,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.050781974963849466,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.23645478820557136,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.053486693117861396,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.34437890170580904,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.14133274225298603,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2792244093851161,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.137201973766986,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3067939001808837,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.14019716700573265,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.053794147358982754,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12171832969820023,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2801408464931296,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09509834591727585,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.18134421280492344,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1321995086231591,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2939113183282549,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09684322016874879,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0975387633966904,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.13554019436226916,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2701318746506885,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.09955263294002248,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.45375984523829344,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08593701665129194,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.43812494927647005,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0663077526002563,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.45414386471820994,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.07717801610280213,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4562408408398047,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12762614353128793,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.38034383660953547,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.13643988001623802,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.24105890691563553,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10749807159719924,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.21680049064217932,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.08287627094811573,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.38017387784259377,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1478372732037485,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.40600060016332346,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.3151703575626704,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8705433440522466,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2946144870324814,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8158462797864259,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2778767900913668,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8058179172116121,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3496636245538944,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6904368864803125,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.27928019907880275,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8312201485359112,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3219691470120828,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8291331552154482,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.290648614950071,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.802884070828492,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3416314319948185,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8272712016507237,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2840920368265925,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7134325414105714,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3478017688780115,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6064312616526377,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2965497826916797,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7591615403051138,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2713796568712825,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7065571062397702,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2822049988324646,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6953653783806106,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2975187188036927,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7453749571041213,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2817619693270118,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7788165295228078,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2620145897556426,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7547285352688018,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.32202984381970856,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.756707269341756,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.26805393279731216,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7324544968159566,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.29351238594020823,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7524928418585283,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.30326181994957224,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7936529155625279,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.34488980770367345,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7980175550679416,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3277448319960563,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.817414585329715,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2796613964771734,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.882915182277839,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.27321647060664744,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8242274477729769,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.34147810399873246,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.6372910468592905,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.29925927490594806,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7408077030789268,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2571764132550972,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.7253116883295695,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.34209894174329414,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.27829294410498007,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.32023186117616953,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.7048942843745623,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3291852935672043,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7234013655329148,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2824937464839043,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6853979244920143,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3386525044136613,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.22590335791647825,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.32545276122701305,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7780333855944488,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.28574358466763705,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8742492655487974,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.33883970506628824,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8347619968568426,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.28761140957680165,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.15122717603749913,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.25920517964510664,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8958811987125704,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3393886266911663,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4106988305296034,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.29214195710179913,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.25594443772309705,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.29967249584373357,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.771972700597011,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2796843616800365,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6703719693520527,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2871250142219831,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2641486695116855,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2707018792448506,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6781790364390379,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.250778496649423,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3278889061272344,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3375825427339596,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5858389017084226,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3108775799128245,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.04219830899122883,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.26444092065105934,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4143239966659536,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.25245330556478707,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.16245892908686102,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2998438186443931,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3836568039106369,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.3238754622412867,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.25227538579310305,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.33704937867905577,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.44870646096848826,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2644477606025491,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7971313630382365,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2562602699116884,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6762073277755972,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.34013902563796194,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.8503995894214376,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2657734608654033,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7741844227107522,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2560071144134901,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6851932219556434,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.27288033301656606,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2400117941081062,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.292155200517927,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.06914349465547535,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2960074761962916,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6596356452657596,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.31756808053905855,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6962883178821166,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.653142429780901,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.42332561994694357,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7121790510702858,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1417699207706957,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6500311492100881,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.6442641705067566,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.713267957316942,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.09792670369373738,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.650466431196741,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.5432675678909162,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6559878198328808,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.17680357523313808,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7223869355238476,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.7337353022076901,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9371566948659956,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.48460664880080756,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9226568483647413,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.10057952473553218,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8632858982593478,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.5382299861598288,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9110798863200267,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.20289087090849045,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8930277406946164,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.5952727900589538,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8955522945642728,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.26465472977256455,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9138646053219502,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.725476746999294,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0990262582924495,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.29352892584722134,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0712941194442396,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.05352050622276637,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1443117065350668,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.18760446930992972,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.077619281102137,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.14014510729462912,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0720198490638106,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.24303696400394417,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1260845355736142,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1744141986402224,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0517065742911282,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.33630053035881025,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.3351074536484704,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3723872816655242,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.3254085722379279,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4622216299580694,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.3485892878219885,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.7346669185558613,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.2900506963771243,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5984557372020619,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.3208340316975506,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.628041124283358,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.3128635098194088,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1506138433735478,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.2951400268178896,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5470862239182513,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.683330681466038,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.58291797307434,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7330675626786953,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6433497515571446,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7076709160749943,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.35829003292498307,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6556925481129852,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.28927760445587075,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.690677294569021,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.2723783680845927,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.737356853619714,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.12428491068310529,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7117664663745293,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.38957828131757244,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7122592131216525,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.118631647719485,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7434554370444546,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.20650347208190273,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6551546072293877,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4665860711248945,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.653767603447759,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.26290078852141857,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6989727852072494,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.10735496767771716,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7362695079446093,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.10717863202980346,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6849259023413183,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.10709787959019204,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6972443396077765,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.014874734722644053,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.685825618058158,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.13449582102311072,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7413957860902762,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.16994759481266217,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6500636196346707,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.042664428868665644,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6635965132996837,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.01939410508257292,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.726471403558652,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.06723591308140893,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6891261463222986,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.04136567720415503,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7265790509677512,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.019195616232251685,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6609415054938714,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.053801991301464874,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.674124152587056,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.12797823900382538,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7404824305188746,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.02461426937991811,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6628680337991606,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1288502825157042,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.719170295442163,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.026332853154364344,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7489473270315592,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.004573201876760884,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7385483793638152,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.02611243783870384,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6570333716994625,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1599181902886539,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6665989618924444,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.016288724235507306,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6585385979427765,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1200474967567776,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.741822697193136,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1391601937879778,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6600845545494491,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.056703516947458246,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6544519257496342,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.07184620743368225,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.701604001642337,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.09431928488446098,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7357422909005267,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.23752396317536736,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7183133395569354,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5988397265895499,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6605698620219644,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.14292729053959635,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7097918083336596,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.16956202962914638,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.6945544566639363,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.14842268897611327,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.898366467499084,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5770267985469238,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.932753062824085,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.6411274797337109,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9304416256810408,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.4031153096632501,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8501154011027579,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3057972727517505,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8765303483550133,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.31390162949713396,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8978614060293624,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.10715216484077887,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9340253630661186,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.488578113342321,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.854631451309058,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.22241911557650443,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8626725959367172,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.16306592275194345,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9467168033898392,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5279963754131249,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.89307326458868,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.19840738057613197,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8795441094833731,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.026093319255791676,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8582130822876146,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.15791870874830444,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8543304126125686,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0013729396961542925,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9063090800531304,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.050849232458588876,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.851514910808152,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.17839599387726013,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9051433614175148,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.11409105343526425,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9302442675107092,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.0035562797365156756,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8726215161028796,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.03692815995952151,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9078655841262528,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.07882455644649852,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9474128665415027,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.021100646036639054,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8838853997760139,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0018554444278989527,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8846214424974752,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.05587746555557115,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8861016462982692,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.09900360957353939,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9325888879261806,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.04088405919829832,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.870649243695057,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.17349162049772407,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8888121036716292,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.09266649533249538,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8539502614802572,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.047495258728945264,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9343955944990487,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0022034689318554818,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9424742013660017,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1756453482338871,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9331278643156629,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.01709429818888971,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9391967569507922,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1354488427196115,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9394379972883629,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1282852881756577,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8668970381076784,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.06526549269280921,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8894318417021918,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.09076855699956884,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.903626310274689,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.12090218831153907,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9153860125752804,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1061911814866327,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9036887852038653,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.5957123556853672,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.8538483663597902,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.07614630737762978,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.9300394108942167,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2549288960121445,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.903447743199806,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.17254976138255979,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.0606566530051973,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.32083075123520377,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.061138624059891,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.29536150099537667,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.074692381110403,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.23438812310705462,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1446349290533684,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.29163010487032964,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.108088637041221,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.17922942555060847,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1096780205184773,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.03474668560891198,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0551941881429077,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.24286187533861117,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.115618614970135,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.03575854885870742,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0610879410602796,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.09379396817003986,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.130413003347604,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.12616949104353306,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1109804970855004,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.11943866505521795,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1182260251192924,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.04547054693019057,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1033165474500284,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.029635675523999195,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0520669893227477,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.06396672273045526,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0659933240485344,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.0787832889686546,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1042826935796817,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.019833392776073284,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.052954779492691,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.10424598823054342,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.071138159055245,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.061904090515828694,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.126762297316228,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.007466259857573792,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1157769034598637,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.08908221147023124,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1224532984417483,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.005950665886905413,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0920221982435825,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.02871735729328251,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1262501123792257,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.03982994417330642,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.111588870233876,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1037303453473021,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.115478082383148,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0457635905124089,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0772182044152414,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.03396879157873872,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.131018400103421,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.05211764038025425,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.087479481817512,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.05626155836236851,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.087455868948554,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.05449009828912665,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.123451712070588,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.030062877102449686,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1149096332686455,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.02426268755371512,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1458343790122165,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.053705260898593205,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.086630378342377,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.11177494219994155,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1206294825282477,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.013864454890058615,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.089062361919835,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.062117057213861265,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0644012536015106,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.012778351454999832,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.090966568306974,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.015786845858475052,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.060393353533834,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.37549992222458306,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1037377705016906,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.02361714251463229,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.125260361739348,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.2598737450397642,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0890916531285373,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.19971258108647585,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.262959734737678,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3531228230466259,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.302706688454882,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.49878234510705577,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2869814033976645,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.06749558953389127,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.325732213683545,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3529249962010712,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.254969385791562,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.2957848529488855,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.271910590220754,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0446082735413399,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.270941720629724,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.31396609585087004,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.338798830086897,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.16431459542761276,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2531199536420456,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.34365781079358354,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.30897700321475,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1832508854128703,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3314792344859585,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1451695375302465,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2844675400117023,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.07417093217491133,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3341474874834454,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.12592386772668193,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3275825626159063,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.12039818546670736,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.281975057558551,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.07850432467003762,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2534302248074725,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.10364843313405156,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.29193022543041,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.03679131657847753,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.324101650870075,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.011174958400986687,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3009421410961117,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.0436590165389521,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3136660384500645,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.10135922474620176,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2559664790623932,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.020110156527778637,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.279977653819895,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.06699700975446507,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.25880739923618,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.013186496223666126,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.344994305475748,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.1367978353008077,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.256898398027638,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.10759997931821952,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2717408029891915,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.07859491020138745,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.321213401664531,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.04799236441938196,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.274450844743931,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.11019238192490734,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.301720997857718,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.06928488345455093,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.283616649647118,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.14674491934589104,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.255500489343472,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.11326071151752796,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.315797930739795,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.08130990784877618,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3330158337721505,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.22959267208436906,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.275273807292964,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.05500296639126453,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2663041802856694,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.007736976516681335,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.326912032947155,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.18321995945271358,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.277060280403976,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.12146354006908691,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.2803622143107907,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.3995587617192858,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.3328356289078918,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": -0.11288901331349548,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.253394027923837,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.1576310778104965,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.287713407682453,
+      "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)": 0.03104601116517979,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 432,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Flip-axis loading: flip vs non-flip pairs",
+        "ylabel": "Refusal-axis loading cos(\u0394, r\u0302 flip axis, LOO)",
+        "legend_labels": [
+          "Single-turn map",
+          "Multi-turn map",
+          "Raw context shift (identity+bias)",
+          "Observed delta"
+        ],
+        "xticklabels": [
+          "Flip pairs\nn=60",
+          "Mid pairs\nn=7",
+          "Non-flip pairs\nn=41"
+        ],
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

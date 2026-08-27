@@ -1,0 +1,636 @@
+{
+  "commit": "62640b11",
+  "render_id": "011c6c2c68e1400b",
+  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2617_svmp_figures.py",
+  "created": "2026-08-27T18:01:32Z",
+  "figsize": [
+    12.5,
+    7.6
+  ],
+  "points": [
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.6973130992418456,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.797217882388609,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.7431511614077204,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.7411822118930298,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.777689279616855,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.6859137997360596,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.4597192309289976,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.6334398218625201,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.5271159749078145,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.3116938638201554,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.46386931120018216,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.4652339333457351,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.491036248550574,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.5931539066721627,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.4587514484660536,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.307228992994946,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.4638151078046847,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.36932541515112477,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "Direction cos median per class (tail)": 0.6458784191161973,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 19.0,
+      "Direction cos median per class (tail)": 0.7697199936450113,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 26.0,
+      "Direction cos median per class (tail)": 0.6933340025844421,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "y": 0.7085389936378723,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "y": 0.7947608334596243,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 26.0,
+      "y": 0.6912871044094553,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.0,
+      "y": 0.7196455693601007,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 19.0,
+      "y": 0.797571436063309,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 26.0,
+      "y": 0.6185329954082048,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 14.0,
+      "y": 0.4825574218490246,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 19.0,
+      "y": 0.5976804514829119,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 26.0,
+      "y": 0.5034883086159809,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 14.0,
+      "y": 0.26936261659789207,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 19.0,
+      "y": 0.4556983581217696,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 26.0,
+      "y": 0.39059347606251504,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 14.0,
+      "y": 0.43892517915570534,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 19.0,
+      "y": 0.5479658563719216,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 26.0,
+      "y": 0.40844570759027843,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 14.0,
+      "y": 0.26304599844611376,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 19.0,
+      "y": 0.42448132970411373,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 26.0,
+      "y": 0.28658171409550837,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 14.0,
+      "y": 0.6078996149148423,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 19.0,
+      "y": 0.7365765365742598,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 26.0,
+      "y": 0.6574625400197228,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 14.0,
+      "y": 0.34449311469418387,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 19.0,
+      "y": 0.41732114691504063,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 26.0,
+      "y": 0.4169465927011029,
+      "series": "Object swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 14.0,
+      "y": 0.3346384283989233,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 19.0,
+      "y": 0.40746722173639005,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 26.0,
+      "y": 0.39039359987401623,
+      "series": "Verb swap (valence flip) (n=16)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 14.0,
+      "y": 0.21623213647768125,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 19.0,
+      "y": 0.31629685223632603,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 26.0,
+      "y": 0.278620907275542,
+      "series": "Subject swap (harmful topic) (n=16)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 14.0,
+      "y": 0.12311459339460679,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 19.0,
+      "y": 0.2109880210294507,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 26.0,
+      "y": 0.4375744494653784,
+      "series": "Object swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 14.0,
+      "y": 0.18484645693973675,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 19.0,
+      "y": 0.2642712814836168,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 26.0,
+      "y": 0.31669781282341036,
+      "series": "Verb swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 14.0,
+      "y": 0.09091934804501442,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 19.0,
+      "y": 0.2205295088246586,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 26.0,
+      "y": 0.23807019773488175,
+      "series": "Subject swap (benign) (n=8)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 14.0,
+      "y": 0.3755937684545927,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 19.0,
+      "y": 0.4551705122567844,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 26.0,
+      "y": 0.4098953668140188,
+      "series": "XSTest safe/unsafe (n=36)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Capture layer": 14.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.7777777777777778,
+      "series": "Single-turn map",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Capture layer": 19.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.9166666666666666,
+      "series": "Single-turn map",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Capture layer": 26.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.9907407407407407,
+      "series": "Single-turn map",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Capture layer": 14.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.6759259259259259,
+      "series": "Multi-turn map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Capture layer": 19.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.9166666666666666,
+      "series": "Multi-turn map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Capture layer": 26.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.9629629629629629,
+      "series": "Multi-turn map",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Capture layer": 14.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.6851851851851852,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Capture layer": 19.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 0.8425925925925926,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Capture layer": 26.0,
+      "Pair-delta retrieval acc@1 (all-pairs pool)": 1.0,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Single-turn map",
+        "ylabel": "Direction cos median per class (tail)",
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "Multi-turn map",
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "Raw context shift (identity+bias)",
+        "legend_labels": [
+          "Object swap (valence flip) (n=16)",
+          "Verb swap (valence flip) (n=16)",
+          "Subject swap (harmful topic) (n=16)",
+          "Object swap (benign) (n=8)",
+          "Verb swap (benign) (n=8)",
+          "Subject swap (benign) (n=8)",
+          "XSTest safe/unsafe (n=36)"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "xlabel": "Capture layer",
+        "ylabel": "Pair-delta retrieval acc@1 (all-pairs pool)",
+        "legend_labels": [
+          "Single-turn map",
+          "Multi-turn map",
+          "Raw context shift (identity+bias)"
+        ],
+        "xticklabels": [
+          "L14",
+          "L19",
+          "L26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "Object swap (valence flip) (n=16)",
+      "Verb swap (valence flip) (n=16)",
+      "Subject swap (harmful topic) (n=16)",
+      "Object swap (benign) (n=8)",
+      "Verb swap (benign) (n=8)",
+      "Subject swap (benign) (n=8)",
+      "XSTest safe/unsafe (n=36)",
+      "Single-turn map",
+      "Multi-turn map",
+      "Raw context shift (identity+bias)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

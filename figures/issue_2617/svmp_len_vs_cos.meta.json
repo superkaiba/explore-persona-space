@@ -1,0 +1,828 @@
+{
+  "commit": "62640b11",
+  "render_id": "cad10ca1d3e540f0",
+  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2617_svmp_figures.py",
+  "created": "2026-08-27T18:01:26Z",
+  "figsize": [
+    7.5,
+    4.6
+  ],
+  "points": [
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2752.2,
+      "Direction cos (single-turn map, tail)": 0.870563564838424,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1709.6,
+      "Direction cos (single-turn map, tail)": 0.7398384129953396,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 120.49999999999989,
+      "Direction cos (single-turn map, tail)": 0.7424615332347019,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2471.0,
+      "Direction cos (single-turn map, tail)": 0.8241916631428693,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 194.5,
+      "Direction cos (single-turn map, tail)": 0.7781771457861641,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 702.2,
+      "Direction cos (single-turn map, tail)": 0.9005139054708299,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1562.9,
+      "Direction cos (single-turn map, tail)": 0.9041525735805801,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 59.30000000000018,
+      "Direction cos (single-turn map, tail)": 0.6364436531500044,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1354.8,
+      "Direction cos (single-turn map, tail)": 0.7788396250487721,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1068.0,
+      "Direction cos (single-turn map, tail)": 0.8632976031178652,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1312.0,
+      "Direction cos (single-turn map, tail)": 0.7841215818047566,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1813.2000000000003,
+      "Direction cos (single-turn map, tail)": 0.8465586131068529,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2739.3,
+      "Direction cos (single-turn map, tail)": 0.8496371888997363,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 251.80000000000018,
+      "Direction cos (single-turn map, tail)": 0.7739854793164463,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 237.0,
+      "Direction cos (single-turn map, tail)": 0.8103141829724615,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 76.5,
+      "Direction cos (single-turn map, tail)": 0.6702089500106202,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1113.6,
+      "Direction cos (single-turn map, tail)": 0.8233468185632031,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 780.2,
+      "Direction cos (single-turn map, tail)": 0.6732083348593204,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 585.8,
+      "Direction cos (single-turn map, tail)": 0.7170971329095448,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1401.8,
+      "Direction cos (single-turn map, tail)": 0.7520791054948077,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 177.60000000000036,
+      "Direction cos (single-turn map, tail)": 0.6894308037139565,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2099.5,
+      "Direction cos (single-turn map, tail)": 0.8271051313959622,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1252.9,
+      "Direction cos (single-turn map, tail)": 0.7730527630858776,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1456.9,
+      "Direction cos (single-turn map, tail)": 0.7907294648267671,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1438.2,
+      "Direction cos (single-turn map, tail)": 0.7810640098892676,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1523.0,
+      "Direction cos (single-turn map, tail)": 0.7792500517995224,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2074.4,
+      "Direction cos (single-turn map, tail)": 0.7961734072555847,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1864.1,
+      "Direction cos (single-turn map, tail)": 0.7375725990817149,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1882.3000000000002,
+      "Direction cos (single-turn map, tail)": 0.7761285074341875,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2131.9,
+      "Direction cos (single-turn map, tail)": 0.8696905890629575,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1786.8,
+      "Direction cos (single-turn map, tail)": 0.8079715123598883,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 684.9000000000001,
+      "Direction cos (single-turn map, tail)": 0.7242079396830454,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 95.5,
+      "Direction cos (single-turn map, tail)": 0.4258674156046762,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1117.0,
+      "Direction cos (single-turn map, tail)": 0.8084484385265847,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 30.0,
+      "Direction cos (single-turn map, tail)": 0.38118518626739906,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 382.4000000000001,
+      "Direction cos (single-turn map, tail)": 0.549683558393509,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 558.9000000000001,
+      "Direction cos (single-turn map, tail)": 0.7070481010815723,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 803.3,
+      "Direction cos (single-turn map, tail)": 0.5602211644391875,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1649.0,
+      "Direction cos (single-turn map, tail)": 0.8263122267919115,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 839.5999999999999,
+      "Direction cos (single-turn map, tail)": 0.8195914228185874,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 967.0,
+      "Direction cos (single-turn map, tail)": 0.6662088979035832,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 427.70000000000005,
+      "Direction cos (single-turn map, tail)": 0.5083998662431657,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1545.2,
+      "Direction cos (single-turn map, tail)": 0.8027267021597592,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 318.70000000000005,
+      "Direction cos (single-turn map, tail)": 0.73328799122268,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 59.90000000000009,
+      "Direction cos (single-turn map, tail)": 0.34315236133728816,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 633.1000000000001,
+      "Direction cos (single-turn map, tail)": 0.6303601768255575,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 192.5,
+      "Direction cos (single-turn map, tail)": 0.4977778492574419,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 859.7,
+      "Direction cos (single-turn map, tail)": 0.6365194668994829,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 729.5999999999999,
+      "Direction cos (single-turn map, tail)": 0.33076847704966855,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 413.7000000000003,
+      "Direction cos (single-turn map, tail)": 0.48173094891488355,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 284.6999999999998,
+      "Direction cos (single-turn map, tail)": 0.5746240990032442,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 13.900000000000091,
+      "Direction cos (single-turn map, tail)": 0.5249330654741653,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 526.5,
+      "Direction cos (single-turn map, tail)": 0.7527937588201037,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 182.39999999999964,
+      "Direction cos (single-turn map, tail)": 0.4124256714093505,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 627.5,
+      "Direction cos (single-turn map, tail)": 0.28213077810274756,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 267.3000000000002,
+      "Direction cos (single-turn map, tail)": 0.44600767348548076,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 195.0,
+      "Direction cos (single-turn map, tail)": 0.4932968968427605,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 145.19999999999982,
+      "Direction cos (single-turn map, tail)": 0.596363463579639,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 479.7999999999997,
+      "Direction cos (single-turn map, tail)": 0.6966556219664102,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 893.5,
+      "Direction cos (single-turn map, tail)": 0.7478223680445252,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 622.9999999999998,
+      "Direction cos (single-turn map, tail)": 0.5899443497646863,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 579.7999999999997,
+      "Direction cos (single-turn map, tail)": 0.5617693624334663,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1045.6000000000001,
+      "Direction cos (single-turn map, tail)": 0.5445575847909832,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 334.7999999999997,
+      "Direction cos (single-turn map, tail)": 0.6575533869791578,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 211.9000000000001,
+      "Direction cos (single-turn map, tail)": 0.4054597616519129,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 235.9000000000001,
+      "Direction cos (single-turn map, tail)": 0.14558248532048607,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 175.0999999999999,
+      "Direction cos (single-turn map, tail)": 0.7292826671728632,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 754.0999999999999,
+      "Direction cos (single-turn map, tail)": 0.5243919423312439,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 242.5999999999999,
+      "Direction cos (single-turn map, tail)": 0.5221704539574565,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 431.5999999999999,
+      "Direction cos (single-turn map, tail)": 0.5553334883750856,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 311.5999999999999,
+      "Direction cos (single-turn map, tail)": 0.2300794187544353,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 185.30000000000018,
+      "Direction cos (single-turn map, tail)": 0.39787522924711705,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 183.0999999999999,
+      "Direction cos (single-turn map, tail)": 0.6199231962866653,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 160.30000000000007,
+      "Direction cos (single-turn map, tail)": 0.7832876470838116,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 21.799999999999955,
+      "Direction cos (single-turn map, tail)": 0.6329435955251695,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 795.0999999999999,
+      "Direction cos (single-turn map, tail)": 0.865729707612397,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1497.0,
+      "Direction cos (single-turn map, tail)": 0.8471228401630059,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2367.6,
+      "Direction cos (single-turn map, tail)": 0.8188050334413701,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 247.4000000000001,
+      "Direction cos (single-turn map, tail)": 0.6810852303773954,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 2110.2000000000003,
+      "Direction cos (single-turn map, tail)": 0.8964596428189401,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 260.79999999999995,
+      "Direction cos (single-turn map, tail)": 0.7683216547454035,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 198.89999999999998,
+      "Direction cos (single-turn map, tail)": 0.7477006066913701,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 141.39999999999998,
+      "Direction cos (single-turn map, tail)": 0.7476948178448667,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 781.5,
+      "Direction cos (single-turn map, tail)": 0.8459912367753183,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 878.5000000000001,
+      "Direction cos (single-turn map, tail)": 0.8246473386310597,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 15.399999999999864,
+      "Direction cos (single-turn map, tail)": 0.4919298709395955,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 776.8000000000001,
+      "Direction cos (single-turn map, tail)": 0.8078245080796996,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 192.5,
+      "Direction cos (single-turn map, tail)": 0.7294192137811722,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 764.4,
+      "Direction cos (single-turn map, tail)": 0.8238963529894184,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 510.0,
+      "Direction cos (single-turn map, tail)": 0.6428000756273525,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 379.5000000000001,
+      "Direction cos (single-turn map, tail)": 0.5612740668678295,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 431.1,
+      "Direction cos (single-turn map, tail)": 0.7335015656215673,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 602.1000000000001,
+      "Direction cos (single-turn map, tail)": 0.6553047826873127,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 499.39999999999986,
+      "Direction cos (single-turn map, tail)": 0.7711183325446191,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1213.8000000000002,
+      "Direction cos (single-turn map, tail)": 0.6791821004563534,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1648.9999999999998,
+      "Direction cos (single-turn map, tail)": 0.8707702184061014,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1079.6000000000001,
+      "Direction cos (single-turn map, tail)": 0.7109419290508415,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1594.9,
+      "Direction cos (single-turn map, tail)": 0.8240339788336295,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 731.0,
+      "Direction cos (single-turn map, tail)": 0.8863836958380076,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 661.6999999999999,
+      "Direction cos (single-turn map, tail)": 0.7821030605585396,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 754.4,
+      "Direction cos (single-turn map, tail)": 0.8163033935040386,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1485.6,
+      "Direction cos (single-turn map, tail)": 0.8616311081376751,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 110.59999999999991,
+      "Direction cos (single-turn map, tail)": 0.7304277673211914,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 518.9000000000001,
+      "Direction cos (single-turn map, tail)": 0.627945335258652,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 618.0,
+      "Direction cos (single-turn map, tail)": 0.8152202864263391,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 1959.6,
+      "Direction cos (single-turn map, tail)": 0.8636278951990547,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 109.30000000000001,
+      "Direction cos (single-turn map, tail)": 0.7454801296455092,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "|\u0394 mean answer length| per pair (characters)": 158.70000000000005,
+      "Direction cos (single-turn map, tail)": 0.6629821138772214,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Length confound read: answer-length delta vs transport",
+        "xlabel": "|\u0394 mean answer length| per pair (characters)",
+        "ylabel": "Direction cos (single-turn map, tail)",
+        "legend_labels": [
+          "Object swap (valence flip)",
+          "Verb swap (valence flip)",
+          "Subject swap (harmful topic)",
+          "Object swap (benign)",
+          "Verb swap (benign)",
+          "Subject swap (benign)",
+          "XSTest safe/unsafe"
+        ],
+        "xticklabels": [
+          "\u2212500",
+          "0",
+          "500",
+          "1000",
+          "1500",
+          "2000",
+          "2500",
+          "3000"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Object swap (valence flip)",
+      "Verb swap (valence flip)",
+      "Subject swap (harmful topic)",
+      "Object swap (benign)",
+      "Verb swap (benign)",
+      "Subject swap (benign)",
+      "XSTest safe/unsafe"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
