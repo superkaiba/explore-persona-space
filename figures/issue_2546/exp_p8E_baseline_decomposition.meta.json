@@ -1,0 +1,115 @@
+{
+  "commit": "72464325",
+  "render_id": "b13c7863b1424eee",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:47Z",
+  "figsize": [
+    8.8,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "ridge map",
+      "held-out R\u00b2 (headline layer)": 0.7335770801632238,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "identity + bias",
+      "held-out R\u00b2 (headline layer)": -1.39896996515126,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "train-mean",
+      "held-out R\u00b2 (headline layer)": -0.00020716715362523175,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "random projection",
+      "held-out R\u00b2 (headline layer)": 0.7287421892188863,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ridge map",
+      "y": 0.5604086824910853,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "identity + bias",
+      "y": -0.8930768188289784,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "train-mean",
+      "y": -0.00029088581487268783,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "random projection",
+      "y": 0.554510080755281,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)\npre ctx \u2192 post answer (pooled)",
+        "ylabel": "held-out R\u00b2 (headline layer)",
+        "xticklabels": [
+          "ridge map",
+          "identity + bias",
+          "train-mean",
+          "random projection"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)\npre ctx \u2192 post answer (pooled)",
+        "xticklabels": [
+          "ridge map",
+          "identity + bias",
+          "train-mean",
+          "random projection"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

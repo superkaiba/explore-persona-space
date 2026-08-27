@@ -1,0 +1,1000 @@
+{
+  "commit": "72464325",
+  "render_id": "eb0605d574c14387",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:20Z",
+  "figsize": [
+    10.8,
+    13.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (headline layer)": 0.7303209370277287,
+      "error": 0.002535471241247922,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (headline layer)": 0.6043177372724895,
+      "error": 0.0038749714676697966,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (headline layer)": 0.6927550292308129,
+      "error": 0.002940700637578675,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (headline layer)": 0.5813389649383138,
+      "error": 0.0038840290780595144,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (headline layer)": 0.7462220506636044,
+      "error": 0.0022817362779843364,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (headline layer)": 0.7481306727697683,
+      "error": 0.00585060939686427,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (headline layer)": 0.7184200444008092,
+      "error": 0.0023745488169090723,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (headline layer)": 0.6246840032062403,
+      "error": 0.002641937196418198,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.19,
+      "y": 0.566382190094641,
+      "error": 0.005122932314417572,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "y": 0.3820168529729485,
+      "error": 0.0050551975822889506,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.81,
+      "y": 0.5839003197380612,
+      "error": 0.005395066909505919,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.19,
+      "y": 0.39850540437062787,
+      "error": 0.005020677459607742,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.81,
+      "y": 0.4776920130274874,
+      "error": 0.004854750310977846,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.19,
+      "y": 0.47752254313155107,
+      "error": 0.0039037711337317482,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.81,
+      "y": 0.6423101138248191,
+      "error": 0.00359061163874691,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.19,
+      "y": 0.5808487246824336,
+      "error": 0.0031380746179344166,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "pre\u2192post map R\u00b2 at tier": -33958.20996622319,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "pre\u2192post map R\u00b2 at tier": -10.916074284527438,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "pre\u2192post map R\u00b2 at tier": -33886.55376964349,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "pre\u2192post map R\u00b2 at tier": -9.86393222378765,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "pre\u2192post map R\u00b2 at tier": 0.00027698486627369956,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "pre\u2192post map R\u00b2 at tier": -7.448703135034732,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "pre\u2192post map R\u00b2 at tier": -0.4658871233764019,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 7.0,
+      "pre\u2192post map R\u00b2 at tier": -12299.777084254914,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "pre\u2192post map R\u00b2 at tier": 0.688194337345748,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "pre\u2192post map R\u00b2 at tier": -27805.666069986233,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "pre\u2192post map R\u00b2 at tier": -5.640841435354946,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "pre\u2192post map R\u00b2 at tier": -27741.19991518019,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "pre\u2192post map R\u00b2 at tier": -2.7161203642719833,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "pre\u2192post map R\u00b2 at tier": 0.0009026242707333987,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "pre\u2192post map R\u00b2 at tier": -2.2952454569241034,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "pre\u2192post map R\u00b2 at tier": 0.3132410314587176,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "pre\u2192post map R\u00b2 at tier": -12697.496700280042,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "pre\u2192post map R\u00b2 at tier": 0.4551944938654341,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "pre\u2192post map R\u00b2 at tier": -49329.410564175356,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "pre\u2192post map R\u00b2 at tier": -15.619935927825892,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "pre\u2192post map R\u00b2 at tier": -49202.34939383134,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "pre\u2192post map R\u00b2 at tier": -13.363330926718604,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "pre\u2192post map R\u00b2 at tier": 4.596041367332937e-05,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "pre\u2192post map R\u00b2 at tier": -12.416971861183733,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "pre\u2192post map R\u00b2 at tier": 0.29103850849135293,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 7.0,
+      "pre\u2192post map R\u00b2 at tier": -21578.46734103474,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "pre\u2192post map R\u00b2 at tier": 0.47403422805916207,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "pre\u2192post map R\u00b2 at tier": -25269.706949109666,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "pre\u2192post map R\u00b2 at tier": -7.335880681931032,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "pre\u2192post map R\u00b2 at tier": -25298.571943050607,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "pre\u2192post map R\u00b2 at tier": -5.7736221700572,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "pre\u2192post map R\u00b2 at tier": -0.00033672313783861263,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "pre\u2192post map R\u00b2 at tier": -4.726506912645367,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "pre\u2192post map R\u00b2 at tier": 0.31760187463372425,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 7.0,
+      "pre\u2192post map R\u00b2 at tier": -12908.89989434148,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "pre\u2192post map R\u00b2 at tier": 0.5079750714147178,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "pre\u2192post map R\u00b2 at tier": -14630.031314015187,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "pre\u2192post map R\u00b2 at tier": -9.388546230134336,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "pre\u2192post map R\u00b2 at tier": -14553.440848470516,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "pre\u2192post map R\u00b2 at tier": -3.1759301071096333,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "pre\u2192post map R\u00b2 at tier": -0.00018648071229021568,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "pre\u2192post map R\u00b2 at tier": -2.5102087032001674,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "pre\u2192post map R\u00b2 at tier": -0.2428933474880539,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "pre\u2192post map R\u00b2 at tier": -3306.7747974091967,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "pre\u2192post map R\u00b2 at tier": 0.5011124228010806,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": -0.7992164745401744,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "y": -0.7163711366191299,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": -0.2369871308149616,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": -0.03725017747048032,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.10214651332755065,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.0,
+      "y": 0.2857804501913723,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "y": 0.21797163820331622,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "y": 0.20355568722194395,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "y": 0.529251455578752,
+      "series": "pooled",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": -2.7208886267756656,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "y": -2.433550695834273,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": -0.814940276051944,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "y": -0.11986534147893946,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.11704673135660204,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": 0.13382243508798575,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "y": 0.18562656783995846,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 7.0,
+      "y": 0.026378178418057563,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "y": 0.4088607901734309,
+      "series": "GSM8K",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": -2.7372971039658744,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "y": -2.3591333795300624,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": -0.5396702703257272,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "y": -0.13010297706652052,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "y": 0.12751315082775094,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": 0.12732370270117488,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 0.24272362169936612,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 7.0,
+      "y": 0.0647428926676813,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "y": 0.4075129431517205,
+      "series": "MATH",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": -1.1119147267290006,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "y": -0.8936608396745302,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": -0.31312892095765,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "y": -0.0281050073010789,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "y": 0.033413240730421845,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "y": 0.19113666208742797,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "y": 0.10230808722302087,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "y": 0.08042489701060729,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "y": 0.29866535382216364,
+      "series": "ContextHub",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": -1.026732846855158,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "y": -0.8907541690076513,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": -0.28086555880686226,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "y": 0.021004881681413567,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.10822102670603484,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "y": 0.2086311013064841,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "y": 0.21472024220905572,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "y": 0.15387970498633619,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.3640156207385169,
+      "series": "MMLU",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "sufficient tier\n(within elicitation band)": 8.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "sufficient tier\n(within elicitation band)": 8.0,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "sufficient tier\n(within elicitation band)": 8.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "sufficient tier\n(within elicitation band)": 8.0,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "category": "raw cosine\n(direction-aware)",
+      "operator similarity\n(pre-map vs post-map)": 0.05302016486632612,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "category": "spectrum cosine\n(rotation-invariant only;\ncannot support same-operator)",
+      "operator similarity\n(pre-map vs post-map)": 0.9839522507975266,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 0.45,
+      "operator similarity\n(pre-map vs post-map)": 5.6649941110950643e-05,
+      "error": 0.0005345667774626013,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "category": "raw cosine\n(direction-aware)",
+      "y": 0.1957737282003646,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "category": "spectrum cosine\n(rotation-invariant only;\ncannot support same-operator)",
+      "y": 0.9928268487237359,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 0.45,
+      "y": -4.4982706330857515e-05,
+      "error": 0.00047642227893585635,
+      "_kind": "errorbar",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 116,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
+        "ylabel": "held-out R\u00b2 (headline layer)",
+        "xticklabels": [
+          "pre ctx \u2192 post answer",
+          "post ctx \u2192 post answer",
+          "pre ctx \u2192 pre answer",
+          "pre ctx \u2192 post CoT"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)",
+        "xticklabels": [
+          "pre ctx \u2192 post answer",
+          "post ctx \u2192 post answer",
+          "pre ctx \u2192 pre answer",
+          "pre ctx \u2192 post CoT"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "ylabel": "pre\u2192post map R\u00b2 at tier",
+        "legend_labels": [
+          "pooled",
+          "GSM8K",
+          "MATH",
+          "ContextHub",
+          "MMLU"
+        ],
+        "xticklabels": [
+          "direct",
+          "+ctx offset",
+          "+ans offset",
+          "+bias",
+          "+scale",
+          "+rotation",
+          "reparam ctx",
+          "reparam ans",
+          "reparam both"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{4}}$",
+          "$\\mathdefault{-10^{3}}$",
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "legend_labels": [
+          "pooled",
+          "GSM8K",
+          "MATH",
+          "ContextHub",
+          "MMLU"
+        ],
+        "xticklabels": [
+          "direct",
+          "+ctx offset",
+          "+ans offset",
+          "+bias",
+          "+scale",
+          "+rotation",
+          "reparam ctx",
+          "reparam ans",
+          "reparam both"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "ylabel": "sufficient tier\n(within elicitation band)",
+        "xticklabels": [
+          "pooled",
+          "GSM8K",
+          "MATH",
+          "ContextHub"
+        ],
+        "yticklabels": [
+          "direct",
+          "+ctx offset",
+          "+ans offset",
+          "+bias",
+          "+scale",
+          "+rotation",
+          "reparam ctx",
+          "reparam ans",
+          "reparam both"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "direct",
+          "+ctx offset",
+          "+ans offset",
+          "+bias",
+          "+scale",
+          "+rotation",
+          "reparam ctx",
+          "reparam ans",
+          "reparam both"
+        ]
+      },
+      {
+        "ylabel": "operator similarity\n(pre-map vs post-map)",
+        "xticklabels": [
+          "raw cosine\n(direction-aware)",
+          "rotation null\n(mean \u00b1 2\u03c3)",
+          "spectrum cosine\n(rotation-invariant only;\ncannot support same-operator)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "xticklabels": [
+          "raw cosine\n(direction-aware)",
+          "rotation null\n(mean \u00b1 2\u03c3)",
+          "spectrum cosine\n(rotation-invariant only;\ncannot support same-operator)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "pooled",
+      "GSM8K",
+      "MATH",
+      "ContextHub",
+      "MMLU"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

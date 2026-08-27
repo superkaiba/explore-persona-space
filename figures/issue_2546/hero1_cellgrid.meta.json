@@ -1,0 +1,667 @@
+{
+  "commit": "72464325",
+  "render_id": "07585f3068bd4303",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:14Z",
+  "figsize": [
+    14.100000000000001,
+    11.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (headline layer)": 0.6927550292308129,
+      "error": 0.002940700637578675,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (headline layer)": 0.5813389649383138,
+      "error": 0.0038840290780595144,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (headline layer)": 0.680896222444916,
+      "error": 0.002480346243409981,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (headline layer)": 0.6035949192126435,
+      "error": 0.0025598354479891006,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (headline layer)": 0.6949312950191467,
+      "error": 0.0025251563355864204,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (headline layer)": 0.6096804369499655,
+      "error": 0.0026088177421143,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (headline layer)": 0.8074809932107219,
+      "error": 0.0016476377915136675,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (headline layer)": 0.6938672707189526,
+      "error": 0.003272305420105981,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.19,
+      "R\u00b2 / split-half ceiling": 0.7285526073779515,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "R\u00b2 / split-half ceiling": 0.6200288663688034,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.81,
+      "R\u00b2 / split-half ceiling": 0.7160810059608538,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.19,
+      "R\u00b2 / split-half ceiling": 0.6437660230552348,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.81,
+      "R\u00b2 / split-half ceiling": 0.7308413300108257,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.19,
+      "R\u00b2 / split-half ceiling": 0.6502565507705744,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.81,
+      "R\u00b2 / split-half ceiling": 0.8492069464511984,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.19,
+      "R\u00b2 / split-half ceiling": 0.7400462780263464,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.19,
+      "answer-identity acc@1 \u2212 chance\n(corpus pool)": 0.2705572774192643,
+      "error": 0.0075331527940000476,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.19,
+      "answer-identity acc@1 \u2212 chance\n(corpus pool)": 0.3146270444650852,
+      "error": 0.00901358381350692,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.81,
+      "answer-identity acc@1 \u2212 chance\n(corpus pool)": 0.8197338556443328,
+      "error": 0.006192381209893516,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.19,
+      "answer-identity acc@1 \u2212 chance\n(corpus pool)": 0.6184475970318765,
+      "error": 0.00617093555971393,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.19,
+      "y": 0.5839003197380612,
+      "error": 0.005395066909505919,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.19,
+      "y": 0.39850540437062787,
+      "error": 0.005020677459607742,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 0.81,
+      "y": 0.6659891422125289,
+      "error": 0.0034221108176637483,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 1.19,
+      "y": 0.597547276920708,
+      "error": 0.002994935801942211,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 1.81,
+      "y": 0.6865331481596482,
+      "error": 0.0029852251421693676,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 2.19,
+      "y": 0.6057173834945183,
+      "error": 0.003030474264787808,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 2.81,
+      "y": 0.7029099979576684,
+      "error": 0.0048752273549109715,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 3.19,
+      "y": 0.47548965821482303,
+      "error": 0.005128669544471387,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": -0.19,
+      "y": 0.68245292815498,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 0.19,
+      "y": 0.5549479883888088,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 0.81,
+      "y": 0.7783969709526039,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.19,
+      "y": 0.832128386861091,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 1.81,
+      "y": 0.8024084615113595,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 2.19,
+      "y": 0.8435058591822479,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.81,
+      "y": 0.8215494496574646,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 3.19,
+      "y": 0.6621542052679051,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": -0.19,
+      "y": 0.3042934425436589,
+      "error": 0.008270665553769235,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": 0.19,
+      "y": 0.14747526810180148,
+      "error": 0.008758473077643991,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 2.81,
+      "y": 0.664259515486831,
+      "error": 0.008305999009657283,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 3.19,
+      "y": 0.32731201697293727,
+      "error": 0.00851877578054927,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": -0.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 0.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 2.81,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 3.19,
+      "y": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": -0.19,
+      "y": 0.699109215371755,
+      "error": 0.00189207413103043,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 0.19,
+      "y": 0.5750789611584484,
+      "error": 0.003189487693525006,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 0.81,
+      "y": 0.6959067358358492,
+      "error": 0.001873154587430259,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 1.19,
+      "y": 0.534750710977776,
+      "error": 0.003245992508084272,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.81,
+      "y": 0.6845940268229832,
+      "error": 0.0020182916972348863,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 2.19,
+      "y": 0.570653785805882,
+      "error": 0.0024011495293905782,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 2.81,
+      "y": 0.6976323614378467,
+      "error": 0.0019282749530045717,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 3.19,
+      "y": 0.5861326535725336,
+      "error": 0.0023361957286578416,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 3.81,
+      "y": 0.7505467336536205,
+      "error": 0.00144148346266737,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 4.19,
+      "y": 0.6277756661785685,
+      "error": 0.002598261025753168,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": -0.19,
+      "y": 0.732155945772557,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": 0.19,
+      "y": 0.6110119269213312,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": 0.81,
+      "y": 0.7288020857720398,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "x": 1.19,
+      "y": 0.5681638251534961,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 1.81,
+      "y": 0.7169546276289508,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 2.19,
+      "y": 0.6063102509746234,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": 2.81,
+      "y": 0.7306092812958579,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "x": 3.19,
+      "y": 0.6227562931000569,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "x": 3.81,
+      "y": 0.7860249036088893,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "x": 4.19,
+      "y": 0.6670013082958259,
+      "_kind": "bar",
+      "_group": 63
+    },
+    {
+      "x": -0.19,
+      "y": 0.3049833666569842,
+      "error": 0.007859082005646445,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "x": 0.19,
+      "y": 0.2381709114466701,
+      "error": 0.008471145743395372,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "x": 0.81,
+      "y": 0.30555216466430546,
+      "error": 0.007718657830905001,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "x": 1.19,
+      "y": 0.263003343697775,
+      "error": 0.008090338193185831,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "x": 3.81,
+      "y": 0.6210652174410358,
+      "error": 0.007723763505134429,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "x": 4.19,
+      "y": 0.5065489744571718,
+      "error": 0.007596646330959411,
+      "_kind": "bar",
+      "_group": 69
+    }
+  ],
+  "n_series": 70,
+  "total_points": 70,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
+        "ylabel": "held-out R\u00b2 (headline layer)",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "ylabel": "R\u00b2 / split-half ceiling",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "ylabel": "answer-identity acc@1 \u2212 chance\n(corpus pool)",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "N/A \u2014 same-template pool:\ninsufficient template rows",
+        "ylabel": "answer-identity acc@1 \u2212 chance\n(same-template pool)",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "same-template pool degenerate:\nchance = 1.0 \u2192 lift \u2261 0",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
+        ]
+      },
+      {
+        "title_left": "arm 3 \u2014 Qwen3-8B think on/off (different geometry)",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 answer (think off)",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
+        ]
+      },
+      {
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 answer (think off)",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 answer (think off)",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "N/A \u2014 same-template pool:\ninsufficient template rows",
+        "xticklabels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 answer (think off)",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

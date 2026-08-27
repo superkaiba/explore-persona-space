@@ -1,0 +1,760 @@
+{
+  "commit": "72464325",
+  "render_id": "c89cdc5b3cb345a7",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:31Z",
+  "figsize": [
+    13.200000000000001,
+    7.0
+  ],
+  "points": [
+    {
+      "x": 0.02874600749895848,
+      "held-out R\u00b2 (headline layer)": 0.46276410678466395,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0342175482655784,
+      "held-out R\u00b2 (headline layer)": 0.5176559851678677,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.1253954558527466,
+      "held-out R\u00b2 (headline layer)": 0.47560089887630874,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.13288288288288289,
+      "held-out R\u00b2 (headline layer)": 0.5625446678263811,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.02874600749895848,
+      "held-out R\u00b2 (headline layer)": 0.45865780077326745,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0342175482655784,
+      "held-out R\u00b2 (headline layer)": 0.5694547914946642,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.1253954558527466,
+      "held-out R\u00b2 (headline layer)": 0.5428355219898153,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.13288288288288289,
+      "held-out R\u00b2 (headline layer)": 0.5912699669847988,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.02874600749895848,
+      "held-out R\u00b2 (headline layer)": 0.4724945585790924,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0342175482655784,
+      "held-out R\u00b2 (headline layer)": 0.5829316562501468,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.1253954558527466,
+      "held-out R\u00b2 (headline layer)": 0.5532185569172567,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.13288288288288289,
+      "held-out R\u00b2 (headline layer)": 0.5980552283689157,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.02874600749895848,
+      "held-out R\u00b2 (headline layer)": 0.6594552521044499,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0342175482655784,
+      "held-out R\u00b2 (headline layer)": 0.7082038664313433,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.1253954558527466,
+      "held-out R\u00b2 (headline layer)": 0.6885287074775555,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.13288288288288289,
+      "held-out R\u00b2 (headline layer)": 0.6645803293341545,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.08167613636363637,
+      "y": 0.33791445514314944,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19973269973269972,
+      "y": 0.4823437837778871,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.23482375979112272,
+      "y": 0.48098076661407696,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.2550670408481447,
+      "y": 0.39130675761194733,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.08167613636363637,
+      "y": 0.5313311117099546,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.19973269973269972,
+      "y": 0.4953969021613833,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.23482375979112272,
+      "y": 0.539202352786537,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.2550670408481447,
+      "y": 0.5823645262505461,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.08167613636363637,
+      "y": 0.5463630250498814,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.19973269973269972,
+      "y": 0.5310343690952932,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.23482375979112272,
+      "y": 0.5572515941420642,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.2550670408481447,
+      "y": 0.5895311629598277,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.08167613636363637,
+      "y": 0.49159758391236275,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.19973269973269972,
+      "y": 0.7045784958118917,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.23482375979112272,
+      "y": 0.6697631599972791,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.2550670408481447,
+      "y": 0.46856101747318635,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.02874522900763359,
+      "y": 0.5529710583865886,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0826584752862329,
+      "y": 0.5134207670081298,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.09254041227940087,
+      "y": 0.5821854793122341,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.23773943757641625,
+      "y": 0.5651899235734772,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.02874522900763359,
+      "y": 0.5769065878263517,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0826584752862329,
+      "y": 0.5363146771969945,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.09254041227940087,
+      "y": 0.5905059527477677,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.23773943757641625,
+      "y": 0.5226970811991807,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.02874522900763359,
+      "y": 0.5168536886544359,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0826584752862329,
+      "y": 0.48518746916746247,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.09254041227940087,
+      "y": 0.5977015059584515,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.23773943757641625,
+      "y": 0.5538010916003766,
+      "series": "ctx end \u2192 CoT",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.02874522900763359,
+      "y": 0.5403673243702751,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0826584752862329,
+      "y": 0.5069816638832253,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.09254041227940087,
+      "y": 0.6159973087579355,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.23773943757641625,
+      "y": 0.5707667051448447,
+      "series": "ctx end \u2192 full output",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.02874522900763359,
+      "y": 0.6693463691492539,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0826584752862329,
+      "y": 0.5763516715779117,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.09254041227940087,
+      "y": 0.6388061022184957,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.23773943757641625,
+      "y": 0.5993698266200553,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.02874600749895848,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.44312368009033604,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.0342175482655784,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.3133638949898571,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.1253954558527466,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.21743512412367097,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.13288288288288289,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.3281238819180607,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.02874600749895848,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.8945887543855727,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.0342175482655784,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.7877007337906732,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.1253954558527466,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.7942033817429923,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.13288288288288289,
+      "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)": 0.6035916573858362,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.08167613636363637,
+      "y": 0.12354347922585228,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.19973269973269972,
+      "y": 0.5305012336494368,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.23482375979112272,
+      "y": 0.32651517288546955,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.2550670408481447,
+      "y": 0.14210286412566678,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.08167613636363637,
+      "y": 0.4419028542258523,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.19973269973269972,
+      "y": 0.7588944620426653,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.23482375979112272,
+      "y": 0.8258626443373455,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "corpus pair-necessity rate (necessary / classified)": 0.2550670408481447,
+      "y": 0.31640906930184387,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.02874522900763359,
+      "y": 0.23922916036907815,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.0826584752862329,
+      "y": 0.6076634251593609,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.09254041227940087,
+      "y": 0.3443243519483723,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.23773943757641625,
+      "y": 0.23990775855620672,
+      "series": "ctx end \u2192 answer",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.02874522900763359,
+      "y": 0.23887867680532893,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.0826584752862329,
+      "y": 0.6565367061458202,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.09254041227940087,
+      "y": 0.35325814196167604,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.23773943757641625,
+      "y": 0.2054871740480055,
+      "series": "ctx end \u2192 answer (think off)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.02874522900763359,
+      "y": 0.5867959542622079,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.0826584752862329,
+      "y": 0.8330194709566242,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.09254041227940087,
+      "y": 0.6593725357882537,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "corpus toggle-necessity rate (necessary / classified)": 0.23773943757641625,
+      "y": 0.39790259621413365,
+      "series": "CoT boundary \u2192 answer",
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 80,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
+        "ylabel": "held-out R\u00b2 (headline layer)",
+        "legend_labels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "xticklabels": [
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ],
+        "yticklabels": [
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)",
+        "legend_labels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "xticklabels": [
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225",
+          "0.250",
+          "0.275"
+        ],
+        "yticklabels": [
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "arm 3 \u2014 Qwen3-8B think on/off (different geometry)",
+        "legend_labels": [
+          "ctx end \u2192 answer",
+          "ctx end \u2192 answer (think off)",
+          "ctx end \u2192 CoT",
+          "ctx end \u2192 full output",
+          "CoT boundary \u2192 answer"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "0.475",
+          "0.500",
+          "0.525",
+          "0.550",
+          "0.575",
+          "0.600",
+          "0.625",
+          "0.650",
+          "0.675",
+          "0.700"
+        ]
+      },
+      {
+        "xlabel": "corpus pair-necessity rate (necessary / classified)",
+        "ylabel": "answer-identity lift\n(acc@1 \u2212 chance, corpus pool)",
+        "xticklabels": [
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "xlabel": "corpus pair-necessity rate (necessary / classified)",
+        "xticklabels": [
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225",
+          "0.250",
+          "0.275"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "xlabel": "corpus toggle-necessity rate (necessary / classified)",
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "ctx end \u2192 answer",
+      "ctx end \u2192 CoT",
+      "ctx end \u2192 full output",
+      "CoT boundary \u2192 answer",
+      "ctx end \u2192 answer (think off)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

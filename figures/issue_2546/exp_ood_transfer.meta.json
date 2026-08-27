@@ -1,0 +1,189 @@
+{
+  "commit": "72464325",
+  "render_id": "8d02664ee06c47a4",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:52Z",
+  "figsize": [
+    13.200000000000001,
+    3.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)": 0.47037670834306733,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)": 0.6501572327044025,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)": 0.12947153951810453,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)": 0.05325066107413148,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)": 0.4504493896079578,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)": 0.09080512351326624,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "y": 0.49303743198922945,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "y": 0.7323452484742807,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.81,
+      "y": -0.1907400320556667,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.19,
+      "y": 0.018148662730114624,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.81,
+      "y": 0.31646669386603177,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.19,
+      "y": 0.05725190839694656,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.19,
+      "y": 0.5195165389608997,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.19,
+      "y": 0.7910328262610088,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.81,
+      "y": -0.27914232698439445,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.19,
+      "y": 0.032127576818358615,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.81,
+      "y": 0.37880379836141587,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.19,
+      "y": 0.02707263905491878,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
+        "ylabel": "transfer R\u00b2 (left) / identity acc@1\n(right; tick = chance)",
+        "xticklabels": [
+          "GSM8K train \u2192 test",
+          "needs-CoT \u2192 no-CoT",
+          "no-CoT \u2192 needs-CoT"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)",
+        "xticklabels": [
+          "GSM8K train \u2192 test",
+          "needs-CoT \u2192 no-CoT",
+          "no-CoT \u2192 needs-CoT"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "arm 3 \u2014 Qwen3-8B think on/off (different geometry)",
+        "xticklabels": [
+          "GSM8K train \u2192 test",
+          "needs-CoT \u2192 no-CoT",
+          "no-CoT \u2192 needs-CoT"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

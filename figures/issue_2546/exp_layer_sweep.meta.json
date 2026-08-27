@@ -1,0 +1,5780 @@
+{
+  "commit": "72464325",
+  "render_id": "4c7f575883414fc6",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:34Z",
+  "figsize": [
+    13.799999999999999,
+    3.6
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.6441674493055292,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.6481093073734598,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.6333862560397041,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.610170835472591,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.6189692376629091,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.5980095726990997,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.6106215256629879,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.6044650129535774,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.6238435868918889,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.6316655289415134,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.6436534119210782,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.6416913854354469,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.6429078568448414,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.6379388666199297,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.6395134682394019,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.6403100182532395,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.629582513577556,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.6247992346315532,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.6278856899723647,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.6927550292308129,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.6851020643280871,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.6943136798508311,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.7004832871969395,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.702207916949816,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.7128102415425507,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.7117983097435188,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.7102876618245173,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.7709750362940785,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.4724065554264789,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.4652523286544239,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.46287304090813086,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.44790563152216145,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.47856446803961195,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.46246739278539595,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.4855293711082722,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.48595865352855394,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.5191356046489755,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.5213107888319947,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.5400613342805889,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.5396972578063733,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.54696288830196,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.5436647878895124,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.5480360928089641,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.5432313154491217,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.5348465038300793,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.5277237702705047,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.5268895188302135,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.5813389649383138,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.5729125787565787,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.5890774334810998,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.5968153533653344,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.5844721616987798,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.5812001756570109,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.5631161646196507,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.546981750134043,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.5629260711742113,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.6547661040863356,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.6625435326796669,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.6531414422486307,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.6430933656897677,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.6637693068515675,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.6374406852795482,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.6530863204979886,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.6463941338586136,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.6705594174843179,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.6663061214567911,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.6817029630809545,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.6788027761440603,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.6780336962943265,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.6677577843998803,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.6589370518232576,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.663421885559339,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.6525446351228057,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.6451541436503655,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.6481985863209154,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.680896222444916,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.681841156087206,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.6920091494732292,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.7000698557408578,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.6929334530687933,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.6991519646639023,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.6914660143102374,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.67478604233395,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.6837673529589382,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.5119009356708979,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.506904558534065,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.5099695766988812,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.4968865121060885,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.5340915627076643,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.5044659449259887,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.5334798714817093,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.5314275792800331,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.5734372872335702,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.5537272755239954,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.5777834768075378,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.5777614698162439,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.5852347203117279,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.5759931453343552,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.5779605275543627,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.57143492329834,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.5651561560570333,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.5572079400657728,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.5558717067348052,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.6035949192126435,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.5969999143158505,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.6064598701976359,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.6154471036711896,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.6026868551062425,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.6003745163128311,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.582222283026327,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.5655141204327947,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.5601456569557708,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.6719377212605704,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.6786731839069696,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.6635731393281299,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.6516423859258134,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.6749049695179905,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.6485301763572531,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.6645050561972756,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.6580403866653286,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.6813648890188688,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.6765208621120509,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.6922862972765567,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.6907173178535967,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.6896643003758645,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.680024290930658,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.6705239393605377,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.6757293138925683,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.664905759001071,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.6581996422527376,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.6617296874355697,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.6949312950191467,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.6957545682846059,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.7060546341216387,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.7116246188132317,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.7043460612642745,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.7107830626726679,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.7041350776654471,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.6859522636272561,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.6939609757988032,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.5239204508479354,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.4925059643376791,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.4896469333059573,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.4850092145562621,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.5307776136719727,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.5024937092890185,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.5351882186974035,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.5359709433423371,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.5795665353620489,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.5599408826472145,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.5850017558531008,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.5864761185013823,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.5936755688335664,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.5865547078041449,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.5870968485843219,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.5823663983306968,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.5745642062598872,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.5663172512275723,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.5653217110981836,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.6096804369499655,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.6033817697260401,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.6125126858972227,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.6205895330951141,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.6084117467592756,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.6061058766794885,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.5890086757225143,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.5698923635532877,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.5541972953293264,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.7328178841333386,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.75383558407316,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.7562845561764338,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.7392488566703326,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.7358328103871905,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.7193724902564218,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.7269679347916854,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.7117582922025689,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.7205536055184008,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.7046777514772193,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.7182535094418571,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.7224743174424819,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.7266947591567596,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.7351080959416955,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.7427697544904956,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.7549882714524742,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.7549353440723165,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.7494598889792163,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.7607028634315207,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.8074809932107219,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.792465462430385,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.7795458657309899,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.7592728988867932,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.7432789802074271,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.7401472075099087,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.7297701533032664,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.7203263044944042,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.8059113962917152,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "held-out R\u00b2 per layer": 0.6105239421003691,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "held-out R\u00b2 per layer": 0.6261704562726537,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "held-out R\u00b2 per layer": 0.6329842923993252,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "held-out R\u00b2 per layer": 0.6211981647302489,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "held-out R\u00b2 per layer": 0.6310171034227021,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "held-out R\u00b2 per layer": 0.6142813814232623,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "held-out R\u00b2 per layer": 0.6237004025328609,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "held-out R\u00b2 per layer": 0.606088799153605,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "held-out R\u00b2 per layer": 0.6210478726990876,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "held-out R\u00b2 per layer": 0.5794697999337554,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "held-out R\u00b2 per layer": 0.5935051701087426,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "held-out R\u00b2 per layer": 0.595333571891714,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "held-out R\u00b2 per layer": 0.6050256232260918,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "held-out R\u00b2 per layer": 0.6045188399102414,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out R\u00b2 per layer": 0.6126430270416363,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "held-out R\u00b2 per layer": 0.6237640187877176,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "held-out R\u00b2 per layer": 0.6175497487718985,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "held-out R\u00b2 per layer": 0.6124155071287836,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "held-out R\u00b2 per layer": 0.6415708774235573,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out R\u00b2 per layer": 0.6938672707189526,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "held-out R\u00b2 per layer": 0.6812566838027958,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "held-out R\u00b2 per layer": 0.6520465092349763,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "held-out R\u00b2 per layer": 0.6295798326853064,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "held-out R\u00b2 per layer": 0.5940901168427831,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "held-out R\u00b2 per layer": 0.5815500046366497,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "held-out R\u00b2 per layer": 0.5588946557672202,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out R\u00b2 per layer": 0.5400336828870053,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "held-out R\u00b2 per layer": 0.6293726448489823,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "y": 0.5509413471947833,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5560276430197277,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5408887290240807,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "y": 0.528137700375154,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5403326344816832,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "y": 0.5203463548305461,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "y": 0.508218541539931,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "y": 0.4946412043830748,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5160568355174011,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "y": 0.5319234610499093,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "y": 0.5588953066194362,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "y": 0.560289837337167,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5698346010023282,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5761653253694584,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5712178176761448,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5653151707449068,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "y": 0.562052290441777,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5530091366766481,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5592201012260016,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5839003197380612,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5684510184806271,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5789438679640044,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5596954554532203,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "y": 0.5527508128876706,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "y": 0.5319179031696062,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5276136838923091,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5317808283000909,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "y": 0.7415435169645139,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "y": 0.34966566692918855,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "y": 0.3407105575203959,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "y": 0.3539018543180654,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "y": 0.334835282938984,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "y": 0.3504806749972349,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "y": 0.3394624061484687,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "y": 0.3487504874728993,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "y": 0.3443228983347142,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "y": 0.3708967758713265,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "y": 0.3792224065664346,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "y": 0.4025439873694233,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "y": 0.3977050744161482,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "y": 0.3989943734173168,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "y": 0.4074629629116192,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "y": 0.4021647449874921,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "y": 0.39621025584793157,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "y": 0.3872838526707443,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "y": 0.37037956888048784,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "y": 0.3709206531870298,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "y": 0.39850540437062787,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "y": 0.390676474596082,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "y": 0.39238257992488335,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "y": 0.38581529405833426,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "y": 0.367825820536976,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "y": 0.3559052580124191,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "y": 0.3428862582063079,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "y": 0.3300267049175142,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "y": 0.46112602317268003,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6548511560784861,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "y": 0.652163816810859,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "y": 0.6744152947549865,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6639578772049266,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "y": 0.6765457904275147,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6520314559124585,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6579167204287506,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6372062928040528,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6595618052721564,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6537619606669969,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6821994613290484,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "y": 0.681054271111543,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "y": 0.6847315568426758,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "y": 0.683857296195541,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6773455582284555,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "y": 0.6741001255813702,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6673156898556244,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6522564541162863,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6539969025563044,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6659891422125289,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6568886196474879,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6517339954264498,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6337077034397549,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6074713526350797,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "y": 0.5830752338591905,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5711680639334251,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5541902980626912,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6894317037062769,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 0.0,
+      "y": 0.5537834562139744,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5533333599436092,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5793808699221012,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5520754936296375,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 4.0,
+      "y": 0.573057285503285,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 5.0,
+      "y": 0.5518249520794744,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 6.0,
+      "y": 0.5726692397478994,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 7.0,
+      "y": 0.5517935818114343,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5876921292109305,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 9.0,
+      "y": 0.5464484836182941,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 10.0,
+      "y": 0.5814224256063807,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 11.0,
+      "y": 0.5805074686949367,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5873489439402138,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5916209619292576,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5891383789762854,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5853765391996733,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5769429104196468,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5613493253683719,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5672346480384862,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 19.0,
+      "y": 0.597547276920708,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5863676895920324,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5457900814107497,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 22.0,
+      "y": 0.524637387985462,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 23.0,
+      "y": 0.4782425086149208,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 24.0,
+      "y": 0.4578930463876094,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 25.0,
+      "y": 0.4415871205549523,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 26.0,
+      "y": 0.4246274547000458,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5730332250317531,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6847574883672536,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "y": 0.6860754728657259,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "y": 0.7048591785008006,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6959130693219999,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "y": 0.7040957168222464,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6795492553927713,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6818823551594115,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6638506457449,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6855974178292596,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6746613933500765,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "y": 0.7014050698198918,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "y": 0.7013014885687485,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "y": 0.7055551804201705,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "y": 0.703880266473192,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6968283438928258,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "y": 0.6946626378263906,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6885260415187581,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6758708778708812,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6762249307273261,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6865331481596482,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6772350028815306,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6717527897662638,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6501359305691419,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6230168159413045,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "y": 0.5969576124381024,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5823288095389192,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5674982058135964,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "y": 0.7099520576052927,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 0.0,
+      "y": 0.5681637909495827,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5708136361591193,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5921329394042807,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5650014266496652,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5836538452742248,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "y": 0.5632923053821923,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "y": 0.582947777441919,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "y": 0.5635595681534407,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5971524431574755,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "y": 0.556517710304182,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "y": 0.5898471332686781,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "y": 0.5884878982373729,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5949292520516225,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5983070793818654,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5981059546514826,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5943454294632559,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5865233317352574,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5711386875672758,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5748383482648821,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6057173834945183,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5930873227843989,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5537036192915505,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5317166842530404,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "y": 0.4850797832161182,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "y": 0.46366543867343424,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "y": 0.4463076424644099,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "y": 0.4301985580549983,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5755316901884983,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6157889035086723,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 1.0,
+      "y": 0.6286667128748147,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 2.0,
+      "y": 0.616812470820177,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6058614242703504,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 4.0,
+      "y": 0.6397235331539526,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6244155670858207,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 6.0,
+      "y": 0.635502743627339,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6101703648433341,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6135493119530705,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6105977427873819,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6315386542394164,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 11.0,
+      "y": 0.6240981000054853,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 12.0,
+      "y": 0.6358429672580151,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 13.0,
+      "y": 0.6346501297662529,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6415677867654024,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 15.0,
+      "y": 0.656183139098446,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6525605882349198,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6466940538711932,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6623351103008296,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 19.0,
+      "y": 0.7029099979576684,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6978807921495577,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6967458447043624,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6731873902504448,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6608474662400172,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 24.0,
+      "y": 0.6375917780025374,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 25.0,
+      "y": 0.6278030286150864,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 26.0,
+      "y": 0.629151129802147,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 27.0,
+      "y": 0.8085489775627235,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 0.0,
+      "y": 0.4192756512613365,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 1.0,
+      "y": 0.4062672286121638,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 2.0,
+      "y": 0.4202450263479659,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 3.0,
+      "y": 0.4070249011686815,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 4.0,
+      "y": 0.43481026997790106,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 5.0,
+      "y": 0.4194368505564,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 6.0,
+      "y": 0.4272298122900571,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 7.0,
+      "y": 0.4138244170835549,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 8.0,
+      "y": 0.4326125623168098,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 9.0,
+      "y": 0.4288719299885483,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 10.0,
+      "y": 0.4496038101067684,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 11.0,
+      "y": 0.4437646759104735,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 12.0,
+      "y": 0.448416923641061,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 13.0,
+      "y": 0.45366421992350403,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 14.0,
+      "y": 0.45347062743179123,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 15.0,
+      "y": 0.4544426821080778,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 16.0,
+      "y": 0.44430949784923224,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 17.0,
+      "y": 0.43223846558106127,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 18.0,
+      "y": 0.44224818462292503,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 19.0,
+      "y": 0.47548965821482303,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 20.0,
+      "y": 0.4700614779580683,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 21.0,
+      "y": 0.46973309705316046,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 22.0,
+      "y": 0.46245814768240534,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 23.0,
+      "y": 0.4419929836365498,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 24.0,
+      "y": 0.433780663836979,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 25.0,
+      "y": 0.4216070320959655,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 26.0,
+      "y": 0.41005665665521507,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5477999913541968,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6649634241323373,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 1.0,
+      "y": 0.6616442767673417,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 2.0,
+      "y": 0.6574290992057664,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6773560301219155,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 4.0,
+      "y": 0.6816777020103602,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6867334071203294,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6552202828541236,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6448578204447523,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6424678450755926,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6634944044862197,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6683608342360811,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 11.0,
+      "y": 0.671601466117997,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 12.0,
+      "y": 0.6921757212371138,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 13.0,
+      "y": 0.6901862642466445,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6876954295382931,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 15.0,
+      "y": 0.6901106213846295,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6732781334346848,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6876324162861579,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6905840908151915,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6819118321831665,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6764956056445703,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6679095887663,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6839643701601361,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6799018143008164,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 24.0,
+      "y": 0.699109215371755,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 25.0,
+      "y": 0.7022121856889405,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 26.0,
+      "y": 0.6951783119655781,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6898141647260918,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 28.0,
+      "y": 0.6835381829173689,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 29.0,
+      "y": 0.6714019932802159,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 30.0,
+      "y": 0.6923255213145747,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 31.0,
+      "y": 0.6895599804733056,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 32.0,
+      "y": 0.7003022098560038,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 33.0,
+      "y": 0.6989451281998915,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 34.0,
+      "y": 0.6774985341719113,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 35.0,
+      "y": 0.7038752897106941,
+      "series": "ctx end \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "layer": 0.0,
+      "y": 0.4194343840544468,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 1.0,
+      "y": 0.4522256843253013,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 2.0,
+      "y": 0.45766276920727245,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5194062985702568,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5310679024056582,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 5.0,
+      "y": 0.5422425934775368,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 6.0,
+      "y": 0.5146912358857758,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 7.0,
+      "y": 0.5147007147118029,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5088012210644169,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 9.0,
+      "y": 0.5285011812562862,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 10.0,
+      "y": 0.52447094117923,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 11.0,
+      "y": 0.5210177345971093,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5544192522832911,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 13.0,
+      "y": 0.555651822704217,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5584026312064996,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5566188096822315,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5472238846311411,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 17.0,
+      "y": 0.560507062528237,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5672223457614789,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5578325381418083,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5549096532251511,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5435041770404836,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5581712138993242,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 23.0,
+      "y": 0.5473931995820045,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 24.0,
+      "y": 0.5750789611584484,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5633581086218038,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5479419187717833,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5571261488728763,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 28.0,
+      "y": 0.5461631203695748,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 29.0,
+      "y": 0.5269126353093645,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 30.0,
+      "y": 0.5450072880039991,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 31.0,
+      "y": 0.5296648542833511,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 32.0,
+      "y": 0.5280481179925989,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 33.0,
+      "y": 0.5165378931944291,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 34.0,
+      "y": 0.5100773378899892,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 35.0,
+      "y": 0.5738962709436215,
+      "series": "ctx end \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "layer": 0.0,
+      "y": 0.7071038342590206,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 1.0,
+      "y": 0.7076213357516874,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 2.0,
+      "y": 0.7085482260129248,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 3.0,
+      "y": 0.7203386295304589,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 4.0,
+      "y": 0.7127995422222162,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 5.0,
+      "y": 0.7175455944120319,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6797981986775044,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6740899607358668,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6712697024913801,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6920029855925636,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6965807425164251,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 11.0,
+      "y": 0.6940270134049544,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 12.0,
+      "y": 0.7131789152485483,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 13.0,
+      "y": 0.7126661848589064,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 14.0,
+      "y": 0.7111744125742858,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 15.0,
+      "y": 0.7156099968593779,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5565781147532955,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5870309979101658,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6109028688282281,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6310199032579724,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 20.0,
+      "y": 0.641324823226985,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6474975739776356,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6746404244371922,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6790721537518256,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 24.0,
+      "y": 0.6959067358358492,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 25.0,
+      "y": 0.7003345573303897,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 26.0,
+      "y": 0.696546668797729,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6923540187965069,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 28.0,
+      "y": 0.6894070651367401,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 29.0,
+      "y": 0.6783005081728891,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 30.0,
+      "y": 0.7010144079179603,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 31.0,
+      "y": 0.7039935107615294,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 32.0,
+      "y": 0.7093572323531144,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 33.0,
+      "y": 0.7096396263662561,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 34.0,
+      "y": 0.7186130652315381,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 35.0,
+      "y": 0.7652441390523039,
+      "series": "ctx end \u2192 answer (think off) (needs CoT)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "layer": 0.0,
+      "y": 0.35947909220167495,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 1.0,
+      "y": 0.39804959427971975,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 2.0,
+      "y": 0.4095113198118725,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 3.0,
+      "y": 0.4709217853858788,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 4.0,
+      "y": 0.47810894243682944,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 5.0,
+      "y": 0.48510221385156216,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 6.0,
+      "y": 0.46216784183841486,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 7.0,
+      "y": 0.4675722598061589,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 8.0,
+      "y": 0.46516651072667903,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 9.0,
+      "y": 0.4869947408875669,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 10.0,
+      "y": 0.48122019936037164,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 11.0,
+      "y": 0.47592263912374744,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5069967220291756,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5102074496319147,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5168390826042003,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5180576119051616,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5008643681573026,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5175254046754413,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5252676864509807,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5206784342387363,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5215179293591603,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5128379992851295,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5288124489694441,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 23.0,
+      "y": 0.5162018758111881,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 24.0,
+      "y": 0.534750710977776,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5198021228259739,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5018955796844207,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5090901271273534,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 28.0,
+      "y": 0.49324113769948796,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 29.0,
+      "y": 0.4722653007467923,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 30.0,
+      "y": 0.4858773225339603,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 31.0,
+      "y": 0.4720885658176349,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 32.0,
+      "y": 0.46774803218515104,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 33.0,
+      "y": 0.45940580203251014,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 34.0,
+      "y": 0.4714859340276192,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 35.0,
+      "y": 0.6457645273434778,
+      "series": "ctx end \u2192 answer (think off) (no CoT needed)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6691385724837895,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 1.0,
+      "y": 0.6711606824193509,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 2.0,
+      "y": 0.6583341580230238,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6746350535516877,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 4.0,
+      "y": 0.6857747707878052,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 5.0,
+      "y": 0.6848306379562796,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6548366041541089,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6497035508853055,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 8.0,
+      "y": 0.6489425050428175,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 9.0,
+      "y": 0.6708576815351801,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6747517210656955,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 11.0,
+      "y": 0.6693093501601904,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 12.0,
+      "y": 0.68878091279724,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 13.0,
+      "y": 0.6865313316033046,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6830970365817595,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 15.0,
+      "y": 0.6866794371086575,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6468469490713988,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6576733490520812,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6666019557522335,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6526762765552767,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 20.0,
+      "y": 0.655964950202954,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6494480569093302,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6662827341978974,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6652778566389892,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 24.0,
+      "y": 0.6845940268229832,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 25.0,
+      "y": 0.6883895456860757,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 26.0,
+      "y": 0.6836612818799387,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6791228241517006,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 28.0,
+      "y": 0.6741181492307916,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 29.0,
+      "y": 0.6624511987239438,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 30.0,
+      "y": 0.6791381027387191,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 31.0,
+      "y": 0.6772097162193531,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 32.0,
+      "y": 0.6764310287682143,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 33.0,
+      "y": 0.6680758155014381,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 34.0,
+      "y": 0.6777832134758499,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 35.0,
+      "y": 0.7352482188035441,
+      "series": "ctx end \u2192 CoT (needs CoT)",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "layer": 0.0,
+      "y": 0.4520446879678659,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 1.0,
+      "y": 0.48133471782089354,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 2.0,
+      "y": 0.4807724231051316,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5356682982613589,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5456584786914339,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 5.0,
+      "y": 0.5523509962785411,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 6.0,
+      "y": 0.5217060667694406,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 7.0,
+      "y": 0.5270357635294456,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5202161264659655,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 9.0,
+      "y": 0.536445806812557,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 10.0,
+      "y": 0.5281465101004856,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 11.0,
+      "y": 0.5182342595064253,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5532171583598753,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5570484749240773,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5605735782782275,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5633340221857743,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 16.0,
+      "y": 0.5209624363747849,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5350784787709032,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5468896200121405,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 19.0,
+      "y": 0.5367531872861493,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 20.0,
+      "y": 0.5454754140413896,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5386142248194101,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5619603442307197,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 23.0,
+      "y": 0.552135159316028,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 24.0,
+      "y": 0.570653785805882,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5571686802285416,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5373611066797692,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5496776295782011,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 28.0,
+      "y": 0.5371721530293877,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 29.0,
+      "y": 0.5168295726350416,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 30.0,
+      "y": 0.5281503153501419,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 31.0,
+      "y": 0.5091497407728203,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 32.0,
+      "y": 0.5017916241981619,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 33.0,
+      "y": 0.48675532093787,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 34.0,
+      "y": 0.4850228958604281,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 35.0,
+      "y": 0.47751690725320906,
+      "series": "ctx end \u2192 CoT (no CoT needed)",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6836695849350783,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 1.0,
+      "y": 0.6821755680026194,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 2.0,
+      "y": 0.6736279428817549,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 3.0,
+      "y": 0.691439621588354,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 4.0,
+      "y": 0.7012213663667868,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 5.0,
+      "y": 0.7020367018826383,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 6.0,
+      "y": 0.6732066722136651,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 7.0,
+      "y": 0.6689024288493481,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 8.0,
+      "y": 0.667684459529859,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 9.0,
+      "y": 0.688035402344048,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 10.0,
+      "y": 0.6912635921945611,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 11.0,
+      "y": 0.6855073662780362,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 12.0,
+      "y": 0.7046745593662863,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 13.0,
+      "y": 0.7035663188616352,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 14.0,
+      "y": 0.7007338176835773,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 15.0,
+      "y": 0.7047176244696971,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6881718994574519,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6937761732795794,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6991061175020543,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6839449420066699,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6832479094675941,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6766094302336818,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6883128715105156,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6840803565947071,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 24.0,
+      "y": 0.6976323614378467,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 25.0,
+      "y": 0.69871109333531,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 26.0,
+      "y": 0.6929396739005641,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6873704180666212,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 28.0,
+      "y": 0.681152641265241,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 29.0,
+      "y": 0.6679709610563148,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 30.0,
+      "y": 0.6834202773190338,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 31.0,
+      "y": 0.6817910423841014,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 32.0,
+      "y": 0.6819271771200628,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 33.0,
+      "y": 0.6751599817697577,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 34.0,
+      "y": 0.677175587595267,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 35.0,
+      "y": 0.7016984601100931,
+      "series": "ctx end \u2192 full output (needs CoT)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "layer": 0.0,
+      "y": 0.47287827967158513,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5031162154213804,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5054157659534955,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5626754714254532,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5719917342508432,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 5.0,
+      "y": 0.5791553552099097,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 6.0,
+      "y": 0.5483622868740474,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 7.0,
+      "y": 0.5555536446898691,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5457502314191409,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 9.0,
+      "y": 0.5592812153585944,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 10.0,
+      "y": 0.5494051939127488,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 11.0,
+      "y": 0.5384991931302086,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5727208719191,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5775866089919195,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 14.0,
+      "y": 0.5813361290255995,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 15.0,
+      "y": 0.5843856595171122,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 16.0,
+      "y": 0.56238144326084,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 17.0,
+      "y": 0.5700730887311356,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 18.0,
+      "y": 0.5824298105272414,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 19.0,
+      "y": 0.56825188229784,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 20.0,
+      "y": 0.573857402522233,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 21.0,
+      "y": 0.5664107272626235,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 22.0,
+      "y": 0.5833116253312706,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 23.0,
+      "y": 0.569084893753362,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 24.0,
+      "y": 0.5861326535725336,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 25.0,
+      "y": 0.5710860053589848,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5513856590022728,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 27.0,
+      "y": 0.5632171137744775,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 28.0,
+      "y": 0.5504813399620924,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 29.0,
+      "y": 0.52960696658599,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 30.0,
+      "y": 0.5421141097697906,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 31.0,
+      "y": 0.5269058321201909,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 32.0,
+      "y": 0.5154409784043121,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 33.0,
+      "y": 0.5009106045732346,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 34.0,
+      "y": 0.4964062676173485,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 35.0,
+      "y": 0.48791192284518403,
+      "series": "ctx end \u2192 full output (no CoT needed)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "layer": 0.0,
+      "y": 0.7015744637135657,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 1.0,
+      "y": 0.7296848396492222,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 2.0,
+      "y": 0.7365096854605817,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 3.0,
+      "y": 0.7548416241873921,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 4.0,
+      "y": 0.7507741745806136,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 5.0,
+      "y": 0.7496271106349068,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 6.0,
+      "y": 0.7217906611539875,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 7.0,
+      "y": 0.7131327919417516,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 8.0,
+      "y": 0.7026538022630768,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 9.0,
+      "y": 0.7096340455183925,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 10.0,
+      "y": 0.7156007869117021,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 11.0,
+      "y": 0.7197313511285305,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 12.0,
+      "y": 0.7364652978185962,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 13.0,
+      "y": 0.7395762187176638,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 14.0,
+      "y": 0.739516187526766,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 15.0,
+      "y": 0.7413986297525275,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 16.0,
+      "y": 0.7244553127982978,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 17.0,
+      "y": 0.7379905674095038,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 18.0,
+      "y": 0.7356409721211312,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 19.0,
+      "y": 0.734580201254716,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 20.0,
+      "y": 0.7307033241060296,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 21.0,
+      "y": 0.7259441446044439,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 22.0,
+      "y": 0.7378509905840056,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 23.0,
+      "y": 0.7337125488150107,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 24.0,
+      "y": 0.7505467336536205,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 25.0,
+      "y": 0.7526994787707023,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 26.0,
+      "y": 0.7444417444901479,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 27.0,
+      "y": 0.7394026914282144,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 28.0,
+      "y": 0.7338286799625404,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 29.0,
+      "y": 0.7245362390278571,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 30.0,
+      "y": 0.7448325365873585,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 31.0,
+      "y": 0.7428800629952286,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 32.0,
+      "y": 0.7552964628806422,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 33.0,
+      "y": 0.7554746146070797,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 34.0,
+      "y": 0.7368955010750647,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 35.0,
+      "y": 0.8037794138325721,
+      "series": "CoT boundary \u2192 answer (needs CoT)",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "layer": 0.0,
+      "y": 0.45918084173090223,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5277735913286559,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5545018073584581,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5959155972755237,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5958153914069313,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 5.0,
+      "y": 0.595895216669,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 6.0,
+      "y": 0.5715074888882344,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 7.0,
+      "y": 0.5650041023284289,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 8.0,
+      "y": 0.5476316222670128,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 9.0,
+      "y": 0.537542701855191,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 10.0,
+      "y": 0.5358999814928939,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 11.0,
+      "y": 0.538987938345433,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 12.0,
+      "y": 0.5783391207596962,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 13.0,
+      "y": 0.5906328204621403,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 14.0,
+      "y": 0.6021992992052725,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 15.0,
+      "y": 0.6105946624651071,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 16.0,
+      "y": 0.6042394254871879,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 17.0,
+      "y": 0.6207078866084503,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 18.0,
+      "y": 0.6186332519542708,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 19.0,
+      "y": 0.6179643839917608,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 20.0,
+      "y": 0.6119707118605451,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 21.0,
+      "y": 0.6059082203954287,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 22.0,
+      "y": 0.6129849967121529,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 23.0,
+      "y": 0.6005299313933342,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 24.0,
+      "y": 0.6277756661785685,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 25.0,
+      "y": 0.6167453193300976,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 26.0,
+      "y": 0.5952848899659804,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 27.0,
+      "y": 0.6018492920222307,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 28.0,
+      "y": 0.591714406417563,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 29.0,
+      "y": 0.5700952827204473,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 30.0,
+      "y": 0.5904629919601816,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 31.0,
+      "y": 0.5802551974952782,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 32.0,
+      "y": 0.5895334173199763,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 33.0,
+      "y": 0.5835248299160731,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 34.0,
+      "y": 0.5820204527122554,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "layer": 35.0,
+      "y": 0.7015698999578515,
+      "series": "CoT boundary \u2192 answer (no CoT needed)",
+      "_kind": "line",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 808,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
+        "xlabel": "layer",
+        "ylabel": "held-out R\u00b2 per layer",
+        "legend_labels": [
+          "ctx end \u2192 answer (needs CoT)",
+          "ctx end \u2192 answer (no CoT needed)",
+          "ctx end \u2192 CoT (needs CoT)",
+          "ctx end \u2192 CoT (no CoT needed)",
+          "ctx end \u2192 full output (needs CoT)",
+          "ctx end \u2192 full output (no CoT needed)",
+          "CoT boundary \u2192 answer (needs CoT)",
+          "CoT boundary \u2192 answer (no CoT needed)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "arm 3 \u2014 Qwen3-8B think on/off (different geometry)",
+        "xlabel": "layer",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      }
+    ],
+    "series": [
+      "ctx end \u2192 answer (needs CoT)",
+      "ctx end \u2192 answer (no CoT needed)",
+      "ctx end \u2192 CoT (needs CoT)",
+      "ctx end \u2192 CoT (no CoT needed)",
+      "ctx end \u2192 full output (needs CoT)",
+      "ctx end \u2192 full output (no CoT needed)",
+      "CoT boundary \u2192 answer (needs CoT)",
+      "CoT boundary \u2192 answer (no CoT needed)",
+      "ctx end \u2192 answer (think off) (needs CoT)",
+      "ctx end \u2192 answer (think off) (no CoT needed)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

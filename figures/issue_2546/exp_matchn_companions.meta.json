@@ -1,0 +1,233 @@
+{
+  "commit": "72464325",
+  "render_id": "22aa17c2612d4435",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:40Z",
+  "figsize": [
+    13.799999999999999,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.6927550292308129,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.6895399510218196,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.5813389649383138,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.5813389649383138,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.8074809932107219,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.8034998815517189,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.8,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.6938672707189526,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.2,
+      "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)": 0.6938672707189526,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.2,
+      "y": 0.5839003197380612,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.2,
+      "y": 0.5845748257968288,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.8,
+      "y": 0.39850540437062787,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.2,
+      "y": 0.39850540437062787,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.8,
+      "y": 0.7029099979576684,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.2,
+      "y": 0.7038474646403279,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.8,
+      "y": 0.47548965821482303,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.2,
+      "y": 0.47548965821482303,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.2,
+      "y": 0.699109215371755,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.2,
+      "y": 0.6961797451669529,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.8,
+      "y": 0.5750789611584484,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.2,
+      "y": 0.5750789611584484,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 1.8,
+      "y": 0.7505467336536205,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 2.2,
+      "y": 0.7472462467752868,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 2.8,
+      "y": 0.6277756661785685,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 3.2,
+      "y": 0.6277756661785685,
+      "_kind": "bar",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
+        "ylabel": "held-out R\u00b2 \u2014 full n (solid)\nvs matched-n companion (faded)",
+        "xticklabels": [
+          "ctx end \u2192 answer\nneeds CoT",
+          "ctx end \u2192 answer\nno CoT needed",
+          "CoT boundary \u2192 answer\nneeds CoT",
+          "CoT boundary \u2192 answer\nno CoT needed"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9"
+        ]
+      },
+      {
+        "title_left": "arm 2 \u2014 R1-Distill-Qwen-7B (pre: Qwen2.5-Math-7B)",
+        "xticklabels": [
+          "ctx end \u2192 answer\nneeds CoT",
+          "ctx end \u2192 answer\nno CoT needed",
+          "CoT boundary \u2192 answer\nneeds CoT",
+          "CoT boundary \u2192 answer\nno CoT needed"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "arm 3 \u2014 Qwen3-8B think on/off (different geometry)",
+        "xticklabels": [
+          "ctx end \u2192 answer\nneeds CoT",
+          "ctx end \u2192 answer\nno CoT needed",
+          "CoT boundary \u2192 answer\nneeds CoT",
+          "CoT boundary \u2192 answer\nno CoT needed"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

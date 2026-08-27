@@ -1,0 +1,206 @@
+{
+  "commit": "72464325",
+  "render_id": "e7b8109417714db5",
+  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_figures.py",
+  "created": "2026-08-27T18:35:49Z",
+  "figsize": [
+    9.6,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.175,
+      "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)": -1239869.2807137242,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.825,
+      "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)": -83569.44056739198,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.825,
+      "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)": -26291.958052193553,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.175,
+      "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)": -2.5416188725224265,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.175,
+      "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)": -3.3523917535622374,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.175,
+      "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)": -3.6327924245235383,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 0.0,
+      "R\u00b2 agreement per k-bin (post read)": -1282054.019399145,
+      "series": "layer 14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 1.0,
+      "R\u00b2 agreement per k-bin (post read)": -1198779.3585941335,
+      "series": "layer 14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 2.0,
+      "R\u00b2 agreement per k-bin (post read)": -1382256.9606101648,
+      "series": "layer 14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 3.0,
+      "R\u00b2 agreement per k-bin (post read)": -1627313.1805289986,
+      "series": "layer 14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 0.0,
+      "R\u00b2 agreement per k-bin (post read)": -84915.12616139713,
+      "series": "layer 19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 1.0,
+      "R\u00b2 agreement per k-bin (post read)": -81125.95696149352,
+      "series": "layer 19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 2.0,
+      "R\u00b2 agreement per k-bin (post read)": -94057.42386541709,
+      "series": "layer 19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 3.0,
+      "R\u00b2 agreement per k-bin (post read)": -110672.63303611052,
+      "series": "layer 19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 0.0,
+      "R\u00b2 agreement per k-bin (post read)": -27970.16598601419,
+      "series": "layer 26",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 1.0,
+      "R\u00b2 agreement per k-bin (post read)": -25997.325646742036,
+      "series": "layer 26",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 2.0,
+      "R\u00b2 agreement per k-bin (post read)": -27992.265468854297,
+      "series": "layer 26",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "GSM8K reasoning-steps bin (k)": 3.0,
+      "R\u00b2 agreement per k-bin (post read)": -29030.37771390209,
+      "series": "layer 26",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "frozen n1m read \u2014 GSM8K test (arm 1)",
+        "ylabel": "R\u00b2 agreement with banked v\u0302 target\n(frozen #779 n1m ridge)",
+        "legend_labels": [
+          "post-model ctx state (read A)",
+          "pre-model ctx state (read B)"
+        ],
+        "xticklabels": [
+          "layer 14",
+          "layer 19",
+          "layer 26"
+        ],
+        "yticklabels": [
+          "\u22124.0",
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0"
+        ]
+      },
+      {
+        "xlabel": "GSM8K reasoning-steps bin (k)",
+        "ylabel": "R\u00b2 agreement per k-bin (post read)",
+        "legend_labels": [
+          "layer 14",
+          "layer 19",
+          "layer 26"
+        ],
+        "xticklabels": [
+          "k1",
+          "k2_3",
+          "k4_6",
+          "k7p"
+        ],
+        "yticklabels": [
+          "\u22121.8",
+          "\u22121.6",
+          "\u22121.4",
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2"
+        ]
+      }
+    ],
+    "series": [
+      "post-model ctx state (read A)",
+      "pre-model ctx state (read B)",
+      "layer 14",
+      "layer 19",
+      "layer 26"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
