@@ -1,0 +1,132 @@
+{
+  "commit": "07d4002c",
+  "render_id": "41407144e0504ac0",
+  "git_commit": "07d4002ccd13d40844bac5694509eba37db6fefe",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T16:30:26Z",
+  "figsize": [
+    6.4,
+    4.2
+  ],
+  "points": [
+    {
+      "Qwen 27B capability column contrast": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.06948340588724836,
+      "error": 0.026665032241821783,
+      "series": "no-think read (prompt end)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Qwen 27B capability column contrast": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.015176089014642112,
+      "error": 0.027528811442501123,
+      "series": "no-think read (prompt end)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Qwen 27B capability column contrast": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.05370117324825791,
+      "error": 0.026432062287768093,
+      "series": "no-think read (prompt end)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Qwen 27B capability column contrast": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.06948340588724836,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen 27B capability column contrast": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.015176089014642112,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen 27B capability column contrast": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.05370117324825791,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Qwen 27B capability column contrast": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.09768078755895027,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Qwen 27B capability column contrast": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.012249172267694333,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Qwen 27B capability column contrast": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.08123173185900104,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Qwen 27B capability column contrast": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.0443507230753067,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Qwen 27B capability column contrast": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.04280845061730791,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Qwen 27B capability column contrast": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.02836760728346485,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Qwen 27B capability column contrast",
+        "ylabel": "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)",
+        "legend_labels": [
+          "no-think read (prompt end)"
+        ],
+        "xticklabels": [
+          "3.6 \u2212 3.5",
+          "3.8 \u2212 3.6",
+          "3.8 \u2212 3.5"
+        ],
+        "yticklabels": [
+          "\u22120.12",
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      }
+    ],
+    "series": [
+      "no-think read (prompt end)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

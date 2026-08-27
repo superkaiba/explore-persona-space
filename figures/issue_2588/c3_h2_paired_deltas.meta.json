@@ -1,0 +1,422 @@
+{
+  "commit": "07d4002c",
+  "render_id": "0d5ee84f24a7426e",
+  "git_commit": "07d4002ccd13d40844bac5694509eba37db6fefe",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T16:30:27Z",
+  "figsize": [
+    7.4,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.1108786610878661,
+      "error": 0.04679664841084061,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.8200000000000001,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.031928480204342274,
+      "error": 0.03689658260223824,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.10434782608695652,
+      "error": 0.029982279639441875,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0934873949579832,
+      "error": 0.030471078332826012,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0,
+      "error": 0.02681396033713148,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06619144602851323,
+      "error": 0.030375332902602376,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.05944055944055944,
+      "error": 0.031309575962695096,
+      "series": "generic (test_1000)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.01818181818181818,
+      "error": 0.14587264150943396,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.03125,
+      "error": 0.07886213169145942,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07782101167315175,
+      "error": 0.055093306120977036,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.05080213903743316,
+      "error": 0.045389091067420846,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07399103139013453,
+      "error": 0.04050816879895402,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06300813008130081,
+      "error": 0.034975558160634856,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.09929078014184398,
+      "error": 0.021304937831934934,
+      "series": "GPQA transfer",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.1108786610878661,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.8200000000000001,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.031928480204342274,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.10434782608695652,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0934873949579832,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06619144602851323,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.05944055944055944,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06607274801949176,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8200000000000001,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.006418691487009583,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07438518829157667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.0611963457582203,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.025820100706338667,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.035711560819648304,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.02711552062922437,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.15966604484117297,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8200000000000001,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06737447371746691,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.13434974757046042,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.12213850242387232,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.02780781996792429,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.09646222662485306,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.82,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.08973467255461456,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.01818181818181818,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.03125,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07782101167315175,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.05080213903743316,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.07399103139013453,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.06300813008130081,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.09929078014184398,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.1667452830188679,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.04656834940442428,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.02238391376451078,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.09610771581359817,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.03547085771218145,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.02867695663670016,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.12069087970219436,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.125,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.11115591397849457,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.13257052600646485,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.005329533678756479,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.11648719531008948,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": 0.09862807295796987,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.18,
+      "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)": -0.07808100403832449,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Raw \u0394 acc@1 (end-of-CoT \u2212 prompt-end, shared rows)",
+        "legend_labels": [
+          "generic (test_1000)",
+          "GPQA transfer"
+        ],
+        "xticklabels": [
+          "Qwen3.5-0.8B",
+          "Qwen3.5-2B",
+          "Qwen3.5-4B",
+          "Qwen3.5-9B",
+          "Qwen3.5-27B",
+          "Qwen3.6-27B",
+          "Qwen3.8-27B"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "generic (test_1000)",
+      "GPQA transfer"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "commit": "07d4002c",
+  "render_id": "49c1ddd7954141a8",
+  "git_commit": "07d4002ccd13d40844bac5694509eba37db6fefe",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T16:30:28Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "OLMo-3.1-32B-Instruct (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.06775407779171895,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "OLMo-3.1-32B-Think (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.04154727793696275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "OLMo-3.1-32B-Think (pre_think)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.09312320916905444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "OLMo-3-7B-Instruct (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.16489361702127658,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "OLMo-3-7B-Think (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.3383084577114428,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "OLMo-3-7B-Think (pre_think)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.263681592039801,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen2.5-7B-Instruct (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.20222446916076844,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-0.8B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.0972972972972973,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-0.8B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.1076923076923077,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-27B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.10101010101010101,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-27B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.1970649895178197,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-2B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.05519053876478318,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-2B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.1297709923664122,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-4B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.1243455497382199,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-4B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.18631178707224336,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.11925465838509317,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.09114583333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.6-27B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.0948905109489051,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.6-27B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.15182186234817813,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.8-27B (prompt_last)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.10256410256410256,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.8-27B (cot_boundary)",
+      "GPQA same-question retrieval acc@1 (cosine)": 0.008264462809917356,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006273525721455458,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005319148936170213,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005055611729019211,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.009009009009009009,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.07692307692307693,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006313131313131313,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.010482180293501049,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006570302233902759,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.03816793893129771,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006544502617801047,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.019011406844106463,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006211180124223602,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.013020833333333334,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005213764337851929,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.010121457489878543,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005341880341880342,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006887052341597796,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "GPQA same-question retrieval acc@1 (cosine)",
+        "legend_labels": [
+          "chance",
+          "same-question acc@1 (transfer)"
+        ],
+        "xticklabels": [
+          "OLMo-3.1-32B-Instruct (prompt_last)",
+          "OLMo-3.1-32B-Think (cot_boundary)",
+          "OLMo-3.1-32B-Think (pre_think)",
+          "OLMo-3-7B-Instruct (prompt_last)",
+          "OLMo-3-7B-Think (cot_boundary)",
+          "OLMo-3-7B-Think (pre_think)",
+          "Qwen2.5-7B-Instruct (prompt_last)",
+          "Qwen3.5-0.8B (prompt_last)",
+          "Qwen3.5-0.8B (cot_boundary)",
+          "Qwen3.5-27B (prompt_last)",
+          "Qwen3.5-27B (cot_boundary)",
+          "Qwen3.5-2B (prompt_last)",
+          "Qwen3.5-2B (cot_boundary)",
+          "Qwen3.5-4B (prompt_last)",
+          "Qwen3.5-4B (cot_boundary)",
+          "Qwen3.5-9B (prompt_last)",
+          "Qwen3.5-9B (cot_boundary)",
+          "Qwen3.6-27B (prompt_last)",
+          "Qwen3.6-27B (cot_boundary)",
+          "Qwen3.8-27B (prompt_last)",
+          "Qwen3.8-27B (cot_boundary)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      }
+    ],
+    "series": [
+      "chance",
+      "same-question acc@1 (transfer)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
