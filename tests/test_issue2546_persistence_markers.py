@@ -86,6 +86,13 @@ from pathlib import Path
 
 import pytest
 
+# Feature-neutral overflow-repo constant (r20 differential): imported from hub
+# — which defines it on BOTH sides of the fix — never from G, where the import
+# is round-20-added and a pre-fix run would die on setup AttributeError.
+from explore_persona_space.orchestrate.hub import (
+    DEFAULT_OVERFLOW_REPO as OVERFLOW_REPO,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -701,14 +708,14 @@ class TestCanonicalDestinationGate:
         monkeypatch.setattr(
             G,
             "_upload",
-            _fake_upload_seq_factory(calls, result=f"{G.DEFAULT_OVERFLOW_REPO}/{self.DEST}"),
+            _fake_upload_seq_factory(calls, result=f"{OVERFLOW_REPO}/{self.DEST}"),
         )
 
         with pytest.raises(RuntimeError, match="did not land canonically") as ei:
             G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
 
         # The refusal names BOTH repos (effective + canonical).
-        assert G.DEFAULT_OVERFLOW_REPO in str(ei.value)
+        assert OVERFLOW_REPO in str(ei.value)
         assert G.DEFAULT_DATASET_REPO in str(ei.value)
         # Only the folder upload was attempted — never a marker upload.
         assert len(calls) == 1 and calls[0]["is_dir"] is True
@@ -731,9 +738,7 @@ class TestCanonicalDestinationGate:
         monkeypatch.setattr(
             G,
             "_upload",
-            _fake_upload_factory(
-                captured, result=f"{G.DEFAULT_OVERFLOW_REPO}/{dest}/_complete.json"
-            ),
+            _fake_upload_factory(captured, result=f"{OVERFLOW_REPO}/{dest}/_complete.json"),
         )
         with pytest.raises(RuntimeError, match="did not land canonically"):
             G._mirror_capture_marker(done_p, dest, {"fingerprint": {}})
@@ -753,9 +758,7 @@ class TestCanonicalDestinationGate:
         monkeypatch.setattr(
             G,
             "_upload",
-            _fake_upload_seq_factory(
-                calls, result=f"{G.DEFAULT_OVERFLOW_REPO}/{self.DEST}/_complete.json"
-            ),
+            _fake_upload_seq_factory(calls, result=f"{OVERFLOW_REPO}/{self.DEST}/_complete.json"),
         )
         with pytest.raises(RuntimeError, match="did not land canonically"):
             G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
