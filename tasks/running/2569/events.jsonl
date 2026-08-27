@@ -346,3 +346,4 @@
 {"ts": "2026-08-27T01:16:31Z", "kind": "phase-sae-ctx-2569", "version": 1, "by": "issue779", "note": "sae_ctx done (fve=0.9030 l0=103.3 g4=PASS)", "sentinel_fp": "97147c14c60db3b7", "sentinel_path": "/workspace/logs/issue-2569-phase-sae-ctx-2569-1787793391.json"}
 {"ts": "2026-08-27T01:16:39Z", "kind": "epm:progress", "version": 105, "by": "poll_pipeline", "note": "phase transition: sae_ctx_train -> feature_map", "phase": "feature_map", "pod": "pod-2569-rows"}
 {"ts": "2026-08-27T01:25:57Z", "kind": "phase-featmap-2569", "version": 1, "by": "issue779", "note": "leg4 done (d_alive_1pct=1276, union=2150, r2_median=0.2523)", "sentinel_fp": "1975aa2677d26b7a", "sentinel_path": "/workspace/logs/issue-2569-phase-featmap-2569-1787793687.json"}
+{"ts": "2026-08-27T01:26:05Z", "kind": "epm:progress", "version": 106, "by": "poll_pipeline", "note": "phase transition: feature_map -> mine", "phase": "mine", "pod": "pod-2569-rows"}
