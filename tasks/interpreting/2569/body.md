@@ -1,7 +1,7 @@
 ---
-title: 'Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge
-  gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and
-  a cross-model operator atlas'
+title: The layer-19 context-answer map reaches its population linear ceiling with
+  reproducible singular structure, contracts only at layer 26, and no gate metric
+  separates from its panel (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-25T06:45:51Z'
