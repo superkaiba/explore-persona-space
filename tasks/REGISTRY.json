@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2628,
+  "highest_id": 2629,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12560,6 +12560,13 @@
       "path": "tasks/proposed/2628",
       "status": "proposed",
       "title": "Autonomous sessions must paste raw concern-id slugs into clean-result prose \u2014 Lens 14 vs the no-opaque-codes rule"
+    },
+    "2629": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2629",
+      "status": "proposed",
+      "title": "Extend the byte/bit-identical ban family to nominalized forms (byte-identity slipped the audit in #2587)"
     },
     "263": {
       "has_clean_result": true,
