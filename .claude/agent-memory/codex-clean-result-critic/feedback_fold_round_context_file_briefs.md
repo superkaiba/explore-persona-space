@@ -86,6 +86,31 @@ Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
   `^---(BEGIN|END) .*---$` collisions — a matching line inside
   SPEC/lens/body would corrupt the envelope strip.
 
+Three fold-RE-GATE patterns that recur PER FOLD on a multi-fold issue
+(#2564 r8 k100 fold, 2026-08-27; each also seen at the r6 ffr fold):
+- **Methodology-pointer staleness recurs at EVERY fold re-gate**: the
+  9a-quater re-export runs only after this gate PASSes, so the body's
+  top `**Methodology:**` pointer + doc are ALWAYS stale w.r.t. the
+  just-folded round at compose time. Verify the staleness yourself
+  (blob==live-doc, k100 row absent, doc!=body `## Methodology`) and
+  compose it as a NEUTRAL-facts emphasis check (pointer target, what
+  the doc lacks, the 9a-quater timing, the r6 precedent id
+  `methodology-export-stale-after-fold`) — never pre-judge
+  blocker-vs-procedural, and never suppress it.
+- **Footer-only binding-concern placement recurs per fold**: each fold's
+  code-review residuals land as one footer "Advisory residuals"
+  paragraph even when the ledger carries CONCERN severity (body label
+  "advisory" != ledger severity; #2564 k100: 2 of 3 were CONCERN, one
+  with a `verified-open` event). Compose the PLACEMENT FACT block
+  (footer-only, no in-span mention, no deferred marker, check-65
+  placement-blind per #2535, the r6 in-span-move precedent) + the
+  not-pre-judged framing.
+- **Explicit brief round beats the fold-cycle-restart inference**: a
+  brief saying "series at v<r-1>; posts as v<r>" continues the series
+  numbering across folds (head sentinel == posted version, no offset)
+  even though other issues' fold cycles restart at 1 — the #823-r8
+  explicit-brief-wins rule, confirmed again here.
+
 Two more delta/reconciler-round compose patterns (#1901 mlp-scaling-densify
 r2, 2026-08-25):
 - **Truncated verifier finding-lists get a composer recompute envelope**:
