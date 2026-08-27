@@ -1772,6 +1772,70 @@ def token_count_equality_table(inputs: dict, out_dir: Path) -> list[Path]:
     return [md_path, json_path]
 
 
+def fig_intrusion_rates(inputs: dict, out_dir: Path) -> list[Path]:
+    """Per-cell CJK stray-character intrusion rates: 9B this run vs 7B parent.
+
+    Reads the analyzer-round scan (``intrusion_scan_2587.json``) and the
+    parent's committed audit (``intrusion_audit.json`` @ d313b856, #2564).
+    The answer-language cell is excluded (its instructed-Chinese arm makes
+    CJK content compliance, not intrusion); the one-word query pilot has no
+    parent counterpart and renders 9B-only. Wald 95% intervals per cell.
+    """
+    scan = inputs["intrusion"]
+    parent = inputs["parent_intrusion"]["rollouts"]["per_arm"]
+    cells = [c for c in scan["per_cell"] if c != "answer_language"]
+    rate9 = {c: scan["per_cell"][c]["intruded"] / scan["per_cell"][c]["total"] for c in cells}
+    order = sorted(cells, key=lambda c: -rate9[c])
+    ticks = np.arange(len(order), dtype=np.float64)
+
+    def _wald_offsets(k: int, n: int) -> tuple[float, float]:
+        """Wald 95% interval -> non-negative percent offsets (gotchas xerr rule)."""
+        p = k / n
+        half = 1.96 * float(np.sqrt(max(p * (1.0 - p), 0.0) / n))
+        return 100.0 * min(half, p), 100.0 * min(half, 1.0 - p)
+
+    c9 = paper_palette_role("primary")
+    c7 = paper_palette_role("baseline")
+    fig, ax = plt.subplots(figsize=(7.0, 4.6), layout="constrained")
+    h = 0.38
+    for off, side, color, lab in (
+        (-h / 2, "9b", c9, DISPLAY["qwen35_9b"]),
+        (+h / 2, "7b", c7, DISPLAY["qwen25_7b"] + " (parent)"),
+    ):
+        vals, los, his, ys = [], [], [], []
+        for i, cell in enumerate(order):
+            if side == "9b":
+                k, n = scan["per_cell"][cell]["intruded"], scan["per_cell"][cell]["total"]
+            else:
+                row = parent.get(cell)
+                if row is None:
+                    continue  # one-word query pilot: no parent counterpart
+                k, n = row["intruded"], row["total"]
+            lo_off, hi_off = _wald_offsets(k, n)
+            vals.append(100.0 * k / n)
+            los.append(lo_off)
+            his.append(hi_off)
+            ys.append(float(i) + off)
+        ax.barh(
+            ys,
+            vals,
+            height=h,
+            color=color,
+            xerr=np.vstack([los, his]),
+            error_kw={"elinewidth": 0.9},
+            label=lab,
+        )
+    ax.set_yticks(ticks)
+    ax.set_yticklabels([axis_label(c) for c in order])
+    ax.invert_yaxis()
+    ax.set_xlabel("rollouts containing any CJK character (%)")
+    ax.set_title("Stray-CJK intrusion per battery cell", loc="left")
+    ax.legend(loc="lower right")
+    paths = savefig_paper(fig, "fig_intrusion_rates", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
 # ── registry + CLI ─────────────────────────────────────────────────────
 
 # fig name -> (required input keys, renderer). Mechanically enumerable:
@@ -1800,6 +1864,7 @@ FIGS: dict[str, tuple[tuple[str, ...], object]] = {
     "lstar_sensitivity_twins": (("delta",), fig_lstar_sensitivity_twins),
     "pooling_twin_scatter": (("delta",), fig_pooling_twin_scatter),
     "think_leak_cap_hit_table": (("leakdir",), think_leak_cap_hit_table),
+    "intrusion_rates": (("intrusion", "parent_intrusion"), fig_intrusion_rates),
     "manipulation_check_table": (("manip9b", "manip7b"), manipulation_check_table),
     "token_count_equality_table": (("bank",), token_count_equality_table),
 }
@@ -1816,6 +1881,12 @@ _INPUT_SPECS: dict[str, tuple[str, str, str]] = {
     "manip9b": ("manip9b_json", "manipulation_check_2587.json (unit 5a)", "json"),
     "manip7b": ("manip7b_json", "parent manipulation_check.json (#2564)", "json"),
     "bank": ("bank_json", "bank_manifest.json (unit 1 + P0b token gates)", "json"),
+    "intrusion": ("intrusion_json", "intrusion_scan_2587.json (analyzer r1 CJK scan)", "json"),
+    "parent_intrusion": (
+        "parent_intrusion_json",
+        "parent intrusion_audit.json (#2564 @ d313b856)",
+        "json",
+    ),
     "leakdir": (
         "leak_caphit_dir",
         "harvested dir holding anchors_*.done.json + cap_hit_*.json",
@@ -1869,6 +1940,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument(
         "--bank-json", type=Path, default=Path("eval_results/issue_2587/bank_manifest.json")
+    )
+    p.add_argument(
+        "--intrusion-json",
+        type=Path,
+        default=Path("eval_results/issue_2587/intrusion_scan_2587.json"),
+    )
+    p.add_argument(
+        "--parent-intrusion-json",
+        type=Path,
+        default=Path("eval_results/issue_2564/intrusion_audit.json"),
     )
     p.add_argument("--leak-caphit-dir", type=Path, default=Path("eval_results/issue_2587"))
     p.add_argument("--style", default="neurips", choices=("neurips", "generic", "blog", "iclr"))
