@@ -1,0 +1,1 @@
+{"ts": "2026-08-27T20:59:51Z", "event": "raised", "concern_id": "artifact-attempt-cap", "severity": "BLOCKER", "summary": "The eight-load cap counts successful loads, allowing unbounded failed git/filesystem attempts and fleet-gate timeout multiplication.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
