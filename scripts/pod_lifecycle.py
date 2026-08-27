@@ -896,6 +896,90 @@ def _resolve_spec(
     )
 
 
+def _derived_extra_cones(issue: int) -> list[str]:
+    """Foreign-issue artifact cone dirs derived from the task's persisted plans (#2608).
+
+    Reads the UNION of ``tasks/<status>/<issue>/plans/v*.md`` (resolved via
+    ``task_workflow.find_task_path`` — never hand-built ``tasks/...`` paths)
+    through ``verify_carryover_inputs.extra_cones_for_plan``, returning the
+    sorted deduped ``(ood_)eval_results/issue_<M>`` / ``figures/issue_<M>``
+    cone dirs for foreign issues ``M != issue``.
+
+    FAIL-SOFT on EVERY error class (task not found, no plans dir, unreadable
+    plan, import failure): returns ``[]`` after printing a one-line stderr
+    note — cone derivation must never fail or stall a provision. An
+    empty/absent plans dir gets its own stderr note too (r3: the
+    missing-plans case was previously silent).
+    """
+    try:
+        # Scripts-dir bootstrap for module-mode consumers (#1296/#1304 pin in
+        # tests/test_backend_poll.py): idempotent, this file's dir IS scripts/.
+        scripts_dir = str(SCRIPT_DIR)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        import verify_carryover_inputs as _vci
+
+        from explore_persona_space.task_workflow import find_task_path
+
+        plans_dir = find_task_path(issue) / "plans"
+        plan_files = sorted(plans_dir.glob("v*.md"))
+        if not plan_files:
+            print(
+                f"NOTE: extra-cone derivation for issue {issue}: no persisted plans "
+                f"at {plans_dir} — no cones derived",
+                file=sys.stderr,
+            )
+            return []
+        cones: set[str] = set()
+        for p in plan_files:
+            cones.update(_vci.extra_cones_for_plan(p.read_text(encoding="utf-8"), issue))
+        return sorted(cones)
+    except Exception as exc:
+        # Fail-soft by contract (#2608): the note is the audit trail; the
+        # bootstrap-side audit legs + the workload's own input read remain
+        # the loud backstops.
+        print(f"NOTE: extra-cone derivation skipped for issue {issue}: {exc!r}", file=sys.stderr)
+        return []
+
+
+def merge_derived_extra_cones(env: dict[str, str], issue: int) -> dict[str, str]:
+    """UNION caller-exported ``BOOTSTRAP_EXTRA_CONES`` with plan-derived cones (#2608 r3).
+
+    The SHARED derive-and-merge choke point for BOTH public bootstrap paths:
+    ``pod.py provision`` (via :func:`_bootstrap_env`) and the manual
+    ``pod.py bootstrap <name>`` recovery (via pod.py's
+    ``_bootstrap_env_with_intent``). Order-stable dedupe, caller tokens
+    first, space-joined; prints the final set. Fail-soft end to end:
+    :func:`_derived_extra_cones` swallows every derivation error class into
+    ``[]`` after its one-line stderr note, and an empty union leaves ``env``
+    untouched. Mutates and returns ``env``.
+    """
+    merged: list[str] = []
+    for cone in (*env.get("BOOTSTRAP_EXTRA_CONES", "").split(), *_derived_extra_cones(issue)):
+        if cone not in merged:
+            merged.append(cone)
+    if merged:
+        env["BOOTSTRAP_EXTRA_CONES"] = " ".join(merged)
+        print(f"Extra sparse cones (caller + plan-derived): {' '.join(merged)}")
+    return env
+
+
+def _bootstrap_env(intent_label: str, issue: int | None) -> dict[str, str]:
+    """Child env for bootstrap_pod.sh: POD_INTENT + ISSUE + merged extra cones.
+
+    When ``issue`` is set, delegates the cone union to the shared
+    :func:`merge_derived_extra_cones` choke point (#2608 r3 — the same helper
+    the manual ``pod.py bootstrap`` path calls). On an empty union the caller
+    env is left untouched (fail-soft derivation included).
+    """
+    env = os.environ.copy()
+    env["POD_INTENT"] = intent_label
+    if issue is not None:
+        env["ISSUE"] = str(issue)
+        merge_derived_extra_cones(env, issue)
+    return env
+
+
 def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = None) -> int:
     """Run the existing bootstrap_pod.sh against a managed pod entry.
 
@@ -911,20 +995,24 @@ def _bootstrap(pod_name: str, intent_label: str = "custom", issue: int | None = 
     bootstrap_pod.sh consumes it LOCALLY (captured into ``ISSUE_VAL`` and
     baked into the ssh payload) — ssh forwards no env vars (#1739).
 
-    A pod that reads ANOTHER issue's committed artifacts declares the extra
-    cones via ``BOOTSTRAP_EXTRA_CONES`` (space-separated repo-relative dirs,
-    e.g. ``"eval_results/issue_722"``), exported before ``pod.py provision``
-    / ``pod.py bootstrap`` — it passes through the ``os.environ`` copy below.
+    ``BOOTSTRAP_EXTRA_CONES`` (space-separated repo-relative dirs, e.g.
+    ``"eval_results/issue_722"``) is AUTO-DERIVED from the task's persisted
+    plans when ``issue`` is set (#2608): the child env carries the UNION of
+    any caller-exported value (exported before ``pod.py provision`` /
+    ``pod.py bootstrap``) and the plan-cited foreign-issue
+    ``(ood_)eval_results/issue_<M>`` / ``figures/issue_<M>`` cone dirs
+    (``verify_carryover_inputs.extra_cones_for_plan``), so a pod that reads
+    ANOTHER issue's committed artifacts opens those cones by default.
+    Derivation is fail-soft (see :func:`_derived_extra_cones`) — a caller
+    export still works standalone and is never dropped. The manual
+    ``pod.py bootstrap <name>`` recovery path shares the same
+    :func:`merge_derived_extra_cones` choke point (#2608 r3).
     """
     print(f"\nRunning bootstrap on {pod_name} (intent={intent_label})...")
-    env = os.environ.copy()
-    env["POD_INTENT"] = intent_label
-    if issue is not None:
-        env["ISSUE"] = str(issue)
     return subprocess.call(
         ["bash", str(BOOTSTRAP_SCRIPT), pod_name],
         cwd=str(PROJECT_ROOT),
-        env=env,
+        env=_bootstrap_env(intent_label, issue),
     )
 
 
@@ -1187,6 +1275,23 @@ EXIT_STOPPED_POD_COLLISION = 76
 # capacity-retry pass may re-drive it), byte-identical to a pre-#2184 rc=1
 # wedge. That disposition is ACCEPTED by design (#2184 plan assumption 13).
 EXIT_CPU_LANE_DRY = 77
+
+# Exit code for a bootstrap-preflight failure (#2606): bootstrap_pod.sh step 10
+# ran the pod-side preflight and it FAILED — the pod is up, REGISTERED
+# (pods.conf + pods_ephemeral.json rows kept), and reachable, but its venv/env
+# is NOT experiment-ready. Joins the 75/76/77 structured-exit family: distinct
+# from 0 (pod ready), 1 (generic bootstrap crash — the #2060 default
+# auto-terminates that path), 75 (still-waiting), 76 (stopped-pod collision),
+# and 77 (CPU lane dry). The pod is deliberately KEPT ALIVE on this code — an
+# env-class failure on a healthy host is repairable over SSH, not a placement
+# fault, so the direct-CLI branch runs NO _record_bad_placement_loud and NO
+# _teardown_failed_provision; the router path (backends/runpod.py::launch)
+# catches this code at its provision relay and best-effort terminates by
+# EXACT id instead (autonomous dispatch has no operator to repair). Mirrored
+# (never imported) as bootstrap_pod.sh::EXIT_PREFLIGHT_FAILED and
+# backends/runpod.py::EXIT_BOOTSTRAP_PREFLIGHT_FAILED; 3-way parity pinned by
+# tests/test_bootstrap_pod_preflight_failloud.py.
+EXIT_BOOTSTRAP_PREFLIGHT_FAILED = 78
 
 
 class WaitForCapacityStillWaiting(RunPodError):
@@ -2605,6 +2710,45 @@ def _provision_wait_register_bootstrap(
             file=sys.stderr,
         )
         rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
+    if rc == EXIT_BOOTSTRAP_PREFLIGHT_FAILED:
+        # #2606: bootstrap completed its setup steps but the pod-side preflight
+        # FAILED (bootstrap_pod.sh step 10 exits EXIT_PREFLIGHT_FAILED=78).
+        # Env-class failure on a healthy host: deliberately NO
+        # _record_bad_placement_loud (not a placement fault) and NO
+        # _teardown_failed_provision (the pod stays ALIVE + registered for
+        # repair over SSH) — contrast the generic rc != 0 branch below, which
+        # records bad placement and auto-terminates by #2060 default.
+        name_suffix = getattr(args, "name_suffix", None)
+        suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+        print(
+            f"\nBootstrap completed its setup steps on {name}, but the pod-side "
+            f"preflight FAILED — the pod is ALIVE and registered (pods.conf + "
+            f"pods_ephemeral.json rows kept), and its venv/env is NOT "
+            f"experiment-ready.\n"
+            f"Repair pointers:\n"
+            f"  - raw preflight rc: the PREFLIGHT-FAILED-AT-BOOTSTRAP log line above "
+            f"(rc=255 = ssh transport)\n"
+            f"  - errno-116/ESTALE venv failures: overlay venv at /root/eps-venv + "
+            f"UV_NO_SYNC (.claude/rules/gotchas.md, pod venv rebuilds)\n"
+            f"  - re-check: ssh {name} 'cd /workspace/explore-persona-space && "
+            f"uv run python -m explore_persona_space.orchestrate.preflight'\n"
+            f"  - discard: python scripts/pod.py terminate "
+            f"--issue {args.issue}{suffix_hint}",
+            file=sys.stderr,
+        )
+        print(
+            "PREFLIGHT: FAIL rc=78 (mapped sentinel code; raw preflight rc in the "
+            "PREFLIGHT-FAILED-AT-BOOTSTRAP log line)",
+            file=sys.stderr,
+        )
+        # Machine-greppable fail-loud provision verdict (#1931 contract): the
+        # LAST stderr line before exit; reason=preflight discriminates this
+        # kept-alive failure from the generic auto-terminated rc!=0 branch.
+        print(
+            f"BOOTSTRAP-FAILED pod={name} rc={EXIT_BOOTSTRAP_PREFLIGHT_FAILED} reason=preflight",
+            file=sys.stderr,
+        )
+        sys.exit(EXIT_BOOTSTRAP_PREFLIGHT_FAILED)
     if rc != 0:
         if keep_flag:
             # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so
@@ -2618,7 +2762,8 @@ def _provision_wait_register_bootstrap(
                 f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
                 f"Investigate, then either re-run "
                 f"`POD_INTENT={intent_label} ISSUE={args.issue} "
-                f"bash scripts/bootstrap_pod.sh {name}` or\n"
+                f"python scripts/pod.py bootstrap {name}` "
+                f"(derives BOOTSTRAP_EXTRA_CONES from the plan, #2608) or\n"
                 f"`python scripts/pod.py terminate --issue {args.issue}{suffix_hint}` to discard.",
                 file=sys.stderr,
             )
@@ -2653,6 +2798,11 @@ def _provision_wait_register_bootstrap(
         print(f"BOOTSTRAP-FAILED pod={name} rc={rc}", file=sys.stderr)
         sys.exit(rc)
 
+    # #2606: bootstrap exit 0 now IMPLIES the pod-side preflight ran and PASSED
+    # (bootstrap_pod.sh step 10 exits EXIT_PREFLIGHT_FAILED=78 on any preflight
+    # failure, and neither `pod.py provision` nor `pod.py bootstrap` ever
+    # passes --no-preflight), so the PASS line is truthful by construction.
+    print("PREFLIGHT: PASS")
     # Machine-greppable success verdict (#1931). Emitted on BOTH streams via one
     # token literal (grep contract: the token appears exactly once in this file):
     # stdout for callers reading captured stdout, stderr so a 2>&1-less stderr

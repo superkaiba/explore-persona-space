@@ -73,3 +73,4 @@
 - [Plan-disclosure edits need a NEW version](feedback_plan_disclosure_edit_needs_new_version.md) — #2123 Arm W FAILs in-place plans/vK.md edits fleet-wide (probes repo root from worktrees); land sanctioned disclosure updates via task.py new-plan-version (#2336 r3)
 - [Scratch sparse worktree config scope](reference_scratch_sparse_worktree_config.md) — `git -C <wt> config` w/o --worktree writes SHARED .git/config (sparseCheckout pollution, #2537); baseline-tree recipe + --show-origin repair
 - [verify_uploads parity + C901 pin](reference_verify_uploads_parity_and_c901.md) — old-revision parity copies must live under <repo>/scripts/ (REPO_ROOT from __file__); LIVE_WORKFLOW_HELPERS diffs run the C901≤15 policy pin — extract helpers, never noqa (#2578)
+- [pytest collection-print capture](reference_pytest_collection_print_capture.md) — default capture swallows collection-phase plugin prints; a subprocess-pytest sentinel assert needs `-s` (#2369 Test A)

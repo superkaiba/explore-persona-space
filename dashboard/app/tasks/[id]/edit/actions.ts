@@ -77,9 +77,12 @@ export async function saveTaskBody(taskId: number, body: string): Promise<Action
   const tmpPath = path.join(tmp, `body-${id}.md`);
   await writeFile(tmpPath, body, "utf8");
   try {
+    // --allow-noop (#2362): a user opening the editor and saving without
+    // changes is a legitimate idempotent save — without the flag the #2333
+    // byte-identical no-op guard would turn it into a user-facing error.
     await execFileP(
       resolveUv(),
-      ["run", "python", "scripts/task.py", "set-body", String(id), "--file", tmpPath],
+      ["run", "python", "scripts/task.py", "set-body", String(id), "--file", tmpPath, "--allow-noop"],
       { cwd: REPO_ROOT, timeout: 30_000 },
     );
   } catch (e) {

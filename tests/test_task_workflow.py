@@ -933,6 +933,115 @@ def test_has_goal_h2_matches_inject_semantics():
     assert _has_goal_h2("plain text mentioning the goal, no heading") is False
 
 
+# ─── set_body: byte-identical no-op guard (incident #2333) ──────────────────
+#
+# A set_body write whose incoming (frontmatter-stripped, trailing-newline-
+# normalized) body is byte-identical to the on-disk body region AND whose
+# roundtrip frontmatter keys (`paper`/`abstract`) change nothing is a
+# provable no-op: `_git_commit` would silently early-return with nothing
+# staged, and a downstream marker could then claim body edits that never
+# landed (#2333, interpretation round 4 — the phantom-body-edit channel).
+# The guard raises `SetBodyNoOpError` BEFORE any side effect; the escape is
+# `allow_noop=True` (CLI: --allow-noop) for deliberate idempotent
+# re-application.
+
+_NOOP_BODY = "# T\n\n## Goal\n\nMeasure the thing precisely.\n\nDistinctive round content.\n"
+
+
+def test_set_body_refuses_byte_identical_noop(fake_repo):
+    """The #2333 replay: re-applying the exact on-disk body raises, leaves
+    body.md byte-unchanged, and the message names the escape (--allow-noop)
+    plus the incident (#2333)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    tw.set_body(new_id, _NOOP_BODY)  # land the body once (normalizes trailing newline)
+    body_path = repo / "tasks" / "proposed" / str(new_id) / "body.md"
+    before = body_path.read_text()
+    with pytest.raises(tw.SetBodyNoOpError) as exc:
+        tw.set_body(new_id, _NOOP_BODY)
+    msg = str(exc.value)
+    assert "--allow-noop" in msg
+    assert "#2333" in msg
+    assert body_path.read_text() == before  # body.md unchanged on refusal
+
+
+def test_set_body_noop_refusal_writes_no_snapshot_and_no_commit(fake_repo):
+    """A refusal is side-effect-free: `snapshot_original=True` must NOT have
+    written original-body.md, and no git commit lands (pins the guard's
+    hoist ABOVE the snapshot copy AND the write/commit tail)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    tw.set_body(new_id, _NOOP_BODY)
+    orig = repo / "tasks" / "proposed" / str(new_id) / "original-body.md"
+    commits_before = _git_log_count(repo)
+    with pytest.raises(tw.SetBodyNoOpError):
+        tw.set_body(new_id, _NOOP_BODY, snapshot_original=True)
+    assert not orig.exists()
+    assert _git_log_count(repo) == commits_before
+
+
+def test_set_body_allow_noop_overrides(fake_repo):
+    """`allow_noop=True` is the deliberate idempotent-re-application escape."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    tw.set_body(new_id, _NOOP_BODY)
+    tw.set_body(new_id, _NOOP_BODY, allow_noop=True)  # no raise
+    _, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert "Distinctive round content." in body
+
+
+def test_set_body_identical_body_with_roundtrip_key_change_writes(fake_repo):
+    """AC3 first half: an identical body accompanied by a REAL roundtrip-key
+    effect (`paper: true` newly opting in) is NOT a no-op — the write has a
+    real frontmatter + REGISTRY effect and must proceed."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    tw.set_body(new_id, _NOOP_BODY)
+    tw.set_body(new_id, "---\npaper: true\n---\n" + _NOOP_BODY)  # no raise
+    fm, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert tw.is_paper_task(fm)  # the carry installed the opt-in
+    assert "Distinctive round content." in body
+
+
+def test_set_body_identical_body_with_unchanged_roundtrip_key_refuses(fake_repo):
+    """AC3 second half: a REPEATED identical write (roundtrip key present but
+    value unchanged) IS a provable no-op and refuses."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    incoming = "---\npaper: true\n---\n" + _NOOP_BODY
+    tw.set_body(new_id, incoming)  # installs paper: true + the body
+    with pytest.raises(tw.SetBodyNoOpError):
+        tw.set_body(new_id, incoming)  # paper unchanged (True == True) → no-op
+
+
+def test_set_body_trailing_newline_only_difference_is_noop(fake_repo):
+    """Normalization parity: an incoming body WITHOUT the trailing newline
+    vs the on-disk body WITH one compares equal after the same
+    normalization `_write_body` receives — still refused."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    tw.set_body(new_id, _NOOP_BODY)  # on-disk body ends with "\n"
+    with pytest.raises(tw.SetBodyNoOpError):
+        tw.set_body(new_id, _NOOP_BODY.rstrip("\n"))
+
+
+def test_set_body_different_body_still_writes(fake_repo):
+    """Regression control: a genuinely different body writes with no flag."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="seed body"))
+    tw.set_body(new_id, _NOOP_BODY)
+    changed = _NOOP_BODY + "\nOne appended sentence.\n"
+    tw.set_body(new_id, changed)  # no raise, no flag
+    _, body = tw._split_frontmatter(
+        (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    )
+    assert "One appended sentence." in body
+
+
 # ─── set_body: duplicate-frontmatter strip ─────────────────────────────────
 #
 # Regression: task #389 (2026-05-26) — the analyzer wrote draft body files

@@ -5,6 +5,8 @@
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
 - [Twin brief excluded the disputed question](feedback_twin_brief_excluded_disputed_question.md) — PASS = non-coverage, not rebuttal
+- [Fires-on-incident headline needs real-artifact acceptance; expected-0 vs ≤2 gate is coherent](feedback_fires_on_incident_headline_needs_real_artifact_acceptance.md) — #2367 r1
+- [Class-fix regex vs corpus spellings; silence-safe checks need surface-pinning tests](feedback_class_fix_regex_corpus_spelling_and_surface_pinning_tests.md) — #2367 r2
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md)
 - [Gate object-identity unchecked](feedback_claude_gate_object_identity_unchecked.md) — read the NAMED function (#2329 r2)
 - [Gate-design flaw vs recoverable robustness read](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on misfire
@@ -116,6 +118,15 @@
 - [Claude interp verifies fix PROSE, not the H3 heading/caption](feedback_claude_interp_verifies_fix_prose_not_heading.md) — heading overclaimed "three reverse"; caption argmax check (#2552 r2)
 
 - [Lens 10 capsule cap not binding; Lens 11 same-H3 + Lens 2 generator-naming ARE](feedback_lens10_capsule_cap_not_binding_lens11_same_h3_binding.md) — #2564 crc r2; SPEC wins both directions
+- [Superlative rank claims + closure location requirements](feedback_superlative_rank_claims_and_closure_location_requirements.md) — compute both headroom definitions; uphold disposition-claims-not-landed, reject invented location demands (#2564 r2)
+- [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidates
+- [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses
+- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — pre-pass PASS ≠ spec-text PASS
+- [Bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md)
+- [Claude interp verifies fix PROSE, not the H3 heading/caption](feedback_claude_interp_verifies_fix_prose_not_heading.md) — heading overclaimed "three reverse"; caption argmax check (#2552 r2)
+
+- [Lens 10 capsule cap not binding; Lens 11 same-H3 + Lens 2 generator-naming ARE](feedback_lens10_capsule_cap_not_binding_lens11_same_h3_binding.md) — #2564 crc r2; SPEC wins both directions
+- [Lens 14 placement list binding; Lens 8 trailing clause FAILs](feedback_lens14_placement_list_binding_and_lens8_trailing_clause.md) — footer-only CONCERN ack fails placement-blind check-65; prereg paraphrase + companion-embedding over-reads rejected (#2564 crc r8)
 - [Superlative rank claims + closure location requirements](feedback_superlative_rank_claims_and_closure_location_requirements.md) — compute both headroom definitions; uphold disposition-claims-not-landed, reject invented location demands (#2564 r2)
 - [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidates
 - [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses

@@ -28,3 +28,4 @@
 - [Held clean-result draft is the caption fix target](feedback_heldbody_caption_fix_target.md) — fix-verification rounds: caption fixes live in /tmp/issue-<N>-clean-result-body-held.md; pass it explicitly
 - [CONCERN:: ledger grammar](feedback_concern_row_ledger_grammar.md) — always instruct `CONCERN:: <SEV> <kebab-id> <summary>`; pipe/key=value rows are validator-rejected
 - [Compose-time ledger evidence + plan readlink](feedback_compose_time_ledger_snapshot.md) — list-concerns --open-only is one signal, never ground truth; adjudicated counts get do-not-re-raise + evidence inlined; readlink plan.md
+- [Fix-verification closure table](feedback_fix_verification_closure_table.md) — closure rounds get a Round-1 Finding Closure section first (VERIFIED-ADDRESSED enum + quoted landed line); PASS tied to all-verified + clean delta

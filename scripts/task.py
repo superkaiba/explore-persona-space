@@ -70,6 +70,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     NewTaskRequest,
     PlanVersionMismatch,
     ReconcileReport,
+    SetBodyNoOpError,
     add_tag,
     address_concern,
     audit,
@@ -1173,7 +1174,7 @@ def _assert_body_nontrivial(text: str, *, source: str) -> None:
 
 def cmd_set_body(args: argparse.Namespace) -> None:
     """CLI handler for `task.py set-body <N> [--body|--file|stdin] [--snapshot]
-    [--allow-stub] [--allow-goal-drop]`.
+    [--allow-stub] [--allow-goal-drop] [--allow-noop]`.
 
     Reads the new body from one of three sources (--body string, --file
     path, or stdin), runs the non-trivial-body assertion via
@@ -1186,7 +1187,12 @@ def cmd_set_body(args: argparse.Namespace) -> None:
     `workflow: v2` task writing a report body (positional
     `<!-- report-v1 -->` sentinel) is AUTO-EXEMPT (#2197) — no flag
     needed on the v2 happy path; pass `--allow-goal-drop` for any other
-    deliberate drop.
+    deliberate drop. The library-side byte-identical no-op guard
+    (incident #2333) raises `SetBodyNoOpError` when the incoming body is
+    identical to the current body.md and no roundtrip frontmatter key
+    changes — a provable no-op is the phantom-body-edit channel — caught
+    here the same way; pass `--allow-noop` for a deliberate idempotent
+    re-application of an already-landed body.
     """
     if args.body is not None:
         new_body = args.body
@@ -1215,8 +1221,9 @@ def cmd_set_body(args: argparse.Namespace) -> None:
             new_body,
             snapshot_original=args.snapshot,
             allow_goal_drop=args.allow_goal_drop,
+            allow_noop=args.allow_noop,
         )
-    except GoalH2DropError as exc:
+    except (GoalH2DropError, SetBodyNoOpError) as exc:
         # Clean one-line refusal (no raw traceback) — matches the
         # `--allow-stub` guard's SystemExit style.
         raise SystemExit(str(exc)) from exc
@@ -2067,7 +2074,9 @@ def main() -> None:
             "#389, 2026-05-26). The strip is idempotent. If you need to change a "
             "frontmatter field, use the dedicated mutators (`set-title`, "
             "`set-clean-result`, `add-tag`, `remove-tag`, `set-goal`) — the "
-            "frontmatter inside the new content is discarded, not merged."
+            "frontmatter inside the new content is discarded, not merged. A "
+            "byte-identical no-op write REFUSES (SetBodyNoOpError, incident "
+            "#2333) unless --allow-noop is passed."
         ),
     )
     p.add_argument("number", type=int)
@@ -2106,6 +2115,21 @@ def main() -> None:
             "`## Motivation`, no `## Goal`; `goal:` frontmatter survives), and "
             "paper-stub writes via `paper: true`. The flag remains for any "
             "other deliberate drop."
+        ),
+    )
+    p.add_argument(
+        "--allow-noop",
+        action="store_true",
+        help=(
+            "allow a byte-identical write. Without this flag set-body REFUSES "
+            "(SetBodyNoOpError) when the incoming body is identical to the "
+            "current body.md and no roundtrip frontmatter key (paper / "
+            "abstract) changes value — a provable no-op is the "
+            "phantom-body-edit channel (incident #2333: an agent edited one "
+            "copy of the body, handed set-body a different copy, git no-op'd "
+            "on identical bytes, and the marker claimed edits that never "
+            "landed). The ONE legitimate use is a deliberate idempotent "
+            "re-application of an already-landed body."
         ),
     )
     p.set_defaults(func=cmd_set_body)

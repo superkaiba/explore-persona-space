@@ -1,0 +1,92 @@
+{
+  "commit": "a9dcdc38+dirty",
+  "render_id": "9fed267d273d4a0f",
+  "git_commit": "a9dcdc38bcb20f62b6244e12049d455a2ea03478",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue779_ctxansviz_figures.py",
+  "created": "2026-08-27T14:47:48Z",
+  "figsize": [
+    10.5,
+    4.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "PCA (first two components)",
+        "xlabel": "PC 1",
+        "ylabel": "PC 2",
+        "legend_labels": [
+          "contexts",
+          "predicted answers",
+          "true answers"
+        ],
+        "xticklabels": [
+          "\u221260",
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60"
+        ],
+        "yticklabels": [
+          "\u221240",
+          "\u221230",
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60"
+        ]
+      },
+      {
+        "title_left": "UMAP \u2014 20,000 of 959,844 rows shown",
+        "xlabel": "UMAP 1",
+        "ylabel": "UMAP 2",
+        "xticklabels": [
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      }
+    ],
+    "series": [
+      "contexts",
+      "predicted answers",
+      "true answers"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

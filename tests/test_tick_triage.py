@@ -1411,3 +1411,180 @@ def test_api_error_probe_incident_1689_content_string(state_dir, monkeypatch, tm
     verdict, reason = tick_triage.triage(1689, "issue")
     assert verdict == "STALE-REDRIVE", (verdict, reason)
     assert "api-error-after-marker" in reason
+
+
+# ── live-subagent screen (#2361) ────────────────────────────────────────────
+# All #2361 tests compute `now = time.time()` per test, build events + agent
+# mtimes relative to THAT now, and thread `triage(..., now=now)` — never the
+# module-level NOW constant (the #2369 wall-clock-aging trap).
+
+
+def _event_at(now: float, kind: str, age_s: float) -> dict:
+    """Event row with ts relative to an EXPLICIT per-test ``now``."""
+    return {"kind": kind, "ts": _iso(now - age_s), "note": ""}
+
+
+def _subagent_fixture(
+    tmp_path: Path,
+    now: float,
+    agent_age_s: float | None,
+    agent_name: str = "agent-aplanner-a1b2c3.jsonl",
+    create_dir: bool = True,
+) -> str:
+    """Session transcript at ``tmp_path/<sid>.jsonl`` plus the sibling
+    ``<sid>/subagents/`` dir (the empirically-verified harness layout,
+    #2361). When ``agent_age_s`` is not None, writes ``agent_name`` under
+    subagents/ with mtime = now - agent_age_s (negative = future-dated).
+    Returns the TRANSCRIPT path (what ``_own_session_transcript_path`` is
+    monkeypatched to return)."""
+    sid = "sess2361"
+    transcript = tmp_path / f"{sid}.jsonl"
+    transcript.write_text("")  # content is never read by the subagent screen
+    if create_dir:
+        subdir = tmp_path / sid / "subagents"
+        subdir.mkdir(parents=True, exist_ok=True)
+        if agent_age_s is not None:
+            agent = subdir / agent_name
+            agent.write_text('{"type": "assistant"}\n')
+            mtime = now - agent_age_s
+            os.utime(agent, (mtime, mtime))
+    return str(transcript)
+
+
+def test_subagent_live_suppresses_stale_redrive(state_dir, monkeypatch, tmp_path):
+    """Direction 1 (#2361 acceptance 1): PARK status `planning` + stale
+    marker + a FRESH agent-*.jsonl under this session's subagents/ dir =>
+    HEALTHY with the `subagent-live` reason prefix — a live planning chain
+    is never re-driven into a duplicate planner spawn."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=120)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "HEALTHY", reason
+    assert "subagent-live" in reason
+
+
+@pytest.mark.parametrize("status", ["planning", "running"])
+def test_subagent_live_suppresses_at_park_and_active(state_dir, monkeypatch, tmp_path, status):
+    """The screen fires on BOTH stale branches — a PARK status (the #2361
+    incident's `planning`) and an ACTIVE status (a live analyzer subagent
+    after the poll chain died) — mirroring the #1051/#1629 scope."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=300)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, status, [_event_at(now, "epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "HEALTHY", reason
+    assert "subagent-live" in reason
+
+
+def test_stale_agent_transcript_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """Direction 2 (#2361 acceptance 2): an agent transcript OLDER than the
+    window is a dead chain — the STALE-REDRIVE recovery for the
+    alive-but-stalled-at-PARK class is NOT blunted."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=7200)  # >> the 1500s default window
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_no_subagents_dir_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """No subagents/ dir at all (a session that never spawned an Agent-tool
+    subagent) — the glob yields nothing, the screen misses, STALE-REDRIVE
+    preserved."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=None, create_dir=False)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_meta_sidecar_alone_does_not_suppress(state_dir, monkeypatch, tmp_path):
+    """Glob pin (#2361 plan-critic round): a fresh `agent-*.meta.json`
+    sidecar ALONE (spawn-time metadata; no appended `.jsonl`) must NOT
+    suppress — pins the `agent-*.jsonl` glob against future widening (the
+    sidecar carries no liveness signal)."""
+    now = time.time()
+    path = _subagent_fixture(
+        tmp_path, now, agent_age_s=120, agent_name="agent-aplanner-a1b2c3.meta.json"
+    )
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_kill_switch_disables_subagent_probe(state_dir, monkeypatch, tmp_path):
+    """`EPM_TICK_SUBAGENT_PROBE=0` restores pre-#2361 behavior: a fresh
+    agent transcript no longer suppresses the STALE-REDRIVE."""
+    monkeypatch.setenv("EPM_TICK_SUBAGENT_PROBE", "0")
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=120)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_subagent_probe_error_fails_toward_ticking(state_dir, monkeypatch, tmp_path):
+    """Acceptance 3 (#2361): ANY classification error inside the screen is
+    eaten by the blanket guard — never raises into triage(), verdict falls
+    back to STALE-REDRIVE (the #1629/#1695 fail-toward-ticking posture)."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=120)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+
+    def boom():
+        raise RuntimeError("window resolution blew up")
+
+    monkeypatch.setattr(tick_triage, "subagent_fresh_s", boom)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_future_dated_agent_transcript_not_latched(state_dir, monkeypatch, tmp_path):
+    """A future-dated agent-file mtime (clock skew) is skipped, never
+    latched as fresh — mirrors the #1629 future-row skip."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=-3600)  # mtime 1h in the FUTURE
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_teardown_verdicts_unaffected_by_subagent_screen(state_dir, monkeypatch, tmp_path):
+    """Teardown verdicts are structurally out of the screen's reach (it
+    lives inside the STALE-REDRIVE branch only): a terminal status with a
+    fresh agent transcript still tears the cron down."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=120)
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "awaiting_promotion", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "GATE-TRANSITION", "first gate crossing fires the push branch"
+    verdict, _ = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "TERMINAL"
+
+
+def test_liveness_and_human_screens_precede_subagent_screen(state_dir, monkeypatch, tmp_path):
+    """Cascade order pin: with BOTH a fresh human transcript row and a
+    fresh agent transcript present, the reason carries the `human-active`
+    prefix — the #2361 screen runs THIRD, only when the #1051 and #1629
+    screens found nothing."""
+    now = time.time()
+    path = _subagent_fixture(tmp_path, now, agent_age_s=120)
+    row = _transcript_row("human", 0)
+    row["timestamp"] = _iso_ms(now - 60)  # fresh relative to the per-test now
+    Path(path).write_text(json.dumps(row) + "\n")
+    monkeypatch.setattr(tick_triage, "_own_session_transcript_path", lambda: path)
+    _patch_issue_state(monkeypatch, "planning", [_event_at(now, "epm:progress v1", 3600)])
+    verdict, reason = tick_triage.triage(9361, "issue", now=now)
+    assert verdict == "HEALTHY", reason
+    assert "human-active" in reason
+    assert "subagent-live" not in reason

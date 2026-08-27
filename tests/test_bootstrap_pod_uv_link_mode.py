@@ -170,9 +170,13 @@ def test_env_file_uv_link_mode_append_guarded() -> None:
 
 
 def test_step10_preflight_failure_is_greppable_not_swallowed() -> None:
-    """(e) the step-10 preflight invocation no longer swallows failure with
-    `|| true`; the greppable PREFLIGHT-FAILED-AT-BOOTSTRAP rc line replaces
-    it (presence-only — quoting context is the review eyeball item)."""
+    """(e) (#2606 rewrite) the step-10 preflight invocation carries NO ``||``
+    fallback at all — its rc must propagate through ssh into the local
+    ``PREFLIGHT_RC=$?`` capture — and the greppable
+    PREFLIGHT-FAILED-AT-BOOTSTRAP rc line is printed LOCALLY in the failure
+    branch that exits ``$EXIT_PREFLIGHT_FAILED``. The pre-#2606 in-payload
+    ``|| echo`` swallow (broken pod → exit 0 → BOOTSTRAP-OK) is the banned
+    regression."""
     text = _text()
     preflight_lines = [
         ln
@@ -180,10 +184,18 @@ def test_step10_preflight_failure_is_greppable_not_swallowed() -> None:
         if "explore_persona_space.orchestrate.preflight" in ln and "uv run" in ln
     ]
     assert preflight_lines, "step-10 preflight invocation not found"
-    for ln in preflight_lines:
-        assert "|| true" not in ln, f"preflight failure still swallowed: {ln!r}"
-    assert any('|| echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"' in ln for ln in preflight_lines), (
-        "missing the PREFLIGHT-FAILED-AT-BOOTSTRAP rc line on the preflight invocation"
+    step10_lines = [ln for ln in preflight_lines if "--no-gpu" in ln]
+    assert step10_lines, "step-10 preflight invocation (--no-gpu form) not found"
+    for ln in step10_lines:
+        assert "||" not in ln, f"preflight failure swallowed by a || fallback: {ln!r}"
+    start = text.index('step 10 "Running preflight check"')
+    region = text[start : text.index("# ── Step 11", start)]
+    assert "PREFLIGHT_RC=$?" in region, "missing the local rc capture after the payload"
+    assert 'echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$PREFLIGHT_RC"' in region, (
+        "missing the LOCAL PREFLIGHT-FAILED-AT-BOOTSTRAP sentinel in the failure branch"
+    )
+    assert 'exit "$EXIT_PREFLIGHT_FAILED"' in region, (
+        "missing the fail-loud exit in the step-10 failure branch"
     )
 
 
@@ -202,14 +214,19 @@ def test_step10_env_assignments_exported_to_uv_run_child(tmp_path) -> None:
 
 
 def test_step10_payload_is_single_quote_free() -> None:
-    """(f-guard, hardened r3) extraction completeness + interior integrity:
-    ``_step10_payload`` slices to the STANDALONE closing delimiter and refuses
-    any quote in the complete interior; this pin asserts the extracted
-    interior carries the full preflight invocation through its final
-    load-bearing line."""
+    """(f-guard, hardened r3; #2606 rewrite) extraction completeness +
+    interior integrity: ``_step10_payload`` slices to the STANDALONE closing
+    delimiter and refuses any quote in the complete interior; this pin
+    asserts the extracted interior ENDS on the bare preflight invocation
+    (no ``||`` fallback — the rc propagates through ssh) and that the
+    PREFLIGHT-FAILED-AT-BOOTSTRAP sentinel has moved OUT of the payload
+    (printed locally in the failure branch instead)."""
     payload = _step10_payload(_text())
     assert "explore_persona_space.orchestrate.preflight" in payload, payload
-    assert "PREFLIGHT-FAILED-AT-BOOTSTRAP" in payload, payload
+    last_line = [ln.strip() for ln in payload.splitlines() if ln.strip()][-1]
+    assert "orchestrate.preflight --no-gpu 2>&1" in last_line, payload
+    assert "||" not in last_line, payload
+    assert "PREFLIGHT-FAILED-AT-BOOTSTRAP" not in payload, payload
 
 
 def test_mutation_quote_after_invocation_guard_fails_extraction() -> None:
@@ -219,7 +236,10 @@ def test_mutation_quote_after_invocation_guard_fails_extraction() -> None:
     extraction silently truncated past the required substrings while bash
     would close the real remote payload at that quote."""
     text = _text()
-    needle = '|| echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"'
+    # #2606: the payload's final load-bearing line is now the bare preflight
+    # invocation (the in-payload || fallback is gone), so the mutation lands
+    # right after it — still INSIDE the payload, before the standalone close.
+    needle = "uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1"
     idx = text.index(needle) + len(needle)
     mutated = text[:idx] + "\n    echo pods' status probed" + text[idx:]
     with pytest.raises(AssertionError, match="single quote"):

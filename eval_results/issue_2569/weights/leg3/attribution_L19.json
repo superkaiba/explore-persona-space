@@ -1,0 +1,61 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 19,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ],
+    "attribution": {
+      "rb_source": "hf:037fcbb210bc52c459959b0746cc268fe08bae96",
+      "rows_attached": false,
+      "n_examples": 8,
+      "seed": 2569420,
+      "top_contrib": 12,
+      "top_pred_features": 5,
+      "ctx_dict": {
+        "repo": "andyrdt/saes-qwen2.5-7b-instruct",
+        "revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+        "layer": 19,
+        "k": 64
+      },
+      "ans_dict": {
+        "hf_leaf": "issue2476_turnavg/analysis_tensors/sae_c",
+        "alive_counts": "issue2476_turnavg/analysis_tensors/eval/alive_c.npz",
+        "union_frac": 0.002
+      }
+    }
+  },
+  "examples": "deferred \u2014 the P-B P1 assemble dir was not attached via --rows-dir (the worked examples need the pinned #2476 holdout's v_C rows); re-run `--phase attribution --rows-dir <assemble-dir>` at layer 19 post-P-B (concern leg3-rows-legs-need-pb-store)",
+  "caveats": [
+    "the map is a correlate, not the mechanism (#1776: Jacobian R^2 -0.001 vs 0.681); all wiring claims are map-level.",
+    "activation-space perturbations are not established to correspond to realizable text perturbations \u2014 this ships as sensitivity analysis and decision-geometry characterization, NEVER a security guarantee"
+  ],
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:51:00.130384Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-attribution",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

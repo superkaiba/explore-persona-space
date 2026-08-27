@@ -115,3 +115,13 @@
 - [Boundary-fake smoke driver probes](boundary_fake_smoke_driver_probes.md) — patch-binds attr check, fresh-root rerun, realized-offline grep, hub fall-through mask post-production
 - [Lint-waiver conformance fix review](lint_waiver_conformance_fix_review.md) — waiver-recognizer placement grammar + guard-tuple subclass check + rerun targeted flags; promised-gate-note residual
 - [Default-flip exemption enum vs input universe](default_flip_exemption_enum_vs_input_universe.md) — enumerate committed bank classes×vids under the new predicate; diff per-class vs parent's committed artifact; fix's tests omit the missed class
+- [Registered-constant figure sweep + exposure](registered_constant_figure_sweep_exposure.md)
+- [Producer schema fix, stale consumer touched by style unit](producer_schema_fix_stale_consumer_touched_by_style_unit.md)
+- [Shared-null draw-set review recipe](shared_null_draw_set_review_recipe.md)
+- [Sizing-pilot entry class vs pinned blind spot](sizing_pilot_entry_class_vs_pinned_blindspot.md)
+- [Loader default narrows extended payload](loader_default_narrows_extended_payload.md)
+- [Styled open markers at zero edge width](styled_open_marker_zero_edge_width.md)
+- [Silent .get default beside a fixed KeyError](silent_get_default_beside_fixed_keyerror.md)
+- [Verdict-assembly status-only source key](verdict_assembly_status_only_source_key.md)
+- [Selection-symmetric band review recipe](selection_symmetric_band_review_recipe.md)
+- [LOO Gram-bootstrap naive probe](loo_gram_bootstrap_naive_probe.md) — machine-verify batched LOO bootstrap algebra vs a naive loop; cache ordering + filtered-input parity

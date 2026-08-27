@@ -1,0 +1,1873 @@
+{
+  "analysis_parity": {
+    "n_slots": 10,
+    "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/k100-low-reliability-axes/manipulation_check_k100.json",
+    "status": "pass"
+  },
+  "meta": {
+    "cjk_ranges_hex": [
+      [
+        "0x4e00",
+        "0x9fff"
+      ],
+      [
+        "0x3400",
+        "0x4dbf"
+      ],
+      [
+        "0xf900",
+        "0xfaff"
+      ],
+      [
+        "0x3040",
+        "0x30ff"
+      ],
+      [
+        "0xac00",
+        "0xd7af"
+      ]
+    ],
+    "conventions": "orig (as-scored) / zeroed (intruded draws non-complying) / excluded (intruded draws out of numerator AND denominator)",
+    "fire_rule": "imported from scripts/issue2564_judge.py (fire_verdict/axis_floor)",
+    "git_argv0_path": "scripts/issue2564_intrusion_audit_k100.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+    "git_dirty": false,
+    "parent_revision": "62b1e8889e1a262501937b0ec6f6022e28b4a7e6",
+    "phase": "intrusion-audit-k100",
+    "round": "k100",
+    "script": "issue2564_intrusion_audit_k100.py",
+    "smoke": false
+  },
+  "new_rollouts": {
+    "intruded_context_draws": [
+      [
+        "user_fact::v1::c01",
+        30
+      ],
+      [
+        "user_fact::v1::c01",
+        61
+      ],
+      [
+        "user_fact::v1::c01",
+        71
+      ],
+      [
+        "user_fact::v1::c02",
+        42
+      ],
+      [
+        "user_fact::v1::c02",
+        79
+      ],
+      [
+        "user_fact::v1::c02",
+        90
+      ],
+      [
+        "user_fact::v1::c03",
+        75
+      ],
+      [
+        "user_fact::v1::c03",
+        96
+      ],
+      [
+        "user_fact::v1::c05",
+        88
+      ],
+      [
+        "user_fact::v1::c06",
+        73
+      ],
+      [
+        "user_fact::v1::c07",
+        74
+      ],
+      [
+        "user_fact::v1::c08",
+        52
+      ],
+      [
+        "user_fact::v1::c09",
+        13
+      ],
+      [
+        "user_fact::v1::c09",
+        20
+      ],
+      [
+        "user_fact::v1::c09",
+        22
+      ],
+      [
+        "user_fact::v1::c09",
+        35
+      ],
+      [
+        "user_fact::v1::c09",
+        43
+      ],
+      [
+        "user_fact::v1::c09",
+        84
+      ],
+      [
+        "user_fact::v1::c09",
+        96
+      ],
+      [
+        "user_fact::v1::c09",
+        98
+      ],
+      [
+        "user_fact::v1::c10",
+        36
+      ],
+      [
+        "user_fact::v1::c11",
+        36
+      ],
+      [
+        "user_fact::v1::c11",
+        71
+      ],
+      [
+        "user_fact::v1::c11",
+        91
+      ],
+      [
+        "user_fact::v1::c12",
+        22
+      ],
+      [
+        "user_fact::v1p::c01",
+        15
+      ],
+      [
+        "user_fact::v1p::c02",
+        56
+      ],
+      [
+        "user_fact::v1p::c02",
+        82
+      ],
+      [
+        "user_fact::v1p::c02",
+        95
+      ],
+      [
+        "user_fact::v1p::c03",
+        15
+      ],
+      [
+        "user_fact::v1p::c03",
+        26
+      ],
+      [
+        "user_fact::v1p::c03",
+        31
+      ],
+      [
+        "user_fact::v1p::c03",
+        34
+      ],
+      [
+        "user_fact::v1p::c04",
+        11
+      ],
+      [
+        "user_fact::v1p::c04",
+        43
+      ],
+      [
+        "user_fact::v1p::c04",
+        82
+      ],
+      [
+        "user_fact::v1p::c05",
+        37
+      ],
+      [
+        "user_fact::v1p::c05",
+        85
+      ],
+      [
+        "user_fact::v1p::c05",
+        90
+      ],
+      [
+        "user_fact::v1p::c06",
+        37
+      ],
+      [
+        "user_fact::v1p::c06",
+        57
+      ],
+      [
+        "user_fact::v1p::c08",
+        91
+      ],
+      [
+        "user_fact::v1p::c09",
+        26
+      ],
+      [
+        "user_fact::v1p::c09",
+        36
+      ],
+      [
+        "user_fact::v1p::c09",
+        54
+      ],
+      [
+        "user_fact::v1p::c09",
+        60
+      ],
+      [
+        "user_fact::v1p::c09",
+        82
+      ],
+      [
+        "user_fact::v2::c01",
+        24
+      ],
+      [
+        "user_fact::v2::c01",
+        71
+      ],
+      [
+        "user_fact::v2::c02",
+        58
+      ],
+      [
+        "user_fact::v2::c03",
+        46
+      ],
+      [
+        "user_fact::v2::c03",
+        85
+      ],
+      [
+        "user_fact::v2::c03",
+        90
+      ],
+      [
+        "user_fact::v2::c04",
+        38
+      ],
+      [
+        "user_fact::v2::c04",
+        46
+      ],
+      [
+        "user_fact::v2::c04",
+        62
+      ],
+      [
+        "user_fact::v2::c05",
+        14
+      ],
+      [
+        "user_fact::v2::c05",
+        42
+      ],
+      [
+        "user_fact::v2::c06",
+        62
+      ],
+      [
+        "user_fact::v2::c06",
+        87
+      ],
+      [
+        "user_fact::v2::c06",
+        94
+      ],
+      [
+        "user_fact::v2::c07",
+        63
+      ],
+      [
+        "user_fact::v2::c07",
+        83
+      ],
+      [
+        "user_fact::v2::c08",
+        16
+      ],
+      [
+        "user_fact::v2::c08",
+        27
+      ],
+      [
+        "user_fact::v2::c08",
+        86
+      ],
+      [
+        "user_fact::v2::c08",
+        94
+      ],
+      [
+        "user_fact::v2::c09",
+        24
+      ],
+      [
+        "user_fact::v2::c09",
+        81
+      ],
+      [
+        "user_fact::v2::c09",
+        97
+      ],
+      [
+        "user_fact::v2::c10",
+        97
+      ],
+      [
+        "user_fact::v2::c11",
+        95
+      ],
+      [
+        "user_fact::v2::c12",
+        12
+      ],
+      [
+        "user_fact::v2::c12",
+        20
+      ],
+      [
+        "user_fact::v2::c12",
+        24
+      ],
+      [
+        "user_fact::v2p::c01",
+        24
+      ],
+      [
+        "user_fact::v2p::c01",
+        33
+      ],
+      [
+        "user_fact::v2p::c01",
+        42
+      ],
+      [
+        "user_fact::v2p::c01",
+        46
+      ],
+      [
+        "user_fact::v2p::c01",
+        72
+      ],
+      [
+        "user_fact::v2p::c01",
+        75
+      ],
+      [
+        "user_fact::v2p::c01",
+        84
+      ],
+      [
+        "user_fact::v2p::c02",
+        46
+      ],
+      [
+        "user_fact::v2p::c02",
+        56
+      ],
+      [
+        "user_fact::v2p::c02",
+        59
+      ],
+      [
+        "user_fact::v2p::c02",
+        73
+      ],
+      [
+        "user_fact::v2p::c03",
+        72
+      ],
+      [
+        "user_fact::v2p::c03",
+        77
+      ],
+      [
+        "user_fact::v2p::c03",
+        89
+      ],
+      [
+        "user_fact::v2p::c04",
+        86
+      ],
+      [
+        "user_fact::v2p::c05",
+        21
+      ],
+      [
+        "user_fact::v2p::c05",
+        45
+      ],
+      [
+        "user_fact::v2p::c05",
+        60
+      ],
+      [
+        "user_fact::v2p::c06",
+        10
+      ],
+      [
+        "user_fact::v2p::c06",
+        68
+      ],
+      [
+        "user_fact::v2p::c06",
+        97
+      ],
+      [
+        "user_fact::v2p::c08",
+        21
+      ],
+      [
+        "user_fact::v2p::c09",
+        25
+      ],
+      [
+        "user_fact::v2p::c09",
+        73
+      ],
+      [
+        "user_fact::v2p::c10",
+        36
+      ],
+      [
+        "user_fact::v2p::c11",
+        96
+      ],
+      [
+        "user_fact::v2p::c12",
+        60
+      ],
+      [
+        "user_fact::v2p::c12",
+        69
+      ],
+      [
+        "user_fact::v2p::c12",
+        73
+      ],
+      [
+        "user_fact::v3::c01",
+        50
+      ],
+      [
+        "user_fact::v3::c01",
+        76
+      ],
+      [
+        "user_fact::v3::c02",
+        22
+      ],
+      [
+        "user_fact::v3::c02",
+        72
+      ],
+      [
+        "user_fact::v3::c02",
+        91
+      ],
+      [
+        "user_fact::v3::c03",
+        53
+      ],
+      [
+        "user_fact::v3::c03",
+        74
+      ],
+      [
+        "user_fact::v3::c03",
+        97
+      ],
+      [
+        "user_fact::v3::c03",
+        99
+      ],
+      [
+        "user_fact::v3::c05",
+        16
+      ],
+      [
+        "user_fact::v3::c05",
+        47
+      ],
+      [
+        "user_fact::v3::c06",
+        58
+      ],
+      [
+        "user_fact::v3::c07",
+        49
+      ],
+      [
+        "user_fact::v3::c08",
+        80
+      ],
+      [
+        "user_fact::v3::c09",
+        17
+      ],
+      [
+        "user_fact::v3::c09",
+        69
+      ],
+      [
+        "user_fact::v3::c09",
+        80
+      ],
+      [
+        "user_fact::v3::c09",
+        91
+      ],
+      [
+        "user_fact::v3::c10",
+        62
+      ],
+      [
+        "user_fact::v3::c11",
+        64
+      ],
+      [
+        "user_fact::v3::c11",
+        87
+      ],
+      [
+        "user_fact::v3::c12",
+        13
+      ],
+      [
+        "user_fact::v3p::c01",
+        49
+      ],
+      [
+        "user_fact::v3p::c02",
+        25
+      ],
+      [
+        "user_fact::v3p::c02",
+        54
+      ],
+      [
+        "user_fact::v3p::c03",
+        17
+      ],
+      [
+        "user_fact::v3p::c03",
+        24
+      ],
+      [
+        "user_fact::v3p::c03",
+        37
+      ],
+      [
+        "user_fact::v3p::c03",
+        40
+      ],
+      [
+        "user_fact::v3p::c03",
+        59
+      ],
+      [
+        "user_fact::v3p::c03",
+        65
+      ],
+      [
+        "user_fact::v3p::c03",
+        72
+      ],
+      [
+        "user_fact::v3p::c03",
+        77
+      ],
+      [
+        "user_fact::v3p::c04",
+        21
+      ],
+      [
+        "user_fact::v3p::c04",
+        29
+      ],
+      [
+        "user_fact::v3p::c04",
+        31
+      ],
+      [
+        "user_fact::v3p::c05",
+        75
+      ],
+      [
+        "user_fact::v3p::c06",
+        84
+      ],
+      [
+        "user_fact::v3p::c06",
+        91
+      ],
+      [
+        "user_fact::v3p::c09",
+        45
+      ],
+      [
+        "user_fact::v3p::c09",
+        98
+      ],
+      [
+        "user_fact::v3p::c10",
+        67
+      ],
+      [
+        "user_fact::v3p::c11",
+        78
+      ],
+      [
+        "user_fact::v4::c01",
+        45
+      ],
+      [
+        "user_fact::v4::c01",
+        95
+      ],
+      [
+        "user_fact::v4::c02",
+        20
+      ],
+      [
+        "user_fact::v4::c02",
+        24
+      ],
+      [
+        "user_fact::v4::c02",
+        37
+      ],
+      [
+        "user_fact::v4::c02",
+        86
+      ],
+      [
+        "user_fact::v4::c02",
+        98
+      ],
+      [
+        "user_fact::v4::c03",
+        21
+      ],
+      [
+        "user_fact::v4::c03",
+        54
+      ],
+      [
+        "user_fact::v4::c03",
+        66
+      ],
+      [
+        "user_fact::v4::c03",
+        67
+      ],
+      [
+        "user_fact::v4::c03",
+        82
+      ],
+      [
+        "user_fact::v4::c04",
+        22
+      ],
+      [
+        "user_fact::v4::c04",
+        34
+      ],
+      [
+        "user_fact::v4::c04",
+        55
+      ],
+      [
+        "user_fact::v4::c04",
+        90
+      ],
+      [
+        "user_fact::v4::c05",
+        26
+      ],
+      [
+        "user_fact::v4::c05",
+        89
+      ],
+      [
+        "user_fact::v4::c06",
+        50
+      ],
+      [
+        "user_fact::v4::c06",
+        73
+      ],
+      [
+        "user_fact::v4::c06",
+        92
+      ],
+      [
+        "user_fact::v4::c09",
+        13
+      ],
+      [
+        "user_fact::v4::c09",
+        27
+      ],
+      [
+        "user_fact::v4::c09",
+        30
+      ],
+      [
+        "user_fact::v4::c09",
+        59
+      ],
+      [
+        "user_fact::v4::c09",
+        98
+      ],
+      [
+        "user_fact::v4::c10",
+        86
+      ],
+      [
+        "user_fact::v4::c12",
+        12
+      ],
+      [
+        "user_fact::v4::c12",
+        77
+      ],
+      [
+        "user_fact::v4p::c01",
+        38
+      ],
+      [
+        "user_fact::v4p::c01",
+        48
+      ],
+      [
+        "user_fact::v4p::c01",
+        52
+      ],
+      [
+        "user_fact::v4p::c01",
+        97
+      ],
+      [
+        "user_fact::v4p::c02",
+        67
+      ],
+      [
+        "user_fact::v4p::c03",
+        30
+      ],
+      [
+        "user_fact::v4p::c03",
+        42
+      ],
+      [
+        "user_fact::v4p::c03",
+        51
+      ],
+      [
+        "user_fact::v4p::c04",
+        91
+      ],
+      [
+        "user_fact::v4p::c05",
+        36
+      ],
+      [
+        "user_fact::v4p::c05",
+        92
+      ],
+      [
+        "user_fact::v4p::c06",
+        40
+      ],
+      [
+        "user_fact::v4p::c06",
+        44
+      ],
+      [
+        "user_fact::v4p::c06",
+        57
+      ],
+      [
+        "user_fact::v4p::c06",
+        59
+      ],
+      [
+        "user_fact::v4p::c06",
+        65
+      ],
+      [
+        "user_fact::v4p::c09",
+        34
+      ],
+      [
+        "user_fact::v4p::c09",
+        73
+      ],
+      [
+        "user_fact::v4p::c09",
+        94
+      ],
+      [
+        "user_fact::v4p::c11",
+        77
+      ],
+      [
+        "user_fact::v5::c01",
+        42
+      ],
+      [
+        "user_fact::v5::c01",
+        46
+      ],
+      [
+        "user_fact::v5::c01",
+        61
+      ],
+      [
+        "user_fact::v5::c02",
+        45
+      ],
+      [
+        "user_fact::v5::c02",
+        48
+      ],
+      [
+        "user_fact::v5::c02",
+        57
+      ],
+      [
+        "user_fact::v5::c02",
+        79
+      ],
+      [
+        "user_fact::v5::c03",
+        34
+      ],
+      [
+        "user_fact::v5::c03",
+        46
+      ],
+      [
+        "user_fact::v5::c04",
+        55
+      ],
+      [
+        "user_fact::v5::c05",
+        19
+      ],
+      [
+        "user_fact::v5::c05",
+        53
+      ],
+      [
+        "user_fact::v5::c06",
+        17
+      ],
+      [
+        "user_fact::v5::c06",
+        55
+      ],
+      [
+        "user_fact::v5::c06",
+        60
+      ],
+      [
+        "user_fact::v5::c06",
+        64
+      ],
+      [
+        "user_fact::v5::c06",
+        94
+      ],
+      [
+        "user_fact::v5::c08",
+        23
+      ],
+      [
+        "user_fact::v5::c09",
+        58
+      ],
+      [
+        "user_fact::v5::c10",
+        43
+      ],
+      [
+        "user_fact::v5::c10",
+        65
+      ],
+      [
+        "user_fact::v5::c10",
+        71
+      ],
+      [
+        "user_fact::v5::c11",
+        76
+      ],
+      [
+        "user_fact::v5::c11",
+        88
+      ],
+      [
+        "user_fact::v5::c12",
+        15
+      ],
+      [
+        "user_fact::v5::c12",
+        68
+      ],
+      [
+        "user_fact::v5::c12",
+        87
+      ],
+      [
+        "user_fact::v5p::c01",
+        24
+      ],
+      [
+        "user_fact::v5p::c01",
+        45
+      ],
+      [
+        "user_fact::v5p::c02",
+        65
+      ],
+      [
+        "user_fact::v5p::c03",
+        22
+      ],
+      [
+        "user_fact::v5p::c03",
+        72
+      ],
+      [
+        "user_fact::v5p::c04",
+        34
+      ],
+      [
+        "user_fact::v5p::c04",
+        73
+      ],
+      [
+        "user_fact::v5p::c04",
+        87
+      ],
+      [
+        "user_fact::v5p::c05",
+        23
+      ],
+      [
+        "user_fact::v5p::c05",
+        44
+      ],
+      [
+        "user_fact::v5p::c06",
+        28
+      ],
+      [
+        "user_fact::v5p::c06",
+        29
+      ],
+      [
+        "user_fact::v5p::c06",
+        53
+      ],
+      [
+        "user_fact::v5p::c06",
+        89
+      ],
+      [
+        "user_fact::v5p::c08",
+        33
+      ],
+      [
+        "user_fact::v5p::c08",
+        61
+      ],
+      [
+        "user_fact::v5p::c09",
+        24
+      ],
+      [
+        "user_fact::v5p::c09",
+        38
+      ],
+      [
+        "user_fact::v5p::c09",
+        58
+      ],
+      [
+        "user_fact::v5p::c09",
+        73
+      ],
+      [
+        "user_fact::v5p::c09",
+        86
+      ],
+      [
+        "user_fact::v5p::c11",
+        11
+      ],
+      [
+        "user_fact::v5p::c11",
+        60
+      ],
+      [
+        "user_fact::v5p::c11",
+        63
+      ],
+      [
+        "user_fact::v5p::c11",
+        73
+      ],
+      [
+        "user_fact::v5p::c11",
+        82
+      ],
+      [
+        "user_fact::v5p::c11",
+        89
+      ],
+      [
+        "user_fact::v5p::c12",
+        13
+      ],
+      [
+        "query::E::c01",
+        11
+      ],
+      [
+        "query::E::c01",
+        32
+      ],
+      [
+        "query::E::c01",
+        44
+      ],
+      [
+        "query::E::c02",
+        17
+      ],
+      [
+        "query::E::c02",
+        19
+      ],
+      [
+        "query::E::c02",
+        35
+      ],
+      [
+        "query::E::c02",
+        37
+      ],
+      [
+        "query::E::c02",
+        43
+      ],
+      [
+        "query::E::c02",
+        57
+      ],
+      [
+        "query::E::c02",
+        67
+      ],
+      [
+        "query::E::c02",
+        78
+      ],
+      [
+        "query::E::c02",
+        96
+      ],
+      [
+        "query::E::c03",
+        50
+      ],
+      [
+        "query::E::c03",
+        86
+      ],
+      [
+        "query::E::c03",
+        98
+      ],
+      [
+        "query::E::c04",
+        25
+      ],
+      [
+        "query::E::c04",
+        33
+      ],
+      [
+        "query::E::c05",
+        74
+      ],
+      [
+        "query::E::c05",
+        78
+      ],
+      [
+        "query::E::c06",
+        45
+      ],
+      [
+        "query::E::c06",
+        64
+      ],
+      [
+        "query::E::c06",
+        72
+      ],
+      [
+        "query::E::c06",
+        86
+      ],
+      [
+        "query::E::c06",
+        87
+      ],
+      [
+        "query::E::c07",
+        95
+      ],
+      [
+        "query::E::c07",
+        98
+      ],
+      [
+        "query::E::c08",
+        69
+      ],
+      [
+        "query::E::c09",
+        62
+      ],
+      [
+        "query::E::c09",
+        89
+      ],
+      [
+        "query::E::c11",
+        12
+      ],
+      [
+        "query::E::c11",
+        21
+      ],
+      [
+        "query::E::c11",
+        26
+      ],
+      [
+        "query::E::c11",
+        49
+      ],
+      [
+        "query::E::c11",
+        82
+      ],
+      [
+        "query::imp::c01",
+        13
+      ],
+      [
+        "query::imp::c01",
+        46
+      ],
+      [
+        "query::imp::c01",
+        58
+      ],
+      [
+        "query::imp::c02",
+        43
+      ],
+      [
+        "query::imp::c03",
+        12
+      ],
+      [
+        "query::imp::c03",
+        18
+      ],
+      [
+        "query::imp::c03",
+        29
+      ],
+      [
+        "query::imp::c03",
+        47
+      ],
+      [
+        "query::imp::c03",
+        50
+      ],
+      [
+        "query::imp::c04",
+        22
+      ],
+      [
+        "query::imp::c04",
+        34
+      ],
+      [
+        "query::imp::c04",
+        47
+      ],
+      [
+        "query::imp::c04",
+        53
+      ],
+      [
+        "query::imp::c04",
+        95
+      ],
+      [
+        "query::imp::c05",
+        23
+      ],
+      [
+        "query::imp::c05",
+        24
+      ],
+      [
+        "query::imp::c05",
+        43
+      ],
+      [
+        "query::imp::c05",
+        81
+      ],
+      [
+        "query::imp::c06",
+        58
+      ],
+      [
+        "query::imp::c06",
+        97
+      ],
+      [
+        "query::imp::c07",
+        23
+      ],
+      [
+        "query::imp::c07",
+        29
+      ],
+      [
+        "query::imp::c07",
+        95
+      ],
+      [
+        "query::imp::c08",
+        32
+      ],
+      [
+        "query::imp::c08",
+        59
+      ],
+      [
+        "query::imp::c08",
+        74
+      ],
+      [
+        "query::imp::c08",
+        78
+      ],
+      [
+        "query::imp::c09",
+        19
+      ],
+      [
+        "query::imp::c09",
+        73
+      ],
+      [
+        "query::imp::c09",
+        99
+      ],
+      [
+        "query::imp::c10",
+        35
+      ],
+      [
+        "query::imp::c11",
+        41
+      ],
+      [
+        "query::imp::c11",
+        62
+      ],
+      [
+        "query::imp::c11",
+        73
+      ],
+      [
+        "query::imp::c12",
+        23
+      ],
+      [
+        "query::imp::c12",
+        68
+      ],
+      [
+        "query::imp::c12",
+        94
+      ],
+      [
+        "query::qpara::c01",
+        12
+      ],
+      [
+        "query::qpara::c01",
+        28
+      ],
+      [
+        "query::qpara::c01",
+        41
+      ],
+      [
+        "query::qpara::c01",
+        52
+      ],
+      [
+        "query::qpara::c01",
+        59
+      ],
+      [
+        "query::qpara::c01",
+        60
+      ],
+      [
+        "query::qpara::c01",
+        95
+      ],
+      [
+        "query::qpara::c02",
+        11
+      ],
+      [
+        "query::qpara::c02",
+        63
+      ],
+      [
+        "query::qpara::c03",
+        22
+      ],
+      [
+        "query::qpara::c04",
+        15
+      ],
+      [
+        "query::qpara::c05",
+        19
+      ],
+      [
+        "query::qpara::c05",
+        28
+      ],
+      [
+        "query::qpara::c05",
+        37
+      ],
+      [
+        "query::qpara::c05",
+        39
+      ],
+      [
+        "query::qpara::c05",
+        67
+      ],
+      [
+        "query::qpara::c05",
+        74
+      ],
+      [
+        "query::qpara::c05",
+        85
+      ],
+      [
+        "query::qpara::c05",
+        92
+      ],
+      [
+        "query::qpara::c06",
+        19
+      ],
+      [
+        "query::qpara::c06",
+        73
+      ],
+      [
+        "query::qpara::c07",
+        17
+      ],
+      [
+        "query::qpara::c07",
+        68
+      ],
+      [
+        "query::qpara::c08",
+        88
+      ],
+      [
+        "query::qpara::c09",
+        19
+      ],
+      [
+        "query::qpara::c09",
+        33
+      ],
+      [
+        "query::qpara::c09",
+        38
+      ],
+      [
+        "query::qpara::c09",
+        46
+      ],
+      [
+        "query::qpara::c09",
+        59
+      ],
+      [
+        "query::qpara::c09",
+        67
+      ],
+      [
+        "query::qpara::c11",
+        83
+      ],
+      [
+        "query::qpara::c11",
+        99
+      ],
+      [
+        "query::qpara::c12",
+        35
+      ],
+      [
+        "query::qpara::c12",
+        62
+      ],
+      [
+        "query::qpara::c12",
+        76
+      ],
+      [
+        "query::qpara::c12",
+        84
+      ],
+      [
+        "query::stmt::c01",
+        12
+      ],
+      [
+        "query::stmt::c01",
+        20
+      ],
+      [
+        "query::stmt::c01",
+        76
+      ],
+      [
+        "query::stmt::c01",
+        90
+      ],
+      [
+        "query::stmt::c02",
+        28
+      ],
+      [
+        "query::stmt::c02",
+        38
+      ],
+      [
+        "query::stmt::c02",
+        65
+      ],
+      [
+        "query::stmt::c02",
+        73
+      ],
+      [
+        "query::stmt::c03",
+        26
+      ],
+      [
+        "query::stmt::c03",
+        35
+      ],
+      [
+        "query::stmt::c03",
+        37
+      ],
+      [
+        "query::stmt::c03",
+        39
+      ],
+      [
+        "query::stmt::c03",
+        44
+      ],
+      [
+        "query::stmt::c03",
+        84
+      ],
+      [
+        "query::stmt::c05",
+        11
+      ],
+      [
+        "query::stmt::c05",
+        14
+      ],
+      [
+        "query::stmt::c05",
+        63
+      ],
+      [
+        "query::stmt::c05",
+        67
+      ],
+      [
+        "query::stmt::c05",
+        75
+      ],
+      [
+        "query::stmt::c05",
+        77
+      ],
+      [
+        "query::stmt::c05",
+        92
+      ],
+      [
+        "query::stmt::c06",
+        13
+      ],
+      [
+        "query::stmt::c06",
+        31
+      ],
+      [
+        "query::stmt::c06",
+        34
+      ],
+      [
+        "query::stmt::c06",
+        48
+      ],
+      [
+        "query::stmt::c06",
+        52
+      ],
+      [
+        "query::stmt::c06",
+        73
+      ],
+      [
+        "query::stmt::c06",
+        79
+      ],
+      [
+        "query::stmt::c06",
+        95
+      ],
+      [
+        "query::stmt::c07",
+        83
+      ],
+      [
+        "query::stmt::c08",
+        19
+      ],
+      [
+        "query::stmt::c08",
+        77
+      ],
+      [
+        "query::stmt::c08",
+        94
+      ],
+      [
+        "query::stmt::c09",
+        96
+      ],
+      [
+        "query::stmt::c10",
+        31
+      ],
+      [
+        "query::stmt::c10",
+        46
+      ],
+      [
+        "query::stmt::c11",
+        19
+      ],
+      [
+        "query::stmt::c11",
+        22
+      ],
+      [
+        "query::stmt::c11",
+        31
+      ],
+      [
+        "query::stmt::c11",
+        58
+      ],
+      [
+        "query::stmt::c11",
+        78
+      ]
+    ],
+    "note": "draws >= 10 only (this round's fresh rollouts); any (context_id, draw) absent from the enumeration is NOT intruded",
+    "per_cell": {
+      "query": {
+        "intruded": 148,
+        "total": 4320
+      },
+      "user_fact": {
+        "intruded": 251,
+        "total": 10800
+      }
+    },
+    "total": 15120,
+    "total_intruded": 399
+  },
+  "parent_parity": {
+    "query": {
+      "committed": {
+        "intruded": 9,
+        "total": 480
+      },
+      "recounted": {
+        "intruded": 9,
+        "total": 480
+      }
+    },
+    "user_fact": {
+      "committed": {
+        "intruded": 19,
+        "total": 1200
+      },
+      "recounted": {
+        "intruded": 19,
+        "total": 1200
+      }
+    }
+  },
+  "user_fact_fire_recount": {
+    "axis_floor_verdicts": {
+      "excluded": {
+        "floor": 3,
+        "floor_met": true,
+        "n_fired": 5,
+        "width": 5
+      },
+      "orig": {
+        "floor": 3,
+        "floor_met": true,
+        "n_fired": 5,
+        "width": 5
+      },
+      "zeroed": {
+        "floor": 3,
+        "floor_met": true,
+        "n_fired": 5,
+        "width": 5
+      }
+    },
+    "denominator": {
+      "v1": 1200,
+      "v1p": 1200,
+      "v2": 1200,
+      "v2p": 1200,
+      "v3": 1200,
+      "v3p": 1200,
+      "v4": 1200,
+      "v4p": 1200,
+      "v5": 1200,
+      "v5p": 1200
+    },
+    "slots": {
+      "user_fact::v1": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1156,
+          1174
+        ],
+        "n_comply": 1180,
+        "n_incomplete": 0,
+        "n_intruded": 26,
+        "n_intruded_comply": 24,
+        "value_id": "v1",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v1p": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1164,
+          1175
+        ],
+        "n_comply": 1188,
+        "n_incomplete": 0,
+        "n_intruded": 25,
+        "n_intruded_comply": 24,
+        "value_id": "v1p",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v2": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1166,
+          1171
+        ],
+        "n_comply": 1195,
+        "n_incomplete": 0,
+        "n_intruded": 29,
+        "n_intruded_comply": 29,
+        "value_id": "v2",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v2p": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1163,
+          1168
+        ],
+        "n_comply": 1195,
+        "n_incomplete": 0,
+        "n_intruded": 32,
+        "n_intruded_comply": 32,
+        "value_id": "v2p",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v3": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1152,
+          1177
+        ],
+        "n_comply": 1175,
+        "n_incomplete": 0,
+        "n_intruded": 23,
+        "n_intruded_comply": 23,
+        "value_id": "v3",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v3p": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1157,
+          1177
+        ],
+        "n_comply": 1180,
+        "n_incomplete": 0,
+        "n_intruded": 23,
+        "n_intruded_comply": 23,
+        "value_id": "v3p",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v4": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1151,
+          1171
+        ],
+        "n_comply": 1180,
+        "n_incomplete": 0,
+        "n_intruded": 29,
+        "n_intruded_comply": 29,
+        "value_id": "v4",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v4p": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1170,
+          1177
+        ],
+        "n_comply": 1193,
+        "n_incomplete": 0,
+        "n_intruded": 23,
+        "n_intruded_comply": 23,
+        "value_id": "v4p",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v5": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1161,
+          1172
+        ],
+        "n_comply": 1189,
+        "n_incomplete": 0,
+        "n_intruded": 28,
+        "n_intruded_comply": 28,
+        "value_id": "v5",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      },
+      "user_fact::v5p": {
+        "axis": "user_fact",
+        "denom": 1200,
+        "excluded_counts": [
+          1151,
+          1168
+        ],
+        "n_comply": 1182,
+        "n_incomplete": 0,
+        "n_intruded": 32,
+        "n_intruded_comply": 31,
+        "value_id": "v5p",
+        "verdict_excluded": "fired",
+        "verdict_orig": "fired",
+        "verdict_zeroed": "fired"
+      }
+    }
+  }
+}

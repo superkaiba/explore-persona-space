@@ -6324,12 +6324,23 @@ class GoalH2DropError(ValueError):
     """
 
 
+class SetBodyNoOpError(ValueError):
+    """``set_body`` refused: the incoming body is byte-identical to the
+    current body and no roundtrip frontmatter key changes value — the write
+    is a provable no-op (phantom-edit channel, incident #2333).
+
+    Pass ``allow_noop=True`` (CLI: ``--allow-noop``) for a deliberate
+    idempotent re-application of an already-landed body.
+    """
+
+
 def set_body(
     task_id: int,
     new_body: str,
     *,
     snapshot_original: bool = False,
     allow_goal_drop: bool = False,
+    allow_noop: bool = False,
 ) -> None:
     """Replace the body content (preserves frontmatter).
 
@@ -6365,6 +6376,25 @@ def set_body(
     experiment`` body that lacks ``## Goal`` on the PRIOR side is
     DELIBERATELY exempt — do not "fix" the prior-lacks exemption.
 
+    Byte-identical no-op guard (incident #2333): when the incoming
+    (frontmatter-stripped, trailing-newline-normalized) body is
+    byte-identical to the on-disk body region AND no
+    ``_SET_BODY_ROUNDTRIP_KEYS`` key changes value, the write is a
+    provable no-op and raises :class:`SetBodyNoOpError` BEFORE any side
+    effect (no ``original-body.md`` snapshot, no git commit, no registry
+    write). This closes the phantom-body-edit channel: an agent edits one
+    copy of the body, hands ``set-body`` a different (unchanged) copy,
+    ``_git_commit`` silently early-returns with nothing staged, and a
+    marker then claims edits that never landed (#2333, interpretation
+    round 4). An identical body accompanied by a REAL roundtrip-key
+    effect (e.g. ``paper: true`` newly opting in) is NOT refused — the
+    write has a real frontmatter + REGISTRY effect. Pass
+    ``allow_noop=True`` (CLI: ``--allow-noop``) for a deliberate
+    idempotent re-application. Guard ordering: an identical body has the
+    same :func:`_has_goal_h2` value as the prior body, so this guard and
+    the Goal-H2 guard can never fire on the same input; the no-op guard
+    runs first.
+
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
     (`set_title`, `set_clean_result`, `add_tag`, `remove_tag`,
@@ -6386,6 +6416,11 @@ def set_body(
             incoming_fm, _ = _split_frontmatter(new_body)
         except ValueError:
             incoming_fm = {}
+        # Snapshot the on-disk roundtrip-key values BEFORE the carry-forward
+        # loop mutates ``fm`` — the no-op guard below compares against the
+        # PRE-merge state to decide whether the write has a real frontmatter
+        # effect (incident #2333).
+        fm_before = {key: fm.get(key) for key in _SET_BODY_ROUNDTRIP_KEYS}
         for key in _SET_BODY_ROUNDTRIP_KEYS:
             if key in incoming_fm and incoming_fm[key] is not None:
                 fm[key] = incoming_fm[key]
@@ -6393,6 +6428,31 @@ def set_body(
         # Goal-drop refusal writes NOTHING (no original-body.md side
         # effect — pinned by test_set_body_goal_drop_refusal_writes_no_snapshot).
         body_text = _strip_leading_frontmatter_blocks(new_body)
+        # Byte-identical no-op guard (incident #2333) — hoisted BEFORE the
+        # snapshot copy AND the Goal-H2 guard so a refusal writes NOTHING.
+        # ``new_norm`` is exactly the body region ``_write_body`` receives,
+        # and ``prior_body`` is exactly the on-disk body region
+        # (``_split_frontmatter`` / ``_join_frontmatter`` pass the body
+        # through verbatim), so this compares what WOULD be written against
+        # what IS on disk.
+        new_norm = body_text if body_text.endswith("\n") else body_text + "\n"
+        roundtrip_effect = any(
+            key in incoming_fm
+            and incoming_fm[key] is not None
+            and fm_before.get(key) != incoming_fm[key]
+            for key in _SET_BODY_ROUNDTRIP_KEYS
+        )
+        if not allow_noop and new_norm == prior_body and not roundtrip_effect:
+            raise SetBodyNoOpError(
+                f"set-body refused for task #{task_id}: the body handed to "
+                "set-body does not differ from the current body.md — either "
+                "the edits were applied to a DIFFERENT copy / never applied, "
+                "OR this body already landed (crash-resume); incident #2333. "
+                "Check `git log -1 -- <body.md path>` and diff your edited "
+                "copy against `$(task.py find N)/body.md`. Pass "
+                "allow_noop=True / --allow-noop ONLY for a deliberate "
+                "idempotent re-application of an already-landed body."
+            )
         if (
             not allow_goal_drop
             and fm.get("kind") == "experiment"
@@ -6416,7 +6476,7 @@ def set_body(
             orig = path.parent / "original-body.md"
             shutil.copy2(path, orig)
             touched.append(orig)
-        _write_body(path, fm, body_text if body_text.endswith("\n") else body_text + "\n")
+        _write_body(path, fm, new_norm)
         # Keep REGISTRY in sync when the paper opt-in (or abstract) landed —
         # the denormalized ``paper``/``abstract``/``title`` surfaces feed the
         # dashboard list view + hover card.
@@ -9215,6 +9275,7 @@ __all__ = [
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
+    "SetBodyNoOpError",
     "StaleTaskPathError",
     "add_tag",
     "address_concern",

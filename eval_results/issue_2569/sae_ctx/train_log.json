@@ -1,0 +1,88 @@
+{
+  "pools": {
+    "n_pool": 943444,
+    "n_train": 933444,
+    "n_val": 10000,
+    "n_rows_present": 964844,
+    "expected_pool_production": 943444,
+    "carve_seed": 2476
+  },
+  "epochs": [
+    {
+      "epoch": 1,
+      "steps": 3647,
+      "mean_loss": 421.478,
+      "val_var_fve": 0.885511,
+      "val_l0": 90.11,
+      "dead_frac_by_tier": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0
+      },
+      "threshold": 0.8354797959327698,
+      "elapsed_s": 132.1
+    },
+    {
+      "epoch": 2,
+      "steps": 7294,
+      "mean_loss": 286.535,
+      "val_var_fve": 0.887174,
+      "val_l0": 118.76,
+      "dead_frac_by_tier": {
+        "0": 0.0259,
+        "1": 0.1087,
+        "2": 0.1566
+      },
+      "threshold": 0.6742424368858337,
+      "elapsed_s": 287.6
+    },
+    {
+      "epoch": 3,
+      "steps": 10941,
+      "mean_loss": 267.323,
+      "val_var_fve": 0.902959,
+      "val_l0": 103.3,
+      "dead_frac_by_tier": {
+        "0": 0.0737,
+        "1": 0.3467,
+        "2": 0.491
+      },
+      "threshold": 0.6178057193756104,
+      "elapsed_s": 455.3
+    }
+  ],
+  "steps": 10941,
+  "cfg": {
+    "architecture": "matryoshka_batchtopk",
+    "act_dim": 3584,
+    "dict_size": 65536,
+    "k": 100,
+    "tier_bounds": [
+      2048,
+      16384,
+      65536
+    ],
+    "seed": 2476,
+    "lr": 0.0002,
+    "adam_betas": [
+      0.9,
+      0.999
+    ],
+    "batch": 256,
+    "epochs": 3,
+    "prefix_loss_reduction": "mean",
+    "threshold_ema": 0.999,
+    "threshold": 0.6178057193756104
+  },
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T01:15:01.329092Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "sae_ctx_train",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "bcea7486c26c484f",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:51:46Z",
+  "figsize": [
+    7.5,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "10-way description matching",
+      "Accuracy": 0.926,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Accuracy": 0.1,
+      "series": "Chance (10-way)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Accuracy": 0.1,
+      "series": "Chance (10-way)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "category": "Described fraction of the answer-feature union",
+      "Coverage": 0.9995348837209302,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Matching accuracy",
+        "ylabel": "Accuracy",
+        "legend_labels": [
+          "Chance (10-way)"
+        ],
+        "xticklabels": [
+          "10-way description matching"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Description coverage",
+        "ylabel": "Coverage",
+        "xticklabels": [
+          "Described fraction of the answer-feature union"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Chance (10-way)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

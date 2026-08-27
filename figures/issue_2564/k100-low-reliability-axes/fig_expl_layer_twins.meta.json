@@ -1,0 +1,121 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "6ae7645ea7f74d9d",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:27:00Z",
+  "figsize": [
+    5.6,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.14911945515829494,
+      "series": "injected name",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.26424653904878004,
+      "series": "injected name",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.4483682394025037,
+      "series": "injected name",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.23195405851115355,
+      "series": "query content",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.3068163907855217,
+      "series": "query content",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.37517754166671075,
+      "series": "query content",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "direction cosine, identity baseline": 0.1956733557783136,
+      "series": "query form",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "direction cosine, identity baseline": 0.24980153992824874,
+      "series": "query form",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "direction cosine, identity baseline": 0.1752076819639337,
+      "series": "query form",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer sensitivity (identity baseline only)",
+        "xlabel": "layer",
+        "ylabel": "direction cosine, identity baseline",
+        "legend_labels": [
+          "injected name",
+          "query content",
+          "query form"
+        ],
+        "xticklabels": [
+          "14",
+          "19",
+          "26"
+        ],
+        "yticklabels": [
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      }
+    ],
+    "series": [
+      "injected name",
+      "query content",
+      "query form"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

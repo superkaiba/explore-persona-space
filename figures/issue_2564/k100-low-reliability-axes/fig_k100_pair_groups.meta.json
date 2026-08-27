@@ -1,0 +1,1624 @@
+{
+  "commit": "8ae0a857+dirty",
+  "render_id": "cc305d482aba46be",
+  "git_commit": "8ae0a857360dd4a7a52375c3d314a666eeaa85a0",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2564/k100-low-reliability-axes/fig_k100_hero_ladder.meta.json",
+    "figures/issue_2564/k100-low-reliability-axes/fig_k100_hero_ladder.pdf",
+    "figures/issue_2564/k100-low-reliability-axes/fig_k100_hero_ladder.png",
+    "scripts/issue2564_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T23:40:57Z",
+  "figsize": [
+    8.4,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.1271252741732844,
+      "direction cosine (100 draws)": 0.462924388216827,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16733458722975372,
+      "direction cosine (100 draws)": 0.3727683867977018,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11696824961063411,
+      "direction cosine (100 draws)": 0.5784344168697964,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13631583651287632,
+      "direction cosine (100 draws)": 0.3679754105035926,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20869871825348207,
+      "direction cosine (100 draws)": 0.5026798476007344,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1029253178035893,
+      "direction cosine (100 draws)": 0.5507628518252684,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12866323576115765,
+      "direction cosine (100 draws)": 0.5031061709941232,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12567228336676556,
+      "direction cosine (100 draws)": 0.48824188901399324,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2046263640789345,
+      "direction cosine (100 draws)": 0.43136927354527865,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16595368745253194,
+      "direction cosine (100 draws)": 0.546333573766574,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.17550423709209026,
+      "direction cosine (100 draws)": 0.4675009930469246,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10878820133816779,
+      "direction cosine (100 draws)": 0.43671382529342184,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16,
+      "direction cosine (100 draws)": 0.4757342522895198,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.17726381440967975,
+      "direction cosine (100 draws)": 0.3352596022826041,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.19873139359249958,
+      "direction cosine (100 draws)": 0.23499656570352062,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.15320970385927973,
+      "direction cosine (100 draws)": 0.44967027258352654,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.12726864661417323,
+      "direction cosine (100 draws)": 0.2730050249943953,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.16655017444190018,
+      "direction cosine (100 draws)": 0.3733415362344913,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.10765807073250104,
+      "direction cosine (100 draws)": 0.42316653426744194,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.19931574063910984,
+      "direction cosine (100 draws)": 0.384058763539209,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1757997278946478,
+      "direction cosine (100 draws)": 0.4003720628623327,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.19097052881024484,
+      "direction cosine (100 draws)": 0.3359180915197289,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.1425431161755842,
+      "direction cosine (100 draws)": 0.38442753680648734,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.2164837629273884,
+      "direction cosine (100 draws)": 0.3162013994099291,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.20717453455866372,
+      "direction cosine (100 draws)": 0.2946398389735853,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.16,
+      "direction cosine (100 draws)": 0.35042143576477097,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8734060196488513,
+      "direction cosine (100 draws)": 0.41676109814984263,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.803356644942236,
+      "direction cosine (100 draws)": 0.29627367272838,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8360065204472441,
+      "direction cosine (100 draws)": 0.4804231659858592,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7852564518944675,
+      "direction cosine (100 draws)": 0.32349041049141136,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.7985147390481058,
+      "direction cosine (100 draws)": 0.413544601578315,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8619658743890946,
+      "direction cosine (100 draws)": 0.5009207087863548,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8693714587089381,
+      "direction cosine (100 draws)": 0.42620020588562446,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8961011678921051,
+      "direction cosine (100 draws)": 0.3613983786867623,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8190990429765782,
+      "direction cosine (100 draws)": 0.33237942151406125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8244551647241842,
+      "direction cosine (100 draws)": 0.5043181513714393,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.836346697353097,
+      "direction cosine (100 draws)": 0.48334936553066743,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.8027365630901142,
+      "direction cosine (100 draws)": 0.3793872659399802,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.84,
+      "direction cosine (100 draws)": 0.4098705372207248,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1155905806402566,
+      "direction cosine (100 draws)": 0.3072528541735286,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.157084591147112,
+      "direction cosine (100 draws)": 0.19580284429733824,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.127229121886106,
+      "direction cosine (100 draws)": 0.373962800941583,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1803776793619012,
+      "direction cosine (100 draws)": 0.22924448001360126,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1524582302646795,
+      "direction cosine (100 draws)": 0.3364653331168696,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1999213835269404,
+      "direction cosine (100 draws)": 0.35010066649800853,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1840318122402698,
+      "direction cosine (100 draws)": 0.301469644093656,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1374839969658448,
+      "direction cosine (100 draws)": 0.28960825424440007,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1998711761674241,
+      "direction cosine (100 draws)": 0.23175236900505364,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1965717228996162,
+      "direction cosine (100 draws)": 0.34796425259492075,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1464974054836208,
+      "direction cosine (100 draws)": 0.35365243551533887,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1345993724716292,
+      "direction cosine (100 draws)": 0.2610617373026036,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.16,
+      "direction cosine (100 draws)": 0.2981948059830752,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8618994604769972,
+      "direction cosine (100 draws)": 0.410057550333016,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7967702980331173,
+      "direction cosine (100 draws)": 0.3309997803864649,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8039889842970132,
+      "direction cosine (100 draws)": 0.523615980132052,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7808834723701208,
+      "direction cosine (100 draws)": 0.43245408576438216,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8744309253002567,
+      "direction cosine (100 draws)": 0.4479799549167854,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.859782102791044,
+      "direction cosine (100 draws)": 0.5408544694378135,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8646198454351604,
+      "direction cosine (100 draws)": 0.48169548079070845,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8736874837226363,
+      "direction cosine (100 draws)": 0.4583884645497486,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8350698930646008,
+      "direction cosine (100 draws)": 0.3991919607170368,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8482489435143474,
+      "direction cosine (100 draws)": 0.5115884201884618,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.796775639775319,
+      "direction cosine (100 draws)": 0.49228510812993254,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.7937436088243168,
+      "direction cosine (100 draws)": 0.35705646267250446,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.84,
+      "direction cosine (100 draws)": 0.44884730983490884,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.1802083554148566,
+      "direction cosine (100 draws)": 0.3779580361848268,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.156531544737176,
+      "direction cosine (100 draws)": 0.23992193822598937,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.167828332777743,
+      "direction cosine (100 draws)": 0.4206210831749352,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.191799862889923,
+      "direction cosine (100 draws)": 0.2768863673309559,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.176166198400071,
+      "direction cosine (100 draws)": 0.38466499698831313,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1664295280789596,
+      "direction cosine (100 draws)": 0.3977943736430014,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.16710485928945,
+      "direction cosine (100 draws)": 0.3548437696783498,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1364740117675134,
+      "direction cosine (100 draws)": 0.3801654964879205,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1036981401481527,
+      "direction cosine (100 draws)": 0.3415484453295968,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1524060867078836,
+      "direction cosine (100 draws)": 0.3829831546266259,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1257501607383436,
+      "direction cosine (100 draws)": 0.3419239107557603,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.1490234372469565,
+      "direction cosine (100 draws)": 0.22324217356865425,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.16,
+      "direction cosine (100 draws)": 0.34354614549957746,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.8824083687921798,
+      "direction cosine (100 draws)": 0.39330337269610705,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.808072738303841,
+      "direction cosine (100 draws)": 0.3370251502958552,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.7869963290026876,
+      "direction cosine (100 draws)": 0.5343205840059246,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.8137660670426397,
+      "direction cosine (100 draws)": 0.2568222570822076,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.815231250932002,
+      "direction cosine (100 draws)": 0.3901828680144358,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.859429981767227,
+      "direction cosine (100 draws)": 0.48407230750592706,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.846843858280953,
+      "direction cosine (100 draws)": 0.41568195812601055,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.8740677850927696,
+      "direction cosine (100 draws)": 0.3540504069078211,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.8597176248392864,
+      "direction cosine (100 draws)": 0.2897194265616781,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.8287664233728083,
+      "direction cosine (100 draws)": 0.44512144279672355,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.877682446159924,
+      "direction cosine (100 draws)": 0.39964248207561315,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.8000367503889243,
+      "direction cosine (100 draws)": 0.33544264546449526,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.84,
+      "direction cosine (100 draws)": 0.3862820751277333,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.1027254487760634,
+      "direction cosine (100 draws)": 0.2355915463605436,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1108057432930774,
+      "direction cosine (100 draws)": 0.20651159017519163,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.186683122071574,
+      "direction cosine (100 draws)": 0.39026867572502716,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1554252676301666,
+      "direction cosine (100 draws)": 0.22143731011747278,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.119352613484032,
+      "direction cosine (100 draws)": 0.26897200815847533,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.160125373012404,
+      "direction cosine (100 draws)": 0.3635275940667342,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1182774523255805,
+      "direction cosine (100 draws)": 0.3406710487658487,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1835584450093286,
+      "direction cosine (100 draws)": 0.2871439091182756,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.153538753068884,
+      "direction cosine (100 draws)": 0.2142484997219627,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.145722547131578,
+      "direction cosine (100 draws)": 0.32944249106514795,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1361814506977455,
+      "direction cosine (100 draws)": 0.3065742919871977,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.1756339111742666,
+      "direction cosine (100 draws)": 0.30534510715366936,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.16,
+      "direction cosine (100 draws)": 0.28914450603462893,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.8234175132664068,
+      "direction cosine (100 draws)": 0.36398791538938396,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.790517990317932,
+      "direction cosine (100 draws)": 0.35189354463652434,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.7941607082544615,
+      "direction cosine (100 draws)": 0.45157988837770385,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8954277197459417,
+      "direction cosine (100 draws)": 0.30433209503676795,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.889029682884913,
+      "direction cosine (100 draws)": 0.4085770595064766,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8639648560572897,
+      "direction cosine (100 draws)": 0.45125405217766285,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.811904395375142,
+      "direction cosine (100 draws)": 0.40872204824063874,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8963011652817268,
+      "direction cosine (100 draws)": 0.4190609384020385,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.873450108475895,
+      "direction cosine (100 draws)": 0.44631275650469354,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8660268226990793,
+      "direction cosine (100 draws)": 0.4235403786356213,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.8339233802572545,
+      "direction cosine (100 draws)": 0.42434285773824987,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.812668987421419,
+      "direction cosine (100 draws)": 0.3639979551092897,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 3.84,
+      "direction cosine (100 draws)": 0.40146679081292097,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 4.11156691545842,
+      "direction cosine (100 draws)": 0.33930847755463106,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.208312287585261,
+      "direction cosine (100 draws)": 0.26666769885394825,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.154693154780033,
+      "direction cosine (100 draws)": 0.3712156704238872,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.124283603775428,
+      "direction cosine (100 draws)": 0.26267914354831245,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.1367147948980785,
+      "direction cosine (100 draws)": 0.382997941339611,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.1695063482730275,
+      "direction cosine (100 draws)": 0.37738974246599094,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.121212733952708,
+      "direction cosine (100 draws)": 0.32291097785724576,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.202793714091086,
+      "direction cosine (100 draws)": 0.34048164804986464,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.191022343580225,
+      "direction cosine (100 draws)": 0.34256682220970075,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.186335554714113,
+      "direction cosine (100 draws)": 0.3739697381977921,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.151851164773013,
+      "direction cosine (100 draws)": 0.33008507047883784,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.1752770608842935,
+      "direction cosine (100 draws)": 0.25770081876213785,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 4.16,
+      "direction cosine (100 draws)": 0.33066447914516334,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 4.850091756269528,
+      "direction cosine (100 draws)": 0.38937477626705913,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.8579815921865785,
+      "direction cosine (100 draws)": 0.364314061600781,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.790133318536786,
+      "direction cosine (100 draws)": 0.5045516001592967,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.829896888260473,
+      "direction cosine (100 draws)": 0.2570544185058406,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.784993700863427,
+      "direction cosine (100 draws)": 0.44815745161377574,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.839278898309342,
+      "direction cosine (100 draws)": 0.44148008780538456,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.819583345479934,
+      "direction cosine (100 draws)": 0.40592791173928605,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.797342902663925,
+      "direction cosine (100 draws)": 0.38890806289992996,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.792408356126706,
+      "direction cosine (100 draws)": 0.4442945318856213,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.850517348661326,
+      "direction cosine (100 draws)": 0.4731632251783472,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.800471156224426,
+      "direction cosine (100 draws)": 0.3523342123932385,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.891014414205215,
+      "direction cosine (100 draws)": 0.4335477381252559,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 4.84,
+      "direction cosine (100 draws)": 0.4085923398478181,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 5.169727336764048,
+      "direction cosine (100 draws)": 0.3138890325432681,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.141624376544181,
+      "direction cosine (100 draws)": 0.24030180184552405,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.17090985897777,
+      "direction cosine (100 draws)": 0.4035394025756043,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.102736464523564,
+      "direction cosine (100 draws)": 0.2691807189016359,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.215027105588973,
+      "direction cosine (100 draws)": 0.3611082941106414,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.157876412433148,
+      "direction cosine (100 draws)": 0.36810773883230824,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.1939282272700344,
+      "direction cosine (100 draws)": 0.3496448422349924,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.109927599990693,
+      "direction cosine (100 draws)": 0.369653987326089,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.158398999700579,
+      "direction cosine (100 draws)": 0.3442086211175344,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.158884839322543,
+      "direction cosine (100 draws)": 0.40152248168612575,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.212539174596998,
+      "direction cosine (100 draws)": 0.3142256191002921,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.168607366285129,
+      "direction cosine (100 draws)": 0.34173187980864145,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.16,
+      "direction cosine (100 draws)": 0.33975953500688805,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.836818728126834,
+      "direction cosine (100 draws)": 0.25472358302259823,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.812037079571027,
+      "direction cosine (100 draws)": 0.16893640844252636,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.819788279681106,
+      "direction cosine (100 draws)": 0.1814413837650348,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.842480688296584,
+      "direction cosine (100 draws)": 0.1432039237822236,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.8326693752366054,
+      "direction cosine (100 draws)": 0.26967213938605994,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.782593449585639,
+      "direction cosine (100 draws)": 0.23586232474866933,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.8791550309033225,
+      "direction cosine (100 draws)": 0.1654447782172442,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.8875392926207715,
+      "direction cosine (100 draws)": 0.1473662397750251,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.796829890679833,
+      "direction cosine (100 draws)": 0.23848911374060572,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.846484337224686,
+      "direction cosine (100 draws)": 0.26345226348954054,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.793029088936253,
+      "direction cosine (100 draws)": 0.19231922612918936,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.860668811164778,
+      "direction cosine (100 draws)": 0.17393080722594792,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 5.84,
+      "direction cosine (100 draws)": 0.20290351597705544,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 6.133748054060681,
+      "direction cosine (100 draws)": 0.11049939443686936,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.179130716163028,
+      "direction cosine (100 draws)": 0.10448881395748291,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.187239353714426,
+      "direction cosine (100 draws)": 0.178941207773234,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.192237699030119,
+      "direction cosine (100 draws)": 0.157008810534156,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.112928913514708,
+      "direction cosine (100 draws)": 0.16761025084956466,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.209921421416513,
+      "direction cosine (100 draws)": 0.2093868070934055,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.1276256789073855,
+      "direction cosine (100 draws)": 0.16466436504945894,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.1044895067411415,
+      "direction cosine (100 draws)": 0.06778462203654675,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.166582296326978,
+      "direction cosine (100 draws)": 0.17651995044505922,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.1445106740634925,
+      "direction cosine (100 draws)": 0.24289393662822106,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.199574769175889,
+      "direction cosine (100 draws)": 0.137522389742002,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.1969901766477165,
+      "direction cosine (100 draws)": 0.13194790699583267,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 6.16,
+      "direction cosine (100 draws)": 0.15410570462848608,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 6.818056667138726,
+      "direction cosine (100 draws)": 0.2489739292996784,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.894347927408369,
+      "direction cosine (100 draws)": 0.17690828218986282,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.814910140576814,
+      "direction cosine (100 draws)": 0.2904277344586978,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.841806855507806,
+      "direction cosine (100 draws)": 0.06479661463475662,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.810715810868112,
+      "direction cosine (100 draws)": 0.34005632117423457,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.892325228405875,
+      "direction cosine (100 draws)": 0.16618464405074493,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.799752938109842,
+      "direction cosine (100 draws)": 0.15442045404010202,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.78538927432708,
+      "direction cosine (100 draws)": 0.19498429950996465,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.8322116472003644,
+      "direction cosine (100 draws)": 0.33512683377058594,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.8990850676867,
+      "direction cosine (100 draws)": 0.1710347711030715,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.88700127195059,
+      "direction cosine (100 draws)": 0.20924748455216344,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.869832962334834,
+      "direction cosine (100 draws)": 0.125748253162561,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 6.84,
+      "direction cosine (100 draws)": 0.20649246849553526,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 7.206895098905423,
+      "direction cosine (100 draws)": 0.13375666459408003,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.207213596763744,
+      "direction cosine (100 draws)": 0.144905927542972,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.162263003246374,
+      "direction cosine (100 draws)": 0.26288812036984793,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.1379114862196955,
+      "direction cosine (100 draws)": 0.1386431601558709,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.192641491853319,
+      "direction cosine (100 draws)": 0.23461373011848663,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.179399351580131,
+      "direction cosine (100 draws)": 0.19699132509307896,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.144838927464845,
+      "direction cosine (100 draws)": 0.21885998392962003,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.111336000167382,
+      "direction cosine (100 draws)": 0.15547319440352317,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.189614753361883,
+      "direction cosine (100 draws)": 0.14747412614031136,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.131495261910744,
+      "direction cosine (100 draws)": 0.2098013039370285,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.212417578064054,
+      "direction cosine (100 draws)": 0.14508525733351124,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.128916469000682,
+      "direction cosine (100 draws)": 0.20528521459804183,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 7.16,
+      "direction cosine (100 draws)": 0.18281483401803109,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 7.794730951889378,
+      "direction cosine (100 draws)": 0.16868647862315395,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.879733520654988,
+      "direction cosine (100 draws)": 0.042988811809336065,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.798394117994939,
+      "direction cosine (100 draws)": 0.3170450806537619,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.801512196978929,
+      "direction cosine (100 draws)": 0.18744428736878493,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.851925934982501,
+      "direction cosine (100 draws)": 0.3051387292465427,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.8849474449004955,
+      "direction cosine (100 draws)": 0.2226248229805897,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.803572159885749,
+      "direction cosine (100 draws)": 0.22370172347908873,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.817238840748011,
+      "direction cosine (100 draws)": 0.27018176630192337,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.873288580588941,
+      "direction cosine (100 draws)": 0.24183141014422754,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.896619171127316,
+      "direction cosine (100 draws)": 0.14294346576604025,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.8400889423442806,
+      "direction cosine (100 draws)": 0.15422271568027324,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.79726770030615,
+      "direction cosine (100 draws)": 0.10804730317298387,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 7.84,
+      "direction cosine (100 draws)": 0.19873804960222555,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 8.101672354524984,
+      "direction cosine (100 draws)": 0.257703984010248,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.127558723599863,
+      "direction cosine (100 draws)": 0.08877827427593105,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.115818666134382,
+      "direction cosine (100 draws)": 0.300998325554833,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.181319040833543,
+      "direction cosine (100 draws)": 0.15948107562694633,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.114619900555423,
+      "direction cosine (100 draws)": 0.27868223705540546,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.160759591794475,
+      "direction cosine (100 draws)": 0.2001126926630984,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.183311492277147,
+      "direction cosine (100 draws)": 0.23091565485253032,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.169733993106508,
+      "direction cosine (100 draws)": 0.21216424473891432,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.123973078199207,
+      "direction cosine (100 draws)": 0.20844797438906834,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.196494943141872,
+      "direction cosine (100 draws)": 0.23621770332844905,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.185848855553896,
+      "direction cosine (100 draws)": 0.21175719344724328,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.188678080469865,
+      "direction cosine (100 draws)": 0.18055387768452835,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 8.16,
+      "direction cosine (100 draws)": 0.2138177698022663,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 8.795726930186877,
+      "direction cosine (100 draws)": 0.17899995031766608,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.794850456438041,
+      "direction cosine (100 draws)": 0.02907040576556041,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.89130750612078,
+      "direction cosine (100 draws)": 0.0826796396355087,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.827709383258993,
+      "direction cosine (100 draws)": -0.024469697124700367,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.816113843013712,
+      "direction cosine (100 draws)": 0.07236708074327483,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.838630085442183,
+      "direction cosine (100 draws)": 0.16383365600578015,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.85954370553163,
+      "direction cosine (100 draws)": 0.19000818477626757,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.894674790845636,
+      "direction cosine (100 draws)": 0.2247117657488699,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.814373547225847,
+      "direction cosine (100 draws)": 0.2085645950185398,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.890977011517442,
+      "direction cosine (100 draws)": 0.09798561913271597,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.782983138966351,
+      "direction cosine (100 draws)": 0.10641526963417604,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.846623765079219,
+      "direction cosine (100 draws)": -0.02721703010156725,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 8.84,
+      "direction cosine (100 draws)": 0.10857911996267432,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 9.17607701340173,
+      "direction cosine (100 draws)": 0.1353202404485717,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.11270768845009,
+      "direction cosine (100 draws)": 0.10192201648864377,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.11684075164767,
+      "direction cosine (100 draws)": 0.16633386895066346,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.150293718317956,
+      "direction cosine (100 draws)": 0.11227314734598656,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.215947829457182,
+      "direction cosine (100 draws)": 0.1362820234069912,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.171525106388124,
+      "direction cosine (100 draws)": 0.11894420839563345,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.211962786592025,
+      "direction cosine (100 draws)": 0.18508103596291844,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.196523309873557,
+      "direction cosine (100 draws)": 0.12658272918543165,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.156085792186635,
+      "direction cosine (100 draws)": 0.18782505415397613,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.194171613910262,
+      "direction cosine (100 draws)": 0.17371336865984432,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.102140414077239,
+      "direction cosine (100 draws)": 0.1312878309407802,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.113097279611889,
+      "direction cosine (100 draws)": 0.10438857131952034,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 9.16,
+      "direction cosine (100 draws)": 0.13999617460491343,
+      "_kind": "scatter",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 260,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per name-pair direction recovery: map vs identity",
+        "ylabel": "direction cosine (100 draws)",
+        "legend_labels": [
+          "frozen map",
+          "identity"
+        ],
+        "xticklabels": [
+          "Marcus vs Emma",
+          "Sarah vs Kevin",
+          "Marcus vs Sarah",
+          "Emma vs Kevin",
+          "Diego vs Sarah",
+          "Diego vs Emma",
+          "Marcus vs Kevin",
+          "Diego vs Kevin",
+          "Marcus vs Diego",
+          "Sarah vs Emma"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

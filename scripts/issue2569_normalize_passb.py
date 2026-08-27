@@ -65,7 +65,7 @@ from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-load_dotenv()  # shared-VM thread caps BEFORE the numpy/torch imports (#847; code-style.md)
+load_dotenv()
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
