@@ -17,3 +17,4 @@
 {"ts": "2026-08-27T11:43:28Z", "kind": "epm:progress", "version": 6, "by": "unknown", "note": "[divergence-probe] r1 count=0 main=1d2feb414d0264c03c43024f00ecc620869792e8 files="}
 {"ts": "2026-08-27T11:44:21Z", "kind": "epm:progress", "version": 7, "by": "issue-orchestrator", "note": "stage-dispatch stage=code-review round=1 — Claude code-reviewer + codex composer spawned in parallel (bg); diff: 1 commit 69KB, 8 files; draft PR #2116 opened; divergence count=0; quota CLEAR"}
 {"ts": "2026-08-27T11:53:45Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mtbgse7i-gxq6gm effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s probe_retries=0"}
+{"ts": "2026-08-27T12:02:25Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mtbgse7i-gxq6gm phase=done after 513s fetch_retries=0."}
