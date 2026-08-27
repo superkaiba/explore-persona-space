@@ -88,3 +88,4 @@
 - [Ack paragraph goes in ## Goal, never after the last result](feedback_ack_paragraph_placement_goal_not_last_result.md) — check 20 counts it into that result (128→193 FAIL); "All three arms" trips the arm-count ban. #2564.
 - [Context row mines Provenance quotes](feedback_context_row_mines_provenance_quotes.md) — check 17 extracts the first quoted fragment from original-body ## Provenance; "origin prompt not recorded" FAILs when any quote exists. #2564 r2.
 - [Worktree commit form + orchestrator-owned concern residual](feedback_targeted_fix_round_worktree_commit_and_concern_residual.md) — git -C "$WT" commit (cd-$WT trips root guard); --issue Lens-14 audit counts orchestrator-owned open concerns: report residual, never fake an address row. #2564 r6.
+- [Per-unit evidence silencers (checks 55/59) + companion-embed word math](feedback_per_unit_evidence_silencers.md) — caption token is cap-free; per-pair/companion idioms; companion alt ≤6 words. #2587 r7.
