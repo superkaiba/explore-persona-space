@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2622,
+  "highest_id": 2623,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12518,6 +12518,13 @@
       "path": "tasks/proposed/2622",
       "status": "proposed",
       "title": "Launcher env override clobbered by dispatcher .env re-source; wrapper's frozen environ gives a false fix-engaged signal"
+    },
+    "2623": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2623",
+      "status": "proposed",
+      "title": "main-red: test_workflow_lint_prod_import_lockfile::test_live_tree_clean pins 7 live-tree WARNs, main emits 11 (dangling first-party import roots unreconciled)"
     },
     "263": {
       "has_clean_result": true,
