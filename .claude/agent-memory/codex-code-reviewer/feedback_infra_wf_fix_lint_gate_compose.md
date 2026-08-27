@@ -366,30 +366,6 @@ failed-then-fixed lockstep item (cap snapshot pin caught by the round's
 pin-sweep, fixed in commit 2) pre-adjudicates as within-round fix — Step 0.9
 certain-introduced-AND-fixed, no git-provenance tag.
 
-**#2364 r1 (2026-08-27) sharpenings — SELF-REFERENTIAL rubric-edit variant
-(the diff EDITS code-reviewer.md + codex-code-reviewer.md themselves, adding a
-new Step/lens + blocker tag):** (a) extract the PRE-ROUND rubric from the
-MAIN-side copy, never the worktree copy — the round's new Step is PAYLOAD
-under review, not binding protocol (grading the round by the gate it
-introduces is circular, and the parallel Claude reviewer loads the main-side
-spec); verify no main drift on the rubric files since merge-base
-(`git log <MB>..origin/main -- <both specs>` empty) so main copy == pre-round
-standard, and state the fact + a twin-PARITY duty (#606 class: copy-list stub
-+ inlined-rubric-line token + Blocker-tags entry in BOTH specs, tag defined
-SUBSTANTIVE/never-stripped). (b) Cap-raise counterfactual can land MANDATED
-(inverse of the #2610 r2 shape): pre-round main copy 109,441 B vs old cap
-109,600 → the round's +2,454 B could not fit; attest MANDATED so the twin
-doesn't adjudicate discretion. (c) Two validation gotchas: the plan/marker
-envelopes legitimately QUOTE the twin spec's literal `{{INLINED RUBRIC}}`
-placeholder when the round edits the twin spec — scope the no-residue check
-to OUTSIDE the envelopes (assert the four named placeholders gone, then `{{`
-outside envelopes only); and `## Concerns to persist` occurs inside the
-extracted rubric span (Step 0.8 prose), so probe the TEMPLATE section with
-rindex/last-occurrence, never first index. (d) The report's own
-failed-then-fixed lockstep item (cap snapshot pin caught by the round's
-pin-sweep, fixed in commit 2) pre-adjudicates as within-round fix — Step 0.9
-certain-introduced-AND-fixed, no git-provenance tag.
-
 **#2365 r1 (2026-08-27) sharpenings — deploy-deferred serving-infra variant
 (diff = Next.js config header + a new served-vs-committed integrity probe;
 production deploy deliberately POST-merge per a plan sequencing note):**
