@@ -618,6 +618,7 @@ def recommend_next_interval(
     run_age_sec: float | None,
     phase_changed_ago_sec: float | None,
     gpu_idle_escalation_posted: bool = False,
+    gpu_noctx_advisory_posted: bool = False,
 ) -> int:
     """Pure decision core for the adaptive bg-poll interval (§7).
 
@@ -640,7 +641,10 @@ def recommend_next_interval(
       post, a GPU-idle ESCALATION post (#664 — a multi-GPU pod idle in an
       upload/CPU-only phase past the escalation threshold; treated the same
       as the advisory so the poll cadence does not go quiet right after
-      escalating), or the #518 CPU-advancing stall-rescue (logs stale +
+      escalating), a no-CUDA-context advisory post (#2624 — same
+      never-go-quiet-on-the-verdict-tick treatment; defaulted so
+      cross-backend call sites need no change), or the #518
+      CPU-advancing stall-rescue (logs stale +
       GPUs idle — the run is healthy but in a degraded-observability
       regime). Deliberately NOT in the set: raw GPU idleness alone
       (``_gpu_idle(gpu_util)`` on a tick that posted no advisory).
@@ -667,7 +671,14 @@ def recommend_next_interval(
         return POLL_INTERVAL_DEFAULT_SEC
     if phase_transitioned:
         return POLL_INTERVAL_DEFAULT_SEC
-    if ssh_failed or gpu_idle_advisory_posted or gpu_idle_escalation_posted or cpu_override_active:
+    anomaly = (
+        ssh_failed
+        or gpu_idle_advisory_posted
+        or gpu_idle_escalation_posted
+        or gpu_noctx_advisory_posted
+        or cpu_override_active
+    )
+    if anomaly:
         return POLL_INTERVAL_DEFAULT_SEC
     if run_age_sec is None or run_age_sec < EARLY_RUN_WINDOW_SEC:
         return POLL_INTERVAL_DEFAULT_SEC
@@ -1798,6 +1809,20 @@ class PollResult:
     pid_identity: str = "unknown"
     marker_pid_identity: str = "unknown"
     sig_proc_rescue: bool = False
+    # #2624: the raw per-GPU memory.used csv from the probe ("unknown" when
+    # nvidia-smi is absent / SSH failed / an older pod-side probe replays).
+    # Observability only. Declared LAST with a default so cross-backend
+    # PollResult(...) call sites need no change.
+    gpu_mem_mib: str = "unknown"
+    # True when THIS tick posted the [gpu-no-cuda-context] marker + Telegram
+    # push (#2624) — every card <= GPU_NOCTX_MEM_MAX_MIB MiB of memory.used
+    # for >= GPU_NOCTX_ADVISORY_MIN min AND >= GPU_NOCTX_MIN_TICKS
+    # consecutive samples of a healthy running phase (no CUDA context was
+    # ever created; the plan's GPU-worthiness claim is falsified, #2546).
+    # Observability only; never changes ``status`` and never stops anything.
+    # Declared LAST with a default so cross-backend PollResult(...) call
+    # sites need no change.
+    gpu_noctx_advisory_posted: bool = False
 
 
 # Sums procps cumulative-CPU `time=` values (format [DD-]HH:MM:SS) for every
@@ -2223,6 +2248,14 @@ def _ssh_probe(
         "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
         "    --format=csv,noheader,nounits 2>/dev/null | paste -sd, -); "
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
+        # #2624: per-GPU memory.used sample (MiB csv) — a SEPARATE second
+        # query so the GPU_UTIL emission above stays byte-identical. 0 MiB on
+        # every card is the conclusive no-CUDA-context signal (a context pins
+        # hundreds of MiB from creation to process exit), unlike 0% util
+        # (which a gap between kernels also reads).
+        "  GPU_MEM_OUT=$(nvidia-smi --query-gpu=memory.used "
+        "    --format=csv,noheader,nounits 2>/dev/null | paste -sd, -); "
+        '  echo "GPU_MEM_MIB=${GPU_MEM_OUT:-unknown}"; '
         "  ZOMBIE=''; GPU_PIDS_TOTAL=0; GPU_PIDS_RESOLVABLE=0; "
         "  while IFS=, read -r zpid zmem; do "
         '    zpid=$(echo "$zpid" | tr -d " "); '
@@ -2256,7 +2289,7 @@ def _ssh_probe(
         '  echo "GPU_PIDS_RESOLVABLE=$GPU_PIDS_RESOLVABLE"; '
         '  echo "NVIDIA_UVM_LIVE_HOLDERS=$UVM_HOLDERS"; '
         '  echo "NVIDIA_UVM_ALLOC_HOLDERS=$UVM_ALLOC_HOLDERS"; '
-        'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; '
+        'else echo "GPU_UTIL=unknown"; echo "GPU_MEM_MIB=unknown"; echo "ZOMBIE_GPU_PIDS="; '
         'echo "GPU_PIDS_TOTAL=unknown"; echo "GPU_PIDS_RESOLVABLE=unknown"; '
         'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"; '
         'echo "NVIDIA_UVM_ALLOC_HOLDERS=unknown"; fi; '
@@ -2434,6 +2467,7 @@ def _ssh_probe(
             "shard_log_mtime_epoch": "0",
             "shard_log_tail": "",
             "gpu_util": "unknown",
+            "gpu_mem_mib": "unknown",
             "zombie_gpu_pids": "",
             "gpu_pids_total": "unknown",
             "gpu_pids_resolvable": "unknown",
@@ -2468,6 +2502,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
+    "GPU_MEM_MIB",
     "ZOMBIE_GPU_PIDS",
     "GPU_PIDS_TOTAL",
     "GPU_PIDS_RESOLVABLE",
@@ -2507,6 +2542,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "shard_log_mtime_epoch": "0",
         "shard_log_tail": "",
         "gpu_util": "unknown",
+        "gpu_mem_mib": "unknown",
         "zombie_gpu_pids": "",
         "gpu_pids_total": "unknown",
         "gpu_pids_resolvable": "unknown",
@@ -3935,6 +3971,194 @@ def _maybe_post_gpu_idle_advisory(
     return update.idle_since_epoch, advised_phases, True
 
 
+# ── #2624 no-CUDA-context advisory ────────────────────────────────────────
+# A GPU-lane phase whose cards ALL stay at <= GPU_NOCTX_MEM_MAX_MIB MiB of
+# memory.used for >= GPU_NOCTX_ADVISORY_MIN minutes AND >= GPU_NOCTX_MIN_TICKS
+# consecutive samples has never allocated a CUDA context (a context pins
+# hundreds of MiB from creation to process exit) — the plan's GPU-worthiness
+# claim is falsified (#2546: 4x H100 at 0 MiB through p5_fits while the
+# dispatcher logged alloc=0,1,2,3). Advisory + push only; never stops anything.
+# 0 (or negative) minutes disables.
+GPU_NOCTX_MEM_MAX_MIB = int(os.environ.get("EPM_GPU_NOCTX_MEM_MAX_MIB", "64"))
+GPU_NOCTX_ADVISORY_MIN = int(os.environ.get("EPM_GPU_NOCTX_ADVISORY_MIN", "20"))
+GPU_NOCTX_MIN_TICKS = int(os.environ.get("EPM_GPU_NOCTX_MIN_TICKS", "3"))
+
+
+def _gpu_mem_all_zero(gpu_mem_mib: str, max_mib: int) -> bool:
+    """True iff ``gpu_mem_mib`` PARSES and every card's memory.used <= max_mib.
+
+    Fail-safe: ``"unknown"`` / unparseable -> False (never accumulates toward
+    an advisory) — the :func:`_parse_gpu_utils` None contract carries over
+    verbatim (the csv-int parser is signal-agnostic; reused as-is).
+    """
+    vals = _parse_gpu_utils(gpu_mem_mib)
+    return vals is not None and all(v <= max_mib for v in vals)
+
+
+@dataclass(frozen=True)
+class GpuNoCtxUpdate:
+    """Outcome of one no-CUDA-context tick (``_gpu_noctx_update``)."""
+
+    should_post: bool
+    since_epoch: int  # 0 = no active all-zero span
+    zero_ticks: int  # consecutive all-zero ticks incl. this one; 0 = no span
+    span_sec: int
+
+
+def _gpu_noctx_update(
+    *,
+    status: str,
+    gpu_mem_mib: str,
+    current_phase: str,
+    prev_phase: str,
+    prev_since_epoch: int,
+    prev_zero_ticks: int,
+    advised_phases: set[str],
+    now_epoch: int,
+    advisory_min: int,
+    min_ticks: int,
+    max_mib: int,
+) -> GpuNoCtxUpdate:
+    """Pure decision core for the #2624 no-CUDA-context advisory.
+
+    Span semantics mirror :func:`_gpu_idle_advisory_update`: RESET on a
+    non-``running`` verdict, any card above ``max_mib``, or an unknown /
+    unparseable sample; RESTART on phase change (each phase gets its own
+    warm-up allowance). Fires once per phase when the span has lasted at
+    least ``advisory_min`` minutes AND ``zero_ticks >= min_ticks`` (the tick
+    floor guarantees >= min_ticks independent zero reads regardless of the
+    poll cadence — a bare span check could fire on only 2 samples under the
+    1800s quiet cadence). ``advisory_min <= 0`` disables. Pure / no I/O —
+    the caller owns state persistence and the marker post.
+    """
+    if advisory_min <= 0:
+        return GpuNoCtxUpdate(should_post=False, since_epoch=0, zero_ticks=0, span_sec=0)
+    if status != "running" or not _gpu_mem_all_zero(gpu_mem_mib, max_mib):
+        return GpuNoCtxUpdate(should_post=False, since_epoch=0, zero_ticks=0, span_sec=0)
+    if current_phase != prev_phase or prev_since_epoch <= 0:
+        since = now_epoch
+        ticks = 1
+    else:
+        since = prev_since_epoch
+        ticks = prev_zero_ticks + 1
+    span = max(0, now_epoch - since)
+    should = (
+        span >= advisory_min * 60 and ticks >= min_ticks and current_phase not in advised_phases
+    )
+    return GpuNoCtxUpdate(should_post=should, since_epoch=since, zero_ticks=ticks, span_sec=span)
+
+
+def _maybe_post_gpu_noctx_advisory(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_mem_mib: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, int, set[str], bool]:
+    """No-CUDA-context wiring for ``poll_once`` (#2624; incident #2546).
+
+    Returns ``(since_epoch, zero_ticks, advised_phases, posted)`` for the
+    caller to persist via ``_save_state``. Mirrors
+    :func:`_maybe_post_gpu_idle_advisory` exactly: guarded int parses of the
+    persisted span keys, an at-most-once-per-phase csv de-dup set, and the
+    same ``epm:progress`` marker channel (note prefixed
+    ``[gpu-no-cuda-context]``, extra ``gpu_no_cuda_context=True``). A
+    marker-post failure is logged and the phase is NOT recorded as advised,
+    so the next tick retries; the fail-soft :func:`_telegram_push` never
+    blocks recording (the marker is the durable record, mirroring
+    :func:`_maybe_escalate_gpu_idle`). ADVISORY ONLY: called after the
+    verdict is computed — it can never influence status / stall / dead /
+    done, and it never kills, stops, or migrates anything (hard constraint
+    of #2624; the plan-time-only posture of the GPU-width carve-out is
+    deliberate). Unlike the #664 escalation it fires regardless of
+    ``_phase_is_cpu_only`` and pod width (n_gpus >= 1): the falsification
+    evidence is the memory value, not the phase-name heuristic — a phase
+    named ``p2_train`` at 0 MiB would otherwise never push. The three state
+    keys are in ``_RUN_SCOPED_STATE_KEYS`` (#1033), so a relaunch resets the
+    clock. GCP-lane residual (by design): ``scripts/backend_poll.py`` reuses
+    the utilization-only idle advisory/escalation and does NOT sample
+    memory.used — GCP provisioning is disabled (#2028), the lane serves
+    in-flight handles only, so this verdict is RunPod-lane only. SLURM
+    lanes have no GPU probe at all — out of scope, named residual.
+    """
+    try:
+        prev_since = int(prev_state.get("gpu_noctx_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_since = 0
+    try:
+        prev_ticks = int(prev_state.get("gpu_noctx_zero_ticks", "0"))
+    except (TypeError, ValueError):
+        prev_ticks = 0
+    advised_phases = {
+        p for p in (prev_state.get("gpu_noctx_advised_phases", "") or "").split(",") if p
+    }
+    update = _gpu_noctx_update(
+        status=status,
+        gpu_mem_mib=gpu_mem_mib,
+        current_phase=current_phase,
+        prev_phase=prev_state.get("phase", ""),
+        prev_since_epoch=prev_since,
+        prev_zero_ticks=prev_ticks,
+        advised_phases=advised_phases,
+        now_epoch=now_epoch,
+        advisory_min=GPU_NOCTX_ADVISORY_MIN,
+        min_ticks=GPU_NOCTX_MIN_TICKS,
+        max_mib=GPU_NOCTX_MEM_MAX_MIB,
+    )
+    if not update.should_post:
+        return update.since_epoch, update.zero_ticks, advised_phases, False
+    n_gpus = len([tok for tok in gpu_mem_mib.split(",") if tok.strip()])
+    span_min = update.span_sec // 60
+    note = (
+        f"[gpu-no-cuda-context] NO CUDA context on any of the {n_gpus} GPU(s) for "
+        f"{span_min} min ({update.zero_ticks} consecutive samples; memory.used <= "
+        f"{GPU_NOCTX_MEM_MAX_MIB} MiB on every card; gpu_mem_mib={gpu_mem_mib}; "
+        f"phase={current_phase}). Unlike 0% utilization (a gap between kernels reads "
+        f"0%), sustained ~0 MiB means this GPU-lane phase has NEVER allocated a CUDA "
+        f"context — the plan's GPU-worthiness claim for this phase is falsified "
+        f"(#2546/#2624 class; the dispatcher's own alloc=... log line does not prove "
+        f"GPU use). Runbook (pods.md § Mid-run discovery): RECORD this marker on the "
+        f"task -> FINISH the phase (do NOT migrate mid-phase) -> FILE the plan defect; "
+        f"apply width right-sizing at the next phase boundary. If this phase "
+        f"legitimately allocates later (a long CPU preamble), disregard. Advisory "
+        f"only: the stall verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_no_cuda_context=True,
+        )
+    except Exception as exc:
+        log.error("gpu-no-cuda-context advisory post failed (next tick will retry): %s", exc)
+        return update.since_epoch, update.zero_ticks, advised_phases, False
+    # Fail-soft phone push — never blocks recording the advisory.
+    _telegram_push(
+        f"[#{issue}] NO CUDA CONTEXT: {n_gpus} GPU(s) at ~0 MiB for {span_min} min in "
+        f"phase={current_phase} on {pod} — GPU-routed phase running CPU-only "
+        f"(#2624; nothing stopped)."
+    )
+    log.warning(
+        "posted gpu-no-cuda-context advisory for #%d: %d GPU(s) at ~0 MiB %d min "
+        "(%d consecutive samples) in phase=%s (pod=%s)",
+        issue,
+        n_gpus,
+        span_min,
+        update.zero_ticks,
+        current_phase,
+        pod,
+    )
+    advised_phases.add(current_phase)
+    return update.since_epoch, update.zero_ticks, advised_phases, True
+
+
 # ── m-of-N GPU-width advisory (#873; incidents #813/#664) ────────────────────
 # Minutes of sustained "healthy verdict + a STABLE strict subset of GPUs idle"
 # on an N>1-GPU pod before a one-per-phase [gpu-width-advisory] epm:progress
@@ -4598,6 +4822,12 @@ _RUN_SCOPED_STATE_KEYS: tuple[str, ...] = (
     "gpu_idle_since_epoch",
     "gpu_idle_advised_phases",
     "gpu_idle_escalated_phases",
+    # #2624 no-CUDA-context advisory: same #1033 rationale as the idle keys —
+    # a relaunch must restart the all-zero-memory clock, never inherit the
+    # previous run's span / de-dup set.
+    "gpu_noctx_since_epoch",
+    "gpu_noctx_zero_ticks",
+    "gpu_noctx_advised_phases",
 )
 # Tolerance (seconds) when comparing the observed run-launched epoch against
 # the stored anchor: rounding jitter on ``now - run_age`` must never
@@ -6053,6 +6283,9 @@ def poll_once(
     if not OUTPUT_MTIME_FOLD_ENABLED:
         output_mtime_ago = 10**9
     gpu_util = probe.get("gpu_util", "unknown")
+    # #2624: per-GPU memory.used csv (the no-CUDA-context signal). .get so a
+    # pod running an older probe (no GPU_MEM_MIB line) reads "unknown".
+    gpu_mem_mib = probe.get("gpu_mem_mib", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
     # Zombie-GPU-allocation signal (#664): the probe emits the
     # space-separated PIDs of compute processes holding >= the VRAM floor
@@ -6372,6 +6605,31 @@ def poll_once(
         now_epoch=now_epoch,
     )
 
+    # ── #2624 no-CUDA-context advisory ───────────────────────────────────
+    # DISTINCT signal class from the utilization tiers above: memory.used
+    # == ~0 MiB on EVERY card is conclusive (no process has EVER created a
+    # CUDA context in the span), unlike 0% util (a gap between kernels).
+    # Fires regardless of phase name / pod width — the #664 escalation is
+    # SUPPRESSED for train/gen/eval/vllm-named phases, which are precisely
+    # the phases whose plans claimed GPU (#2546: p5_fits ran hours at 0 MiB
+    # on 4x H100 with only the 30-min marker-only idle advisory). Marker +
+    # push, once per phase; advisory only — never flips ``status``, never
+    # stops anything. Reads the run-scoped tripwire_state (#1033).
+    (
+        gpu_noctx_since_epoch,
+        gpu_noctx_zero_ticks,
+        gpu_noctx_advised_phases,
+        gpu_noctx_posted,
+    ) = _maybe_post_gpu_noctx_advisory(
+        issue=issue,
+        pod=pod,
+        status=status,
+        gpu_mem_mib=gpu_mem_mib,
+        current_phase=current_phase,
+        prev_state=tripwire_state,
+        now_epoch=now_epoch,
+    )
+
     # ── #1556 trigger-dense declaration read (once per tick) ─────────────
     # Gates BOTH orchestrator-facing raw-text surfaces below: the post-done
     # phase-lines emission (reduced to [phase=<token>] tokens) and the
@@ -6472,6 +6730,7 @@ def poll_once(
         ssh_failed=ssh_failed,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
         gpu_idle_escalation_posted=gpu_idle_escalation_posted,
+        gpu_noctx_advisory_posted=gpu_noctx_posted,
         cpu_override_active=cpu_override_active,
         run_age_sec=run_age_sec,
         phase_changed_ago_sec=phase_changed_ago_sec,
@@ -6514,6 +6773,12 @@ def poll_once(
             # #664 escalation tier per-phase de-dup (shares the idle span
             # above). Same comma-join contract as the advised set.
             "gpu_idle_escalated_phases": ",".join(sorted(gpu_idle_escalated_phases)),
+            # #2624 no-CUDA-context advisory: all-zero-memory span anchor +
+            # consecutive-tick count + per-phase de-dup (same comma-join
+            # contract as the idle sets; all three in _RUN_SCOPED_STATE_KEYS).
+            "gpu_noctx_since_epoch": str(gpu_noctx_since_epoch),
+            "gpu_noctx_zero_ticks": str(gpu_noctx_zero_ticks),
+            "gpu_noctx_advised_phases": ",".join(sorted(gpu_noctx_advised_phases)),
             # #1752: per-phase escalation COUNT across run epochs
             # (phase:count pairs). Deliberately NOT in
             # _RUN_SCOPED_STATE_KEYS: the #1033 rationale (stale
@@ -6645,8 +6910,10 @@ def poll_once(
         phase_log_mtime_sec_ago=min(phase_log_mtime_ago, 10**9),
         shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
+        gpu_mem_mib=gpu_mem_mib,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
         gpu_idle_escalation_posted=gpu_idle_escalation_posted,
+        gpu_noctx_advisory_posted=gpu_noctx_posted,
         gpu_width_advisory_posted=gpu_width_posted,
         gpu_underparallel_warning_posted=gpu_underparallel_posted,
         eta_deviation_posted=eta_posted,
@@ -6741,8 +7008,12 @@ def main(argv: list[str] | None = None) -> int:
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
                 "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
+                # #2624 no-CUDA-context surfaces (additive keys; downstream
+                # readers .get-defend by house pattern).
+                "gpu_mem_mib": result.gpu_mem_mib,
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
                 "gpu_idle_escalation_posted": result.gpu_idle_escalation_posted,
+                "gpu_noctx_advisory_posted": result.gpu_noctx_advisory_posted,
                 "gpu_width_advisory_posted": result.gpu_width_advisory_posted,
                 "gpu_underparallel_warning_posted": result.gpu_underparallel_warning_posted,
                 "eta_deviation_posted": result.eta_deviation_posted,

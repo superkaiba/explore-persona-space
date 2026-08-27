@@ -1,0 +1,634 @@
+{
+  "commit": "71ebfee2+dirty",
+  "render_id": "5ca7103e8101490a",
+  "git_commit": "71ebfee271120a34a76fa8eff5fff829d1b7cd1e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue779_ctxansviz_figures.py",
+  "created": "2026-08-27T14:48:26Z",
+  "figsize": [
+    13.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.4363073382338468,
+      "error": 0.09367942792864678,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.29598973184867294,
+      "error": 0.11931028644358767,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.12350648254285404,
+      "error": 0.0777235130992017,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.8292347243443572,
+      "error": 0.10459890069500033,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.5786720620517001,
+      "error": 0.15032335192143978,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.461640983946613,
+      "error": 0.16413946397226348,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.22195404969307753,
+      "error": 0.1800137179692622,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 6.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.36586531199470573,
+      "error": 0.2071233665587997,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 7.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.321182796967072,
+      "error": 0.23243454890912058,
+      "series": "measured (mean-centered)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.011437276173580223,
+      "error": 0.19502491394347538,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.005665313179969628,
+      "error": 0.1220241741762988,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.0020975276342696794,
+      "error": 0.07322599174836972,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.02224478963804244,
+      "error": 0.3011109682741244,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.014406147952233463,
+      "error": 0.2279055248363297,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.010986037312651352,
+      "error": 0.17671788525549398,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.00616963731809529,
+      "error": 0.1357921954461978,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 7.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.009456770138596214,
+      "error": 0.1764169229544353,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 8.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.0035033453033191907,
+      "error": 0.15123344120288698,
+      "series": "shuffled-pairing null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.4363073382338468,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.29598973184867294,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.12350648254285404,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.8292347243443572,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.5786720620517001,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.461640983946613,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.22195404969307753,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.36586531199470573,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.321182796967072,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.3335101788138602,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.155312992272887,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.04394163130356045,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.6738930373404393,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.38681418145122587,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.25735716423236665,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.0633585825315574,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.11037066848994137,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.07308030240826502,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.5208690346711538,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.39393356516006234,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.19938865750196386,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.8830908387304399,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.6874608852941054,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.5856360921768936,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.4233860184700818,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.5246174016075408,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.88,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.5379494002265062,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.011437276173580223,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.005665313179969628,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.0020975276342696794,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.02224478963804244,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.014406147952233463,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.010986037312651352,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.00616963731809529,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.009456770138596214,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.0035033453033191907,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.1621583564127523,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.10277265514656922,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.06643620641835649,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.23710827854013364,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.18663309985813906,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.1449324349905318,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.11961021493371163,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.14813219348932477,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.12,
+      "per-row cosine (median, 2.5\u201397.5%)": -0.13042246981407213,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.22789147147419844,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.14127569320602837,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.08001577707838295,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.36511365800811524,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.26917794981452037,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.20850333552045616,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.15197417595868395,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.20470165241954585,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.12,
+      "per-row cosine (median, 2.5\u201397.5%)": 0.17204441259170183,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "linear CKA (rotation-invariant)",
+        "annotations": [
+          "1.00",
+          "0.87",
+          "0.49",
+          "0.51",
+          "0.54",
+          "0.40",
+          "0.87",
+          "1.00",
+          "0.56",
+          "0.55",
+          "0.57",
+          "0.38",
+          "0.49",
+          "0.56",
+          "1.00",
+          "0.42",
+          "0.46",
+          "0.68",
+          "0.51",
+          "0.55",
+          "0.42",
+          "1.00",
+          "0.95",
+          "0.60",
+          "0.54",
+          "0.57",
+          "0.46",
+          "0.95",
+          "1.00",
+          "0.68",
+          "0.40",
+          "0.38",
+          "0.68",
+          "0.60",
+          "0.68",
+          "1.00"
+        ],
+        "xticklabels": [
+          "ctx L14",
+          "ctx L19",
+          "ctx L26",
+          "ans L14",
+          "ans L19",
+          "ans L26"
+        ],
+        "yticklabels": [
+          "ctx L14",
+          "ctx L19",
+          "ctx L26",
+          "ans L14",
+          "ans L19",
+          "ans L26"
+        ]
+      },
+      {
+        "title_left": "context CKA, all layers (n=17,304)",
+        "xlabel": "layer",
+        "ylabel": "layer",
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24"
+        ],
+        "yticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24"
+        ]
+      },
+      {
+        "title_left": "cross-layer per-row cosine vs shuffled-pairing null",
+        "ylabel": "per-row cosine (median, 2.5\u201397.5%)",
+        "legend_labels": [
+          "measured (mean-centered)",
+          "shuffled-pairing null"
+        ],
+        "xticklabels": [
+          "ctx L14 \u2194 ctx L19",
+          "ctx L19 \u2194 ctx L26",
+          "ctx L14 \u2194 ctx L26",
+          "ans L14 \u2194 ans L19",
+          "ans L19 \u2194 ans L26",
+          "ans L14 \u2194 ans L26",
+          "ctx L14 \u2194 ans L14",
+          "ctx L19 \u2194 ans L19",
+          "ctx L26 \u2194 ans L26"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "measured (mean-centered)",
+      "shuffled-pairing null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -5,6 +5,8 @@
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
 - [Twin brief excluded the disputed question](feedback_twin_brief_excluded_disputed_question.md) — PASS = non-coverage, not rebuttal
+- [Fires-on-incident headline needs real-artifact acceptance; expected-0 vs ≤2 gate is coherent](feedback_fires_on_incident_headline_needs_real_artifact_acceptance.md) — #2367 r1
+- [Class-fix regex vs corpus spellings; silence-safe checks need surface-pinning tests](feedback_class_fix_regex_corpus_spelling_and_surface_pinning_tests.md) — #2367 r2
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md)
 - [Gate object-identity unchecked](feedback_claude_gate_object_identity_unchecked.md) — read the NAMED function (#2329 r2)
 - [Gate-design flaw vs recoverable robustness read](feedback_gate_design_vs_recoverable_robustness_read.md) — REVISE only on misfire

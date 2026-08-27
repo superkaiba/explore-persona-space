@@ -851,9 +851,14 @@ def _collect_run_metadata(
 
     def _safe_version(pkg: str) -> str:
         try:
-            return importlib.metadata.version(pkg)
-        except importlib.metadata.PackageNotFoundError:
+            ver = importlib.metadata.version(pkg)
+        except (importlib.metadata.PackageNotFoundError, KeyError):
+            # KeyError("Version") is the announced future form of the
+            # present-dist-info / missing-METADATA shape (CPython deprecated the
+            # implicit-None return) — normalized like preflight's tier-1 handler
+            # (#2360); this helper is informational, so both shapes read "unknown".
             return "unknown"
+        return ver if ver is not None else "unknown"
 
     return {
         "model": model_path,

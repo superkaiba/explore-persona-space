@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2629,
+  "highest_id": 2635,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10530,50 +10530,50 @@
     "2363": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2363",
-      "status": "reviewing",
+      "path": "tasks/completed/2363",
+      "status": "completed",
       "title": "workflow-fix: a plan can mark its ONLY source of acceptance evidence optional and still PASS verify_plan"
     },
     "2364": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2364",
-      "status": "running",
+      "path": "tasks/reviewing/2364",
+      "status": "reviewing",
       "title": "workflow-fix: no review surface catches a test suite that monkeypatches the production constant its acceptance criterion depends on"
     },
     "2365": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2365",
-      "status": "proposed",
+      "path": "tasks/completed/2365",
+      "status": "completed",
       "title": "Cloudflare email obfuscation silently rewrites model-generation text in every eps.superkaiba.com dashboard (served bytes != committed bytes)"
     },
     "2366": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2366",
-      "status": "proposed",
+      "path": "tasks/completed/2366",
+      "status": "completed",
       "title": "eval/capability.py: same narrow PackageNotFoundError catch breaks on the announced importlib.metadata KeyError"
     },
     "2367": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2367",
-      "status": "proposed",
+      "path": "tasks/running/2367",
+      "status": "running",
       "title": "verify_task_body: flag caption-unit vs figure-sidecar count drift (check-45 family)"
     },
     "2368": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2368",
-      "status": "proposed",
+      "path": "tasks/reviewing/2368",
+      "status": "reviewing",
       "title": "test_bootstrap_pod_git_credentials.py extracts ssh payloads by first-quote scan (same shape #2360 r3 hardened); sweep tests/ for siblings"
     },
     "2369": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2369",
-      "status": "proposed",
+      "path": "tasks/reviewing/2369",
+      "status": "reviewing",
       "title": "workflow-fix: test_tick_triage module-level NOW makes fixtures wall-clock-sensitive in long gate sessions"
     },
     "237": {
@@ -10586,8 +10586,8 @@
     "2370": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2370",
-      "status": "proposed",
+      "path": "tasks/archived/2370",
+      "status": "archived",
       "title": "guard_root_code_commit.sh: pathspec scoping fails to exempt foreign staged files (blocks its own remediation form)"
     },
     "2371": {
@@ -11921,8 +11921,8 @@
       "goal": "(1) In CoT-trained models, measure R2 and acc@1 for four maps \u2014 post-context\u2192answer, post-context\u2192CoT, post-context\u2192CoT+answer, post-CoT\u2192answer \u2014 on a corpus that DOES versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's context vector can predict the POST-CoT-trained model's post-</think> answer state, and how the fitted map changes across the CoT-training step, using a matched same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2546",
-      "status": "running",
+      "path": "tasks/verifying/2546",
+      "status": "verifying",
       "title": "Can the context\u2192answer map predict the POST-CoT answer, and how does CoT training change the map?"
     },
     "2547": {
@@ -12233,16 +12233,16 @@
       "goal": "On Qwen/Qwen3.5-9B with thinking disabled, replicate the #2564 minimal-pair discrimination battery end to end (fresh 20-50k-context context-to-answer ridge map fit with layer sweep; full 984-context bank + the answer_language and query_content_oneword pilot axes at K=10 draws; parent battery reads with the new arms) and compare the per-axis discrimination profile against the Qwen2.5-7B-Instruct parent. Pod-side env upgrade only (transformers/vLLM with qwen3_5 support in the pod venv; repo pins untouched); compat smoke gate before any production wave; thinking-off enforced and asserted in every generation and capture.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2587",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2587",
+      "status": "awaiting_promotion",
       "title": "The minimal-pair discrimination profile of the context-to-answer map carries over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)"
     },
     "2588": {
       "goal": "Determine whether linear context-to-answer mapping quality (held-out kNN retrieval primary, R^2 + identity+bias secondary) increases with general model capability (Artificial Analysis Intelligence Index), across a cross-family open-weight panel (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting with the end-of-CoT state as map input), on the generic mapping corpus and GPQA Diamond.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2588",
-      "status": "running",
+      "path": "tasks/interpreting/2588",
+      "status": "interpreting",
       "title": "Context-to-answer mapping quality vs general model capability (cross-family ladder, thinking on/off)"
     },
     "2589": {
@@ -12423,8 +12423,8 @@
     "2610": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2610",
-      "status": "reviewing",
+      "path": "tasks/completed/2610",
+      "status": "completed",
       "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
     },
     "2611": {
@@ -12465,17 +12465,17 @@
     "2616": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2616",
-      "status": "reviewing",
-      "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
+      "path": "tasks/completed/2616",
+      "status": "completed",
+      "title": "Background per-stem Hub uploader: overlap capture-phase uploads with next-stem compute (shipped; adoption deferred to a future capture round)"
     },
     "2617": {
       "goal": "On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping safety valence (e.g. 'how to build a bomb' vs 'how to build a house'), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine, magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context; the question is whether the map's pre-generation geometry encodes the refusal DECISION (transport tracks whether behavior flipped) or merely surface content.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2617",
-      "status": "running",
-      "title": "Safety-valence minimal pairs: does the frozen context->answer map encode the refusal decision or just surface text?"
+      "path": "tasks/interpreting/2617",
+      "status": "interpreting",
+      "title": "Safety-valence minimal pairs: does the frozen context\u2192answer map encode the refusal decision or just surface text? [interpreting]"
     },
     "2618": {
       "has_clean_result": true,
@@ -12529,8 +12529,8 @@
     "2624": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2624",
-      "status": "reviewing",
+      "path": "tasks/completed/2624",
+      "status": "completed",
       "title": "No check verifies a GPU-lane-routed phase actually allocates a CUDA context (P5 ran 4xH100 at 0 MiB)"
     },
     "2625": {
@@ -12574,6 +12574,48 @@
       "path": "tasks/archived/263",
       "status": "archived",
       "title": "Validation-based per-persona persona-vector recipes beat the project default by +0.11 AUC but can't be certified per-persona at N_test=20; the recipe grid splits into 57 clusters rather than \u22645 (LOW confidence)"
+    },
+    "2630": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2630",
+      "status": "proposed",
+      "title": "workflow-fix: Step 9c selector does not map .claude/agents prose files to their token-pin tests"
+    },
+    "2631": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2631",
+      "status": "proposed",
+      "title": "Step 10d TG mapped-test leg maps sibling-sync imports via raw own-diff \u2014 subtract base-identical paths (#2302 class)"
+    },
+    "2632": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2632",
+      "status": "proposed",
+      "title": "step9c scan-violation set-diff extracts --tb=short traceback header as branch-added violation path (false gate BLOCK)"
+    },
+    "2633": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2633",
+      "status": "proposed",
+      "title": "verify_uploads.py row-index reader uses splitlines() \u2014 false-FAILs the #2148 rows gate on U+2028-bearing rollout JSONL"
+    },
+    "2634": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2634",
+      "status": "proposed",
+      "title": "step9c_baseline scan-set extractor counts the failing test's own traceback header as a branch-added violation path (false SCAN-NEW-VIOLATION)"
+    },
+    "2635": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2635",
+      "status": "planning",
+      "title": "verify_task_body: mechanical verbatim-sample-vs-manifest grep \u2014 FAIL fabricated '(verbatim)' sample rows"
     },
     "264": {
       "has_clean_result": false,
