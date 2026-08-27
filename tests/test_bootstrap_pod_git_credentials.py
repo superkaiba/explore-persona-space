@@ -61,6 +61,10 @@ def _helper_assignment_line() -> str:
 
 def _helper_assignment_value_raw() -> str:
     """The raw (still-escaped) text between the assignment's outer double quotes."""
+    # Sweep disposition (#2368): NOT a first-quote scan — this takes the whole
+    # assignment LINE, asserts a terminal double quote, and slices prefix/suffix,
+    # so embedded escaped quotes are INCLUDED in the value, never truncated; the
+    # value is additionally cross-checked by real-bash materialization in test 5.
     line = _helper_assignment_line()
     assert line.endswith('"'), f"assignment must end with a closing double quote: {line!r}"
     return line[len(_ASSIGN_PREFIX) : -1]
@@ -69,8 +73,30 @@ def _helper_assignment_value_raw() -> str:
 def _single_quoted_ssh_cmd_blocks(text: str) -> list[str]:
     """Bodies of every single-quoted ``ssh_cmd '...'`` call in the script.
 
-    Single-quoted bash strings cannot contain a single quote, so the closing
-    quote is simply the next ``'`` after the opener.
+    Hardened per #2368 (same defect family as #2360 blockers B1/B5). A bash
+    single-quoted STRING literal cannot contain a single quote, but the
+    logical PAYLOAD handed to ``ssh_cmd`` can continue past the first ``'``
+    via standard shell idioms: the quote-embed continuation
+    (close-quote, backslash-escaped quote, reopen-quote), adjacent
+    double-quote concatenation, or a same-line second quoted argument.
+    A bare first-quote slice silently TRUNCATES all of these, and the
+    negative assertion over the extracted blocks (test 4b) never inspects
+    the uninspected tail — the test stays green while the tail regresses.
+
+    Therefore, after closing each block at the first ``'`` following the
+    opener, the extractor REQUIRES that closing quote to be followed by a
+    NEWLINE or END-OF-TEXT — anything else is a loud ``pytest.fail`` naming
+    the character offset and the following characters. This strictness
+    deliberately also refuses a same-line second quoted argument
+    (``ssh_cmd 'safe' 'tail'``): today ``ssh_cmd()`` forwards exactly
+    ``"$1"`` (bootstrap_pod.sh, the 3-line helper above the argument
+    parsing), so a second argument is dead text, but the guard must not
+    DEPEND on that unpinned invariant — under a ``"$1"`` -> ``"$@"`` drift
+    the second argument becomes live remote payload.
+
+    Documented limitation: a future LEGITIMATE same-line shape (e.g. a real
+    second argument) will fail here and requires a deliberate, reviewed
+    edit of this terminator predicate — it is never absorbed silently.
     """
     blocks: list[str] = []
     idx = 0
@@ -81,7 +107,19 @@ def _single_quoted_ssh_cmd_blocks(text: str) -> list[str]:
             return blocks
         open_q = start + len(marker)
         close_q = text.index("'", open_q)
-        blocks.append(text[open_q:close_q])
+        after = text[close_q + 1 : close_q + 2]
+        if after not in ("", "\n"):
+            pytest.fail(
+                f"ssh_cmd single-quoted block closing at character offset {close_q} is "
+                f"followed by {text[close_q + 1 : close_q + 16]!r}, not newline/end-of-text "
+                "— a same-line continuation would be silently truncated by a first-quote "
+                "extractor; split the block or deliberately extend this terminator predicate"
+            )
+        block = text[open_q:close_q]
+        # Defense in depth: trivially true under the first-quote slice above,
+        # but pins the quote-free-interior invariant against a future rewrite.
+        assert "'" not in block, "extracted ssh_cmd block interior must be quote-free"
+        blocks.append(block)
         idx = close_q + 1
 
 
@@ -167,6 +205,10 @@ def test_credential_helper_store_absent() -> None:
 def test_existing_repo_branch_retrofits_tokenless_remote() -> None:
     text = _script_text()
     start = text.index("if [ -d $REMOTE_DIR/.git ]")
+    # Sweep disposition (#2368): first-OCCURRENCE keyword scan, same .index()
+    # family as the ssh_cmd extractor, but every assertion on the slice below is
+    # POSITIVE (must-contain / ordering via .index, which raises on absence), so
+    # a truncated slice flips green->red (loud), never silently green.
     end = text.index("else", start)
     branch = text[start:end]
     assert "git remote set-url origin '$REPO_URL_TOKENLESS'" in branch, (
@@ -201,6 +243,61 @@ def test_global_helper_config_in_double_quoted_ssh_cmd() -> None:
             "unexpanded $GIT_CRED_HELPER inside a single-quoted ssh_cmd block "
             "(it would be stored literally, never expanded)"
         )
+
+
+# ---------------------------------------------------------------------------
+# 4c. Mutation tests (#2368): a payload continuing past the first closing
+#     quote must FAIL extraction, never silently truncate
+# ---------------------------------------------------------------------------
+
+# Sentinel tail spliced past the first block's closing quote. It carries the
+# exact literal the test-4b negative assertion scans for, so a truncating
+# extractor that never surfaces it keeps that assertion green.
+_MUTATION_SENTINEL = "echo $GIT_CRED_HELPER"
+
+# Continuation shapes, each starting at the character immediately after the
+# first single-quoted block's closing quote:
+#   quote_embed      -> close-quote, backslash-escaped quote, reopen-quote
+#                       ('a'\''b' — the #2360 idiom); next char: backslash.
+#   double_quote     -> adjacent double-quoted string concatenation
+#                       ('a'"b"); next char: double quote.
+#   whitespace_arg   -> same-line SECOND quoted argument
+#                       (ssh_cmd 'safe' 'tail'); next char: space.
+_MUTATION_SPLICES = {
+    "quote_embed": "\\''" + _MUTATION_SENTINEL + "'",
+    "double_quote": '"' + _MUTATION_SENTINEL + '"',
+    "whitespace_arg": " '" + _MUTATION_SENTINEL + "'",
+}
+
+
+@pytest.mark.parametrize("shape", sorted(_MUTATION_SPLICES))
+def test_mutation_continuation_after_close_quote_fails_extraction(shape: str) -> None:
+    """The hardened extractor FAILS on any same-line continuation splice.
+
+    Red-direction evidence: under the OLD extractor (close at the first
+    ``'``, no terminator check) every one of these splices yields a
+    TRUNCATED block — the sentinel tail sits between the closing quote and
+    the next ``ssh_cmd '`` marker, so it lands in NO extracted block, is
+    never marker-matched, and the test-4b negative assertion
+    (``"GIT_CRED_HELPER" not in block``) stays green: silent
+    under-inspection. The hardened extractor instead ``pytest.fail``s the
+    moment the closing quote is followed by anything but newline/end-of-text.
+    """
+    text = _script_text()
+    marker = "ssh_cmd '"
+    start = text.index(marker)
+    # Sweep disposition (#2368): recorded-safe quote-char locator, NOT a payload
+    # extractor. This first-quote .index() only LOCATES the splice point for the
+    # mutation; the assert on the next line pins the newline precondition on the
+    # real script's first block, and the mutated text is fed to the HARDENED
+    # extractor (_single_quoted_ssh_cmd_blocks), which pytest.fails loud on any
+    # same-line continuation — so a mislocated close quote here cannot silently
+    # truncate inspected payload.
+    close_q = text.index("'", start + len(marker))
+    assert text[close_q + 1 : close_q + 2] == "\n", "real script's first block must be clean"
+    mutated = text[: close_q + 1] + _MUTATION_SPLICES[shape] + text[close_q + 1 :]
+    with pytest.raises(pytest.fail.Exception, match="followed by"):
+        _single_quoted_ssh_cmd_blocks(mutated)
 
 
 # ---------------------------------------------------------------------------
