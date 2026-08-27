@@ -10600,8 +10600,8 @@
     "2372": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2372",
-      "status": "planning",
+      "path": "tasks/approved/2372",
+      "status": "approved",
       "title": "workflow-fix: guard_repo_root_branch.sh \u2014 sticky-scope invalidator anchors before legal assignment prefixes (#2357 cwd-mover-lead sibling)"
     },
     "2373": {
