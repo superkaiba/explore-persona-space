@@ -40,6 +40,9 @@ Contract:
   untracked IMPORTED module beside a tracked entrypoint is still invisible —
   tree-wide untracked coverage was rejected for the fleet-noise cost above.
 - Bounded: 5s subprocess timeout per git call.
+- No optional locks: probes never take git's optional locks
+  (`--no-optional-locks` on every call), so a timeout-killed probe cannot
+  orphan `.git/index.lock` (#2611).
 - Literal pathspecs: every git call routes through `_run_git`, which passes
   the global `--literal-pathspecs` option, so glob metacharacters (`[`, `*`,
   `?`) in a filename can never match a tracked SIBLING and misclassify an
@@ -110,19 +113,29 @@ class GitProvenance:
 
 
 def _run_git(args: list[str], cwd: Path | None) -> str | None:
-    """Run git with ``--literal-pathspecs``; return stdout, or None on failure.
+    """Run git with ``--no-optional-locks --literal-pathspecs``; return stdout, or None on failure.
 
-    ``--literal-pathspecs`` (a global option, placed BEFORE the subcommand) is
-    load-bearing for every pathspec-taking probe in this module: without it,
-    glob metacharacters (``[``, ``*``, ``?``) in a filename make the pathspec a
-    PATTERN, so an untracked ``scripts/foo[1].py`` argv[0] would MATCH a
-    tracked sibling ``scripts/foo1.py`` and be misclassified as "tracked" —
-    defeating the #2175 untracked-producing-script invariant. The option is
-    inert for calls that carry no pathspec (rev-parse, tree-wide status).
+    ``--no-optional-locks`` (a global option, placed BEFORE the subcommand)
+    makes ``git status`` skip the opportunistic index stat-cache write-back,
+    so it never takes ``.git/index.lock``. Without it, a probe killed at the
+    ``_GIT_TIMEOUT_SEC`` timeout mid-``status`` orphans ``.git/index.lock``
+    on slow filesystems, blocking every later index-writing git operation in
+    that checkout (#2611; observed on #2546 arm 3). Git implements the flag
+    as ``GIT_OPTIONAL_LOCKS=0`` in the child environment, which propagates to
+    nested submodule-status children — closing the ``external/open-instruct``
+    gitlink's own orphanable submodule ``index.lock`` too.
+
+    ``--literal-pathspecs`` (also a global option) is load-bearing for every
+    pathspec-taking probe in this module: without it, glob metacharacters
+    (``[``, ``*``, ``?``) in a filename make the pathspec a PATTERN, so an
+    untracked ``scripts/foo[1].py`` argv[0] would MATCH a tracked sibling
+    ``scripts/foo1.py`` and be misclassified as "tracked" — defeating the
+    #2175 untracked-producing-script invariant. The option is inert for calls
+    that carry no pathspec (rev-parse, tree-wide status).
     """
     try:
         result = subprocess.run(
-            ["git", "--literal-pathspecs", *args],
+            ["git", "--no-optional-locks", "--literal-pathspecs", *args],
             cwd=str(cwd) if cwd else None,
             capture_output=True,
             text=True,

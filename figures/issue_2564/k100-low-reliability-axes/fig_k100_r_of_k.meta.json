@@ -1,0 +1,201 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "33205725d4334817",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:27:06Z",
+  "figsize": [
+    5.8,
+    4.4
+  ],
+  "points": [
+    {
+      "draws pooled per context (K)": 10.0,
+      "split-half reliability r(K)": 0.9851312708259188,
+      "series": "query content (measured)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "draws pooled per context (K)": 20.0,
+      "split-half reliability r(K)": 0.991794446518043,
+      "series": "query content (measured)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "draws pooled per context (K)": 50.0,
+      "split-half reliability r(K)": 0.9963302918100291,
+      "series": "query content (measured)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "draws pooled per context (K)": 100.0,
+      "split-half reliability r(K)": 0.9980886142087384,
+      "series": "query content (measured)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "draws pooled per context (K)": 10.0,
+      "split-half reliability r(K)": 0.6675092616937596,
+      "series": "query form (measured)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "draws pooled per context (K)": 20.0,
+      "split-half reliability r(K)": 0.7452309116148297,
+      "series": "query form (measured)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "draws pooled per context (K)": 50.0,
+      "split-half reliability r(K)": 0.8680626936991244,
+      "series": "query form (measured)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "draws pooled per context (K)": 100.0,
+      "split-half reliability r(K)": 0.9310199420704779,
+      "series": "query form (measured)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "draws pooled per context (K)": 10.0,
+      "split-half reliability r(K)": 0.13112877731871203,
+      "series": "injected name (measured)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "draws pooled per context (K)": 20.0,
+      "split-half reliability r(K)": 0.20814914588906444,
+      "series": "injected name (measured)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "draws pooled per context (K)": 50.0,
+      "split-half reliability r(K)": 0.4380601854170483,
+      "series": "injected name (measured)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "draws pooled per context (K)": 100.0,
+      "split-half reliability r(K)": 0.5931309127649439,
+      "series": "injected name (measured)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "draws pooled per context (K)": 10.0,
+      "split-half reliability r(K)": 0.5994338960687404,
+      "series": "query form (S-B projection)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "draws pooled per context (K)": 20.0,
+      "split-half reliability r(K)": 0.7495575747670388,
+      "series": "query form (S-B projection)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "draws pooled per context (K)": 50.0,
+      "split-half reliability r(K)": 0.882107923351918,
+      "series": "query form (S-B projection)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "draws pooled per context (K)": 100.0,
+      "split-half reliability r(K)": 0.9373616809188479,
+      "series": "query form (S-B projection)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "draws pooled per context (K)": 10.0,
+      "split-half reliability r(K)": 0.13102069808322983,
+      "series": "injected name (S-B projection)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "draws pooled per context (K)": 20.0,
+      "split-half reliability r(K)": 0.23168576544226643,
+      "series": "injected name (S-B projection)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "draws pooled per context (K)": 50.0,
+      "split-half reliability r(K)": 0.4298345822889187,
+      "series": "injected name (S-B projection)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "draws pooled per context (K)": 100.0,
+      "split-half reliability r(K)": 0.6012367970577794,
+      "series": "injected name (S-B projection)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 20,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Measured r(K) vs the Spearman-Brown projection",
+        "xlabel": "draws pooled per context (K)",
+        "ylabel": "split-half reliability r(K)",
+        "legend_labels": [
+          "query content (measured)",
+          "query form (measured)",
+          "injected name (measured)",
+          "query form (S-B projection)",
+          "injected name (S-B projection)"
+        ],
+        "xticklabels": [
+          "10",
+          "20",
+          "50",
+          "100"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "query content (measured)",
+      "query form (measured)",
+      "injected name (measured)",
+      "query form (S-B projection)",
+      "injected name (S-B projection)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

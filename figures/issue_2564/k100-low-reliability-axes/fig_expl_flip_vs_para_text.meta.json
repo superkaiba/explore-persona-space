@@ -1,0 +1,72 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "0294c309df1d4bda",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:26:50Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "answer-text shift norm (embedding space)": 0.28738940249825623,
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "answer-text shift norm (embedding space)": 0.31322557341205853,
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "answer-text shift norm (embedding space)": 0.28302723647872063,
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "answer-text shift norm (embedding space)": 0.27873659291816616,
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "answer-text shift norm (embedding space)": 0.35685489098443357,
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Text-space shift: value flips vs paraphrases",
+        "ylabel": "answer-text shift norm (embedding space)",
+        "xticklabels": [
+          "injected name\nvalue flip",
+          "injected name\nparaphrase",
+          "query content\nvalue flip",
+          "query form\nvalue flip"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

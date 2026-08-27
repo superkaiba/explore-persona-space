@@ -119,6 +119,17 @@ and defuse the network paragraph entirely (do-not-fetch: the HF links point
 at firewalled text). Probe all three local-source patterns before concluding
 raw text is HF-only: `judge_inputs/`, `rawcomp_cache/`, `axis_items/`.
 
+**`data/issue_<N>/hf_dl/<stage>/` staged shards — a fourth lens-7 local-text
+source (#2564 k100 round, 2026-08-26).** Activation-DV rounds that stage
+their HF upload locally leave text-bearing JSONL shards under
+`hf_dl/<stage>/raw_completions/...` AND intrusion-audit mirrors under
+`hf_dl/intrusion_<slug>/{<slug>,parent/<sha>}/anchors_*.jsonl` (rows carry a
+full `text` field + cell/value/draw/cap_hit metadata — enough for spot-check
+row joins, CJK counting, and cap-hit verification, all local). Probe
+`hf_dl/*<slug>*` alongside `judge_inputs/`, `rawcomp_cache/`, `axis_items/`
+before concluding raw text is HF-only. The #685 smoke-copy trap recurs here
+as a `<stage>_smoke/` sibling dir — name it in the do-not-use warning.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw
