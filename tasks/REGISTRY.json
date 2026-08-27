@@ -10551,8 +10551,8 @@
     "2366": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2366",
-      "status": "running",
+      "path": "tasks/completed/2366",
+      "status": "completed",
       "title": "eval/capability.py: same narrow PackageNotFoundError catch breaks on the announced importlib.metadata KeyError"
     },
     "2367": {
