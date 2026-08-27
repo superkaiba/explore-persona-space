@@ -1,0 +1,1 @@
+{"ts": "2026-08-27T18:58:52Z", "event": "raised", "concern_id": "ast-pin-import-alias", "severity": "NIT", "summary": "The wall-clock AST pin misses module aliases such as `import time as t; NOW = t.time()`, especially leaving the async sibling unprotected.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}

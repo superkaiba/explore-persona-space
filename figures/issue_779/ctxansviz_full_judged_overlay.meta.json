@@ -1,0 +1,73 @@
+{
+  "commit": "a9dcdc38+dirty",
+  "render_id": "c42b9b5b00a3420a",
+  "git_commit": "a9dcdc38bcb20f62b6244e12049d455a2ea03478",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py",
+    "tasks/planning/2366/events.jsonl"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue779_ctxansviz_figures.py",
+  "created": "2026-08-27T14:48:04Z",
+  "figsize": [
+    6.5,
+    5.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "judged contexts (n=17,304) over the unjudged bulk",
+        "xlabel": "UMAP 1",
+        "ylabel": "UMAP 2",
+        "legend_labels": [
+          "unjudged contexts"
+        ],
+        "xticklabels": [
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      },
+      {
+        "ylabel": "judged sycophancy score (0\u2013100)",
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "unjudged contexts"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

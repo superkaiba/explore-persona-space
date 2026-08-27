@@ -1,0 +1,65 @@
+{
+  "commit": "932d2221",
+  "render_id": "20a15c3d3d124936",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:27Z",
+  "figsize": [
+    4.6,
+    3.2
+  ],
+  "points": [
+    {
+      "layer": "16",
+      "two-draw reliability ceiling (r)": 0.9125609397888184,
+      "_kind": "bar"
+    },
+    {
+      "layer": "18",
+      "two-draw reliability ceiling (r)": 0.9089683294296265,
+      "_kind": "bar"
+    },
+    {
+      "layer": "22",
+      "two-draw reliability ceiling (r)": 0.9141045212745667,
+      "_kind": "bar"
+    },
+    {
+      "layer": "30",
+      "two-draw reliability ceiling (r)": 0.9219003915786743,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer",
+        "ylabel": "two-draw reliability ceiling (r)",
+        "xticklabels": [
+          "16",
+          "18",
+          "22",
+          "30"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

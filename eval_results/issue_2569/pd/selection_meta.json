@@ -1,0 +1,21 @@
+{
+ "drops": {
+  "pass_b_no_text": 0,
+  "skip_manifest_files": 16,
+  "text_missing": 0
+ },
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_xmodel_capture.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "6f6729c0a0214e0b025c0993dd6f19079d1fc8c1",
+  "git_dirty": false,
+  "phase": "select",
+  "timestamp_utc": "2026-08-26T22:01:18Z"
+ },
+ "n_hold": 20000,
+ "n_sae": 40000,
+ "n_selected_with_text_ci": 60000,
+ "n_texts_kept": 60000,
+ "rows_target": 60000,
+ "selected_ci_sha256": "c04ecc0e3abb49074f69f5f0d7a76bc40cd505adb9387b4d4050a9dcbb400408"
+}

@@ -127,6 +127,19 @@ new file, quote the plan's few relevant rows in a
 check would trip on (parent stats had 16 phase2 arms vs the round's 24 —
 parity is shape/keys/value-forms, never arm-set equality).
 
+**Variant (#2587 fa1 r1, 2026-08-27): the round's OWN
+`epm:free-analysis-followup-run v1` marker (posted BEFORE the review
+dispatch) is the round record — inline it + both commit messages in the
+standard IMPLEMENTATION envelope, no placeholder, no orchestrator
+substitution.** The impl-marker probe correctly returns nothing round-matched;
+absence is BY DESIGN. Also inline the `epm:progress` compute-character
+dispatch note as the ROUND CONTRACT envelope. NEAR-MISS caught in-turn:
+hand-TYPING the marker/commit texts into the template corrupted a SHA
+reference and silently dropped the note's trailing triage line — build EVERY
+verbatim envelope by programmatic extraction (events.jsonl JSON parse +
+`git log --format=%B -1 <sha>`) with `{{...}}` placeholders, never retyped
+prose, and assert a distinctive substring (e.g. a cited SHA) landed.
+
 **Variant (#823 P-Gen v13 amendment round, 2026-08-20): orchestrator LANDING
 NOTE as the round record — inline directly, no placeholder.** When the
 implementer orphans its turn (uncommitted payload, #2041 shape) and the

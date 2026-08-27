@@ -9,3 +9,5 @@
 - [Shape-complete scope sweeps](feedback_shape_complete_scope_sweeps.md) — recurring scope-defect sweeps enumerate all six quantity shapes (incl. sameness claims); interval-only sweep false-PASSed #823 r7.
 - [Adjudicated concern-count override](feedback_adjudicated_concern_count_override.md) — Lens-14 verifier line unreliable two ways: #2530 count drop + #2535 footer-swallow; envelope verbatim + authoritative block + SPEC-judged placement.
 - [Open interp ids at CR gate](feedback_open_interp_ids_at_cr_gate.md) — adjudicated-but-still-OPEN interp ledger ids: compose do-not-re-raise (substance) + in-scope Lens-14 surface carve-out (acknowledgement fix), both blocks.
+- [Recipe-snapshot spot-check](feedback_recipe_snapshot_spot_check.md) — r2 after a recipe-inlining blocker: snapshot producing issues' Methodology to /tmp as verify-direction read targets; contradiction = real finding.
+- [Reconciler-REVISE verification rounds](feedback_reconciler_revise_verification_rounds.md) — bounded round shape: fix-verification block + fifth BODY DIFF envelope (delta scope + fences) + PASS-by-reference; marker-kind-qualified stale tokens.

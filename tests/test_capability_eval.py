@@ -192,3 +192,74 @@ class TestSerializeLmEvalResults:
         out = _serialize_lm_eval_results({"x": _Unknown()})
         assert out == {"x": "<Unknown>"}
         json.dumps(out)
+
+
+# ---------------------------------------------------------------------------
+# _collect_run_metadata._safe_version — broken-metadata handling (#2366)
+# ---------------------------------------------------------------------------
+
+
+class TestCollectRunMetadataSafeVersion:
+    """Pin `_safe_version`'s handling of both broken-metadata shapes (#2366).
+
+    Each test exercises the REAL `_collect_run_metadata` body; the only fake
+    is `importlib.metadata.version` (the external boundary). The nested
+    `import importlib.metadata` inside `_collect_run_metadata` resolves the
+    same module object, so the monkeypatch reaches it. The git-commit
+    subprocess runs real (`check=False`, 5 s timeout — harmless in-repo).
+    """
+
+    _VERSION_KEYS = ("vllm_version", "transformers_version", "torch_version")
+
+    @staticmethod
+    def _collect(monkeypatch: pytest.MonkeyPatch, fake_version) -> dict:
+        import importlib.metadata
+
+        from explore_persona_space.eval.capability import _collect_run_metadata
+
+        monkeypatch.setattr(importlib.metadata, "version", fake_version)
+        return _collect_run_metadata(
+            model_path="m",
+            questions=[],
+            cot_scaffolds=[],
+            n_personas=0,
+            cot_max_tokens=0,
+        )
+
+    def test_keyerror_version_reads_unknown(self, monkeypatch: pytest.MonkeyPatch):
+        """KeyError("Version") — the announced future missing-METADATA shape.
+
+        CPython 3.12.13 deprecates the implicit-None return for a present
+        dist-info with missing METADATA; the future form raises KeyError.
+        Interpreter-version-INDEPENDENT pin via the monkeypatched fake.
+        """
+
+        def fake(pkg: str) -> str:
+            raise KeyError("Version")
+
+        meta = self._collect(monkeypatch, fake)
+        for key in self._VERSION_KEYS:
+            assert meta[key] == "unknown", (key, meta[key])
+
+    def test_none_return_reads_unknown(self, monkeypatch: pytest.MonkeyPatch):
+        """Implicit-None return — today's missing-METADATA shape."""
+        meta = self._collect(monkeypatch, lambda pkg: None)
+        for key in self._VERSION_KEYS:
+            assert meta[key] == "unknown", (key, meta[key])
+
+    def test_package_not_found_reads_unknown(self, monkeypatch: pytest.MonkeyPatch):
+        """Absent dist-info — the pre-existing handled shape, pinned."""
+        import importlib.metadata
+
+        def fake(pkg: str) -> str:
+            raise importlib.metadata.PackageNotFoundError(pkg)
+
+        meta = self._collect(monkeypatch, fake)
+        for key in self._VERSION_KEYS:
+            assert meta[key] == "unknown", (key, meta[key])
+
+    def test_healthy_version_flows_through(self, monkeypatch: pytest.MonkeyPatch):
+        """Healthy packages keep their real version string — normalization untouched."""
+        meta = self._collect(monkeypatch, lambda pkg: "1.2.3")
+        for key in self._VERSION_KEYS:
+            assert meta[key] == "1.2.3", (key, meta[key])

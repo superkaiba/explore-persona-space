@@ -1,0 +1,402 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "db3d9cc7d4ef48a9",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:51:42Z",
+  "figsize": [
+    13.0,
+    3.9
+  ],
+  "points": [
+    {
+      "category": "Fitted feature-to-feature map",
+      "Median per-feature held-out R^2": 0.25227837996108166,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Composed route (no fit)",
+      "Median per-feature held-out R^2": 0.5991626918144275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Dense-input ridge (banked)",
+      "Median per-feature held-out R^2": 0.5119052686081915,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Index-aligned identity + bias (null)",
+      "Median per-feature held-out R^2": -0.026535532648888083,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Train-mean (null)",
+      "Median per-feature held-out R^2": -2.6969928030751156e-05,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Median per-feature held-out R^2": -0.270751953125,
+      "series": "Row-shuffle null (median)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Median per-feature held-out R^2": -0.270751953125,
+      "series": "Row-shuffle null (median)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": -0.266667,
+      "Median per-feature held-out R^2": 0.4330602139234543,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.733333,
+      "Median per-feature held-out R^2": 0.12569376826286316,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.733333,
+      "Median per-feature held-out R^2": 0.09539102762937546,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Coarse tier (first 2,048)",
+      "Median per-feature held-out R^2": -0.650532603263855,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Mid tier (to 16,384)",
+      "Median per-feature held-out R^2": -6.000986832077615e-05,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Specific tier (to 65,536)",
+      "Median per-feature held-out R^2": -3.243112405471038e-05,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.266667,
+      "Median per-feature held-out R^2": -2.7117891477246303e-05,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.266667,
+      "Median per-feature held-out R^2": -2.626944024086697e-05,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.266667,
+      "Median per-feature held-out R^2": -2.6929605155601166e-05,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.725689,
+      "Features": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.734968,
+      "Features": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.744247,
+      "Features": 1.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.753526,
+      "Features": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.762805,
+      "Features": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.772084,
+      "Features": 3.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.781363,
+      "Features": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.790642,
+      "Features": 2.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.799921,
+      "Features": 9.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.8092,
+      "Features": 12.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.818479,
+      "Features": 20.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.827758,
+      "Features": 28.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.837036,
+      "Features": 32.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.846315,
+      "Features": 32.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.855594,
+      "Features": 39.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.864873,
+      "Features": 54.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.874152,
+      "Features": 52.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.883431,
+      "Features": 75.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.89271,
+      "Features": 91.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.901989,
+      "Features": 118.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.911268,
+      "Features": 120.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.920547,
+      "Features": 156.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.929826,
+      "Features": 175.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.939105,
+      "Features": 220.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.948384,
+      "Features": 191.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.957662,
+      "Features": 186.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.966941,
+      "Features": 189.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.97622,
+      "Features": 159.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.985499,
+      "Features": 99.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.994778,
+      "Features": 80.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.5,
+      "Features": 0.0,
+      "series": "Chance (0.5)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Firing AUROC per feature (fitted map)": 0.5,
+      "Features": 1.0,
+      "series": "Chance (0.5)",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Comparison routes",
+        "ylabel": "Median per-feature held-out R^2",
+        "legend_labels": [
+          "Row-shuffle null (median)"
+        ],
+        "xticklabels": [
+          "Fitted feature-to-feature map",
+          "Composed route (no fit)",
+          "Dense-input ridge (banked)",
+          "Index-aligned identity + bias (null)",
+          "Train-mean (null)"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Per-tier medians",
+        "ylabel": "Median per-feature held-out R^2",
+        "legend_labels": [
+          "Fitted feature-to-feature map",
+          "Index-aligned identity + bias (null)",
+          "Train-mean (null)"
+        ],
+        "xticklabels": [
+          "Coarse tier (first 2,048)",
+          "Mid tier (to 16,384)",
+          "Specific tier (to 65,536)"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "Hurdle: firing detection",
+        "xlabel": "Firing AUROC per feature (fitted map)",
+        "ylabel": "Features",
+        "legend_labels": [
+          "Chance (0.5)"
+        ],
+        "xticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250"
+        ]
+      }
+    ],
+    "series": [
+      "Row-shuffle null (median)",
+      "Fitted feature-to-feature map",
+      "Index-aligned identity + bias (null)",
+      "Train-mean (null)",
+      "Chance (0.5)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

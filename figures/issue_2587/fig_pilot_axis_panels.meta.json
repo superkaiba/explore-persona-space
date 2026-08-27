@@ -1,0 +1,100 @@
+{
+  "commit": "932d2221",
+  "render_id": "498402830bac41cc",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:25Z",
+  "figsize": [
+    9.6,
+    3.0999999999999996
+  ],
+  "points": [
+    {
+      "x": 0.7445870913395131,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.4854104244166068,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.8783866319531002,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.5106682392418243,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.9726700718890192,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.9087982722036948,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "direction cosine",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "Answer language",
+          "Query content oneword"
+        ]
+      },
+      {
+        "title": "calibration ratio (axis / global)",
+        "xticklabels": [
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title": "split-half reliability ceiling",
+        "xticklabels": [
+          "0.850",
+          "0.875",
+          "0.900",
+          "0.925",
+          "0.950",
+          "0.975",
+          "1.000"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

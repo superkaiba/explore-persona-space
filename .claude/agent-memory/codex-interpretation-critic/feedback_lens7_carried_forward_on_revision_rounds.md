@@ -31,6 +31,18 @@ the CJK intrusion scan was carried forward via `cjk_recount.json` +
 (Reconstructed 2026-08-18 from the MEMORY.md index hook after the original
 file went missing from disk; the #2333 r3 application re-grounds it.)
 
+**Non-coverage boundary (#2587 r3→r4, 2026-08-27).** Carried-forward
+scoping NEVER covers the disputed/delta items themselves. The #2587 r3
+Codex PASS carried a Results-table row as "pin unchanged" while the row's
+9B superlative was false against the cited JSON — the reconciler overruled
+it as delta-scoping NON-COVERAGE. When composing a delta round, (a) name
+each delta item explicitly and instruct that "pin unchanged" does not
+apply to it; (b) require the fix-verification lines to quote the body span
+AND the reviewer's own recompute values from the ground-truth JSON; (c)
+state in the Rules that a PASS carrying any delta item as unchanged/unread
+will be overruled. Byte-unchanged pins license carrying UNTOUCHED material
+only.
+
 **Lens-6 twin of the same principle (#2378 r3, 2026-08-25).** On a
 wording/caption-only revision round where the compose-time blob check shows
 every figure pin BYTE-UNCHANGED from a round both critics fully verified

@@ -1,0 +1,219 @@
+{
+  "issue": 2564,
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "frozen_at": "2026-08-24",
+  "plan_version": "v6",
+  "axes": {
+    "persona": {
+      "kind": "slotted",
+      "slot": "{NP}",
+      "template": "You are a {NP}. Stay fully in character.",
+      "paraphrase_template": "Adopt the persona of a {NP} for your whole reply.",
+      "expected_value_tokens": 13,
+      "values": {
+        "v1": "gruff pirate captain",
+        "v2": "prim Victorian butler",
+        "v3": "calm zen meditation teacher",
+        "v4": "manic tech startup founder",
+        "v5": "jaded noir detective"
+      }
+    },
+    "format": {
+      "kind": "slotted",
+      "slot": "{NP}",
+      "template": "Format your entire answer as {NP}.",
+      "paraphrase_template": "Your whole reply must take the form of {NP}.",
+      "expected_value_tokens": 10,
+      "values": {
+        "v1": "a bulleted list",
+        "v2": "a strict numbered list",
+        "v3": "a lyrical poem",
+        "v4": "one long flowing paragraph",
+        "v5": "one valid JSON object"
+      }
+    },
+    "lexical_marker": {
+      "kind": "slotted",
+      "slot": "{W}",
+      "template": "Include the word \"{W}\" somewhere in your answer.",
+      "paraphrase_template": "Make sure your reply contains the word \"{W}\".",
+      "expected_value_tokens": 12,
+      "values": {
+        "v1": "moreover",
+        "v2": "honestly",
+        "v3": "surely",
+        "v4": "notably",
+        "v5": "essentially"
+      }
+    },
+    "stance": {
+      "kind": "sentence",
+      "expected_value_tokens": 9,
+      "values": {
+        "v1": "Back exactly one option firmly in your answer.",
+        "v2": "Argue against every option in your answer.",
+        "v3": "Stay strictly neutral between options in your answer.",
+        "v4": "Steelman both sides equally in your answer.",
+        "v5": "Play devil's advocate constantly in your answer."
+      },
+      "paraphrases": {
+        "v1": "Commit to just one side and defend it.",
+        "v2": "Take the negative side on all the options.",
+        "v3": "Do not lean toward any side at all.",
+        "v4": "Present the strongest case for each side.",
+        "v5": "Take the contrarian position at every turn."
+      }
+    },
+    "content_constraint": {
+      "kind": "sentence",
+      "expected_value_tokens": 9,
+      "values": {
+        "v1": "Give exactly three separate reasons in your answer.",
+        "v2": "Do not mention any numbers in your answer.",
+        "v3": "Avoid all first-person wording in your answer.",
+        "v4": "Mention one concrete example in your answer.",
+        "v5": "Use fewer than twenty words in your answer."
+      },
+      "paraphrases": {
+        "v1": "Your reply must contain precisely three reasons.",
+        "v2": "Keep every number out of your reply.",
+        "v3": "Write without ever speaking about yourself.",
+        "v4": "Work a specific real example into your reply.",
+        "v5": "Keep your reply shorter than twenty words."
+      }
+    },
+    "register": {
+      "kind": "sentence",
+      "expected_value_tokens": 10,
+      "values": {
+        "v1": "Use a very formal and highly professional tone throughout.",
+        "v2": "Use a very casual and conversational tone throughout."
+      },
+      "paraphrases": {
+        "v1": "Write in a highly formal, businesslike style.",
+        "v2": "Write in a relaxed, chatty, informal style."
+      }
+    },
+    "hedging": {
+      "kind": "sentence",
+      "expected_value_tokens": 10,
+      "values": {
+        "v1": "Answer with strong, decisive, total confidence throughout.",
+        "v2": "Answer with heavy caveats and hedging throughout."
+      },
+      "paraphrases": {
+        "v1": "Sound completely sure of every claim you make.",
+        "v2": "Qualify every claim and express plenty of doubt."
+      }
+    },
+    "user_fact": {
+      "kind": "slotted",
+      "slot": "{NAME}",
+      "template": "The user's name is {NAME}. Always address them by name.",
+      "paraphrase_template": "This user is called {NAME}. Use their name when you reply.",
+      "expected_value_tokens": 13,
+      "values": {
+        "v1": "Marcus",
+        "v2": "Diego",
+        "v3": "Sarah",
+        "v4": "Emma",
+        "v5": "Kevin"
+      },
+      "name_token_ids": {
+        "Marcus": 35683,
+        "Diego": 18336,
+        "Sarah": 20445,
+        "Emma": 34935,
+        "Kevin": 16364
+      }
+    },
+    "user_profile": {
+      "kind": "slotted",
+      "slot": "{PROFILE}",
+      "template": "The user is {PROFILE}. Keep this in mind when answering.",
+      "paraphrase_template": "Bear in mind while answering that the user is {PROFILE}.",
+      "expected_value_tokens": 24,
+      "values": {
+        "v1": "a busy single parent on a tight budget who wants quick practical help",
+        "v2": "a retired mechanical engineer with plenty of savings who enjoys careful detailed analysis",
+        "v3": "a college freshman living in a shared dorm who prefers fun social options",
+        "v4": "a rural nurse working long overnight shifts who values simple, reliable routines",
+        "v5": "a frequent business traveler with scarce free time who likes efficient flexible plans"
+      }
+    }
+  },
+  "carriers": {
+    "c01": {
+      "question": "Should I adopt a dog or a cat?",
+      "imperative": "Help me decide between adopting a dog and a cat.",
+      "statement": "I'm deciding between adopting a dog and a cat.",
+      "paraphrase": "Would a dog or a cat be the better pet for me?"
+    },
+    "c02": {
+      "question": "Is it better to rent or to buy a home?",
+      "imperative": "Help me choose between renting and buying a home.",
+      "statement": "I'm choosing between renting and buying a home.",
+      "paraphrase": "Does renting a home beat buying one?"
+    },
+    "c03": {
+      "question": "How should someone spend a free weekend?",
+      "imperative": "Suggest how someone should spend a free weekend.",
+      "statement": "I'm considering how someone should spend a free weekend.",
+      "paraphrase": "What is a good way to use a weekend off?"
+    },
+    "c04": {
+      "question": "Should students be required to learn coding?",
+      "imperative": "Tell me whether students should be required to learn coding.",
+      "statement": "I'm weighing whether students should be required to learn coding.",
+      "paraphrase": "Ought coding to be a mandatory subject in school?"
+    },
+    "c05": {
+      "question": "Is remote work better than working in an office?",
+      "imperative": "Tell me whether remote work beats working in an office.",
+      "statement": "I'm comparing remote work with working in an office.",
+      "paraphrase": "Is working from home preferable to office work?"
+    },
+    "c06": {
+      "question": "What's the best way to make new friends?",
+      "imperative": "Give me the best way to make new friends.",
+      "statement": "I'm looking for the best way to make new friends.",
+      "paraphrase": "How can a person most easily build new friendships?"
+    },
+    "c07": {
+      "question": "Should I read more fiction or nonfiction?",
+      "imperative": "Help me pick between reading more fiction and more nonfiction.",
+      "statement": "I'm picking between reading more fiction and more nonfiction.",
+      "paraphrase": "Would fiction or nonfiction be the better reading focus for me?"
+    },
+    "c08": {
+      "question": "Is it worth traveling somewhere alone?",
+      "imperative": "Tell me whether traveling somewhere alone is worth it.",
+      "statement": "I'm weighing whether traveling somewhere alone is worth it.",
+      "paraphrase": "Does going on a solo trip pay off?"
+    },
+    "c09": {
+      "question": "How should a person choose a career?",
+      "imperative": "Explain how a person should choose a career.",
+      "statement": "I'm thinking through how a person should choose a career.",
+      "paraphrase": "What is the right way to pick a career path?"
+    },
+    "c10": {
+      "question": "Is it better to save money or to spend it?",
+      "imperative": "Tell me whether it's better to save money or to spend it.",
+      "statement": "I'm deciding between saving my money and spending it.",
+      "paraphrase": "Should a person prioritize saving over spending?"
+    },
+    "c11": {
+      "question": "Should someone follow a passion or a stable job?",
+      "imperative": "Help me weigh following a passion against a stable job.",
+      "statement": "I'm weighing following a passion against a stable job.",
+      "paraphrase": "Is chasing a passion wiser than keeping a stable job?"
+    },
+    "c12": {
+      "question": "Is it better to exercise in the morning or evening?",
+      "imperative": "Tell me whether to exercise in the morning or the evening.",
+      "statement": "I'm choosing between morning and evening workouts.",
+      "paraphrase": "Does a morning workout beat an evening one?"
+    }
+  }
+}

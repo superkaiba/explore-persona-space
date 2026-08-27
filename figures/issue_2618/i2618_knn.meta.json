@@ -1,0 +1,720 @@
+{
+  "commit": "3ab1809d+dirty",
+  "render_id": "57b7d36200294f6d",
+  "git_commit": "3ab1809d6baff3e4e57457540dae95e8caabf67b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2618_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2618_figures.py",
+  "created": "2026-08-27T10:33:44Z",
+  "figsize": [
+    11.0,
+    6.2
+  ],
+  "points": [
+    {
+      "k nearest neighbors": -0.26,
+      "P(true context in top k)": 0.763,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": 0.74,
+      "P(true context in top k)": 0.892,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": 1.74,
+      "P(true context in top k)": 0.936,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": 2.74,
+      "P(true context in top k)": 0.988,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "k nearest neighbors": "1",
+      "P(true context in top k)": 0.011,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": "5",
+      "P(true context in top k)": 0.033,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": "10",
+      "P(true context in top k)": 0.05,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": "50",
+      "P(true context in top k)": 0.162,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "k nearest neighbors": 0.26,
+      "P(true context in top k)": 0.204,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 1.26,
+      "P(true context in top k)": 0.363,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 2.26,
+      "P(true context in top k)": 0.419,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 3.26,
+      "P(true context in top k)": 0.576,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "k nearest neighbors": 0.0,
+      "P(true context in top k)": 0.001,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "P(true context in top k)": 0.005,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": 2.0,
+      "P(true context in top k)": 0.01,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": 3.0,
+      "P(true context in top k)": 0.05,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k nearest neighbors": -0.26,
+      "y": 0.837,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": 0.74,
+      "y": 0.937,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": 1.74,
+      "y": 0.971,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": 2.74,
+      "y": 0.997,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "k nearest neighbors": "1",
+      "y": 0.132,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": "5",
+      "y": 0.268,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": "10",
+      "y": 0.34,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": "50",
+      "y": 0.498,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "k nearest neighbors": 0.26,
+      "y": 0.267,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 1.26,
+      "y": 0.437,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 2.26,
+      "y": 0.547,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 3.26,
+      "y": 0.731,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "k nearest neighbors": 0.0,
+      "y": 0.001,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.005,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k nearest neighbors": 2.0,
+      "y": 0.01,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k nearest neighbors": 3.0,
+      "y": 0.05,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k nearest neighbors": -0.26,
+      "y": 0.617,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "k nearest neighbors": 0.74,
+      "y": 0.821,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "k nearest neighbors": 1.74,
+      "y": 0.891,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "k nearest neighbors": 2.74,
+      "y": 0.965,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "k nearest neighbors": "1",
+      "y": 0.016,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "k nearest neighbors": "5",
+      "y": 0.152,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "k nearest neighbors": "10",
+      "y": 0.219,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "k nearest neighbors": "50",
+      "y": 0.367,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "k nearest neighbors": 0.26,
+      "y": 0.034,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "k nearest neighbors": 1.26,
+      "y": 0.153,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "k nearest neighbors": 2.26,
+      "y": 0.215,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "k nearest neighbors": 3.26,
+      "y": 0.362,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "k nearest neighbors": 0.0,
+      "y": 0.001,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.005,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k nearest neighbors": 2.0,
+      "y": 0.01,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k nearest neighbors": 3.0,
+      "y": 0.05,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k nearest neighbors": -0.26,
+      "P(true context in top k)": 0.772,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "k nearest neighbors": 0.74,
+      "P(true context in top k)": 0.894,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "k nearest neighbors": 1.74,
+      "P(true context in top k)": 0.944,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "k nearest neighbors": 2.74,
+      "P(true context in top k)": 0.985,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "k nearest neighbors": "1",
+      "P(true context in top k)": 0.012,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "k nearest neighbors": "5",
+      "P(true context in top k)": 0.03,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "k nearest neighbors": "10",
+      "P(true context in top k)": 0.044,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "k nearest neighbors": "50",
+      "P(true context in top k)": 0.139,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "k nearest neighbors": 0.26,
+      "P(true context in top k)": 0.204,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "k nearest neighbors": 1.26,
+      "P(true context in top k)": 0.359,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "k nearest neighbors": 2.26,
+      "P(true context in top k)": 0.432,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "k nearest neighbors": 3.26,
+      "P(true context in top k)": 0.585,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "k nearest neighbors": 0.0,
+      "P(true context in top k)": 0.001,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "P(true context in top k)": 0.005,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k nearest neighbors": 2.0,
+      "P(true context in top k)": 0.01,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k nearest neighbors": 3.0,
+      "P(true context in top k)": 0.05,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k nearest neighbors": -0.26,
+      "y": 0.838,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "k nearest neighbors": 0.74,
+      "y": 0.937,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "k nearest neighbors": 1.74,
+      "y": 0.974,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "k nearest neighbors": 2.74,
+      "y": 0.997,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "k nearest neighbors": "1",
+      "y": 0.112,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "k nearest neighbors": "5",
+      "y": 0.228,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "k nearest neighbors": "10",
+      "y": 0.284,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "k nearest neighbors": "50",
+      "y": 0.409,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "k nearest neighbors": 0.26,
+      "y": 0.272,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "k nearest neighbors": 1.26,
+      "y": 0.448,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "k nearest neighbors": 2.26,
+      "y": 0.525,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "k nearest neighbors": 3.26,
+      "y": 0.691,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "k nearest neighbors": 0.0,
+      "y": 0.001,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.005,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k nearest neighbors": 2.0,
+      "y": 0.01,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k nearest neighbors": 3.0,
+      "y": 0.05,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k nearest neighbors": -0.26,
+      "y": 0.613,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "k nearest neighbors": 0.74,
+      "y": 0.824,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "k nearest neighbors": 1.74,
+      "y": 0.88,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "k nearest neighbors": 2.74,
+      "y": 0.968,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "k nearest neighbors": "1",
+      "y": 0.087,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "k nearest neighbors": "5",
+      "y": 0.172,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "k nearest neighbors": "10",
+      "y": 0.222,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "k nearest neighbors": "50",
+      "y": 0.382,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "k nearest neighbors": 0.26,
+      "y": 0.091,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "k nearest neighbors": 1.26,
+      "y": 0.166,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "k nearest neighbors": 2.26,
+      "y": 0.225,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "k nearest neighbors": 3.26,
+      "y": 0.396,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "k nearest neighbors": 0.0,
+      "y": 0.001,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "k nearest neighbors": 1.0,
+      "y": 0.005,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "k nearest neighbors": 2.0,
+      "y": 0.01,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "k nearest neighbors": 3.0,
+      "y": 0.05,
+      "series": "Chance (k/1000)",
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 96,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer 14 \u2014 euclidean",
+        "xlabel": "k nearest neighbors",
+        "ylabel": "P(true context in top k)",
+        "xticklabels": [
+          "1",
+          "5",
+          "10",
+          "50"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Layer 19 \u2014 euclidean",
+        "xlabel": "k nearest neighbors",
+        "xticklabels": [
+          "1",
+          "5",
+          "10",
+          "50"
+        ]
+      },
+      {
+        "title_left": "Layer 26 \u2014 euclidean",
+        "xlabel": "k nearest neighbors",
+        "xticklabels": [
+          "1",
+          "5",
+          "10",
+          "50"
+        ]
+      },
+      {
+        "title_left": "Layer 14 \u2014 cosine",
+        "xlabel": "k nearest neighbors",
+        "ylabel": "P(true context in top k)",
+        "xticklabels": [
+          "1",
+          "5",
+          "10",
+          "50"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Layer 19 \u2014 cosine",
+        "xlabel": "k nearest neighbors",
+        "xticklabels": [
+          "1",
+          "5",
+          "10",
+          "50"
+        ]
+      },
+      {
+        "title_left": "Layer 26 \u2014 cosine",
+        "xlabel": "k nearest neighbors",
+        "xticklabels": [
+          "1",
+          "5",
+          "10",
+          "50"
+        ]
+      }
+    ],
+    "series": [
+      "Chance (k/1000)",
+      "Fitted reverse map",
+      "Best pinv (ridge pinv)",
+      "Identity + bias"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

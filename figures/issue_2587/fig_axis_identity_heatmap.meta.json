@@ -1,0 +1,94 @@
+{
+  "commit": "932d2221",
+  "render_id": "fd737c8ce4194000",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:25:44Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Qwen3.5-9B (thinking off)",
+        "xlabel": "value pair (within axis)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "yticklabels": [
+          "Answer language",
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Query form",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile"
+        ]
+      },
+      {
+        "title": "Qwen2.5-7B-Instruct",
+        "xlabel": "value pair (within axis)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "yticklabels": [
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Query form",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile"
+        ]
+      },
+      {
+        "ylabel": "axis identity cosine (map arm)",
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

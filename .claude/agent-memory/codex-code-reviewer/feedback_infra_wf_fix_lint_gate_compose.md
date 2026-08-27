@@ -574,3 +574,256 @@ ledger-empty + plan-HANDED concerns distinction (verify handed items 1–5 as
 plan-adherence rows, never ledger closures; header = `**Prior-concerns
 ledger:** empty`); plan-verify no-version-gap negative attest (v3 PASS,
 symlink v3) per #2624(e).
+
+**#2364 r1 (2026-08-27) sharpenings — SELF-REFERENTIAL rubric-edit variant
+(the diff EDITS code-reviewer.md + codex-code-reviewer.md themselves, adding a
+new Step/lens + blocker tag):** (a) extract the PRE-ROUND rubric from the
+MAIN-side copy, never the worktree copy — the round's new Step is PAYLOAD
+under review, not binding protocol (grading the round by the gate it
+introduces is circular, and the parallel Claude reviewer loads the main-side
+spec); verify no main drift on the rubric files since merge-base
+(`git log <MB>..origin/main -- <both specs>` empty) so main copy == pre-round
+standard, and state the fact + a twin-PARITY duty (#606 class: copy-list stub
++ inlined-rubric-line token + Blocker-tags entry in BOTH specs, tag defined
+SUBSTANTIVE/never-stripped). (b) Cap-raise counterfactual can land MANDATED
+(inverse of the #2610 r2 shape): pre-round main copy 109,441 B vs old cap
+109,600 → the round's +2,454 B could not fit; attest MANDATED so the twin
+doesn't adjudicate discretion. (c) Two validation gotchas: the plan/marker
+envelopes legitimately QUOTE the twin spec's literal `{{INLINED RUBRIC}}`
+placeholder when the round edits the twin spec — scope the no-residue check
+to OUTSIDE the envelopes (assert the four named placeholders gone, then `{{`
+outside envelopes only); and `## Concerns to persist` occurs inside the
+extracted rubric span (Step 0.8 prose), so probe the TEMPLATE section with
+rindex/last-occurrence, never first index. (d) The report's own
+failed-then-fixed lockstep item (cap snapshot pin caught by the round's
+pin-sweep, fixed in commit 2) pre-adjudicates as within-round fix — Step 0.9
+certain-introduced-AND-fixed, no git-provenance tag.
+
+**#2365 r1 (2026-08-27) sharpenings — deploy-deferred serving-infra variant
+(diff = Next.js config header + a new served-vs-committed integrity probe;
+production deploy deliberately POST-merge per a plan sequencing note):**
+(a) a plan-sanctioned deferred-acceptance round composes THREE coupled facts —
+the sequencing note is quoted as compose-time fact ("absence of deploy is not
+a blocker; the live negative control legitimately exits rc=1 until deploy"),
+the implementer-raised deploy-pending concern gets the
+[[brief-named-concern-adjudication]] required line with expected disposition
+= consistent-with-plan (re-emit ONLY on changed disposition), and the
+execution ban is WIDENED to name the deploy surface explicitly (systemctl
+restart, npm build, next start, running the probe against live CDN or local
+ports, curl to the production host) — a generic "never run smoke commands"
+ban does not obviously cover a reviewer "harmlessly" curling the live URL.
+(b) An untracked REPO-ROOT-side probe artifact the plan creates
+(`dashboard/public/cf-obfuscation-probe.html`) is attested deliberate +
+outside the worktree so the twin neither flags scope creep nor tries to read
+it. (c) A round-new NETWORK-probe script (~88-unit fetch loop) gets an
+explicit Step 3.6 honest-adjudication steer (minutes-scale read-only
+idempotent verdict probe — state the adjudication, don't skip the step) and
+a hollow-gate mapping = "documented human procedure": verify the README
+deploy block actually carries the command AND that it resolves from the
+block's stated cwd (`cd dashboard && uv run python ../scripts/...`).
+(d) Hub-call duty (#1805) on a stdlib-urllib probe: attest "no Hub calls —
+duty trivially discharges; re-arms if you find one". Roster SKIP + floor
+EXEMPT + plan-verify-present dual attest all fired again (tags [],
+origin_prompt = sibling-task surfacing).
+
+**#2366 r1 (2026-08-27) sharpening — src-LIBRARY bug-fix variant (diff widens
+an exception catch in `src/**` + adds tests; no workflow helper touched):**
+the recipe generalizes with two adaptations. (a) A marker that VOLUNTARILY
+carries a `## Smoke run` H2 (a pytest digest) on a type-exempt kind:infra task
+gets an explicit pre-triage line — "voluntary extra evidence, not a Step 0.6
+surface; can only help, never grounds `smoke-run-missing`" (the type-exempt
+sibling of [[data-hardening-round-compose]]'s brief-bound smoke H2). (b) An
+exception-WIDENING fix gets a routed review-questions block: catch-width vs
+the plan's must-ask fence, healthy-path invariance of the normalization
+(`ver if ver is not None else sentinel`), and breadth adjudication (the
+widened class swallows more than the announced instance — route as at most
+CONCERNS + `CONCERN::` row when the plan pins the exact diff and the helper is
+informational-only, never a FAIL on the plan's own pinned hunk). Roster-SKIP +
+floor-EXEMPT-with-plan-verify-present dual attest + three-grain recount with a
+grain-artifact extra (a docstring citing a DIFFERENT `*_capability.py` file)
+all fired again, per the validated patterns.
+
+**#2364 r2 (2026-08-27) sharpenings — upheld-blockers fix round on an
+advisory AST scanner (reconciler BINDING FAIL, 2 upheld + 1 deferred):**
+(a) one mechanism serving a BLOCKER fix AND a reconciler Standing Minor
+(per-function save-exclusion scoping) composes as INTENT-adherence, never
+sketch-verbatim — hand the (d)-disclosed judgment call (helper-function
+saves now pin ⇒ suppress) neutrally, and direct the new-edge hunt at the
+mechanism's own gaps (`save_value_ids` matches `ast.Assign`+single-Name
+only ⇒ AnnAssign / tuple-target saves are residual false-suppression
+shapes), with severity CALIBRATED to the reconciler's own precedent (a
+disclosed narrow residual in a WARN-only flag-only advisory scanner routes
+CONCERN-grade like its Finding 2, unless it recreates the founding class
+as broadly as the blocker did). (b) A WARN-delta claim (268→263: 5
+removed, 0 added) composes as a STATIC site-read battery for the no-uv
+twin: the composer names the 5 removed-WARN sites (from the marker) for
+newly-pins verification, plus the two ADD-direction hunt shapes (live
+one-char-constant patches after a regex widen; save-idiom reads that LOST
+their exclusion). (c) A deferred concern whose rationale offered an
+OPTIONAL remedy the round DECLINED with a (b)-recorded rationale gets the
+three-way `CONSISTENT-WITH-DEFERRAL | DISCLOSURE-GAP | FALSE-CLAIM` status
+line, severity fenced at CONCERN, re-emit-id-only-on-changed-disposition.
+(d) Round-scoping arithmetic: keep the reconciler envelope's OWN marker
+tags (different kind — no extraction collision; assert ==1 each) while
+stripping + blockquoting the inlined prior CODEX verdict per the rclose
+recipe; post-fix line anchors recomputed since both inlined verdicts cite
+the r1 blob's lines.
+
+**#2368 r1 (2026-08-27) sharpening — tests-only mutation-hardening variant
+(diff hardens a test-file payload extractor + adds parametrized mutation
+tests; no lint/guard/production script touched):** the #2566 tests-only
+adaptations fired again (roster SKIP-form with the pin voluntarily run;
+floor EXEMPT via sibling-surfacing Provenance WITH a plan-verify PASS
+present — recorded at plan v1, plan later amended to v2 by critic REVISE,
+attest both per the #2306 nuance; voluntary `## Smoke run` H2 pre-triaged
+per the #2366(a) line). New: (a) **marker sweep claims are scoped to
+PRE-ROUND state by default — recount at HEAD including the round's OWN
+additions.** The marker claimed "exactly ONE quote-char extraction call
+under tests/" while the composer's HEAD recount found TWO (the hardened
+extractor at :109 + the round's own NEW mutation-test splice locator at
+:289, `text.index("'", ...)`). Compose as a FENCED test-the-hypothesis
+adjudication — at most Minor `substantive` + optional CONCERN:: row (the
+new call only locates the splice point, feeds the HARDENED extractor, and
+sits behind a loud precondition assert) — never an attested defect, never
+silently dropped. (b) **Mutation-test rounds get a red-direction
+static-trace duty:** verify each splice's first post-close-quote char
+violates the new predicate AND that the OLD extractor (read at the pinned
+merge base via `git show <MB>:<file>`) silently truncates with the sentinel
+in no block — the docstring's red-evidence claim is verifiable without
+running pytest; also pin the `pytest.raises(pytest.fail.Exception,
+match=...)` contract against the guard's actual message literal.
+
+**#2365 r1 (2026-08-27) sharpenings — deploy-deferred serving-infra variant
+(diff = Next.js config header + a new served-vs-committed integrity probe;
+production deploy deliberately POST-merge per a plan sequencing note):**
+(a) a plan-sanctioned deferred-acceptance round composes THREE coupled facts —
+the sequencing note is quoted as compose-time fact ("absence of deploy is not
+a blocker; the live negative control legitimately exits rc=1 until deploy"),
+the implementer-raised deploy-pending concern gets the
+[[brief-named-concern-adjudication]] required line with expected disposition
+= consistent-with-plan (re-emit ONLY on changed disposition), and the
+execution ban is WIDENED to name the deploy surface explicitly (systemctl
+restart, npm build, next start, running the probe against live CDN or local
+ports, curl to the production host) — a generic "never run smoke commands"
+ban does not obviously cover a reviewer "harmlessly" curling the live URL.
+(b) An untracked REPO-ROOT-side probe artifact the plan creates
+(`dashboard/public/cf-obfuscation-probe.html`) is attested deliberate +
+outside the worktree so the twin neither flags scope creep nor tries to read
+it. (c) A round-new NETWORK-probe script (~88-unit fetch loop) gets an
+explicit Step 3.6 honest-adjudication steer (minutes-scale read-only
+idempotent verdict probe — state the adjudication, don't skip the step) and
+a hollow-gate mapping = "documented human procedure": verify the README
+deploy block actually carries the command AND that it resolves from the
+block's stated cwd (`cd dashboard && uv run python ../scripts/...`).
+(d) Hub-call duty (#1805) on a stdlib-urllib probe: attest "no Hub calls —
+duty trivially discharges; re-arms if you find one". Roster SKIP + floor
+EXEMPT + plan-verify-present dual attest all fired again (tags [],
+origin_prompt = sibling-task surfacing).
+
+**#2366 r1 (2026-08-27) sharpening — src-LIBRARY bug-fix variant (diff widens
+an exception catch in `src/**` + adds tests; no workflow helper touched):**
+the recipe generalizes with two adaptations. (a) A marker that VOLUNTARILY
+carries a `## Smoke run` H2 (a pytest digest) on a type-exempt kind:infra task
+gets an explicit pre-triage line — "voluntary extra evidence, not a Step 0.6
+surface; can only help, never grounds `smoke-run-missing`" (the type-exempt
+sibling of [[data-hardening-round-compose]]'s brief-bound smoke H2). (b) An
+exception-WIDENING fix gets a routed review-questions block: catch-width vs
+the plan's must-ask fence, healthy-path invariance of the normalization
+(`ver if ver is not None else sentinel`), and breadth adjudication (the
+widened class swallows more than the announced instance — route as at most
+CONCERNS + `CONCERN::` row when the plan pins the exact diff and the helper is
+informational-only, never a FAIL on the plan's own pinned hunk). Roster-SKIP +
+floor-EXEMPT-with-plan-verify-present dual attest + three-grain recount with a
+grain-artifact extra (a docstring citing a DIFFERENT `*_capability.py` file)
+all fired again, per the validated patterns.
+
+**#2364 r2 (2026-08-27) sharpenings — upheld-blockers fix round on an
+advisory AST scanner (reconciler BINDING FAIL, 2 upheld + 1 deferred):**
+(a) one mechanism serving a BLOCKER fix AND a reconciler Standing Minor
+(per-function save-exclusion scoping) composes as INTENT-adherence, never
+sketch-verbatim — hand the (d)-disclosed judgment call (helper-function
+saves now pin ⇒ suppress) neutrally, and direct the new-edge hunt at the
+mechanism's own gaps (`save_value_ids` matches `ast.Assign`+single-Name
+only ⇒ AnnAssign / tuple-target saves are residual false-suppression
+shapes), with severity CALIBRATED to the reconciler's own precedent (a
+disclosed narrow residual in a WARN-only flag-only advisory scanner routes
+CONCERN-grade like its Finding 2, unless it recreates the founding class
+as broadly as the blocker did). (b) A WARN-delta claim (268→263: 5
+removed, 0 added) composes as a STATIC site-read battery for the no-uv
+twin: the composer names the 5 removed-WARN sites (from the marker) for
+newly-pins verification, plus the two ADD-direction hunt shapes (live
+one-char-constant patches after a regex widen; save-idiom reads that LOST
+their exclusion). (c) A deferred concern whose rationale offered an
+OPTIONAL remedy the round DECLINED with a (b)-recorded rationale gets the
+three-way `CONSISTENT-WITH-DEFERRAL | DISCLOSURE-GAP | FALSE-CLAIM` status
+line, severity fenced at CONCERN, re-emit-id-only-on-changed-disposition.
+(d) Round-scoping arithmetic: keep the reconciler envelope's OWN marker
+tags (different kind — no extraction collision; assert ==1 each) while
+stripping + blockquoting the inlined prior CODEX verdict per the rclose
+recipe; post-fix line anchors recomputed since both inlined verdicts cite
+the r1 blob's lines.
+
+**#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
+verify_plan-check round (diff adds a GPU-state advisory family to
+poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
+(a) **Step 0.72 fired on a compose for the first time** — a zero-GPU-memory
+"no CUDA context" advisory IS an idle-family verdict from host GPU state, so
+the gate legitimately triggers. Compose it as a REQUIRED named header line
+(`**Own-device GPU-verdict adjudication (Step 0.72):** ...`) with deployment
+FACTS stated neutrally, never pre-adjudicated: probe runs on the issue's
+DEDICATED RunPod pod (whole-pod == assigned devices), mirrors the
+pre-existing whole-pod GPU_UTIL idle-advisory probe, actuation is
+advisory-only (marker+push, never drain/kill), and the SLURM-lanes-have-no-
+probe residual is verifiable from the wiring docstring; name the
+`# HOST_WIDE_GPU_VERDICT_EXEMPT:` waiver as the remedy if the twin judges
+scoping unsound. (b) **Advisory-only plan constraints compose as a
+neutrality TRACE duty** (wiring strictly after the verdict; an escaping
+exception is BOTH a neutrality break and the crash-safety third leg;
+post-failure-retry vs once-per-phase dedup = double-post AND never-post both
+findings) — plus a pre-triage that a sanctioned `recommend_next_interval`
+anomaly term needs its plan license checked, not assumed. (c) A marker
+per-file "+277/-3" that is really the `--stat` combined churn (numstat
+274/3) is the #2336-r2(e) stats-hygiene shape again — pre-triage as Minor
+report-accuracy when totals match. (d) Both target scripts on
+LIVE_WORKFLOW_HELPERS at once = one roster fact naming both line numbers.
+(e) plan-verify version nuance NEGATIVE case: marker verified v2 AND the
+symlink IS v2 — attest "no version gap" explicitly so the twin doesn't go
+hunting.
+
+**#2367 r1 (2026-08-27) sharpening — verify_task_body CHECK-ADDITION variant
+(diff adds a WARN-grade check + count-pin updates; the full #2291 recipe fired
+cleanly):** one genuinely new duty — a committed test pinned to a REAL-REPO
+git object (`git show <sha>^:tasks/<status>/<N>/body.md` with no repo-root
+monkeypatch) gets an explicit ENVIRONMENT-ROBUSTNESS adjudication: how does
+the test resolve the repo root from an arbitrary worktree/pytest cwd, and
+does the pinned object resolve there (worktrees share the odb; a test that
+passes locally but cannot pass in the Step 9c gate env is substantive).
+Also validated again: fail-soft/WARN-grade fleet body-gate checks take the
+crash-safety third leg with named adversarial sidecar/regex hypotheses
+(missing/unparseable/wrong-shape meta.json, catastrophic backtracking,
+boundary K/P/s values); map-files 7-hit list vs three-grain extras composed
+with the #2525(a) superset + run-anyway/deferred-invariant pre-triage;
+ledger-empty + plan-HANDED concerns distinction (verify handed items 1–5 as
+plan-adherence rows, never ledger closures; header = `**Prior-concerns
+ledger:** empty`); plan-verify no-version-gap negative attest (v3 PASS,
+symlink v3) per #2624(e).
+
+**#2367 r2 (2026-08-27) sharpening — bounce round closing BOTH a
+reconciler-downgraded CONCERN and a Standing-only recommendation:** the
+auto-forwarded Codex BLOCKER ledger row can STAY at severity BLOCKER while
+the reconciler classified that finding Standing-only (rejected as a round
+blocker, remedy routed to a standing recommendation) — when the orchestrator
+bounce names both ids anyway, frame closure duties on the BOUNCE contract
+(both fixes ARE the round; false closure claim = substantive FAIL on either),
+keep r1 severity grades settled via the upheld-variant author-neutrality
+fence, and use the reconciler row's `evidence` as the alt-binding acceptance
+contract while the Standing-recommendation text + the twin's own r1 Fix text
+serve as the un-downgraded row's contract. Also pre-triage together: a
+r2-only BARE `<!-- epm:results -->` head sentinel (r1 was versioned — a
+genuine round-2 imperfection, CONCERNS-at-most) + a missing `### (e)` H3
+with the addressed-substance locations named ((a) items + (c) regression
+block + ledger addressed rows). Status bullets for the two persisted ids
+start `- <id>:` so the final line-start `CONCERN:: ` count stays exactly 1
+(the grammar row); the stripped-tags/blockquoted-rows rclose form keeps tag
+arithmetic at own-head==1/close==1/prior==0 with reconcile tags kept (==1,
+different kind).

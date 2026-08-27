@@ -1,0 +1,191 @@
+{
+  "issue": 2587,
+  "name_token_counts_q35": {
+    "Diego": {
+      "ids": [
+        17790
+      ],
+      "n_tokens": 1,
+      "q25_pinned_id": 18336,
+      "single_token": true
+    },
+    "Emma": {
+      "ids": [
+        33778
+      ],
+      "n_tokens": 1,
+      "q25_pinned_id": 34935,
+      "single_token": true
+    },
+    "Kevin": {
+      "ids": [
+        15883
+      ],
+      "n_tokens": 1,
+      "q25_pinned_id": 16364,
+      "single_token": true
+    },
+    "Marcus": {
+      "ids": [
+        34503
+      ],
+      "n_tokens": 1,
+      "q25_pinned_id": 35683,
+      "single_token": true
+    },
+    "Sarah": {
+      "ids": [
+        19822
+      ],
+      "n_tokens": 1,
+      "q25_pinned_id": 20445,
+      "single_token": true
+    }
+  },
+  "paraphrase_token_counts_q35": {
+    "content_constraint": {
+      "v1": 8,
+      "v2": 8,
+      "v3": 7,
+      "v4": 9,
+      "v5": 8
+    },
+    "format": {
+      "v1": 13,
+      "v2": 13,
+      "v3": 13,
+      "v4": 13,
+      "v5": 13
+    },
+    "hedging": {
+      "v1": 9,
+      "v2": 10
+    },
+    "lexical_marker": {
+      "v1": 11,
+      "v2": 11,
+      "v3": 11,
+      "v4": 11,
+      "v5": 11
+    },
+    "persona": {
+      "v1": 15,
+      "v2": 15,
+      "v3": 15,
+      "v4": 15,
+      "v5": 15
+    },
+    "register": {
+      "v1": 10,
+      "v2": 11
+    },
+    "stance": {
+      "v1": 9,
+      "v2": 9,
+      "v3": 9,
+      "v4": 8,
+      "v5": 9
+    },
+    "user_fact": {
+      "v1": 13,
+      "v2": 13,
+      "v3": 13,
+      "v4": 13,
+      "v5": 13
+    },
+    "user_profile": {
+      "v1": 23,
+      "v2": 23,
+      "v3": 23,
+      "v4": 23,
+      "v5": 23
+    }
+  },
+  "q25_expected_value_tokens": {
+    "content_constraint": 9,
+    "format": 10,
+    "hedging": 10,
+    "lexical_marker": 12,
+    "persona": 13,
+    "register": 10,
+    "stance": 9,
+    "user_fact": 13,
+    "user_profile": 24
+  },
+  "value_token_counts_q35": {
+    "answer_language": {
+      "chinese": 4,
+      "english": 4,
+      "spanish": 4
+    },
+    "content_constraint": {
+      "v1": 9,
+      "v2": 9,
+      "v3": 9,
+      "v4": 9,
+      "v5": 9
+    },
+    "format": {
+      "v1": 10,
+      "v2": 10,
+      "v3": 10,
+      "v4": 10,
+      "v5": 10
+    },
+    "hedging": {
+      "v1": 10,
+      "v2": 10
+    },
+    "lexical_marker": {
+      "v1": 12,
+      "v2": 12,
+      "v3": 12,
+      "v4": 12,
+      "v5": 12
+    },
+    "persona": {
+      "v1": 13,
+      "v2": 13,
+      "v3": 13,
+      "v4": 13,
+      "v5": 13
+    },
+    "register": {
+      "v1": 10,
+      "v2": 10
+    },
+    "stance": {
+      "v1": 9,
+      "v2": 9,
+      "v3": 9,
+      "v4": 9,
+      "v5": 9
+    },
+    "user_fact": {
+      "v1": 13,
+      "v2": 13,
+      "v3": 13,
+      "v4": 13,
+      "v5": 13
+    },
+    "user_profile": {
+      "v1": 24,
+      "v2": 24,
+      "v3": 24,
+      "v4": 24,
+      "v5": 24
+    }
+  },
+  "within_axis_equal_q35": {
+    "answer_language": true,
+    "content_constraint": true,
+    "format": true,
+    "hedging": true,
+    "lexical_marker": true,
+    "persona": true,
+    "register": true,
+    "stance": true,
+    "user_fact": true,
+    "user_profile": true
+  }
+}

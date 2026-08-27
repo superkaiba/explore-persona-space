@@ -27,6 +27,13 @@ quantity (a baseline, a chance line) drawn with different visual identity
 in different figures; (3) `paper_palette(n)` is style-independent (Wong)
 but `paper_palette_role` resolves at CALL time against the ACTIVE style —
 module-import-time role capture vs in-function calls can silently mix
-palettes. Sibling: [[figure-populated-assert-reference-artists]] (the
-non-empty-axes guard on the same class of commits — re-fired verbatim on
-#2546: artist-count scan passes on all-NaN bars + axhline).
+palettes. (4) INDEXED-palette figures collide with ROLE-based siblings
+STRUCTURALLY: `paper_palette(n)` indexes 1/2/5 ARE the neurips role hexes
+for baseline/control/accent, so a figure coloring N series via
+`paper_palette(N)` beside role-disciplined siblings rebinds those roles by
+construction (#2587 R2 g3: `fig_floors_per_layer` gave floors palette[1..5]
+— Wong orange = the 7B role — on the same depth-vs-R² axes shape as hero-2's
+orange 7B points, while the file's own docstring declared floors neutral;
+flagged CONCERN). Sibling: [[figure-populated-assert-reference-artists]]
+(the non-empty-axes guard on the same class of commits — re-fired verbatim
+on #2546: artist-count scan passes on all-NaN bars + axhline).

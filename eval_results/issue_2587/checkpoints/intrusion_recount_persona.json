@@ -1,0 +1,43 @@
+{
+  "axis": "persona",
+  "delta_vs_7b_after": {
+    "ci95": [
+      1.3483892886369209,
+      2.082690911541363
+    ],
+    "point": 1.7035280213467008
+  },
+  "delta_vs_7b_before": {
+    "ci95": [
+      2.271046249510184,
+      2.8799174433375243
+    ],
+    "point": 2.5588433760715947
+  },
+  "drops": {
+    "n_ctx_all_draws_lost": 0,
+    "n_ctx_in_selection": 60,
+    "n_pairs_noise_nan": 0,
+    "n_pairs_obs_nan": 0,
+    "n_rows_dropped": 96
+  },
+  "excluded": 7.533007275495358,
+  "excluded_minus_unexcluded": -0.855315354724894,
+  "gain_survives_exclusion": true,
+  "kind": "parent",
+  "s_7b": 5.829479254148657,
+  "selection": {
+    "fire": {
+      "n_dropped_7b_only": 60,
+      "n_dropped_9b_only": 0,
+      "n_missing_fire_rows_7b": 0,
+      "n_missing_fire_rows_9b": 0,
+      "n_shared_primary": 120,
+      "n_symmetric_fired": 12,
+      "symmetric_headline": false
+    },
+    "n_pairs": 120,
+    "rule": "ALL shared primary pairs (committed fallback: symmetric_headline false)"
+  },
+  "unexcluded": 8.388322630220252
+}

@@ -1,0 +1,246 @@
+{
+  "n_fit": 120000,
+  "n_val": 400,
+  "n_te": 20000,
+  "n_union": 2150,
+  "union_source": "issue2476_turnavg/analysis_tensors/eval/alive_c.npz",
+  "union_floor_frac": 0.002,
+  "realized_l0_k": 96,
+  "routes": [
+    {
+      "route": "fitted_map",
+      "r2_unconditional": {
+        "median": 0.25227837996108166,
+        "mean": 0.3091571199348498,
+        "frac_positive": 0.9916279069767442,
+        "n_nan": 0
+      },
+      "hurdle": {
+        "firing_auroc_median": 0.9363000895102079,
+        "firing_auroc_n_nan": 0,
+        "conditional_magnitude_r2_median": -0.8576749343598992,
+        "conditional_magnitude_r2_n_nan": 0,
+        "note": "conditional-magnitude R2 is scored ONLY on rows where the true feature fires; it is never mixed with the unconditional R2 in any verdict"
+      },
+      "pr_at_k": {
+        "k": 96,
+        "precision_at_k": 0.7013354166666667,
+        "recall_at_k": 0.7125396771656124,
+        "n_rows": 20000,
+        "n_rows_zero_true": 0
+      },
+      "fit_meta": {
+        "floor_frac": 0.01,
+        "floor_rows": 1200,
+        "d_alive_ctx": 1276,
+        "selected_lambda": 316.2277660168379,
+        "val_r2_at_selected": 0.6760375586180025,
+        "lambda_grid_edge": null,
+        "widenings": 0,
+        "r2_median": 0.25227837996108166
+      }
+    },
+    {
+      "route": "composed_banked_2476",
+      "source": "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
+      "n_banked": 879,
+      "n_in_union": 879,
+      "banked_alive_floor": 1200,
+      "banked_n_fit_rows": 120000,
+      "r2_median_on_intersection": 0.5991626918144275,
+      "r2_mean_on_intersection": 0.556485046470404,
+      "note": "banked #2476 instrument REUSED not re-run; per-feature R2 from ITS holdout predictions (same pinned 20k holdout rows); intersection = banked 1% panel within the 0.2% union"
+    },
+    {
+      "route": "dense_input_banked_2476",
+      "source": "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
+      "n_banked": 879,
+      "n_in_union": 879,
+      "banked_alive_floor": 1200,
+      "banked_n_fit_rows": 120000,
+      "r2_median_on_intersection": 0.5119052686081915,
+      "r2_mean_on_intersection": 0.49523677053243365,
+      "note": "banked #2476 instrument REUSED not re-run; per-feature R2 from ITS holdout predictions (same pinned 20k holdout rows); intersection = banked 1% panel within the 0.2% union"
+    },
+    {
+      "route": "index_aligned_ib",
+      "r2_unconditional": {
+        "median": -0.026535532648888083,
+        "mean": -4.038725211943337,
+        "frac_positive": 0.012558139534883722,
+        "n_nan": 0
+      },
+      "hurdle": {
+        "firing_auroc_median": 0.5,
+        "firing_auroc_n_nan": 0,
+        "conditional_magnitude_r2_median": -2.306160064263957,
+        "conditional_magnitude_r2_n_nan": 0,
+        "note": "conditional-magnitude R2 is scored ONLY on rows where the true feature fires; it is never mixed with the unconditional R2 in any verdict"
+      },
+      "pr_at_k": {
+        "k": 96,
+        "precision_at_k": 0.4137739583333334,
+        "recall_at_k": 0.41784943977759265,
+        "n_rows": 20000,
+        "n_rows_zero_true": 0
+      },
+      "label": "index-aligned null \u2014 feature indices are unrelated across dictionaries, expected ~ train-mean"
+    },
+    {
+      "route": "train_mean_null",
+      "r2_unconditional": {
+        "median": -2.6969928030751156e-05,
+        "mean": -5.8769171355209725e-05,
+        "n_nan": 0
+      },
+      "note": "constant predictor: AUROC/PR@k undefined (constant scores) \u2014 omitted"
+    }
+  ],
+  "floor_sweep": [
+    {
+      "floor_frac": 0.01,
+      "floor_rows": 1200,
+      "d_alive_ctx": 1276,
+      "selected_lambda": 316.2277660168379,
+      "val_r2_at_selected": 0.6760375586180025,
+      "lambda_grid_edge": null,
+      "widenings": 0,
+      "r2_median": 0.25227837996108166
+    },
+    {
+      "floor_frac": 0.005,
+      "floor_rows": 600,
+      "d_alive_ctx": 1686,
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.6907401479783535,
+      "lambda_grid_edge": null,
+      "widenings": 0,
+      "r2_median": 0.2760320830579662
+    },
+    {
+      "floor_frac": 0.0025,
+      "floor_rows": 300,
+      "d_alive_ctx": 2311,
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.70029631084581,
+      "lambda_grid_edge": null,
+      "widenings": 0,
+      "r2_median": 0.3100291267246469
+    },
+    {
+      "floor_frac": 0.002,
+      "floor_rows": 240,
+      "d_alive_ctx": 2545,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.7039440478135228,
+      "lambda_grid_edge": null,
+      "widenings": 0,
+      "r2_median": 0.3203627217089171
+    }
+  ],
+  "corpus_transfer": {
+    "fold": "fit LMSYS-only (pass_b masked out by row id) -> score per-corpus holdout",
+    "mirrors": "#2476 corpus_fold: EA fit id refit_lmsys_transfer__ridge__seed0 (#1482 _train_rows_for LMSYS train rows; lambda on the same val set)",
+    "group_level": "corpus is the fold group (ood-generalization-folds): the transfer read carries the generalization claim, never a pointwise holdout R2 alone",
+    "n_fit_lmsys": 65899,
+    "d_alive_ctx": 1276,
+    "n_over_d": 51.64498432601881,
+    "n_te_wildchat": 9017,
+    "n_te_lmsys": 10983,
+    "n_te_pass_b_excluded": 0,
+    "fit_meta": {
+      "estimator": "val-selected primal ridge, widened 27-value grid (C4 widen-on-edge)",
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.6808309472466867,
+      "lambda_grid_edge": null,
+      "widenings": 0
+    },
+    "r2_median": {
+      "transfer_on_wildchat": -0.23780710681333528,
+      "fitted_on_wildchat": 0.19012181497874625,
+      "transfer_on_lmsys": 0.23603953637194414,
+      "fitted_on_lmsys": 0.23200131848022776
+    },
+    "headline_read": "transfer_on_wildchat (LMSYS-trained map on WildChat holdout rows) vs fitted_on_wildchat (mixed-fit map on the SAME rows / SAME union features)"
+  },
+  "knn_retrieval": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 20000,
+      "n_pool": 20000,
+      "acc_at_k": {
+        "1": 0.55405,
+        "5": 0.75225,
+        "10": 0.81205
+      },
+      "chance_at_k": {
+        "1": 5e-05,
+        "5": 0.00025,
+        "10": 0.0005
+      },
+      "median_rank": 1.0,
+      "mrr": 0.6450171109442019
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 20000,
+      "n_pool": 20000,
+      "acc_at_k": {
+        "1": 0.6269,
+        "5": 0.802,
+        "10": 0.8533
+      },
+      "chance_at_k": {
+        "1": 5e-05,
+        "5": 0.00025,
+        "10": 0.0005
+      },
+      "median_rank": 1.0,
+      "mrr": 0.7068356072361293
+    }
+  },
+  "shuffle_null": {
+    "n_draws": 20,
+    "seeds": [
+      2476100,
+      2476101,
+      2476102,
+      2476103,
+      2476104,
+      2476105,
+      2476106,
+      2476107,
+      2476108,
+      2476109,
+      2476110,
+      2476111,
+      2476112,
+      2476113,
+      2476114,
+      2476115,
+      2476116,
+      2476117,
+      2476118,
+      2476119
+    ],
+    "convention": "prediction rows permuted; same fp64 R2 kernel (#2476)"
+  },
+  "grain_matching": {
+    "inputs": "fresh ctx SAE on v_C (last-prompt-token state; conversation grain)",
+    "targets": "#2476 answer SAE on v_A (answer-span mean; turn-averaged grain)",
+    "headline_rule": "no cross-grain read carries a headline; per-token andyrdt reads of v_C (token grain) live in P-A, not this leg"
+  },
+  "production": true,
+  "regime_config_hash": "35003bfda5ef3328",
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T01:20:57.979127Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "featmap",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

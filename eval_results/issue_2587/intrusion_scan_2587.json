@@ -1,0 +1,100 @@
+{
+  "answer_language_by_value": {
+    "bare": {
+      "intruded": 11,
+      "total": 120
+    },
+    "chinese": {
+      "intruded": 110,
+      "total": 120
+    },
+    "english": {
+      "intruded": 7,
+      "total": 120
+    },
+    "spanish": {
+      "intruded": 39,
+      "total": 120
+    }
+  },
+  "note": "row intruded iff completion matches the regex; answer_language 'chinese' value is instructed-CJK (compliance, not intrusion)",
+  "parent_11_axes": {
+    "intruded": 618,
+    "total": 9840
+  },
+  "per_cell": {
+    "answer_language": {
+      "intruded": 167,
+      "total": 480
+    },
+    "content_constraint": {
+      "intruded": 18,
+      "total": 1200
+    },
+    "format": {
+      "intruded": 38,
+      "total": 1200
+    },
+    "hedging": {
+      "intruded": 37,
+      "total": 480
+    },
+    "lexical_marker": {
+      "intruded": 14,
+      "total": 1200
+    },
+    "persona": {
+      "intruded": 201,
+      "total": 1200
+    },
+    "query": {
+      "intruded": 34,
+      "total": 480
+    },
+    "query_content_oneword": {
+      "intruded": 36,
+      "total": 480
+    },
+    "register": {
+      "intruded": 59,
+      "total": 480
+    },
+    "stance": {
+      "intruded": 84,
+      "total": 1200
+    },
+    "user_fact": {
+      "intruded": 40,
+      "total": 1200
+    },
+    "user_profile": {
+      "intruded": 93,
+      "total": 1200
+    }
+  },
+  "per_cell_cjk_char_median": {
+    "answer_language": 967,
+    "content_constraint": 3.0,
+    "format": 2.0,
+    "hedging": 2,
+    "lexical_marker": 3.0,
+    "persona": 2,
+    "query": 2.5,
+    "query_content_oneword": 2.0,
+    "register": 2,
+    "stance": 2.0,
+    "user_fact": 2.0,
+    "user_profile": 2
+  },
+  "regex": "[\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af]",
+  "schema": "issue2587_cjk_scan_v1",
+  "source": "issue2587_minpair/raw_completions/anchors/*.jsonl (10 cells from the local judge staging mirror, query + query_content_oneword re-downloaded from the HF prefix)",
+  "total": {
+    "intruded": 821,
+    "total": 10800
+  },
+  "total_excl_answer_language": {
+    "intruded": 654,
+    "total": 10320
+  }
+}

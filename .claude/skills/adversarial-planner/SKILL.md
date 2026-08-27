@@ -522,7 +522,13 @@ Run the structural verifier against the plan version just persisted:
   (check 72 — the wave is real but its instrument is the SAME
   already-piloted rubric as an unconditional primary wave in the same
   plan; the inheritance claim is the reviewer-auditable declaration;
-  #2590).
+  #2590), and
+  `N/A — no acceptance binding to an optional phase`
+  (check 74 — the gates-section mention of the optionality-marked phase
+  is genuinely informational, not a binding; a plan whose criterion IS
+  bound to the optional phase instead strikes the optionality marker,
+  re-binds the criterion to a non-optional evidence source, or
+  explicitly demotes/conditions the criterion; #2363, incident #2360 v2).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

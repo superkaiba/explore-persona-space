@@ -1,0 +1,327 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "6ff40dc37c5b4c0e",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:52:09Z",
+  "figsize": [
+    11.0,
+    6.2
+  ],
+  "points": [
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": "0",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "Rank (last prompt token context)": 5.0,
+      "y": 0.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 5.0,
+      "y": 1.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 5.0,
+      "y": 2.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 3.0,
+      "y": 3.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 3.0,
+      "y": 4.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 5.0,
+      "y": 5.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 5.0,
+      "y": 6.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 4.0,
+      "y": 7.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rank (last prompt token context)": 5.0,
+      "y": 8.0,
+      "series": "Gavish-Donoho reference (analytic)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Cross-half held-out R^2": 0.566923477184136,
+      "y": 0.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.6203776050439334,
+      "y": 1.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.6196261261972315,
+      "y": 2.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.5854268527954024,
+      "y": 3.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.5916769908450024,
+      "y": 4.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.6524956667334332,
+      "y": 5.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.6748268962420458,
+      "y": 6.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.5411573571831985,
+      "y": 7.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.5579764217493737,
+      "y": 8.0,
+      "series": "Fit half 1, score half 2",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Cross-half held-out R^2": 0.5608101903435943,
+      "y": 0.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.6157298237537532,
+      "y": 1.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.6188425824702048,
+      "y": 2.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.5837656156462854,
+      "y": 3.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.5898144942606217,
+      "y": 4.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.6513103310669249,
+      "y": 5.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.6695974439859784,
+      "y": 6.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.5441444141831464,
+      "y": 7.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Cross-half held-out R^2": 0.5573529912784223,
+      "y": 8.0,
+      "series": "Fit half 2, score half 1",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Denoised shift rank per arm",
+        "xlabel": "Rank (last prompt token context)",
+        "legend_labels": [
+          "Gavish-Donoho reference (analytic)",
+          "Denoised rank (calibrated)"
+        ],
+        "xticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Half-map generalization",
+        "xlabel": "Cross-half held-out R^2",
+        "legend_labels": [
+          "Fit half 1, score half 2",
+          "Fit half 2, score half 1"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "Gavish-Donoho reference (analytic)",
+      "Denoised rank (calibrated)",
+      "Fit half 1, score half 2",
+      "Fit half 2, score half 1"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

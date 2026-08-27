@@ -1,0 +1,475 @@
+{
+  "commit": "3ab1809d+dirty",
+  "render_id": "c6bbd3bbde594a69",
+  "git_commit": "3ab1809d6baff3e4e57457540dae95e8caabf67b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2618_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2618_figures.py",
+  "created": "2026-08-27T10:33:41Z",
+  "figsize": [
+    11.0,
+    3.4
+  ],
+  "points": [
+    {
+      "truncation rank k": 8.0,
+      "held-out $R^2$ (raw context space)": -0.018649211311420277,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 32.0,
+      "held-out $R^2$ (raw context space)": -0.008988432310054417,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 128.0,
+      "held-out $R^2$ (raw context space)": 0.003224790446621162,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 512.0,
+      "held-out $R^2$ (raw context space)": -0.009333444166492288,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 1024.0,
+      "held-out $R^2$ (raw context space)": -0.1017790490679169,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 1433.0,
+      "held-out $R^2$ (raw context space)": -0.2646477514894181,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 2048.0,
+      "held-out $R^2$ (raw context space)": -0.8105853151155427,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 3072.0,
+      "held-out $R^2$ (raw context space)": -6.420215513714291,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 3584.0,
+      "held-out $R^2$ (raw context space)": -131183.45654352102,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 128.0,
+      "held-out $R^2$ (raw context space)": 0.003224790446621162,
+      "series": "Val-selected k*",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 0.0,
+      "held-out $R^2$ (raw context space)": 0.7412542246476238,
+      "series": "Fitted reverse map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 1.0,
+      "held-out $R^2$ (raw context space)": 0.7412542246476238,
+      "series": "Fitted reverse map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 0.0,
+      "held-out $R^2$ (raw context space)": 0.033772658427259294,
+      "series": "Ridge-pinv",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 1.0,
+      "held-out $R^2$ (raw context space)": 0.033772658427259294,
+      "series": "Ridge-pinv",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 0.0,
+      "held-out $R^2$ (raw context space)": -0.3828975890978261,
+      "series": "Identity + bias",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 1.0,
+      "held-out $R^2$ (raw context space)": -0.3828975890978261,
+      "series": "Identity + bias",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 0.0,
+      "held-out $R^2$ (raw context space)": -0.030427874600676974,
+      "series": "Predict the mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 1.0,
+      "held-out $R^2$ (raw context space)": -0.030427874600676974,
+      "series": "Predict the mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.009551808234781634,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.03534602542302001,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.05972334368230703,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.07202418491153217,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.020641900551921277,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": -0.0810261251744282,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": -0.42183664867694737,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": -3.73622385264522,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": -7905.126590054505,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.07202418491153217,
+      "series": "Val-selected k*",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": 0.75071200316297,
+      "series": "Fitted reverse map",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": 0.75071200316297,
+      "series": "Fitted reverse map",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": 0.13504949921383902,
+      "series": "Ridge-pinv",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": 0.13504949921383902,
+      "series": "Ridge-pinv",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": -0.012794760992104859,
+      "series": "Identity + bias",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": -0.012794760992104859,
+      "series": "Identity + bias",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": -0.02732910763683427,
+      "series": "Predict the mean",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": -0.02732910763683427,
+      "series": "Predict the mean",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.0022311724813316447,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.010030978071074115,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.026817691569857027,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.027040303625742945,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": -0.056089426273119525,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": -0.19097171649736389,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": -0.5920673537104197,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": -3.9804245903038726,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": -23212234.324657876,
+      "series": "Truncated pinv (rank k)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.026817691569857027,
+      "series": "Val-selected k*",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": 0.6110331401333698,
+      "series": "Fitted reverse map",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": 0.6110331401333698,
+      "series": "Fitted reverse map",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": 0.1121456173884291,
+      "series": "Ridge-pinv",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": 0.1121456173884291,
+      "series": "Ridge-pinv",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": 0.07922633466990725,
+      "series": "Identity + bias",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": 0.07922633466990725,
+      "series": "Identity + bias",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "truncation rank k": 0.0,
+      "y": -0.014233034867940031,
+      "series": "Predict the mean",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "truncation rank k": 1.0,
+      "y": -0.014233034867940031,
+      "series": "Predict the mean",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer 14",
+        "xlabel": "truncation rank k",
+        "ylabel": "held-out $R^2$ (raw context space)",
+        "xticklabels": [
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{14}}$",
+          "$\\mathdefault{2^{16}}$"
+        ],
+        "yticklabels": [
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xlabel": "truncation rank k",
+        "xticklabels": [
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{14}}$",
+          "$\\mathdefault{2^{16}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xlabel": "truncation rank k",
+        "xticklabels": [
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{14}}$",
+          "$\\mathdefault{2^{16}}$"
+        ]
+      }
+    ],
+    "series": [
+      "Truncated pinv (rank k)",
+      "Val-selected k*",
+      "Fitted reverse map",
+      "Ridge-pinv",
+      "Identity + bias",
+      "Predict the mean"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
