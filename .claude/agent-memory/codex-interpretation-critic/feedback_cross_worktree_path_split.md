@@ -119,6 +119,19 @@ and defuse the network paragraph entirely (do-not-fetch: the HF links point
 at firewalled text). Probe all three local-source patterns before concluding
 raw text is HF-only: `judge_inputs/`, `rawcomp_cache/`, `axis_items/`.
 
+**`judge_work/` + `hf_dl/<slug>/<hf-prefix>/` — fourth + fifth lens-7 local-text
+sources (#2587 r1, 2026-08-27).** Two more staging patterns beyond
+judge_inputs/rawcomp_cache/axis_items: (a)
+`<worktree>/data/issue_<N>/judge_work/` — `raw/` holds local judge outputs
+(judge_raw_*.json, judge_scores.jsonl) and `anchors_staging/<hf-prefix>/`
+holds most rollout shards staged for VM-side judging; (b)
+`<worktree>/data/issue_<N>/hf_dl/<adhoc-slug>/<hf-prefix>/` — ad-hoc HF pulls
+(e.g. `anchors_extra/`, `mapfit_sample/`) that fill the shards
+anchors_staging lacks. On #2587 the union covered ALL 12 anchors shards +
+judge outputs + a map-fit sample shard, fully defusing the network paragraph.
+Probe `find <worktree>/data/issue_<N> -maxdepth 3 -type d` rather than only
+the three named dirs.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw
