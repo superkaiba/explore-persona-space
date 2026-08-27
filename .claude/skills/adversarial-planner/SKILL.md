@@ -524,7 +524,7 @@ Run the structural verifier against the plan version just persisted:
   plan; the inheritance claim is the reviewer-auditable declaration;
   #2590), and
   `N/A — no acceptance binding to an optional phase`
-  (check 73 — the gates-section mention of the optionality-marked phase
+  (check 74 — the gates-section mention of the optionality-marked phase
   is genuinely informational, not a binding; a plan whose criterion IS
   bound to the optional phase instead strikes the optionality marker,
   re-binds the criterion to a non-optional evidence source, or

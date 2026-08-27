@@ -468,7 +468,7 @@ labeled-line forms):
     (check 72 — the wave is real but its instrument is the SAME
     already-piloted rubric as an unconditional primary wave in the same
     plan; the inheritance claim is the reviewer-auditable declaration)
-  - ``N/A — no acceptance binding to an optional phase`` (check 73 — the
+  - ``N/A — no acceptance binding to an optional phase`` (check 74 — the
     gates-section mention of the optionality-marked phase is genuinely
     informational, not a binding; a plan whose criterion IS bound to the
     optional phase instead strikes the optionality marker (the #2360 v3
