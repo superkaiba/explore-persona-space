@@ -298,3 +298,27 @@ reconciler item with NO ledger row gets a pseudo-id closure line
 (#1092-r4 pattern) — all three items in one REQUIRED
 `## Reconciler-item closure` section, NOT-ADDRESSED = substantive FAIL,
 verified-addressed ledger ids never re-emitted as CONCERN:: rows.
+
+**#2525 r1 (2026-08-27) sharpenings — offender-side invariant-RESTORATION
+variant (diff fixes the OFFENDING scripts to re-green three existing fleet
+tests; no lint/guard/test file edited):** (a) **A `--map-files` hit list is
+a SUPERSET of fragment greps** — the selector maps changed PATHS to tests,
+so a marker's map-files list can legitimately contain files with ZERO
+fragment hits (here `test_issue1901_opsurface.py`,
+`test_shared_vm_thread_caps.py`); pre-triage them as selector-mapped, never
+as a stale/unreproducible claim, and reconcile the recount as "every
+composer hit either in the marker's lists or RAN locally anyway". (b) **A
+"comment-only edits" claim backing a pre-existing-failure disclosure gets a
+composer `ast.dump(base) == ast.dump(head)` settle** (git show merge-base
+blob → temp file, one `uv run python -c` compare) — hands Step 0.9
+`pre-existing-on-trunk` as a settled fact instead of a twin re-derivation.
+(c) **Waiver-placement rounds attest the READER's semantics with line
+numbers** (`_prod_import_lint_waiver_present` @ workflow_lint.py:9690:
+first physical line OR nearest preceding non-blank, blanks skipped, reason
+≥ 10 chars) + the one non-standard placement site, so the twin verifies all
+N placements against the real predicate. (d) Hollow-gate mapping for
+secret-gate insertions = "gate scans the SAME artifact the adjacent call
+uploads, on the live path, at EVERY site" — per-site gated-path vs
+uploaded-path pairs enumerated in the priorities block. (e) Floor-exempt +
+plan-verify-present dual attest fired again (tags `urgent-main-red` only,
+origin_prompt names a sibling-task surfacing — not a wf-fix candidate).
