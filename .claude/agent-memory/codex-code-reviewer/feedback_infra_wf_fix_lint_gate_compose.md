@@ -574,3 +574,23 @@ ledger-empty + plan-HANDED concerns distinction (verify handed items 1–5 as
 plan-adherence rows, never ledger closures; header = `**Prior-concerns
 ledger:** empty`); plan-verify no-version-gap negative attest (v3 PASS,
 symlink v3) per #2624(e).
+
+**#2367 r2 (2026-08-27) sharpening — bounce round closing BOTH a
+reconciler-downgraded CONCERN and a Standing-only recommendation:** the
+auto-forwarded Codex BLOCKER ledger row can STAY at severity BLOCKER while
+the reconciler classified that finding Standing-only (rejected as a round
+blocker, remedy routed to a standing recommendation) — when the orchestrator
+bounce names both ids anyway, frame closure duties on the BOUNCE contract
+(both fixes ARE the round; false closure claim = substantive FAIL on either),
+keep r1 severity grades settled via the upheld-variant author-neutrality
+fence, and use the reconciler row's `evidence` as the alt-binding acceptance
+contract while the Standing-recommendation text + the twin's own r1 Fix text
+serve as the un-downgraded row's contract. Also pre-triage together: a
+r2-only BARE `<!-- epm:results -->` head sentinel (r1 was versioned — a
+genuine round-2 imperfection, CONCERNS-at-most) + a missing `### (e)` H3
+with the addressed-substance locations named ((a) items + (c) regression
+block + ledger addressed rows). Status bullets for the two persisted ids
+start `- <id>:` so the final line-start `CONCERN:: ` count stays exactly 1
+(the grammar row); the stripped-tags/blockquoted-rows rclose form keeps tag
+arithmetic at own-head==1/close==1/prior==0 with reconcile tags kept (==1,
+different kind).

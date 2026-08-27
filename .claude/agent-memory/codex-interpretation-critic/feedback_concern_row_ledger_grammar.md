@@ -20,5 +20,10 @@ to hand-normalize all 11 before they could persist.
 **How to apply:** add a STRICT grammar block right after the output-format
 template in every composed prompt (round 1 included — don't wait for a
 rejection), with a literal example row and the explicit anti-patterns
-(pipes, key=value fields) named. See [[cross-worktree-path-split-for-figures-vs-eval-jsons]]
+(pipes, key=value fields) named. Give a severity MAPPING, not just the enum
+(verdict-driving → BLOCKER; substantive-but-not-verdict-driving → CONCERN;
+polish → NIT) — a twin told only the enum picks its own vocabulary (MAJOR).
+On revision rounds where the twin's OWN prior round used bad severity, name
+that in the prompt ("your round-1 output used `MAJOR` — REJECTED") — the
+self-referential callback lands harder than the abstract rule. See [[cross-worktree-path-split-for-figures-vs-eval-jsons]]
 for the sibling path-composition duties on the same rounds.
