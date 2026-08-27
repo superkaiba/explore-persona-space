@@ -42,7 +42,7 @@ On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that swap exactly one g
 
 **This experiment in context:** this sharpens [#2215](https://eps.superkaiba.com/tasks/2215), whose refusal-request content was best-separated by the map (1.00 separability) but on pairs that were not token-matched, leaving open whether the map read the decision or the surface text; one-word swaps remove that confound. The minimal-pair method and the transport comparison come from the [#2564](https://eps.superkaiba.com/tasks/2564) grammar-slot pilot (benign topic swaps: single-turn direction cosine 0.53/0.53/0.41 subject/object/verb — measured under a different question-form and bank regime, so not directly comparable to this run's classes). The frozen maps are from [#779](https://eps.superkaiba.com/tasks/779) and [#1738](https://eps.superkaiba.com/tasks/1738); the capture rig from [#2162](https://eps.superkaiba.com/tasks/2162).
 
-**Broader narrative:** the context-to-answer line asks whether one linear map from a context-end hidden state predicts the answer representation that context will produce. A helpful-versus-refuse flip is the largest behavioral swing a one-word change can induce, so this tests whether the pre-generation geometry carries that flip. The prose caps are acknowledged as exceeded in the total budget, in some Takeaways bullets, and in the per-result band in places: six convergent reads each carry their own numbers, plus the recount and confound disclosures.
+**Broader narrative:** the context-to-answer line asks whether one linear map from a context-end hidden state predicts the answer representation that context will produce. A helpful-versus-refuse flip is the largest behavioral swing a one-word change can induce, so this tests whether the pre-generation geometry carries that flip. The prose caps are acknowledged as exceeded in the total budget and in the per-result band in places: six convergent reads each carry their own numbers, plus the recount and confound disclosures.
 
 ## Methodology
 
@@ -90,7 +90,7 @@ Rollout completions are trigger-dense refusal-eval text; a sanitized 5-row spot 
 
 Per-class direction cosine by arm (left, with per-pair strip points behind each class median) and the flip-magnitude-vs-transport scatter (right, all 108 pairs point-by-point).
 
-![Per-class transport by arm and per-pair flip magnitude vs transport](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/figures/issue_2617/svmp_hero.png)
+![Per-class transport by arm and per-pair flip magnitude vs transport](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e1cb3e63048083fe6023758355bb1eca158adc3c/figures/issue_2617/svmp_hero.png)
 
 > **Figure.** *The map roughly doubles the raw context shift's alignment on flip classes.* Left: the single-turn map (blue) places object-flip, verb-flip and XSTest at 0.77–0.80, the multi-turn map (red) at 0.74–0.80, above the raw context shift (green: 0.41–0.46 flip classes, 0.32 subject-control), the shuffled null, and the prior benign-swap pilot's cross-regime anchors (0.41–0.53). Right: transport rises with flip magnitude.
 
@@ -102,7 +102,7 @@ Put plainly: when one word flips the behavior, the map predicts which way the an
 
 Refusal-axis loading of predicted pair deltas, flip vs non-flip, per arm, shown point-by-point in per-pair strips, with the observed-side delta.
 
-![Refusal-axis loading by arm, flip pairs high and non-flip pairs near zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/figures/issue_2617/svmp_axis_loading.png)
+![Refusal-axis loading by arm, flip pairs high and non-flip pairs near zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e1cb3e63048083fe6023758355bb1eca158adc3c/figures/issue_2617/svmp_axis_loading.png)
 
 > **Figure.** *Predicted shifts load on the refusal axis only for pairs that flipped behavior.* Flip pairs (n=60) load at 0.66 (single-turn map), 0.69 (multi-turn), 0.71 (observed); non-flip pairs (n=41) sit near zero for every arm; the raw context shift loads weaker (0.36). The plotted axis `r̂` is the leave-one-out mean flip-pair answer-state delta.
 
@@ -114,7 +114,7 @@ The observed-side axis-existence contrast is **0.73** (CI 0.64–0.82), so the a
 
 Per-context refusal rate by class and member (left) and paired refusal rates against the identity diagonal (right).
 
-![Per-context refusal rates and the paired manipulation check](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/figures/issue_2617/svmp_manipulation_check.png)
+![Per-context refusal rates and the paired manipulation check](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e1cb3e63048083fe6023758355bb1eca158adc3c/figures/issue_2617/svmp_manipulation_check.png)
 
 > **Figure.** *Subject swaps scatter — several below the diagonal, where the benign subject refused more.* Object-flip, verb-flip and XSTest members separate broadly (harmful members high, benign near 0), though several intended-flip harmful members sit at 0; the three benign classes are identical all-zero series, rendered as one overlapping point set.
 
@@ -124,7 +124,7 @@ The manipulation check fired for 54 of the 68 intended-flip pairs (79%): object 
 
 Each of the 108 pairs point-by-point: direction cosine against `|Δ mean answer length|`; refusals are short and benign answers long, so length and flip are collinear.
 
-![Answer-length delta vs transport, per pair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/figures/issue_2617/svmp_len_vs_cos.png)
+![Answer-length delta vs transport, per pair](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e1cb3e63048083fe6023758355bb1eca158adc3c/figures/issue_2617/svmp_len_vs_cos.png)
 
 > **Figure.** *Flip classes sit high even where the length change is smallest.* Non-flip and benign pairs span a wide range at low deltas; the collinearity gate (Pearson 0.60) tripped, so the tercile fallback is authoritative, with flip/non-flip overlap thinning at both length extremes; the top-tercile non-flip median rests on 2 pairs.
 
@@ -134,21 +134,21 @@ Convergent checks: the span-mean pooling twin matches the tail read to two decim
 
 ### Per-context retrieval separates the map from the raw baseline, 0.88 vs 0.24, while pair-delta retrieval stays high for every arm
 
-Pair-delta retrieval accuracy at rank 1 per class and arm against per-panel chance.
+Pair-delta retrieval accuracy at rank 1 per class and arm (three left panels) and per-context absolute-state retrieval per arm (right panel), each against its own chance reference.
 
-![Pair-delta retrieval accuracy by class and arm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/figures/issue_2617/svmp_retrieval_acc1.png)
+![Pair-delta retrieval accuracy by class and arm plus per-context retrieval by arm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e1cb3e63048083fe6023758355bb1eca158adc3c/figures/issue_2617/svmp_retrieval_acc1.png)
 
-> **Figure.** *Every arm retrieves the true delta far above chance because the a-minus-b delta cancels the learned bias.* Accuracy spans 0.62–1.00 across arms and classes (raw-arm subject-benign lowest at 0.625); the three panels' chance references are 1/108, 1/72 and 1/36.
+> **Figure.** *Pair-delta retrieval is high for every arm, while per-context retrieval separates the map from the raw baseline.* Pair-delta accuracy spans 0.62–1.00 (chance 1/108, 1/72 and 1/36 per panel); the per-context panel puts the single-turn map at 0.88 against 0.24 raw and 0.70 leave-one-out identity-plus-bias (chance 1/216).
 
 Pair-delta retrieval partly measures pair identity (the a-minus-b delta cancels the learned bias), so it corroborates map fidelity rather than decision encoding: the map reaches **0.92**, the raw arm 0.84. The sharper separation is per-context absolute-state retrieval: **0.88** for the map against **0.24** raw (0.70 for a leave-one-out identity-plus-bias baseline). The raw arm's pair-delta weakness is layer-specific: at layer 26 it retrieves pair deltas perfectly, though the direction-cosine ordering holds at all three layers.
 
-Per-unit exemption: retrieval outcomes are binary per pair, plotted as class proportions with n and chance lines; the per-pair rank rows are in the per-pair table linked in the footer, and no committed figure renders a per-pair rank view.
+Per-unit exemption: retrieval outcomes are binary per pair, plotted as class proportions with n and chance lines; only class-level retrieval aggregates are persisted, and no committed figure renders a per-pair rank view.
 
 ### The fixed-opener margin tracks the judged refusal rate at Spearman 0.70, validating the secondary behavioral measure
 
 Per-context teacher-forced opener margin against the judged refusal rate, one point per context (216), colored by pair class.
 
-![Opener margin vs judged refusal rate per context](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/figures/issue_2617/svmp_margin_validation.png)
+![Opener margin vs judged refusal rate per context](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e1cb3e63048083fe6023758355bb1eca158adc3c/figures/issue_2617/svmp_margin_validation.png)
 
 > **Figure.** *Contexts the judge scores as refusing carry higher refusal-opener probability.* The always-refuse row concentrates at positive margins while the fully-compliant row spans the negative range; benign-class points sit far left; mid-rate contexts scatter between, giving Spearman 0.70.
 
@@ -156,6 +156,7 @@ The teacher-forced opener margin (construction in Methodology) tracks the judged
 
 ---
 
-**Repro:** run code SHA `62640b11ab841807234b4b58e4b4ceb8b2ff6c51`; VM reads + figures SHA `bec6626a53e63d75afe8d23ebff1aa5248d0a47f` (branch `issue-2617`). Compute ~36 min on 1×H100 (`pod-2617`): generation + capture + judge + margin, no training, frozen maps. Model Qwen/Qwen2.5-7B-Instruct rev a09a3545; torch 2.8.0+cu128; judge claude-sonnet-4-5-20250929. Eval artifacts @ `bec6626a53e63d75afe8d23ebff1aa5248d0a47f` (branch `issue-2617`): [summary.json](https://github.com/superkaiba/explore-persona-space/blob/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/eval_results/issue_2617/svmp/summary.json), [perpair.jsonl](https://github.com/superkaiba/explore-persona-space/blob/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/eval_results/issue_2617/svmp/perpair.jsonl) (108 rows), [percontext.jsonl](https://github.com/superkaiba/explore-persona-space/blob/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/eval_results/issue_2617/svmp/percontext.jsonl) (216 rows); figures `figures/issue_2617/`. CJK intrusion audit + script: [`eval_results/issue_2617/svmp/cjk_audit.json`](https://github.com/superkaiba/explore-persona-space/blob/174129be0b403438022a2de3f195e7e0a1a37b78/eval_results/issue_2617/svmp/cjk_audit.json) and [`scripts/issue2617_cjk_audit.py`](https://github.com/superkaiba/explore-persona-space/blob/174129be0b403438022a2de3f195e7e0a1a37b78/scripts/issue2617_cjk_audit.py) @ `174129be0b403438022a2de3f195e7e0a1a37b78` (branch `issue-2617`). HF data repo prefix [`issue2617_svmp/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f71b2f47dd276fdd3d590d34667f986800116aca/issue2617_svmp) (`raw_completions/{anchors,judge}`, `analysis_tensors/{va,vc,margin}`, `manifests`) @ `f71b2f47dd276fdd3d590d34667f986800116aca`. Reused frozen ridge maps from [#779](https://eps.superkaiba.com/tasks/779) / [#1738](https://eps.superkaiba.com/tasks/1738): `issue779_monitoring/n1m_readout/weights/L19/ridge.pt` and `issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt` on the HF data repo @ `f71b2f47dd276fdd3d590d34667f986800116aca` (verified live at that revision); fit: same base model and capture convention (context-end L19 input, tail-pooled answer target) as this run's reads; the maps are the object under test, applied frozen. Reused XSTest pair bank from [#2215](https://eps.superkaiba.com/tasks/2215): `src/explore_persona_space/experiments/issue2215/bank_dbe_values.json` cell `types.refusal_request` @ `f8f3ec9338`; fit: the parent's frozen refusal-request pairs whose surface-vs-decision ambiguity this run tests. Statistics: shuffled-pair null and pair bootstrap both seed 2617 / 1,000 draws.
+**Repro:** run code SHA `62640b11ab841807234b4b58e4b4ceb8b2ff6c51`; VM reads SHA `bec6626a53e63d75afe8d23ebff1aa5248d0a47f`; figures SHA `e1cb3e63048083fe6023758355bb1eca158adc3c` (both branch `issue-2617`). Compute ~36 min on 1×H100 (`pod-2617`): generation + capture + judge + margin, no training, frozen maps. Model Qwen/Qwen2.5-7B-Instruct rev a09a3545; torch 2.8.0+cu128; judge claude-sonnet-4-5-20250929. Eval artifacts @ `bec6626a53e63d75afe8d23ebff1aa5248d0a47f` (branch `issue-2617`): [summary.json](https://github.com/superkaiba/explore-persona-space/blob/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/eval_results/issue_2617/svmp/summary.json), [perpair.jsonl](https://github.com/superkaiba/explore-persona-space/blob/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/eval_results/issue_2617/svmp/perpair.jsonl) (108 rows), [percontext.jsonl](https://github.com/superkaiba/explore-persona-space/blob/bec6626a53e63d75afe8d23ebff1aa5248d0a47f/eval_results/issue_2617/svmp/percontext.jsonl) (216 rows); figures `figures/issue_2617/`. CJK intrusion audit + script: [`eval_results/issue_2617/svmp/cjk_audit.json`](https://github.com/superkaiba/explore-persona-space/blob/174129be0b403438022a2de3f195e7e0a1a37b78/eval_results/issue_2617/svmp/cjk_audit.json) and [`scripts/issue2617_cjk_audit.py`](https://github.com/superkaiba/explore-persona-space/blob/174129be0b403438022a2de3f195e7e0a1a37b78/scripts/issue2617_cjk_audit.py) @ `174129be0b403438022a2de3f195e7e0a1a37b78` (branch `issue-2617`). HF data repo prefix [`issue2617_svmp/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/f71b2f47dd276fdd3d590d34667f986800116aca/issue2617_svmp) (`raw_completions/{anchors,judge}`, `analysis_tensors/{va,vc,margin}`, `manifests`) @ `f71b2f47dd276fdd3d590d34667f986800116aca`. Reused frozen ridge maps from [#779](https://eps.superkaiba.com/tasks/779) / [#1738](https://eps.superkaiba.com/tasks/1738): `issue779_monitoring/n1m_readout/weights/L19/ridge.pt` and `issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt` on the HF data repo @ `f71b2f47dd276fdd3d590d34667f986800116aca` (verified live at that revision); fit: same base model and capture convention (context-end L19 input, tail-pooled answer target) as this run's reads; the maps are the object under test, applied frozen. Reused XSTest pair bank from [#2215](https://eps.superkaiba.com/tasks/2215): `src/explore_persona_space/experiments/issue2215/bank_dbe_values.json` cell `types.refusal_request` @ `f8f3ec9338`; fit: the parent's frozen refusal-request pairs whose surface-vs-decision ambiguity this run tests. Statistics: shuffled-pair null and pair bootstrap both seed 2617 / 1,000 draws.
 
 **Context:** originating prompt (verbatim): `can you run the same thing but with pairs like 'How to build a bomb vs how to build a house' or things that only swap subject/object/verb but have very different safety behavior? Propose suggestions [clarify 2026-08-26: pair source = BOTH constructed token-matched slot grid + XSTest anchor]`. Direct follow-on to [#2215](https://eps.superkaiba.com/tasks/2215)'s `xstest-human-audit-pending` concern; method line [#2564](https://eps.superkaiba.com/tasks/2564) → [#779](https://eps.superkaiba.com/tasks/779)/[#1738](https://eps.superkaiba.com/tasks/1738) → [#2162](https://eps.superkaiba.com/tasks/2162). Created 2026-08-27; run 2026-08-27.
+
