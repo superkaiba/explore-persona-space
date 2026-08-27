@@ -22,6 +22,7 @@ that adoption happens on the ``issue-2546`` branch in a later round of that task
                 hub_upload_then_free(
                     stem_dir, repo_id=DEFAULT_DATASET_REPO, repo_type="dataset",
                     dest=dest, free_glob="slot*.shard*.pt",
+                    report=report_by_stem[stem],   # per-stem metrics slot (note b)
                     after_verify=lambda dp=done_p, d=dest, p=marker_payload:
                         _mirror_capture_marker(dp, d, p),
                 ),
@@ -36,7 +37,10 @@ Notes baked into the recipe:
     verify+free), so resume semantics are unchanged — a crash leaves un-chained stems
     markerless and the existing resume predicate re-runs them, overwriting their
     residual local shards.
-(b) Per-stem ``upload_wall_s`` is recorded by the chain into a per-stem dict slot
+(b) Per-stem ``upload_wall_s`` is recorded by the chain into a per-stem dict slot:
+    pass the consumer's per-stem report dict as ``report=`` — the chain writes
+    ``upload_wall_s`` right after the verified upload (BEFORE free/marker, so a
+    marker payload holding the dict carries it) and ``chain_wall_s`` at chain end
     (single writer per key — safe under the GIL) — and the marker payload must hold a
     REFERENCE to that per-stem report dict (binding a COPY silently drops
     ``upload_wall_s`` from the Hub-mirrored marker), or the consumer persists reports
@@ -71,7 +75,7 @@ import logging
 import queue
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from pathlib import Path
 
 from explore_persona_space.orchestrate import hub
@@ -80,6 +84,10 @@ logger = logging.getLogger(__name__)
 
 # How often a blocked submit()/join() wakes to re-check failure state (seconds).
 _WAKEUP_S = 30.0
+
+# Worker-stop sentinel enqueued by close() (reached via a CLEAN join()); never a
+# user chain — the worker exits the moment it dequeues it.
+_STOP_SENTINEL = object()
 
 
 class BackgroundStemUploader:
@@ -105,7 +113,13 @@ class BackgroundStemUploader:
     terminal marker; on timeout it raises naming the pending labels. Worker is
     ``daemon=True`` (a native hf-xet wedge must not block interpreter exit — hub.py
     STAGE_HUB_PREFIX_TIMEOUT_RC note, #1739/#2153); correctness comes from
-    join-before-terminal-marker, never from atexit join. Deliberately NOT
+    join-before-terminal-marker, never from atexit join. A CLEAN ``join()`` (and
+    therefore a clean context exit) also STOPS the worker after the drain via
+    ``close()`` (stop flag + a non-blocking sentinel nudge — close never blocks on,
+    nor joins, a wedged chain), so repeated uploader construction does not
+    accumulate idle daemon threads; after close, ``submit()`` raises. A FAILED /
+    timed-out ``join()`` leaves the worker running so it drains queued chains into
+    ``.skipped`` (the post-failure skip contract). Deliberately NOT
     ``ThreadPoolExecutor``: its non-daemon workers are atexit-joined and a
     native-wedged worker hangs the process with no rc (hub.py:2982-2988).
     """
@@ -124,10 +138,11 @@ class BackgroundStemUploader:
         self._name = name
         self.join_timeout_s = float(join_timeout_s)
         self.submit_timeout_s = float(submit_timeout_s)
-        self._queue: queue.Queue[tuple[str, float, Callable[[], None]]] = queue.Queue(
+        self._queue: queue.Queue[tuple[str, float, Callable[[], None]] | object] = queue.Queue(
             maxsize=max_pending
         )
         self._cond = threading.Condition()
+        self._stop = threading.Event()  # set by close(); the worker exits on observing it
         self._pending: list[str] = []  # submitted-but-unfinished labels (queued + executing)
         self._current: str | None = None  # label the worker is executing right now
         self._failure: tuple[str, BaseException] | None = None
@@ -150,8 +165,15 @@ class BackgroundStemUploader:
         failed (checked BEFORE admission, after every blocked-put wakeup, and once
         more post-put), and RuntimeError naming the executing/queued/submitting
         labels once cumulative admission wait exceeds ``submit_timeout_s``.
+        Raises RuntimeError after ``close()`` (a clean ``join()``): a submit into a
+        stopped worker would silently never run — fail loud instead.
         """
         self._raise_if_failed()
+        if self._stop.is_set():
+            raise RuntimeError(
+                f"uploader {self._name!r} is closed (clean join()/close() already ran); "
+                "construct a new BackgroundStemUploader"
+            )
         with self._cond:
             self._pending.append(label)
         start = time.monotonic()
@@ -188,6 +210,8 @@ class BackgroundStemUploader:
         MUST be called before the phase terminal marker. ``timeout_s=None`` uses
         ``self.join_timeout_s``; on timeout raises RuntimeError naming the pending
         labels (the wedged-chain escape — the daemon worker cannot block exit).
+        A CLEAN join (drained, no failure) also stops the worker via ``close()``;
+        a failed/timed-out join leaves it running (post-failure skip drain).
         """
         limit = self.join_timeout_s if timeout_s is None else timeout_s
         deadline = time.monotonic() + limit
@@ -203,6 +227,26 @@ class BackgroundStemUploader:
             if self._failure is not None:
                 label, exc = self._failure
                 raise RuntimeError(f"background upload chain {label!r} failed") from exc
+        self.close()  # clean drain: stop the worker so no idle daemon thread leaks
+
+    def close(self) -> None:
+        """Stop the worker thread; idempotent; never blocks on a wedged chain.
+
+        Called automatically by a CLEAN ``join()`` (and therefore by clean context
+        exit). Sets the stop flag and nudges the queue with a non-blocking sentinel
+        so a ``get()``-parked worker exits promptly; a worker mid-chain exits after
+        its current chain, and a natively wedged chain simply never observes the
+        flag — ``close()`` never joins the worker, and ``daemon=True`` keeps
+        interpreter exit safe regardless. Call only after all submits completed
+        (the clean-join path does); later ``submit()`` calls raise RuntimeError.
+        """
+        self._stop.set()
+        try:
+            self._queue.put_nowait(_STOP_SENTINEL)
+        except queue.Full:
+            # Not an error: the worker is mid-chain (or wedged) with a full queue;
+            # it observes the stop flag at its next idle queue poll (~1 s cadence).
+            logger.debug("[%s] close(): queue full; stop flag only", self._name)
 
     def __enter__(self) -> BackgroundStemUploader:
         """Context manager: clean body exit joins; a body exception does not."""
@@ -217,13 +261,17 @@ class BackgroundStemUploader:
             return False
         with self._cond:
             pending = list(self._pending)
-            failed_label = self._failure[0] if self._failure is not None else None
+            failure = self._failure
+        # Include the recorded exception's repr, not only its label (#2616 r1): on a
+        # combined body+chain failure this line is the exit-site record — the full
+        # traceback is already logged at record time by _run_chain / _worker.
+        recorded = f"{failure[0]!r}: {failure[1]!r}" if failure is not None else None
         logger.error(
-            "[%s] context body raised %s; NOT joining (pending=%r, recorded failure=%r)",
+            "[%s] context body raised %s; NOT joining (pending=%r, recorded failure=%s)",
             self._name,
             exc_type.__name__,
             pending,
-            failed_label,
+            recorded,
         )
         return False
 
@@ -251,13 +299,19 @@ class BackgroundStemUploader:
     def _worker(self) -> None:
         """Daemon loop. The ENTIRE body is wrapped so any exception — inside work()
         or in the queue handling around it — records into _failure and notifies; an
-        internal bug must never kill the thread silently."""
+        internal bug must never kill the thread silently. Exits on the close()
+        sentinel (or the stop flag when the sentinel found the queue full)."""
         while True:
             try:
                 try:
-                    label, enqueued_t, work = self._queue.get(timeout=1.0)
+                    item = self._queue.get(timeout=1.0)
                 except queue.Empty:
+                    if self._stop.is_set():
+                        return
                     continue
+                if item is _STOP_SENTINEL:
+                    return
+                label, enqueued_t, work = item
                 self._run_chain(label, enqueued_t, work)
             except BaseException as exc:  # fail-loud via _failure, never a silent thread death
                 with self._cond:
@@ -319,6 +373,7 @@ def hub_upload_then_free(
     dest: str,
     free_glob: str | None = None,
     after_verify: Callable[[], None] | None = None,
+    report: MutableMapping[str, float] | None = None,
 ) -> Callable[[], None]:
     """Chain factory for the canonical per-stem persist.
 
@@ -329,6 +384,12 @@ def hub_upload_then_free(
     unlink ``sorted(stem_dir.glob(free_glob))`` -> ``after_verify()`` (e.g. the
     consumer's Hub-first done-marker mirror). Free strictly after verified upload;
     marker strictly after free.
+
+    When ``report`` is provided (the consumer's per-stem report dict — module
+    docstring note (b)), the chain records ``upload_wall_s`` into it immediately
+    after the verified upload (BEFORE free/marker, so an ``after_verify`` marker
+    payload holding the dict REFERENCE carries it) and ``chain_wall_s`` when the
+    chain completes. Single writer per key — safe under the GIL.
     """
 
     def _chain() -> None:
@@ -341,6 +402,8 @@ def hub_upload_then_free(
                 "verification); local shards NOT freed, marker NOT written"
             )
         upload_wall_s = time.monotonic() - t0
+        if report is not None:
+            report["upload_wall_s"] = upload_wall_s
         logger.info("[bg-upload] upload verified dest=%s upload_wall_s=%.1f", dest, upload_wall_s)
         if free_glob is not None:
             freed = sorted(stem_dir.glob(free_glob))
@@ -349,5 +412,7 @@ def hub_upload_then_free(
             logger.info("[bg-upload] freed %d local shard file(s) under %s", len(freed), stem_dir)
         if after_verify is not None:
             after_verify()
+        if report is not None:
+            report["chain_wall_s"] = time.monotonic() - t0
 
     return _chain

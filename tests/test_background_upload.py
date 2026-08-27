@@ -2,15 +2,19 @@
 
 CPU-only, no network. Every ordering claim is an event-ordered happens-before
 assertion (a submit/join provably CANNOT complete while a gating Event is unset);
-timeouts appear only as bounded hang caps, never as ordering evidence. Blocking
-Events are released in teardown (the ``gates`` fixture) so no daemon thread is left
-wedged across tests. ``hub._upload`` is faked ONLY at the external network boundary,
-with a def mirroring the real signature; one un-mocked test pins that signature.
+for the two blocked-call witnesses (A6 backpressure, A8 context join) the EXACT
+blocking call is instrumented to signal entry and to record the release-state AT
+ITS RETURN — timeouts appear only as bounded POSITIVE hang caps, never as ordering
+evidence (no ``assert not event.wait(t)`` witnesses; #2616 r2). Blocking Events are
+released in teardown (the ``gates`` fixture) so no daemon thread is left wedged
+across tests. ``hub._upload`` is faked ONLY at the external network boundary, with
+a def mirroring the real signature; one un-mocked test pins that signature.
 """
 
 from __future__ import annotations
 
 import inspect
+import logging
 import threading
 import time
 
@@ -230,39 +234,67 @@ def test_empty_upload_result_raises_without_free(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------- A6
 
 
-def test_bounded_queue_backpressure(gates):
-    """max_pending bounds QUEUED chains: with max_pending=1 the THIRD submit blocks."""
+def test_bounded_queue_backpressure(gates, monkeypatch):
+    """max_pending bounds QUEUED chains: with max_pending=1 the THIRD submit blocks.
+
+    Instrumented happens-before witness (#2616 r2 — no negative timed waits): c3's
+    exact blocking call (the queue put inside submit) is wrapped to signal ENTRY and
+    to record, AT ITS RETURN, whether the gate had been released and chain c1 had
+    completed. A correct bounded queue admits c3 only after gate release -> c1
+    completion -> c2 dequeue (both flags True by happens-before); an unbounded /
+    broken queue admits c3 straight from the entry signal, before the test releases
+    the gate, recording False — caught regardless of helper-thread scheduling.
+    """
     gate = threading.Event()
     gates.append(gate)
     started = threading.Event()
+    chain1_done = threading.Event()
     order: list[str] = []
 
     def chain1() -> None:
         started.set()
         assert gate.wait(WAIT)
         order.append("c1")
+        chain1_done.set()
 
     up = BackgroundStemUploader(max_pending=1)
+    real_put = up._queue.put
+    c3_put_entered = threading.Event()
+    c3_put_returned = threading.Event()
+    at_c3_admission: dict[str, bool] = {}
+
+    def instrumented_put(item, *args, **kwargs):
+        is_c3 = isinstance(item, tuple) and item[0] == "c3"
+        if is_c3:
+            c3_put_entered.set()
+        result = real_put(item, *args, **kwargs)
+        if is_c3:
+            # Recorded AT the blocking call's return — the decisive ordering read.
+            at_c3_admission["gate_released"] = gate.is_set()
+            at_c3_admission["c1_done"] = chain1_done.is_set()
+            c3_put_returned.set()
+        return result
+
+    monkeypatch.setattr(up._queue, "put", instrumented_put)
+
     up.submit(chain1, label="c1")
     assert started.wait(WAIT)  # worker holds c1 (executing, not queued)
     up.submit(lambda: order.append("c2"), label="c2")  # fills the single queue slot
+    assert up._queue.full()  # structural: the ONE queue slot is occupied by c2
 
-    t3_entered = threading.Event()
     t3_returned = threading.Event()
 
     def submit_c3() -> None:
-        t3_entered.set()
         up.submit(lambda: order.append("c3"), label="c3")
         t3_returned.set()
 
     helper = threading.Thread(target=submit_c3, daemon=True)
     helper.start()
-    assert t3_entered.wait(WAIT)
-    # Event ordering: while gate is unset the worker cannot finish c1, so the queue
-    # slot never frees and submit("c3") provably cannot return.
-    assert not t3_returned.wait(0.5)
-    assert not gate.is_set()
+    assert c3_put_entered.wait(WAIT)  # positive: c3 reached the blocking put
+    assert not gate.is_set()  # test-controlled: the release has not happened yet
     gate.set()
+    assert c3_put_returned.wait(WAIT)  # bounded hang cap, not an ordering witness
+    assert at_c3_admission == {"gate_released": True, "c1_done": True}
     assert t3_returned.wait(WAIT)
     up.join()
     assert order == ["c1", "c2", "c3"]
@@ -327,22 +359,49 @@ def test_worker_thread_is_daemon():
 # --------------------------------------------------------------------------- A8
 
 
-def test_context_manager_join_waits_event_ordered(gates):
-    """__exit__ on clean body exit provably WAITS: a no-op join fails this test."""
+def test_context_manager_join_waits_event_ordered(gates, monkeypatch):
+    """__exit__ on clean body exit provably WAITS: a no-op join fails this test.
+
+    Instrumented happens-before witness (#2616 r2 — no negative timed waits): the
+    exact blocking call (__exit__'s join) is wrapped to signal ENTRY and to record,
+    AT ITS RETURN, whether the gate had been released and the chain completed. A
+    real join returns only after gate release -> chain completion -> pending drain
+    (both flags True by happens-before); a no-op join returns straight from the
+    entry signal, before the test releases the gate, recording False — caught
+    regardless of helper-thread scheduling. An __exit__ that never calls join at
+    all fails the positive join_entered wait.
+    """
     gate = threading.Event()
     gates.append(gate)
     started = threading.Event()
     chain_done = threading.Event()
     body_done = threading.Event()
     exited = threading.Event()
+    join_entered = threading.Event()
+    join_returned = threading.Event()
+    at_join_return: dict[str, bool] = {}
 
     def chain1() -> None:
         started.set()
         assert gate.wait(WAIT)
         chain_done.set()
 
+    up = BackgroundStemUploader(max_pending=2)
+    real_join = up.join
+
+    def instrumented_join(timeout_s=None):
+        join_entered.set()
+        result = real_join(timeout_s)
+        # Recorded AT the blocking call's return — the decisive ordering read.
+        at_join_return["gate_released"] = gate.is_set()
+        at_join_return["chain_done"] = chain_done.is_set()
+        join_returned.set()
+        return result
+
+    monkeypatch.setattr(up, "join", instrumented_join)
+
     def run_ctx() -> None:
-        with BackgroundStemUploader(max_pending=2) as up:
+        with up:
             up.submit(chain1, label="c1")
             body_done.set()
         exited.set()
@@ -351,11 +410,11 @@ def test_context_manager_join_waits_event_ordered(gates):
     helper.start()
     assert body_done.wait(WAIT)
     assert started.wait(WAIT)
-    # Event ordering: while gate is unset the chain cannot complete, so a REAL join
-    # cannot return — a no-op join would set `exited` here and fail the assert.
-    assert not exited.wait(0.5)
-    assert not chain_done.is_set()
+    assert join_entered.wait(WAIT)  # positive: __exit__ actually ENTERED join()
+    assert not chain_done.is_set()  # test-controlled: the chain is still gate-blocked
     gate.set()
+    assert join_returned.wait(WAIT)  # bounded hang cap, not an ordering witness
+    assert at_join_return == {"gate_released": True, "chain_done": True}
     assert exited.wait(WAIT)
     assert chain_done.is_set()  # chain completed BEFORE __exit__ returned
     helper.join(WAIT)
@@ -383,6 +442,25 @@ def test_context_manager_body_exception_returns_while_chain_blocked(gates):
     gate.set()
     up.join()
     assert chain_done.is_set()
+
+
+def test_body_exception_exit_logs_recorded_failure_detail(caplog):
+    """On a combined body+chain failure, the __exit__ log carries the recorded
+    exception's repr (type + message), not only its label (#2616 r1 reconciler
+    polish; the record-time tracebacks in _run_chain stay the primary record)."""
+    original = ValueError("chain exploded")
+    up = BackgroundStemUploader(max_pending=2)
+    with (
+        caplog.at_level(logging.ERROR, logger=bgu.__name__),
+        pytest.raises(RuntimeError, match="body boom"),
+        up,
+    ):
+        up.submit(_raiser(original), label="c1")
+        _wait_until(lambda: up.failure is original)
+        raise RuntimeError("body boom")
+    text = " ".join(record.getMessage() for record in caplog.records)
+    assert "'c1'" in text  # the failed label, still present
+    assert "ValueError" in text and "chain exploded" in text  # the exception detail
 
 
 # ------------------------------------------------------------- chain factory e2e
@@ -421,6 +499,61 @@ def test_chain_factory_order_upload_free_marker(tmp_path, monkeypatch):
     assert events == ["upload", "marker"]
     assert not any(s.exists() for s in shards)  # shards absent after unlink
     assert keep.exists()  # only the free_glob matches were freed
+    up._thread.join(WAIT)  # clean context exit stops the worker (bounded positive wait)
+    assert not up._thread.is_alive()
+
+
+def test_chain_records_upload_wall_into_report(tmp_path, monkeypatch):
+    """With report= provided, the chain writes upload_wall_s after the verified
+    upload and BEFORE the marker step (an after_verify payload holding the dict
+    REFERENCE carries it — module-docstring note (b)), plus chain_wall_s at end."""
+    stem_dir = tmp_path / "stem0"
+    stem_dir.mkdir()
+    shard = stem_dir / "slot0.shard0.pt"
+    shard.write_bytes(b"a" * 8)
+    events: list[str] = []
+    monkeypatch.setattr(bgu.hub, "_upload", _fake_upload_factory(events))
+    report: dict[str, float] = {}
+    seen_at_marker: dict[str, float] = {}
+
+    chain = hub_upload_then_free(
+        stem_dir,
+        repo_id="org/data",
+        repo_type="dataset",
+        dest="issue2616/stem0",
+        free_glob="slot*.shard*.pt",
+        after_verify=lambda: seen_at_marker.update(report),
+        report=report,
+    )
+    chain()
+    assert report["upload_wall_s"] >= 0.0
+    assert seen_at_marker.get("upload_wall_s") == report["upload_wall_s"]
+    assert report["chain_wall_s"] >= report["upload_wall_s"]
+    assert not shard.exists()  # free behavior unchanged when report= is passed
+
+
+# --------------------------------------------------------- worker lifecycle stop
+
+
+def test_worker_exits_after_clean_join():
+    """A clean join() stops the daemon worker — repeated uploader construction must
+    not accumulate live threads (bounded POSITIVE wait on thread exit)."""
+    up = BackgroundStemUploader(max_pending=2)
+    ran: list[str] = []
+    up.submit(lambda: ran.append("c1"), label="c1")
+    up.join()
+    up._thread.join(WAIT)
+    assert not up._thread.is_alive()
+    assert ran == ["c1"]
+
+
+def test_submit_after_close_raises():
+    """close() is idempotent; a submit after close fails loud, never silently unrun."""
+    up = BackgroundStemUploader(max_pending=2)
+    up.join()  # clean no-op drain -> close() -> worker stop
+    up.close()  # idempotent
+    with pytest.raises(RuntimeError, match="closed"):
+        up.submit(lambda: None, label="late")
 
 
 # ------------------------------------------------------ worker internal errors
