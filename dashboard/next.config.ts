@@ -65,6 +65,23 @@ const nextConfig: NextConfig = {
     "/literature/[date]": ["../updates/literature/**/*"],
     "/literature/papers/[id]": ["../updates/literature/**/*"],
   },
+  async headers() {
+    return [
+      {
+        // All static .html artifacts under public/ (incl. nested paths, e.g.
+        // battery/*.html). `no-transform` tells intermediaries (Cloudflare)
+        // not to rewrite the payload — Email Address Obfuscation was silently
+        // injecting __cf_email__ spans into text presented as model
+        // generations (task #2365). `public, max-age=0` preserves the exact
+        // caching semantics Next.js already serves for public/ files; only
+        // the no-transform directive is new.
+        source: "/:path(.*\\.html)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, no-transform" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       // The /log route is retired; its feed merged into /updates.
