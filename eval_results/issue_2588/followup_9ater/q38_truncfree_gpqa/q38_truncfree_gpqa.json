@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "issue": 2588,
+    "round": "9a-ter-free-analysis",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-08-27T20:03:46Z",
+    "git_commit": "9c2f47829de69528fc12d0bd92444e58192657e8",
+    "git_dirty": false,
+    "phase": "followup-9ater",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2588_followup_9ater.py"
+  },
+  "cell": "q38_27b_b",
+  "input_position": "cot_boundary",
+  "layer_star": 50,
+  "inputs": {
+    "eval_results/issue_2588/hub_mirror/issue2588_capability_panel/fits/q38_27b_b/gpqa_perrow_cot_boundary.json": "b5c8ab84bc265ee1ac44f6fbe80c373232aa2e86d7c698c6b81e7cd5720dd268",
+    "eval_results/issue_2588/hub_mirror/issue2588_capability_panel/fits/q38_27b_b/resid_cot_boundary.json": "1056b602e36ec5e1abda307c5eafb3dbaa0ddc1592857d0e9d79e94fc4cc7022",
+    "eval_results/issue_2588/hub_mirror/issue2588_capability_panel/fits/q38_27b_b/dropped_row_ids.json": "e9f539db20541a5725e25029ba3f475a4055168ae19f816d831e18113e70f89d"
+  },
+  "kept_rows_all_finish_stop": true,
+  "finish_reason_counts": {
+    "stop": 726
+  },
+  "drop_stats": {
+    "n_gpqa_rows_nominal": 990,
+    "n_kept": 726,
+    "n_dropped": 264,
+    "dropped_per_stage": {
+      "gpqa_s42": 56,
+      "gpqa_s43": 53,
+      "gpqa_s44": 52,
+      "gpqa_s45": 50,
+      "gpqa_s46": 53
+    },
+    "kept_cluster_size_dist": {
+      "1": 7,
+      "2": 5,
+      "3": 8,
+      "4": 10,
+      "5": 129
+    }
+  },
+  "resid_covariates": [
+    "log_prompt_tokens",
+    "log_answer_tokens",
+    "log_think_tokens"
+  ],
+  "reads": {
+    "kept_full_pool": {
+      "n_rows": 726,
+      "n_questions": 159,
+      "acc1_orig": 0.008264462809917356,
+      "acc1_resid": 0.07713498622589532,
+      "delta_resid_minus_orig": 0.06887052341597796,
+      "chance_producer_formula": 0.006887052341597796,
+      "chance_exact_excl_self": 0.005239859409138407,
+      "chance_exact_incl_self": 0.006610052440255295
+    },
+    "truncation_free_complete_clusters": {
+      "n_rows": 645,
+      "n_questions": 129,
+      "acc1_orig": 0.009302325581395349,
+      "acc1_resid": 0.08527131782945736,
+      "delta_resid_minus_orig": 0.07596899224806201,
+      "chance_producer_formula": 0.006887052341597796,
+      "chance_exact_excl_self": 0.005517241379310346,
+      "chance_exact_incl_self": 0.006887052341597796
+    }
+  },
+  "bootstrap": {
+    "kept_full_pool": {
+      "draws": 2000,
+      "seed": 42,
+      "n_clusters": 159,
+      "acc1_orig_ci95": [
+        0.0,
+        0.023099399508352082
+      ],
+      "acc1_resid_ci95": [
+        0.04409472275431879,
+        0.11436834511614484
+      ],
+      "delta_resid_minus_orig_ci95": [
+        0.03899721448467967,
+        0.10489450998185114
+      ]
+    },
+    "truncation_free_complete_clusters": {
+      "draws": 2000,
+      "seed": 42,
+      "n_clusters": 129,
+      "acc1_orig_ci95": [
+        0.0,
+        0.02635658914728682
+      ],
+      "acc1_resid_ci95": [
+        0.04961240310077519,
+        0.12713178294573643
+      ],
+      "delta_resid_minus_orig_ci95": [
+        0.043410852713178294,
+        0.11472868217054263
+      ]
+    }
+  },
+  "acc1_by_kept_cluster_size": {
+    "1": {
+      "n_rows": 7,
+      "n_questions": 7,
+      "acc1_orig": 0.0,
+      "acc1_resid": 0.0
+    },
+    "2": {
+      "n_rows": 10,
+      "n_questions": 5,
+      "acc1_orig": 0.0,
+      "acc1_resid": 0.0
+    },
+    "3": {
+      "n_rows": 24,
+      "n_questions": 8,
+      "acc1_orig": 0.0,
+      "acc1_resid": 0.0
+    },
+    "4": {
+      "n_rows": 40,
+      "n_questions": 10,
+      "acc1_orig": 0.0,
+      "acc1_resid": 0.025
+    },
+    "5": {
+      "n_rows": 645,
+      "n_questions": 129,
+      "acc1_orig": 0.009302325581395349,
+      "acc1_resid": 0.08527131782945736
+    }
+  },
+  "shipped_reference": {
+    "same_question_acc1_cos": 0.008264462809917356,
+    "same_question_chance": 0.006887052341597796,
+    "gpqa_resid_same_q_acc1": 0.07713498622589532
+  },
+  "notes": [
+    "Per-row hit indicators are frozen against the FULL 726-row kept retrieval pool; subset reads restrict the QUERY rows only. A pool-restricted recompute needs prediction vectors, which are not persisted (same artifact gap as the aborted layer-re-selection bootstrap).",
+    "The shipped same_question_chance uses the producer formula n_rollouts/n_pool (5/726); composition-exact chance values are reported alongside it.",
+    "resid labels = ridge transfer read after residualizing log_prompt/answer/think token counts out of the answer states (resid_cot_boundary.json), rows identical to the original read."
+  ]
+}

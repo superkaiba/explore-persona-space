@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "issue": 2588,
+    "round": "9a-ter-free-analysis",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-08-27T20:03:47Z",
+    "git_commit": "9c2f47829de69528fc12d0bd92444e58192657e8",
+    "git_dirty": true,
+    "phase": "followup-9ater",
+    "git_dirty_paths": [
+      "eval_results/issue_2588/trend_summary.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2588_followup_9ater.py"
+  },
+  "status": "aborted-needs-gpu",
+  "analysis": "nested layer-re-selection bootstrap (column contrasts, both arms)",
+  "reason": "requires per-row per-layer correctness indicators for validation (per-draw layer re-selection) and test (paired contrast). No banked artifact carries them: percell_<pos>_LXX.json holds aggregate kNN reads only (verified below), perrow_<pos>.json exists at layer_star only, and the frozen per-layer ridge maps are not persisted. Rebuilding the indicators means re-fitting ~190+ per-layer maps (6 column cells x ~27-33 swept layers, n_train ~8.3-10k, d=5120) from the raw activation shards under issue2588_capability_panel/<model>/<arm>/analysis_tensors (~34.4 GB nothink + ~17.1 GB think for q35_27b alone; ~150 GB across the 3-model column) — over the 50 GB VM footprint rule and far beyond the zero-GPU free-analysis budget.",
+  "verified_local_evidence": {
+    "percell_knn_read_keys": {
+      "q35_27b_a/L00": [
+        "acc_at_k",
+        "chance_at_k",
+        "median_rank",
+        "metric",
+        "mrr",
+        "n",
+        "n_pool"
+      ],
+      "q38_27b_b/L50": [
+        "acc_at_k",
+        "chance_at_k",
+        "median_rank",
+        "metric",
+        "mrr",
+        "n",
+        "n_pool"
+      ]
+    },
+    "harvest_revision": "270dc35039d790f077b7b02b455f1ef57905c708"
+  },
+  "restage_recipe": "pod round (eval/lora-7b-class GPU or cpu-bigmem): stage the 6 column cells' capture stores, re-fit the swept per-layer ridge maps with the production fit core (scripts/issue2588_run_cell.py path), persist per-row per-layer val/test hit indicators (small JSONs), then run the vectorized draws x layers re-selection bootstrap on the VM."
+}

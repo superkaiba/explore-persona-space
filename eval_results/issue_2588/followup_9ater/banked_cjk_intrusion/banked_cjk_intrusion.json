@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "issue": 2588,
+    "round": "9a-ter-free-analysis",
+    "numpy": "2.2.6",
+    "timestamp_utc": "2026-08-27T20:03:46Z",
+    "git_commit": "9c2f47829de69528fc12d0bd92444e58192657e8",
+    "git_dirty": false,
+    "phase": "followup-9ater",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2588_followup_9ater.py"
+  },
+  "scan_spec": "row intruded iff completion matches [\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af] AND its prompt does not (the #2588 fresh-cell scan spec, applied to the banked #2330 cap2048 test pools)",
+  "cells": {
+    "q25_7b_a": {
+      "generic_test": {
+        "n_rows": 1000,
+        "n_cjk_prompt_excluded": 45,
+        "n_intruded": 34,
+        "n_intruded_answer_span": 34,
+        "intruded_row_ids": [
+          "test_1000_36",
+          "test_1000_64",
+          "test_1000_69",
+          "test_1000_100",
+          "test_1000_157",
+          "test_1000_159",
+          "test_1000_203",
+          "test_1000_259",
+          "test_1000_337",
+          "test_1000_344",
+          "test_1000_351",
+          "test_1000_383",
+          "test_1000_390",
+          "test_1000_423",
+          "test_1000_482",
+          "test_1000_513",
+          "test_1000_527",
+          "test_1000_536",
+          "test_1000_554",
+          "test_1000_560",
+          "test_1000_574",
+          "test_1000_626",
+          "test_1000_649",
+          "test_1000_668",
+          "test_1000_687",
+          "test_1000_698",
+          "test_1000_701",
+          "test_1000_713",
+          "test_1000_729",
+          "test_1000_732",
+          "test_1000_763",
+          "test_1000_820",
+          "test_1000_835",
+          "test_1000_908"
+        ],
+        "fired_overlap": 27,
+        "acc1_raw": 0.732,
+        "acc1_zeroed": 0.705,
+        "acc1_excluded": 0.7298136645962733,
+        "source": "banked #2330 cap2048 test pool (issue2330_matched/q25_cap2048/test_1000/raw_completions @ b99d86de23); scanned with the #2588 scan_spec by scripts/issue2588_followup_9ater.py (9a-ter round; deferral closed)",
+        "chunk_sha256": {
+          "shard00_chunk0000.json": "49ca8c26b66c580b249c4efcbeb7a41a89a47484372bcd2d340f44a92a6654b1",
+          "shard00_chunk0001.json": "240476b447bd0b20c95dc8548a341760e8a359ef325138bcf6b2062bc120ae11"
+        }
+      }
+    },
+    "q35_9b_a": {
+      "generic_test": {
+        "n_rows": 1000,
+        "n_cjk_prompt_excluded": 45,
+        "n_intruded": 24,
+        "n_intruded_answer_span": 24,
+        "intruded_row_ids": [
+          "test_1000_64",
+          "test_1000_72",
+          "test_1000_125",
+          "test_1000_129",
+          "test_1000_218",
+          "test_1000_259",
+          "test_1000_264",
+          "test_1000_284",
+          "test_1000_344",
+          "test_1000_390",
+          "test_1000_408",
+          "test_1000_422",
+          "test_1000_494",
+          "test_1000_513",
+          "test_1000_527",
+          "test_1000_536",
+          "test_1000_560",
+          "test_1000_577",
+          "test_1000_591",
+          "test_1000_717",
+          "test_1000_732",
+          "test_1000_765",
+          "test_1000_772",
+          "test_1000_820"
+        ],
+        "fired_overlap": 22,
+        "acc1_raw": 0.727,
+        "acc1_zeroed": 0.705,
+        "acc1_excluded": 0.7223360655737705,
+        "source": "banked #2330 cap2048 test pool (issue2330_matched/qwen35_9b_cap2048/test_1000/raw_completions @ b99d86de23); scanned with the #2588 scan_spec by scripts/issue2588_followup_9ater.py (9a-ter round; deferral closed)",
+        "chunk_sha256": {
+          "shard00_chunk0000.json": "2d81650699062b4e5f45e2c79fb819cb349dbd6cb2c8e1eeb70684dabb77335b",
+          "shard00_chunk0001.json": "69f9b5ddc96df65de4297baaa82dd49eca0460ea08d76f4914bf2875c91b6aae"
+        }
+      }
+    }
+  },
+  "cross_check_vs_issue2330": {
+    "artifact": "eval_results/issue_2330/cap2048/intrusion_cap2048.json",
+    "n_prompts_with_cjk": 45,
+    "n_eligible": 955,
+    "n_intruded_7b": 34,
+    "n_intruded_9b": 24,
+    "n_intruded_either": 48,
+    "n_intruded_both": 10,
+    "all_matched": true
+  }
+}
