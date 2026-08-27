@@ -12475,7 +12475,7 @@
       "kind": "experiment",
       "path": "tasks/running/2617",
       "status": "running",
-      "title": "Safety-valence minimal pairs: decision vs surface transport of the frozen context\u2192answer map [running / fix round 4 after reconciled r3 FAIL \u2014 marker truthfulness + margin identity validation]"
+      "title": "Safety-valence minimal pairs: decision vs surface transport of the frozen context\u2192answer map [running / code-review PASSED r4 \u2014 dispatching pod run]"
     },
     "2618": {
       "has_clean_result": true,
