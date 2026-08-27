@@ -1,5 +1,6 @@
 ---
-title: 'Replicate the #2564 minimal-pair battery on Qwen3.5-9B (thinking disabled)'
+title: The minimal-pair discrimination profile of the context-to-answer map carries
+  over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-25T19:44:34Z'
