@@ -456,9 +456,12 @@ def _require_canonical_upload(res: str, dest: str, what: str) -> None:
     corruption of rounds 18/19: a near-cap folder commit is rejected while the
     1-file marker commit still fits. A REAL raise, never a bare ``assert``
     (``python -O`` strips asserts; this is a durability invariant). On the
-    raise, local shards + local marker stay in place and the next resume
-    retries — the repair's existing fail-loud contract. Deliberately NOT a
-    change to ``hub._upload``'s own contract: the overflow fallback is
+    raise, local recovery files stay in place and nothing is blessed, so a
+    resume is SAFE — but the overflow arm re-fails until a human frees
+    file-count headroom on the canonical repo (a retry cannot clear a
+    persistent repo-wide cap) — the repair's existing fail-loud contract.
+    Deliberately NOT a change to ``hub._upload``'s own contract: the
+    overflow fallback is
     designed durability behavior for ordinary artifacts (``upload_stage``'s
     rollout JSONLs keep using it un-gated).
     """
@@ -468,9 +471,21 @@ def _require_canonical_upload(res: str, dest: str, what: str) -> None:
             f"[capture] {what}: upload did not land canonically — hub._upload "
             f"returned {res!r}, expected {canonical!r}. A truthy mismatch is "
             f"the file-count overflow reroute to {DEFAULT_OVERFLOW_REPO} "
-            f"(#1108/#2304), invisible to the P5 fit staging; an empty result "
-            f"is the 0-committed-files verify miss. Refusing to attest/bless — "
-            f"local files retained; the next resume retries."
+            f"(#1108/#2304): the canonical repo {DEFAULT_DATASET_REPO} "
+            f"rejected the commit at its repo-wide file-count cap. This halt "
+            f"is deliberate, not a transient fault, and retrying cannot "
+            f"clear a persistent cap: resumes re-fail here until a human "
+            f"frees file-count headroom on {DEFAULT_DATASET_REPO} (delete or "
+            f"pack/consolidate old prefixes). The rerouted copy on "
+            f"{DEFAULT_OVERFLOW_REPO} is no substitute: the P5 fit staging "
+            f"reads {DEFAULT_DATASET_REPO} only "
+            f"(issue2546_fit_cells._stage_stem), and no flag or env toggle "
+            f"makes the overflow repo consumable. An empty result is instead "
+            f"the 0-committed-files verify miss (transient; a plain resume "
+            f"may clear that arm). Refusing to attest/bless: local recovery "
+            f"files are retained and no completion marker was written or "
+            f"mirrored, so resuming after remediation is safe and re-runs "
+            f"this upload."
         )
 
 

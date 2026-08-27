@@ -73,6 +73,21 @@ r20-3. Memo monkeypatches carry ``raising=False`` so the r19 shard-gate cases
     blob (26f3cdddfe), where ``_HUB_SHARD_STEM_SETS`` does not exist — the
     differential then fails on behavior, not setup AttributeError.
 
+Round 21 additions (both r20 reviewers converged on the same defect — Codex
+F2 + Claude's single Minor):
+
+r21-1. The r20 AST census recorded only gate-call MEMBERSHIP per function; a
+    refactor gating a fabricated value, leaving a second ``_upload`` result
+    unchecked, or moving the gate after the shard-freeing unlink loop stayed
+    green. ``_canonical_gate_wiring_violations`` now also binds DATAFLOW
+    (the gate's first argument is the name bound from the function's live
+    ``_upload(...)`` assignment, after it; every ``_upload`` result in a
+    gated function is gated) and ORDERING (every gate precedes the first
+    shard ``unlink``, ``_mirror_capture_marker`` call, ``_HUB_*SETS`` memo
+    ``.add``, and ``tmp.replace`` bless). Violations are labeled (a)-(d)
+    with the function name, and a missing ordering anchor fails LOUD with
+    update instructions instead of passing vacuously.
+
 Network-free: the only Hub boundary (``hub._upload`` / ``HfApi``) is faked
 with signature-mirroring fakes; every other body runs for real on tmp_path.
 """
@@ -678,6 +693,226 @@ class TestShardGatedTwinRepair:
 # marker — on the repair path AND the write path's shared mirror helper.
 # ---------------------------------------------------------------------------
 
+_GATE_FN = "_require_canonical_upload"
+_MEMO_SET_NAMES = {"_HUB_MARKER_SETS", "_HUB_SHARD_STEM_SETS"}
+# Per gated function: the SIDE-EFFECT anchors the gate must textually precede.
+# The pin binds the gate to effects (shard unlink, marker mirror, Hub-memo
+# add, the tmp.replace local bless) and deliberately NOT to inert statements
+# such as building the marker-payload dict — constructing a dict blesses
+# nothing, and pinning a payload variable NAME would break on any rename.
+_GATED_SITE_ANCHORS: dict[str, tuple[str, ...]] = {
+    "run_capture": ("unlink", "mirror"),
+    "run_capture_reliability": ("unlink", "mirror"),
+    "_ensure_capture_marker_hub_twin": ("memo_add", "mirror"),
+    "_mirror_capture_marker": ("replace",),
+}
+_ANCHOR_EFFECT = {
+    "unlink": "the local shards are freed",
+    "mirror": "the completion marker is mirrored to the Hub",
+    "memo_add": "the Hub presence memo is extended",
+    "replace": "the local marker is blessed for resume",
+}
+
+
+def _callee_name(call: ast.Call) -> str | None:
+    fn = call.func
+    if isinstance(fn, ast.Name):
+        return fn.id
+    if isinstance(fn, ast.Attribute):
+        return fn.attr
+    return None
+
+
+def _canonical_gate_wiring_violations(src: str) -> list[str]:
+    """Return labeled violations of the canonical-gate wiring contract (r21).
+
+    Requirement labels (issue #2546 round 21; each message names its
+    function + label so a future refactorer knows exactly what broke):
+
+    (a) dataflow — inside each gated function, EVERY ``_upload(...)`` result
+        is checked by ``_require_canonical_upload``, and every gate's FIRST
+        argument is the name bound from a preceding ``_upload`` assignment
+        (or the ``_upload(...)`` call inlined as that argument). A gate over
+        a fabricated/unrelated value checks nothing at runtime.
+    (b) ordering — every gate call textually precedes the FIRST side effect
+        of each anchor kind in ``_GATED_SITE_ANCHORS``: a gate that fires
+        after shards are freed / the marker is mirrored / the memo is
+        extended / the local marker is blessed prevents nothing. A missing
+        anchor is itself a violation (loud, with instructions) rather than a
+        vacuous pass, so the pin cannot rot silently when an effect moves.
+    (c) ``upload_stage`` stays UN-gated — the overflow reroute is the
+        DESIGNED #1108/#2304 durability path for ordinary rollout JSONLs.
+    (d) all four attestation-adjacent sites carry the gate.
+
+    Known accepted false negative: dataflow is lineno-based, not def-use — a
+    REBINDING of the result name between the ``_upload`` assignment and the
+    gate is invisible (flow analysis is out of scope for a regression pin).
+    """
+    tree = ast.parse(src)
+    problems: list[str] = []
+
+    # (c)/(d): enclosing-function census of every gate call. Parent-walk so a
+    # gate inside a helper nested in upload_stage still counts against (c).
+    parents: dict[ast.AST, ast.AST] = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            parents[child] = node
+    callers: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and _callee_name(node) == _GATE_FN:
+            anc = node
+            while anc in parents:
+                anc = parents[anc]
+                if isinstance(anc, ast.FunctionDef):
+                    callers.add(anc.name)
+    ungated = sorted(set(_GATED_SITE_ANCHORS) - callers)
+    if ungated:
+        problems.append(
+            f"(d) gated site(s) {ungated} no longer call {_GATE_FN}: every "
+            f"attestation-adjacent upload must be gated (r20 reconciler ruling)"
+        )
+    if "upload_stage" in callers:
+        problems.append(
+            f"(c) upload_stage calls {_GATE_FN}: rollout JSONLs are ordinary "
+            f"artifacts whose overflow reroute is the DESIGNED #1108/#2304 "
+            f"durability path — gating it regresses that durability"
+        )
+
+    funcs = {
+        n.name: n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.FunctionDef) and n.name in _GATED_SITE_ANCHORS
+    }
+    for fname in sorted(_GATED_SITE_ANCHORS):
+        fn_node = funcs.get(fname)
+        if fn_node is None:
+            problems.append(f"(d) {fname}: function not found in issue2546_gen_capture")
+            continue
+        anchors = _GATED_SITE_ANCHORS[fname]
+        facts = _collect_gate_facts(fn_node, anchors)
+        problems.extend(_dataflow_problems(fname, facts))
+        problems.extend(_ordering_problems(fname, anchors, facts))
+    return problems
+
+
+def _collect_gate_facts(fn_node: ast.FunctionDef, anchors: tuple[str, ...]) -> dict:
+    """One walk of a gated function: uploads, gates, and anchor linenos."""
+    facts: dict = {
+        "upload_assigns": {},  # bound name -> [assign linenos]
+        "assigned_upload_calls": {},  # id(_upload call node) -> bound name
+        "upload_calls": [],
+        "gate_calls": [],
+        "anchor_lines": {k: [] for k in anchors},
+    }
+    anchor_lines = facts["anchor_lines"]
+    for node in ast.walk(fn_node):
+        if isinstance(node, ast.Assign):
+            if (
+                isinstance(node.value, ast.Call)
+                and _callee_name(node.value) == "_upload"
+                and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+            ):
+                facts["upload_assigns"].setdefault(node.targets[0].id, []).append(node.lineno)
+                facts["assigned_upload_calls"][id(node.value)] = node.targets[0].id
+        elif isinstance(node, ast.Call):
+            name = _callee_name(node)
+            if name == "_upload":
+                facts["upload_calls"].append(node)
+            elif name == _GATE_FN:
+                facts["gate_calls"].append(node)
+            elif name == "_mirror_capture_marker" and "mirror" in anchor_lines:
+                anchor_lines["mirror"].append(node.lineno)
+            elif (
+                name in ("unlink", "replace")
+                and name in anchor_lines
+                and isinstance(node.func, ast.Attribute)
+            ):
+                anchor_lines[name].append(node.lineno)
+            elif (
+                name == "add"
+                and "memo_add" in anchor_lines
+                and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Subscript)
+                and isinstance(node.func.value.value, ast.Name)
+                and node.func.value.value.id in _MEMO_SET_NAMES
+            ):
+                anchor_lines["memo_add"].append(node.lineno)
+    return facts
+
+
+def _dataflow_problems(fname: str, facts: dict) -> list[str]:
+    """(a): gate first-arg <- live _upload result; no un-gated _upload."""
+    problems: list[str] = []
+    gated_names: set[str] = set()
+    direct_gated: set[int] = set()
+    for g in facts["gate_calls"]:
+        first = g.args[0] if g.args else None
+        if isinstance(first, ast.Call) and _callee_name(first) == "_upload":
+            direct_gated.add(id(first))
+            continue
+        if isinstance(first, ast.Name):
+            binds = facts["upload_assigns"].get(first.id, [])
+            if not binds:
+                problems.append(
+                    f"(a) {fname}: gate at line {g.lineno} checks {first.id!r}, "
+                    f"which is not bound from _upload(...) in this function — "
+                    f"the gate must check the live upload result, not a "
+                    f"fabricated/unrelated value"
+                )
+            elif min(binds) >= g.lineno:
+                problems.append(
+                    f"(a) {fname}: gate at line {g.lineno} precedes the "
+                    f"_upload assignment binding {first.id!r} (line "
+                    f"{min(binds)}) — it checks a stale value"
+                )
+            else:
+                gated_names.add(first.id)
+            continue
+        problems.append(
+            f"(a) {fname}: gate at line {g.lineno} takes "
+            f"{type(first).__name__ if first is not None else 'nothing'} "
+            f"as its result argument — must be the _upload-bound name or "
+            f"the _upload(...) call itself"
+        )
+    for call in facts["upload_calls"]:
+        bound = facts["assigned_upload_calls"].get(id(call))
+        if id(call) in direct_gated or (bound is not None and bound in gated_names):
+            continue
+        problems.append(
+            f"(a) {fname}: _upload result at line {call.lineno} is never "
+            f"checked by {_GATE_FN} — an overflow-rerouted (truthy) "
+            f"return would pass unexamined"
+        )
+    return problems
+
+
+def _ordering_problems(fname: str, anchors: tuple[str, ...], facts: dict) -> list[str]:
+    """(b): every gate call precedes the FIRST side effect of each kind."""
+    problems: list[str] = []
+    gate_last = max((g.lineno for g in facts["gate_calls"]), default=None)
+    for kind in anchors:
+        lines = facts["anchor_lines"][kind]
+        if not lines:
+            problems.append(
+                f"(b) {fname}: expected ordering anchor {kind!r} not found — "
+                f"if that effect moved into a helper, update "
+                f"_GATED_SITE_ANCHORS in this test so the gate-before-effect "
+                f"ordering stays pinned instead of passing vacuously"
+            )
+            continue
+        if gate_last is None:
+            continue  # (d) already reported the missing gate
+        first_effect = min(lines)
+        if gate_last >= first_effect:
+            problems.append(
+                f"(b) {fname}: {_GATE_FN} at line {gate_last} does not "
+                f"precede the first {kind!r} effect at line {first_effect} — "
+                f"a gate that fires after {_ANCHOR_EFFECT[kind]} prevents "
+                f"nothing"
+            )
+    return problems
+
 
 class TestCanonicalDestinationGate:
     STEM = "post__gsm8k"
@@ -767,40 +1002,22 @@ class TestCanonicalDestinationGate:
         assert json.loads(done_p.read_text()) == payload
 
     def test_all_attestation_upload_sites_route_through_the_gate(self):
-        """AST wiring pin: the canonical-destination check gates all four
-        attestation-adjacent upload sites — BOTH write-path store uploads
-        (run_capture + run_capture_reliability), the repair's stem-dir upload,
-        and the shared marker mirror. ``upload_stage`` (rollout JSONLs) is
-        deliberately NOT gated: the overflow reroute is the designed
-        durability path for ordinary artifacts (#1108/#2304), and gating it
-        would regress that behavior."""
-        src = Path(G.__file__).read_text()
-        tree = ast.parse(src)
-        parents: dict[ast.AST, ast.AST] = {}
-        for node in ast.walk(tree):
-            for child in ast.iter_child_nodes(node):
-                parents[child] = node
-        callers = set()
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Call):
-                continue
-            fn = node.func
-            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", None)
-            if name != "_require_canonical_upload":
-                continue
-            anc = node
-            while anc in parents:
-                anc = parents[anc]
-                if isinstance(anc, ast.FunctionDef):
-                    callers.add(anc.name)
-        assert {
-            "run_capture",
-            "run_capture_reliability",
-            "_ensure_capture_marker_hub_twin",
-            "_mirror_capture_marker",
-        } <= callers, callers
-        # upload_stage stays un-gated by design (rollouts may reroute).
-        assert "upload_stage" not in callers, callers
+        """AST wiring pin — dataflow + ordering, not just membership (r21).
+
+        Round 20's census recorded only whether the gate was called ANYWHERE
+        in each function, so a refactor gating the wrong value, or gating
+        AFTER the shard-freeing unlink loop / marker mirror, stayed green
+        (r20 Codex F2 + Claude Minor — both reviewers, independently). Now
+        bound per gated function: (a) the gate's result argument traces to
+        the live ``_upload(...)`` assignment and no ``_upload`` result goes
+        un-gated; (b) the gate precedes the first shard ``unlink``, the
+        ``_mirror_capture_marker`` call, the ``_HUB_*SETS[...].add`` memo
+        extensions, and the ``tmp.replace`` local bless; (c) ``upload_stage``
+        stays un-gated (designed #1108/#2304 durability reroute for rollout
+        JSONLs); (d) all four attestation-adjacent sites carry the gate.
+        Failure messages name the function and the violated requirement."""
+        problems = _canonical_gate_wiring_violations(Path(G.__file__).read_text())
+        assert not problems, "canonical-gate wiring violations:\n  - " + "\n  - ".join(problems)
 
 
 # ---------------------------------------------------------------------------
