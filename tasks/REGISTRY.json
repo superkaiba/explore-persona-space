@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2631,
+  "highest_id": 2632,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12588,6 +12588,13 @@
       "path": "tasks/proposed/2631",
       "status": "proposed",
       "title": "Step 10d TG mapped-test leg maps sibling-sync imports via raw own-diff \u2014 subtract base-identical paths (#2302 class)"
+    },
+    "2632": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2632",
+      "status": "proposed",
+      "title": "step9c scan-violation set-diff extracts --tb=short traceback header as branch-added violation path (false gate BLOCK)"
     },
     "264": {
       "has_clean_result": false,
