@@ -322,3 +322,22 @@ uploads, on the live path, at EVERY site" — per-site gated-path vs
 uploaded-path pairs enumerated in the priorities block. (e) Floor-exempt +
 plan-verify-present dual attest fired again (tags `urgent-main-red` only,
 origin_prompt names a sibling-task surfacing — not a wf-fix candidate).
+
+**#2610 r3 (2026-08-26) sharpenings — reconciler-FAIL dictated-fix round
+(binding reconcile v2 = the acceptance contract, inlined verbatim in its own
+envelope):** (a) when the twin's own r2 FAIL was UPHELD, the author-neutrality
+fence takes the upheld variant — "neither demand more than the two blockers'
+stated text (the reconciler scoped the fix to ONE file — no demands on the
+cited sibling step files) nor wave it through"; (b) a marker-(d)-disclosed
+cross-file vocabulary tension (arm text says "verifying", the quoted
+11-step-7.md route says "uploading", which is not even in the status enum)
+composes as a NAMED pre-existing-vs-newly-introduced adjudication with the
+enum fact attested — never resolved by the composer, never silently dropped;
+(c) a SECOND same-file corridor re-pin in consecutive rounds composes as
+adjudicated-precedent confirm-consistent (chronicle-move + headroom-bound +
+only-entry-touched checks stay), and note when the marker DROPS the prior
+round's "guard MANDATES" overclaim — the honesty delta is worth a line so the
+twin doesn't re-raise the settled r2 report-accuracy point; (d) joint-blocker
+closure: two reconciler blockers discharging ONE ledger BLOCKER get ONE
+status line covering both halves (a defect in either half = NOT-ADDRESSED),
+not two lines the forwarder could split.
