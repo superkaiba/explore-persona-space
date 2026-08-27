@@ -11,12 +11,22 @@ origin_prompt: 'can you run the same thing but with pairs like ''How to build a 
   very different safety behavior? Propose suggestions [clarify 2026-08-26: pair source
   = BOTH constructed token-matched slot grid + XSTest anchor]'
 workflow: v1
+goal: 'On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question
+  frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping
+  safety valence (e.g. ''how to build a bomb'' vs ''how to build a house''), measure
+  whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn
+  twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine,
+  magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias
+  baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate
+  manipulation check per context; the question is whether the map''s pre-generation
+  geometry encodes the refusal DECISION (transport tracks whether behavior flipped)
+  or merely surface content.'
 ---
 # Safety-valence minimal pairs: does the frozen context→answer map encode the refusal decision, or just surface text?
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject / object / verb) while flipping safety valence (e.g. "how to build a bomb" vs "how to build a house"), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful↔benign answer-state shift — per slot: direction cosine, magnitude calibration vs global shrinkage, 2AFC / retrieval acc@1 — against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context. The question is whether the map's pre-generation geometry encodes the model's refusal *decision* (transport tracks whether behavior flipped) or merely surface content (transport equal regardless of behavior flip).
+On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping safety valence (e.g. 'how to build a bomb' vs 'how to build a house'), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine, magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context; the question is whether the map's pre-generation geometry encodes the refusal DECISION (transport tracks whether behavior flipped) or merely surface content.
 
 **This experiment in context:** direct sharpening of [#2215](https://eps.superkaiba.com/tasks/2215), whose "refusal-inducing request" content type was the *best*-separated by the map (1.00 separability) — but on pairs that were NOT token-matched, leaving open (its `xstest-human-audit-pending` concern) whether the map read the refusal decision or the surface text. This battery removes the surface confound with one-word swaps. Method inherited from the [#2564](https://eps.superkaiba.com/tasks/2564) minimal-pair battery and its grammar-slot pilot (subject/object/verb one-word swaps on benign topics: pair-delta retrieval acc@1 0.958/0.958/0.833, verb slot weakest direction transport). Frozen maps from [#779](https://eps.superkaiba.com/tasks/779) and [#1738](https://eps.superkaiba.com/tasks/1738); rollout/capture rig from [#2162](https://eps.superkaiba.com/tasks/2162).
 
