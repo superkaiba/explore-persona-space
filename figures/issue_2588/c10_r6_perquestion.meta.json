@@ -1,0 +1,2926 @@
+{
+ "commit": "7ce6b403+dirty",
+ "render_id": "1a4dd0dc01744ddc",
+ "git_commit": "7ce6b403069be1abab01464fe706147cb297b6ab",
+ "git_dirty": true,
+ "git_dirty_paths": [
+  "figures/issue_2588/c1_capability_trend.meta.json",
+  "figures/issue_2588/c1_capability_trend.pdf",
+  "figures/issue_2588/c1_capability_trend.png",
+  "figures/issue_2588/c2_column_contrasts.meta.json",
+  "figures/issue_2588/c2_column_contrasts.pdf",
+  "figures/issue_2588/c2_column_contrasts.png",
+  "figures/issue_2588/c3_h2_paired_deltas.meta.json",
+  "figures/issue_2588/c3_h2_paired_deltas.pdf",
+  "figures/issue_2588/c3_h2_paired_deltas.png",
+  "figures/issue_2588/c4_gpqa_transfer.meta.json",
+  "figures/issue_2588/c4_gpqa_transfer.pdf",
+  "figures/issue_2588/c4_gpqa_transfer.png",
+  "figures/issue_2588/c5_column_verdict.meta.json",
+  "figures/issue_2588/c5_column_verdict.pdf",
+  "figures/issue_2588/c5_column_verdict.png",
+  "figures/issue_2588/c6_column_layer_sweeps.meta.json",
+  "figures/issue_2588/c6_column_layer_sweeps.pdf",
+  "figures/issue_2588/c6_column_layer_sweeps.png",
+  "figures/issue_2588/c7_endpoint_percell.meta.json",
+  "figures/issue_2588/c7_endpoint_percell.pdf",
+  "figures/issue_2588/c7_endpoint_percell.png",
+  "figures/issue_2588/c8_q38_perquestion.meta.json",
+  "figures/issue_2588/c8_q38_perquestion.pdf",
+  "figures/issue_2588/c8_q38_perquestion.png",
+  "figures/issue_2588/c9_hardset_recompute.meta.json",
+  "figures/issue_2588/c9_hardset_recompute.pdf",
+  "figures/issue_2588/c9_hardset_recompute.png",
+  "scripts/issue2588_figures.py"
+ ],
+ "git_argv0_state": "modified",
+ "git_argv0_path": "scripts/issue2588_figures.py",
+ "created": "2026-08-27T22:10:22Z",
+ "figsize": [
+  12.4,
+  4.2
+ ],
+ "points": [
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 1,
+   "question": "question 182",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 5,
+   "hits_length_residualized": 5
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 2,
+   "question": "question 10",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 1,
+   "hits_length_residualized": 5
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 3,
+   "question": "question 13",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 5
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 4,
+   "question": "question 61",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 5
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 5,
+   "question": "question 153",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 4
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 6,
+   "question": "question 25",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 7,
+   "question": "question 60",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 8,
+   "question": "question 69",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 9,
+   "question": "question 99",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 10,
+   "question": "question 102",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 11,
+   "question": "question 160",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 12,
+   "question": "question 163",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 13,
+   "question": "question 70",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 2
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 14,
+   "question": "question 28",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 15,
+   "question": "question 38",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 16,
+   "question": "question 48",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 17,
+   "question": "question 84",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 18,
+   "question": "question 108",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 19,
+   "question": "question 134",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 20,
+   "question": "question 140",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 21,
+   "question": "question 161",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 22,
+   "question": "question 179",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 23,
+   "question": "question 0",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 24,
+   "question": "question 1",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 25,
+   "question": "question 2",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 26,
+   "question": "question 4",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 27,
+   "question": "question 6",
+   "kept_rollouts": 2,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 28,
+   "question": "question 9",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 29,
+   "question": "question 12",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 30,
+   "question": "question 14",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 31,
+   "question": "question 16",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 32,
+   "question": "question 17",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 33,
+   "question": "question 19",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 34,
+   "question": "question 20",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 35,
+   "question": "question 21",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 36,
+   "question": "question 22",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 37,
+   "question": "question 23",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 38,
+   "question": "question 24",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 39,
+   "question": "question 26",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 40,
+   "question": "question 29",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 41,
+   "question": "question 30",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 42,
+   "question": "question 31",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 43,
+   "question": "question 32",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 44,
+   "question": "question 33",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 45,
+   "question": "question 34",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 46,
+   "question": "question 35",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 47,
+   "question": "question 36",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 48,
+   "question": "question 37",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 49,
+   "question": "question 39",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 50,
+   "question": "question 40",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 51,
+   "question": "question 41",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 52,
+   "question": "question 42",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 53,
+   "question": "question 44",
+   "kept_rollouts": 2,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 54,
+   "question": "question 45",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 55,
+   "question": "question 46",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 56,
+   "question": "question 47",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 57,
+   "question": "question 49",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 58,
+   "question": "question 52",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 59,
+   "question": "question 53",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 60,
+   "question": "question 54",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 61,
+   "question": "question 56",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 62,
+   "question": "question 57",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 63,
+   "question": "question 58",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 64,
+   "question": "question 59",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 65,
+   "question": "question 62",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 66,
+   "question": "question 63",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 67,
+   "question": "question 64",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 68,
+   "question": "question 65",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 69,
+   "question": "question 66",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 70,
+   "question": "question 67",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 71,
+   "question": "question 68",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 72,
+   "question": "question 71",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 73,
+   "question": "question 73",
+   "kept_rollouts": 2,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 74,
+   "question": "question 74",
+   "kept_rollouts": 2,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 75,
+   "question": "question 75",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 76,
+   "question": "question 76",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 77,
+   "question": "question 78",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 78,
+   "question": "question 79",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 79,
+   "question": "question 80",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 80,
+   "question": "question 81",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 81,
+   "question": "question 85",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 82,
+   "question": "question 88",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 83,
+   "question": "question 89",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 84,
+   "question": "question 90",
+   "kept_rollouts": 2,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 85,
+   "question": "question 91",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 86,
+   "question": "question 94",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 87,
+   "question": "question 95",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 88,
+   "question": "question 96",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 89,
+   "question": "question 97",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 90,
+   "question": "question 98",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 91,
+   "question": "question 100",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 92,
+   "question": "question 101",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 93,
+   "question": "question 103",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 94,
+   "question": "question 104",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 95,
+   "question": "question 105",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 96,
+   "question": "question 106",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 97,
+   "question": "question 109",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 98,
+   "question": "question 110",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 99,
+   "question": "question 111",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 100,
+   "question": "question 112",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 101,
+   "question": "question 113",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 102,
+   "question": "question 114",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 103,
+   "question": "question 115",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 104,
+   "question": "question 116",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 105,
+   "question": "question 117",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 106,
+   "question": "question 118",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 107,
+   "question": "question 120",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 108,
+   "question": "question 122",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 109,
+   "question": "question 124",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 110,
+   "question": "question 125",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 111,
+   "question": "question 126",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 112,
+   "question": "question 128",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 113,
+   "question": "question 129",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 114,
+   "question": "question 130",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 115,
+   "question": "question 131",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 116,
+   "question": "question 132",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 117,
+   "question": "question 133",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 118,
+   "question": "question 135",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 119,
+   "question": "question 136",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 120,
+   "question": "question 137",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 121,
+   "question": "question 138",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 122,
+   "question": "question 141",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 123,
+   "question": "question 142",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 124,
+   "question": "question 144",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 125,
+   "question": "question 145",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 126,
+   "question": "question 146",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 127,
+   "question": "question 147",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 128,
+   "question": "question 148",
+   "kept_rollouts": 4,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 129,
+   "question": "question 149",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 130,
+   "question": "question 150",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 131,
+   "question": "question 151",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 132,
+   "question": "question 152",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 133,
+   "question": "question 155",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 134,
+   "question": "question 156",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 135,
+   "question": "question 157",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 136,
+   "question": "question 158",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 137,
+   "question": "question 162",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 138,
+   "question": "question 164",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 139,
+   "question": "question 165",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 140,
+   "question": "question 167",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 141,
+   "question": "question 169",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 142,
+   "question": "question 170",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 143,
+   "question": "question 171",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 144,
+   "question": "question 172",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 145,
+   "question": "question 174",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 146,
+   "question": "question 175",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 147,
+   "question": "question 176",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 148,
+   "question": "question 177",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 149,
+   "question": "question 178",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 150,
+   "question": "question 181",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 151,
+   "question": "question 183",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 152,
+   "question": "question 184",
+   "kept_rollouts": 3,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 153,
+   "question": "question 185",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 154,
+   "question": "question 186",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 155,
+   "question": "question 187",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 156,
+   "question": "question 189",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 157,
+   "question": "question 191",
+   "kept_rollouts": 1,
+   "truncation_free": false,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 158,
+   "question": "question 195",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "collapsed newest-27B thinking cell",
+   "question_rank": 159,
+   "question": "question 197",
+   "kept_rollouts": 5,
+   "truncation_free": true,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 1,
+   "question": "question 57",
+   "hits_end_of_thought_correct_rows": 5,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 2,
+   "question": "question 164",
+   "hits_end_of_thought_correct_rows": 5,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 3,
+   "question": "question 147",
+   "hits_end_of_thought_correct_rows": 3,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 4,
+   "question": "question 47",
+   "hits_end_of_thought_correct_rows": 2,
+   "hits_end_of_thought_incorrect_rows": 1,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 5,
+   "question": "question 152",
+   "hits_end_of_thought_correct_rows": 3,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 6,
+   "question": "question 165",
+   "hits_end_of_thought_correct_rows": 3,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 7,
+   "question": "question 13",
+   "hits_end_of_thought_correct_rows": 2,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 8,
+   "question": "question 163",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 2,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 9,
+   "question": "question 60",
+   "hits_end_of_thought_correct_rows": 1,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 10,
+   "question": "question 105",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 1,
+   "hits_pre_think_all_rows": 1
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 11,
+   "question": "question 29",
+   "hits_end_of_thought_correct_rows": 1,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 12,
+   "question": "question 45",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 13,
+   "question": "question 58",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 14,
+   "question": "question 161",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 5
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 15,
+   "question": "question 73",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 4
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 16,
+   "question": "question 87",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 4
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 17,
+   "question": "question 98",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 4
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 18,
+   "question": "question 133",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 4
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 19,
+   "question": "question 125",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 3
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 20,
+   "question": "question 1",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 21,
+   "question": "question 2",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 22,
+   "question": "question 3",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 23,
+   "question": "question 4",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 24,
+   "question": "question 6",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 25,
+   "question": "question 7",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 26,
+   "question": "question 8",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 27,
+   "question": "question 9",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 28,
+   "question": "question 10",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 29,
+   "question": "question 11",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 30,
+   "question": "question 12",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 31,
+   "question": "question 16",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 32,
+   "question": "question 17",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 33,
+   "question": "question 19",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 34,
+   "question": "question 20",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 35,
+   "question": "question 21",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 36,
+   "question": "question 22",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 37,
+   "question": "question 23",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 38,
+   "question": "question 24",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 39,
+   "question": "question 25",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 40,
+   "question": "question 26",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 41,
+   "question": "question 27",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 42,
+   "question": "question 28",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 43,
+   "question": "question 30",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 44,
+   "question": "question 31",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 45,
+   "question": "question 33",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 46,
+   "question": "question 34",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 47,
+   "question": "question 35",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 48,
+   "question": "question 36",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 49,
+   "question": "question 37",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 50,
+   "question": "question 38",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 51,
+   "question": "question 39",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 52,
+   "question": "question 40",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 53,
+   "question": "question 41",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 54,
+   "question": "question 42",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 55,
+   "question": "question 43",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 56,
+   "question": "question 46",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 57,
+   "question": "question 48",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 58,
+   "question": "question 50",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 59,
+   "question": "question 53",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 60,
+   "question": "question 54",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 61,
+   "question": "question 55",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 62,
+   "question": "question 56",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 63,
+   "question": "question 59",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 64,
+   "question": "question 61",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 65,
+   "question": "question 62",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 66,
+   "question": "question 63",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 67,
+   "question": "question 64",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 68,
+   "question": "question 65",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 69,
+   "question": "question 66",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 70,
+   "question": "question 67",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 71,
+   "question": "question 68",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 72,
+   "question": "question 69",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 73,
+   "question": "question 70",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 74,
+   "question": "question 71",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 75,
+   "question": "question 74",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 76,
+   "question": "question 75",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 77,
+   "question": "question 76",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 78,
+   "question": "question 77",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 79,
+   "question": "question 78",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 80,
+   "question": "question 79",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 81,
+   "question": "question 80",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 82,
+   "question": "question 83",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 83,
+   "question": "question 86",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 84,
+   "question": "question 88",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 85,
+   "question": "question 89",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 86,
+   "question": "question 92",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 87,
+   "question": "question 93",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 88,
+   "question": "question 94",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 89,
+   "question": "question 95",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 90,
+   "question": "question 96",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 91,
+   "question": "question 97",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 92,
+   "question": "question 99",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 93,
+   "question": "question 100",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 94,
+   "question": "question 101",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 95,
+   "question": "question 102",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 96,
+   "question": "question 103",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 97,
+   "question": "question 104",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 98,
+   "question": "question 106",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 99,
+   "question": "question 107",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 100,
+   "question": "question 108",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 101,
+   "question": "question 109",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 102,
+   "question": "question 110",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 103,
+   "question": "question 111",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 104,
+   "question": "question 112",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 105,
+   "question": "question 113",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 106,
+   "question": "question 114",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 107,
+   "question": "question 115",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 108,
+   "question": "question 116",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 109,
+   "question": "question 117",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 110,
+   "question": "question 118",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 111,
+   "question": "question 120",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 112,
+   "question": "question 121",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 113,
+   "question": "question 122",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 114,
+   "question": "question 123",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 115,
+   "question": "question 124",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 116,
+   "question": "question 126",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 117,
+   "question": "question 127",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 118,
+   "question": "question 128",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 119,
+   "question": "question 129",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 120,
+   "question": "question 130",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 121,
+   "question": "question 131",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 122,
+   "question": "question 132",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 123,
+   "question": "question 134",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 124,
+   "question": "question 135",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 125,
+   "question": "question 136",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 126,
+   "question": "question 137",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 127,
+   "question": "question 138",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 128,
+   "question": "question 140",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 129,
+   "question": "question 141",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 130,
+   "question": "question 142",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 131,
+   "question": "question 143",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 132,
+   "question": "question 144",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 133,
+   "question": "question 145",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 134,
+   "question": "question 146",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 135,
+   "question": "question 148",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 136,
+   "question": "question 149",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 137,
+   "question": "question 150",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 138,
+   "question": "question 151",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 139,
+   "question": "question 153",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 140,
+   "question": "question 154",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 141,
+   "question": "question 155",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 142,
+   "question": "question 156",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 143,
+   "question": "question 157",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 144,
+   "question": "question 158",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 145,
+   "question": "question 159",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 146,
+   "question": "question 160",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 147,
+   "question": "question 162",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 148,
+   "question": "question 168",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 149,
+   "question": "question 169",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 150,
+   "question": "question 170",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 151,
+   "question": "question 171",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 152,
+   "question": "question 172",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 153,
+   "question": "question 174",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 154,
+   "question": "question 175",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 155,
+   "question": "question 176",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 156,
+   "question": "question 178",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 157,
+   "question": "question 179",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 158,
+   "question": "question 180",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 159,
+   "question": "question 181",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 160,
+   "question": "question 182",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 161,
+   "question": "question 183",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 162,
+   "question": "question 184",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 163,
+   "question": "question 185",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 164,
+   "question": "question 186",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 165,
+   "question": "question 187",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 166,
+   "question": "question 189",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 167,
+   "question": "question 190",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 168,
+   "question": "question 192",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 169,
+   "question": "question 193",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 170,
+   "question": "question 194",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  },
+  {
+   "panel": "OLMo 32B Think by stratum",
+   "question_rank": 171,
+   "question": "question 196",
+   "hits_end_of_thought_correct_rows": 0,
+   "hits_end_of_thought_incorrect_rows": 0,
+   "hits_pre_think_all_rows": 0
+  }
+ ],
+ "n_series": 6,
+ "total_points": 861,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Collapsed newest-27B thinking cell",
+    "xlabel": "Question (ranked by residualized hits)",
+    "ylabel": "Retrieval hits per question (of kept rollouts)",
+    "legend_labels": [
+     "length-residualized read",
+     "raw end-of-thought read",
+     "question has truncated rollouts (30)"
+    ],
+    "xticklabels": [
+     "\u221220",
+     "0",
+     "20",
+     "40",
+     "60",
+     "80",
+     "100",
+     "120",
+     "140",
+     "160",
+     "180"
+    ],
+    "yticklabels": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   },
+   {
+    "title_left": "OLMo 32B Think, hits by correctness stratum",
+    "xlabel": "Question (ranked by end-of-thought hits)",
+    "ylabel": "Retrieval hits per question",
+    "legend_labels": [
+     "pre-think read (all rows)",
+     "end-of-thought, correct rows",
+     "end-of-thought, incorrect rows"
+    ],
+    "xticklabels": [
+     "\u221225",
+     "0",
+     "25",
+     "50",
+     "75",
+     "100",
+     "125",
+     "150",
+     "175",
+     "200"
+    ],
+    "yticklabels": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "5",
+     "6"
+    ]
+   }
+  ],
+  "series": [
+   "length-residualized read",
+   "raw end-of-thought read",
+   "question has truncated rollouts (30)",
+   "pre-think read (all rows)",
+   "end-of-thought, correct rows",
+   "end-of-thought, incorrect rows"
+  ]
+ },
+ "formats_written": [
+  "png",
+  "pdf"
+ ]
+}

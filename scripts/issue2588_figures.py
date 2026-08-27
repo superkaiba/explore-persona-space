@@ -23,6 +23,9 @@ figure register — axes + ticks + legend only, no in-figure caption blocks):
                         thinking hard-set cell (raw vs length-residualized).
   c9_hardset_recompute  truncation-free recompute (q38 thinking) + OLMo Think
                         correctness-stratum reads.
+  c10_r6_perquestion    Result-6 per-question companion: q38 hits with
+                        truncated-rollout questions marked + OLMo 32B Think
+                        hits by correctness stratum.
 """
 
 from __future__ import annotations
@@ -563,13 +566,10 @@ def fig_endpoint_percell(summary: dict, out_dir: Path, fits_dir: Path) -> None:
     plt.close(fig)
 
 
-def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
-    """c8: per-question companion behind the collapsed newest-27B thinking cell.
-
-    Joins the raw end-of-CoT per-row hit record with the length-residualized
-    per-row hits (identical rows) and plots hits-of-rollouts per question, both
-    reads. Sidecar points are re-annotated with question ids + hit indicators
-    (bar/line readback would drop the identifiers)."""
+def _q38_perquestion(fits_dir: Path) -> list[tuple[str, dict[str, int]]]:
+    """Per-question join behind the collapsed newest-27B thinking cell: raw
+    end-of-CoT hits x length-residualized hits (identical rows), ordered by
+    residualized hits (shared by c8 + c10 panel a)."""
     cell = fits_dir / "q38_27b_b"
     raw = json.loads((cell / "gpqa_perrow_cot_boundary.json").read_text())
     res = json.loads((cell / "resid_cot_boundary.json").read_text())["gpqa_resid"]
@@ -584,9 +584,21 @@ def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
     assert n_rows == 726, n_rows
     assert len(per_q) == 159, len(per_q)
     assert sum(r["hits_raw"] for r in per_q.values()) == 6  # the 2-question concentration
-    ordered = sorted(
-        per_q.items(), key=lambda kv: (-kv[1]["hits_resid"], -kv[1]["hits_raw"], kv[0])
-    )
+    return sorted(per_q.items(), key=lambda kv: (-kv[1]["hits_resid"], -kv[1]["hits_raw"], kv[0]))
+
+
+def _qlabel(qid: str) -> str:
+    # plain-English rendered label ("question 182"); raw ids stay in provenance
+    return f"question {int(qid.rsplit('_', 1)[1])}"
+
+
+def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
+    """c8: per-question companion behind the collapsed newest-27B thinking cell.
+
+    Plots hits-of-rollouts per question, raw vs length-residualized reads.
+    Sidecar points are re-annotated with question ids + hit indicators
+    (bar/line readback would drop the identifiers)."""
+    ordered = _q38_perquestion(fits_dir)
     xs = np.arange(1, len(ordered) + 1)
     resid_y = [kv[1]["hits_resid"] for kv in ordered]
     raw_y = [kv[1]["hits_raw"] for kv in ordered]
@@ -594,11 +606,6 @@ def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(9.6, 4.0))
     ax.plot(xs, resid_y, "o", ms=3.2, color=colors[1], label="length-residualized read")
     ax.plot(xs, raw_y, "o", ms=3.2, color=colors[0], alpha=0.75, label="raw end-of-thought read")
-
-    def _qlabel(qid: str) -> str:
-        # plain-English rendered label ("question 182"); raw ids stay in provenance
-        return f"question {int(qid.rsplit('_', 1)[1])}"
-
     for i, (qid, rec) in enumerate(ordered):
         if rec["hits_raw"] > 0:
             ax.text(xs[i] + 1.5, rec["hits_raw"], _qlabel(qid), fontsize=6.5, va="center")
@@ -620,6 +627,177 @@ def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
             "hits_length_residualized": rec["hits_resid"],
         }
         for x, (qid, rec) in zip(xs, ordered, strict=True)
+    ]
+    meta_path.write_text(json.dumps(meta, indent=1), encoding="utf-8")
+
+
+def _olmo32_perrow_correctness(fits_dir: Path, parsed_root: Path) -> dict[str, bool]:
+    """Per-row judge-corrected correctness for the OLMo-3.1-32B Think cell,
+    the trend-summary split recipe: anchored exact-match letter extraction,
+    overridden by the judge-fallback verdict where one exists (rows with
+    neither are excluded)."""
+    cell_key = "o31_32b_t_b"
+    model = cell_key.rsplit("_", 1)[0]
+    parsed = parsed_root / PC.PANEL_PREFIX / model / "think" / "parsed"
+    correct_by_id: dict[str, bool] = {}
+    for f in sorted(parsed.glob("gpqa_s*.jsonl")):
+        with f.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                a0, a1 = row["ans_char_span"]
+                ok, letter = PC.gpqa_letter_correct(row["text"][a0:a1], row["gold"])
+                if letter is not None:
+                    correct_by_id[row["row_id"]] = bool(ok)
+    jv = json.loads((fits_dir / cell_key / "gpqa_judge_verdicts.json").read_text())["verdicts"]
+    for rid, v in jv.items():
+        if v.get("letter") and v["letter"] != "UNPARSEABLE":
+            correct_by_id[rid] = bool(v["correct"])
+    return correct_by_id
+
+
+def fig_r6_perquestion(out_dir: Path, fits_dir: Path, parsed_root: Path) -> None:
+    """c10 (Result 6 per-unit companion, two declared panels): (a) the collapsed
+    newest-27B thinking cell's per-question hits (raw vs length-residualized)
+    with truncated-rollout questions marked — the row-level view behind the
+    truncation-free recompute; (b) OLMo-3.1-32B Think per-question hits at the
+    end-of-thought read split by answer correctness, plus the pre-think read —
+    the row-level view behind the c9 stratum bars."""
+    colors = paper_palette(3)
+    fig, (ax, axb) = plt.subplots(1, 2, figsize=(12.4, 4.2))
+
+    # Panel (a): q38 per-question hits, truncation-free membership marked.
+    ordered = _q38_perquestion(fits_dir)
+    n_tf = sum(1 for _q, r in ordered if r["rollouts"] == 5)
+    assert n_tf == 129, n_tf  # truncation-free clusters (all five rollouts kept)
+    xs = np.arange(1, len(ordered) + 1)
+    ax.plot(
+        xs,
+        [r["hits_resid"] for _q, r in ordered],
+        "o",
+        ms=3.2,
+        color=colors[1],
+        label="length-residualized read",
+    )
+    ax.plot(
+        xs,
+        [r["hits_raw"] for _q, r in ordered],
+        "o",
+        ms=3.2,
+        color=colors[0],
+        alpha=0.75,
+        label="raw end-of-thought read",
+    )
+    trunc_x = [x for x, (_q, r) in zip(xs, ordered, strict=True) if r["rollouts"] < 5]
+    ax.plot(
+        trunc_x,
+        [-0.45] * len(trunc_x),
+        marker="|",
+        ls="",
+        color="grey",
+        label="question has truncated rollouts (30)",
+    )
+    ax.set_ylim(-0.8, 5.5)
+    ax.set_yticks(range(0, 6))
+    ax.set_xlabel("Question (ranked by residualized hits)")
+    ax.set_ylabel("Retrieval hits per question (of kept rollouts)")
+    ax.set_title("Collapsed newest-27B thinking cell", loc="left", fontsize=9)
+    ax.legend(frameon=False, fontsize=7.5)
+
+    # Panel (b): OLMo 32B Think per-question hits by correctness stratum.
+    correct_by_id = _olmo32_perrow_correctness(fits_dir, parsed_root)
+    cell = fits_dir / "o31_32b_t_b"
+    eot = json.loads((cell / "gpqa_perrow_cot_boundary.json").read_text())
+    pre = json.loads((cell / "gpqa_perrow_pre_think.json").read_text())
+    per_q: dict[str, dict[str, int]] = {}
+    for rid, qid, hit in zip(eot["row_ids"], eot["qids"], eot["same_q_hit"], strict=True):
+        if rid not in correct_by_id:
+            continue  # excluded: no extractable letter and no judge verdict
+        rec = per_q.setdefault(str(qid), {"hits_correct": 0, "hits_incorrect": 0, "hits_pre": 0})
+        rec["hits_correct" if correct_by_id[rid] else "hits_incorrect"] += int(hit)
+    pre_hits = dict(zip(pre["row_ids"], pre["same_q_hit"], strict=True))
+    for rid, qid in zip(pre["row_ids"], pre["qids"], strict=True):
+        rec = per_q.setdefault(str(qid), {"hits_correct": 0, "hits_incorrect": 0, "hits_pre": 0})
+        rec["hits_pre"] += int(pre_hits[rid])
+    # fail-loud reconciliation vs the shipped stratum aggregates
+    n_cor = sum(1 for rid in eot["row_ids"] if correct_by_id.get(rid) is True)
+    n_inc = sum(1 for rid in eot["row_ids"] if correct_by_id.get(rid) is False)
+    assert (n_cor, n_inc) == (381, 317), (n_cor, n_inc)
+    got_cor = sum(r["hits_correct"] for r in per_q.values()) / n_cor
+    got_inc = sum(r["hits_incorrect"] for r in per_q.values()) / n_inc
+    assert abs(got_cor - 0.06561679790026247) < 1e-12, got_cor
+    assert abs(got_inc - 0.012618296529968454) < 1e-12, got_inc
+    got_pre = sum(r["hits_pre"] for r in per_q.values()) / len(pre["row_ids"])
+    assert abs(got_pre - 0.09312320916905444) < 1e-12, got_pre
+
+    o_ordered = sorted(
+        per_q.items(),
+        key=lambda kv: (
+            -(kv[1]["hits_correct"] + kv[1]["hits_incorrect"]),
+            -kv[1]["hits_pre"],
+            kv[0],
+        ),
+    )
+    oxs = np.arange(1, len(o_ordered) + 1)
+    axb.plot(
+        oxs,
+        [r["hits_pre"] for _q, r in o_ordered],
+        "o",
+        ms=3.0,
+        color="grey",
+        alpha=0.6,
+        label="pre-think read (all rows)",
+    )
+    axb.plot(
+        oxs,
+        [r["hits_correct"] for _q, r in o_ordered],
+        "o",
+        ms=3.2,
+        color=colors[1],
+        label="end-of-thought, correct rows",
+    )
+    axb.plot(
+        oxs,
+        [r["hits_incorrect"] for _q, r in o_ordered],
+        "o",
+        ms=3.2,
+        color=colors[2],
+        alpha=0.85,
+        label="end-of-thought, incorrect rows",
+    )
+    axb.set_yticks(range(0, int(max(r["hits_pre"] for _q, r in o_ordered)) + 2))
+    axb.set_xlabel("Question (ranked by end-of-thought hits)")
+    axb.set_ylabel("Retrieval hits per question")
+    axb.set_title("OLMo 32B Think, hits by correctness stratum", loc="left", fontsize=9)
+    axb.legend(frameon=False, fontsize=7.5)
+    savefig_paper(fig, "c10_r6_perquestion", dir=out_dir)
+    plt.close(fig)
+    # Sidecar re-annotation: per-question identifiers + hit indicators, both panels.
+    meta_path = out_dir / "c10_r6_perquestion.meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["points"] = [
+        {
+            "panel": "collapsed newest-27B thinking cell",
+            "question_rank": int(x),
+            "question": _qlabel(qid),
+            "kept_rollouts": rec["rollouts"],
+            "truncation_free": rec["rollouts"] == 5,
+            "hits_raw_end_of_thought": rec["hits_raw"],
+            "hits_length_residualized": rec["hits_resid"],
+        }
+        for x, (qid, rec) in zip(xs, ordered, strict=True)
+    ] + [
+        {
+            "panel": "OLMo 32B Think by stratum",
+            "question_rank": int(x),
+            "question": _qlabel(qid),
+            "hits_end_of_thought_correct_rows": rec["hits_correct"],
+            "hits_end_of_thought_incorrect_rows": rec["hits_incorrect"],
+            "hits_pre_think_all_rows": rec["hits_pre"],
+        }
+        for x, (qid, rec) in zip(oxs, o_ordered, strict=True)
     ]
     meta_path.write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
@@ -733,6 +911,12 @@ def main(argv: list[str] | None = None) -> int:
         / "q38_truncfree_gpqa.json",
         help="9a-ter truncation-free recompute JSON (c9 panel a)",
     )
+    ap.add_argument(
+        "--parsed-root",
+        type=Path,
+        default=_REPO_ROOT / "data" / "issue_2588" / "hf_dl" / "parsed_mirror",
+        help="staged parsed-row mirror (c10 panel b per-row correctness join)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
     if args.import_check:
@@ -752,6 +936,7 @@ def main(argv: list[str] | None = None) -> int:
     fig_endpoint_percell(summary, args.out_dir, args.fits_dir)
     fig_q38_perquestion(args.out_dir, args.fits_dir)
     fig_hardset_recompute(summary, args.out_dir, args.recompute)
+    fig_r6_perquestion(args.out_dir, args.fits_dir, args.parsed_root)
     print(f"[phase=done] figures written -> {args.out_dir}")
     return 0
 
