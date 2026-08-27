@@ -113,3 +113,4 @@
 {"ts": "2026-08-27T17:25:29Z", "kind": "epm:progress", "version": 16, "by": "poll_pipeline", "note": "phase transition: (start) -> gen", "phase": "gen", "pod": "pod-2617"}
 {"ts": "2026-08-27T17:35:10Z", "kind": "epm:progress", "version": 17, "by": "issue-orchestrator", "note": "[long-phase-heartbeat] Step 6d.2 poll loop live; tick 2: phase=gen pid_alive gpu_util=88% log fresh (43s), zero error patterns. Poll chain 540s; pod-2617 healthy."}
 {"ts": "2026-08-27T17:44:24Z", "kind": "epm:progress", "version": 18, "by": "poll_pipeline", "note": "phase transition: gen -> capture", "phase": "capture", "pod": "pod-2617"}
+{"ts": "2026-08-27T17:54:17Z", "kind": "epm:progress", "version": 19, "by": "poll_pipeline", "note": "phase transition: capture -> done", "phase": "done", "pod": "pod-2617"}
