@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2633,
+  "highest_id": 2634,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12602,6 +12602,13 @@
       "path": "tasks/proposed/2633",
       "status": "proposed",
       "title": "verify_uploads.py row-index reader uses splitlines() \u2014 false-FAILs the #2148 rows gate on U+2028-bearing rollout JSONL"
+    },
+    "2634": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2634",
+      "status": "proposed",
+      "title": "step9c_baseline scan-set extractor counts the failing test's own traceback header as a branch-added violation path (false SCAN-NEW-VIOLATION)"
     },
     "264": {
       "has_clean_result": false,
