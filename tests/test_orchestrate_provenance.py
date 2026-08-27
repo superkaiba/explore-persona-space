@@ -8,6 +8,7 @@ artifacts/organisms.py, extended with a dirty-tree flag (incident #1482).
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -16,6 +17,7 @@ import pytest
 from explore_persona_space.orchestrate.provenance import (
     _MAX_DIRTY_PATHS,
     GitProvenance,
+    _git_dirty_status,
     as_metadata_dict,
     commit_string,
     git_provenance,
@@ -356,3 +358,69 @@ def test_convexity_extra_phase_precedence_over_kwarg(tmp_path: Path, monkeypatch
 
     md = reproducibility_metadata(extra={"phase": "legacy-extra"}, phase="fits")
     assert md["phase"] == "legacy-extra"
+
+
+# ---------------------------------------------------------------------------
+# --no-optional-locks: timeout-killed probes must not orphan .git/index.lock
+# (task #2611)
+# ---------------------------------------------------------------------------
+
+
+def test_every_git_argv_leads_with_no_optional_locks_and_literal_pathspecs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Argv pin for the #2611 fix: EVERY git subprocess `git_provenance()`
+    spawns must lead with BOTH global options, in order —
+    `["git", "--no-optional-locks", "--literal-pathspecs", <subcommand>, ...]`
+    — so no probe can take git's optional locks (a `_GIT_TIMEOUT_SEC`-killed
+    `git status` would otherwise orphan `.git/index.lock` on a slow
+    filesystem) and no pathspec is ever a glob PATTERN (#2175 r2)."""
+    _init_repo(tmp_path)
+    script = tmp_path / "runner.py"
+    script.write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(tmp_path), "add", "runner.py"], check=True)
+    subprocess.run(["git", "-C", str(tmp_path), "commit", "-q", "-m", "runner"], check=True)
+
+    captured: list[list[str]] = []
+    real_run = subprocess.run
+
+    def _capture_and_delegate(argv, *args, **kwargs):
+        captured.append(list(argv))
+        return real_run(argv, *args, **kwargs)
+
+    # Installed AFTER the fixture repo setup, so the fixture's own bare
+    # ["git", ...] setup calls above cannot pollute the capture.
+    monkeypatch.setattr(subprocess, "run", _capture_and_delegate)
+    prov = git_provenance(cwd=tmp_path, argv0=str(script))
+    monkeypatch.undo()
+
+    assert prov.commit_sha != "unknown"  # the probes really ran
+    assert prov.argv0_state == "tracked"  # the pathspec-taking probes ran too
+    assert len(captured) >= 3  # rev-parse + tree-wide status + argv0 probes
+    for argv in captured:
+        assert argv[:3] == ["git", "--no-optional-locks", "--literal-pathspecs"], argv
+
+
+def test_dirty_status_probe_never_writes_index_or_leaves_lock(tmp_path: Path) -> None:
+    """Behavioral pin for the #2611 fix — FAILS pre-fix: without
+    `--no-optional-locks`, `git status` opportunistically refreshes the index
+    stat cache, so on a staled stat entry (content unchanged, mtime moved) it
+    REWRITES `.git/index` under `.git/index.lock` — exactly the write a
+    timeout-killed probe orphans mid-flight. With the flag, the probe must
+    leave the index byte- AND mtime-identical and no `.git/index.lock`
+    behind, while still reading the tree as clean."""
+    _init_repo(tmp_path)
+    # Stale the tracked file's cached stat entry: content unchanged, mtime
+    # pushed back — a lock-taking `git status` would rewrite the index here.
+    os.utime(tmp_path / "seed.txt", (1_000_000_000, 1_000_000_000))
+    index = tmp_path / ".git" / "index"
+    before_bytes = index.read_bytes()
+    before_mtime_ns = index.stat().st_mtime_ns
+
+    dirty, paths = _git_dirty_status(cwd=tmp_path)
+
+    assert dirty is False  # content is unchanged — probe semantics intact
+    assert paths == []
+    assert index.read_bytes() == before_bytes
+    assert index.stat().st_mtime_ns == before_mtime_ns
+    assert not (tmp_path / ".git" / "index.lock").exists()
