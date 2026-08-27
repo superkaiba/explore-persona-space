@@ -1,0 +1,3363 @@
+{
+  "axes": {
+    "query_content": {
+      "answer_length": {
+        "paraphrase": {
+          "mean_abs_delta_tokens": 41.119166666666665,
+          "mean_delta_tokens": -22.924166666666668
+        },
+        "primary": {
+          "mean_abs_delta_tokens": 68.75909090909093,
+          "mean_delta_tokens": 22.600303030303014
+        }
+      },
+      "axis": "query_content",
+      "calibration": {
+        "arm_1738ce": {
+          "axis_slope": 0.7631833978567649,
+          "axis_slope_all_values": 0.7631833978567649,
+          "axis_slope_ci95": [
+            0.7151097072487886,
+            0.807934408905936
+          ],
+          "axis_slope_ci95_all_values": [
+            0.7151097072487886,
+            0.807934408905936
+          ],
+          "global_slope_parent_frozen": 0.9746799192232769,
+          "global_slope_round_pooled": 0.8986528631353693,
+          "global_slope_round_swap": 1.6854472568136893,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.7830092554537763,
+          "ratio_to_parent_global_all_values": 0.7830092554537763,
+          "ratio_to_parent_global_ci95": [
+            0.7336867141149888,
+            0.8289228011897275
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.7336867141149888,
+            0.8289228011897275
+          ],
+          "ratio_to_round_pooled": 0.849252730575012,
+          "ratio_to_round_pooled_all_values": 0.849252730575012,
+          "ratio_to_round_pooled_ci95": [
+            0.8101493122091465,
+            0.8634534230723647
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.8101493122091465,
+            0.8634534230723647
+          ],
+          "ratio_to_round_swap": 0.4528076418716007,
+          "ratio_to_round_swap_all_values": 0.4528076418716007,
+          "ratio_to_round_swap_ci95": [
+            0.38112513636173834,
+            0.5237398231384349
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.38112513636173834,
+            0.5237398231384349
+          ]
+        },
+        "arm_779ce": {
+          "axis_slope": 0.8213872193237509,
+          "axis_slope_all_values": 0.8213872193237509,
+          "axis_slope_ci95": [
+            0.7715291962030482,
+            0.8725195131552792
+          ],
+          "axis_slope_ci95_all_values": [
+            0.7715291962030482,
+            0.8725195131552792
+          ],
+          "global_slope_parent_frozen": 1.0136696325596286,
+          "global_slope_round_pooled": 0.9473266907749054,
+          "global_slope_round_swap": 1.8370495464802188,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.8103105715514598,
+          "ratio_to_parent_global_all_values": 0.8103105715514598,
+          "ratio_to_parent_global_ci95": [
+            0.761124898508453,
+            0.8607533313906922
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.761124898508453,
+            0.8607533313906922
+          ],
+          "ratio_to_round_pooled": 0.8670580353350574,
+          "ratio_to_round_pooled_all_values": 0.8670580353350574,
+          "ratio_to_round_pooled_ci95": [
+            0.8333801372290431,
+            0.8814976898491683
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.8333801372290431,
+            0.8814976898491683
+          ],
+          "ratio_to_round_swap": 0.44712306257472817,
+          "ratio_to_round_swap_all_values": 0.44712306257472817,
+          "ratio_to_round_swap_ci95": [
+            0.3754252882746198,
+            0.5239693762256405
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.3754252882746198,
+            0.5239693762256405
+          ]
+        },
+        "arm_iddelta": {
+          "axis_slope": 1.5502590137712782,
+          "axis_slope_all_values": 1.5502590137712782,
+          "axis_slope_ci95": [
+            1.4497657540981637,
+            1.6830721946174145
+          ],
+          "axis_slope_ci95_all_values": [
+            1.4497657540981637,
+            1.6830721946174145
+          ],
+          "global_slope_parent_frozen": 2.0672297728432754,
+          "global_slope_round_pooled": 2.09700047585169,
+          "global_slope_round_swap": 3.5879705265442463,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 0.7499209977220125,
+          "ratio_to_parent_global_all_values": 0.7499209977220125,
+          "ratio_to_parent_global_ci95": [
+            0.7013084724027318,
+            0.8141679346570705
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            0.7013084724027318,
+            0.8141679346570705
+          ],
+          "ratio_to_round_pooled": 0.7392745169223891,
+          "ratio_to_round_pooled_all_values": 0.7392745169223891,
+          "ratio_to_round_pooled_ci95": [
+            0.6821872376372905,
+            0.751788556371657
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            0.6821872376372905,
+            0.751788556371657
+          ],
+          "ratio_to_round_swap": 0.43207127881967583,
+          "ratio_to_round_swap_all_values": 0.43207127881967583,
+          "ratio_to_round_swap_ci95": [
+            0.37375773079373964,
+            0.49702619758879846
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.37375773079373964,
+            0.49702619758879846
+          ]
+        }
+      },
+      "cross_family": {
+        "n/a": "no paraphrase-family swap class for this axis"
+      },
+      "direction": {
+        "arm_1738ce": {
+          "ceiling_normalized_cos": 0.6753044981558297,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.629810949694046,
+            0.712727787970085
+          ],
+          "ci95_all_values": [
+            0.629810949694046,
+            0.712727787970085
+          ],
+          "controls": {
+            "query_paraphrase": {
+              "ci95": [
+                0.3298024493727772,
+                0.46548230003106644
+              ],
+              "mean_cos": 0.3989174522972097,
+              "n_pairs": 12
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.3393030979008429,
+              0.39244084966691545
+            ],
+            "ci95_all_values": [
+              0.3393030979008429,
+              0.39244084966691545
+            ],
+            "mean_cos_gap_all_values": 0.36719733994775805,
+            "mean_cos_gap_headline": 0.36719733994775805,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.6740137307332796,
+          "mean_cos_headline": 0.6740137307332796,
+          "null": {
+            "b": 10000,
+            "mean": 0.030468305308734386,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.028389488305990532,
+            "q97_5": 0.09170788673091844,
+            "scheme": "class-preserving edge derangement over the C(12,2) carrier dyads (carrier preservation undefined for dyadic pairs)",
+            "seed": [
+              21620,
+              0
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.6740137307332796,
+            "70": 0.6740137307332796,
+            "90": 0.6740137307332796
+          }
+        },
+        "arm_779ce": {
+          "ceiling_normalized_cos": 0.7215463053554787,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.6809533469883875,
+            0.7555984321596425
+          ],
+          "ci95_all_values": [
+            0.6809533469883875,
+            0.7555984321596425
+          ],
+          "controls": {
+            "query_paraphrase": {
+              "ci95": [
+                0.33805393498553643,
+                0.4515051460496591
+              ],
+              "mean_cos": 0.39943582054424615,
+              "n_pairs": 12
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.38921317661012544,
+              0.4361473123125737
+            ],
+            "ci95_all_values": [
+              0.38921317661012544,
+              0.4361473123125737
+            ],
+            "mean_cos_gap_all_values": 0.4133507612141633,
+            "mean_cos_gap_headline": 0.4133507612141633,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.720167151999685,
+          "mean_cos_headline": 0.720167151999685,
+          "null": {
+            "b": 10000,
+            "mean": 0.0322867924778871,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.02970623606242879,
+            "q97_5": 0.09600740083094904,
+            "scheme": "class-preserving edge derangement over the C(12,2) carrier dyads (carrier preservation undefined for dyadic pairs)",
+            "seed": [
+              21620,
+              0
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.720167151999685,
+            "70": 0.720167151999685,
+            "90": 0.720167151999685
+          }
+        },
+        "arm_iddelta": {
+          "ceiling_normalized_cos": 0.3074039583436774,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.27949901031204716,
+            0.33054239398104385
+          ],
+          "ci95_all_values": [
+            0.27949901031204716,
+            0.33054239398104385
+          ],
+          "controls": {
+            "query_paraphrase": {
+              "ci95": [
+                0.21364724211568345,
+                0.29044940294463484
+              ],
+              "mean_cos": 0.2529628689554077,
+              "n_pairs": 12
+            }
+          },
+          "mean_cos_all_values": 0.3068163907855217,
+          "mean_cos_headline": 0.3068163907855217,
+          "null": {
+            "b": 10000,
+            "mean": 0.013618741283501927,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.011506838325147373,
+            "q97_5": 0.03909166051841783,
+            "scheme": "class-preserving edge derangement over the C(12,2) carrier dyads (carrier preservation undefined for dyadic pairs)",
+            "seed": [
+              21620,
+              0
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.3068163907855217,
+            "70": 0.3068163907855217,
+            "90": 0.3068163907855217
+          }
+        }
+      },
+      "fire": {
+        "axis_row": null,
+        "compliance_limited": false,
+        "fired_pair_counts": {
+          "50": 66,
+          "70": 66,
+          "90": 66
+        },
+        "floor_met": null,
+        "headline_ok": true,
+        "n_headline_pairs_fired70": 66,
+        "n_primary_pairs": 66,
+        "no_fired_pairs": false
+      },
+      "identity": {
+        "n/a": "query_content pairs are carrier dyads \u2014 no carrier-replicated value pair exists, so the carrier-mean identity read is undefined"
+      },
+      "layer_twins": {
+        "14": {
+          "arm_iddelta_mean_cos_all_values": 0.23195405851115355,
+          "arm_iddelta_mean_cos_headline": 0.23195405851115355,
+          "arm_iddelta_ratio_to_global": 0.6625489429460324,
+          "arm_iddelta_ratio_to_global_all_values": 0.6625489429460324,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        },
+        "26": {
+          "arm_iddelta_mean_cos_all_values": 0.37517754166671075,
+          "arm_iddelta_mean_cos_headline": 0.37517754166671075,
+          "arm_iddelta_ratio_to_global": 0.7773234438564316,
+          "arm_iddelta_ratio_to_global_all_values": 0.7773234438564316,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        }
+      },
+      "n_primary_pairs": 66,
+      "para_class": "query_paraphrase",
+      "pooling_twin_span": {
+        "arm_1738ce": {
+          "axis_slope": 0.7591154497162993,
+          "axis_slope_all_values": 0.7591154497162993,
+          "mean_cos_all_values": 0.673818467883961,
+          "mean_cos_headline": 0.673818467883961
+        },
+        "arm_779ce": {
+          "axis_slope": 0.8170084020251562,
+          "axis_slope_all_values": 0.8170084020251562,
+          "mean_cos_all_values": 0.7200031594115022,
+          "mean_cos_headline": 0.7200031594115022
+        },
+        "arm_iddelta": {
+          "axis_slope": 1.5419720629110532,
+          "axis_slope_all_values": 1.5419720629110532,
+          "mean_cos_all_values": 0.30655250394567485,
+          "mean_cos_headline": 0.30655250394567485
+        }
+      },
+      "primary_class": "query_content",
+      "reliability": {
+        "noise_norm_mean": 1.3626289208043483,
+        "r100_ci95": [
+          0.9977410764051758,
+          0.9984078884751781
+        ],
+        "r100_ci95_all_values": [
+          0.9977410764051758,
+          0.9984078884751781
+        ],
+        "r100_mean": 0.9980886142087384,
+        "r100_mean_all_values": 0.9980886142087384,
+        "r50_half_mean": 0.9961851206733049,
+        "spearman_brown": "r100 = 2*r50 / (1 + r50) (pooled 50/50 split-half)"
+      },
+      "surface": {
+        "arm_1738ce": {
+          "edit_dose_ols": {
+            "intercept": 2.0063308615090847,
+            "n": 474,
+            "slope": 1.1061572227840288
+          },
+          "flip_norm_ci95": [
+            21.872411213419625,
+            27.130021354348834
+          ],
+          "flip_norm_ci95_all_values": [
+            21.872411213419625,
+            27.130021354348834
+          ],
+          "flip_norm_mean": 24.493699472010057,
+          "flip_norm_mean_all_values": 24.493699472010057,
+          "gap": 14.786173039373617,
+          "gap_all_values": 14.786173039373617,
+          "gap_ci95": [
+            11.201133314434113,
+            18.17029503444409
+          ],
+          "gap_ci95_all_values": [
+            11.201133314434113,
+            18.17029503444409
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            7.937609989673616,
+            11.96084402502138
+          ],
+          "para_norm_ci95_all_values": [
+            7.937609989673616,
+            11.96084402502138
+          ],
+          "para_norm_mean": 9.70752643263644,
+          "para_norm_mean_all_values": 9.70752643263644,
+          "residualized_gap": 13.512416237379888,
+          "residualized_gap_all_values": 13.512416237379888
+        },
+        "arm_779ce": {
+          "edit_dose_ols": {
+            "intercept": 2.2275579365502107,
+            "n": 474,
+            "slope": 1.1519308722915353
+          },
+          "flip_norm_ci95": [
+            23.8712258482574,
+            29.12641197887947
+          ],
+          "flip_norm_ci95_all_values": [
+            23.8712258482574,
+            29.12641197887947
+          ],
+          "flip_norm_mean": 26.38841836772831,
+          "flip_norm_mean_all_values": 26.38841836772831,
+          "gap": 16.102093681762057,
+          "gap_all_values": 16.102093681762057,
+          "gap_ci95": [
+            12.799965478910957,
+            19.369510123008652
+          ],
+          "gap_ci95_all_values": [
+            12.799965478910957,
+            19.369510123008652
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.763856063685049,
+            12.084542188469378
+          ],
+          "para_norm_ci95_all_values": [
+            8.763856063685049,
+            12.084542188469378
+          ],
+          "para_norm_mean": 10.286324685966251,
+          "para_norm_mean_all_values": 10.286324685966251,
+          "residualized_gap": 14.77562782882029,
+          "residualized_gap_all_values": 14.77562782882029
+        },
+        "arm_iddelta": {
+          "edit_dose_ols": {
+            "intercept": 4.154267687996853,
+            "n": 474,
+            "slope": 2.8707440338513615
+          },
+          "flip_norm_ci95": [
+            46.02252256468984,
+            53.537721366730906
+          ],
+          "flip_norm_ci95_all_values": [
+            46.02252256468984,
+            53.537721366730906
+          ],
+          "flip_norm_mean": 50.159026168078405,
+          "flip_norm_mean_all_values": 50.159026168078405,
+          "gap": 24.435187177795374,
+          "gap_all_values": 24.435187177795374,
+          "gap_ci95": [
+            15.471578624099314,
+            31.56863958354201
+          ],
+          "gap_ci95_all_values": [
+            15.471578624099314,
+            31.56863958354201
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            20.52640229264526,
+            32.09031475875392
+          ],
+          "para_norm_ci95_all_values": [
+            20.52640229264526,
+            32.09031475875392
+          ],
+          "para_norm_mean": 25.72383899028303,
+          "para_norm_mean_all_values": 25.72383899028303,
+          "residualized_gap": 21.1294819266938,
+          "residualized_gap_all_values": 21.1294819266938
+        },
+        "observed": {
+          "edit_dose_ols": {
+            "intercept": 0.31685187516253954,
+            "n": 474,
+            "slope": 1.175917833876657
+          },
+          "flip_norm_ci95": [
+            29.48631675586284,
+            34.61315199203163
+          ],
+          "flip_norm_ci95_all_values": [
+            29.48631675586284,
+            34.61315199203163
+          ],
+          "flip_norm_mean": 32.16048215106672,
+          "flip_norm_mean_all_values": 32.16048215106672,
+          "gap": 25.770005446823074,
+          "gap_all_values": 25.770005446823074,
+          "gap_ci95": [
+            22.438574003921953,
+            28.902617057195084
+          ],
+          "gap_ci95_all_values": [
+            22.438574003921953,
+            28.902617057195084
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            5.082928996842603,
+            8.074339021233623
+          ],
+          "para_norm_ci95_all_values": [
+            5.082928996842603,
+            8.074339021233623
+          ],
+          "para_norm_mean": 6.390476704243643,
+          "para_norm_mean_all_values": 6.390476704243643,
+          "residualized_gap": 24.415918244177234,
+          "residualized_gap_all_values": 24.415918244177234
+        }
+      },
+      "text_space": {
+        "cross_carrier_consistency": null,
+        "flip_norm_ci95": [
+          1.0617707156371248,
+          1.162318316513483
+        ],
+        "flip_norm_ci95_all_values": [
+          1.0617707156371248,
+          1.162318316513483
+        ],
+        "flip_norm_mean": 1.118073813427839,
+        "flip_norm_mean_all_values": 1.118073813427839,
+        "flip_over_para_ratio": 3.1436437710782807,
+        "flip_over_para_ratio_all_values": 3.1436437710782807,
+        "note": "Qwen3-Embedding-8B mean answer embeddings (means of L2-normalized per-draw rows, NOT re-normalized); observed only \u2014 no predicted arm exists in text space",
+        "paraphrase_null_norm_ci95": [
+          0.31423101848822205,
+          0.3977889138516513
+        ],
+        "paraphrase_null_norm_ci95_all_values": [
+          0.31423101848822205,
+          0.3977889138516513
+        ],
+        "paraphrase_null_norm_mean": 0.35566173995736666,
+        "paraphrase_null_norm_mean_all_values": 0.35566173995736666
+      }
+    },
+    "query_form": {
+      "answer_length": {
+        "paraphrase": {
+          "mean_abs_delta_tokens": 41.119166666666665,
+          "mean_delta_tokens": -22.924166666666668
+        },
+        "primary": {
+          "mean_abs_delta_tokens": 70.27111111111111,
+          "mean_delta_tokens": -36.04555555555555
+        }
+      },
+      "axis": "query_form",
+      "calibration": {
+        "arm_1738ce": {
+          "axis_slope": 1.4301880489099823,
+          "axis_slope_all_values": 1.4301880489099823,
+          "axis_slope_ci95": [
+            1.187950058370085,
+            1.7442708572737706
+          ],
+          "axis_slope_ci95_all_values": [
+            1.187950058370085,
+            1.7442708572737706
+          ],
+          "global_slope_parent_frozen": 0.9746799192232769,
+          "global_slope_round_pooled": 0.8986528631353693,
+          "global_slope_round_swap": 1.6854472568136893,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.467341247832109,
+          "ratio_to_parent_global_all_values": 1.467341247832109,
+          "ratio_to_parent_global_ci95": [
+            1.2188104370886836,
+            1.789583249713179
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.2188104370886836,
+            1.789583249713179
+          ],
+          "ratio_to_round_pooled": 1.5914799891919387,
+          "ratio_to_round_pooled_all_values": 1.5914799891919387,
+          "ratio_to_round_pooled_ci95": [
+            1.3245206022185652,
+            1.8819677486919841
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.3245206022185652,
+            1.8819677486919841
+          ],
+          "ratio_to_round_swap": 0.8485510555896775,
+          "ratio_to_round_swap_all_values": 0.8485510555896775,
+          "ratio_to_round_swap_ci95": [
+            0.6363091101393005,
+            1.1010830695667562
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.6363091101393005,
+            1.1010830695667562
+          ]
+        },
+        "arm_779ce": {
+          "axis_slope": 1.542655200040784,
+          "axis_slope_all_values": 1.542655200040784,
+          "axis_slope_ci95": [
+            1.3166698532914942,
+            1.8697781001387677
+          ],
+          "axis_slope_ci95_all_values": [
+            1.3166698532914942,
+            1.8697781001387677
+          ],
+          "global_slope_parent_frozen": 1.0136696325596286,
+          "global_slope_round_pooled": 0.9473266907749054,
+          "global_slope_round_swap": 1.8370495464802188,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.5218520418189978,
+          "ratio_to_parent_global_all_values": 1.5218520418189978,
+          "ratio_to_parent_global_ci95": [
+            1.2989141738090313,
+            1.8445635935816385
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.2989141738090313,
+            1.8445635935816385
+          ],
+          "ratio_to_round_pooled": 1.6284299968144094,
+          "ratio_to_round_pooled_all_values": 1.6284299968144094,
+          "ratio_to_round_pooled_ci95": [
+            1.3717206946474394,
+            1.9339346047400554
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.3717206946474394,
+            1.9339346047400554
+          ],
+          "ratio_to_round_swap": 0.8397461042879908,
+          "ratio_to_round_swap_all_values": 0.8397461042879908,
+          "ratio_to_round_swap_ci95": [
+            0.6430027075590187,
+            1.0843373457002363
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.6430027075590187,
+            1.0843373457002363
+          ]
+        },
+        "arm_iddelta": {
+          "axis_slope": 4.6906764019299,
+          "axis_slope_all_values": 4.6906764019299,
+          "axis_slope_ci95": [
+            3.8628050025695075,
+            5.914170895904711
+          ],
+          "axis_slope_ci95_all_values": [
+            3.8628050025695075,
+            5.914170895904711
+          ],
+          "global_slope_parent_frozen": 2.0672297728432754,
+          "global_slope_round_pooled": 2.09700047585169,
+          "global_slope_round_swap": 3.5879705265442463,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 2.2690638764738407,
+          "ratio_to_parent_global_all_values": 2.2690638764738407,
+          "ratio_to_parent_global_ci95": [
+            1.8685900586931812,
+            2.86091607889835
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.8685900586931812,
+            2.86091607889835
+          ],
+          "ratio_to_round_pooled": 2.2368504232335935,
+          "ratio_to_round_pooled_all_values": 2.2368504232335935,
+          "ratio_to_round_pooled_ci95": [
+            1.7853110123951346,
+            2.7583272695513097
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.7853110123951346,
+            2.7583272695513097
+          ],
+          "ratio_to_round_swap": 1.307334150943465,
+          "ratio_to_round_swap_all_values": 1.307334150943465,
+          "ratio_to_round_swap_ci95": [
+            0.9973909440280821,
+            1.7074913156912717
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            0.9973909440280821,
+            1.7074913156912717
+          ]
+        }
+      },
+      "cross_family": {
+        "n/a": "no paraphrase-family swap class for this axis"
+      },
+      "direction": {
+        "arm_1738ce": {
+          "ceiling_normalized_cos": 0.4011693459473629,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.32678557592097657,
+            0.4199689819338082
+          ],
+          "ci95_all_values": [
+            0.32678557592097657,
+            0.4199689819338082
+          ],
+          "controls": {
+            "query_paraphrase": {
+              "ci95": [
+                0.3298024493727772,
+                0.46548230003106644
+              ],
+              "mean_cos": 0.3989174522972097,
+              "n_pairs": 12
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.08417935631659558,
+              0.16235915650976965
+            ],
+            "ci95_all_values": [
+              0.08417935631659558,
+              0.16235915650976965
+            ],
+            "mean_cos_gap_all_values": 0.12369512129611653,
+            "mean_cos_gap_headline": 0.12369512129611653,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.3734966612243653,
+          "mean_cos_headline": 0.3734966612243653,
+          "null": {
+            "b": 10000,
+            "mean": 0.08719363492552894,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": 0.07537386755999367,
+            "q97_5": 0.09912902377750127,
+            "scheme": "carrier- and class-preserving form-pair derangement",
+            "seed": [
+              21620,
+              1
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.3734966612243653,
+            "70": 0.3734966612243653,
+            "90": 0.3734966612243653
+          }
+        },
+        "arm_779ce": {
+          "ceiling_normalized_cos": 0.37621410635091634,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.30528512009167785,
+            0.3874091775764796
+          ],
+          "ci95_all_values": [
+            0.30528512009167785,
+            0.3874091775764796
+          ],
+          "controls": {
+            "query_paraphrase": {
+              "ci95": [
+                0.33805393498553643,
+                0.4515051460496591
+              ],
+              "mean_cos": 0.39943582054424615,
+              "n_pairs": 12
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.07000386056466007,
+              0.13123933332327287
+            ],
+            "ci95_all_values": [
+              0.07000386056466007,
+              0.13123933332327287
+            ],
+            "mean_cos_gap_all_values": 0.100461295572678,
+            "mean_cos_gap_headline": 0.100461295572678,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.35026283550092674,
+          "mean_cos_headline": 0.35026283550092674,
+          "null": {
+            "b": 10000,
+            "mean": 0.08324160647588574,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": 0.07308564062747346,
+            "q97_5": 0.0932294738843597,
+            "scheme": "carrier- and class-preserving form-pair derangement",
+            "seed": [
+              21620,
+              1
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.35026283550092674,
+            "70": 0.35026283550092674,
+            "90": 0.35026283550092674
+          }
+        },
+        "arm_iddelta": {
+          "ceiling_normalized_cos": 0.2683095480991736,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.22252732860550983,
+            0.2749331804521385
+          ],
+          "ci95_all_values": [
+            0.22252732860550983,
+            0.2749331804521385
+          ],
+          "controls": {
+            "query_paraphrase": {
+              "ci95": [
+                0.21364724211568345,
+                0.29044940294463484
+              ],
+              "mean_cos": 0.2529628689554077,
+              "n_pairs": 12
+            }
+          },
+          "mean_cos_all_values": 0.24980153992824874,
+          "mean_cos_headline": 0.24980153992824874,
+          "null": {
+            "b": 10000,
+            "mean": 0.08201036225598793,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": 0.076727446710655,
+            "q97_5": 0.08749763091135171,
+            "scheme": "carrier- and class-preserving form-pair derangement",
+            "seed": [
+              21620,
+              1
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.24980153992824874,
+            "70": 0.24980153992824874,
+            "90": 0.24980153992824874
+          }
+        }
+      },
+      "fire": {
+        "axis_row": null,
+        "compliance_limited": false,
+        "fired_pair_counts": {
+          "50": 36,
+          "70": 36,
+          "90": 36
+        },
+        "floor_met": null,
+        "headline_ok": true,
+        "n_headline_pairs_fired70": 36,
+        "n_primary_pairs": 36,
+        "no_fired_pairs": false
+      },
+      "identity": {
+        "arm_1738ce": {
+          "median": 0.5162379917989621,
+          "median_all_values": 0.5162379917989621,
+          "median_ci95": [
+            0.36342199620008114,
+            0.5819410043628386
+          ],
+          "median_ci95_all_values": [
+            0.36342199620008114,
+            0.5819410043628386
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.08267920270460906,
+              0.28700898473770353
+            ],
+            "gap": 0.1882826960709359,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.08267920270460906,
+              0.28700898473770353
+            ],
+            "gap": 0.1882826960709359,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.34075275024299406,
+          "per_vp_cos": {
+            "E-imp": 0.5162379917989621,
+            "E-stmt": 0.5429092075359074,
+            "imp-stmt": 0.4125995313103525
+          },
+          "per_vp_fired70": {
+            "E-imp": true,
+            "E-stmt": true,
+            "imp-stmt": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.43440666523236504,
+          "median_all_values": 0.43440666523236504,
+          "median_ci95": [
+            0.3569059987269106,
+            0.5311477648355406
+          ],
+          "median_ci95_all_values": [
+            0.3569059987269106,
+            0.5311477648355406
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.06781896228581889,
+              0.2476954118941061
+            ],
+            "gap": 0.10645136950433881,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.06781896228581889,
+              0.2476954118941061
+            ],
+            "gap": 0.10645136950433881,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.36861948292898994,
+          "per_vp_cos": {
+            "E-imp": 0.43146369036780907,
+            "E-stmt": 0.5082816987743553,
+            "imp-stmt": 0.43440666523236504
+          },
+          "per_vp_fired70": {
+            "E-imp": true,
+            "E-stmt": true,
+            "imp-stmt": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.32795529572802623,
+          "median_all_values": 0.32795529572802623,
+          "median_ci95": [
+            0.2505108010401213,
+            0.36009198244792173
+          ],
+          "median_ci95_all_values": [
+            0.2505108010401213,
+            0.36009198244792173
+          ],
+          "pc1_identity_cos_exploratory": 0.24302852715968926,
+          "per_vp_cos": {
+            "E-imp": 0.28709948787793776,
+            "E-stmt": 0.38500760185193417,
+            "imp-stmt": 0.32795529572802623
+          },
+          "per_vp_fired70": {
+            "E-imp": true,
+            "E-stmt": true,
+            "imp-stmt": true
+          }
+        }
+      },
+      "k100_deciding": {
+        "g": {
+          "ci95": [
+            0.2386593207952485,
+            0.7359732310338423
+          ],
+          "fragile": false,
+          "n_finite_draws": 10000,
+          "scheme": "carrier-clustered paired bootstrap (shared resample)",
+          "threshold": 0.15
+        }
+      },
+      "layer_twins": {
+        "14": {
+          "arm_iddelta_mean_cos_all_values": 0.1956733557783136,
+          "arm_iddelta_mean_cos_headline": 0.1956733557783136,
+          "arm_iddelta_ratio_to_global": 3.852447936678667,
+          "arm_iddelta_ratio_to_global_all_values": 3.852447936678667,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        },
+        "26": {
+          "arm_iddelta_mean_cos_all_values": 0.1752076819639337,
+          "arm_iddelta_mean_cos_headline": 0.1752076819639337,
+          "arm_iddelta_ratio_to_global": 2.1572749146303827,
+          "arm_iddelta_ratio_to_global_all_values": 2.1572749146303827,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        }
+      },
+      "n_primary_pairs": 36,
+      "para_class": "query_paraphrase",
+      "pooling_twin_span": {
+        "arm_1738ce": {
+          "axis_slope": 1.4222992407762507,
+          "axis_slope_all_values": 1.4222992407762507,
+          "mean_cos_all_values": 0.37391148480622294,
+          "mean_cos_headline": 0.37391148480622294
+        },
+        "arm_779ce": {
+          "axis_slope": 1.5341347195595492,
+          "axis_slope_all_values": 1.5341347195595492,
+          "mean_cos_all_values": 0.35125450450103896,
+          "mean_cos_headline": 0.35125450450103896
+        },
+        "arm_iddelta": {
+          "axis_slope": 4.664746772326886,
+          "axis_slope_all_values": 4.664746772326886,
+          "mean_cos_all_values": 0.2494689591684883,
+          "mean_cos_headline": 0.2494689591684883
+        }
+      },
+      "primary_class": "query_form",
+      "reliability": {
+        "noise_norm_mean": 1.3700272859507008,
+        "r100_ci95": [
+          0.9105153815013257,
+          0.952048083123615
+        ],
+        "r100_ci95_all_values": [
+          0.9105153815013257,
+          0.952048083123615
+        ],
+        "r100_mean": 0.9310199420704779,
+        "r100_mean_all_values": 0.9310199420704779,
+        "r50_half_mean": 0.8780556625806027,
+        "spearman_brown": "r100 = 2*r50 / (1 + r50) (pooled 50/50 split-half)"
+      },
+      "surface": {
+        "arm_1738ce": {
+          "edit_dose_ols": {
+            "intercept": 2.0063308615090847,
+            "n": 474,
+            "slope": 1.1061572227840288
+          },
+          "flip_norm_ci95": [
+            9.430260349835105,
+            11.921665273632032
+          ],
+          "flip_norm_ci95_all_values": [
+            9.430260349835105,
+            11.921665273632032
+          ],
+          "flip_norm_mean": 10.685202220601697,
+          "flip_norm_mean_all_values": 10.685202220601697,
+          "gap": 0.9776757879652571,
+          "gap_all_values": 0.9776757879652571,
+          "gap_ci95": [
+            -1.3950888717308205,
+            3.029946796382159
+          ],
+          "gap_ci95_all_values": [
+            -1.3950888717308205,
+            3.029946796382159
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            7.937609989673616,
+            11.96084402502138
+          ],
+          "para_norm_ci95_all_values": [
+            7.937609989673616,
+            11.96084402502138
+          ],
+          "para_norm_mean": 9.70752643263644,
+          "para_norm_mean_all_values": 9.70752643263644,
+          "residualized_gap": 4.787772888665801,
+          "residualized_gap_all_values": 4.787772888665801
+        },
+        "arm_779ce": {
+          "edit_dose_ols": {
+            "intercept": 2.2275579365502107,
+            "n": 474,
+            "slope": 1.1519308722915353
+          },
+          "flip_norm_ci95": [
+            10.44719825045301,
+            12.733455842820627
+          ],
+          "flip_norm_ci95_all_values": [
+            10.44719825045301,
+            12.733455842820627
+          ],
+          "flip_norm_mean": 11.624303613334078,
+          "flip_norm_mean_all_values": 11.624303613334078,
+          "gap": 1.3379789273678266,
+          "gap_all_values": 1.3379789273678266,
+          "gap_ci95": [
+            -0.6323005432643397,
+            3.171116062917771
+          ],
+          "gap_ci95_all_values": [
+            -0.6323005432643397,
+            3.171116062917771
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.763856063685049,
+            12.084542188469378
+          ],
+          "para_norm_ci95_all_values": [
+            8.763856063685049,
+            12.084542188469378
+          ],
+          "para_norm_mean": 10.286324685966251,
+          "para_norm_mean_all_values": 10.286324685966251,
+          "residualized_gap": 5.30574082081645,
+          "residualized_gap_all_values": 5.30574082081645
+        },
+        "arm_iddelta": {
+          "edit_dose_ols": {
+            "intercept": 4.154267687996853,
+            "n": 474,
+            "slope": 2.8707440338513615
+          },
+          "flip_norm_ci95": [
+            30.565976939450337,
+            40.079431999337906
+          ],
+          "flip_norm_ci95_all_values": [
+            30.565976939450337,
+            40.079431999337906
+          ],
+          "flip_norm_mean": 35.23387374575088,
+          "flip_norm_mean_all_values": 35.23387374575088,
+          "gap": 9.510034755467846,
+          "gap_all_values": 9.510034755467846,
+          "gap_ci95": [
+            1.9585663300161436,
+            17.11026250165457
+          ],
+          "gap_ci95_all_values": [
+            1.9585663300161436,
+            17.11026250165457
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            20.52640229264526,
+            32.09031475875392
+          ],
+          "para_norm_ci95_all_values": [
+            20.52640229264526,
+            32.09031475875392
+          ],
+          "para_norm_mean": 25.72383899028303,
+          "para_norm_mean_all_values": 25.72383899028303,
+          "residualized_gap": 19.398153094289196,
+          "residualized_gap_all_values": 19.398153094289196
+        },
+        "observed": {
+          "edit_dose_ols": {
+            "intercept": 0.31685187516253954,
+            "n": 474,
+            "slope": 1.175917833876657
+          },
+          "flip_norm_ci95": [
+            5.5998912504347755,
+            7.869431246228376
+          ],
+          "flip_norm_ci95_all_values": [
+            5.5998912504347755,
+            7.869431246228376
+          ],
+          "flip_norm_mean": 6.746583270945948,
+          "flip_norm_mean_all_values": 6.746583270945948,
+          "gap": 0.3561065667023051,
+          "gap_all_values": 0.3561065667023051,
+          "gap_ci95": [
+            -1.1236501712739173,
+            1.886862130906842
+          ],
+          "gap_ci95_all_values": [
+            -1.1236501712739173,
+            1.886862130906842
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            5.082928996842603,
+            8.074339021233623
+          ],
+          "para_norm_ci95_all_values": [
+            5.082928996842603,
+            8.074339021233623
+          ],
+          "para_norm_mean": 6.390476704243643,
+          "para_norm_mean_all_values": 6.390476704243643,
+          "residualized_gap": 4.406490216721903,
+          "residualized_gap_all_values": 4.406490216721903
+        }
+      },
+      "text_space": {
+        "cross_carrier_consistency": {
+          "median": 0.09584765486206341,
+          "median_all_values": 0.09584765486206341,
+          "median_ci95": [
+            0.011332008126664761,
+            0.21625000500412667
+          ],
+          "median_ci95_all_values": [
+            0.011332008126664761,
+            0.21625000500412667
+          ],
+          "per_vp_mean_pairwise_cos": {
+            "E-imp": 0.09584765486206341,
+            "E-stmt": 0.20607231955824928,
+            "imp-stmt": 0.03194671399846491
+          }
+        },
+        "flip_norm_ci95": [
+          0.1849257539052057,
+          0.24615689593370613
+        ],
+        "flip_norm_ci95_all_values": [
+          0.1849257539052057,
+          0.24615689593370613
+        ],
+        "flip_norm_mean": 0.21576452235497137,
+        "flip_norm_mean_all_values": 0.21576452235497137,
+        "flip_over_para_ratio": 0.6066565450105349,
+        "flip_over_para_ratio_all_values": 0.6066565450105349,
+        "note": "Qwen3-Embedding-8B mean answer embeddings (means of L2-normalized per-draw rows, NOT re-normalized); observed only \u2014 no predicted arm exists in text space",
+        "paraphrase_null_norm_ci95": [
+          0.31423101848822205,
+          0.3977889138516513
+        ],
+        "paraphrase_null_norm_ci95_all_values": [
+          0.31423101848822205,
+          0.3977889138516513
+        ],
+        "paraphrase_null_norm_mean": 0.35566173995736666,
+        "paraphrase_null_norm_mean_all_values": 0.35566173995736666
+      }
+    },
+    "user_fact": {
+      "answer_length": {
+        "famswap": {
+          "mean_abs_delta_tokens": 23.520999999999997,
+          "mean_delta_tokens": -0.24683333333333313
+        },
+        "install": {
+          "mean_abs_delta_tokens": 169.66133333333332,
+          "mean_delta_tokens": 169.66133333333332
+        },
+        "paraphrase": {
+          "mean_abs_delta_tokens": 21.202666666666662,
+          "mean_delta_tokens": -7.864333333333334
+        },
+        "primary": {
+          "mean_abs_delta_tokens": 10.08366666666667,
+          "mean_delta_tokens": 3.680166666666669
+        }
+      },
+      "axis": "user_fact",
+      "calibration": {
+        "arm_1738ce": {
+          "axis_slope": 1.6854472568136893,
+          "axis_slope_all_values": 1.6854472568136893,
+          "axis_slope_ci95": [
+            1.499595791291758,
+            1.9376909793471306
+          ],
+          "axis_slope_ci95_all_values": [
+            1.499595791291758,
+            1.9376909793471306
+          ],
+          "global_slope_parent_frozen": 0.9746799192232769,
+          "global_slope_round_pooled": 0.8986528631353693,
+          "global_slope_round_swap": 1.6854472568136893,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.7292315390644586,
+          "ratio_to_parent_global_all_values": 1.7292315390644586,
+          "ratio_to_parent_global_ci95": [
+            1.5385520535672745,
+            1.9880280091245521
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.5385520535672745,
+            1.9880280091245521
+          ],
+          "ratio_to_round_pooled": 1.8755264974433188,
+          "ratio_to_round_pooled_all_values": 1.8755264974433188,
+          "ratio_to_round_pooled_ci95": [
+            1.6278755203075728,
+            2.170453271040903
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.6278755203075728,
+            2.170453271040903
+          ],
+          "ratio_to_round_swap": 1.0,
+          "ratio_to_round_swap_all_values": 1.0,
+          "ratio_to_round_swap_ci95": [
+            1.0,
+            1.0
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            1.0,
+            1.0
+          ]
+        },
+        "arm_779ce": {
+          "axis_slope": 1.8370495464802188,
+          "axis_slope_all_values": 1.8370495464802188,
+          "axis_slope_ci95": [
+            1.6288545919184003,
+            2.118313204577106
+          ],
+          "axis_slope_ci95_all_values": [
+            1.6288545919184003,
+            2.118313204577106
+          ],
+          "global_slope_parent_frozen": 1.0136696325596286,
+          "global_slope_round_pooled": 0.9473266907749054,
+          "global_slope_round_swap": 1.8370495464802188,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.8122763940767015,
+          "ratio_to_parent_global_all_values": 1.8122763940767015,
+          "ratio_to_parent_global_ci95": [
+            1.6068890095931563,
+            2.0897471291786944
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.6068890095931563,
+            2.0897471291786944
+          ],
+          "ratio_to_round_pooled": 1.939193273418199,
+          "ratio_to_round_pooled_all_values": 1.939193273418199,
+          "ratio_to_round_pooled_ci95": [
+            1.675023883200017,
+            2.2438339479281084
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.675023883200017,
+            2.2438339479281084
+          ],
+          "ratio_to_round_swap": 1.0,
+          "ratio_to_round_swap_all_values": 1.0,
+          "ratio_to_round_swap_ci95": [
+            1.0,
+            1.0
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            1.0,
+            1.0
+          ]
+        },
+        "arm_iddelta": {
+          "axis_slope": 3.5879705265442463,
+          "axis_slope_all_values": 3.5879705265442463,
+          "axis_slope_ci95": [
+            3.224181830627825,
+            4.058912293235014
+          ],
+          "axis_slope_ci95_all_values": [
+            3.224181830627825,
+            4.058912293235014
+          ],
+          "global_slope_parent_frozen": 2.0672297728432754,
+          "global_slope_round_pooled": 2.09700047585169,
+          "global_slope_round_swap": 3.5879705265442463,
+          "primary_denominator": "global_slope_parent_frozen (parent's realized global slope; round-pooled global_slope_round_pooled is the companion)",
+          "ratio_to_parent_global": 1.7356418593030123,
+          "ratio_to_parent_global_all_values": 1.7356418593030123,
+          "ratio_to_parent_global_ci95": [
+            1.5596630200392643,
+            1.963454835333748
+          ],
+          "ratio_to_parent_global_ci95_all_values": [
+            1.5596630200392643,
+            1.963454835333748
+          ],
+          "ratio_to_round_pooled": 1.711001293448445,
+          "ratio_to_round_pooled_all_values": 1.711001293448445,
+          "ratio_to_round_pooled_ci95": [
+            1.4859376366594848,
+            1.9121117817514692
+          ],
+          "ratio_to_round_pooled_ci95_all_values": [
+            1.4859376366594848,
+            1.9121117817514692
+          ],
+          "ratio_to_round_swap": 1.0,
+          "ratio_to_round_swap_all_values": 1.0,
+          "ratio_to_round_swap_ci95": [
+            1.0,
+            1.0
+          ],
+          "ratio_to_round_swap_ci95_all_values": [
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "cross_family": {
+        "arm_1738ce": {
+          "median": 0.7073973908534243,
+          "median_all_values": 0.7073973908534243,
+          "median_ci95": [
+            0.667213520518419,
+            0.7355938121558888
+          ],
+          "median_ci95_all_values": [
+            0.667213520518419,
+            0.7355938121558888
+          ],
+          "null": {
+            "b": 10000,
+            "mean": -0.008008645826054966,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.1916821292832678,
+            "q97_5": 0.1397848183516751,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "v1-v2": 0.6313778267915473,
+            "v1-v3": 0.795843840525754,
+            "v1-v4": 0.8099610878077059,
+            "v1-v5": 0.20056642090574364,
+            "v2-v3": 0.790044310383232,
+            "v2-v4": 0.7983293416475723,
+            "v2-v5": 0.3712094882171063,
+            "v3-v4": 0.40928805997699336,
+            "v3-v5": 0.7065925518857048,
+            "v4-v5": 0.708202229821144
+          },
+          "per_vp_fired70_both_families": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.721110634332403,
+          "median_all_values": 0.721110634332403,
+          "median_ci95": [
+            0.6784344577978125,
+            0.7451662524594187
+          ],
+          "median_ci95_all_values": [
+            0.6784344577978125,
+            0.7451662524594187
+          ],
+          "null": {
+            "b": 10000,
+            "mean": -0.002639342381764236,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.17052276124299018,
+            "q97_5": 0.13436995995692277,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "v1-v2": 0.5875924300904363,
+            "v1-v3": 0.7718620796672443,
+            "v1-v4": 0.7592853240457198,
+            "v1-v5": 0.15278929828881016,
+            "v2-v3": 0.759104670564742,
+            "v2-v4": 0.7504567231476372,
+            "v2-v5": 0.3541562432313789,
+            "v3-v4": 0.48459094112056417,
+            "v3-v5": 0.73676870454637,
+            "v4-v5": 0.7054525641184359
+          },
+          "per_vp_fired70_both_families": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.44189624622476503,
+          "median_all_values": 0.44189624622476503,
+          "median_ci95": [
+            0.4063786746239428,
+            0.4720918065641945
+          ],
+          "median_ci95_all_values": [
+            0.4063786746239428,
+            0.4720918065641945
+          ],
+          "null": {
+            "b": 10000,
+            "mean": -0.008545703598443938,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.14150239673192114,
+            "q97_5": 0.13256918371438872,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "v1-v2": 0.4285452015853449,
+            "v1-v3": 0.6286906223958617,
+            "v1-v4": 0.6578494796488796,
+            "v1-v5": -0.03721015394028766,
+            "v2-v3": 0.6050867356469803,
+            "v2-v4": 0.6014414289163138,
+            "v2-v5": 0.1375047603004743,
+            "v3-v4": 0.3750410948492981,
+            "v3-v5": 0.42023399557971924,
+            "v4-v5": 0.45524729086418514
+          },
+          "per_vp_fired70_both_families": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        },
+        "observed": {
+          "median": 0.6676635815811687,
+          "median_all_values": 0.6676635815811687,
+          "median_ci95": [
+            0.497505107404192,
+            0.7456233090115476
+          ],
+          "median_ci95_all_values": [
+            0.497505107404192,
+            0.7456233090115476
+          ],
+          "null": {
+            "b": 10000,
+            "mean": -0.06541160398054639,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.32172206327863273,
+            "q97_5": 0.31550401756214413,
+            "scheme": "class-preserving vp derangement between the two wording families"
+          },
+          "per_vp_cos": {
+            "v1-v2": 0.5866456740763596,
+            "v1-v3": 0.877096309119427,
+            "v1-v4": 0.857822442803773,
+            "v1-v5": -0.09114711338470377,
+            "v2-v3": 0.8295786764525934,
+            "v2-v4": 0.833831565549849,
+            "v2-v5": 0.1280235351690448,
+            "v3-v4": 0.48157885121519994,
+            "v3-v5": 0.6895408737025158,
+            "v4-v5": 0.6457862894598215
+          },
+          "per_vp_fired70_both_families": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        }
+      },
+      "direction": {
+        "arm_1738ce": {
+          "ceiling_normalized_cos": 0.5358906605485314,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.28439023139287073,
+            0.34722928462947455
+          ],
+          "ci95_all_values": [
+            0.28439023139287073,
+            0.34722928462947455
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.34675733826785327,
+                0.38337834464401466
+              ],
+              "mean_cos": 0.365434823596645,
+              "n_pairs": 120
+            },
+            "install": {
+              "ci95": [
+                0.45437427328364527,
+                0.5109911433016753
+              ],
+              "mean_cos": 0.4814125432300535,
+              "n_pairs": 60
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.17348185721309242,
+                0.2428818258456141
+              ],
+              "mean_cos": 0.20879135155537218,
+              "n_pairs": 60
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.039564460692474525,
+              0.0673179044327815
+            ],
+            "ci95_all_values": [
+              0.039564460692474525,
+              0.0673179044327815
+            ],
+            "mean_cos_gap_all_values": 0.05360677758457911,
+            "mean_cos_gap_headline": 0.05360677758457911,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.31785331663335914,
+          "mean_cos_headline": 0.31785331663335914,
+          "null": {
+            "b": 10000,
+            "mean": 0.014250797759510837,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.0227727356937059,
+            "q97_5": 0.05295867866579214,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              2
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.31785331663335914,
+            "70": 0.31785331663335914,
+            "90": 0.31785331663335914
+          }
+        },
+        "arm_779ce": {
+          "ceiling_normalized_cos": 0.5475193400445972,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.2959765228607052,
+            0.350557061644433
+          ],
+          "ci95_all_values": [
+            0.2959765228607052,
+            0.350557061644433
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.31696667675810486,
+                0.36272405300090044
+              ],
+              "mean_cos": 0.34191954779326805,
+              "n_pairs": 120
+            },
+            "install": {
+              "ci95": [
+                0.3693950955940172,
+                0.4388364845567375
+              ],
+              "mean_cos": 0.40512505329308723,
+              "n_pairs": 60
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.1963608418706916,
+                0.26555130619629697
+              ],
+              "mean_cos": 0.2328138062887484,
+              "n_pairs": 60
+            }
+          },
+          "gap_vs_iddelta": {
+            "ci95": [
+              0.050408091477515106,
+              0.06932093819603548
+            ],
+            "ci95_all_values": [
+              0.050408091477515106,
+              0.06932093819603548
+            ],
+            "mean_cos_gap_all_values": 0.06050410686833153,
+            "mean_cos_gap_headline": 0.06050410686833153,
+            "paired": "per-pair cos difference under the SHARED carrier bootstrap"
+          },
+          "mean_cos_all_values": 0.32475064591711167,
+          "mean_cos_headline": 0.32475064591711167,
+          "null": {
+            "b": 10000,
+            "mean": 0.017709248190189892,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.02120401239730403,
+            "q97_5": 0.0574105488969303,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              2
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.32475064591711167,
+            "70": 0.32475064591711167,
+            "90": 0.32475064591711167
+          }
+        },
+        "arm_iddelta": {
+          "ceiling_normalized_cos": 0.4455113253446296,
+          "ceiling_suppressed": false,
+          "ci95": [
+            0.24048436075641635,
+            0.2866398434040868
+          ],
+          "ci95_all_values": [
+            0.24048436075641635,
+            0.2866398434040868
+          ],
+          "controls": {
+            "famswap": {
+              "ci95": [
+                0.21330706840681293,
+                0.2618104307385832
+              ],
+              "mean_cos": 0.23735136758040937,
+              "n_pairs": 120
+            },
+            "install": {
+              "ci95": [
+                0.2669615518839986,
+                0.310812241673888
+              ],
+              "mean_cos": 0.2890609101547182,
+              "n_pairs": 60
+            },
+            "instruction_paraphrase": {
+              "ci95": [
+                0.18019068405063496,
+                0.21563610468505234
+              ],
+              "mean_cos": 0.1986563153796833,
+              "n_pairs": 60
+            }
+          },
+          "mean_cos_all_values": 0.26424653904878004,
+          "mean_cos_headline": 0.26424653904878004,
+          "null": {
+            "b": 10000,
+            "mean": 0.010151134845712085,
+            "over": "all primary-class value pairs (fire mask NOT applied to the null grid)",
+            "q2_5": -0.019006399245556617,
+            "q97_5": 0.03943563275378297,
+            "scheme": "carrier- and class-preserving value-pair derangement",
+            "seed": [
+              21620,
+              2
+            ]
+          },
+          "sensitivity_mean_cos": {
+            "50": 0.26424653904878004,
+            "70": 0.26424653904878004,
+            "90": 0.26424653904878004
+          }
+        }
+      },
+      "fire": {
+        "axis_row": {
+          "axis": "user_fact",
+          "floor": 3,
+          "floor_met": true,
+          "n_fired_base": 5,
+          "n_fired_para": 5,
+          "n_not_fired_base": 0,
+          "n_undetermined_base": 0,
+          "sensitivity": {
+            "50": {
+              "floor_met": true,
+              "n_fired_base": 5
+            },
+            "90": {
+              "floor_met": true,
+              "n_fired_base": 5
+            }
+          },
+          "width": 5
+        },
+        "compliance_limited": false,
+        "fired_pair_counts": {
+          "50": 120,
+          "70": 120,
+          "90": 120
+        },
+        "floor_met": true,
+        "headline_ok": true,
+        "n_headline_pairs_fired70": 120,
+        "n_primary_pairs": 120,
+        "no_fired_pairs": false
+      },
+      "identity": {
+        "arm_1738ce": {
+          "median": 0.5151628931076369,
+          "median_all_values": 0.5151628931076369,
+          "median_ci95": [
+            0.4501854977196056,
+            0.5264926987500692
+          ],
+          "median_ci95_all_values": [
+            0.4501854977196056,
+            0.5264926987500692
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.0662369129707298,
+              0.11062926690691734
+            ],
+            "gap": 0.08324749481821564,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.0662369129707298,
+              0.11062926690691734
+            ],
+            "gap": 0.08324749481821564,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.5939025904136546,
+          "per_vp_cos": {
+            "v1-v2": 0.36131992449464534,
+            "v1-v3": 0.5505488653981155,
+            "v1-v4": 0.5940971905006984,
+            "v1-v5": 0.34871566363281287,
+            "v2-v3": 0.5023287235021309,
+            "v2-v4": 0.5279970627131428,
+            "v2-v5": 0.33499697928679445,
+            "v3-v4": 0.19491451443796262,
+            "v3-v5": 0.5755712333222397,
+            "v4-v5": 0.5800811163411498
+          },
+          "per_vp_fired70": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        },
+        "arm_779ce": {
+          "median": 0.5423399962799548,
+          "median_all_values": 0.5423399962799548,
+          "median_ci95": [
+            0.4788498052392898,
+            0.550778186034564
+          ],
+          "median_ci95_all_values": [
+            0.4788498052392898,
+            0.550778186034564
+          ],
+          "median_gap_vs_iddelta": {
+            "ci95": [
+              0.09231706524372883,
+              0.13881374288921822
+            ],
+            "gap": 0.11042459799053356,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "median_gap_vs_iddelta_all_values": {
+            "ci95": [
+              0.09231706524372883,
+              0.13881374288921822
+            ],
+            "gap": 0.11042459799053356,
+            "paired": "median-draw difference under the SHARED carrier bootstrap"
+          },
+          "pc1_identity_cos_exploratory": 0.6182486674275094,
+          "per_vp_cos": {
+            "v1-v2": 0.3595902227503318,
+            "v1-v3": 0.5707256566910618,
+            "v1-v4": 0.622127062655101,
+            "v1-v5": 0.35251626651696794,
+            "v2-v3": 0.5282385609490883,
+            "v2-v4": 0.5564414316108213,
+            "v2-v5": 0.3784727175555533,
+            "v3-v4": 0.1605409135667361,
+            "v3-v5": 0.5897005548642206,
+            "v4-v5": 0.5938555161654505
+          },
+          "per_vp_fired70": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        },
+        "arm_iddelta": {
+          "median": 0.4319153982894212,
+          "median_all_values": 0.4319153982894212,
+          "median_ci95": [
+            0.35912720783478785,
+            0.4416781564813054
+          ],
+          "median_ci95_all_values": [
+            0.35912720783478785,
+            0.4416781564813054
+          ],
+          "pc1_identity_cos_exploratory": 0.4569828199561537,
+          "per_vp_cos": {
+            "v1-v2": 0.3774610374189572,
+            "v1-v3": 0.43495356825245357,
+            "v1-v4": 0.4538241754754089,
+            "v1-v5": 0.2840030166962091,
+            "v2-v3": 0.44162340154225843,
+            "v2-v4": 0.4633786453448829,
+            "v2-v5": 0.33942788617252945,
+            "v3-v4": 0.2504902917545242,
+            "v3-v5": 0.4309030414013678,
+            "v4-v5": 0.4329277551774746
+          },
+          "per_vp_fired70": {
+            "v1-v2": true,
+            "v1-v3": true,
+            "v1-v4": true,
+            "v1-v5": true,
+            "v2-v3": true,
+            "v2-v4": true,
+            "v2-v5": true,
+            "v3-v4": true,
+            "v3-v5": true,
+            "v4-v5": true
+          }
+        }
+      },
+      "k100_deciding": {
+        "c_over_b": {
+          "ci95": [
+            0.3787733782568599,
+            0.4639425057413141
+          ],
+          "fragile": false,
+          "n_finite_draws": 10000,
+          "scheme": "carrier-clustered paired bootstrap (shared resample)",
+          "threshold": 0.35
+        }
+      },
+      "layer_twins": {
+        "14": {
+          "arm_iddelta_mean_cos_all_values": 0.14911945515829494,
+          "arm_iddelta_mean_cos_headline": 0.14911945515829494,
+          "arm_iddelta_ratio_to_global": 2.479287164295076,
+          "arm_iddelta_ratio_to_global_all_values": 2.479287164295076,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        },
+        "26": {
+          "arm_iddelta_mean_cos_all_values": 0.4483682394025037,
+          "arm_iddelta_mean_cos_headline": 0.4483682394025037,
+          "arm_iddelta_ratio_to_global": 2.406081041673553,
+          "arm_iddelta_ratio_to_global_all_values": 2.406081041673553,
+          "note": "iddelta only \u2014 ridge arms are L19-fit and have no twin at this layer"
+        }
+      },
+      "n_primary_pairs": 120,
+      "para_class": "instruction_paraphrase",
+      "pooling_twin_span": {
+        "arm_1738ce": {
+          "axis_slope": 1.6686609175230644,
+          "axis_slope_all_values": 1.6686609175230644,
+          "mean_cos_all_values": 0.3167182934259953,
+          "mean_cos_headline": 0.3167182934259953
+        },
+        "arm_779ce": {
+          "axis_slope": 1.8187371521804134,
+          "axis_slope_all_values": 1.8187371521804134,
+          "mean_cos_all_values": 0.32316902583171747,
+          "mean_cos_headline": 0.32316902583171747
+        },
+        "arm_iddelta": {
+          "axis_slope": 3.552658425153382,
+          "axis_slope_all_values": 3.552658425153382,
+          "mean_cos_all_values": 0.26223304431250477,
+          "mean_cos_headline": 0.26223304431250477
+        }
+      },
+      "primary_class": "swap",
+      "reliability": {
+        "noise_norm_mean": 1.3253014351494636,
+        "r100_ci95": [
+          0.5341720749853125,
+          0.6441506744055797
+        ],
+        "r100_ci95_all_values": [
+          0.5341720749853125,
+          0.6441506744055797
+        ],
+        "r100_mean": 0.5931309127649439,
+        "r100_mean_all_values": 0.5931309127649439,
+        "r50_half_mean": 0.4538358041646836,
+        "spearman_brown": "r100 = 2*r50 / (1 + r50) (pooled 50/50 split-half)"
+      },
+      "surface": {
+        "arm_1738ce": {
+          "edit_dose_ols": {
+            "intercept": 2.0063308615090847,
+            "n": 474,
+            "slope": 1.1061572227840288
+          },
+          "flip_norm_ci95": [
+            3.738810464942716,
+            4.190947541373297
+          ],
+          "flip_norm_ci95_all_values": [
+            3.738810464942716,
+            4.190947541373297
+          ],
+          "flip_norm_mean": 3.963553551474649,
+          "flip_norm_mean_all_values": 3.963553551474649,
+          "gap": -5.001355111960108,
+          "gap_all_values": -5.001355111960108,
+          "gap_ci95": [
+            -5.667978366211559,
+            -4.361696342783849
+          ],
+          "gap_ci95_all_values": [
+            -5.667978366211559,
+            -4.361696342783849
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.299415819581476,
+            9.664392850582926
+          ],
+          "para_norm_ci95_all_values": [
+            8.299415819581476,
+            9.664392850582926
+          ],
+          "para_norm_mean": 8.964908663434757,
+          "para_norm_mean_all_values": 8.964908663434757,
+          "residualized_gap": 8.27253156144824,
+          "residualized_gap_all_values": 8.27253156144824
+        },
+        "arm_779ce": {
+          "edit_dose_ols": {
+            "intercept": 2.2275579365502107,
+            "n": 474,
+            "slope": 1.1519308722915353
+          },
+          "flip_norm_ci95": [
+            4.065157762760274,
+            4.571833613241559
+          ],
+          "flip_norm_ci95_all_values": [
+            4.065157762760274,
+            4.571833613241559
+          ],
+          "flip_norm_mean": 4.315944554815505,
+          "flip_norm_mean_all_values": 4.315944554815505,
+          "gap": -5.128994776006256,
+          "gap_all_values": -5.128994776006256,
+          "gap_ci95": [
+            -5.66686519353129,
+            -4.601403291822291
+          ],
+          "gap_ci95_all_values": [
+            -5.66686519353129,
+            -4.601403291822291
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            8.871835535192071,
+            10.02579552306253
+          ],
+          "para_norm_ci95_all_values": [
+            8.871835535192071,
+            10.02579552306253
+          ],
+          "para_norm_mean": 9.44493933082176,
+          "para_norm_mean_all_values": 9.44493933082176,
+          "residualized_gap": 8.694175691492166,
+          "residualized_gap_all_values": 8.694175691492166
+        },
+        "arm_iddelta": {
+          "edit_dose_ols": {
+            "intercept": 4.154267687996853,
+            "n": 474,
+            "slope": 2.8707440338513615
+          },
+          "flip_norm_ci95": [
+            8.11595293643402,
+            8.757519030829771
+          ],
+          "flip_norm_ci95_all_values": [
+            8.11595293643402,
+            8.757519030829771
+          ],
+          "flip_norm_mean": 8.443364124164324,
+          "flip_norm_mean_all_values": 8.443364124164324,
+          "gap": -16.13939459275224,
+          "gap_all_values": -16.13939459275224,
+          "gap_ci95": [
+            -17.65524064956761,
+            -14.685042110438452
+          ],
+          "gap_ci95_all_values": [
+            -17.65524064956761,
+            -14.685042110438452
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            22.955324718515413,
+            26.267616684150177
+          ],
+          "para_norm_ci95_all_values": [
+            22.955324718515413,
+            26.267616684150177
+          ],
+          "para_norm_mean": 24.582758716916562,
+          "para_norm_mean_all_values": 24.582758716916562,
+          "residualized_gap": 18.30953381346409,
+          "residualized_gap_all_values": 18.30953381346409
+        },
+        "observed": {
+          "edit_dose_ols": {
+            "intercept": 0.31685187516253954,
+            "n": 474,
+            "slope": 1.175917833876657
+          },
+          "flip_norm_ci95": [
+            2.026934995126232,
+            2.5137688566181975
+          ],
+          "flip_norm_ci95_all_values": [
+            2.026934995126232,
+            2.5137688566181975
+          ],
+          "flip_norm_mean": 2.2671296495286555,
+          "flip_norm_mean_all_values": 2.2671296495286555,
+          "gap": -2.1177760050799472,
+          "gap_all_values": -2.1177760050799472,
+          "gap_ci95": [
+            -2.6985789781514824,
+            -1.5810599189860197
+          ],
+          "gap_ci95_all_values": [
+            -2.6985789781514824,
+            -1.5810599189860197
+          ],
+          "labeling": "DESCRIPTIVE only (plan \u00a76: a surface-transducing map predicts a NEGATIVE gap; no H-label keys on this gap)",
+          "para_norm_ci95": [
+            3.6788361115992316,
+            5.172975305239432
+          ],
+          "para_norm_ci95_all_values": [
+            3.6788361115992316,
+            5.172975305239432
+          ],
+          "para_norm_mean": 4.384905654608603,
+          "para_norm_mean_all_values": 4.384905654608603,
+          "residualized_gap": 11.993238001439936,
+          "residualized_gap_all_values": 11.993238001439936
+        }
+      },
+      "text_space": {
+        "cross_carrier_consistency": {
+          "median": 0.8345229521687846,
+          "median_all_values": 0.8345229521687846,
+          "median_ci95": [
+            0.804493142720806,
+            0.8604003800445275
+          ],
+          "median_ci95_all_values": [
+            0.804493142720806,
+            0.8604003800445275
+          ],
+          "per_vp_mean_pairwise_cos": {
+            "v1-v2": 0.8356363954712978,
+            "v1-v3": 0.8334095088662714,
+            "v1-v4": 0.8135354406894426,
+            "v1-v5": 0.8502980402488397,
+            "v2-v3": 0.846444582965189,
+            "v2-v4": 0.8230798647435966,
+            "v2-v5": 0.8517476896137782,
+            "v3-v4": 0.8215845753010114,
+            "v3-v5": 0.8412503448835303,
+            "v4-v5": 0.8237305068097004
+          }
+        },
+        "flip_norm_ci95": [
+          0.3936023343149444,
+          0.4562317430144074
+        ],
+        "flip_norm_ci95_all_values": [
+          0.3936023343149444,
+          0.4562317430144074
+        ],
+        "flip_norm_mean": 0.4240079867592348,
+        "flip_norm_mean_all_values": 0.4240079867592348,
+        "flip_over_para_ratio": 2.331839691964074,
+        "flip_over_para_ratio_all_values": 2.331839691964074,
+        "note": "Qwen3-Embedding-8B mean answer embeddings (means of L2-normalized per-draw rows, NOT re-normalized); observed only \u2014 no predicted arm exists in text space",
+        "paraphrase_null_norm_ci95": [
+          0.1620138330734279,
+          0.20535855936393882
+        ],
+        "paraphrase_null_norm_ci95_all_values": [
+          0.1620138330734279,
+          0.20535855936393882
+        ],
+        "paraphrase_null_norm_mean": 0.1818341064441266,
+        "paraphrase_null_norm_mean_all_values": 0.1818341064441266
+      }
+    }
+  },
+  "contract": {
+    "bootstrap": {
+      "B": 10000,
+      "gsmall_caveat": "G=12 clusters \u2014 percentile CIs undercover (plan \u00a76 convention 8)",
+      "query_content": "query_content pairs are carrier DYADS: the bootstrap resamples the 12 carrier VERTICES with replacement and weights each edge by the product of its sampled endpoint multiplicities (edges with an unsampled endpoint get weight 0); single-carrier pairs weight by their carrier multiplicity",
+      "scheme": "carrier-clustered (resample the 12 carrier clusters with replacement)",
+      "seed": 2215
+    },
+    "compliance": {
+      "headline_threshold_pct": 70,
+      "rule": "headline per-axis reads are FLOOR-GATED: an axis whose manipulation-check floor verdict (axis_row.floor_met, n_fired_base >= ceil(0.6 x width)) is not met is compliance-limited and reports NULL headline fields; on floor-met axes the headline uses pairs whose BOTH endpoint values fired at 70; non-fired values stay in the artifact (hollow) via *_all_values companions, excluded from the headline",
+      "sensitivity_pcts": [
+        50,
+        90
+      ]
+    },
+    "draw_to_pair_aggregation": "Delta = difference of the two contexts' K=10-draw mean answer vectors (tail-inclusive L19 primary; empty-completion draws excluded from the mean, per-context valid-draw counts recorded per pair)",
+    "null": {
+      "B": 10000,
+      "seed": 21620
+    },
+    "null_scheme": {
+      "query_content": "class-preserving edge derangement over the C(12,2) carrier dyads (carrier preservation undefined for dyadic pairs)",
+      "query_form": "carrier- and class-preserving form-pair derangement",
+      "user_fact": "carrier- and class-preserving value-pair derangement"
+    },
+    "orientation_conventions": {
+      "famswap": "para(value_i) -> para(value_j), same value-index order",
+      "install": "E -> value (a = bare-E query context, b = value context)",
+      "instruction_paraphrase": "value -> its paraphrase",
+      "query_content": "carrier_i -> carrier_j by carrier-index order (i < j)",
+      "query_form": "form_i -> form_j by form-index order E < imp < stmt",
+      "query_paraphrase": "E question -> reworded question",
+      "swap": "value_i -> value_j by plan-listed value-index order (i < j)"
+    },
+    "primary_pair_classes": {
+      "axis_identity": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "cross_family_consistency": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "direction_fidelity": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "knn_delta_retrieval": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "magnitude_calibration": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "reliability_ceiling": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "surface_sensitivity": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      },
+      "text_third_space": {
+        "controls": [
+          "install",
+          "instruction_paraphrase",
+          "query_paraphrase"
+        ],
+        "cross_family_read_class": [
+          "famswap"
+        ],
+        "instruction_axes": [
+          "swap"
+        ],
+        "query_axes": [
+          "query_content",
+          "query_form"
+        ]
+      }
+    },
+    "split_half": {
+      "n_pairs_insufficient_draws": 0,
+      "n_splits": 20,
+      "seed": 2564,
+      "step_up": "Spearman-Brown r100 = 2*r50 / (1 + r50) (pooled 50/50 split-half)"
+    }
+  },
+  "k100": {
+    "bridge_gate": {
+      "headline_parity": {
+        "demoted": false,
+        "note": "binds in production; informational under --smoke (slice arithmetic)",
+        "ok": true,
+        "rows": {
+          "query_form": {
+            "abs_diff": {
+              "mean_cos_headline": 0.0,
+              "r10_mean": 0.0
+            },
+            "committed": {
+              "mean_cos_headline": 0.30400866272404437,
+              "r10_mean": 0.5994338960687404
+            },
+            "measured": {
+              "mean_cos_headline": 0.30400866272404437,
+              "r10_mean": 0.5994338960687404
+            },
+            "n_headline_pairs": 36,
+            "ok": true
+          },
+          "user_fact": {
+            "abs_diff": {
+              "mean_cos_headline": 5.551115123125783e-17,
+              "r10_mean": 0.0
+            },
+            "committed": {
+              "mean_cos_headline": 0.17208480650441785,
+              "r10_mean": 0.13102069808322983
+            },
+            "measured": {
+              "mean_cos_headline": 0.1720848065044179,
+              "r10_mean": 0.13102069808322983
+            },
+            "n_headline_pairs": 120,
+            "ok": true
+          }
+        }
+      },
+      "perpair_parity": {
+        "max_abs_diff": {
+          "cos_arm_779ce": 6.2450045135165055e-15,
+          "cos_arm_iddelta": 3.594347042223944e-15,
+          "r10": 0.0
+        },
+        "n_pairs_compared": 474,
+        "ok": true,
+        "source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/perpair.jsonl"
+      },
+      "tolerance_abs": 1e-06,
+      "verdict": "pass"
+    },
+    "fire_recompute": {
+      "denominators": {
+        "k100": 1200,
+        "parent": 120
+      },
+      "fired_set_changes": [],
+      "k100_verdicts_1200": {
+        "v1": "fired",
+        "v1p": "fired",
+        "v2": "fired",
+        "v2p": "fired",
+        "v3": "fired",
+        "v3p": "fired",
+        "v4": "fired",
+        "v4p": "fired",
+        "v5": "fired",
+        "v5p": "fired"
+      },
+      "parent_verdicts_120": {
+        "v1": "fired",
+        "v1p": "fired",
+        "v2": "fired",
+        "v2p": "fired",
+        "v3": "fired",
+        "v3p": "fired",
+        "v4": "fired",
+        "v4p": "fired",
+        "v5": "fired",
+        "v5p": "fired"
+      }
+    },
+    "provenance_checks": {
+      "check_a_vc_parity": {
+        "cos_min_bar": 0.999,
+        "demoted": false,
+        "min_cos": 0.9996989804652227,
+        "min_cos_context": "user_fact::v5p::c10",
+        "parent_revision": "62b1e8889e1a262501937b0ec6f6022e28b4a7e6",
+        "source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/manifests/k100_low_reliability_axes/k100_vc_parity.json",
+        "verdict": "pass"
+      },
+      "check_b_cross_provenance": {
+        "bootstrap": {
+          "B": 10000,
+          "scheme": "carrier-clustered",
+          "seed": [
+            2215,
+            100
+          ]
+        },
+        "ci_overlap": true,
+        "cross_provenance_ci95": [
+          0.45619341018344683,
+          0.5126470238363974
+        ],
+        "cross_provenance_mean_cos": 0.49160819488164764,
+        "exchangeable": true,
+        "n_pairs_excluded_nan": 0,
+        "n_pairs_used": 474,
+        "slots": {
+          "new_a": [
+            10,
+            20
+          ],
+          "new_b": [
+            20,
+            30
+          ],
+          "new_c": [
+            30,
+            40
+          ],
+          "parent": [
+            0,
+            10
+          ]
+        },
+        "status": "evaluated",
+        "within_new_ci95": [
+          0.4452496866488684,
+          0.5057030444530346
+        ],
+        "within_new_mean_cos": 0.4826975826547673
+      },
+      "check_c_answer_length": {
+        "note": "report-only (plan v8 \u00a74: not a fallback trigger)",
+        "per_cell": {
+          "query": {
+            "mean_abs_paired_diff_tokens": 17.0337962962963,
+            "mean_paired_diff_tokens": 5.570370370370409,
+            "n_contexts": 48,
+            "new_mean_tokens": 418.07453703703703,
+            "parent_mean_tokens": 412.5041666666666
+          },
+          "user_fact": {
+            "mean_abs_paired_diff_tokens": 14.35351851851851,
+            "mean_paired_diff_tokens": 1.9046296296295968,
+            "n_contexts": 120,
+            "new_mean_tokens": 218.24296296296293,
+            "parent_mean_tokens": 216.3383333333334
+          }
+        }
+      }
+    },
+    "r_of_k": {
+      "k_grid": [
+        10,
+        20,
+        50,
+        100
+      ],
+      "measured_r_by_axis": {
+        "query_content": {
+          "10": 0.9851312708259188,
+          "100": 0.9980886142087384,
+          "20": 0.991794446518043,
+          "50": 0.9963302918100291
+        },
+        "query_form": {
+          "10": 0.6675092616937596,
+          "100": 0.9310199420704779,
+          "20": 0.7452309116148297,
+          "50": 0.8680626936991244
+        },
+        "user_fact": {
+          "10": 0.13112877731871203,
+          "100": 0.5931309127649439,
+          "20": 0.20814914588906444,
+          "50": 0.4380601854170483
+        }
+      },
+      "n_splits": 20,
+      "note": "measured = draw-subsampled split-half + step-up over ALL primary pairs; projected = Spearman-Brown from the committed parent r10 (plan v8 \u00a73b)",
+      "projected_from_committed_r10": {
+        "query_form": {
+          "10": 0.5994338960687404,
+          "100": 0.9373616809188479,
+          "20": 0.7495575747670388,
+          "50": 0.882107923351918
+        },
+        "user_fact": {
+          "10": 0.13102069808322983,
+          "100": 0.6012367970577794,
+          "20": 0.23168576544226643,
+          "50": 0.4298345822889187
+        }
+      },
+      "realized_mean_pool_size": {
+        "10": 10.0,
+        "100": 100.0,
+        "20": 20.0,
+        "50": 50.0
+      },
+      "subsample_seed": [
+        2564,
+        31337
+      ]
+    },
+    "reliability": {
+      "bootstrap": {
+        "B": 10000,
+        "scheme": "carrier-clustered",
+        "seed": [
+          2215,
+          101
+        ]
+      },
+      "fallback": {
+        "criterion": "PRE-REGISTERED (plan v8 \u00a74; consistency note 2): the new-only estimator becomes PRIMARY iff provenance check (b)'s cross-provenance vs within-new 95% CIs do NOT overlap, OR on ANY k100 axis the pooled r100 and the new-only projected r100 95% carrier-clustered bootstrap CIs do NOT overlap (all-values primary pairs; non-overlap = lo_1 > hi_2 or lo_2 > hi_1); evaluated informationally under --smoke (never switches the estimator at smoke n \u2014 gate-calibration demotion)",
+        "fired": false,
+        "smoke_demoted": false,
+        "trigger": null,
+        "would_fire": false
+      },
+      "new_only_projection": "45/45 split-half -> r90 (2r/(1+r)) -> r100 via r1",
+      "per_axis": {
+        "query_content": {
+          "ci_overlap": true,
+          "n_primary_pairs": 66,
+          "r100_new_only_ci95": [
+            0.9979621069852159,
+            0.9984859234303864
+          ],
+          "r100_new_only_projected": 0.998248509094798,
+          "r100_pooled": 0.9980886142087384,
+          "r100_pooled_ci95": [
+            0.9977505566539832,
+            0.9984020853807226
+          ]
+        },
+        "query_form": {
+          "ci_overlap": true,
+          "n_primary_pairs": 36,
+          "r100_new_only_ci95": [
+            0.9119878790607548,
+            0.9517755313528321
+          ],
+          "r100_new_only_projected": 0.9315340892637176,
+          "r100_pooled": 0.9310199420704779,
+          "r100_pooled_ci95": [
+            0.9105044295244706,
+            0.9521403852518685
+          ]
+        },
+        "user_fact": {
+          "ci_overlap": true,
+          "n_primary_pairs": 120,
+          "r100_new_only_ci95": [
+            0.5368462871144907,
+            0.6447355851654979
+          ],
+          "r100_new_only_projected": 0.5949548343306766,
+          "r100_pooled": 0.5931309127649439,
+          "r100_pooled_ci95": [
+            0.5348110183953714,
+            0.6454530747357435
+          ]
+        }
+      },
+      "primary_estimator": "pooled"
+    },
+    "verdicts": {
+      "informational_smoke": false,
+      "injected_name": {
+        "b100": 0.7701499287573452,
+        "b100_ci95_from_r_ci": [
+          0.7308707648998641,
+          0.8025899790089456
+        ],
+        "c_ci95": [
+          0.2959765228607052,
+          0.350557061644433
+        ],
+        "c_mean_cos_headline_arm_779ce": 0.32475064591711167,
+        "c_over_b": 0.4216719807286152,
+        "c_over_b_ci95": [
+          0.3787733782568599,
+          0.4639425057413141
+        ],
+        "fragile": false,
+        "fragile_components": {
+          "b_ci_straddles_floor": false,
+          "c_over_b_paired_ci_straddles_ratio": false
+        },
+        "lattice": "reliability-limited <=> b>=0.55 AND c/b>=0.35; map-direction-loss <=> b>=0.55 AND c/b<0.35; unresolved otherwise",
+        "r100_mean": 0.5931309127649439,
+        "thresholds": {
+          "b_floor": 0.55,
+          "ratio": 0.35
+        },
+        "verdict": "reliability-limited",
+        "verdict_reason": null
+      },
+      "query_form_dissociation": {
+        "fragile": false,
+        "g": 0.4490680250306688,
+        "g_ci95": [
+          0.2386593207952485,
+          0.7359732310338423
+        ],
+        "lattice": "dissociation-holds <=> g >= 0.15; dissociation-collapses otherwise",
+        "state_flip_over_para": 1.0557245700412037,
+        "text_flip_over_para": 0.6066565450105349,
+        "threshold_g": 0.15,
+        "verdict": "dissociation-holds",
+        "verdict_reason": null
+      },
+      "reliability_estimator": "pooled"
+    }
+  },
+  "meta": {
+    "arms": [
+      "arm_779ce",
+      "arm_1738ce",
+      "arm_iddelta"
+    ],
+    "carriers": [
+      "c01",
+      "c02",
+      "c03",
+      "c04",
+      "c05",
+      "c06",
+      "c07",
+      "c08",
+      "c09",
+      "c10",
+      "c11",
+      "c12"
+    ],
+    "cells": [
+      "query",
+      "user_fact"
+    ],
+    "elapsed_s": 524.7,
+    "frozen_global_slope": {
+      "note": "parent's realized per-arm global slope (global_slope_all2778), the PRIMARY ratio denominator for this round (plan v8 \u00a711, the ffr mechanism reused)",
+      "per_arm": {
+        "arm_1738ce": 0.9746799192232769,
+        "arm_779ce": 1.0136696325596286,
+        "arm_iddelta": 2.0672297728432754
+      },
+      "source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/minpair_delta.json"
+    },
+    "git_argv0_path": "scripts/issue2564_analysis.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+    "git_dirty": false,
+    "identity_cancellation_assert": {
+      "max_abs_err": 3.552713678800501e-15,
+      "n_pairs_checked": 32,
+      "statement": "identity_bias_predict(x_A) - identity_bias_predict(x_B) == x_A - x_B",
+      "tol": 9e-08
+    },
+    "input_files": {
+      "bank2564_manifest.json": {
+        "bytes": 1150286,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/parent_pin/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/manifests/bank2564_manifest.json",
+        "sha256": "d87c2dd9ac703cd8ad3d7c86f9e50a0259609004c68ff473cf818a1a4529b070"
+      },
+      "emb_pooling_k100": {
+        "counts": {
+          "parent": {
+            "n_rows_query_roster": 480,
+            "n_rows_total": 9840
+          },
+          "round": {
+            "n_rows_query_roster": 4320,
+            "n_rows_total": 4320
+          }
+        },
+        "query": "pooled per-draw means (parent draws 0-9 + k100 draws >= 10)",
+        "user_fact": "parent K=10 means (embed leg is query-only; plan v8 K4/\u00a711)"
+      },
+      "manipulation_check.json": {
+        "bytes": 33385,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/manipulation_check.json"
+      },
+      "means_anchors.parent.npz": {
+        "bytes": 8175842,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/parent_pin/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/analysis_tensors/embeddings_qwen3_8b/means_anchors.npz",
+        "source": "parent"
+      },
+      "parent_minpair_delta.json": {
+        "bytes": 355924,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/eval_results/issue_2564/minpair_delta.json",
+        "sha256": "28d6344569ddba846a44a46ad4227c7596d38e3f7b63b1f998ff4d83c250fe2d"
+      },
+      "perdraw_anchors.parent.npz": {
+        "bytes": 82460198,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/parent_pin/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/analysis_tensors/embeddings_qwen3_8b/perdraw_anchors.npz",
+        "source": "parent"
+      },
+      "perdraw_anchors.round.npz": {
+        "bytes": 35787878,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/analysis_tensors/k100_low_reliability_axes/embeddings_qwen3_8b/perdraw_anchors.npz",
+        "source": "round"
+      },
+      "va2564_query.parent.pt": {
+        "bytes": 20684373,
+        "n_rows_ctx_absent_from_roster": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/parent_pin/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/analysis_tensors/va2564/va2564_query.pt",
+        "source": "parent"
+      },
+      "va2564_query.pt": {
+        "bytes": 186138837,
+        "n_rows_ctx_absent_from_roster": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/analysis_tensors/k100_low_reliability_axes/va2564/va2564_query.pt",
+        "source": "round"
+      },
+      "va2564_user_fact.parent.pt": {
+        "bytes": 51713845,
+        "n_rows_ctx_absent_from_roster": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/parent_pin/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/analysis_tensors/va2564/va2564_user_fact.pt",
+        "source": "parent"
+      },
+      "va2564_user_fact.pt": {
+        "bytes": 465404341,
+        "n_rows_ctx_absent_from_roster": 0,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/analysis_tensors/k100_low_reliability_axes/va2564/va2564_user_fact.pt",
+        "source": "round"
+      },
+      "vc2564_bank.pt": {
+        "bytes": 42350716,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/parent_pin/62b1e8889e1a262501937b0ec6f6022e28b4a7e6/analysis_tensors/vc2564/vc2564_bank.pt",
+        "source": "parent@62b1e8889e1a262501937b0ec6f6022e28b4a7e6"
+      }
+    },
+    "issue": 2564,
+    "layer_primary": 19,
+    "layers": [
+      14,
+      19,
+      26
+    ],
+    "manip_check_meta": {
+      "fire_threshold_pct": 70,
+      "floor_rule": ">= ceil(0.6 x width) base values fired",
+      "judged_denominator": null
+    },
+    "n_contexts": 168,
+    "n_pairs": 474,
+    "parent_revision": "62b1e8889e1a262501937b0ec6f6022e28b4a7e6",
+    "phase": "pe-analysis",
+    "pooling_primary": "tail_inclusive_mean",
+    "pooling_twin": "span_mean",
+    "reliability_estimator": "pooled",
+    "ridge_payloads": {
+      "arm_1738ce": {
+        "bytes": 51425847,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/frozen_maps/issue1738_multiturn/analysis_tensors/weights/L19/context_ridge.pt",
+        "sha256": "1916bed192f36dfe9dc57a3c712d3ea56d3767199504693c0c0f33bcde27bda4"
+      },
+      "arm_779ce": {
+        "bytes": 51425703,
+        "path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2564/data/issue_2564/hf_dl/pe_stage_k100/frozen_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+        "sha256": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909"
+      }
+    },
+    "round": "k100",
+    "smoke": false,
+    "timestamp_utc": "2026-08-26T22:25:22.170696+00:00",
+    "vc_source": {
+      "k100_recaptured_vc": "provenance check (a) ONLY \u2014 compared pod-side against the parent bank (issue2564_run._k100_vc_parity); never feeds a pooled or bridge read",
+      "pooled_and_bridge_reads": "parent committed vc2564_bank.pt @ 62b1e8889e1a262501937b0ec6f6022e28b4a7e6 (staged source='parent'; issue2564_analysis.load_stores_k100)"
+    }
+  },
+  "retrieval": {
+    "global": {
+      "arm_1738ce": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.2468354430379747,
+            "5": 0.41561181434599154,
+            "10": 0.5189873417721519
+          },
+          "chance_at_k": {
+            "1": 0.002109704641350211,
+            "5": 0.010548523206751054,
+            "10": 0.02109704641350211
+          },
+          "median_rank": 10.0,
+          "metric": "cosine",
+          "mrr": 0.33988153168426544,
+          "n": 474,
+          "n_pool": 474
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.17932489451476794,
+            "5": 0.29535864978902954,
+            "10": 0.39451476793248946
+          },
+          "chance_at_k": {
+            "1": 0.002109704641350211,
+            "5": 0.010548523206751054,
+            "10": 0.02109704641350211
+          },
+          "median_rank": 18.0,
+          "metric": "euclidean",
+          "mrr": 0.25201936745943015,
+          "n": 474,
+          "n_pool": 474
+        }
+      },
+      "arm_779ce": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.2721518987341772,
+            "5": 0.4430379746835443,
+            "10": 0.5443037974683544
+          },
+          "chance_at_k": {
+            "1": 0.002109704641350211,
+            "5": 0.010548523206751054,
+            "10": 0.02109704641350211
+          },
+          "median_rank": 8.0,
+          "metric": "cosine",
+          "mrr": 0.3649497543918831,
+          "n": 474,
+          "n_pool": 474
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.22573839662447256,
+            "5": 0.3628691983122363,
+            "10": 0.4388185654008439
+          },
+          "chance_at_k": {
+            "1": 0.002109704641350211,
+            "5": 0.010548523206751054,
+            "10": 0.02109704641350211
+          },
+          "median_rank": 16.0,
+          "metric": "euclidean",
+          "mrr": 0.3005157237775762,
+          "n": 474,
+          "n_pool": 474
+        }
+      },
+      "arm_iddelta": {
+        "cosine": {
+          "acc_at_k": {
+            "1": 0.310126582278481,
+            "5": 0.4978902953586498,
+            "10": 0.5970464135021097
+          },
+          "chance_at_k": {
+            "1": 0.002109704641350211,
+            "5": 0.010548523206751054,
+            "10": 0.02109704641350211
+          },
+          "median_rank": 6.0,
+          "metric": "cosine",
+          "mrr": 0.40179226027085735,
+          "n": 474,
+          "n_pool": 474
+        },
+        "euclidean": {
+          "acc_at_k": {
+            "1": 0.189873417721519,
+            "5": 0.3755274261603376,
+            "10": 0.4767932489451477
+          },
+          "chance_at_k": {
+            "1": 0.002109704641350211,
+            "5": 0.010548523206751054,
+            "10": 0.02109704641350211
+          },
+          "median_rank": 12.0,
+          "metric": "euclidean",
+          "mrr": 0.28199934523680315,
+          "n": 474,
+          "n_pool": 474
+        }
+      }
+    },
+    "note": "restricted-pool retrieval over the 474 k100 pairs (chance = k/474); NOT comparable to the parent's 2,778-pair global read (plan v8 \u00a76)",
+    "per_axis": {
+      "query_content": {
+        "arm_1738ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.9848484848484849,
+              "5": 1.0,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.015151515151515152,
+              "5": 0.07575757575757576,
+              "10": 0.15151515151515152
+            },
+            "median_rank": 1.0,
+            "metric": "cosine",
+            "mrr": 0.9924242424242424,
+            "n": 66,
+            "n_pool": 66
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.9696969696969697,
+              "5": 1.0,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.015151515151515152,
+              "5": 0.07575757575757576,
+              "10": 0.15151515151515152
+            },
+            "median_rank": 1.0,
+            "metric": "euclidean",
+            "mrr": 0.9848484848484849,
+            "n": 66,
+            "n_pool": 66
+          }
+        },
+        "arm_779ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 1.0,
+              "5": 1.0,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.015151515151515152,
+              "5": 0.07575757575757576,
+              "10": 0.15151515151515152
+            },
+            "median_rank": 1.0,
+            "metric": "cosine",
+            "mrr": 1.0,
+            "n": 66,
+            "n_pool": 66
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 1.0,
+              "5": 1.0,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.015151515151515152,
+              "5": 0.07575757575757576,
+              "10": 0.15151515151515152
+            },
+            "median_rank": 1.0,
+            "metric": "euclidean",
+            "mrr": 1.0,
+            "n": 66,
+            "n_pool": 66
+          }
+        },
+        "arm_iddelta": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.9848484848484849,
+              "5": 1.0,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.015151515151515152,
+              "5": 0.07575757575757576,
+              "10": 0.15151515151515152
+            },
+            "median_rank": 1.0,
+            "metric": "cosine",
+            "mrr": 0.9924242424242424,
+            "n": 66,
+            "n_pool": 66
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.8939393939393939,
+              "5": 1.0,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.015151515151515152,
+              "5": 0.07575757575757576,
+              "10": 0.15151515151515152
+            },
+            "median_rank": 1.0,
+            "metric": "euclidean",
+            "mrr": 0.9424242424242425,
+            "n": 66,
+            "n_pool": 66
+          }
+        }
+      },
+      "query_form": {
+        "arm_1738ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.6944444444444444,
+              "5": 0.8611111111111112,
+              "10": 1.0
+            },
+            "chance_at_k": {
+              "1": 0.027777777777777776,
+              "5": 0.1388888888888889,
+              "10": 0.2777777777777778
+            },
+            "median_rank": 1.0,
+            "metric": "cosine",
+            "mrr": 0.7926256613756615,
+            "n": 36,
+            "n_pool": 36
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.5,
+              "5": 0.8055555555555556,
+              "10": 0.8333333333333334
+            },
+            "chance_at_k": {
+              "1": 0.027777777777777776,
+              "5": 0.1388888888888889,
+              "10": 0.2777777777777778
+            },
+            "median_rank": 1.5,
+            "metric": "euclidean",
+            "mrr": 0.644918571545623,
+            "n": 36,
+            "n_pool": 36
+          }
+        },
+        "arm_779ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.6944444444444444,
+              "5": 0.9444444444444444,
+              "10": 0.9444444444444444
+            },
+            "chance_at_k": {
+              "1": 0.027777777777777776,
+              "5": 0.1388888888888889,
+              "10": 0.2777777777777778
+            },
+            "median_rank": 1.0,
+            "metric": "cosine",
+            "mrr": 0.796272554605888,
+            "n": 36,
+            "n_pool": 36
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.5555555555555556,
+              "5": 0.7777777777777778,
+              "10": 0.8055555555555556
+            },
+            "chance_at_k": {
+              "1": 0.027777777777777776,
+              "5": 0.1388888888888889,
+              "10": 0.2777777777777778
+            },
+            "median_rank": 1.0,
+            "metric": "euclidean",
+            "mrr": 0.6601313326446533,
+            "n": 36,
+            "n_pool": 36
+          }
+        },
+        "arm_iddelta": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.6388888888888888,
+              "5": 0.8611111111111112,
+              "10": 0.9444444444444444
+            },
+            "chance_at_k": {
+              "1": 0.027777777777777776,
+              "5": 0.1388888888888889,
+              "10": 0.2777777777777778
+            },
+            "median_rank": 1.0,
+            "metric": "cosine",
+            "mrr": 0.7419237897179073,
+            "n": 36,
+            "n_pool": 36
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.6111111111111112,
+              "5": 0.8333333333333334,
+              "10": 0.9444444444444444
+            },
+            "chance_at_k": {
+              "1": 0.027777777777777776,
+              "5": 0.1388888888888889,
+              "10": 0.2777777777777778
+            },
+            "median_rank": 1.0,
+            "metric": "euclidean",
+            "mrr": 0.7218788156288156,
+            "n": 36,
+            "n_pool": 36
+          }
+        }
+      },
+      "user_fact": {
+        "arm_1738ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.05,
+              "5": 0.275,
+              "10": 0.5
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 10.5,
+            "metric": "cosine",
+            "mrr": 0.18558271421105552,
+            "n": 120,
+            "n_pool": 120
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.09166666666666666,
+              "5": 0.3,
+              "10": 0.49166666666666664
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 11.5,
+            "metric": "euclidean",
+            "mrr": 0.21416300297164656,
+            "n": 120,
+            "n_pool": 120
+          }
+        },
+        "arm_779ce": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.1,
+              "5": 0.325,
+              "10": 0.48333333333333334
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 11.0,
+            "metric": "cosine",
+            "mrr": 0.2217760367346634,
+            "n": 120,
+            "n_pool": 120
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.10833333333333334,
+              "5": 0.30833333333333335,
+              "10": 0.43333333333333335
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 13.0,
+            "metric": "euclidean",
+            "mrr": 0.23295524866563355,
+            "n": 120,
+            "n_pool": 120
+          }
+        },
+        "arm_iddelta": {
+          "cosine": {
+            "acc_at_k": {
+              "1": 0.20833333333333334,
+              "5": 0.48333333333333334,
+              "10": 0.6916666666666667
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 6.0,
+            "metric": "cosine",
+            "mrr": 0.33862522115483,
+            "n": 120,
+            "n_pool": 120
+          },
+          "euclidean": {
+            "acc_at_k": {
+              "1": 0.16666666666666666,
+              "5": 0.45,
+              "10": 0.6416666666666667
+            },
+            "chance_at_k": {
+              "1": 0.008333333333333333,
+              "5": 0.041666666666666664,
+              "10": 0.08333333333333333
+            },
+            "median_rank": 6.0,
+            "metric": "euclidean",
+            "mrr": 0.30215863468312393,
+            "n": 120,
+            "n_pool": 120
+          }
+        }
+      }
+    }
+  }
+}

@@ -39,6 +39,16 @@ reconciler's ids still FAILs the `--issue` verify. Address the absorbed original
 `address-concern --by analyzer --round <k>`, with a summary naming the reconciler adjudication
 ("narrowed by reconciler r1 item 2a; fixed: ...") — that is an evidence-discharge, not a dodge.
 
+**#2564 k100 fold (2026-08-26) — re-raised Codex CONCERN rows stay open after a later PASS+PASS
+round:** a Codex code-review CONCERN re-raised in round r3 (`k100-paired-bootstrap-wiring-unpinned`)
+stayed OPEN in concerns.jsonl even though round r4 returned PASS+PASS with zero blockers — the
+gate-time `--issue` verify FAILed the fold on it while the `--file` pre-check was green. Ack cost
+zero prose words: the id-substring sentence went into the new result's SECOND prose paragraph paid
+for by moving the intrusion clause into the `> **Figure.**` caption (caption text is INSIDE the H3
+span, so it satisfies the substring scan, and is EXCLUDED from the 180-word cap — the #2552 relief
+and this scan compose). Ground the disposition in a direct read (`git show <run-sha>:<script>` for
+the production call sites), never a bare "bounded".
+
 **#823 fold update (2026-08-20) — the "barred from address-concern" claim above is STALE as a
 mechanical matter:** `task.py address-concern <N> --concern-id <id> --by analyzer --round <k>
 --summary '<=200 chars>'` was ACCEPTED by the current CLI and satisfied the Lens-14 audit. Use it

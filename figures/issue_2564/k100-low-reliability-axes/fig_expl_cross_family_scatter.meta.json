@@ -1,0 +1,124 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "4a31ed44f6f841ac",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:26:40Z",
+  "figsize": [
+    5.2,
+    4.6
+  ],
+  "points": [
+    {
+      "observed cross-family consistency (cosine)": 0.5866456740763596,
+      "predicted cross-family consistency (cosine)": 0.5875924300904363,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.877096309119427,
+      "predicted cross-family consistency (cosine)": 0.7718620796672443,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.857822442803773,
+      "predicted cross-family consistency (cosine)": 0.7592853240457198,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": -0.09114711338470377,
+      "predicted cross-family consistency (cosine)": 0.15278929828881016,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.8295786764525934,
+      "predicted cross-family consistency (cosine)": 0.759104670564742,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.833831565549849,
+      "predicted cross-family consistency (cosine)": 0.7504567231476372,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.1280235351690448,
+      "predicted cross-family consistency (cosine)": 0.3541562432313789,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.48157885121519994,
+      "predicted cross-family consistency (cosine)": 0.48459094112056417,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.6895408737025158,
+      "predicted cross-family consistency (cosine)": 0.73676870454637,
+      "series": "injected name",
+      "_kind": "scatter"
+    },
+    {
+      "observed cross-family consistency (cosine)": 0.6457862894598215,
+      "predicted cross-family consistency (cosine)": 0.7054525641184359,
+      "series": "injected name",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cross-family consistency: observed vs predicted",
+        "xlabel": "observed cross-family consistency (cosine)",
+        "ylabel": "predicted cross-family consistency (cosine)",
+        "legend_labels": [
+          "injected name"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "injected name"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

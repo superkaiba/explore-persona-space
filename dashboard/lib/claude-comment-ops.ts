@@ -634,6 +634,10 @@ export async function writeTaskBodyUnchecked(
   taskId: number,
   body: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Deliberately NO --allow-noop (#2362): an unchanged Claude rewrite that
+  // then stamps `addressed_in` is the #2333 phantom-edit class — the set-body
+  // byte-identical no-op refusal surfacing through the error path below is
+  // intended (fail-loud phantom-addressed guard).
   if (!Number.isFinite(taskId) || !Number.isInteger(taskId) || taskId < 1) {
     return { ok: false, error: "invalid task id" };
   }

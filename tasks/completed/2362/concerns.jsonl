@@ -1,0 +1,1 @@
+{"ts": "2026-08-27T01:46:29Z", "event": "raised", "concern_id": "gate-scope-hit-list-incomplete", "severity": "NIT", "summary": "Gate-scope pin-hit list omits tests/test_task_workflow.py despite new-literal hits; recompute the list/count.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}

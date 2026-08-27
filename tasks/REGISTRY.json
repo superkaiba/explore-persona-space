@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2612,
+  "highest_id": 2615,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10523,8 +10523,8 @@
     "2362": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2362",
-      "status": "running",
+      "path": "tasks/completed/2362",
+      "status": "completed",
       "title": "set-body: fail-loud on byte-identical no-op + gate body-edit markers on an actual body commit (phantom v4 edits, #2333)"
     },
     "2363": {
@@ -11772,8 +11772,8 @@
     "2525": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2525",
-      "status": "proposed",
+      "path": "tasks/reviewing/2525",
+      "status": "reviewing",
       "title": "Fix three fleet-wide test invariants broken by sibling landings on main (ungated HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)"
     },
     "2526": {
@@ -12056,9 +12056,9 @@
       "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2564",
-      "status": "followups_running",
-      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout, after re-elicitation and a tenfold sampling boost clear the compliance-failed and noise-limited reads (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/2564",
+      "status": "awaiting_promotion",
+      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout (MODERATE confidence)"
     },
     "2565": {
       "has_clean_result": false,
@@ -12070,8 +12070,8 @@
     "2566": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2566",
-      "status": "proposed",
+      "path": "tasks/running/2566",
+      "status": "running",
       "title": "workflow-fix: test_gates_full_shape red fleet-wide \u2014 clarify_experiment_ask gate missing from pinned set"
     },
     "2567": {
@@ -12395,8 +12395,8 @@
     "2607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2607",
-      "status": "reviewing",
+      "path": "tasks/completed/2607",
+      "status": "completed",
       "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
     },
     "2608": {
@@ -12430,8 +12430,8 @@
     "2611": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2611",
-      "status": "running",
+      "path": "tasks/completed/2611",
+      "status": "completed",
       "title": "git_provenance()'s 5s-timeout git status orphans .git/index.lock on slow filesystems, breaking every later git op in the run (fix: --no-optional-locks)"
     },
     "2612": {
@@ -12440,6 +12440,27 @@
       "path": "tasks/proposed/2612",
       "status": "proposed",
       "title": "Arm-independent g0_gate.json publishes to arm-UNSCOPED paths: git conflicts at the second arm's last phase, HF overwrites silently (arm 1's provenance destroyed)"
+    },
+    "2613": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2613",
+      "status": "proposed",
+      "title": "Run LOGS are not an artifact class in the upload policy and have no shared persist helper \u2014 logs die with the pod unless upload-verification happens to catch them"
+    },
+    "2614": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2614",
+      "status": "proposed",
+      "title": "Curate oversized agent-memory indexes on main (code-reviewer-lean MEMORY.md 41KB hard-FAILs #1891 lint; blocks Step-10d agent-memory re-sync commits)"
+    },
+    "2615": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2615",
+      "status": "proposed",
+      "title": "Pod sparse clones silently hide sibling-issue eval_results/ inputs (empty dir, no error)"
     },
     "262": {
       "has_clean_result": false,
