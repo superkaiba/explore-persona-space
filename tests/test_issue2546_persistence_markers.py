@@ -343,8 +343,9 @@ class TestEnsureCaptureMarkerHubTwin:
     def test_missing_twin_is_repaired_via_the_mirror(self, tmp_path, monkeypatch):
         """The pre-fix local-only marker (blocker 1): with the stem's REMOTE
         shards present (r19 gate), repair mirrors the LOCAL payload to the
-        stem's Hub prefix with _mirror_capture_marker's own upload+assert
-        discipline, then memoizes the repaired twin."""
+        stem's Hub prefix with _mirror_capture_marker's own upload +
+        canonical-destination-gate discipline (r20), then memoizes the
+        repaired twin."""
         payload = {"fingerprint": {"stage": "capture"}, "report": {"stem": "post__gsm8k"}}
         done_p = self._stem(tmp_path, payload)
         dest = f"{G.STORE_PREFIX}/arm1/post__gsm8k"
