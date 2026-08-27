@@ -728,7 +728,10 @@ def fig_hero3(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             ax_acc.plot(x, ser["chance"], ls=":", color=scol[s], alpha=0.7, lw=1.0)
         ax_r2.set_title(ARM_TITLE[a], fontsize=8)
         _set_symlog_y(ax_r2)
-        ax_acc.set_xlabel("CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)")
+        # Plain-English endpoints only (r2 blocker trajectory-figure-opaque-endpoint-codes):
+        # never render internal cell slugs on an axis; keep the label short enough that the
+        # three side-by-side panels' x-labels cannot collide.
+        ax_acc.set_xlabel("position in the thinking span\n(0 = prompt end, 1 = think boundary)")
         if ci == 0:
             ax_r2.set_ylabel(
                 "held-out R² (solid) / identity+bias (dotted)\nsplit-half ceiling (dashed)",

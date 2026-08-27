@@ -1,0 +1,184 @@
+{
+ "definition": "pre_acc=(both_correct+pre_only_correct[/rescued_by_no_think])/denom; post_acc=(both_correct+necessary)/denom; denom excludes unknown",
+ "source": [
+  "pair_necessity_a1.json",
+  "pair_necessity_a2.json",
+  "qwen3_toggle_labels.json"
+ ],
+ "accuracy": {
+  "arm1 (OpenThinker3 vs Qwen2.5-Instruct)": {
+   "arc_challenge": {
+    "pre_acc": 0.8932,
+    "post_acc": 0.81,
+    "denom_excl_unknown": 1105,
+    "unknown": 62,
+    "unknown_share": 0.0531
+   },
+   "contexthub": {
+    "pre_acc": 0.1425,
+    "post_acc": 0.1242,
+    "denom_excl_unknown": 6371,
+    "unknown": 582,
+    "unknown_share": 0.0837
+   },
+   "csqa": {
+    "pre_acc": 0.8354,
+    "post_acc": 0.7745,
+    "denom_excl_unknown": 1051,
+    "unknown": 170,
+    "unknown_share": 0.1392
+   },
+   "gsm8k_test": {
+    "pre_acc": 0.897,
+    "post_acc": 0.9285,
+    "denom_excl_unknown": 1272,
+    "unknown": 29,
+    "unknown_share": 0.0223
+   },
+   "gsm8k_train": {
+    "pre_acc": 0.9421,
+    "post_acc": 0.9395,
+    "denom_excl_unknown": 7201,
+    "unknown": 174,
+    "unknown_share": 0.0236
+   },
+   "math": {
+    "pre_acc": 0.7481,
+    "post_acc": 0.757,
+    "denom_excl_unknown": 6954,
+    "unknown": 404,
+    "unknown_share": 0.0549
+   },
+   "mmlu": {
+    "pre_acc": 0.7247,
+    "post_acc": 0.7133,
+    "denom_excl_unknown": 5772,
+    "unknown": 978,
+    "unknown_share": 0.1449
+   },
+   "piqa": {
+    "pre_acc": 0.8682,
+    "post_acc": 0.5711,
+    "denom_excl_unknown": 1737,
+    "unknown": 66,
+    "unknown_share": 0.0366
+   }
+  },
+  "arm2 (R1-Distill vs Qwen2.5-Math)": {
+   "arc_challenge": {
+    "pre_acc": 0.6046,
+    "post_acc": 0.8422,
+    "denom_excl_unknown": 1128,
+    "unknown": 39,
+    "unknown_share": 0.0334
+   },
+   "contexthub": {
+    "pre_acc": 0.092,
+    "post_acc": 0.123,
+    "denom_excl_unknown": 5632,
+    "unknown": 1321,
+    "unknown_share": 0.19
+   },
+   "csqa": {
+    "pre_acc": 0.3613,
+    "post_acc": 0.6693,
+    "denom_excl_unknown": 1146,
+    "unknown": 75,
+    "unknown_share": 0.0614
+   },
+   "gsm8k_test": {
+    "pre_acc": 0.4996,
+    "post_acc": 0.7786,
+    "denom_excl_unknown": 1147,
+    "unknown": 154,
+    "unknown_share": 0.1184
+   },
+   "gsm8k_train": {
+    "pre_acc": 0.7159,
+    "post_acc": 0.813,
+    "denom_excl_unknown": 6734,
+    "unknown": 641,
+    "unknown_share": 0.0869
+   },
+   "math": {
+    "pre_acc": 0.6217,
+    "post_acc": 0.7578,
+    "denom_excl_unknown": 6128,
+    "unknown": 1230,
+    "unknown_share": 0.1672
+   },
+   "mmlu": {
+    "pre_acc": 0.4606,
+    "post_acc": 0.6079,
+    "denom_excl_unknown": 6414,
+    "unknown": 336,
+    "unknown_share": 0.0498
+   },
+   "piqa": {
+    "pre_acc": 0.2485,
+    "post_acc": 0.7604,
+    "denom_excl_unknown": 1686,
+    "unknown": 117,
+    "unknown_share": 0.0649
+   }
+  },
+  "arm3 (Qwen3-8B think on/off)": {
+   "arc_challenge": {
+    "pre_acc": 0.6828,
+    "post_acc": 0.9507,
+    "denom_excl_unknown": 1157,
+    "unknown": 10,
+    "unknown_share": 0.0086
+   },
+   "contexthub": {
+    "pre_acc": 0.1248,
+    "post_acc": 0.0751,
+    "denom_excl_unknown": 8384,
+    "unknown": 369,
+    "unknown_share": 0.0422
+   },
+   "csqa": {
+    "pre_acc": 0.5215,
+    "post_acc": 0.8488,
+    "denom_excl_unknown": 1210,
+    "unknown": 11,
+    "unknown_share": 0.009
+   },
+   "gsm8k_test": {
+    "pre_acc": 0.8703,
+    "post_acc": 0.9584,
+    "denom_excl_unknown": 1249,
+    "unknown": 52,
+    "unknown_share": 0.04
+   },
+   "gsm8k_train": {
+    "pre_acc": 0.8929,
+    "post_acc": 0.9664,
+    "denom_excl_unknown": 7162,
+    "unknown": 213,
+    "unknown_share": 0.0289
+   },
+   "math": {
+    "pre_acc": 0.8054,
+    "post_acc": 0.7627,
+    "denom_excl_unknown": 6743,
+    "unknown": 615,
+    "unknown_share": 0.0836
+   },
+   "mmlu": {
+    "pre_acc": 0.6317,
+    "post_acc": 0.8349,
+    "denom_excl_unknown": 7361,
+    "unknown": 319,
+    "unknown_share": 0.0415
+   },
+   "piqa": {
+    "pre_acc": 0.5159,
+    "post_acc": 0.6968,
+    "denom_excl_unknown": 1791,
+    "unknown": 12,
+    "unknown_share": 0.0067
+   }
+  }
+ }
+}
