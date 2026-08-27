@@ -1,6 +1,6 @@
 ---
 title: 'Safety-valence minimal pairs: decision vs surface transport of the frozen
-  context→answer map [running / code-review PASSED r4 — dispatching pod run]'
+  context→answer map [running / provisioning pod-2617 (1xH100 eval)]'
 kind: experiment
 tags: []
 created_at: '2026-08-27T06:00:57Z'
