@@ -811,6 +811,20 @@ def fig_crossmodel_axis_profile(inputs: dict, out_dir: Path) -> list[Path]:
     s9 = np.asarray([_fnum(sep_rows.get(a, {}).get("s_9b")) for a in axes_order])
     s7 = np.asarray([_fnum(sep_rows.get(a, {}).get("s_7b")) for a in axes_order])
     sp = np.asarray([_fnum(sep_rows.get(a, {}).get("s_7b_ref_parent")) for a in axes_order])
+    # v2 (#2587 interpretation round 2): the two pilot axes carry no crossmodel
+    # row, so their 9B-side separation is filled from the SAME-form statistic in
+    # minpair_delta_2587.json — observed flip-norm mean / split-half noise-norm
+    # mean, identical to the contrasts doc's s_9b construction (verified on
+    # query_content: 10.5621 / 1.0349 = 10.206 == s_9b). Makes the 13-axis
+    # separation ranking (incl. "answer-language ranks 6th of 13") visible.
+    for i, a in enumerate(axes_order):
+        if not math.isfinite(s9[i]):
+            row = axes9.get(a)
+            if row is None or not row.get("pilot_axis"):
+                continue
+            obs = _fnum(row["surface"]["observed"]["flip_norm_mean"])
+            noise = _fnum(row["reliability"]["noise_norm_mean"])
+            s9[i] = obs / noise
     ax.plot(s9, ypos + 0.18, marker="o", ms=4.5, color=c9, ls="none")
     ax.plot(s7, ypos - 0.18, marker="D", ms=4.5, color=c7, ls="none")
     ax.scatter(sp, ypos - 0.18, facecolors="none", edgecolors=c7, marker="D", s=32)
@@ -840,7 +854,10 @@ def fig_crossmodel_axis_profile(inputs: dict, out_dir: Path) -> list[Path]:
         Line2D([], [], color=neutral, alpha=0.35, lw=3.5, label=DISPLAY["null_band"]),
     ]
     fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=7)
-    paths = savefig_paper(fig, "fig_hero_crossmodel_axis_profile", dir=out_dir)
+    # v2 filename (new-name supersession, #1482 convention): adds the pilot
+    # separation dots; the round-1 fig_hero_crossmodel_axis_profile.* files
+    # stay committed as the superseded render.
+    paths = savefig_paper(fig, "fig_hero_crossmodel_axis_profile_v2", dir=out_dir)
     plt.close(fig)
     return list(paths.values())
 
