@@ -178,6 +178,9 @@ def main() -> None:
     (args.out_root / "meta.json").write_text(json.dumps(meta, indent=1))
 
     if not args.skip_upload:
+        from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
+
+        assert_upload_clean([args.out_root], what="upload_folder(sepcmp qwen3 embeddings)")
         SEP.assert_hub_dir_filecounts(args.out_root, HF_PREFIX)
         SEP.retry_transient(
             lambda: api.upload_folder(

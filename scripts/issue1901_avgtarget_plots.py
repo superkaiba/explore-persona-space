@@ -185,6 +185,9 @@ def _upload_eval(args, *, force: bool = False) -> None:
 def _upload_file(local: Path, repo_path: str) -> None:
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate import secret_scrub
+
+    secret_scrub.assert_upload_clean([local], what=f"upload {repo_path}")
     hub.retry_transient(
         lambda: HfApi().upload_file(
             path_or_fileobj=str(local),
