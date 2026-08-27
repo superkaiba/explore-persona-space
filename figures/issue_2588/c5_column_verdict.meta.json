@@ -1,0 +1,359 @@
+{
+  "commit": "b6dc2f6f+dirty",
+  "render_id": "c41e4810cad14877",
+  "git_commit": "b6dc2f6f88346b2e59393687f2c90feccced5238",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2588_figures.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-27T16:46:34Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": -0.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8800403630245576,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 0.88,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8649223942292106,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 1.88,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8559858133028172,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": -0.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8044132397191575,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 0.88,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7798994974874371,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 1.88,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7997977755308392,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 0.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8049763308041077,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 1.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8012170385395537,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 2.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.740966606251427,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 0.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8155737704918032,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 1.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8184584178498986,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 2.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.8265424912689173,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": -0.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7883600802407221,
+      "series": "no-think read (prompt end)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 0.88,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7185929648241206,
+      "series": "no-think read (prompt end)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 1.88,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7340748230535895,
+      "series": "no-think read (prompt end)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 0.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7838268442622951,
+      "series": "thinking read (end of CoT)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 1.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7839756592292089,
+      "series": "thinking read (end of CoT)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Same-size 27B release (capability index 35 est / 38 / 52)": 2.12,
+      "Retrieval acc@1 (cosine, calibrated)": 0.7811408614668219,
+      "series": "thinking read (end of CoT)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.06948340588724836,
+      "error": 0.026665032241821783,
+      "series": "no-think read (prompt end)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.015176089014642112,
+      "error": 0.027528811442501123,
+      "series": "no-think read (prompt end)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.05370117324825791,
+      "error": 0.026432062287768093,
+      "series": "no-think read (prompt end)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.0010280803797536188,
+      "error": 0.026711030857232816,
+      "series": "thinking read (end of CoT) (drop-degraded)",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.004533895178476096,
+      "error": 0.03133200561965065,
+      "series": "thinking read (end of CoT) (drop-degraded)",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 2.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.002209143151428954,
+      "error": 0.031480268068289845,
+      "series": "thinking read (end of CoT) (drop-degraded)",
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.06948340588724836,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.015176089014642112,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.05370117324825791,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.09768078755895027,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.012249172267694333,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.08123173185900104,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": -0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.0443507230753067,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.04280845061730791,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.85,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.02836760728346485,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.0010280803797536188,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.004533895178476096,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 2.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.002209143151428954,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.026784265553900902,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.027416714895706823,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 2.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": -0.030928732566234,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 0.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.026637796160564726,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 1.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.035247296343594484,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Column contrast (later release \u2212 earlier)": 2.15,
+      "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.03203180357034569,
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Same-size 27B release (capability index 35 est / 38 / 52)",
+        "ylabel": "Retrieval acc@1 (cosine, calibrated)",
+        "legend_labels": [
+          "no-think read (prompt end)",
+          "thinking read (end of CoT)",
+          "repeat-draw ceiling (cal.)",
+          "length-residualized"
+        ],
+        "xticklabels": [
+          "Qwen3.5-27B",
+          "Qwen3.6-27B",
+          "Qwen3.8-27B"
+        ],
+        "yticklabels": [
+          "0.70",
+          "0.72",
+          "0.74",
+          "0.76",
+          "0.78",
+          "0.80",
+          "0.82",
+          "0.84",
+          "0.86",
+          "0.88",
+          "0.90"
+        ]
+      },
+      {
+        "xlabel": "Column contrast (later release \u2212 earlier)",
+        "ylabel": "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)",
+        "legend_labels": [
+          "no-think read (prompt end)",
+          "thinking read (end of CoT) (drop-degraded)"
+        ],
+        "xticklabels": [
+          "3.6 \u2212 3.5",
+          "3.8 \u2212 3.6",
+          "3.8 \u2212 3.5"
+        ],
+        "yticklabels": [
+          "\u22120.12",
+          "\u22120.10",
+          "\u22120.08",
+          "\u22120.06",
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06"
+        ]
+      }
+    ],
+    "series": [
+      "no-think read (prompt end)",
+      "thinking read (end of CoT)",
+      "repeat-draw ceiling (cal.)",
+      "length-residualized",
+      "thinking read (end of CoT) (drop-degraded)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

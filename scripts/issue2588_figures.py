@@ -237,6 +237,135 @@ def fig_gpqa_transfer(summary: dict, out_dir: Path) -> None:
     plt.close(fig)
 
 
+def fig_column_verdict(summary: dict, out_dir: Path, fits_dir: Path) -> None:
+    """Hero 1x2 (analyzer round 1): absolute calibrated acc@1 for the three 27B
+    releases (both arms, repeat-draw ceilings + length-residualized companions)
+    beside ALL SIX column contrasts (arm a filled, arm b open = drop-degraded)."""
+    colors = dict(zip(("a", "b"), paper_palette(2), strict=True))
+    releases = ["q35_27b", "q36_27b", "q38_27b"]
+    rel_labels = ["Qwen3.5-27B", "Qwen3.6-27B", "Qwen3.8-27B"]
+    pos_of_arm = {"a": "prompt_last", "b": "cot_boundary"}
+    fig, (ax, axc) = plt.subplots(1, 2, figsize=(11.5, 4.4))
+
+    resid = summary.get("resid", {})
+    for arm in ("a", "b"):
+        xs = [i + (0.12 if arm == "b" else -0.12) for i in range(3)]
+        ys, ceils, resids = [], [], []
+        for mk in releases:
+            rec = summary["per_map"][f"{mk}_{arm}.{pos_of_arm[arm]}"]
+            ys.append(rec["acc1_cos_calibrated"])
+            ceils.append(rec["ceiling_retrieval"]["ceiling_acc1_cos"] - rec["null_mean"])
+            rrec = resid.get(f"{mk}_{arm}.{pos_of_arm[arm]}", {})
+            resids.append(rrec.get("resid_acc1_cos"))
+        ax.plot(xs, ys, "o-", color=colors[arm], label=ARM_LABEL[arm], markersize=7)
+        ax.scatter(xs, ceils, marker="_", s=140, color=colors[arm], alpha=0.6)
+        ax.scatter(
+            xs,
+            resids,
+            marker="D",
+            s=30,
+            facecolors="none",
+            edgecolors=colors[arm],
+            linewidths=1.2,
+        )
+    ax.scatter([], [], marker="_", s=140, color="grey", label="repeat-draw ceiling (cal.)")
+    ax.scatter(
+        [],
+        [],
+        marker="D",
+        s=30,
+        facecolors="none",
+        edgecolors="grey",
+        linewidths=1.2,
+        label="length-residualized",
+    )
+    ax.set_xticks(range(3), rel_labels)
+    ax.set_xlabel("Same-size 27B release (capability index 35 est / 38 / 52)")
+    ax.set_ylabel("Retrieval acc@1 (cosine, calibrated)")
+    ax.legend(frameon=False, fontsize=8, loc="lower left")
+
+    labels = ["3.6 − 3.5", "3.8 − 3.6", "3.8 − 3.5"]
+    keys = ["contrast_36_minus_35", "contrast_38_minus_36", "contrast_38_minus_35"]
+    arm_c_label = {"a": ARM_LABEL["a"], "b": ARM_LABEL["b"] + " (drop-degraded)"}
+    for j, arm in enumerate(("a", "b")):
+        rec = summary["column_verdicts"][arm]
+        xs = [i + (0.15 if j else -0.15) for i in range(3)]
+        ys = [rec[k]["delta_cal"] for k in keys]
+        los = [max(0.0, y - rec[k]["ci95_cal"][0]) for y, k in zip(ys, keys, strict=True)]
+        his = [max(0.0, rec[k]["ci95_cal"][1] - y) for y, k in zip(ys, keys, strict=True)]
+        mfc = colors[arm] if arm == "a" else "none"
+        axc.errorbar(
+            xs,
+            ys,
+            yerr=[los, his],
+            fmt="o",
+            color=colors[arm],
+            markerfacecolor=mfc,
+            markeredgewidth=1.2,
+            capsize=3,
+            label=arm_c_label[arm],
+        )
+    axc.axhline(0.0, color="grey", lw=0.8)
+    axc.set_xticks(range(3), labels)
+    axc.set_xlabel("Column contrast (later release − earlier)")
+    axc.set_ylabel("Calibrated Δ acc@1 (95% bootstrap CI, shifted)")
+    axc.legend(frameon=False, fontsize=8)
+    savefig_paper(fig, "c5_column_verdict", dir=out_dir)
+    plt.close(fig)
+
+
+def fig_column_layer_sweeps(summary: dict, out_dir: Path, fits_dir: Path) -> None:
+    """Low-level per-unit view behind the column verdict: per-layer TEST retrieval
+    acc@1 curves for the two column endpoints (no-think arm), even-stride sweep
+    (lines) + the odd-layer sensitivity pass (small markers), val-frozen stars
+    circled."""
+    cells = {"q35_27b_a": "Qwen3.5-27B", "q38_27b_a": "Qwen3.8-27B"}
+    colors = dict(zip(cells, paper_palette(4)[2:], strict=True))
+    fig, ax = plt.subplots(figsize=(7.6, 4.4))
+    for cell, label in cells.items():
+        even = {}
+        for f in sorted((fits_dir / cell).glob("percell_prompt_last_L*.json")):
+            layer = int(f.stem.rsplit("_L", 1)[1])
+            rec = json.loads(f.read_text())
+            even[layer] = rec["knn_test"]["ridge"]["cosine"]["acc_at_k"]["1"]
+        xs = sorted(even)
+        ax.plot(xs, [even[x] for x in xs], "-", color=colors[cell], label=f"{label} (even sweep)")
+        star = summary["per_map"][f"{cell}.prompt_last"]["layer_star"]
+        ax.scatter(
+            [star],
+            [even[star]],
+            s=120,
+            facecolors="none",
+            edgecolors=colors[cell],
+            linewidths=1.6,
+            zorder=4,
+        )
+        odd_path = fits_dir.parent / "fits_oddlayers" / cell / "fits_prompt_last_odd.json"
+        if odd_path.exists():
+            odd = json.loads(odd_path.read_text())
+            oxs = sorted(int(k) for k in odd["layers"])
+            oys = [
+                odd["layers"][str(x)]["knn_test"]["ridge"]["cosine"]["acc_at_k"]["1"] for x in oxs
+            ]
+            ax.scatter(
+                oxs, oys, s=14, color=colors[cell], alpha=0.55, label=f"{label} (odd layers)"
+            )
+    ax.scatter(
+        [],
+        [],
+        s=120,
+        facecolors="none",
+        edgecolors="grey",
+        linewidths=1.6,
+        label="validation-frozen layer",
+    )
+    ax.set_xlabel("Layer index (64-layer models)")
+    ax.set_ylabel("Held-out test retrieval acc@1 (cosine)")
+    ax.legend(frameon=False, fontsize=8, loc="lower center")
+    savefig_paper(fig, "c6_column_layer_sweeps", dir=out_dir)
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__.replace("%", "%%"), formatter_class=argparse.RawDescriptionHelpFormatter
@@ -247,6 +376,17 @@ def main(argv: list[str] | None = None) -> int:
         default=_REPO_ROOT / "eval_results" / "issue_2588" / "trend_summary.json",
     )
     ap.add_argument("--out-dir", type=Path, default=FIG_DIR)
+    ap.add_argument(
+        "--fits-dir",
+        type=Path,
+        default=_REPO_ROOT
+        / "eval_results"
+        / "issue_2588"
+        / "hub_mirror"
+        / "issue2588_capability_panel"
+        / "fits",
+        help="local mirror of issue2588_capability_panel/fits (percell + oddlayer inputs)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
     if args.import_check:
@@ -261,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:
     fig_column_contrasts(summary, args.out_dir)
     fig_h2_paired_deltas(summary, args.out_dir)
     fig_gpqa_transfer(summary, args.out_dir)
+    fig_column_verdict(summary, args.out_dir, args.fits_dir)
+    fig_column_layer_sweeps(summary, args.out_dir, args.fits_dir)
     print(f"[phase=done] figures written -> {args.out_dir}")
     return 0
 
