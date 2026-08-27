@@ -422,7 +422,7 @@ def signal_stage_done(args, behavior: str, token: str) -> None:
 
     from huggingface_hub import HfApi
 
-    from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate import hub, secret_scrub
 
     payload = {
         "behavior": behavior,
@@ -435,6 +435,7 @@ def signal_stage_done(args, behavior: str, token: str) -> None:
         json.dump(payload, f)
         tmp = f.name
     crumb = _stage_crumb_path(behavior, args.stage_run_token)
+    secret_scrub.assert_upload_clean([tmp], what="claim4-stage-crumb-upload")
     hub.retry_transient(
         lambda: HfApi().upload_file(
             path_or_fileobj=tmp,
@@ -525,7 +526,7 @@ def signal_gate1_result(args, behavior: str, token: str, gate_rc: int) -> None:
 
     from huggingface_hub import HfApi
 
-    from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate import hub, secret_scrub
 
     payload = {
         "behavior": behavior,
@@ -539,6 +540,7 @@ def signal_gate1_result(args, behavior: str, token: str, gate_rc: int) -> None:
         json.dump(payload, f)
         tmp = f.name
     crumb = _gate1_crumb_path(behavior, args.stage_run_token)
+    secret_scrub.assert_upload_clean([tmp], what="claim4-gate1-crumb-upload")
     hub.retry_transient(
         lambda: HfApi().upload_file(
             path_or_fileobj=tmp,
