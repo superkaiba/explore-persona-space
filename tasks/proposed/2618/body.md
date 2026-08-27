@@ -1,6 +1,7 @@
 ---
-title: Fitted answer-to-context reverse map vs pseudoinverse of the context-to-answer
-  map on the 963k-context n1m bank
+title: Fitted answer-to-context map recovers held-out contexts (R2 0.75, top-1 retrieval
+  84%) while the pseudoinverse of the context-to-answer map fails as a predictor (best
+  R2 0.14) and points elsewhere (operator cosine <= 0.34) (MODERATE confidence)
 kind: analysis
 tags:
 - keep-running
