@@ -88,6 +88,18 @@ r21-1. The r20 AST census recorded only gate-call MEMBERSHIP per function; a
     with the function name, and a missing ordering anchor fails LOUD with
     update instructions instead of passing vacuously.
 
+Round 22 addition (Codex r21 probes M-x1/M-x2 — the r21 pin is
+reachability-blind):
+
+r22-1. BLOCK LOCALITY, labeled (e): every ``<name> = _upload(...)``
+    assignment and its ``_require_canonical_upload(<name>, ...)`` gate must
+    occupy the SAME statement list, with no rebinding of ``<name>`` between
+    them. A gate wrapped in ``if False:`` (M-x1) parses as present — dataflow
+    and lineno ordering both stay green — but sits in a NESTED statement
+    list; a rebinding between assignment and gate (M-x2) makes the gate
+    check a value that is not the live upload result. One predicate, two
+    violation messages.
+
 Network-free: the only Hub boundary (``hub._upload`` / ``HfApi``) is faked
 with signature-mirroring fakes; every other body runs for real on tmp_path.
 """
@@ -743,10 +755,20 @@ def _canonical_gate_wiring_violations(src: str) -> list[str]:
     (c) ``upload_stage`` stays UN-gated — the overflow reroute is the
         DESIGNED #1108/#2304 durability path for ordinary rollout JSONLs.
     (d) all four attestation-adjacent sites carry the gate.
+    (e) block locality (round 22) — every ``<name> = _upload(...)``
+        assignment and its ``_require_canonical_upload(<name>, ...)`` gate
+        occupy the SAME statement list, with no rebinding of ``<name>``
+        between them. Closes the r21 reachability blind spots: a gate
+        wrapped in ``if False:`` (M-x1) satisfies (a)/(b)/(d) but lives in a
+        nested statement list; a rebinding between assignment and gate
+        (M-x2) satisfies (a)'s lineno dataflow while the gate checks a dead
+        value.
 
-    Known accepted false negative: dataflow is lineno-based, not def-use — a
-    REBINDING of the result name between the ``_upload`` assignment and the
-    gate is invisible (flow analysis is out of scope for a regression pin).
+    Known accepted false negatives (r22): a rebinding that produces no
+    Store-context ``ast.Name`` (``del <name>``; ``import ... as <name>``)
+    and a gate call embedded in a never-called ``lambda`` inside a simple
+    statement are invisible — genuine flow analysis stays out of scope for
+    a regression pin.
     """
     tree = ast.parse(src)
     problems: list[str] = []
@@ -792,6 +814,105 @@ def _canonical_gate_wiring_violations(src: str) -> list[str]:
         facts = _collect_gate_facts(fn_node, anchors)
         problems.extend(_dataflow_problems(fname, facts))
         problems.extend(_ordering_problems(fname, anchors, facts))
+        problems.extend(_block_locality_problems(fname, fn_node))
+    return problems
+
+
+# Compound statements own NESTED statement lists — a gate call inside one is
+# conditionally skipped (or never reached at all: `if False:`), so it never
+# counts as the sibling gate requirement (e) demands.
+_COMPOUND_STMTS = (
+    ast.If,
+    ast.For,
+    ast.AsyncFor,
+    ast.While,
+    ast.With,
+    ast.AsyncWith,
+    ast.Try,
+    ast.TryStar,
+    ast.Match,
+    ast.FunctionDef,
+    ast.AsyncFunctionDef,
+    ast.ClassDef,
+)
+
+
+def _iter_stmt_lists(fn_node: ast.FunctionDef):
+    """Yield every statement list under ``fn_node`` (bodies, orelse, handlers...)."""
+    for node in ast.walk(fn_node):
+        for field in ("body", "orelse", "finalbody"):
+            stmts = getattr(node, field, None)
+            if isinstance(stmts, list) and stmts and all(isinstance(s, ast.stmt) for s in stmts):
+                yield stmts
+
+
+def _stores_name(stmt: ast.stmt, name: str) -> bool:
+    """True when ``stmt`` (nested blocks included) rebinds ``name``.
+
+    Store-context ``ast.Name`` covers ``=``/``+=``/annotated assignment,
+    ``for``/``with``-target, and walrus rebinding.
+    """
+    return any(
+        isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store) and n.id == name
+        for n in ast.walk(stmt)
+    )
+
+
+def _is_sibling_gate_stmt(stmt: ast.stmt, name: str) -> bool:
+    """True when ``stmt`` is a SIMPLE statement carrying the gate over ``name``.
+
+    Compound statements are excluded by construction — their gate calls live
+    in nested statement lists (the M-x1 ``if False:`` shape).
+    """
+    if isinstance(stmt, _COMPOUND_STMTS):
+        return False
+    for n in ast.walk(stmt):
+        if isinstance(n, ast.Call) and _callee_name(n) == _GATE_FN:
+            first = n.args[0] if n.args else None
+            if isinstance(first, ast.Name) and first.id == name:
+                return True
+    return False
+
+
+def _block_locality_problems(fname: str, fn_node: ast.FunctionDef) -> list[str]:
+    """(e): upload assignment + its gate share ONE statement list, no rebinding between."""
+    problems: list[str] = []
+    for stmts in _iter_stmt_lists(fn_node):
+        for i, stmt in enumerate(stmts):
+            if not (
+                isinstance(stmt, ast.Assign)
+                and isinstance(stmt.value, ast.Call)
+                and _callee_name(stmt.value) == "_upload"
+                and len(stmt.targets) == 1
+                and isinstance(stmt.targets[0], ast.Name)
+            ):
+                continue
+            name = stmt.targets[0].id
+            gate_idx = next(
+                (j for j in range(i + 1, len(stmts)) if _is_sibling_gate_stmt(stmts[j], name)),
+                None,
+            )
+            if gate_idx is None:
+                problems.append(
+                    f"(e) {fname}: the _upload assignment binding {name!r} at "
+                    f"line {stmt.lineno} has no {_GATE_FN}({name}, ...) call "
+                    f"in the SAME statement list — a gate inside a nested or "
+                    f"conditional block (e.g. behind `if False:`) is skipped "
+                    f"or unreachable at runtime; place the gate as a sibling "
+                    f"statement directly after the assignment"
+                )
+                continue
+            for between in stmts[i + 1 : gate_idx]:
+                if _stores_name(between, name):
+                    problems.append(
+                        f"(e) {fname}: {name!r} is rebound at line "
+                        f"{between.lineno}, between the _upload assignment "
+                        f"(line {stmt.lineno}) and its gate (line "
+                        f"{stmts[gate_idx].lineno}) — the gate checks the "
+                        f"rebound value, not the live upload result; remove "
+                        f"the rebinding or move the gate directly after the "
+                        f"assignment"
+                    )
     return problems
 
 
@@ -1014,7 +1135,10 @@ class TestCanonicalDestinationGate:
         ``_mirror_capture_marker`` call, the ``_HUB_*SETS[...].add`` memo
         extensions, and the ``tmp.replace`` local bless; (c) ``upload_stage``
         stays un-gated (designed #1108/#2304 durability reroute for rollout
-        JSONLs); (d) all four attestation-adjacent sites carry the gate.
+        JSONLs); (d) all four attestation-adjacent sites carry the gate;
+        (e) block locality (r22) — assignment and gate share ONE statement
+        list with no rebinding of the result between them (closes the
+        ``if False:`` dead-branch wrap and result-rebinding probes).
         Failure messages name the function and the violated requirement."""
         problems = _canonical_gate_wiring_violations(Path(G.__file__).read_text())
         assert not problems, "canonical-gate wiring violations:\n  - " + "\n  - ".join(problems)
