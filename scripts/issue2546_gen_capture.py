@@ -96,6 +96,7 @@ from issue928_common import char_span_to_token_span, repeated_4gram_fraction  # 
 from explore_persona_space.atomic_io import write_json_atomic, write_jsonl_atomic  # noqa: E402
 from explore_persona_space.orchestrate.hub import (  # noqa: E402
     DEFAULT_DATASET_REPO,
+    DEFAULT_OVERFLOW_REPO,
     _upload,
     retry_transient,
     stage_hub_prefix,
@@ -440,6 +441,39 @@ def _read_jsonl(path: Path) -> list[dict]:
     return out
 
 
+def _require_canonical_upload(res: str, dest: str, what: str) -> None:
+    """Refuse a ``hub._upload`` result that did not land at ``DEFAULT_DATASET_REPO/<dest>``.
+
+    ``hub._upload``'s return names the EFFECTIVE repo, and truthiness cannot
+    gate a completeness attestation (round 20; reconciler on body v19): on the
+    repo-wide file-count rejection this data repo has actually hit (#2304;
+    #1108 for the model repo), the default-ON ``_filecount_overflow_retry``
+    returns a TRUTHY ``DEFAULT_OVERFLOW_REPO/...`` path WITHOUT raising — even
+    under ``raise_on_error=True`` — and a 0-committed-files scoped verify
+    returns ``""``. P5 stages ``hub.DEFAULT_DATASET_REPO`` only
+    (``issue2546_fit_cells._stage_stem``), so a rerouted store plus a
+    canonically-landed single-file marker is exactly the marker-only
+    corruption of rounds 18/19: a near-cap folder commit is rejected while the
+    1-file marker commit still fits. A REAL raise, never a bare ``assert``
+    (``python -O`` strips asserts; this is a durability invariant). On the
+    raise, local shards + local marker stay in place and the next resume
+    retries — the repair's existing fail-loud contract. Deliberately NOT a
+    change to ``hub._upload``'s own contract: the overflow fallback is
+    designed durability behavior for ordinary artifacts (``upload_stage``'s
+    rollout JSONLs keep using it un-gated).
+    """
+    canonical = f"{DEFAULT_DATASET_REPO}/{dest}"
+    if res != canonical:
+        raise RuntimeError(
+            f"[capture] {what}: upload did not land canonically — hub._upload "
+            f"returned {res!r}, expected {canonical!r}. A truthy mismatch is "
+            f"the file-count overflow reroute to {DEFAULT_OVERFLOW_REPO} "
+            f"(#1108/#2304), invisible to the P5 fit staging; an empty result "
+            f"is the 0-committed-files verify miss. Refusing to attest/bless — "
+            f"local files retained; the next resume retries."
+        )
+
+
 def _mirror_capture_marker(done_p: Path, dest: str, payload: dict) -> None:
     """Upload the per-stem capture marker to the stem's Hub prefix, THEN bless local resume.
 
@@ -461,15 +495,19 @@ def _mirror_capture_marker(done_p: Path, dest: str, payload: dict) -> None:
     """
     tmp = done_p.parent.parent / f".{done_p.parent.name}._complete.pending.json"
     _atomic_write_json(tmp, payload)
+    marker_dest = f"{dest}/{done_p.name}"
     res = _upload(
         tmp,
         DEFAULT_DATASET_REPO,
         "dataset",
-        f"{dest}/{done_p.name}",
+        marker_dest,
         upload_as_file=True,
         raise_on_error=True,
     )
-    assert res, f"capture marker upload returned empty result for {dest}/{done_p.name}"
+    # Canonical-destination gate BEFORE blessing local resume (round 20): a
+    # truthy overflow-rerouted return must not bless a marker the P5 staging
+    # cannot see beside shards that may not be there.
+    _require_canonical_upload(res, marker_dest, f"capture marker {marker_dest}")
     tmp.replace(done_p)
 
 
@@ -495,7 +533,10 @@ def _fill_hub_store_listing(arm: int, smoke: bool) -> None:
     retry_transient thunk (#779: the HTTP error raises at iteration). A
     missing PREFIX (nothing uploaded for this arm yet — the response-bearing
     404 ``EntryNotFoundError``, non-transient, re-raised immediately by
-    retry_transient) is an EMPTY listing, so every resumed stem routes to the
+    retry_transient; exception contract observed on huggingface_hub 0.36.2
+    against the live Hub, r19 probe — a contract drift, e.g. a header-less
+    404, escapes the except tuple and raises loudly at the listing) is an
+    EMPTY listing, so every resumed stem routes to the
     repair path — never a blind accept. A REPO-level fault
     (``RepositoryNotFoundError``: deleted repo, revoked auth) RAISES here by
     design (round 19; reconciler on v18): folding it into "empty" is the
@@ -622,7 +663,11 @@ def _ensure_capture_marker_hub_twin(
             ignore_patterns=["_complete.json"],
             raise_on_error=True,
         )
-        assert res, f"repair stem-dir upload returned empty result for {dest}"
+        # Canonical-destination gate BEFORE the memo add and BEFORE the
+        # mirror (round 20): the overflow reroute returns TRUTHY, and a
+        # single-file marker commit can succeed canonically exactly when the
+        # multi-file folder commit was rejected by near-cap arithmetic.
+        _require_canonical_upload(res, dest, f"{stem} repair stem-dir upload")
         _HUB_SHARD_STEM_SETS[(arm, smoke)].add(dest)
     else:
         logger.info("[capture] %s: local marker present, Hub twin missing — mirroring", stem)
@@ -3321,7 +3366,9 @@ def run_capture(
                 dest = f"{STORE_PREFIX}/{arm_dirname(arm.arm, bool(args.smoke))}/{stem}"
                 t_up = time.time()
                 res = _upload(stem_dir, DEFAULT_DATASET_REPO, "dataset", dest, raise_on_error=True)
-                assert res, f"store upload returned empty result for {dest}"
+                # Canonical gate BEFORE the shard free and the marker mirror
+                # (round 20): an overflow-rerouted store is invisible to P5.
+                _require_canonical_upload(res, dest, f"{stem} store upload")
                 report["upload_wall_s"] = time.time() - t_up
                 if not args.smoke and args.phase == "capture":
                     shard_files = sorted(stem_dir.glob("slot*.shard*.pt"))
@@ -3614,7 +3661,9 @@ def run_capture_reliability(
                 dest = f"{STORE_PREFIX}/{arm_dirname(arm.arm, bool(args.smoke))}/{stem}"
                 t_up = time.time()
                 res = _upload(stem_dir, DEFAULT_DATASET_REPO, "dataset", dest, raise_on_error=True)
-                assert res, f"rel store upload returned empty result for {dest}"
+                # Canonical gate BEFORE the shard free and the marker mirror
+                # (round 20): an overflow-rerouted store is invisible to P5.
+                _require_canonical_upload(res, dest, f"{stem} rel store upload")
                 report["upload_wall_s"] = time.time() - t_up
                 if not args.smoke and args.phase == "capture-reliability":
                     shard_files = sorted(stem_dir.glob("slot*.shard*.pt"))

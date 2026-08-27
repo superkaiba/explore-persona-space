@@ -50,6 +50,29 @@ r19-2. The twin repair is gated on remote SHARD presence from the SAME
     An empty remote listing plus a would-be-successful marker upload never
     ends in a bare marker write.
 
+Round 20 additions (reconciler ruling on body v19 — the r18 corruption
+survives r19 through the FILE-COUNT OVERFLOW lane):
+
+r20-1. Canonical-destination gate: ``hub._upload``'s default-ON
+    ``_filecount_overflow_retry`` returns a TRUTHY ``DEFAULT_OVERFLOW_REPO/...``
+    path without raising (even under ``raise_on_error=True``), so truthiness
+    cannot gate an attestation. Every attestation-adjacent upload site — the
+    repair's stem-dir upload, BOTH write-path store uploads, and the shared
+    marker mirror — now requires ``res == f"{DEFAULT_DATASET_REPO}/{dest}"``
+    via ``_require_canonical_upload`` (a REAL raise, not a bare assert) BEFORE
+    any memo add, marker mirror, shard free, or local-resume bless.
+    ``upload_stage`` (rollout JSONLs) stays deliberately un-gated: the
+    overflow reroute is the designed durability path for ordinary artifacts
+    (#1108/#2304).
+r20-2. The fake ``hub._upload`` factories default to ECHOING the canonical
+    success return (``f"{repo_id}/{path_in_repo}"``, hub.py ``_upload``);
+    explicit ``result=`` simulates the ``""`` verify miss or a truthy
+    overflow reroute.
+r20-3. Memo monkeypatches carry ``raising=False`` so the r19 shard-gate cases
+    reach their BEHAVIORAL assertions when run against the pre-r19 parent
+    blob (26f3cdddfe), where ``_HUB_SHARD_STEM_SETS`` does not exist — the
+    differential then fails on behavior, not setup AttributeError.
+
 Network-free: the only Hub boundary (``hub._upload`` / ``HfApi``) is faked
 with signature-mirroring fakes; every other body runs for real on tmp_path.
 """
@@ -142,7 +165,13 @@ class TestCaptureMarkerFp:
 # ---------------------------------------------------------------------------
 
 
-def _fake_upload_factory(captured: dict, *, result="repo/dest", exc: Exception | None = None):
+# Default fake result: mirror hub._upload's canonical-success contract
+# (`return f"{repo_id}/{path_in_repo}"`). Pass an explicit result= to simulate
+# the "" 0-committed-files verify miss or a truthy overflow reroute (r20).
+_ECHO_CANONICAL = object()
+
+
+def _fake_upload_factory(captured: dict, *, result=_ECHO_CANONICAL, exc: Exception | None = None):
     """Signature-mirroring fake of hub._upload (network boundary only)."""
 
     def fake_upload(
@@ -165,6 +194,8 @@ def _fake_upload_factory(captured: dict, *, result="repo/dest", exc: Exception |
         captured["raise_on_error"] = raise_on_error
         if exc is not None:
             raise exc
+        if result is _ECHO_CANONICAL:
+            return f"{repo_id}/{path_in_repo}"
         return result
 
     return fake_upload
@@ -213,12 +244,14 @@ class TestMirrorCaptureMarker:
         assert not done_p.exists()
 
     def test_empty_upload_result_leaves_no_local_marker(self, tmp_path, monkeypatch):
+        """The "" 0-committed-files verify miss now trips the canonical gate —
+        a REAL RuntimeError (r20; a bare assert is stripped under -O)."""
         stem_dir = tmp_path / "s"
         stem_dir.mkdir()
         done_p = stem_dir / "_complete.json"
         captured: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured, result=""))
-        with pytest.raises(AssertionError):
+        with pytest.raises(RuntimeError, match="did not land canonically"):
             G._mirror_capture_marker(done_p, "prefix/stem", {"fingerprint": {}})
         assert not done_p.exists()
 
@@ -290,8 +323,8 @@ class TestEnsureCaptureMarkerHubTwin:
         payload = {"fingerprint": {"stage": "capture"}, "report": {}}
         done_p = self._stem(tmp_path, payload)
         twin = f"{G.STORE_PREFIX}/arm1/post__gsm8k/_complete.json"
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): {twin}})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): {twin}}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()}, raising=False)
         calls: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(calls))
 
@@ -308,8 +341,8 @@ class TestEnsureCaptureMarkerHubTwin:
         payload = {"fingerprint": {"stage": "capture"}, "report": {"stem": "post__gsm8k"}}
         done_p = self._stem(tmp_path, payload)
         dest = f"{G.STORE_PREFIX}/arm1/post__gsm8k"
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {dest}})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {dest}}, raising=False)
         captured: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured))
 
@@ -332,8 +365,8 @@ class TestEnsureCaptureMarkerHubTwin:
         payload = {"fingerprint": {"stage": "capture"}}
         done_p = self._stem(tmp_path, payload)
         dest = f"{G.STORE_PREFIX}/arm1/post__gsm8k"
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {dest}})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {dest}}, raising=False)
         monkeypatch.setattr(G, "_upload", _fake_upload_factory({}, exc=RuntimeError("hub down")))
         with pytest.raises(RuntimeError):
             G._ensure_capture_marker_hub_twin(done_p, 1, False, "post__gsm8k", payload)
@@ -345,9 +378,12 @@ class TestEnsureCaptureMarkerHubTwin:
         stem_dir.mkdir(parents=True)
         done_p = stem_dir / "_complete.json"
         done_p.write_text(json.dumps(payload))
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(2, True): set()})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(2, True): set()}, raising=False)
         monkeypatch.setattr(
-            G, "_HUB_SHARD_STEM_SETS", {(2, True): {f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k"}}
+            G,
+            "_HUB_SHARD_STEM_SETS",
+            {(2, True): {f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k"}},
+            raising=False,
         )
         captured: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured))
@@ -384,8 +420,8 @@ class TestEnsureCaptureMarkerHubTwin:
                 yield _Entry(f"{path_in_repo}/short__csqa/slot1.shard2.pt")
 
         monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {}, raising=False)
         got = G._hub_capture_marker_paths(2, True)
         assert got == {f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k/_complete.json"}
         shard_stems = G._hub_shard_stem_paths(2, True)
@@ -416,8 +452,8 @@ class TestEnsureCaptureMarkerHubTwin:
                 yield  # pragma: no cover — keeps this a generator like the real API
 
         monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {}, raising=False)
         assert G._hub_capture_marker_paths(1, False) == set()
         assert G._hub_shard_stem_paths(1, False) == set()
 
@@ -454,7 +490,7 @@ class TestEnsureCaptureMarkerHubTwin:
 # ---------------------------------------------------------------------------
 
 
-def _fake_upload_seq_factory(calls: list, *, result="repo/dest", exc: Exception | None = None):
+def _fake_upload_seq_factory(calls: list, *, result=_ECHO_CANONICAL, exc: Exception | None = None):
     """Like _fake_upload_factory, but appends ONE record per call (ordering)."""
 
     def fake_upload(
@@ -483,6 +519,8 @@ def _fake_upload_seq_factory(calls: list, *, result="repo/dest", exc: Exception 
         calls.append(rec)
         if exc is not None:
             raise exc
+        if result is _ECHO_CANONICAL:
+            return f"{repo_id}/{path_in_repo}"
         return result
 
     return fake_upload
@@ -518,8 +556,8 @@ class TestShardGatedTwinRepair:
                 yield  # pragma: no cover — keeps this a generator like the real API
 
         monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {}, raising=False)
         with pytest.raises(RepositoryNotFoundError):
             G._hub_capture_marker_paths(1, False)
         with pytest.raises(RepositoryNotFoundError):
@@ -534,8 +572,8 @@ class TestShardGatedTwinRepair:
         stem, and no upload of ANY kind is attempted."""
         payload = {"fingerprint": {"stage": "capture"}}
         done_p = self._stem_dir(tmp_path, payload, n_local_shards=0)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()}, raising=False)
         calls: list = []
         monkeypatch.setattr(G, "_upload", _fake_upload_seq_factory(calls))
 
@@ -554,8 +592,8 @@ class TestShardGatedTwinRepair:
         marker mirror — never a marker-only write."""
         payload = {"fingerprint": {"stage": "capture"}, "report": {"stem": self.STEM}}
         done_p = self._stem_dir(tmp_path, payload, n_local_shards=2)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()}, raising=False)
         calls: list = []
         monkeypatch.setattr(G, "_upload", _fake_upload_seq_factory(calls))
 
@@ -591,8 +629,8 @@ class TestShardGatedTwinRepair:
         => mirror the marker ONLY — no redundant stem-dir re-upload."""
         payload = {"fingerprint": {"stage": "capture"}}
         done_p = self._stem_dir(tmp_path, payload, n_local_shards=2)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {self.DEST}})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {self.DEST}}, raising=False)
         calls: list = []
         monkeypatch.setattr(G, "_upload", _fake_upload_seq_factory(calls))
 
@@ -608,8 +646,8 @@ class TestShardGatedTwinRepair:
         shards it attests."""
         payload = {"fingerprint": {"stage": "capture"}}
         done_p = self._stem_dir(tmp_path, payload, n_local_shards=1)
-        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
-        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()}, raising=False)
         calls: list = []
         monkeypatch.setattr(
             G, "_upload", _fake_upload_seq_factory(calls, exc=RuntimeError("hub down"))
@@ -623,6 +661,142 @@ class TestShardGatedTwinRepair:
         assert G._HUB_MARKER_SETS[(1, False)] == set()  # twin never blessed
         assert self.DEST not in G._HUB_SHARD_STEM_SETS[(1, False)]
         assert json.loads(done_p.read_text()) == payload  # local marker kept
+
+
+# ---------------------------------------------------------------------------
+# Round 20 — canonical-destination gate (reconciler ruling on body v19): a
+# TRUTHY hub._upload return naming the overflow repo (the default-ON
+# file-count reroute, #1108/#2304) must never bless the memo or place a
+# marker — on the repair path AND the write path's shared mirror helper.
+# ---------------------------------------------------------------------------
+
+
+class TestCanonicalDestinationGate:
+    STEM = "post__gsm8k"
+
+    def setup_method(self):
+        self.DEST = f"{G.STORE_PREFIX}/arm1/{self.STEM}"
+
+    def _stem_dir(self, tmp_path, payload, *, n_local_shards=0):
+        stem_dir = tmp_path / "store" / "arm1" / self.STEM
+        stem_dir.mkdir(parents=True)
+        done_p = stem_dir / "_complete.json"
+        done_p.write_text(json.dumps(payload))
+        for i in range(n_local_shards):
+            (stem_dir / f"slot{i}.shard0.pt").write_bytes(b"\0" * 8)
+        return done_p
+
+    def test_overflow_rerouted_stem_dir_raises_before_any_marker(self, tmp_path, monkeypatch):
+        """Repair middle branch: a truthy overflow-path return from the
+        stem-dir upload RAISES naming both repos — BEFORE the memo add and
+        BEFORE any marker upload. Pre-fix, `assert res` passed on the truthy
+        reroute, the memo falsely recorded canonical presence, and the
+        single-file marker commit could land canonically exactly when the
+        multi-file folder commit was rejected by near-cap arithmetic."""
+        payload = {"fingerprint": {"stage": "capture"}}
+        done_p = self._stem_dir(tmp_path, payload, n_local_shards=2)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()}, raising=False)
+        calls: list = []
+        monkeypatch.setattr(
+            G,
+            "_upload",
+            _fake_upload_seq_factory(calls, result=f"{G.DEFAULT_OVERFLOW_REPO}/{self.DEST}"),
+        )
+
+        with pytest.raises(RuntimeError, match="did not land canonically") as ei:
+            G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+
+        # The refusal names BOTH repos (effective + canonical).
+        assert G.DEFAULT_OVERFLOW_REPO in str(ei.value)
+        assert G.DEFAULT_DATASET_REPO in str(ei.value)
+        # Only the folder upload was attempted — never a marker upload.
+        assert len(calls) == 1 and calls[0]["is_dir"] is True
+        # No memo mutation on either set.
+        assert G._HUB_MARKER_SETS[(1, False)] == set()
+        assert self.DEST not in G._HUB_SHARD_STEM_SETS[(1, False)]
+        # Local marker + shards retained: the next resume retries.
+        assert json.loads(done_p.read_text()) == payload
+        assert len(sorted(done_p.parent.glob("slot*.shard*.pt"))) == 2
+
+    def test_overflow_rerouted_marker_never_blesses_local_resume(self, tmp_path, monkeypatch):
+        """Write path (the shared mirror helper): a truthy overflow-path
+        return from the single-file marker upload RAISES before
+        ``tmp.replace(done_p)`` — local resume is never blessed."""
+        stem_dir = tmp_path / "s" / self.STEM
+        stem_dir.mkdir(parents=True)
+        done_p = stem_dir / "_complete.json"
+        dest = f"prefix/{self.STEM}"
+        captured: dict = {}
+        monkeypatch.setattr(
+            G,
+            "_upload",
+            _fake_upload_factory(
+                captured, result=f"{G.DEFAULT_OVERFLOW_REPO}/{dest}/_complete.json"
+            ),
+        )
+        with pytest.raises(RuntimeError, match="did not land canonically"):
+            G._mirror_capture_marker(done_p, dest, {"fingerprint": {}})
+        assert not done_p.exists()
+
+    def test_overflow_rerouted_marker_in_repair_never_memoizes_the_twin(
+        self, tmp_path, monkeypatch
+    ):
+        """Repair top branch (remote shards present): a rerouted MARKER upload
+        raises out of the mirror, the twin is never memoized, and the
+        pre-existing local marker keeps its bytes."""
+        payload = {"fingerprint": {"stage": "capture"}}
+        done_p = self._stem_dir(tmp_path, payload)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()}, raising=False)
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {self.DEST}}, raising=False)
+        calls: list = []
+        monkeypatch.setattr(
+            G,
+            "_upload",
+            _fake_upload_seq_factory(
+                calls, result=f"{G.DEFAULT_OVERFLOW_REPO}/{self.DEST}/_complete.json"
+            ),
+        )
+        with pytest.raises(RuntimeError, match="did not land canonically"):
+            G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+        assert G._HUB_MARKER_SETS[(1, False)] == set()
+        assert json.loads(done_p.read_text()) == payload
+
+    def test_all_attestation_upload_sites_route_through_the_gate(self):
+        """AST wiring pin: the canonical-destination check gates all four
+        attestation-adjacent upload sites — BOTH write-path store uploads
+        (run_capture + run_capture_reliability), the repair's stem-dir upload,
+        and the shared marker mirror. ``upload_stage`` (rollout JSONLs) is
+        deliberately NOT gated: the overflow reroute is the designed
+        durability path for ordinary artifacts (#1108/#2304), and gating it
+        would regress that behavior."""
+        src = Path(G.__file__).read_text()
+        tree = ast.parse(src)
+        parents: dict[ast.AST, ast.AST] = {}
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                parents[child] = node
+        callers = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", None)
+            if name != "_require_canonical_upload":
+                continue
+            anc = node
+            while anc in parents:
+                anc = parents[anc]
+                if isinstance(anc, ast.FunctionDef):
+                    callers.add(anc.name)
+        assert {
+            "run_capture",
+            "run_capture_reliability",
+            "_ensure_capture_marker_hub_twin",
+            "_mirror_capture_marker",
+        } <= callers, callers
+        # upload_stage stays un-gated by design (rollouts may reroute).
+        assert "upload_stage" not in callers, callers
 
 
 # ---------------------------------------------------------------------------

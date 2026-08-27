@@ -299,8 +299,16 @@ def enumerate_stems(out_root: Path, arm: int, smoke: bool, *, offline: bool = Fa
     if not offline:
         try:
             stems.update(_list_hf_stems(arm, smoke))
-        except (FileNotFoundError, EntryNotFoundError, RepositoryNotFoundError):
-            pass  # nothing uploaded yet (e.g. --skip-upload smoke): local-only is fine
+        except (FileNotFoundError, EntryNotFoundError, RepositoryNotFoundError) as e:
+            # Nothing uploaded yet (e.g. --skip-upload smoke): local-only is
+            # fine. A REPO-level fault (RepositoryNotFoundError: deleted repo,
+            # revoked auth) also lands here — keep the fail-safe direction but
+            # leave a trace (r19 reconciler Minor; round 20).
+            print(
+                f"[stems] HF stem listing unavailable for arm {arm} "
+                f"({type(e).__name__}: {e}) — continuing with local-only stems",
+                flush=True,
+            )
     if not stems:
         raise FileNotFoundError(
             f"no capture stems for arm {arm} — neither {local} nor HF "
