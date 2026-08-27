@@ -236,6 +236,24 @@ prescription only approximates (source-substring wiring pin vs "a
 compute_all-level pin") gets an on-merits adjudication instruction, never
 pre-resolved.
 
+**Target id latest=raised — implementer defers address-concern to the
+orchestrator (#2365 r2, 2026-08-27):** the #2552-r4 split assumes the round's
+TARGET ids carry `addressed` rows. A conformant variant: the implementer's
+(e) says "NOT calling address-concern — the round-2 reviewer verifies and the
+orchestrator records", so the target id's latest event is still `raised`
+at compose time. Then the STATUS-LINE-ONLY rule applies to the round's own
+target (a `CONCERN:: ` row would append a duplicate raised event) — say
+explicitly "do NOT emit a same-id row in ANY outcome; the Closure ledger
+status line alone carries the verdict incl. a re-raise", and attest the
+deliberate deferral as process-conformant so the twin doesn't flag the
+missing addressed row as a bookkeeping defect. Fence basis note from the
+same round: a reconcile whose rationale says the concern "blocks advance
+until addressed" + a brief framing the round as existing solely to close it
+= the #2336-r2 rider basis for the upheld-bounce fence (NOT-ADDRESSED =
+substantive FAIL, PARTIALLY-ADDRESSED carve-out), even with no verbatim
+NOT-ADDRESSED=FAIL clause; a reconcile-OPTIONAL standing rec closed in the
+same round gets a pseudo-id line at its own severity (Minor), never FAIL.
+
 **Default fence on a silent brief + out-of-round diverged_on_main (#2564 r3,
 2026-08-25):** a brief framing the round as "the concern-closure round …
 the review verifies the closures + any new defects" WITHOUT a
