@@ -295,9 +295,18 @@ def paired_contrast(
     assert_pair_metadata(ref_a, ref_b)
     hits_a, hits_b = _perrow_by_ci(rec_a), _perrow_by_ci(rec_b)
     shared = [ci for ci in universe if ci in hits_a and ci in hits_b]
-    assert len(shared) >= 0.9 * len(universe), (
+    # G5-bounded regime: per-cell drops <= 2% imply a shared intersection
+    # >= ~96%; realized q38_27b_b test drops (14.1% unclosed-think residue
+    # AFTER the registered regen, whose max_model_len re-pin ceiling binds)
+    # violate that premise, so sub-floor pairs are computed on the realized
+    # intersection and LABELED g5_bounded=false (never silently consumed;
+    # column_verdicts downgrades the arm's status). A catastrophic floor
+    # still hard-fails — below half coverage the paired read is not a
+    # measurement of the registered universe at all.
+    g5_bounded = len(shared) >= 0.9 * len(universe)
+    assert len(shared) >= 0.5 * len(universe), (
         f"paired contrast {ref_a.map_id} vs {ref_b.map_id}: only {len(shared)}/"
-        f"{len(universe)} shared rows — drop residue exceeds the G5-bounded regime"
+        f"{len(universe)} shared rows — below the catastrophic 0.5 floor"
     )
     in_shared = np.array([ci in hits_a and ci in hits_b for ci in universe])
     da = np.array([hits_a.get(ci, 0) for ci in universe], dtype=np.float64)
@@ -313,6 +322,7 @@ def paired_contrast(
     return {
         "pair": [ref_a.map_id, ref_b.map_id],
         "n_shared_rows": len(shared),
+        "g5_bounded": bool(g5_bounded),
         "delta_raw": raw_delta,
         "delta_null_means": float(delta_null),
         "delta_cal": float(raw_delta - delta_null),
@@ -354,8 +364,14 @@ def column_verdicts(maps: dict[str, dict], universe: list[str], matrix: np.ndarr
             "delta_step1_cal": c_35_36["delta_cal"],
             "delta_step2_cal": c_36_38["delta_cal"],
         }
+        g5_bounded = all(c["g5_bounded"] for c in (c_35_36, c_36_38, c_35_38))
         out[arm] = {
-            "status": "complete",
+            # A sub-floor intersection (realized q38_27b_b think-residue) is
+            # never consumed silently: the arm's status names the degraded
+            # regime, and the headline label may only be read from a
+            # g5_bounded arm (the caveat travels with the verdict).
+            "status": "complete" if g5_bounded else "complete-g5-degraded",
+            "g5_bounded": g5_bounded,
             "contrast_36_minus_35": c_35_36,
             "contrast_38_minus_36": c_36_38,
             "contrast_38_minus_35": c_35_38,
