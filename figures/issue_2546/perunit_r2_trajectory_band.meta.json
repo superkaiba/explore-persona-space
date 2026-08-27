@@ -1,0 +1,54 @@
+{
+  "commit": "708ff604",
+  "render_id": "1dd5bae01f754e78",
+  "git_commit": "708ff604a158cb82455cedd57eff0f594671287f",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_perunit_views.py",
+  "created": "2026-08-27T22:16:56Z",
+  "figsize": [
+    6.2,
+    4.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "position in the thinking span (0 = prompt end, 1 = think boundary)",
+        "ylabel": "per-question squared error of the predicted answer state",
+        "legend_labels": [
+          "5th to 95th percentile",
+          "interquartile range",
+          "median question"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$"
+        ]
+      }
+    ],
+    "series": [
+      "median question",
+      "5th to 95th percentile",
+      "interquartile range"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,11 +1,11 @@
 {
-  "commit": "2ad752e4",
-  "render_id": "b825006521d14131",
-  "git_commit": "2ad752e4ee966d3c8e6f5734b5c09b204549d424",
+  "commit": "5b39b6de",
+  "render_id": "1f72f26529864206",
+  "git_commit": "5b39b6de63ee0321aaf6096503970a6b926865cb",
   "git_dirty": false,
   "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T20:29:05Z",
+  "created": "2026-08-27T22:15:25Z",
   "figsize": [
     13.799999999999999,
     7.2
@@ -2124,859 +2124,859 @@
       "_group": 29
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2792772186642269,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.05283623055809698,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.055657212564806345,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.04734675205855444,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.04902409271119244,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.04612686794754498,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.041933516315949985,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.04574565416285453,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.043610856968587984,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.043000914913083256,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.8284537968892955,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 30
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.008719941244962618,
       "_kind": "line",
       "_group": 31
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.5742682593234248,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.41314853651864686,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.447068478161758,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.4581015774596517,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.4632078052338835,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.4549101851007568,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.4574632989878727,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.45372481079602445,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.44579192121820005,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.447706756633537,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.8780888118902161,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 32
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "answer-identity acc@1, corpus pool\n(solid; dotted = chance)": 0.2596412148583397,
       "_kind": "line",
       "_group": 33
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.3117896522476675,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.06217133163698049,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.05538592027141646,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.054707379134860054,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.055640373197625104,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.0539440203562341,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.05224766751484309,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.05046649703138253,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.05267175572519084,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.05665818490245971,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.6717557251908397,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 34
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.007496209704008593,
       "_kind": "line",
       "_group": 35
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.3833796457103161,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.28143452587704065,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.29393886766238275,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.29376519624869746,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.29749913164293157,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.3031434525877041,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.3021014241055922,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.2996700243139979,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.2996700243139979,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.3154741229593609,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.5632163945814519,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 36
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.23590437760851457,
       "_kind": "line",
       "_group": 37
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.33394276070599815,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.14682511778355953,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.1392307151395823,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.13775402573658674,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.13198790521060402,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.13001898600660994,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.12734688137261796,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.12460445819562618,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.12601082905562197,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.12474509528162576,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.65002461149005,
       "series": "needs CoT",
       "_kind": "line",
       "_group": 38
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.028959394049013994,
       "_kind": "line",
       "_group": 39
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.4957604045118631,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.434539089848308,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.47856865033061063,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.48432516530532865,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.48199144301828084,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.48160248930377286,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.47716841695838197,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.46238817580707897,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.46075457020614546,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.46098794243485025,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.7641384675223648,
       "series": "no CoT needed",
       "_kind": "line",
       "_group": 40
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.0,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.1,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.1,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.2,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.2,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.3,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.3,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.4,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.4,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.5,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.5,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.6,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.6,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.7,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.7,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.8,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.8,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 0.9,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 0.9,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
     },
     {
-      "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)": 1.0,
+      "position in the thinking span\n(0 = prompt end, 1 = think boundary)": 1.0,
       "y": 0.257589493065193,
       "_kind": "line",
       "_group": 41
@@ -3059,7 +3059,7 @@
         ]
       },
       {
-        "xlabel": "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)",
+        "xlabel": "position in the thinking span\n(0 = prompt end, 1 = think boundary)",
         "ylabel": "answer-identity acc@1, corpus pool\n(solid; dotted = chance)",
         "xticklabels": [
           "\u22120.2",
@@ -3082,7 +3082,7 @@
         ]
       },
       {
-        "xlabel": "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)",
+        "xlabel": "position in the thinking span\n(0 = prompt end, 1 = think boundary)",
         "xticklabels": [
           "\u22120.2",
           "0.0",
@@ -3107,7 +3107,7 @@
         ]
       },
       {
-        "xlabel": "CoT-content fraction t (0 = ctx end / p7_A, 1 = CoT boundary / p7_D)",
+        "xlabel": "position in the thinking span\n(0 = prompt end, 1 = think boundary)",
         "xticklabels": [
           "\u22120.2",
           "0.0",

@@ -1,0 +1,49 @@
+{
+ "n_rows": 6956,
+ "target": "ans_mean @ layer 19, arm 1 post (OpenThinker3), MATH rows",
+ "units": {
+  "sqerr_ctx": "does-stratum fit, MATH-row subset",
+  "sqerr_boundary": "does-stratum fit, MATH-row subset",
+  "sqerr_cross_model": "does-stratum fit, MATH-row subset",
+  "sqerr_t10": "does-stratum fit, MATH-row subset",
+  "sqerr_t20": "does-stratum fit, MATH-row subset",
+  "sqerr_t30": "does-stratum fit, MATH-row subset",
+  "sqerr_t40": "does-stratum fit, MATH-row subset",
+  "sqerr_t50": "does-stratum fit, MATH-row subset",
+  "sqerr_t60": "does-stratum fit, MATH-row subset",
+  "sqerr_t70": "does-stratum fit, MATH-row subset",
+  "sqerr_t80": "does-stratum fit, MATH-row subset",
+  "sqerr_t90": "does-stratum fit, MATH-row subset"
+ },
+ "crosscheck_p7A_math": {
+  "recomputed": 0.4758426647886519,
+  "committed": 0.47560089887630874,
+  "abs_dev": 0.00024176591234315037
+ },
+ "subset_r2_from_perunit": {
+  "sqerr_ctx": 0.4574638679355524,
+  "sqerr_boundary": 0.678393502705416,
+  "sqerr_cross_model": 0.5376772304346507,
+  "sqerr_t10": 0.307228870414219,
+  "sqerr_t20": 0.30233237627221254,
+  "sqerr_t30": 0.29186710681634864,
+  "sqerr_t40": 0.2794344655083977,
+  "sqerr_t50": 0.2687616588876186,
+  "sqerr_t60": 0.2624753763789911,
+  "sqerr_t70": 0.2563507120855735,
+  "sqerr_t80": 0.2500327421910091,
+  "sqerr_t90": 0.24904199476630684
+ },
+ "traj_npz_keys_mapped": {
+  "t10": "pred_l1",
+  "t20": "pred_l4",
+  "t30": "pred_l7",
+  "t40": "pred_l10",
+  "t50": "pred_l13",
+  "t60": "pred_l16",
+  "t70": "pred_l19",
+  "t80": "pred_l22",
+  "t90": "pred_l25"
+ },
+ "hf_revision": "8368cc69f887d20931acd8c4d76c142275173728"
+}

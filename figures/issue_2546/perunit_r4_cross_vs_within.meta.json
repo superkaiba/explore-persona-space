@@ -1,0 +1,51 @@
+{
+  "commit": "708ff604",
+  "render_id": "d3553ce527694dda",
+  "git_commit": "708ff604a158cb82455cedd57eff0f594671287f",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2546_perunit_views.py",
+  "created": "2026-08-27T22:16:55Z",
+  "figsize": [
+    6.0,
+    5.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "per-question squared error: post-model context map",
+        "ylabel": "per-question squared error: pre-model context map",
+        "legend_labels": [
+          "equal error",
+          "median per x-decile"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      }
+    ],
+    "series": [
+      "equal error",
+      "median per x-decile"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
