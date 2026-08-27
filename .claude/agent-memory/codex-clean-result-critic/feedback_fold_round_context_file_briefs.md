@@ -128,3 +128,89 @@ Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
   (status-move-proof). First grep every inline source for
   `^---(BEGIN|END) .*---$` collisions — a matching line inside
   SPEC/lens/body would corrupt the envelope strip.
+
+Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
+2026-08-25):
+- **Prior-CYCLE codex markers do not advance a new cycle's head
+  sentinel**: when the codex kind's history carries v1/v2 head sentinels
+  from an EARLIER fold cycle, a new fold cycle's first review is still
+  head-sentinel round 1 — "own-kind history" counts only WITHIN the
+  current fold cycle (the Claude critic's fold rounds restart at 1 the
+  same way; observed at the #1901 generic-boundary fold). The posted
+  top-level version stays auto max+1 on the kind (v3 there) — state the
+  head-vs-posted offset in the Step 5 return.
+- **User-directed body inline**: when the brief orders the body inlined,
+  wrap the verbatim copy in its own `---BEGIN/END ...---` span so the
+  Step-4 awk strips it from the no-residue greps (captured content, not
+  composer instruction text) and label it the review target of record
+  (status-move-proof). First grep every inline source for
+  `^---(BEGIN|END) .*---$` collisions — a matching line inside
+  SPEC/lens/body would corrupt the envelope strip.
+
+Three fold-RE-GATE patterns that recur PER FOLD on a multi-fold issue
+(#2564 r8 k100 fold, 2026-08-27; each also seen at the r6 ffr fold):
+- **Methodology-pointer staleness recurs at EVERY fold re-gate**: the
+  9a-quater re-export runs only after this gate PASSes, so the body's
+  top `**Methodology:**` pointer + doc are ALWAYS stale w.r.t. the
+  just-folded round at compose time. Verify the staleness yourself
+  (blob==live-doc, k100 row absent, doc!=body `## Methodology`) and
+  compose it as a NEUTRAL-facts emphasis check (pointer target, what
+  the doc lacks, the 9a-quater timing, the r6 precedent id
+  `methodology-export-stale-after-fold`) — never pre-judge
+  blocker-vs-procedural, and never suppress it.
+- **Footer-only binding-concern placement recurs per fold**: each fold's
+  code-review residuals land as one footer "Advisory residuals"
+  paragraph even when the ledger carries CONCERN severity (body label
+  "advisory" != ledger severity; #2564 k100: 2 of 3 were CONCERN, one
+  with a `verified-open` event). Compose the PLACEMENT FACT block
+  (footer-only, no in-span mention, no deferred marker, check-65
+  placement-blind per #2535, the r6 in-span-move precedent) + the
+  not-pre-judged framing.
+- **Explicit brief round beats the fold-cycle-restart inference**: a
+  brief saying "series at v<r-1>; posts as v<r>" continues the series
+  numbering across folds (head sentinel == posted version, no offset)
+  even though other issues' fold cycles restart at 1 — the #823-r8
+  explicit-brief-wins rule, confirmed again here.
+
+Two more delta/reconciler-round compose patterns (#1901 mlp-scaling-densify
+r2, 2026-08-25):
+- **Truncated verifier finding-lists get a composer recompute envelope**:
+  when a fix's adjudication turns on WHICH sections a verifier WARN names
+  and the WARN message truncates its list (check-49 prints 2 entries +
+  "…"), recompute the untruncated classification at compose time with the
+  verifier MODULE's own helpers (`sys.path.insert(0,"scripts"); import
+  verify_task_body`; re-run the check's exact loop, print per-section
+  FLAGGED/SILENCED + the operative regex) and inline it as a
+  `COMPOSER ... RECOMPUTE` envelope. Present it as NEUTRAL mechanical
+  data — never pre-judge the disposition (the #1901 case: the analyzer's
+  `companion` clause landed in the setup beat, which check-49
+  deliberately does not scan, so the fixed result still FLAGGED;
+  discharge-vs-residue was left to Codex).
+- **Reconciler-bound delta rounds inline the binding verdict + both body
+  versions' diff**: extract the `epm:review-reconcile` note verbatim as
+  its own envelope (fix list + do-not-touch rulings ARE the round's
+  adjudication standard — no 15-lens inline needed), locate the two
+  set-body commits bracketing the fix (`git log -- <body path>`), attest
+  worktree==HEAD, and inline `git diff <r1-reviewed> <fixed>` as a
+  COMPOSER DELTA DIFF envelope with the expected hunk set attested —
+  including lifecycle hunks inside the span that are NOT analyzer edits
+  (a `remove-tag keep-running` frontmatter hunk rode the #1901 span; an
+  unattested lifecycle hunk would read as a delta-confinement violation).
+
+Two more fold-round compose patterns (#1901 mlp-scaling-densify fold,
+2026-08-25):
+- **Prior-CYCLE codex markers do not advance a new cycle's head
+  sentinel**: when the codex kind's history carries v1/v2 head sentinels
+  from an EARLIER fold cycle, a new fold cycle's first review is still
+  head-sentinel round 1 — "own-kind history" counts only WITHIN the
+  current fold cycle (the Claude critic's fold rounds restart at 1 the
+  same way; observed at the #1901 generic-boundary fold). The posted
+  top-level version stays auto max+1 on the kind (v3 there) — state the
+  head-vs-posted offset in the Step 5 return.
+- **User-directed body inline**: when the brief orders the body inlined,
+  wrap the verbatim copy in its own `---BEGIN/END ...---` span so the
+  Step-4 awk strips it from the no-residue greps (captured content, not
+  composer instruction text) and label it the review target of record
+  (status-move-proof). First grep every inline source for
+  `^---(BEGIN|END) .*---$` collisions — a matching line inside
+  SPEC/lens/body would corrupt the envelope strip.

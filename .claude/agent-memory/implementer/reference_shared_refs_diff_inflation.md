@@ -26,3 +26,6 @@ Related timing fact from the same round: the no-flags `workflow_lint.py`
 run exceeded a 500 s timeout under fleet load (both captures needed the
 run_in_background + same-turn-poll shape with a ~29 min internal timeout);
 plan §8-style lint baselines should not be given sub-10-min fences.
+Re-measured on #2610 (2026-08-26): a 540 s foreground fence ALSO timed out
+(rc=124) while a concurrent session ran its own lint gate — start with the
+background shape + a ~1740 s fence; don't burn a foreground attempt first.
