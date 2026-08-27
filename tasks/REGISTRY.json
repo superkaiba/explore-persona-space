@@ -12543,8 +12543,8 @@
     "2626": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2626",
-      "status": "proposed",
+      "path": "tasks/archived/2626",
+      "status": "archived",
       "title": "Curate code-reviewer-lean agent-memory index under the 24KB lint cap (live no-flags FAIL redding Step 9c gates)"
     },
     "263": {
