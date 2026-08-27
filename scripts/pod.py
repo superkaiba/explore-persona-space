@@ -106,6 +106,15 @@ def _bootstrap_env_with_intent(pod_name: str | None) -> dict[str, str]:
       1. ``ISSUE`` already in the caller's environment (explicit override).
       2. Derived from the managed pod name (``pod-<N>[-slug]``).
       3. Left unset (code-only cones — matches bootstrap_pod.sh's default).
+
+    ``BOOTSTRAP_EXTRA_CONES`` (#2608 r3): when an issue resolves, the
+    plan-derived foreign-issue cone set is UNIONed with any caller export via
+    the SAME ``pod_lifecycle.merge_derived_extra_cones`` choke point the
+    ``pod.py provision`` path uses — a ``provision --no-bootstrap`` followed
+    by the documented ``pod.py bootstrap <name>`` recovery opens the same
+    cross-issue cones. Fail-soft on every error class (import failure,
+    malformed ISSUE, derivation error): caller env untouched, one-line
+    stderr note, the bootstrap proceeds.
     """
     env = os.environ.copy()
     if not ("POD_INTENT" in env and env["POD_INTENT"].strip()):
@@ -114,6 +123,21 @@ def _bootstrap_env_with_intent(pod_name: str | None) -> dict[str, str]:
         derived = _derive_issue_from_pod_name(pod_name)
         if derived is not None:
             env["ISSUE"] = derived
+    issue_val = env.get("ISSUE", "").strip()
+    if issue_val:
+        try:
+            import pod_lifecycle  # lazy sibling import (SCRIPT_DIR on sys.path)
+
+            pod_lifecycle.merge_derived_extra_cones(env, int(issue_val))
+        except Exception as exc:
+            # Fail-soft by contract (#2608): a manual re-bootstrap must never
+            # fail or stall on cone derivation; the bootstrap-side audit legs
+            # remain the loud backstop.
+            print(
+                f"NOTE: extra-cone derivation skipped for manual bootstrap "
+                f"(ISSUE={issue_val!r}): {exc!r}",
+                file=sys.stderr,
+            )
     return env
 
 

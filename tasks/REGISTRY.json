@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2615,
+  "highest_id": 2620,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10523,8 +10523,8 @@
     "2362": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2362",
-      "status": "reviewing",
+      "path": "tasks/completed/2362",
+      "status": "completed",
       "title": "set-body: fail-loud on byte-identical no-op + gate body-edit markers on an actual body commit (phantom v4 edits, #2333)"
     },
     "2363": {
@@ -11772,8 +11772,8 @@
     "2525": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2525",
-      "status": "running",
+      "path": "tasks/reviewing/2525",
+      "status": "reviewing",
       "title": "Fix three fleet-wide test invariants broken by sibling landings on main (ungated HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)"
     },
     "2526": {
@@ -12231,11 +12231,11 @@
     },
     "2587": {
       "goal": "On Qwen/Qwen3.5-9B with thinking disabled, replicate the #2564 minimal-pair discrimination battery end to end (fresh 20-50k-context context-to-answer ridge map fit with layer sweep; full 984-context bank + the answer_language and query_content_oneword pilot axes at K=10 draws; parent battery reads with the new arms) and compare the per-axis discrimination profile against the Qwen2.5-7B-Instruct parent. Pod-side env upgrade only (transformers/vLLM with qwen3_5 support in the pod venv; repo pins untouched); compat smoke gate before any production wave; thinking-off enforced and asserted in every generation and capture.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2587",
-      "status": "running",
-      "title": "Replicate the #2564 minimal-pair battery on Qwen3.5-9B (thinking disabled)"
+      "path": "tasks/interpreting/2587",
+      "status": "interpreting",
+      "title": "The minimal-pair discrimination profile of the context-to-answer map carries over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)"
     },
     "2588": {
       "goal": "Determine whether linear context-to-answer mapping quality (held-out kNN retrieval primary, R^2 + identity+bias secondary) increases with general model capability (Artificial Analysis Intelligence Index), across a cross-family open-weight panel (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting with the end-of-CoT state as map input), on the generic mapping corpus and GPQA Diamond.",
@@ -12402,8 +12402,8 @@
     "2608": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2608",
-      "status": "reviewing",
+      "path": "tasks/completed/2608",
+      "status": "completed",
       "title": "Pod bootstrap cone sparse-checkout omits CROSS-ISSUE artifact cones, so drivers reading prior issues' committed eval_results/figures crash at launch"
     },
     "2609": {
@@ -12423,8 +12423,8 @@
     "2610": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2610",
-      "status": "running",
+      "path": "tasks/reviewing/2610",
+      "status": "reviewing",
       "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
     },
     "2611": {
@@ -12462,12 +12462,48 @@
       "status": "proposed",
       "title": "Pod sparse clones silently hide sibling-issue eval_results/ inputs (empty dir, no error)"
     },
+    "2616": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2616",
+      "status": "running",
+      "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
+    },
+    "2617": {
+      "goal": "On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping safety valence (e.g. 'how to build a bomb' vs 'how to build a house'), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine, magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context; the question is whether the map's pre-generation geometry encodes the refusal DECISION (transport tracks whether behavior flipped) or merely surface content.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/2617",
+      "status": "planning",
+      "title": "Safety-valence minimal pairs: does the frozen context->answer map encode the refusal decision or just surface text?"
+    },
+    "2618": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2618",
+      "status": "proposed",
+      "title": "Fitted answer-to-context reverse map vs pseudoinverse of the context-to-answer map on the 963k-context n1m bank"
+    },
+    "2619": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2619",
+      "status": "proposed",
+      "title": "Boot-disk worktree regrowth: land the #2132 data-disk cutover; sweep foreign-issue caches in reused worktrees"
+    },
     "262": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/262",
       "status": "archived",
       "title": "Run proper experiment: EM then marker coupling to see if leakage really increases"
+    },
+    "2620": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/2620",
+      "status": "planning",
+      "title": "curate .claude/agent-memory/code-reviewer-lean/MEMORY.md under the 24KB agent-memory index FAIL cap (41KB on main; reds worktree spec-freshness sync commits + silently truncates the lean twin's loaded lessons)"
     },
     "263": {
       "has_clean_result": true,

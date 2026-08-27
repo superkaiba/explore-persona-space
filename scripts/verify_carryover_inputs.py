@@ -285,6 +285,106 @@ def _issue_of_path(path: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+# --- Cross-issue cone derivation (#2608) ------------------------------------
+# Cone-dir head of a cone-scope candidate: unlike _ISSUE_DIR_RE this accepts a
+# bare dir citation with NO trailing slash (`eval_results/issue_1482`), since
+# a dir/no-ext candidate is still a dependency declaration for cone purposes.
+_CONE_HEAD_RE = re.compile(r"^((?:ood_)?eval_results)/issue_(\d+)(?:/|$)")
+# figures/issue_<M> head of a cone-scope candidate. Matched against EXPANDED
+# candidates (never raw plan text), so `$` is a real citation boundary: the
+# `(?:/|$)` right guard rejects suffix-named sibling trees
+# (`figures/issue_2476-old/...`) and files directly under figures/
+# (`figures/issue_2476.png`), which are not the `figures/issue_2476` cone
+# (#2608 round-2 boundary fix; the eval head above already carries it).
+_FIGURES_ISSUE_RE = re.compile(r"^figures/issue_(\d+)(?:/|$)")
+# Cone-scope candidate scan (#2608 round 2). Like _PATH_RE but (a) scoped to
+# the three cone families (figures/ is NOT in _PATH_RE's alternation), and
+# (b) tolerant of `{...}` brace groups WITH commas: the brace-grouped citation
+# `eval_results/issue_{1482,2476}/...` is the notation many persisted plans
+# use, and _PATH_RE's char class carries `{}` but NOT `,`, so gate-mode
+# extraction truncates such a candidate at the first comma
+# (`eval_results/issue_{1482`) and _CONE_HEAD_RE derives nothing (round-1
+# reconciler blocker). Candidates are brace-expanded via _expand_braces
+# BEFORE the cone-head regexes above. Gate-mode _PATH_RE and its
+# classification semantics are deliberately untouched: widening its raw char
+# class with `,` would glom comma-separated prose citations into one
+# candidate. Same left guard as _PATH_RE so HF-repo / nested
+# (`.../figures/issue_5`) forms never match.
+_CONE_CAND_RE = re.compile(
+    r"(?<![\w/\-.])"
+    r"(?P<path>(?:eval_results|ood_eval_results|figures)/"
+    r"[A-Za-z0-9](?:[\w.\-/*?\[\]<>]|\{[^{}\n]*\})*)"
+)
+
+
+def extra_cones_for_plan(plan_text: str, issue: int) -> list[str]:
+    """Sorted, deduped FOREIGN-issue artifact cone dirs cited in a plan (#2608).
+
+    Returns the top-2-component cone dirs (``eval_results/issue_<M>``,
+    ``ood_eval_results/issue_<M>``, ``figures/issue_<M>``) for every cited
+    path whose owning issue ``M != issue`` — the set pod bootstrap must open
+    via ``BOOTSTRAP_EXTRA_CONES`` so the round's carry-over inputs exist on
+    the pod's cone sparse-checkout (incident: #2569's first launch died on
+    BOTH pods because the cross-issue cones were hidden).
+
+    Derives from a cone-scope scan of the plan text (``_CONE_CAND_RE``) that
+    covers every Channel-A form INCLUDING skip-classed candidates (glob
+    ``eval_results/issue_M/*.json``, trailing-``/`` dir, no-ext forms): the
+    gate's skip reasons exist for its never-block contract, but for cone
+    derivation they are real dependency declarations — filtering to
+    classify-eligible candidates only would recreate a blind path for plans
+    that cite only globs/dirs. Brace-grouped citations
+    (``eval_results/issue_{1482,2476}/...``) are expanded via
+    ``_expand_braces`` before the cone-head regexes, so every group member
+    derives its cone (pre-fix they derived NOTHING — ``_PATH_RE`` truncates
+    the candidate at the first comma; round-1 reconciler blocker). Own-issue
+    paths are never returned.
+    """
+    cones: set[str] = set()
+    for m in _CONE_CAND_RE.finditer(plan_text):
+        raw = m.group("path").rstrip(_TRAIL_PUNCT)
+        for cand in _bounded_brace_expansions(raw):
+            em = _CONE_HEAD_RE.match(cand)
+            if em and int(em.group(2)) != issue:
+                cones.add(f"{em.group(1)}/issue_{em.group(2)}")
+            fm = _FIGURES_ISSUE_RE.match(cand)
+            if fm and int(fm.group(1)) != issue:
+                cones.add(f"figures/issue_{fm.group(1)}")
+    return sorted(cones)
+
+
+# Hard cap on the Cartesian brace expansion of ONE cone-scope candidate
+# (#2608 r3, cone-brace-expansion-unbounded NIT): real plans cite <= ~10
+# members per group, so 512 covers 2-3 modest groups while bounding a
+# degenerate many-group candidate that would otherwise multiply without
+# limit. Applies ONLY to cone derivation — gate-mode `_collect_decl` keeps
+# calling `_expand_braces` directly (its semantics are deliberately
+# untouched; the gate's declared values are operator-authored, not scanned
+# free text).
+_BRACE_EXPANSION_CAP = 512
+
+
+def _bounded_brace_expansions(raw: str, cap: int = _BRACE_EXPANSION_CAP) -> list[str]:
+    """`_expand_braces` bounded by the Cartesian product of group sizes.
+
+    Computes the expansion COUNT first (product of per-group member counts —
+    exact for the flat, non-nested groups `_CONE_CAND_RE` admits) so an
+    over-cap candidate is SKIPPED with a one-line stderr note BEFORE any
+    expansion is materialized. Fail-soft: cone derivation must never stall a
+    provision on a pathological plan line.
+    """
+    n = 1
+    for grp in re.findall(r"\{([^{}\n]*)\}", raw):
+        n *= grp.count(",") + 1
+    if n > cap:
+        print(
+            f"NOTE: skipping cone candidate with {n} brace expansions (> cap {cap}): {raw[:120]}",
+            file=sys.stderr,
+        )
+        return []
+    return _expand_braces(raw)
+
+
 def _expand_braces(s: str) -> list[str]:
     """Expand `{a,b}` brace-globs (recursively for multiple groups)."""
     m = re.search(r"\{([^{}]*)\}", s)
@@ -1388,26 +1488,38 @@ def _repo_branch_arg(value: str) -> str:
 
 
 def _validate_cli_mode(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
-    """Post-parse mode validation (#2263); `parser.error` exits 2.
+    """Post-parse mode validation (#2263, #2608); `parser.error` exits 2.
 
-    Resolver mode (--print-repo-branch) takes only --issue/--repo-root —
-    every check-mode flag is refused loud so a fence typo cannot half-run
-    the gate; check mode still REQUIRES --plan.
+    Resolver modes (--print-repo-branch / --print-extra-cones) are mutually
+    exclusive; each takes only its own flag subset — every check-mode flag
+    is refused loud so a fence typo cannot half-run the gate; check mode
+    still REQUIRES --plan. --print-extra-cones additionally accepts an
+    OPTIONAL --plan (an explicit plan file overrides task_workflow
+    resolution of the persisted plans/v*.md union).
     """
+    if args.print_repo_branch and args.print_extra_cones:
+        parser.error("--print-repo-branch and --print-extra-cones are mutually exclusive")
+    check_mode_flags = [
+        ("--ref", args.ref is not None),
+        ("--repo-branch", args.repo_branch is not None),
+        ("--extra-sync-path", bool(args.extra_sync_path)),
+        ("--no-fetch", args.no_fetch),
+        ("--json", args.as_json),
+        ("--lane", args.lane != "clone"),
+    ]
     if args.print_repo_branch:
-        forbidden = [
-            ("--plan", args.plan is not None),
-            ("--ref", args.ref is not None),
-            ("--repo-branch", args.repo_branch is not None),
-            ("--extra-sync-path", bool(args.extra_sync_path)),
-            ("--no-fetch", args.no_fetch),
-            ("--json", args.as_json),
-            ("--lane", args.lane != "clone"),
-        ]
+        forbidden = [("--plan", args.plan is not None), *check_mode_flags]
         bad = [flag for flag, hit in forbidden if hit]
         if bad:
             parser.error(
                 f"--print-repo-branch combines only with --issue/--repo-root (got {', '.join(bad)})"
+            )
+    elif args.print_extra_cones:
+        bad = [flag for flag, hit in check_mode_flags if hit]
+        if bad:
+            parser.error(
+                "--print-extra-cones combines only with --issue/--repo-root[/--plan] "
+                f"(got {', '.join(bad)})"
             )
     elif args.plan is None:
         parser.error("--plan is required")
@@ -1425,6 +1537,51 @@ def _print_repo_branch_mode(repo_root: Path, issue: int) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     print(branch)
+    return 0
+
+
+def _print_extra_cones_mode(issue: int, plan: str | None) -> int:
+    """Execute --print-extra-cones: space-separated foreign cone dirs, exit 0.
+
+    FAIL-SOFT by contract (#2608): this mode feeds pod provisioning
+    (``pod_lifecycle._bootstrap`` derives ``BOOTSTRAP_EXTRA_CONES`` from it)
+    and must never fail or stall a provision — an unreadable plan, an
+    unresolvable task, an import failure, or zero matches all print an empty
+    stdout and exit 0, with a one-line NOTE on stderr for the error classes
+    (never a silent swallow). Distinct from --print-repo-branch, whose
+    refusals are load-bearing (exit 2). Without --plan, reads the UNION of
+    the task's persisted plans/v*.md via ``task_workflow.find_task_path``
+    (never hand-built ``tasks/...`` paths): cones are additive, idempotent
+    and JSON-tree-sized, so over-inclusion from a superseded plan version
+    costs a few MB of promisor fetch, while under-inclusion is exactly the
+    #2569 incident class.
+    """
+    texts: list[str] = []
+    if plan is not None:
+        try:
+            texts.append(Path(plan).read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"NOTE: --print-extra-cones: cannot read plan {plan}: {exc}", file=sys.stderr)
+            return 0
+    else:
+        try:
+            from explore_persona_space.task_workflow import find_task_path
+
+            plans_dir = find_task_path(issue) / "plans"
+            for p in sorted(plans_dir.glob("v*.md")):
+                texts.append(p.read_text(encoding="utf-8"))
+        except Exception as exc:
+            # Fail-soft resolver contract (#2608): task not found, registry
+            # drift, branch-guard refusal, import failure — note + exit 0.
+            print(
+                f"NOTE: --print-extra-cones: cannot resolve persisted plans for issue "
+                f"{issue}: {exc!r}",
+                file=sys.stderr,
+            )
+            return 0
+    cones = sorted({c for t in texts for c in extra_cones_for_plan(t, issue)})
+    if cones:
+        print(" ".join(cones))
     return 0
 
 
@@ -1456,6 +1613,19 @@ def main(argv: list[str] | None = None) -> int:
             "issue-scoped branch resolver BOTH Step 6 fences call (#2263). Exit 2 with "
             "EMPTY stdout on zero or multiple candidates; combines only with "
             "--issue/--repo-root"
+        ),
+    )
+    parser.add_argument(
+        "--print-extra-cones",
+        action="store_true",
+        help=(
+            "print the space-separated FOREIGN-issue artifact cone dirs "
+            "(eval_results / ood_eval_results / figures issue_<M> trees, M != --issue) "
+            "cited in the plan text, for BOOTSTRAP_EXTRA_CONES threading at pod "
+            "provision (#2608). With --plan reads that file; without it, reads the "
+            "UNION of the task's persisted plans/v*.md via task_workflow. FAIL-SOFT "
+            "resolver mode: no plan / no task / no matches print nothing and exit 0 "
+            "(never blocks a provision); combines only with --issue/--repo-root[/--plan]"
         ),
     )
     ref_group = parser.add_mutually_exclusive_group()
@@ -1524,6 +1694,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", dest="as_json", help="JSON findings")
     args = parser.parse_args(argv)
     _validate_cli_mode(parser, args)
+
+    if args.print_extra_cones:
+        # #2608 resolver mode: fail-soft by contract; needs no repo root
+        # (plan text only), so it dispatches BEFORE repo-root resolution.
+        return _print_extra_cones_mode(args.issue, args.plan)
 
     repo_root = args.repo_root if args.repo_root is not None else _default_repo_root()
     if repo_root is None:
