@@ -148,7 +148,9 @@ The figure plots held-out retrieval acc@1 across every swept layer for the two e
 
 > **Figure.** *The oldest release leads at 62 of 64 corresponding layers.* Retrieval acc@1 by layer for Qwen3.5-27B and Qwen3.8-27B (thinking off; n = 987 shared test prompts per layer); circles mark each model's validation-frozen layer; exceptions are layers 0 and 3 only.
 
-Because the oldest release leads at 62 of 64 corresponding layers (exceptions: layers 0 and 3; best odd layers 0.752 vs 0.747), every layer-selection rule yields the inversion; the frozen-layer conditioning of the intervals affects widths, not the endpoint sign. A nested per-draw layer re-selection bootstrap stays open for user triage, reclassified as GPU work: per-row per-layer hit indicators were never persisted, so it needs about 190 per-layer refits over roughly 150 GB of activation shards (restage recipe recorded with the follow-up round artifacts). It would move interval widths only; the 62-of-64-layer lead fixes the sign. Per-unit exemption: the figure already shows every swept layer individually.
+Because the oldest release leads at 62 of 64 corresponding layers (exceptions: layers 0 and 3; best odd layers 0.752 vs 0.747), every layer-selection rule yields the inversion; the frozen-layer conditioning of the intervals affects widths, not the endpoint sign. A nested per-draw layer re-selection bootstrap stays open for user triage, reclassified as GPU work: per-row per-layer hit indicators were never persisted, so it needs about 190 per-layer refits over roughly 150 GB of activation shards (restage recipe recorded with the follow-up round artifacts). It would move interval widths only; the 62-of-64-layer lead fixes the sign.
+
+Per-unit exemption: the figure already shows every swept layer individually.
 
 ### No panel-wide capability trend in either read
 
