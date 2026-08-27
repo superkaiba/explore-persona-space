@@ -19,302 +19,200 @@ relates_to:
 - spec-context-as-vector
 - identity-contextual-vs-base
 ---
-# Can the context→answer map predict the POST-CoT answer, and how does CoT training change the map?
+# A thinking model's final answer state is largely predictable before reasoning starts, but the specific answer becomes retrievable only at the end of the trace (MODERATE confidence)
 
-## Motivation
+<!-- clean-result-v4 -->
 
-The context→answer map `v_A ≈ M v_C` predicts the mean answer activation from the
-last-prompt-token activation, in ONE forward pass at ONE token, at held-out R² ≈ 0.8 on
-wild chat (#779, #1482). In a CoT-trained model the output splits at a literal token:
-`<think> … </think>` then the answer. That makes the question exact, and it splits into
-two plots.
+## Takeaways
 
-A constant-depth transformer's single forward pass sits in TC⁰
-([2402.12875](https://arxiv.org/abs/2402.12875),
-[2310.07923](https://arxiv.org/abs/2310.07923)); CoT is what buys serial computation
-beyond it. Where the reasoning does real serial work, the post-CoT answer should not be
-predictable from the pre-CoT context state. Where it IS predictable, the CoT was not
-computing the answer.
+- On reasoning-heavy corpora, the end-of-prompt state predicts the final answer state at held-out R² **0.58 to 0.70**, matching the whole-output map to within 0.2 pp on two of three settings.
+- Retrieval disagrees: from the context state the predicted vector identifies the correct answer at acc@1 0.28 versus 0.83 from the end-of-thought state on reasoning-heavy corpora (chance 0.9%).
+- Mid-reasoning states predict the answer state worse than the context state (primary pair: R² flat 0.58 versus 0.69, retrieval 4 to 6%); predictability jumps only at the think boundary.
+- Dividing by split-half ceilings (0.856 versus 0.718) flips the needs-reasoning advantage for the trace and whole-output maps on the R1-Distill pair; raw cross-stratum reads there invert the answer.
+- Reasoning training rewrote the map: only full input-plus-output reparameterization reaches the post-map band (4 of 5 OpenThinker3 ladder units; none on R1-Distill); operator cosine 0.05 to 0.20.
+- All 185 planned fit jobs landed; the same-template retrieval pool is degenerate by construction, so the answer-present label ships as metric-discordant; Math-7B's 4,096-token window dropped 7.55% of pre-side rows.
 
 ## Goal
 
-(1) In CoT-trained models, measure R2 and acc@1 for four maps — post-context→answer, post-context→CoT, post-context→CoT+answer, post-CoT→answer — on a corpus that DOES versus DOESN'T require chain-of-thought; and (2) measure whether a PRE-CoT-trained model's context vector can predict the POST-CoT-trained model's post-</think> answer state, and how the fitted map changes across the CoT-training step, using a matched same-geometry pre/post pair (Qwen2.5-7B-Instruct -> OpenThinker3-7B).
+Measure, in reasoning-trained models, how well linear maps from the pre-reasoning context state predict the reasoning trace, the answer, and the whole output on corpora that do versus don't require chain-of-thought, and whether the pre-training model's context state predicts the post-training model's answer state.
 
----
+- **This experiment in context:** The context→answer map line reads held-out R² 0.7542 at layer 19 on 963,444 wild-chat contexts ([#779](https://eps.superkaiba.com/tasks/779)), a different eval distribution, so not directly comparable to these benchmark corpora. [#928](https://eps.superkaiba.com/tasks/928) showed the map survives on a thinking model at whole-output grain; [#1005](https://eps.superkaiba.com/tasks/1005) supplied the R1-Distill parse and capture recipe; [#1336](https://eps.superkaiba.com/tasks/1336) the staged corpora, fit conventions, and reparameterization ladder; [#722](https://eps.superkaiba.com/tasks/722) the baseline and retrieval helpers; [#1345](https://eps.superkaiba.com/tasks/1345) the operator-comparison conventions. A thinking model splits its output at a literal token, turning "is the answer already in the context state?" into an exact, decomposable question.
+- **Broader narrative:** If the answer state is encoded before any reasoning token, the serial chain-of-thought is not computing it and one forward pass could monitor the eventual answer; if the trace does real serial work, predictability should climb through the thinking span.
 
-# Plot 7 — Relationship to CoT
+Conciseness and figure-text warns acknowledged: some result sections run to the edge of the 120-word per-result prose band, total content prose exceeds the 800-word budget (three model settings, five results, and the coverage disclosures), and the trajectory figure's x-axis label renders the internal cell slugs for its context-end and boundary endpoints.
 
-**Metrics (both, every cell):** held-out R², and **acc@1** = kNN retrieval at k=1
-(`analysis/mapping_baselines.knn_retrieval`, euclidean + cosine, chance = 1/n_pool
-stated). Plus the mandatory identity+learned-bias baseline
-(`identity_bias_predict`) — all four maps are same-dimension, so it always applies.
+## Methodology
 
-**Four maps, all within ONE CoT-trained model:**
+- **Design:** Three model settings ran concurrently, one pod each: (1) OpenThinker3-7B against its exact non-reasoning parent Qwen2.5-7B-Instruct (identical 3,584-dim, 28-layer geometry; carries the headline); (2) DeepSeek-R1-Distill-Qwen-7B against Qwen2.5-Math-7B (a different reasoning recipe; direction-only, because the two chat templates differ, render-confounding its cross-model cells); (3) Qwen3-8B with thinking toggled on and off on the same weights (4,096-dim, 36 layers; never compared 1:1 against the 7B pairs). Per setting: ~34,200 benchmark prompts over 8 corpora, greedy on-policy generation, teacher-forced re-capture of the model's own tokens with all-layer residual hooks, bf16 span summaries (context end; trace mean; trace boundary; answer mean; whole-output mean; 9 interior trace positions at the frozen-layer subset), and closed-form ridge maps between summaries. 222 statistical fit units across 185 registry jobs (71 + 71 + 43), all `ok`, `dropped_or_degraded` empty in every fit report.
 
-| cell | input | target | what it tests |
-|---|---|---|---|
-| **A** | post-context `v_C` (last prompt token, before any think token) | answer only (post-`</think>` span) | **the hypothesis** — is the answer there before reasoning? |
-| **B** | post-context `v_C` | CoT only (inside the think block) | is the *reasoning trace* predictable even when the answer is not? |
-| **C** | post-context `v_C` | CoT + answer (whole output) | the closest analogue of the existing R² ≈ 0.8 map |
-| **D** | post-CoT vector (state at `</think>`) | answer only | **the ceiling** — after the serial work, is the answer there? |
+- **Training:** N/A — no model training. Complete generation/capture/fit hyperparameter table:
 
-**Crossed with corpus: requires-CoT vs doesn't-require-CoT.**
+| Hyperparameter | Value | Source |
+|---|---|---|
+| Decoding, every generation stage | greedy (`decode_fallback: false`, `prefill_fallback: false` realized in all settings) | plan §4 (#928/#1005 precedent); rollout `meta.json` fingerprints |
+| Post-side / think-on generation cap | 8,192 new tokens; cap-hit rows force-regenerated at 16,384; residual cap-hit rows dropped and counted per corpus | plan §4.2 (#1005, #1426); realized rates in rollout `meta.json` |
+| Pre-side / think-off generation caps | 2,048 (Qwen2.5-7B-Instruct, Qwen3-8B think-off); 4,096 (Qwen2.5-Math-7B, bounded by its 4,096-token context window) | plan §4.2; plan defect note under Data extraction |
+| Reliability draws | temperature 0.6, top_p 0.95, 4 draws; 1,500 / 1,000 / 1,000 post-side prompts per setting plus 500 short-side | plan §4.2 (DeepSeek-R1 model card range) |
+| Ridge fit | primal ridge; K=5 folds, seed 0; λ grid logspace(−3, 8, 23); inner-CV λ selection with 2 inner folds (recorded module-global patch); GCV degrees-of-freedom guard active | plan §10 (#1336, #825 fit cores); `fit_params` block in every cell JSON |
+| Frozen layers | 14, 19, 26 of 28 with headline 19 (7B settings); 18, 24, 33 of 36 with headline 24 (Qwen3-8B, matched fractional depth); frozen in the plan before any fit | plan §11 (#825 gate constant, #779 layer plateau) |
+| Activation store | bf16 span summaries, 500-row shards, finiteness asserted | plan §4.2 (#825/#1336 storage parity) |
+| Uncertainty | 1,000 paired prompt-level bootstrap draws per headline quantity; 20 shuffle nulls per fit (advisory) | plan §6 (#1336 convention) |
+| Retrieval metric | kNN, k=1, euclidean and cosine, within-corpus pool, content-identity hit rule; per-query chance = share of the pool in the query's answer-content class | plan §6 (#722 helper, called rather than reimplemented) |
+| Corpus dedup | 5-gram Jaccard ≥ 0.8, within and across corpora, before any split | plan §4.2 (#1775 leakage class) |
+| Models | `Qwen/Qwen2.5-7B-Instruct` → `open-thoughts/OpenThinker3-7B` (revision `864fb9aef`); `Qwen/Qwen2.5-Math-7B` → `deepseek-ai/DeepSeek-R1-Distill-Qwen-7B`; `Qwen/Qwen3-8B` original hybrid release, not a 2507 checkpoint | plan §4.1; revisions pinned in rollout `meta.json` fingerprints |
 
-**Predicted pattern and what each contrast buys:**
+- **Evaluation:** Two dependent variables per map cell, both on held-out rows at the frozen headline layer. (1) Pooled held-out R²: the construct is linear predictability of the target activation summary from the input summary; on-distribution, since inputs and targets come from teacher-forced re-passes over the model's own greedy rollouts (the standard recipe of this line, capture determinism gated at cosine 0.999/0.9999). (2) Answer-identity acc@1: the construct is whether the predicted vector discriminates answer content; a retrieved neighbor counts as a hit only if it carries the same canonical answer content (normalized boxed value, option letter, or native answer), reported as lift over stated per-query chance. Every fitted map also reports the identity-plus-bias baseline and a square random-projection control; the latter draws an invertible d×d Gaussian, so near-parity with the fitted map is expected by construction, and the control checks basis-invariance only, never map capacity. Noise ceilings per stratum and setting come from split-half consistency over the 4 temperature-0.6 draws, boosted to full length; the greedy-target versus sampled-draw temperature mismatch is a carried approximation. GSM8K-test has no reliability draws by design (concern id `gsm8k-test-has-no-reliability-draws-so-no-noise-ceiling`). The per-cell JSON fields `r2_ceiling_normalized: null` and `ceiling_status: "missing_reliability_capture"` are stale hardcoded stubs from before the reliability leg landed and must not be quoted; every normalized number here divides the cell's headline R² by its stratum ceiling from `reliability/reliability__a{1,2,3}.json` (all `status: ok`). Raw cross-setting comparisons systematically understate the R1-Distill pair, whose ceilings (0.856 / 0.718) sit far below the other settings (0.94 to 0.95); compare settings normalized. Pooled-stratum bootstrap intervals ignore corpus clustering and read anti-conservative; per-corpus cells are the robust unit. Estimator validity: no cell fits with minimum training rows below the feature dimension (0 of 170 cell JSONs), no selected λ sits at a grid edge, and each cell records its per-fit selector. The fit-core reuse gate refit a pinned fit cell from the parent fit-core line at layer 19 to R² 0.673094 against its committed 0.6731 (absolute deviation 5.9e-6, tolerance 0.01, pass). Language-intrusion audit (Qwen-family models, English eval, no judged pools anywhere since the run makes zero LLM-judge calls): CJK-script rows in the scanned capture-substrate stems are 2 of 1,301 (OpenThinker3 post, GSM8K-test) and 7 of 1,167 (OpenThinker3 post, ARC), 0 of 1,301 on the six other scanned generation stems.
 
-- *Doesn't require CoT*: A, B, C, D all high. The answer was present from the start.
-- *Requires CoT*: **A collapses**; **D stays high** — the A→D gap IS the serial work, read
-  in the same units; **B stays moderate**, because the trace's register, length, and shape
-  are predictable even when its content is not; **C sits between and is inflated by the
-  long trace**.
-- **The A-vs-C contrast is the star of the plot.** If C ≫ A on the requires-CoT corpus,
-  then the whole-output map's apparent competence is carried by the reasoning trace, not
-  by the answer. That is the single most important thing to establish, because it says the
-  existing 0.8-style whole-output read cannot be cited as evidence the map predicts
-  answers.
+- **Data extraction:** All corpora are established benchmarks (tier 2): GSM8K train (7,473 drawn) and test (1,319, eval-only), MATH (7,500), ContextHub deductive and abductive levels 1-4 (6,960 drawn for the 7B settings, 8,760 for Qwen3-8B), MMLU (6,750 / 7,680), ARC-Challenge (1,172), CommonsenseQA (1,221), PIQA (1,838); prompts rendered zero-shot with each model's own chat template and no added system prompt. Needs-reasoning stratum: GSM8K rows with 4 or more calculator steps, MATH, ContextHub levels 3-4; no-reasoning stratum: MMLU, ARC, CSQA, PIQA, ContextHub level 1, GSM8K 1-step rows; published CoT-recovery gaps (+54 to +68 pp versus 0 to +4.6 pp) anchor the split, and three within-run necessity dials (GSM8K step bins; pair necessity = post-correct while pre-wrong; the Qwen3-8B on-model toggle) grade it. Every contrast within a setting uses one shared usable-row intersection (pooled fit sets 26,300 / 24,910 / 29,652 rows; needs-reasoning 13,116 / 11,790 / 14,221; no-reasoning 10,967 / 11,516 / 12,855). Attrition, disclosed per side: the Math-7B pre side dropped 7.55% of 33,928 rows because generations hitting its 4,096-token window are dropped rather than truncated-and-kept; the drop is length-selected and therefore difficulty-correlated (per-corpus rates 1.9% on MMLU to 12.2% on ContextHub), and the plan's regenerate-at-16,384 trigger is structurally unavailable there, a plan defect: 7 of 8 pre-side corpora exceeded the 2% trigger with zero regenerated rows (concern ids `post-side-retention-differential-across-corpora`, `arm2-pre-caphit-over-trigger-no-regen-headroom`). The matched pre/post row loss on that pair is bounded two-sided between 7.55% and 11.01% pooled; its four small corpora (PIQA, GSM8K-test, CSQA, ARC) sit below the feature dimension at both bracket ends and never carry per-corpus fits (pooled-stratum members only, by design). Post-side residual cap-hit after forced 16,384 regeneration: 3.46% pooled on R1-Distill (26 to 987 regenerated rows per corpus); OpenThinker3 MMLU is the worst single cell at 7.7% residual cap-hit plus 455 degenerate-repetition drops (85.5% usable), a verbosity-selected loss carried as a caveat on that cell. Two MATH gold rows (`math:13255`, `math:2467`) were dropped for empty upstream ground truth, accounted separately from cap-hit. One reliability-instrumentation caveat stays open (`partial-resume-rel-draw-reallocation`, verified-open): a partial resume reallocates the full reliability target over pending corpora rather than cumulatively recording realized draws, so per-corpus draw composition on the R1-Distill pair is approximate; the ceilings pool across corpora within a stratum. Qwen3-8B toggle classes per corpus are committed in `necessity/qwen3_toggle_labels.json` (for example GSM8K-train: 6,329 both-correct, 592 necessary, 175 both-wrong, 66 rescued-by-no-think, 213 unknown).
 
-**Backing panel (continuous version):** the DOES/DOESN'T bar plot is a two-bin summary of
-a continuous relation. Also plot R² and acc@1 versus the graded necessity score, one line
-per map cell, so the bar plot is not the only evidence.
+- **Sample training/evaluation data + completions:** No training data exists; samples are eval prompts with on-policy greedy completions. Quoted spans are verbatim; long completions are truncated where marked.
 
-**Measurement discipline this plot needs:**
-- acc@1 retrieves within a **per-target pool** (answer pool for A/D, CoT pool for B,
-  whole-output pool for C). Cross-target retrieval is meaningless.
-- Post-`</think>` answers are short and template-heavy ("The answer is 72."), so R² is
-  inflated by the template. Retrieve within a **same-template pool** so acc@1 forces
-  discrimination on answer content. acc@1 is the headline metric for A and D for this
-  reason; R² is the companion.
-- Per-target **noise ceilings**: split-half reliability of each target across rollouts,
-  per stratum. Reasoning traces branch, so requires-CoT targets are genuinely noisier;
-  #1073 measured the single-draw penalty at 0.046–0.078 on wild chat and it will be
-  larger here. Report ceiling-normalized values alongside raw.
-- Report per-stratum target token count and target variance, so a length- or
-  stereotypy-driven metric change is legible rather than silent.
+<details>
+<summary>Needs-reasoning example: GSM8K-test row, OpenThinker3-7B (post side)</summary>
 
----
+1 of 1,301 rows, random sample (seed 42); full file: [post_greedy_a1/gsm8k_test.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/8368cc69f887d20931acd8c4d76c142275173728/issue2546_cotmap/raw_completions/post_greedy_a1/gsm8k_test.jsonl)
 
-# Plot 8 — Relationship to CoT training
+```
+row_id: gsm8k_test:1044   gold: 1   calculator steps: 4   finish_reason: stop   n_gen_tokens: 1119
+PROMPT: On the first day of school, Ava sees that her friends Cole and Xavier have both grown
+a lot over the summer. Xavier was 4 feet tall and grew 3 inches. Cole was 50 inches tall and
+grew 2 inches over the summer. What is the difference between Cole and Xavier's height now?
 
-**Question:** can a PRE-CoT-trained context vector predict the POST-CoT answer, and how
-does the mapping change across the CoT-training step?
+Put your final answer within \boxed{}.
+COMPLETION (head): <think> Okay, so Ava is trying to figure out the difference in height
+between her friends Cole and Xavier after they've grown over the summer. Let me see, the
+problem says that Xavier was 4 feet tall and grew 3 inches. T
+[... truncated: 1,119-token completion ...]
+COMPLETION (tail): rom the larger height:
+52 inches - 51 inches = 1 inch
+Thus, the difference between Cole and Xavier's height now is \(\boxed{1}\).
+```
 
-**The pair (primary): `Qwen/Qwen2.5-7B-Instruct` → `open-thoughts/OpenThinker3-7B`.**
-Verified 2026-08-24:
+</details>
 
-- OpenThinker3-7B is fine-tuned **from Qwen2.5-7B-Instruct**, on OpenThoughts3-1.2M,
-  **pure SFT on reasoning traces, no RL**. A single-variable CoT-training intervention.
-- Both configs: hidden 3584, 28 layers, vocab 152064, `Qwen2ForCausalLM`. **Identical
-  geometry**, so a cross-model map is well posed, the identity baseline is meaningful, the
-  layer-19 pin transfers, and the extraction rig needs no changes.
-- The *pre* model is the exact model the whole mapping line is built on, so the R² ≈ 0.8
-  map and the #1482 baselines are the pre-side reference for free.
+<details>
+<summary>Same row, Qwen2.5-7B-Instruct (pre side)</summary>
 
-| cell | input model | input | target model | target | tests |
-|---|---|---|---|---|---|
-| **E** | pre | `v_C` | post | post-`</think>` answer | **the headline** — does CoT training put something there that was not? |
-| **F** | post | `v_C` | post | post-`</think>` answer | within-model reference (= Plot 7 cell A) |
-| **G** | pre | `v_C` | pre | pre's own answer | the existing baseline map (the 0.8) |
-| **H** | pre | `v_C` | post | post's CoT | does the pre-model's context state predict the reasoning the post-model will do? |
+1 of 1,301 rows, the pre-side completion of the same random-sample (seed 42) row; full file: [pre_greedy_a1/gsm8k_test.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/8368cc69f887d20931acd8c4d76c142275173728/issue2546_cotmap/raw_completions/pre_greedy_a1/gsm8k_test.jsonl)
 
-**"How does the mapping change" — use the built battery, do not re-derive it:**
-within-stage held-out R², the **#825 reparameterization gap** (within-stage R² minus the
-reparameterized-base-map R²), and operator comparison following the
-`scripts/issue1345_operator_comparison.py` conventions. Per CLAUDE.md's
-similarity-statistic rule, state whether each similarity is direction-aware
-(raw / Procrustes-aligned operator cosine) or spectrum/rotation-invariant-only — the
-latter can never support a "same operator up to rotation" claim.
+```
+row_id: gsm8k_test:1044   finish_reason: stop   n_gen_tokens: 239   (no think block; the pre
+model answers directly)
+COMPLETION (head): To find the difference between Cole and Xavier's current heights, we first
+need to calculate their heights after the summer growth.
 
-**Major reuse — #1336 is this battery one level up.** Status `awaiting_promotion`, goal:
-"Determine whether RLVR-style RL post-training changes the linear context→answer-profile
-map more than SFT/DPO post-training, using a released separated-stage ladder … per stage,
-measure (a) within-stage held-out R² of the per-example ridge map c_x → v(x) and (b) the
-#825 Result-2 reparameterization gap." It carries 55 banked turnstores across
-`gsm8k_train_full` / `gsm8k_test1319` / `math7500` / `lmsys5k` / `lmsys23k` / `if11k` /
-`sft11k` / `uf11k`, and its `common.py` already handles a Qwen2.5-7B base/instruct pair.
-**Plot 8 is the CoT-training instance of #1336's battery: reuse the battery, swap the
-ladder.** The planner must check the banked turnstores for fitness before regenerating
-anything (`.claude/rules/artifact-reuse.md`).
+Xavier was originally 4 feet tall. Since there are 12 inches in a foot, we convert Xavier's
+height to inches:
+[... truncated: 239-token completion ...]
+```
 
-**Second pair (robustness, a different CoT-training recipe):** `Qwen/Qwen2.5-Math-7B` →
-`deepseek-ai/DeepSeek-R1-Distill-Qwen-7B` (SFT on 800k R1-generated traces; verified same
-3584/28 geometry). Weaker as a pre/post pair because the base is a non-instruct
-math-specialized model, but it is a genuinely different CoT-training recipe, and
-R1-Distill's chat template **prefills `<think>\n`**, so its trace/answer boundary is
-guaranteed rather than emergent.
+</details>
 
----
+<details>
+<summary>No-reasoning example: ARC-Challenge row, OpenThinker3-7B (post side)</summary>
 
-## Necessity dials (defining the DOES vs DOESN'T corpora)
+1 of 1,167 rows, random sample (seed 42); full file: [post_greedy_a1/arc_challenge.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/8368cc69f887d20931acd8c4d76c142275173728/issue2546_cotmap/raw_completions/post_greedy_a1/arc_challenge.jsonl)
 
-1. **On-model thinking toggle.** `Qwen/Qwen3-8B` — the ORIGINAL hybrid release, NOT a
-   `-2507` checkpoint — toggles `enable_thinking=True/False` on the SAME WEIGHTS, giving
-   per-question necessity `correct(think) ∧ ¬correct(no-think)` on the exact model being
-   mapped, with no prompt-hack confound. The `-2507` checkpoints split into separate
-   Instruct and Thinking models and LOSE this affordance, so the checkpoint pin is
-   load-bearing. Geometry is 4096/36, so this arm needs its own refit — it is a third arm,
-   not a substitute for the same-geometry pair. Qwen3-8B is also the model in the closest
-   prior work (2603.17199), so the arms stay comparable.
-2. **GSM8K calculator-step count** from the inline `<<48/2=24>>` annotations in the gold
-   solutions. Free, per question, WITHIN-corpus so register and format are fixed. Bin
-   k=1 / 2–3 / 4–6 / ≥7, matching <https://arxiv.org/html/2608.09942>.
-3. **ContextHub deductive + abductive levels 1–4** — a within-corpus logical-depth ladder
-   that is NOT math, so it de-confounds "requires CoT" from "is a math problem". No
-   math-only design can do that. 600 → 2,396 rows per level.
+```
+row_id: arc_challenge:15   gold: A   finish_reason: stop   n_gen_tokens: 610
+PROMPT: At which temperature does water freeze?
 
-**Pool pre-stratification and cross-model prior (zero GPU):** the TAUR-Lab CoT Analysis
-Project collection, released with "To CoT or not to CoT?"
-([2409.12183](https://arxiv.org/abs/2409.12183), ICLR 2025).
-<https://huggingface.co/collections/TAUR-Lab/cot-analysis-project-66bbb9e5e0156e65059895f5>
+A. 0 degrees Celsius
+B. 32 degrees Celsius
+C. 100 degrees Celsius
+D. 212 degrees Celsius
 
-16 per-model repos × 31–45 benchmark configs. Verified schema (2026-08-24, config
-`gsm8k`): per question, `zero_shot_cot_is_correct`, `zero_shot_direct_is_correct`, the
-few-shot twins, parsed answers, rendered prompts, gold answer, and character offsets of
-the answer span in `additional_information.*_answer_parser_info.answer_span`. Question
-sets align across model repos (verified: gsm8k 1319, mmlu 14042, musique_all 4834,
-bbh 6258, siqa 3908, contexthub levels identical across four repos probed), so a
-per-question cross-model join is well defined. Some configs come DOUBLED (gsm8k_hard
-2638 = 2×1319, arc_challenge 598 = 2×299) and need dedup before joining.
+Answer with the letter of the correct option.
+COMPLETION (head): <think> Okay, so the question is asking at which temperature water freezes,
+and the options are A. 0°C, B. 32°C, C. 100°C, D. 212°C. Hmm, I need to remember my basic
+science here. Let me think. I know
+[... truncated: 610-token completion ...]
+COMPLETION (tail): lsius). However, the question specifically asks for the freezing temperature
+in Celsius, so **A** is the correct choice.
+```
 
-`rescue_rate(q)` = fraction of the 16 models with `cot_correct ∧ ¬direct_correct`. Used to
-pre-select a question pool spanning the necessity range cheaply, and as a
-model-independent robustness regressor. It does NOT replace dial 1 — necessity is
-model-specific, and a borrowed label attenuates the correlation on the mapped model.
+</details>
 
-DOESN'T-require-CoT corpus: MMLU, ARC-Challenge (200-question bank already in-repo at
-`src/explore_persona_space/artifacts/query_banks/arc_c_v1.json`), CSQA, PIQA, Winogrande,
-ContextHub level 1, GSM8K k=1. DOES: GSM8K k≥4, MATH, ContextHub levels 3–4.
+## Results
 
-Published anchor on Qwen-2.5-7B-Instruct among others: GSM8K +53.9 to +68.0 pp CoT gain,
-MATH +55.4 to +67.5 pp, MMLU +2.4 to +4.6 pp, ARC-C +0.0 to +3.3 pp
-(<https://arxiv.org/html/2608.09942>).
+### Before any reasoning token, the whole-output map barely beats the answer-only map, but retrieval says the specific answer is mostly not there yet
 
----
+Plotted: held-out R² at the frozen headline layer for four within-model maps by stratum and setting; lower rows: ceiling-normalized R², retrieval lift, same-template pool.
 
-## Span extraction (verified)
+![Cell grid of R squared, ceiling-normalized R squared, and retrieval lift for four maps by stratum and setting](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/hero1_cellgrid.png)
 
-- **R1-Distill-Qwen-7B**: chat template prefills `<think>\n` at the generation prompt, so
-  the boundary is the `</think>` token. Guaranteed.
-- **OpenThinker3-7B**: the chat template does NOT prefill `<think>`, but the
-  OpenThoughts3-1.2M training traces DO contain `<think>`/`</think>` (verified on the
-  dataset's first rows), so the model emits them in the response text. **The realized
-  emission rate must be checked at smoke time**; below ~99% the answer-span split needs a
-  declared fallback and the shortfall is reported, never silently dropped.
+> **Figure.** *Context-to-answer R² sits within 0.2 pp of the whole-output map on OpenThinker3-7B (0.693 versus 0.695, needs-reasoning, n = 13,116).* Black dashes: identity-plus-bias baseline, deeply negative on a symlog axis. Row 3 is the discordant read: retrieval lift from the context state is a fraction of the boundary state's. Row 4 states the same-template degeneracy verdicts.
 
-## Positioning — a live disagreement this design adjudicates
+Every setting lands on the lattice's answer-already-present label (gap under 15 pp, presence over 50 pp), but the concordance overlay cannot be evaluated (degenerate same-template pool), so the label ships as metric-discordant: R² says present, retrieval (0.279 from context, 0.829 at the boundary) places the decisive content in the residual. Layer 19, frozen in the plan, carries the headline; the observed best layer 27 reads 0.771. Ceiling normalization flips two stratum orderings on R1-Distill.
 
-**Camp A, the answer is already there pre-CoT:**
-- "Catching rationalization in the act" (<https://arxiv.org/html/2603.17199>): pre-CoT
-  probes at the first decoding step predict motivated reasoning as well as a GPT-5-nano
-  monitor with full trace access; end-of-CoT probes recover the hinted choice at >86%.
-  Qwen3-8B thinking mode; MMLU / AQuA / ARC-C / CSQA. **Binary and small-multiclass
-  classification only — explicitly does NOT regress onto answer activations.**
-- "Therefore I am. I Think." (<https://arxiv.org/html/2604.01202>): tool-call decisions
-  >90–95% predictable from activations before any reasoning token.
-- "Reasoning Models Know When They're Right" (NYU): correctness probe reads 0.79 AUROC
-  from the very first reasoning step, 0.95 by completion. DeepSeek-R1-Distill series,
-  QwQ-32B.
+| Quantity (needs-reasoning, headline layer) | OpenThinker3 pair | 2.5 to 97.5% (paired bootstrap) |
+|---|---|---|
+| Whole-output map minus answer map, R² gap | +0.22 pp | −0.01 to +0.43 pp |
+| Answer-map R² | 0.6928 | 0.6897 to 0.6956 |
+| Answer-map retrieval lift, corpus pool | +0.271 | +0.263 to +0.278 |
+| End-of-thought retrieval lift, corpus pool | +0.820 | +0.814 to +0.826 |
 
-**Camp B, the answer is computed during CoT:**
-- "LLMs Faithfully and Iteratively Compute Answers During CoT"
-  (<https://arxiv.org/abs/2412.01113>): on multi-step arithmetic, linear probes for the
-  final answer improve MONOTONICALLY along the reasoning chain.
-
-**Contribution.** Every Camp-A result probes a LOW-BANDWIDTH target (a binary label, a
-4–5 way choice, a correctness flag). Plot 7 regresses the FULL answer state and reads it
-by retrieval among a candidate pool, which is a far higher-bandwidth claim, and crosses it
-with a graded necessity dial. Camp B's monotone-improvement result is a sharp prior
-prediction that cell A should fail precisely where necessity is high while cell D holds.
-Plot 8 then adds the axis neither camp has: what CoT TRAINING does to the map.
-
-## Cost drivers to size at plan time
-
-- Reasoning traces are LONG. `max_new_tokens` must be far above the 2048 default
-  (CLAUDE.md: reasoning/CoT models need far more); budget 8k–16k and report the realized
-  cap-hit fraction with a pre-registered re-gen trigger (default: >2% per cell ⇒ re-generate
-  at ≥2× the cap).
-- A generation corpus plus a map refit is needed per model arm; three targets per arm
-  (answer / CoT / CoT+answer) come from the SAME generation, so the extra targets are
-  nearly free once traces exist.
-- Activation capture over long sequences: decide capture-during-generation vs a
-  teacher-forced re-pass; the re-pass cost scales with trace length.
-- Check #1336's 55 banked turnstores for fitness BEFORE generating anything.
-
-## SCOPE ADDENDUM — user decision 2026-08-24, BINDING (both items are IN SCOPE for round 1)
-
-Decisions 1 and 2 below were open at filing and the user resolved BOTH as "add them".
-They are requirements, not options. The planner must cost and schedule them.
-
-### Addendum 1 — all THREE model arms are in round-1 scope
-
-| arm | pre (pre-CoT-trained) | post (CoT-trained) | geometry | what it uniquely buys |
+| R1-Distill pair, R² by stratum | needs-reasoning raw | no-reasoning raw | needs / ceiling | none / ceiling |
 |---|---|---|---|---|
-| **1 (primary)** | `Qwen/Qwen2.5-7B-Instruct` | `open-thoughts/OpenThinker3-7B` | 3584 / 28, IDENTICAL both sides | the same-geometry pre/post pair; covers Plot 7 AND Plot 8 on its own; pre side is the model the existing R² ≈ 0.8 map and the #1482 baselines already live on |
-| **2 (recipe robustness)** | `Qwen/Qwen2.5-Math-7B` | `deepseek-ai/DeepSeek-R1-Distill-Qwen-7B` | 3584 / 28, identical both sides | a genuinely DIFFERENT CoT-training recipe (SFT on 800k R1-generated traces vs OpenThoughts3 QwQ traces); its chat template PREFILLS `<think>\n`, so the trace/answer boundary is guaranteed rather than emergent |
-| **3 (necessity toggle)** | — | `Qwen/Qwen3-8B`, **ORIGINAL hybrid release, NOT a `-2507` checkpoint** | 4096 / 36, own refit required | `enable_thinking=True/False` on the SAME WEIGHTS ⇒ per-question CoT necessity measured on the exact model being mapped, with no prompt-hack confound. Also the model used by the closest prior work (2603.17199), so the arms stay comparable |
+| Context → answer | 0.584 | 0.399 | 0.683 | 0.555 |
+| Context → trace | 0.666 | 0.598 | 0.778 | 0.832 (flip) |
+| Context → whole output | 0.687 | 0.606 | 0.802 | 0.844 (flip) |
+| End of thought → answer | 0.703 | 0.476 | 0.822 | 0.662 |
 
-Binding notes:
-- The `-2507` checkpoint pin on arm 3 is load-bearing: `-2507` split into separate Instruct
-  (emits no `<think>`) and Thinking models and LOSES the toggle. Pin the original release.
-- Arm 3 is a DIFFERENT geometry (4096/36), so it gets its own map refit and its own layer
-  selection; it is NOT comparable cell-by-cell to arms 1 and 2, and any cross-arm claim
-  must say so.
-- Arm 2's pre side (`Qwen2.5-Math-7B`) is a non-instruct math-specialised base, so its own
-  answers differ in kind from arm 1's. Arm 2 is a recipe-robustness read on the DIRECTION
-  of the effect, not a second estimate of arm 1's magnitude.
-- **Cost consequence, stated plainly:** arms 2 and 3 each need their own generation corpus
-  and their own map refit, and arm 3's refit is at a different geometry. This is roughly
-  3× arm 1 alone on generation, not a marginal addition. Size all three in plan §9.
+### Mid-reasoning states predict the final answer state worse than the context state; predictability jumps only at the think boundary
 
-### Addendum 2 — the predictability-vs-CoT-position trajectory is a required deliverable
+Plotted: held-out R² (top) and answer-identity acc@1 (bottom) for maps from the state at trace fraction t to the fixed final answer state; endpoints are the context-end and boundary maps.
 
-Capture the map input at normalised positions THROUGH the think block, not only at its two
-endpoints, and refit the map at each position against the SAME target (the post-`</think>`
-answer state `v_A*`):
+![Predictability of the final answer state versus position inside the thinking span, R squared and retrieval rows](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/hero3_trajectory.png)
 
-- `t = pre` — last prompt token, before any think token. **This is exactly Plot 7 cell A.**
-- `t ∈ (0,1)` — residual state at normalised positions inside the think block; default grid
-  `{0.1, 0.2, … , 0.9}`, matching the normalised-position convention of 2603.17199 so the
-  arms are directly comparable to the closest prior work.
-- `t = end` — the state at `</think>`. **This is exactly Plot 7 cell D.**
+> **Figure.** *The trajectory is a boundary step.* On needs-reasoning corpora (OpenThinker3 pair) R² falls from 0.693 at the prompt to a flat 0.58 mid-trace and recovers to 0.807 only at the boundary; retrieval collapses to 0.04 to 0.06 mid-trace against 0.279 at the prompt and 0.829 at the boundary. Same shape in every setting.
 
-So the trajectory SUBSUMES cells A and D as its endpoints, and Plot 7 becomes the endpoint
-summary of a curve the trajectory plots in full. Deliverable: R² and acc@1 versus `t`, one
-curve per necessity stratum, per arm, with the noise ceiling drawn per stratum.
+The plan predicted a monotone rise of at least +0.10 R² on needs-reasoning corpora; the rank correlation over the 11 positions is negative on the primary pair (−0.46) and the +0.11 end-to-end rise is entirely a boundary step. A positional-distance account predicts a rising curve; the interior dip runs opposite, so mid-trace states are genuinely poorer linear encodings of the eventual answer. Interior positions exist at the three frozen layers only.
 
-Why it is required and not optional:
-- It is the direct test of Camp B's monotonicity claim (2412.01113: linear probes for the
-  final answer improve MONOTONICALLY along the reasoning chain). The predicted
-  reconciliation is that the curve is FLAT AND HIGH from `t = pre` on the doesn't-require-CoT
-  corpus, and RISES from near chance on the requires-CoT corpus. A flat-high curve on
-  requires-CoT would refute the whole serial-computation framing, which is the outcome the
-  design must be able to see.
-- The `t = pre → t = end` rise, per stratum, is the serial work measured in the DV's own
-  units, as a curve rather than a two-point gap.
+### Per-corpus reads reproduce the pattern, matched-n companions leave it unchanged, and every planned fit cell landed
 
-Cost: the intermediate positions come from the SAME forward pass as the endpoints, so the
-capture is near-free once traces exist. The non-trivial added cost is the refit at each
-position (9 extra ridge fits per arm per target), which is the vectorizable many-cell fit
-case — batch the position axis, do NOT loop
-(`.claude/rules/vectorize-many-cell-fits.md`).
+Plotted: held-out R² at the headline layer for each within-model map on the four per-corpus fit cells, one heatmap per setting; the disaggregated view behind the stratum bars above.
 
-## Remaining open decision
+![Per-corpus heatmap of held-out R squared for the four maps in each setting](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/exp_percorpus_heatmap.png)
 
-1. Free directional read first: the frozen #779 map applied cross-model to OpenThinker3
-   contexts on the 1,319 GSM8K test questions, binned by calculator-step count. Weak
-   (cross-model transfer, so a drop is partly confounded) but near-zero GPU.
+> **Figure.** *Within single corpora the context-to-answer map reads 0.46 to 0.56 (OpenThinker3 pair) and the boundary map leads everywhere (0.66 to 0.71).* Pooled-stratum bars sit above every within-corpus value, so pooled numbers carry corpus-identity structure; the within-corpus grain is the de-confounded read.
 
-## Provenance
+Matched-n companions leave the stratum contrast unchanged (answer map 0.690 refit at 10,967 rows versus 0.693 at full n). Maps are stratum-specific: fitting on needs-reasoning corpora scores R² 0.13 on the other stratum's held-out rows, 0.45 in the reverse direction, and 0.47 for the decontaminated GSM8K train-to-test transfer. Coverage was complete: 185 registry jobs finished `ok` with zero dropped or degraded units, so no planned cell is silently absent from any figure.
 
-Originating chat, 2026-08-24: "I want to design an experiment to check if our mapping does
-a lot worse on questions where CoT is in some sense NECESSARY. find a
-dataset/model/framework for this"; then the scoping call that necessity be operationalized
-as measured CoT lift and that the lift "doesn't have to be our model"; then the redirect
-"wait but we want to predict directly from context to the post CoT answer, and do this in
-CoT trained models"; then the Plot 7 / Plot 8 framing, verbatim:
+### Reasoning training rewrote the context-to-answer operator, even though the pre-training context state still predicts the post-training answer state
 
-> Plot 7: Relationship to CoT / Plot: R^2 and acc@1 for: post context vector → answer /
-> post context vector → CoT only / post context vector → CoT + answer / post CoT vector →
-> answer / on a corpus that DOES vs DOESN'T require CoT. Claim: TBD. Transition: We then
-> wanted to see how this mapping was affected by CoT training.
-> Plot 8: Relationship to CoT training. Question: can pre CoT trained context vector
-> predict post CoT answer / how does the mapping change.
+Plotted: cross-model and within-model R² per stratum (top); the pre-to-post map pushed through the 9-tier reparameterization ladder with per-corpus bands and sufficient-tier stars (middle); operator similarity (bottom).
+
+![Cross-model map bars, reparameterization ladder curves and sufficient tiers, and operator similarity for both model pairs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/hero2_p8_ladder.png)
+
+> **Figure.** *The pre-training context state predicts the post-training answer state at R² 0.730, above the post model's own 0.693 (OpenThinker3 pair, needs-reasoning); no coordinate change at or below rotation reproduces the post map anywhere.* Stars mark ladder units whose full-reparameterization tier reaches the band; the R1-Distill panel reaches none.
+
+The ordering reverses on the render-confounded R1-Distill pair (0.566 cross, 0.584 within), so pre-above-post is OpenThinker3-specific; cross-model maps beating zero and the identity baseline replicate in both pairs. Direction-aware operator cosine reads 0.053 / 0.196 against a near-zero rotation null, while the 0.984 / 0.993 spectrum cosine is rotation-invariant only and cannot support a same-operator claim. A frozen wild-chat pre-model map fits far below zero in both reads, so the cross-model predictability is corpus-fit rather than portable.
+
+| Ladder unit | OpenThinker3 pair, sufficient tier | R1-Distill pair, sufficient tier |
+|---|---|---|
+| Pooled | full reparameterization (band 0.021) | none within band (0.017) |
+| GSM8K-train | full reparameterization (0.014) | none (0.014) |
+| MATH | full reparameterization (0.014) | none (0.014) |
+| ContextHub | full reparameterization (0.015) | none (0.010) |
+| MMLU | none within band (0.017) | none (0.012) |
+
+### On-model necessity moves retrieval more than R², and thinking-off answer states are as predictable as thinking-on
+
+Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
+
+![Per-corpus R squared and retrieval lift against corpus necessity rate for all settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/backing_necessity.png)
+
+> **Figure.** *Necessity tracks retrieval more than R².* At the corpus grain the R²-versus-necessity relation is weak and non-monotone for every map; the boundary-versus-context retrieval gap widens with necessity.
+
+With thinking disabled on the same Qwen3-8B weights the context-to-answer map is as strong as with thinking on (0.696 versus 0.699 on needs-reasoning corpora; 0.535 versus 0.575 on the rest): pre-answer predictability is independent of whether the model will reason. The necessity dials exist only at corpus grain (`backing-panel-grain-gap`). The boundary-minus-context retrieval gap widens with necessity in every setting (+0.55 versus +0.30 across the OpenThinker3 strata), the direction the serial-work prediction expected, expressed in retrieval rather than R².
+
+---
+
+**Repro:** Three RunPod pods, 4× H100 each (intent `ft-7b`), one per setting, phases sharded 4-way per pod; realized fit-phase walls 2.08 h (71 jobs, OpenThinker3 pod), ~7.8 h (71 jobs, R1-Distill pod; same job count, slowdown cause not isolated: measured thread oversubscription plus MooseFS I/O variance), 2.11 h (43 jobs, Qwen3-8B pod); the fit phase holds its GPUs (model resident, 38 to 80 GB per GPU, bursty utilization). Code on branch `issue-2546`, tip [`4f105327a8d`](https://github.com/superkaiba/explore-persona-space/tree/4f105327a8d4a48ba73571826241bb865c5cb30c): generation/capture `scripts/issue2546_gen_capture.py` (capture ran at `a917b1a9f56`), fits `scripts/issue2546_fit_cells.py` (cells at `76ac8d57c0a`, gate at `add7f605869`), staging `scripts/issue2546_stage_corpora.py`, figures `scripts/issue2546_figures.py` (all 33 figure files rendered at [`2ad752e4ee9`](https://github.com/superkaiba/explore-persona-space/commit/2ad752e4ee966d3c8e6f5734b5c09b204549d424), `git_dirty: false` in every sidecar). Eval JSONs: [`eval_results/issue_2546/`](https://github.com/superkaiba/explore-persona-space/tree/4f105327a8d4a48ba73571826241bb865c5cb30c/eval_results/issue_2546) (209 files: 170 cells, 16 reports, 12 ladder/operator, 3 each rowsets/reliability/necessity, 1 frozen-map read, 1 gate). HF data repo pinned at [`8368cc69`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8368cc69f887d20931acd8c4d76c142275173728/issue2546_cotmap): `corpora_v1/` (15 files), `raw_completions/` (21 stage dirs, rollout text for every generation stage), `analysis_tensors/thinkstore/arm{1,2,3}/`, `analysis_tensors/preds/arm{1,2,3}/` (per-row predictions at frozen layers, 62 + 62 + 40 npz), `eval_results_mirror/`, `logs/`. Transfer-path note: the R1-Distill pod staged with both HF accelerators disabled after an `hf_transfer` download fault, the Qwen3-8B pod with xet enabled; uploads ran 45 to 47 MB/s either way, so the deviation does not generalize to uploads. Config slugs: cells `p7_{A,B,C,D,traj,Aoff}` and `p8_{E,F,G,H}` crossed with `{does,doesnt,<corpus>,matchn}` and `a{1,2,3}`; the plan §6.5 glob `out/operator_comparison__a2.json` drifted to the realized `out/ladder/operator_comparison__a2.json`. Reused: staged GSM8K/MATH corpora from [#1336](https://eps.superkaiba.com/tasks/1336) (fit: same prompt corpora, counts re-measured at staging); banked wild-chat map weights from [#779](https://eps.superkaiba.com/tasks/779) (fit: frozen directional read only); the pinned fit-gate activation store from [#825](https://eps.superkaiba.com/tasks/825) (fit: gate refit reproduced the committed value to 5.9e-6); baseline and retrieval helpers from [#722](https://eps.superkaiba.com/tasks/722); operator-comparison conventions from [#1345](https://eps.superkaiba.com/tasks/1345).
+
+**Context:** Origin prompt (verbatim):
+
+> `I want to design an experiment to check if our mapping does a lot worse on questions where CoT is in some sense NECESSARY. find a dataset/model/framework for this`
+
+A binding scope addendum (user decision 2026-08-24) made all three model settings and the 9-point trace trajectory round-1 requirements. Lineage: extends the context→answer mapping question; fresh direction (no parent task). Created 2026-08-24; generation and capture 2026-08-25 to 2026-08-26; fits, figures, and the 24-round code-review chain closed 2026-08-27.
