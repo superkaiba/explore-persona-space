@@ -436,6 +436,30 @@ stripping + blockquoting the inlined prior CODEX verdict per the rclose
 recipe; post-fix line anchors recomputed since both inlined verdicts cite
 the r1 blob's lines.
 
+**#2368 r1 (2026-08-27) sharpening — tests-only mutation-hardening variant
+(diff hardens a test-file payload extractor + adds parametrized mutation
+tests; no lint/guard/production script touched):** the #2566 tests-only
+adaptations fired again (roster SKIP-form with the pin voluntarily run;
+floor EXEMPT via sibling-surfacing Provenance WITH a plan-verify PASS
+present — recorded at plan v1, plan later amended to v2 by critic REVISE,
+attest both per the #2306 nuance; voluntary `## Smoke run` H2 pre-triaged
+per the #2366(a) line). New: (a) **marker sweep claims are scoped to
+PRE-ROUND state by default — recount at HEAD including the round's OWN
+additions.** The marker claimed "exactly ONE quote-char extraction call
+under tests/" while the composer's HEAD recount found TWO (the hardened
+extractor at :109 + the round's own NEW mutation-test splice locator at
+:289, `text.index("'", ...)`). Compose as a FENCED test-the-hypothesis
+adjudication — at most Minor `substantive` + optional CONCERN:: row (the
+new call only locates the splice point, feeds the HARDENED extractor, and
+sits behind a loud precondition assert) — never an attested defect, never
+silently dropped. (b) **Mutation-test rounds get a red-direction
+static-trace duty:** verify each splice's first post-close-quote char
+violates the new predicate AND that the OLD extractor (read at the pinned
+merge base via `git show <MB>:<file>`) silently truncates with the sentinel
+in no block — the docstring's red-evidence claim is verifiable without
+running pytest; also pin the `pytest.raises(pytest.fail.Exception,
+match=...)` contract against the guard's actual message literal.
+
 **#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
 verify_plan-check round (diff adds a GPU-state advisory family to
 poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
