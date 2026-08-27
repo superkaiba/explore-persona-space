@@ -341,3 +341,30 @@ twin doesn't re-raise the settled r2 report-accuracy point; (d) joint-blocker
 closure: two reconciler blockers discharging ONE ledger BLOCKER get ONE
 status line covering both halves (a defect in either half = NOT-ADDRESSED),
 not two lines the forwarder could split.
+
+**#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
+verify_plan-check round (diff adds a GPU-state advisory family to
+poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
+(a) **Step 0.72 fired on a compose for the first time** — a zero-GPU-memory
+"no CUDA context" advisory IS an idle-family verdict from host GPU state, so
+the gate legitimately triggers. Compose it as a REQUIRED named header line
+(`**Own-device GPU-verdict adjudication (Step 0.72):** ...`) with deployment
+FACTS stated neutrally, never pre-adjudicated: probe runs on the issue's
+DEDICATED RunPod pod (whole-pod == assigned devices), mirrors the
+pre-existing whole-pod GPU_UTIL idle-advisory probe, actuation is
+advisory-only (marker+push, never drain/kill), and the SLURM-lanes-have-no-
+probe residual is verifiable from the wiring docstring; name the
+`# HOST_WIDE_GPU_VERDICT_EXEMPT:` waiver as the remedy if the twin judges
+scoping unsound. (b) **Advisory-only plan constraints compose as a
+neutrality TRACE duty** (wiring strictly after the verdict; an escaping
+exception is BOTH a neutrality break and the crash-safety third leg;
+post-failure-retry vs once-per-phase dedup = double-post AND never-post both
+findings) — plus a pre-triage that a sanctioned `recommend_next_interval`
+anomaly term needs its plan license checked, not assumed. (c) A marker
+per-file "+277/-3" that is really the `--stat` combined churn (numstat
+274/3) is the #2336-r2(e) stats-hygiene shape again — pre-triage as Minor
+report-accuracy when totals match. (d) Both target scripts on
+LIVE_WORKFLOW_HELPERS at once = one roster fact naming both line numbers.
+(e) plan-verify version nuance NEGATIVE case: marker verified v2 AND the
+symlink IS v2 — attest "no version gap" explicitly so the twin doesn't go
+hunting.
