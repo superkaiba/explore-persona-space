@@ -15986,7 +15986,7 @@ def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: p
     return []
 
 
-_ALL_CAPS_CONST_RE = re.compile(r"[A-Z][A-Z0-9_]+")
+_ALL_CAPS_CONST_RE = re.compile(r"[A-Z][A-Z0-9_]*")
 
 
 def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan: four patch-form hit rules + import-table module resolution + repo-wide pin suppression (#2364); extracting a branch would just relocate it
@@ -16024,20 +16024,31 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
     same constant inside an assert-bearing function — an Attribute read
     (``mod.CONST``) or a bare Name read of a from-imported constant
     (``from mod import CONST``) — excluding reads that sit inside a
-    recognized patch call's own arguments (the save-the-original idiom) and
-    reads that are the immediate value of a simple ``name = mod.CONST``
-    assignment.
+    recognized patch call's own arguments, and reads (either form) that
+    are the immediate value of a simple ``name = <read>`` assignment
+    inside a function that ALSO patches the same constant (the
+    save-the-original idiom). The same assignment shape in a function
+    that does NOT patch that constant is a real contents read and counts
+    as a pin.
 
     DISCLOSED over-approximation (why WARN-only): the scanner cannot see
     whether an acceptance criterion DEPENDS on the patched constant (the A3
     escape), so it treats every monkeypatched curated constant as
-    criterion-bearing; the reviewer lenses adjudicate dependence.
+    criterion-bearing; the reviewer lenses adjudicate dependence. Receiver
+    identity is not validated either: ANY ``<recv>.setattr(...)`` call
+    counts as patch form 1/2, so a non-monkeypatch helper's
+    ``helper.setattr(mod, "CONST", v)`` is misclassified as a patch
+    (over-WARN; its arguments are also excluded from pins).
     DISCLOSED false-suppression: ANY qualifying Load in an assert-bearing
     function counts as a pin, even when that function's asserts do not
     actually constrain the constant's contents (e.g. an ordering pin via a
     source substring that merely mentions the constant name in an
     f-string is NOT caught, but a Load-form read next to unrelated asserts
     is credited).
+    DISCLOSED non-suppression (over-WARN): a contents test written
+    unittest-style (``self.assertIn(...)`` etc. with no bare ``assert``
+    statement) is NOT credited as a pin — the pin pass requires an
+    ``ast.Assert``-bearing function.
     DISCLOSED false negatives: a module object reaching the patch call
     through a fixture / variable / conftest indirection (only import-table
     receivers resolve); parametrized or string-BUILT constant names (only
@@ -16149,13 +16160,35 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
                 return (mod, const)
         return None
 
+    def _pin_key(sub: ast.AST, imports: dict[str, str]) -> tuple[str, str] | None:
+        """(module_basename, CONST) for an eligible Load-context constant read."""
+        if (
+            isinstance(sub, ast.Attribute)
+            and isinstance(sub.ctx, ast.Load)
+            and _is_all_caps(sub.attr)
+        ):
+            mod = _resolve_module(sub.value, imports)
+            if mod and not _is_test_module(mod):
+                return (mod.split(".")[-1], sub.attr)
+        elif (
+            isinstance(sub, ast.Name)
+            and isinstance(sub.ctx, ast.Load)
+            and _is_all_caps(sub.id)
+            and sub.id in imports
+        ):
+            dotted = imports[sub.id]
+            mod, _, const = dotted.rpartition(".")
+            if mod and const == sub.id and not _is_test_module(mod):
+                return (mod.split(".")[-1], const)
+        return None
+
     hits: list[tuple[Path, int, str, str]] = []
     pinned: set[tuple[str, str]] = set()
 
     for path in test_paths:
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (OSError, SyntaxError) as err:
+        except (OSError, SyntaxError, UnicodeDecodeError) as err:
             _emit(f"monkeypatched-constant: {path}: unparseable, skipped ({err})")
             continue
         imports = _import_table(tree)
@@ -16175,43 +16208,37 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
                 hits.append((path, node.lineno, mod, const))
 
         # Pin pass: Load-ctx reads of ALL_CAPS non-test-module attrs inside
-        # assert-bearing functions (excluding patch-call args + save-assigns).
-        save_value_ids = {
-            id(node.value)
-            for node in ast.walk(tree)
-            if isinstance(node, ast.Assign)
-            and isinstance(node.value, ast.Attribute)
-            and len(node.targets) == 1
-            and isinstance(node.targets[0], ast.Name)
-        }
+        # assert-bearing functions, excluding patch-call args and
+        # save-the-original assignments (``name = <read>`` — Attribute OR
+        # from-imported bare-Name value — in a function that ALSO patches
+        # the same constant; the same assignment shape in a non-patching
+        # function is a real contents read and counts as a pin).
         for fn in ast.walk(tree):
             if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             if not any(isinstance(sub, ast.Assert) for sub in ast.walk(fn)):
                 continue
+            fn_patched: set[tuple[str, str]] = set()
             for sub in ast.walk(fn):
-                if (
-                    isinstance(sub, ast.Attribute)
-                    and isinstance(sub.ctx, ast.Load)
-                    and _is_all_caps(sub.attr)
-                    and id(sub) not in patch_arg_node_ids
-                    and id(sub) not in save_value_ids
-                ):
-                    mod = _resolve_module(sub.value, imports)
-                    if mod and not _is_test_module(mod):
-                        pinned.add((mod.split(".")[-1], sub.attr))
-                elif (
-                    isinstance(sub, ast.Name)
-                    and isinstance(sub.ctx, ast.Load)
-                    and _is_all_caps(sub.id)
-                    and id(sub) not in patch_arg_node_ids
-                    and id(sub) not in save_value_ids
-                    and sub.id in imports
-                ):
-                    dotted = imports[sub.id]
-                    mod, _, const = dotted.rpartition(".")
-                    if mod and const == sub.id and not _is_test_module(mod):
-                        pinned.add((mod.split(".")[-1], const))
+                if isinstance(sub, ast.Call):
+                    target = _patch_target(sub, imports)
+                    if target is not None:
+                        fn_patched.add((target[0].split(".")[-1], target[1]))
+            save_value_ids = {
+                id(node.value)
+                for node in ast.walk(fn)
+                if isinstance(node, ast.Assign)
+                and isinstance(node.value, (ast.Attribute, ast.Name))
+                and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+            }
+            for sub in ast.walk(fn):
+                key = _pin_key(sub, imports)
+                if key is None or id(sub) in patch_arg_node_ids:
+                    continue
+                if id(sub) in save_value_ids and key in fn_patched:
+                    continue
+                pinned.add(key)
 
     for path, lineno, mod, const in sorted(hits, key=lambda h: (str(h[0]), h[1])):
         if (mod.split(".")[-1], const) in pinned:

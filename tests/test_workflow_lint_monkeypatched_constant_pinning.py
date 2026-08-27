@@ -40,6 +40,23 @@ substring — both shipped lists could be entirely empty with all tests green.
 12. ``test_pinning_lens_passes_on_live_tree`` — binds the landed edits.
 13. ``test_check_production_constant_pinning_lens_bundled_in_no_flags`` —
     the two-part behavioral bundling pin (the sibling #2165 test's shape).
+
+Round-2 revision fixtures (the two upheld round-1 BLOCKERs + minors):
+
+14. ``test_fromimport_save_idiom_not_a_pin`` — the
+    ``scanner-bare-name-save-false-suppression`` blocker: a from-imported
+    bare-Name save (``orig = LOAD_BEARING_DISTS``) next to a patch of the
+    same constant must NOT suppress the WARN.
+15. ``test_non_utf8_test_file_warns_and_scanning_continues`` — the
+    ``scanner-unicode-decode-crash`` blocker: non-UTF-8 bytes emit the
+    unparseable WARN (never raise) and later files still scan.
+16. ``test_assignment_read_in_non_patching_function_is_a_pin`` — the save
+    exclusion is scoped to functions that also patch the same constant, so
+    a separate ``actual = mod.CONST`` contents test suppresses.
+17. ``test_non_monkeypatch_setattr_receiver_is_disclosed_over_approximation``
+    — negative control pinning the disclosed receiver over-approximation.
+18. ``test_single_char_constant_matched`` — the widened
+    ``[A-Z][A-Z0-9_]*`` regex matches one-character constants.
 """
 
 from __future__ import annotations
@@ -176,6 +193,45 @@ def test_replaces(monkeypatch):
     assert preflight.check_dists() == []
 """
 
+_FIXTURE_SAVE_IDIOM_FROMIMPORT = """\
+import preflight_mod
+from preflight_mod import LOAD_BEARING_DISTS
+
+
+def test_save_and_patch_fromimport(monkeypatch):
+    orig = LOAD_BEARING_DISTS
+    monkeypatch.setattr(preflight_mod, "LOAD_BEARING_DISTS", ["fixture"])
+    assert preflight_mod.check_dists() == []
+    assert isinstance(orig, list)
+"""
+
+_FIXTURE_LOCAL_VAR_CONTENTS = """\
+import preflight_mod
+
+
+def test_contents_via_local_variable():
+    actual = preflight_mod.LOAD_BEARING_DISTS
+    assert "requests" in set(actual)
+"""
+
+_FIXTURE_HELPER_SETATTR = """\
+import preflight_mod
+
+
+def test_helper_receiver(helper):
+    helper.setattr(preflight_mod, "LOAD_BEARING_DISTS", ["x"])
+    assert preflight_mod.check_dists() == []
+"""
+
+_FIXTURE_SINGLE_CHAR_CONST = """\
+import preflight_mod
+
+
+def test_patches_single_char_constant(monkeypatch):
+    monkeypatch.setattr(preflight_mod, "X", [1])
+    assert preflight_mod.check_dists() == []
+"""
+
 
 def _write_tests(root: Path, **files: str) -> Path:
     tests_dir = root / "tests"
@@ -280,6 +336,72 @@ def test_returns_empty_fail_list_always(tmp_path: Path) -> None:
     _write_tests(tmp_path, test_unpinned=_FIXTURE_UNPINNED)
     ret = check_monkeypatched_constant_pinning(repo_root=tmp_path)
     assert ret == []
+
+
+# --------------------------------------------------------------------------
+# Round-2 revision fixtures (upheld round-1 BLOCKERs + opportunistic minors).
+# --------------------------------------------------------------------------
+
+
+def test_fromimport_save_idiom_not_a_pin(tmp_path: Path) -> None:
+    """Round-2 BLOCKER fix (``scanner-bare-name-save-false-suppression``): a
+    from-imported bare-Name save (``orig = LOAD_BEARING_DISTS``) next to a
+    patch of the same constant must NOT count as a pin. Pre-fix the WARN was
+    silently suppressed because ``save_value_ids`` collected only
+    ``ast.Attribute`` assignment values, so the Name-branch exclusion was
+    dead code."""
+    _write_tests(tmp_path, test_save=_FIXTURE_SAVE_IDIOM_FROMIMPORT)
+    warns = _scan(tmp_path)
+    assert len(warns) == 1 and "preflight_mod.LOAD_BEARING_DISTS" in warns[0], (
+        f"a from-imported save-the-original assignment must not count as a pin; got: {warns}"
+    )
+
+
+def test_non_utf8_test_file_warns_and_scanning_continues(tmp_path: Path) -> None:
+    """Round-2 BLOCKER fix (``scanner-unicode-decode-crash``): non-UTF-8
+    bytes in a test file emit the unparseable WARN (never raise
+    UnicodeDecodeError, per the ALWAYS-returns-[] contract) and scanning
+    continues to later files."""
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir(parents=True, exist_ok=True)
+    (tests_dir / "test_latin1.py").write_bytes(b"# caf\xe9 \xff not utf-8\n")
+    (tests_dir / "test_ordering.py").write_text(_FIXTURE_ORDERING_ONLY, encoding="utf-8")
+    warns = _scan(tmp_path)
+    assert any("unparseable" in w and "test_latin1" in w for w in warns), warns
+    assert any("preflight_mod.LOAD_BEARING_DISTS" in w for w in warns), warns
+
+
+def test_assignment_read_in_non_patching_function_is_a_pin(tmp_path: Path) -> None:
+    """Codex round-1 Minor 1: ``actual = mod.CONST`` inside a NON-patching
+    contents test is a real contents read and suppresses — the save-assign
+    exclusion is scoped to functions that ALSO patch the same constant."""
+    _write_tests(
+        tmp_path,
+        test_unpinned=_FIXTURE_UNPINNED,
+        test_local_var=_FIXTURE_LOCAL_VAR_CONTENTS,
+    )
+    warns = _scan(tmp_path)
+    assert all("LOAD_BEARING_DISTS" not in w for w in warns), warns
+    assert sum("DEEP_IMPORT_MODULES" in w for w in warns) == 2, warns
+
+
+def test_non_monkeypatch_setattr_receiver_is_disclosed_over_approximation(
+    tmp_path: Path,
+) -> None:
+    """Negative control pinning the DISCLOSED over-approximation: receiver
+    identity is not validated, so a non-monkeypatch ``helper.setattr(mod,
+    "CONST", v)`` classifies as patch form 1/2 and WARNs."""
+    _write_tests(tmp_path, test_helper=_FIXTURE_HELPER_SETATTR)
+    warns = _scan(tmp_path)
+    assert len(warns) == 1 and "preflight_mod.LOAD_BEARING_DISTS" in warns[0], warns
+
+
+def test_single_char_constant_matched(tmp_path: Path) -> None:
+    """Codex round-1 Minor: the widened ``[A-Z][A-Z0-9_]*`` regex matches a
+    one-character constant like ``X``."""
+    _write_tests(tmp_path, test_single=_FIXTURE_SINGLE_CHAR_CONST)
+    warns = _scan(tmp_path)
+    assert len(warns) == 1 and "preflight_mod.X" in warns[0], warns
 
 
 # --------------------------------------------------------------------------
