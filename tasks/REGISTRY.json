@@ -10565,8 +10565,8 @@
     "2368": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2368",
-      "status": "approved",
+      "path": "tasks/running/2368",
+      "status": "running",
       "title": "test_bootstrap_pod_git_credentials.py extracts ssh payloads by first-quote scan (same shape #2360 r3 hardened); sweep tests/ for siblings"
     },
     "2369": {
