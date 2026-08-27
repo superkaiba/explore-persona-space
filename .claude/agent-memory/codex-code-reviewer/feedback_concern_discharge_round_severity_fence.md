@@ -207,6 +207,34 @@ FULL ordinary bar (that is the round's highest-yield lens). Fence-wise this
 composed as the DEFAULT CONCERN fence + #2552-r4 re-open rows (all target
 ids latest=addressed; brief had no NOT-ADDRESSED=FAIL clause, reconcile had
 no MUST-address rider — it had offered a file-a-follow-up fork).
+**Reconciler-BINDING-FAIL bounce with a REJECTED twin Critical (#2564 k100
+r3, 2026-08-26):** three compose facts from the upheld-bounce sibling shape
+(prior round Claude-PASS / Codex-FAIL / reconciler BINDING FAIL upholding a
+MIXED BLOCKER+CONCERN+NIT set and REJECTING one twin Critical): (1) the
+brief cites the reconcile by its ROUND sentinel ("epm:review-reconcile v8")
+but the POSTED marker version is its own sequence (v6 here) — fetch by
+kind + latest ts from events.jsonl and verify the head sentinel's round
+digit matches the brief; state the mapping in the return. (2) A ledger
+`verified-open` row forwarded from the twin's own FAIL can BUNDLE the
+rejected finding's text with the upheld one's ("staging remains unkeyed AND
+the predicate accepts demoted reports") — the reconcile's "Observed but not
+raised" names itself the scoping record; attest at compose time that only
+the upheld leg binds, or the twin grades the rejected half as an open
+obligation. Pair the no-relitigate block with a composer PROBE that the fix
+commit does not touch the rejected finding's mechanism (here: the single
+run.py hunk is the staging block, predicate untouched) so "NEW evidence
+from THIS diff" is decidable. (3) When lifting the verdict template's
+`**Blocker tags:**` bracket line from a donor template that EMBEDS prior
+verdicts, a first-match regex grabs an embedded verdict's SHORTER line —
+filter candidates by the strip-set + this-round-note content
+('Step 5c-bis' + 'N/A-BY-KIND') and assert exactly one. Fence applied: the
+upheld BLOCKER takes NOT-ADDRESSED=substantive-FAIL (the fix IS the
+round); the upheld-nonblocking CONCERN and standing NIT re-raise at
+recorded severity via same-id rows (latest=addressed ⇒ row required on
+failed closure, #2552 r4); an elected fix mechanism the reconcile's
+prescription only approximates (source-substring wiring pin vs "a
+compute_all-level pin") gets an on-merits adjudication instruction, never
+pre-resolved.
 
 **Default fence on a silent brief + out-of-round diverged_on_main (#2564 r3,
 2026-08-25):** a brief framing the round as "the concern-closure round …

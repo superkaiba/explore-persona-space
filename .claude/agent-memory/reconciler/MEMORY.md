@@ -121,6 +121,15 @@
 - [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses
 - [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — pre-pass PASS ≠ spec-text PASS
 - [Bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md)
+- [Claude interp verifies fix PROSE, not the H3 heading/caption](feedback_claude_interp_verifies_fix_prose_not_heading.md) — heading overclaimed "three reverse"; caption argmax check (#2552 r2)
+
+- [Lens 10 capsule cap not binding; Lens 11 same-H3 + Lens 2 generator-naming ARE](feedback_lens10_capsule_cap_not_binding_lens11_same_h3_binding.md) — #2564 crc r2; SPEC wins both directions
+- [Lens 14 placement list binding; Lens 8 trailing clause FAILs](feedback_lens14_placement_list_binding_and_lens8_trailing_clause.md) — footer-only CONCERN ack fails placement-blind check-65; prereg paraphrase + companion-embedding over-reads rejected (#2564 crc r8)
+- [Superlative rank claims + closure location requirements](feedback_superlative_rank_claims_and_closure_location_requirements.md) — compute both headroom definitions; uphold disposition-claims-not-landed, reject invented location demands (#2564 r2)
+- [Claude interp under-samples NEW sample blocks](feedback_claude_interp_undersamples_new_sample_blocks.md) — sweep ALL rows vs BOTH candidates
+- [Claude interp skips derived-quantity inversion](feedback_claude_interp_skips_derived_quantity_inversion.md) — invert pool=1/chance clauses
+- [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — pre-pass PASS ≠ spec-text PASS
+- [Bare-#N refs + missing reuse path (Lens 2/5)](feedback_clean_result_bare_issue_refs_and_reuse_path.md)
 - [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — re-scan for named tests, ± (#378)
 - [Cross-loop CI conflict](feedback_cross_loop_ci_conflict.md) — interp-required CIs survive Codex Lens-7 FAIL (#478, #509)
 - [Codex misses Lens 9 raw+processed exception](feedback_codex_misses_lens9_raw_processed_exception.md) — adjacent pair = ONE figure (#480 r1)
