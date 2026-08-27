@@ -410,6 +410,32 @@ floor-EXEMPT-with-plan-verify-present dual attest + three-grain recount with a
 grain-artifact extra (a docstring citing a DIFFERENT `*_capability.py` file)
 all fired again, per the validated patterns.
 
+**#2364 r2 (2026-08-27) sharpenings — upheld-blockers fix round on an
+advisory AST scanner (reconciler BINDING FAIL, 2 upheld + 1 deferred):**
+(a) one mechanism serving a BLOCKER fix AND a reconciler Standing Minor
+(per-function save-exclusion scoping) composes as INTENT-adherence, never
+sketch-verbatim — hand the (d)-disclosed judgment call (helper-function
+saves now pin ⇒ suppress) neutrally, and direct the new-edge hunt at the
+mechanism's own gaps (`save_value_ids` matches `ast.Assign`+single-Name
+only ⇒ AnnAssign / tuple-target saves are residual false-suppression
+shapes), with severity CALIBRATED to the reconciler's own precedent (a
+disclosed narrow residual in a WARN-only flag-only advisory scanner routes
+CONCERN-grade like its Finding 2, unless it recreates the founding class
+as broadly as the blocker did). (b) A WARN-delta claim (268→263: 5
+removed, 0 added) composes as a STATIC site-read battery for the no-uv
+twin: the composer names the 5 removed-WARN sites (from the marker) for
+newly-pins verification, plus the two ADD-direction hunt shapes (live
+one-char-constant patches after a regex widen; save-idiom reads that LOST
+their exclusion). (c) A deferred concern whose rationale offered an
+OPTIONAL remedy the round DECLINED with a (b)-recorded rationale gets the
+three-way `CONSISTENT-WITH-DEFERRAL | DISCLOSURE-GAP | FALSE-CLAIM` status
+line, severity fenced at CONCERN, re-emit-id-only-on-changed-disposition.
+(d) Round-scoping arithmetic: keep the reconciler envelope's OWN marker
+tags (different kind — no extraction collision; assert ==1 each) while
+stripping + blockquoting the inlined prior CODEX verdict per the rclose
+recipe; post-fix line anchors recomputed since both inlined verdicts cite
+the r1 blob's lines.
+
 **#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
 verify_plan-check round (diff adds a GPU-state advisory family to
 poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
