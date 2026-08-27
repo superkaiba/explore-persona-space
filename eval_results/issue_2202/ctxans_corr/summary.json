@@ -1,0 +1,85 @@
+{
+  "question": "Across all held-out pairs, how well does context-vector similarity predict answer-vector similarity?",
+  "n_contexts": 9941,
+  "n_pairs": 49406770,
+  "seed": 2202,
+  "note_conventions": "raw cosines are dominated by a shared mean direction; the centered context space and the whitened answer space (the retrieval convention) are the de-biased reads",
+  "cells": {
+    "context_raw|answer_raw": {
+      "n_pairs": 49406770,
+      "pearson_r": 0.6637326205460291,
+      "r_squared": 0.4405409915768991,
+      "slope_answer_on_context": 0.7779577894778653,
+      "mean_context_sim": 0.6961606264049047,
+      "mean_answer_sim": 0.6884673732293374,
+      "sd_context_sim": 0.08626044877723914,
+      "sd_answer_sim": 0.10110545417355421,
+      "spearman_rho": 0.6671624376894923,
+      "spearman_n_subsample": 4999322,
+      "per_query_spearman": {
+        "median": 0.6194962150957894,
+        "mean": 0.6100187994155448,
+        "q25": 0.5349198165842274,
+        "q75": 0.7020851295590982,
+        "frac_positive": 0.9993964389900413
+      }
+    },
+    "context_raw|answer_whitened": {
+      "n_pairs": 49406770,
+      "pearson_r": 0.061952585787102325,
+      "r_squared": 0.003838122885708273,
+      "slope_answer_on_context": 0.013306700186771575,
+      "mean_context_sim": 0.6961606264049047,
+      "mean_answer_sim": 3.8484531200142764e-05,
+      "sd_context_sim": 0.08626044877723914,
+      "sd_answer_sim": 0.0185277485236791,
+      "spearman_rho": 0.02296340111480508,
+      "spearman_n_subsample": 5003900,
+      "per_query_spearman": {
+        "median": 0.034390255409363024,
+        "mean": 0.03463730292002999,
+        "q25": 0.020996441393858804,
+        "q75": 0.047697874031169755,
+        "frac_positive": 0.9619756563725983
+      }
+    },
+    "context_centered|answer_raw": {
+      "n_pairs": 49406770,
+      "pearson_r": 0.3523377392562824,
+      "r_squared": 0.12414188250422806,
+      "slope_answer_on_context": 0.21628972843775265,
+      "mean_context_sim": 0.0007358458016851399,
+      "mean_answer_sim": 0.6884673732293374,
+      "sd_context_sim": 0.16470161300443814,
+      "sd_answer_sim": 0.10110545417355421,
+      "spearman_rho": 0.3598782887730272,
+      "spearman_n_subsample": 5003976,
+      "per_query_spearman": {
+        "median": 0.43612730276819844,
+        "mean": 0.4052457782607995,
+        "q25": 0.22436550342725106,
+        "q75": 0.6149497667338246,
+        "frac_positive": 0.9278744593099286
+      }
+    },
+    "context_centered|answer_whitened": {
+      "n_pairs": 49406770,
+      "pearson_r": 0.1079408053782872,
+      "r_squared": 0.011651217465713274,
+      "slope_answer_on_context": 0.012142565339893807,
+      "mean_context_sim": 0.0007358458016851399,
+      "mean_answer_sim": 3.8484531200142764e-05,
+      "sd_context_sim": 0.16470161300443814,
+      "sd_answer_sim": 0.0185277485236791,
+      "spearman_rho": 0.04062549516242472,
+      "spearman_n_subsample": 5001501,
+      "per_query_spearman": {
+        "median": 0.041820648373786545,
+        "mean": 0.04260426867526578,
+        "q25": 0.025721210943732833,
+        "q75": 0.05816236397766743,
+        "frac_positive": 0.9682124534755054
+      }
+    }
+  }
+}

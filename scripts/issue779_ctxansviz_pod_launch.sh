@@ -21,4 +21,12 @@ export PYTHONUNBUFFERED=1
 mkdir -p /workspace/logs
 # $$ becomes the python PID after the exec chain (shell -> uv run -> python).
 echo $$ > /workspace/logs/issue-779-ctxansviz.pid
-exec uv run python scripts/issue779_ctxansviz_pod.py --phase all "$@"
+# The pod clone is sparse (issue-scoped eval_results cone); the P6 judged-join
+# input eval_results/issue_1739/dv_dataset/** is git-tracked but outside the
+# cone (P6 died FileNotFoundError on labeling.json). Materialize it up front.
+if [ "$(git config core.sparseCheckout 2>/dev/null)" = "true" ]; then
+  git sparse-checkout add eval_results/issue_1739/dv_dataset
+fi
+# --extra viz: umap-learn lives behind the project's viz extra; a bare
+# `uv run` on a fresh pod env omits it (P4 died ModuleNotFoundError: umap).
+exec uv run --extra viz python scripts/issue779_ctxansviz_pod.py --phase all "$@"
