@@ -477,6 +477,13 @@ uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file .claude/cache/expe
 uv run python "$REPO_ROOT"/scripts/audit_clean_results_body_discipline.py .claude/cache/experiment-<N>-clean-result.md
 ```
 
+Never point `--file` at a `tasks/<status>/<N>/body.md` inside a worktree —
+that tree is frozen at the branch-cut base commit and its `concerns.jsonl`
+sibling is silently stale (the #2378 r7 false PASS); the verifier now
+REFUSES such paths (#2607). The gate run on the REAL task body is
+`--issue <N>`, which resolves via the branch-guarded task_workflow registry
+against the main checkout.
+
 The discipline audit is the SAME pre-pass the clean-result-critic runs — a
 finding here (bracketed-CI `[lo, hi]`, opaque codes, `byte identical`) is a
 guaranteed round-1 bounce (#641 et al.). The verifier's check catalog
@@ -515,6 +522,24 @@ second snapshot would overwrite the legitimate original-body.md); second
 failure → `epm:failure v1 failure_class: code reason:
 set-body-handoff-failed`, EXIT — never `set-title` / `set-clean-result`
 over a stub body.
+
+**Landing verification after every set-body (REQUIRED — #2333).** After
+EVERY `task.py set-body` call, in the SAME turn, BEFORE posting any marker
+that claims body edits: (a) re-read the LIVE body
+(`$(uv run python scripts/task.py find <N>)/body.md`) and grep for ≥1
+distinctive string from this round's edits; (b) confirm a fresh commit
+touched body.md (`git log -1 --format='%h %cI' -- <that path>`) and that it
+postdates the round start; (c) record that sha in the round's marker note
+(`body_commit=<sha>`). On a `set-body: no-op` refusal (`SetBodyNoOpError` —
+the byte-identical guard, #2333), run duty step (a) FIRST: re-read the live
+body and check the latest body.md commit. If this round's edits are ALREADY
+live (the crash-resume case: a prior invocation landed the commit before
+the marker posted), the round's body work is DONE — proceed to the marker
+with the existing commit's sha; no retry and no `--allow-noop` needed. Only
+if the edits are NOT live does the refusal mean you passed the wrong copy:
+find the file you actually edited, re-diff, re-run set-body with that file.
+`--allow-noop` is only for a deliberate re-application of an
+already-landed body.
 
 **Same-issue follow-up re-entry (re-fold, not re-promote).** On an
 `epm:followup-scope v1` re-spawn the body is ALREADY a clean-result: fold
