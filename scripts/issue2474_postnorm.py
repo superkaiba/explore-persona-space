@@ -209,7 +209,7 @@ def _metadata(phase: str) -> dict:
 # Config
 # ---------------------------------------------------------------------------
 def _cfg_from_args(args) -> dict:
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
 
     if args.synthetic_root:
         root = Path(args.synthetic_root)
@@ -304,13 +304,13 @@ def _selected_settings(args, cfg: dict) -> list[str]:
 def _p_inoc(cfg: dict) -> dict:
     if cfg["p_inoc"] is not None:
         return cfg["p_inoc"]
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
 
     return FIT._p_inoc_labels()
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
 
     FIT._atomic_write_json(path, payload)
 
@@ -572,7 +572,7 @@ def _stage_train_jsonl(cfg: dict, cond: str) -> Path:
 
 
 def _stage_stored_mu(cfg: dict, cond: str) -> Path:
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
 
     target = cfg["capture_root"] / f"base_mu_{cond}" / "mu.pt"
     if not target.is_file():
@@ -632,7 +632,7 @@ def _validate_train_rows(path: Path) -> int:
 def _validate_stored_mu(mu_path: Path, layer: int, expect_rows: int, hidden: int | None) -> None:
     """Stored-mu schema/shape/count/finiteness contract, checked BEFORE any
     model load / GPU forward (r1 codex: gpu-input-contract-post-work)."""
-    import issue2379_mapfit as mf
+    import issue2379_mapfit as mf  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
     import numpy as np
 
     stored = mf._torch_load_constrained(mu_path)
@@ -745,8 +745,8 @@ def phase_trainref_gpu(args, cfg: dict) -> dict:
     train-file identity. Model/tokenizer come from cfg["model_loader"] when the
     smoke injects a tiny CPU model, else the production loader.
     """
-    import issue2379_capture as CAP
-    import issue2379_mapfit as mf
+    import issue2379_capture as CAP  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
+    import issue2379_mapfit as mf  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
     import numpy as np
 
     print(f"[phase=trainref_gpu] start (conds={args.conditions})", flush=True)
@@ -1142,7 +1142,7 @@ def _resolve_norm_weight(args, cfg: dict, means: dict) -> dict:
 def _stage_offline_inputs(cfg: dict, selected: list[str]) -> None:
     """Grid/ceiling/mu bundles + per-setting vhat tensors for the SELECTED
     settings (production only; staging failures raise — never a skip)."""
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
 
     if cfg["synthetic"]:
         return
@@ -1173,7 +1173,7 @@ def _load_vhat(cfg: dict, setting: str, n_rows: int, hidden: int):
     parent-producer hash (r1 codex blocker map-vhat-vector-identity-unverified)
     — Gate R's averaged pre-norm projections alone cannot see every component.
     Plus schema, layer/setting, row count, hidden dim and finiteness."""
-    import issue2379_mapfit as mf
+    import issue2379_mapfit as mf  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
     import numpy as np
 
     path = cfg["vhat_path"][setting]
@@ -1208,7 +1208,7 @@ def _load_vhat(cfg: dict, setting: str, n_rows: int, hidden: int):
 def _ib_bias_l(cfg: dict):
     """ib_bias at the target layer, recomputed EXACTLY as the parent fit worker
     (pinned pass-B bundle, same split seed, same helper) — fp64 (H,)."""
-    import issue2379_mapfit as mf
+    import issue2379_mapfit as mf  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
     import numpy as np
 
     from explore_persona_space.analysis.mapping_baselines import identity_bias_predict
@@ -1222,7 +1222,7 @@ def _ib_bias_l(cfg: dict):
 
 def _grid_indexing(grid: dict, expected_rows: int | None, setting: str):
     """(labels, row_of, trig/q arrays) mirroring issue2474_fit.phase_scores."""
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
     import numpy as np
 
     labels = FIT._labels_from_row_meta(grid["row_meta"])
@@ -1326,7 +1326,7 @@ def _rescore_fingerprint(cfg: dict, means: dict, norm: dict) -> dict:
 
 def phase_rescore(args, cfg: dict) -> dict:
     """Offline post-norm re-read of the stored layer-27 states (+ Gate R)."""
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
     import numpy as np
 
     print("[phase=rescore] start", flush=True)
@@ -1374,7 +1374,7 @@ def phase_rescore(args, cfg: dict) -> dict:
         c_ri = np.array([r["rollout_idx"] for r in c_meta], dtype=int)
         n_rollouts = int(c_ri.max()) + 1 if len(c_ri) else 1
         # Gate R scores against the STORED mu (the parent's exact reference).
-        import issue2379_mapfit as mf
+        import issue2379_mapfit as mf  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
 
         stored_mu = {
             c: mf._torch_load_constrained(cfg["capture_root"] / f"base_mu_{c}" / "mu.pt")
@@ -1475,8 +1475,10 @@ def phase_rescore(args, cfg: dict) -> dict:
 # Phase: stats (P3 — pooled Spearman + paired trigger bootstrap, pre vs post)
 # ---------------------------------------------------------------------------
 def phase_stats(args, cfg: dict) -> dict:
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
     import numpy as np
+
+    # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
     from issue2379_analysis import _rank_lastaxis
 
     print("[phase=stats] start", flush=True)
@@ -1818,7 +1820,7 @@ def _gen_smoke_tree(root: Path) -> None:
     """Synthetic input tree: parent-path mu bundles (REAL two-helper capture on
     the tiny model), synthetic grid/ceiling/vhat/passb, self-consistent parent
     score/stat targets, synthetic rates."""
-    import issue2474_fit as FIT
+    import issue2474_fit as FIT  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2474 branch merge; runnable only in that worktree until then
     import issue779_collect as I779
     import numpy as np
     import torch
@@ -1959,7 +1961,7 @@ def _gen_smoke_tree(root: Path) -> None:
     (root / "rates_synth.json").write_text(json.dumps(rates))
     # Self-consistent parent targets: run the SAME scoring core on the synthetic
     # inputs (stored-mu reference) and persist in the parent schema.
-    import issue2379_mapfit as mf
+    import issue2379_mapfit as mf  # PROD_IMPORT_LINT_EXEMPT: sibling module lands with the issue-2379 branch merge; runnable only in that worktree until then
 
     row_of = -np.ones((n_t, n_q), dtype=int)
     for i, r in enumerate(grid_meta):
