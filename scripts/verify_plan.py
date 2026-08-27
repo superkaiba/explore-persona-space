@@ -217,6 +217,10 @@ Check catalog (id — classification — kind scope)
   c72 contingent judge wave     WARN-only, conditional    experiment +
       (>=5k calls) names its                              analysis
       rule-26 pilot gate
+  c73 GPU-lane routing declares WARN-only, conditional    experiment +
+      its cuda-context: claim   (no-trigger renders       analysis
+                                PASS, not SKIP — never
+                                passed=False)
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
@@ -15075,6 +15079,85 @@ def check_contingent_judge_pilot(plan: str, kind: str) -> CheckResult:
     return _skip(cid, name, best_skip)
 
 
+# ─── Check 73 — GPU-lane phase declares its CUDA-context claim (#2624) ──────
+#
+# Incident #2546: a 4x H100 pod ran p5_fits entirely CPU-bound — the
+# dispatcher logged alloc=0,1,2,3 while nvidia-smi read 0 MiB on every card
+# for hours. The plan-side half of the #2624 fix: every GPU-lane routing
+# carries one `cuda-context:` line naming WHAT allocates GPU memory and via
+# WHICH mechanism (the falsifiable claim the RunPod poller's
+# [gpu-no-cuda-context] memory probe checks at runtime;
+# .claude/rules/plan-compute-sizing.md § CUDA-context claim). Trigger tokens
+# are conservative (explicit GPU flags / GPU intents / an Nx<GPU-class>
+# shape); WARN-only BY CONSTRUCTION — existing plans lack the line, so a
+# FAIL posture would wedge the fleet (the c46/c50 posture; #1388 class).
+
+_C73_GPU_LANE_RE = re.compile(
+    r"--gpu-type|--gpu-count"
+    r"|--intent\s+(?:lora-7b|ft-7b|inf-70b|ft-70b|eval|debug)"
+    r"|intent:\s*(?:lora-7b|ft-7b|inf-70b|ft-70b)"
+    # U+00D7 (the MULTIPLICATION SIGN) via escape: the corpus writes both
+    # "4x H100" and the typographic form; the escape keeps the source ASCII.
+    r"|\b[1248]\s*[x\u00d7]\s*(?:H100|H200|A100|B200)\b"
+)
+_C73_SATISFIER_RE = re.compile(r"(?im)^\s*[-*]?\s*cuda-context:\s*\S")
+
+
+def check_gpu_lane_cuda_context(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2624; incident #2546): a plan routing a
+    GPU-lane phase — an explicit ``--gpu-type``/``--gpu-count``, a GPU
+    intent (``--intent lora-7b|ft-7b|inf-70b|ft-70b|eval|debug`` or an
+    ``intent:`` frontmatter-style token), or an Nx<GPU-class> shape —
+    must carry at least one ``cuda-context:`` line declaring what
+    allocates a CUDA context and via which mechanism
+    (plan-compute-sizing.md § CUDA-context claim). The TRIGGER is scoped
+    to the section-9 window when one parses (fenced launch commands
+    included — that is where GPU flags live), else whole-plan; the
+    SATISFIER is searched whole-plan (the declaration commonly lives in
+    the §4 phase description). Never returns passed=False: trigger with
+    no satisfier -> WARN, everything else -> PASS (no-trigger renders
+    PASS, not SKIP — deliberate divergence from the conditional-SKIP
+    convention, per the #2624 plan §4.2 fixture matrix). Armed for kind
+    in {experiment, analysis} only."""
+    cid = "c73_gpu_lane_cuda_context"
+    name = "GPU-lane routing declares its cuda-context: claim"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c69/c70 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote GPU-lane "
+            "tokens in prose; the founding incident (#2546 p5_fits) is kind: experiment",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is not None:
+        lo, hi = window
+        trigger_text = "\n".join(lines[lo:hi])
+        scope = f"section-9 window (lines {lo + 1}-{hi})"
+    else:
+        trigger_text = plan
+        scope = "whole plan (no parseable section-9 heading)"
+    m = _C73_GPU_LANE_RE.search(trigger_text)
+    if m is None:
+        return _pass(cid, name, f"no GPU-lane routing token in the {scope}")
+    if _C73_SATISFIER_RE.search(plan):
+        return _pass(
+            cid,
+            name,
+            f"GPU-lane token '{m.group(0)}' in the {scope}; a cuda-context: "
+            "declaration line is present",
+        )
+    return _warn(
+        cid,
+        name,
+        f"GPU-lane routing token '{m.group(0)}' in the {scope} but no "
+        "`cuda-context:` line declares what allocates a CUDA context — "
+        "plan-compute-sizing.md § CUDA-context claim; #2624/#2546",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -15146,6 +15229,7 @@ CHECKS = [
     check_pilot_resolution,
     check_jq_probe_dryrun,
     check_contingent_judge_pilot,
+    check_gpu_lane_cuda_context,
 ]
 
 
