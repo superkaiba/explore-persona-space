@@ -3,3 +3,4 @@
 {"ts": "2026-08-27T06:52:35Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-08-27T06:53:38Z", "kind": "epm:progress", "version": 1, "by": "issue-orchestrator", "note": "planner-dispatch round=1 — invoking plan drafting (plan draft v1 target; kind: infra zero-GPU curation task, minimum plan-review floor applies)"}
 {"ts": "2026-08-27T06:59:32Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py --issue 2620: verdict=PASS n_fail=0 n_warn=0 (66 SKIP — experiment-only checks; kind=infra) plan_version=v1"}
+{"ts": "2026-08-27T07:08:12Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py --issue 2620: verdict=PASS n_fail=0 n_warn=0 (66 SKIP — experiment-only checks; kind=infra) plan_version=v2"}
