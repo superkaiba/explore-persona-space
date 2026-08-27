@@ -86,7 +86,7 @@ def _single_quoted_ssh_cmd_blocks(text: str) -> list[str]:
     Therefore, after closing each block at the first ``'`` following the
     opener, the extractor REQUIRES that closing quote to be followed by a
     NEWLINE or END-OF-TEXT — anything else is a loud ``pytest.fail`` naming
-    the byte offset and the following characters. This strictness
+    the character offset and the following characters. This strictness
     deliberately also refuses a same-line second quoted argument
     (``ssh_cmd 'safe' 'tail'``): today ``ssh_cmd()`` forwards exactly
     ``"$1"`` (bootstrap_pod.sh, the 3-line helper above the argument
@@ -110,7 +110,7 @@ def _single_quoted_ssh_cmd_blocks(text: str) -> list[str]:
         after = text[close_q + 1 : close_q + 2]
         if after not in ("", "\n"):
             pytest.fail(
-                f"ssh_cmd single-quoted block closing at byte offset {close_q} is "
+                f"ssh_cmd single-quoted block closing at character offset {close_q} is "
                 f"followed by {text[close_q + 1 : close_q + 16]!r}, not newline/end-of-text "
                 "— a same-line continuation would be silently truncated by a first-quote "
                 "extractor; split the block or deliberately extend this terminator predicate"
@@ -286,6 +286,13 @@ def test_mutation_continuation_after_close_quote_fails_extraction(shape: str) ->
     text = _script_text()
     marker = "ssh_cmd '"
     start = text.index(marker)
+    # Sweep disposition (#2368): recorded-safe quote-char locator, NOT a payload
+    # extractor. This first-quote .index() only LOCATES the splice point for the
+    # mutation; the assert on the next line pins the newline precondition on the
+    # real script's first block, and the mutated text is fed to the HARDENED
+    # extractor (_single_quoted_ssh_cmd_blocks), which pytest.fails loud on any
+    # same-line continuation — so a mislocated close quote here cannot silently
+    # truncate inspected payload.
     close_q = text.index("'", start + len(marker))
     assert text[close_q + 1 : close_q + 2] == "\n", "real script's first block must be clean"
     mutated = text[: close_q + 1] + _MUTATION_SPLICES[shape] + text[close_q + 1 :]
