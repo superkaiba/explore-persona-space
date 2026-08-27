@@ -115,6 +115,10 @@ def fig_r2_vs_k(fits: dict[int, dict], fig_dir: str) -> dict:
         ax.set_xlabel("truncation rank k")
         ax.set_title(f"Layer {ly}")
     axes[0].set_ylabel("held-out $R^2$ (raw context space)")
+    # Deep-rank pinv collapses by orders of magnitude (full-rank reaches -1e7);
+    # unclipped it flattens every other series into one line. Clip the view and
+    # state the collapse magnitude in the surrounding prose, never on canvas.
+    axes[0].set_ylim(-1.05, 1.05)
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.16))
     fig.tight_layout()

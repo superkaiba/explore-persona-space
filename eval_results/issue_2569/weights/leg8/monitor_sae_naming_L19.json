@@ -1,0 +1,648 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 19,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ],
+    "dashboards": {
+      "rb_source": "hf:037fcbb210bc52c459959b0746cc268fe08bae96",
+      "null_seed": 2569140,
+      "features_per_direction": 8,
+      "ctx_dict": {
+        "repo": "andyrdt/saes-qwen2.5-7b-instruct",
+        "revision": "c37e53c4bb07127ad17ab88f28b93d4e87142e59",
+        "layer": 19,
+        "k": 64
+      },
+      "ans_dict": {
+        "hf_leaf": "issue2476_turnavg/analysis_tensors/sae_c",
+        "alive_counts": "issue2476_turnavg/analysis_tensors/eval/alive_c.npz",
+        "union_frac": 0.002
+      }
+    }
+  },
+  "traits": {
+    "evil": {
+      "gradient": {
+        "max_abs_cos": 0.13604500889778137,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 129894,
+            "cos": -0.13604500889778137,
+            "label": null
+          },
+          {
+            "feat_id": 28653,
+            "cos": -0.13126049935817719,
+            "label": null
+          },
+          {
+            "feat_id": 98050,
+            "cos": -0.12671144306659698,
+            "label": null
+          },
+          {
+            "feat_id": 8458,
+            "cos": -0.11217107623815536,
+            "label": null
+          },
+          {
+            "feat_id": 38953,
+            "cos": 0.10912483185529709,
+            "label": null
+          },
+          {
+            "feat_id": 30954,
+            "cos": 0.10325147211551666,
+            "label": null
+          },
+          {
+            "feat_id": 40288,
+            "cos": 0.10232911258935928,
+            "label": null
+          },
+          {
+            "feat_id": 105671,
+            "cos": -0.10152269899845123,
+            "label": null
+          }
+        ]
+      },
+      "preimage_unit_level": {
+        "max_abs_cos": 0.23417997360229492,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 100594,
+            "cos": 0.23417997360229492,
+            "label": null
+          },
+          {
+            "feat_id": 30954,
+            "cos": 0.1737765073776245,
+            "label": null
+          },
+          {
+            "feat_id": 10163,
+            "cos": 0.17156046628952026,
+            "label": null
+          },
+          {
+            "feat_id": 99957,
+            "cos": 0.16237647831439972,
+            "label": null
+          },
+          {
+            "feat_id": 96568,
+            "cos": 0.1407773792743683,
+            "label": null
+          },
+          {
+            "feat_id": 69312,
+            "cos": 0.13354960083961487,
+            "label": null
+          },
+          {
+            "feat_id": 100924,
+            "cos": 0.1303839087486267,
+            "label": null
+          },
+          {
+            "feat_id": 71418,
+            "cos": 0.12522941827774048,
+            "label": null
+          }
+        ]
+      },
+      "preimage_unit_level_fullpinv": {
+        "max_abs_cos": 0.25831303000450134,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 57558,
+            "cos": -0.25831303000450134,
+            "label": null
+          },
+          {
+            "feat_id": 28532,
+            "cos": -0.14140062034130096,
+            "label": null
+          },
+          {
+            "feat_id": 130140,
+            "cos": -0.13035209476947784,
+            "label": null
+          },
+          {
+            "feat_id": 101571,
+            "cos": -0.12274240702390671,
+            "label": null
+          },
+          {
+            "feat_id": 74507,
+            "cos": -0.10224229842424393,
+            "label": null
+          },
+          {
+            "feat_id": 55490,
+            "cos": -0.09984882920980453,
+            "label": null
+          },
+          {
+            "feat_id": 128487,
+            "cos": -0.0980207696557045,
+            "label": null
+          },
+          {
+            "feat_id": 81091,
+            "cos": -0.09412964433431625,
+            "label": null
+          }
+        ]
+      },
+      "r_hat_vs_answer_dict": {
+        "nearest_feat_id": 216,
+        "cos": 0.4926806092262268,
+        "top_features": [
+          {
+            "feat_id": 216,
+            "cos": 0.4926806092262268
+          },
+          {
+            "feat_id": 1513,
+            "cos": 0.3130708932876587
+          },
+          {
+            "feat_id": 431,
+            "cos": 0.25005924701690674
+          },
+          {
+            "feat_id": 117,
+            "cos": 0.24526900053024292
+          },
+          {
+            "feat_id": 561,
+            "cos": 0.24443626403808594
+          },
+          {
+            "feat_id": 1203,
+            "cos": 0.2424314022064209
+          },
+          {
+            "feat_id": 1884,
+            "cos": 0.24142326414585114
+          },
+          {
+            "feat_id": 1791,
+            "cos": 0.23266123235225677
+          }
+        ]
+      }
+    },
+    "sycophancy": {
+      "gradient": {
+        "max_abs_cos": 0.10808862000703812,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 37830,
+            "cos": 0.10808862000703812,
+            "label": null
+          },
+          {
+            "feat_id": 48151,
+            "cos": -0.09849312156438828,
+            "label": null
+          },
+          {
+            "feat_id": 118610,
+            "cos": 0.09557605534791946,
+            "label": null
+          },
+          {
+            "feat_id": 13437,
+            "cos": 0.09249347448348999,
+            "label": null
+          },
+          {
+            "feat_id": 32901,
+            "cos": 0.09221169352531433,
+            "label": null
+          },
+          {
+            "feat_id": 26568,
+            "cos": 0.08798181265592575,
+            "label": null
+          },
+          {
+            "feat_id": 63759,
+            "cos": -0.0870577022433281,
+            "label": null
+          },
+          {
+            "feat_id": 120246,
+            "cos": 0.08642856776714325,
+            "label": null
+          }
+        ]
+      },
+      "preimage_unit_level": {
+        "max_abs_cos": 0.12624390423297882,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 9818,
+            "cos": -0.12624390423297882,
+            "label": null
+          },
+          {
+            "feat_id": 80144,
+            "cos": -0.11781151592731476,
+            "label": null
+          },
+          {
+            "feat_id": 39874,
+            "cos": 0.11583422869443893,
+            "label": null
+          },
+          {
+            "feat_id": 86187,
+            "cos": 0.10200619697570801,
+            "label": null
+          },
+          {
+            "feat_id": 89488,
+            "cos": 0.10093823075294495,
+            "label": null
+          },
+          {
+            "feat_id": 82494,
+            "cos": 0.099964439868927,
+            "label": null
+          },
+          {
+            "feat_id": 117721,
+            "cos": 0.09539119154214859,
+            "label": null
+          },
+          {
+            "feat_id": 118610,
+            "cos": 0.09502188116312027,
+            "label": null
+          }
+        ]
+      },
+      "preimage_unit_level_fullpinv": {
+        "max_abs_cos": 0.1705731451511383,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 47030,
+            "cos": 0.1705731451511383,
+            "label": null
+          },
+          {
+            "feat_id": 130789,
+            "cos": -0.16847778856754303,
+            "label": null
+          },
+          {
+            "feat_id": 57558,
+            "cos": 0.14985685050487518,
+            "label": null
+          },
+          {
+            "feat_id": 31406,
+            "cos": -0.13586780428886414,
+            "label": null
+          },
+          {
+            "feat_id": 101571,
+            "cos": 0.1266234815120697,
+            "label": null
+          },
+          {
+            "feat_id": 81091,
+            "cos": 0.1225195974111557,
+            "label": null
+          },
+          {
+            "feat_id": 122363,
+            "cos": -0.1049090325832367,
+            "label": null
+          },
+          {
+            "feat_id": 1195,
+            "cos": 0.10317083448171616,
+            "label": null
+          }
+        ]
+      },
+      "r_hat_vs_answer_dict": {
+        "nearest_feat_id": 274,
+        "cos": 0.5153484344482422,
+        "top_features": [
+          {
+            "feat_id": 274,
+            "cos": 0.5153484344482422
+          },
+          {
+            "feat_id": 481,
+            "cos": 0.4084571301937103
+          },
+          {
+            "feat_id": 1079,
+            "cos": 0.2745322585105896
+          },
+          {
+            "feat_id": 445,
+            "cos": -0.268656849861145
+          },
+          {
+            "feat_id": 225,
+            "cos": -0.24444730579853058
+          },
+          {
+            "feat_id": 269,
+            "cos": 0.21547596156597137
+          },
+          {
+            "feat_id": 1779,
+            "cos": -0.21196472644805908
+          },
+          {
+            "feat_id": 870,
+            "cos": 0.20614899694919586
+          }
+        ]
+      }
+    },
+    "hallucination": {
+      "gradient": {
+        "max_abs_cos": 0.07219064235687256,
+        "exceeds_analytic_floor": false,
+        "exceeds_empirical_p95": false,
+        "top_features": [
+          {
+            "feat_id": 7688,
+            "cos": -0.07219064235687256,
+            "label": null
+          },
+          {
+            "feat_id": 130674,
+            "cos": -0.07218065857887268,
+            "label": null
+          },
+          {
+            "feat_id": 59780,
+            "cos": -0.0719284638762474,
+            "label": null
+          },
+          {
+            "feat_id": 93785,
+            "cos": 0.0701669231057167,
+            "label": null
+          },
+          {
+            "feat_id": 21921,
+            "cos": -0.06803945451974869,
+            "label": null
+          },
+          {
+            "feat_id": 42769,
+            "cos": 0.06797734647989273,
+            "label": null
+          },
+          {
+            "feat_id": 9314,
+            "cos": -0.06747571378946304,
+            "label": null
+          },
+          {
+            "feat_id": 108989,
+            "cos": -0.06702613085508347,
+            "label": null
+          }
+        ]
+      },
+      "preimage_unit_level": {
+        "max_abs_cos": 0.10517434030771255,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 97791,
+            "cos": -0.10517434030771255,
+            "label": null
+          },
+          {
+            "feat_id": 71615,
+            "cos": -0.1008247435092926,
+            "label": null
+          },
+          {
+            "feat_id": 33885,
+            "cos": -0.10049500316381454,
+            "label": null
+          },
+          {
+            "feat_id": 59328,
+            "cos": -0.08637045323848724,
+            "label": null
+          },
+          {
+            "feat_id": 116674,
+            "cos": -0.08297870308160782,
+            "label": null
+          },
+          {
+            "feat_id": 128487,
+            "cos": -0.07769237458705902,
+            "label": null
+          },
+          {
+            "feat_id": 73815,
+            "cos": -0.07507139444351196,
+            "label": null
+          },
+          {
+            "feat_id": 72247,
+            "cos": -0.07414466887712479,
+            "label": null
+          }
+        ]
+      },
+      "preimage_unit_level_fullpinv": {
+        "max_abs_cos": 0.19779977202415466,
+        "exceeds_analytic_floor": true,
+        "exceeds_empirical_p95": true,
+        "top_features": [
+          {
+            "feat_id": 57558,
+            "cos": 0.19779977202415466,
+            "label": null
+          },
+          {
+            "feat_id": 47030,
+            "cos": 0.16677428781986237,
+            "label": null
+          },
+          {
+            "feat_id": 130789,
+            "cos": -0.1639947146177292,
+            "label": null
+          },
+          {
+            "feat_id": 28532,
+            "cos": 0.15284523367881775,
+            "label": null
+          },
+          {
+            "feat_id": 31406,
+            "cos": -0.14656075835227966,
+            "label": null
+          },
+          {
+            "feat_id": 101571,
+            "cos": 0.14341437816619873,
+            "label": null
+          },
+          {
+            "feat_id": 60213,
+            "cos": 0.12837086617946625,
+            "label": null
+          },
+          {
+            "feat_id": 55490,
+            "cos": 0.11254797130823135,
+            "label": null
+          }
+        ]
+      },
+      "r_hat_vs_answer_dict": {
+        "nearest_feat_id": 740,
+        "cos": -0.34380626678466797,
+        "top_features": [
+          {
+            "feat_id": 740,
+            "cos": -0.34380626678466797
+          },
+          {
+            "feat_id": 845,
+            "cos": -0.3356906771659851
+          },
+          {
+            "feat_id": 742,
+            "cos": -0.3280927240848541
+          },
+          {
+            "feat_id": 328,
+            "cos": -0.2813330888748169
+          },
+          {
+            "feat_id": 1441,
+            "cos": -0.2595564126968384
+          },
+          {
+            "feat_id": 1273,
+            "cos": -0.25251734256744385
+          },
+          {
+            "feat_id": 27,
+            "cos": -0.2504904866218567
+          },
+          {
+            "feat_id": 1327,
+            "cos": 0.24939027428627014
+          }
+        ]
+      }
+    }
+  },
+  "null_floors": {
+    "ctx": {
+      "n_features": 131072,
+      "analytic_sqrt_2lnN_over_d": 0.08109016582885539,
+      "empirical": {
+        "n_draws": 1000,
+        "seed": 2569140,
+        "mean": 0.07640884274244308,
+        "p50": 0.07574889808893204,
+        "p90": 0.08270837664604187,
+        "p95": 0.08533650860190391,
+        "p99": 0.08954421162605286,
+        "max": 0.09731375426054001
+      }
+    },
+    "ans": {
+      "n_features": 65536,
+      "analytic_sqrt_2lnN_over_d": 0.07866901621440532,
+      "empirical": {
+        "n_draws": 1000,
+        "seed": 2569141,
+        "mean": 0.07415243598818778,
+        "p50": 0.07339334860444069,
+        "p90": 0.08039342388510703,
+        "p95": 0.08318683467805385,
+        "p99": 0.08735244125127792,
+        "max": 0.09136511385440826
+      }
+    }
+  },
+  "whitened_cosine": "deferred-to-P-B (side-matched whitening needs Sigma_c/Sigma_a moments)",
+  "label_sources": {
+    "sources": [
+      {
+        "source": "issue1773_feature_table_v1",
+        "path": "eval_results/issue_1773/feature_table_v1.jsonl",
+        "status": "absent"
+      },
+      {
+        "source": "issue1482_context_side_labels",
+        "path": "eval_results/issue_1482/context_side_labels/descriptions_context_side.jsonl",
+        "status": "absent"
+      }
+    ],
+    "note": "descriptions are judged autointerp text over activating windows; evidence_side names which span produced the windows (#1482 caveat) \u2014 features without a row carry their index only"
+  },
+  "caveats": [
+    "the map is a correlate, not the mechanism (#1776: Jacobian R^2 -0.001 vs 0.681); all wiring claims are map-level.",
+    "activation-space perturbations are not established to correspond to realizable text perturbations \u2014 this ships as sensitivity analysis and decision-geometry characterization, NEVER a security guarantee"
+  ],
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:51:06.692895Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-sae-dashboards",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

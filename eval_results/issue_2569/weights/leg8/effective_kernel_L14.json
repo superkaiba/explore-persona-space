@@ -1,0 +1,47 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 14,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ]
+  },
+  "tau_kernel": 0.277918482445995,
+  "k99": 1325,
+  "k90": 411,
+  "kernel_dim": 2259,
+  "tau_over_median_gain": 1.6824327579658116,
+  "tau_over_max_gain": 0.021099201301778853,
+  "pct_of_typical_gain": 168.24327579658117,
+  "sigma_kernel_max": 0.2777701572369045,
+  "sigma_kernel_mean": 0.09431979154334083,
+  "claims_phrasing": "effective kernel = the 2259 input directions the map reads at < 168.243% of typical (median) gain and < 2.110% of peak gain (sigma_i < tau_kernel = 0.277918); ridge has no exact kernel \u2014 this is a low-gain read subspace, never an exact null space",
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:15:22.070287Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-kernel",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

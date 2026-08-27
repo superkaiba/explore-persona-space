@@ -1,0 +1,652 @@
+{
+  "meta": {
+    "issue": 2569,
+    "script": "issue2569_gateladder",
+    "git_commit": "c522e28fa4",
+    "seed": 2569,
+    "ts": "2026-08-27T01:02:42Z",
+    "python": "3.11.10",
+    "numpy": "2.2.6"
+  },
+  "regime": {
+    "n_grid": [
+      4500,
+      10000,
+      50000,
+      150000,
+      500000
+    ],
+    "eval_rows": 5000,
+    "val_rows": 5000,
+    "seed": 2569,
+    "layer": 19,
+    "lambda_grid": [
+      9.999999999999999e-06,
+      100000000.0,
+      27
+    ],
+    "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+    "lmsys_tag": "lmsys",
+    "smoke": false,
+    "regime_config_hash": "35003bfda5ef3328"
+  },
+  "splits": {
+    "pool_rows": 515485,
+    "n_lmsys_rows": 525485,
+    "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+    "seed": 2569,
+    "lmsys_tag": "lmsys"
+  },
+  "moments": {
+    "n_rows": 500000,
+    "total_var": 1405.5144209861628,
+    "noise_var": 384.67912117296123,
+    "linear_r2_population": 0.7263072399477369,
+    "eta_top8": [
+      315.78237333979996,
+      248.47730873636306,
+      171.32079736251657,
+      162.95447805549327,
+      118.78122746901737,
+      108.39302857154223,
+      85.83229261134714,
+      82.63753936727905
+    ],
+    "eta_sum": 3583.999990795534
+  },
+  "verdict_points": [
+    {
+      "n_train": 4500,
+      "test_r2": 0.6445898317040525,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.643633806518074,
+      "lambda_grid_edge": null,
+      "n_widenings": 0,
+      "final_grid": [
+        9.999999999999999e-06,
+        100000000.0,
+        27
+      ],
+      "identity_bias_r2": -0.9999253567178297,
+      "knn_retrieval": {
+        "metric": "euclidean",
+        "n": 5000,
+        "n_pool": 5000,
+        "acc_at_k": {
+          "1": 0.5668,
+          "5": 0.7514,
+          "10": 0.8138
+        },
+        "chance_at_k": {
+          "1": 0.0002,
+          "5": 0.001,
+          "10": 0.002
+        },
+        "median_rank": 1.0,
+        "mrr": 0.652703859122712
+      },
+      "extra_eval_r2": {
+        "passb_pinned_val": {
+          "r2": 0.6860708467385728,
+          "n_rows": 400
+        },
+        "passb_pinned_test": {
+          "r2": 0.6805879959904575,
+          "n_rows": 1000
+        }
+      },
+      "label": "verdict_n4500",
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys",
+      "corpus_mix": {
+        "lmsys": 4500
+      },
+      "theory": {
+        "kappa": 3745.0532025261937,
+        "gamma": 0.06726350313621203,
+        "excess_risk": 106.036267170956,
+        "predicted_mse": 490.7153883439172,
+        "predicted_r2": 0.6508642095613559
+      }
+    },
+    {
+      "n_train": 10000,
+      "test_r2": 0.6709989646079072,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.6711688472884787,
+      "lambda_grid_edge": null,
+      "n_widenings": 0,
+      "final_grid": [
+        9.999999999999999e-06,
+        100000000.0,
+        27
+      ],
+      "identity_bias_r2": -0.9997460163823073,
+      "knn_retrieval": {
+        "metric": "euclidean",
+        "n": 5000,
+        "n_pool": 5000,
+        "acc_at_k": {
+          "1": 0.6462,
+          "5": 0.8052,
+          "10": 0.858
+        },
+        "chance_at_k": {
+          "1": 0.0002,
+          "5": 0.001,
+          "10": 0.002
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7200159279474676
+      },
+      "extra_eval_r2": {
+        "passb_pinned_val": {
+          "r2": 0.7106197304752201,
+          "n_rows": 400
+        },
+        "passb_pinned_test": {
+          "r2": 0.705636364258205,
+          "n_rows": 1000
+        }
+      },
+      "label": "verdict_n10000",
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys",
+      "corpus_mix": {
+        "lmsys": 10000
+      },
+      "theory": {
+        "kappa": 3553.658021363147,
+        "gamma": 0.055744785808495345,
+        "excess_risk": 69.19279818431671,
+        "predicted_mse": 453.87191935727793,
+        "predicted_r2": 0.6770777214517486
+      }
+    },
+    {
+      "n_train": 50000,
+      "test_r2": 0.7033440691001323,
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.7033215192202225,
+      "lambda_grid_edge": null,
+      "n_widenings": 0,
+      "final_grid": [
+        9.999999999999999e-06,
+        100000000.0,
+        27
+      ],
+      "identity_bias_r2": -0.9997407249941421,
+      "knn_retrieval": {
+        "metric": "euclidean",
+        "n": 5000,
+        "n_pool": 5000,
+        "acc_at_k": {
+          "1": 0.7292,
+          "5": 0.8612,
+          "10": 0.8958
+        },
+        "chance_at_k": {
+          "1": 0.0002,
+          "5": 0.001,
+          "10": 0.002
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7889729510451795
+      },
+      "extra_eval_r2": {
+        "passb_pinned_val": {
+          "r2": 0.7386762992987315,
+          "n_rows": 400
+        },
+        "passb_pinned_test": {
+          "r2": 0.7377177739501573,
+          "n_rows": 1000
+        }
+      },
+      "label": "verdict_n50000",
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys",
+      "corpus_mix": {
+        "lmsys": 50000
+      },
+      "theory": {
+        "kappa": 3305.7924350218786,
+        "gamma": 0.030136202178023534,
+        "excess_risk": 24.117575908519314,
+        "predicted_mse": 408.79669708148054,
+        "predicted_r2": 0.7091479881119589
+      }
+    },
+    {
+      "n_train": 150000,
+      "test_r2": 0.7144363191838058,
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.7145908575275759,
+      "lambda_grid_edge": null,
+      "n_widenings": 0,
+      "final_grid": [
+        9.999999999999999e-06,
+        100000000.0,
+        27
+      ],
+      "identity_bias_r2": -0.9996952313575724,
+      "knn_retrieval": {
+        "metric": "euclidean",
+        "n": 5000,
+        "n_pool": 5000,
+        "acc_at_k": {
+          "1": 0.7656,
+          "5": 0.8778,
+          "10": 0.91
+        },
+        "chance_at_k": {
+          "1": 0.0002,
+          "5": 0.001,
+          "10": 0.002
+        },
+        "median_rank": 1.0,
+        "mrr": 0.8173888822180051
+      },
+      "extra_eval_r2": {
+        "passb_pinned_val": {
+          "r2": 0.750319789923551,
+          "n_rows": 400
+        },
+        "passb_pinned_test": {
+          "r2": 0.7481090630084244,
+          "n_rows": 1000
+        }
+      },
+      "label": "verdict_n150000",
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys",
+      "corpus_mix": {
+        "lmsys": 150000
+      },
+      "theory": {
+        "kappa": 1022.3130295375581,
+        "gamma": 0.020091327288236698,
+        "excess_risk": 8.63560565185798,
+        "predicted_mse": 393.3147268248192,
+        "predicted_r2": 0.7201631509772383
+      }
+    },
+    {
+      "n_train": 500000,
+      "test_r2": 0.7194200037963737,
+      "selected_lambda": 1000.0,
+      "val_r2_at_selected": 0.7195195952477222,
+      "lambda_grid_edge": null,
+      "n_widenings": 0,
+      "final_grid": [
+        9.999999999999999e-06,
+        100000000.0,
+        27
+      ],
+      "identity_bias_r2": -0.9997025682843748,
+      "knn_retrieval": {
+        "metric": "euclidean",
+        "n": 5000,
+        "n_pool": 5000,
+        "acc_at_k": {
+          "1": 0.7708,
+          "5": 0.8812,
+          "10": 0.9116
+        },
+        "chance_at_k": {
+          "1": 0.0002,
+          "5": 0.001,
+          "10": 0.002
+        },
+        "median_rank": 1.0,
+        "mrr": 0.8218231238515693
+      },
+      "extra_eval_r2": {
+        "passb_pinned_val": {
+          "r2": 0.7561634842621093,
+          "n_rows": 400
+        },
+        "passb_pinned_test": {
+          "r2": 0.7544342206412827,
+          "n_rows": 1000
+        }
+      },
+      "label": "verdict_n500000",
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys",
+      "corpus_mix": {
+        "lmsys": 500000
+      },
+      "theory": {
+        "kappa": 1007.0083824520112,
+        "gamma": 0.006764207515869761,
+        "excess_risk": 2.723949444931488,
+        "predicted_mse": 387.4030706178927,
+        "predicted_r2": 0.7243691954821241
+      }
+    }
+  ],
+  "parity_check": {
+    "reference": {
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys"
+    },
+    "per_point": [
+      {
+        "label": "verdict_n4500",
+        "pass": true,
+        "mismatched_fields": []
+      },
+      {
+        "label": "verdict_n10000",
+        "pass": true,
+        "mismatched_fields": []
+      },
+      {
+        "label": "verdict_n50000",
+        "pass": true,
+        "mismatched_fields": []
+      },
+      {
+        "label": "verdict_n150000",
+        "pass": true,
+        "mismatched_fields": []
+      },
+      {
+        "label": "verdict_n500000",
+        "pass": true,
+        "mismatched_fields": []
+      }
+    ]
+  },
+  "parity_excluded": [],
+  "h2b": {
+    "mean_abs_dr2": 0.005766615438430866,
+    "per_point_delta_r2": [
+      -0.006274377857303448,
+      -0.006078756843841404,
+      -0.0058039190118266415,
+      -0.005726831793432474,
+      -0.004949191685750365
+    ],
+    "same_sign_all": true,
+    "verdict": "h2b-pass",
+    "bands": {
+      "pass_le": 0.05,
+      "kill_gt": 0.15
+    },
+    "well_posedness": {
+      "d": 3584,
+      "rule": "n_train < d is estimator-degenerate (#1701); degenerate points are excluded from the verdict statistic and NAMED, never scored",
+      "per_point": [
+        {
+          "label": "verdict_n4500",
+          "n_train": 4500,
+          "d": 3584,
+          "n_over_d": 1.2555803571428572,
+          "well_posed": true
+        },
+        {
+          "label": "verdict_n10000",
+          "n_train": 10000,
+          "d": 3584,
+          "n_over_d": 2.7901785714285716,
+          "well_posed": true
+        },
+        {
+          "label": "verdict_n50000",
+          "n_train": 50000,
+          "d": 3584,
+          "n_over_d": 13.950892857142858,
+          "well_posed": true
+        },
+        {
+          "label": "verdict_n150000",
+          "n_train": 150000,
+          "d": 3584,
+          "n_over_d": 41.85267857142857,
+          "well_posed": true
+        },
+        {
+          "label": "verdict_n500000",
+          "n_train": 500000,
+          "d": 3584,
+          "n_over_d": 139.50892857142858,
+          "well_posed": true
+        }
+      ],
+      "degenerate_excluded": []
+    }
+  },
+  "companions_off_recipe": [
+    {
+      "label": "passb_n4500_L16_gcv",
+      "n_train": 4500,
+      "test_r2": 0.6293,
+      "selected_lambda": 316.23,
+      "lambda_grid_edge": null,
+      "layer": 16,
+      "corpus_mix": {
+        "pass_b_seed_corpus": 4500
+      },
+      "lambda_selection": "GCV",
+      "train_eval_distribution": "pass-b mixed seed corpus",
+      "source": "vendored from #2474 PASSB_PROVENANCE via plan #2569 \u00a74 leg 2 (B4/B6)",
+      "off_recipe_companion": true
+    },
+    {
+      "label": "committed_n3600_L19",
+      "n_train": 3600,
+      "test_r2": 0.7054149303865586,
+      "selected_lambda": 1000.0,
+      "lambda_grid_edge": null,
+      "layer": 19,
+      "corpus_mix": {
+        "pass_b_seed_corpus": 3600
+      },
+      "lambda_selection": "val-selected (committed original grid)",
+      "train_eval_distribution": "pass-b mixed seed corpus",
+      "source": "eval_results/issue_779/fitter-fair-comparison/fair_comparison.json",
+      "off_recipe_companion": true
+    },
+    {
+      "label": "committed_n50k_plan_b_L19",
+      "n_train": 50000,
+      "test_r2": 0.7599992543132661,
+      "selected_lambda": 1000.0,
+      "lambda_grid_edge": null,
+      "layer": 19,
+      "corpus_mix": {
+        "pass_b_seed_corpus": 3600,
+        "n50k_new": 46600
+      },
+      "lambda_selection": "val-selected (committed n50k grid)",
+      "train_eval_distribution": "mixed pool -> pass-b eval rows",
+      "source": "eval_results/issue_779/fitter-fair-comparison-n50k/n50k_fits.json",
+      "off_recipe_companion": true
+    },
+    {
+      "label": "committed_lmsys_150k_L19",
+      "n_train": 150000,
+      "test_r2": 0.754355957580797,
+      "selected_lambda": 1000.0,
+      "lambda_grid_edge": null,
+      "layer": 19,
+      "corpus_mix": {
+        "lmsys": 150000,
+        "wildchat": 0
+      },
+      "lambda_selection": "val-selected (committed n1m streaming grid)",
+      "train_eval_distribution": "store pool -> pass-b eval rows",
+      "source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json",
+      "off_recipe_companion": true
+    },
+    {
+      "label": "committed_lmsys_500k_L19",
+      "n_train": 500000,
+      "test_r2": 0.7608232696391413,
+      "selected_lambda": 0.001,
+      "lambda_grid_edge": "low",
+      "layer": 19,
+      "corpus_mix": {
+        "lmsys": 500000,
+        "wildchat": 0
+      },
+      "lambda_selection": "val-selected (committed n1m streaming grid)",
+      "train_eval_distribution": "store pool -> pass-b eval rows",
+      "source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json",
+      "off_recipe_companion": true
+    },
+    {
+      "label": "committed_mixed_1m_L19",
+      "n_train": 963444,
+      "test_r2": 0.7541708417500051,
+      "selected_lambda": 0.001,
+      "lambda_grid_edge": "low",
+      "layer": 19,
+      "corpus_mix": {
+        "lmsys": 529085,
+        "wildchat": 434359
+      },
+      "lambda_selection": "val-selected (committed n1m streaming grid)",
+      "train_eval_distribution": "store pool -> pass-b eval rows",
+      "source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json",
+      "off_recipe_companion": true
+    },
+    {
+      "label": "committed_mixed_500k_L19",
+      "n_train": 500000,
+      "test_r2": 0.7526607745723463,
+      "selected_lambda": 100.0,
+      "lambda_grid_edge": null,
+      "layer": 19,
+      "corpus_mix": {
+        "lmsys": 274580,
+        "wildchat": 225420
+      },
+      "lambda_selection": "val-selected (committed n1m streaming grid)",
+      "train_eval_distribution": "store pool -> pass-b eval rows",
+      "source": "eval_results/issue_779/fitter-fair-comparison-n1m/n1m_fits.json",
+      "off_recipe_companion": true
+    }
+  ],
+  "companion_parity_vs_verdict_reference": {
+    "reference": {
+      "layer": 19,
+      "train_corpus": "lmsys",
+      "eval_split_sha": "te:65c0a5d42040dd6c|val:9458b4474f2dcf1a",
+      "lambda_selection": "val-selected over widened 27-value 1e-5..1e8 grid; widen-on-edge",
+      "train_eval_distribution": "lmsys->lmsys"
+    },
+    "per_point": [
+      {
+        "label": "passb_n4500_L16_gcv",
+        "pass": false,
+        "mismatched_fields": [
+          "layer",
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      },
+      {
+        "label": "committed_n3600_L19",
+        "pass": false,
+        "mismatched_fields": [
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      },
+      {
+        "label": "committed_n50k_plan_b_L19",
+        "pass": false,
+        "mismatched_fields": [
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      },
+      {
+        "label": "committed_lmsys_150k_L19",
+        "pass": false,
+        "mismatched_fields": [
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      },
+      {
+        "label": "committed_lmsys_500k_L19",
+        "pass": false,
+        "mismatched_fields": [
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      },
+      {
+        "label": "committed_mixed_1m_L19",
+        "pass": false,
+        "mismatched_fields": [
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      },
+      {
+        "label": "committed_mixed_500k_L19",
+        "pass": false,
+        "mismatched_fields": [
+          "train_corpus",
+          "eval_split_sha",
+          "lambda_selection",
+          "train_eval_distribution"
+        ]
+      }
+    ]
+  },
+  "extra_eval_slices": {
+    "passb_pinned_val": {
+      "n_rows": 400,
+      "note": "sha-pinned pass-B comparability companion \u2014 off-distribution scoring, NEVER a verdict input (B4)"
+    },
+    "passb_pinned_test": {
+      "n_rows": 1000,
+      "note": "sha-pinned pass-B comparability companion \u2014 off-distribution scoring, NEVER a verdict input (B4)"
+    }
+  },
+  "corpus_measurement": {
+    "source": "n1m sampling manifest (streaming ci join, re-measured at phase entry \u2014 B4)",
+    "n_rows_present": 964844,
+    "n_lmsys_measured": 525485,
+    "n_wildchat_measured": 434359,
+    "n_pass_b": 5000,
+    "n_lmsys_expected_production": 529085,
+    "production": true
+  }
+}

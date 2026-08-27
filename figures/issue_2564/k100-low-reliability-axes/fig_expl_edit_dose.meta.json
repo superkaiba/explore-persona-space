@@ -1,0 +1,3393 @@
+{
+  "commit": "c5c233ac",
+  "render_id": "435dbfdb27214144",
+  "git_commit": "c5c233acbe8dc8ea535b403bf81c41b9c74cc0a2",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2564_figures.py",
+  "created": "2026-08-26T22:26:42Z",
+  "figsize": [
+    6.0,
+    4.2
+  ],
+  "points": [
+    {
+      "changed tokens between the pair's contexts": 2.041088506196436,
+      "predicted shift norm": 2.600583106237173,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9309360141291612,
+      "predicted shift norm": 4.67987221261231,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8622920571808583,
+      "predicted shift norm": 4.486212609995913,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8549582906585587,
+      "predicted shift norm": 3.578010253545545,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0939810717600817,
+      "predicted shift norm": 4.619056342139288,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1238266731833164,
+      "predicted shift norm": 4.290514274724974,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.031990732730154,
+      "predicted shift norm": 3.569088486833202,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0688489682951996,
+      "predicted shift norm": 1.6307056157332227,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.013087497439627,
+      "predicted shift norm": 6.033091328141928,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1305217271363306,
+      "predicted shift norm": 5.694225864083388,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0947560662364597,
+      "predicted shift norm": 3.3972022884129944,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8508215500510445,
+      "predicted shift norm": 6.004915649875553,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.107221282976271,
+      "predicted shift norm": 5.921354208755366,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8600756725916394,
+      "predicted shift norm": 3.652058369952904,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.068896633928983,
+      "predicted shift norm": 5.38397964820521,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9026966861807677,
+      "predicted shift norm": 5.106447958777777,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.108953676704966,
+      "predicted shift norm": 3.8814673386621363,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0124383660747274,
+      "predicted shift norm": 1.6660346412192308,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9399135671612155,
+      "predicted shift norm": 6.908455563208457,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9768061663592975,
+      "predicted shift norm": 6.748005350453586,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8584959013436388,
+      "predicted shift norm": 3.2515096456174097,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8872849829498692,
+      "predicted shift norm": 5.961315805389168,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.051187324408089,
+      "predicted shift norm": 5.726623698170348,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.044156853472275,
+      "predicted shift norm": 2.7833336971308444,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0346155334443763,
+      "predicted shift norm": 5.779873429991591,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.965103266278565,
+      "predicted shift norm": 5.481129844848058,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1491629807367634,
+      "predicted shift norm": 3.6275321136168897,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.144250601632869,
+      "predicted shift norm": 1.7662483314483477,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0556625953442085,
+      "predicted shift norm": 6.442788642168515,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.045137782880345,
+      "predicted shift norm": 6.192564052263422,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.056534019171282,
+      "predicted shift norm": 2.753114326715011,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9666764271937311,
+      "predicted shift norm": 5.000262830653432,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8905289515067234,
+      "predicted shift norm": 4.817072621513746,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0664465020582243,
+      "predicted shift norm": 3.6279095956014906,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.007606296742718,
+      "predicted shift norm": 4.829094000390527,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9430725626676868,
+      "predicted shift norm": 4.484617869833803,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9957506076495366,
+      "predicted shift norm": 4.0960658258165,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1168463503047,
+      "predicted shift norm": 1.7683187601943566,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.130213054786875,
+      "predicted shift norm": 6.225977754552435,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.957338559012721,
+      "predicted shift norm": 5.9749663830117665,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0214589492189283,
+      "predicted shift norm": 3.4886471834105715,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9465608173227826,
+      "predicted shift norm": 6.050901972446355,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.028290009059909,
+      "predicted shift norm": 5.897860559462316,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.95137336765214,
+      "predicted shift norm": 3.6986982494884493,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9674857001584485,
+      "predicted shift norm": 5.723904366602018,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.117082305601438,
+      "predicted shift norm": 5.330443456137322,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.918147278060014,
+      "predicted shift norm": 4.0601189148089825,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0369561434058125,
+      "predicted shift norm": 1.930270746377828,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8752046030747154,
+      "predicted shift norm": 6.59316460822561,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0997932442960194,
+      "predicted shift norm": 6.299569122305005,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.086129492246605,
+      "predicted shift norm": 2.593029383825498,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9218108328978856,
+      "predicted shift norm": 4.904266595420058,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.112945269243211,
+      "predicted shift norm": 4.820519247859876,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8675704104415582,
+      "predicted shift norm": 2.9209950541298686,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.950835118163698,
+      "predicted shift norm": 4.776436290936208,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8950838400684518,
+      "predicted shift norm": 4.59171526263099,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9851018099947861,
+      "predicted shift norm": 3.478457047660943,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0888972810861883,
+      "predicted shift norm": 1.4908494588047543,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9191926626981242,
+      "predicted shift norm": 5.6867916382013775,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.865606390319323,
+      "predicted shift norm": 5.5527019299197455,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9713655519464583,
+      "predicted shift norm": 3.108055728801864,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9095539133527766,
+      "predicted shift norm": 5.7654729884524,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8772259136857365,
+      "predicted shift norm": 5.775835430866504,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.024099715796055,
+      "predicted shift norm": 3.766004741320025,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9396088398456768,
+      "predicted shift norm": 5.390768688224708,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0515984633869078,
+      "predicted shift norm": 5.395876894626582,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.909854633190464,
+      "predicted shift norm": 4.596609026339816,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1326339331519493,
+      "predicted shift norm": 1.5671541235745603,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9595330504734485,
+      "predicted shift norm": 7.0941557396816,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8816485838710688,
+      "predicted shift norm": 7.0529284729746635,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0387324454619127,
+      "predicted shift norm": 2.719355119191604,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1281463659203603,
+      "predicted shift norm": 4.62361775611346,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9821131464147352,
+      "predicted shift norm": 4.8670844747434385,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.136377148107221,
+      "predicted shift norm": 2.915191193598716,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.999968744106294,
+      "predicted shift norm": 4.400154110405147,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9775685874547226,
+      "predicted shift norm": 4.336297133242578,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.036064035604613,
+      "predicted shift norm": 3.4607316650377706,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.148528951570597,
+      "predicted shift norm": 1.6075069375823108,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1346831024813295,
+      "predicted shift norm": 5.249575522429269,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.988013541792729,
+      "predicted shift norm": 5.422978256082457,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0773186535924872,
+      "predicted shift norm": 3.5594724609961896,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9992268086462857,
+      "predicted shift norm": 6.0413980410928465,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.008793648059031,
+      "predicted shift norm": 5.721120222345506,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0857357102141423,
+      "predicted shift norm": 3.654614221733265,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9743967548067012,
+      "predicted shift norm": 5.785854765723927,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.070345071536619,
+      "predicted shift norm": 5.3965266578963975,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.063342863396925,
+      "predicted shift norm": 3.8768170696205138,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1296179059840137,
+      "predicted shift norm": 1.6529641547069982,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8844797899842716,
+      "predicted shift norm": 6.059633457571795,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.068704535122893,
+      "predicted shift norm": 5.728296057886734,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.128227178587368,
+      "predicted shift norm": 2.7650145487358837,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.140377856977394,
+      "predicted shift norm": 5.5087634356833854,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8544118914896108,
+      "predicted shift norm": 5.24672026198792,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1090920270736726,
+      "predicted shift norm": 3.224487916362241,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1443585120199034,
+      "predicted shift norm": 4.928351336204965,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.137163053883289,
+      "predicted shift norm": 4.514695837361673,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8946292036697494,
+      "predicted shift norm": 3.1316954362159364,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1417886441468865,
+      "predicted shift norm": 1.6212312474473178,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1169806667161564,
+      "predicted shift norm": 5.484026049204713,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.096712148262921,
+      "predicted shift norm": 5.2447455166928645,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9939963771423497,
+      "predicted shift norm": 2.2223570380005127,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.919711875891791,
+      "predicted shift norm": 4.053155874391823,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0905641736154923,
+      "predicted shift norm": 4.116694970383192,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.127059047935041,
+      "predicted shift norm": 2.8070280623034365,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9298390816876878,
+      "predicted shift norm": 3.5900047442232097,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.011680322286656,
+      "predicted shift norm": 3.52335682740584,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9828258486923596,
+      "predicted shift norm": 3.2080377744022983,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1293051947943464,
+      "predicted shift norm": 1.530846699768304,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8621532133565304,
+      "predicted shift norm": 4.69292232886267,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.069601858696968,
+      "predicted shift norm": 4.696557437950873,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.034311974084699,
+      "predicted shift norm": 3.435451438384439,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8585096095340563,
+      "predicted shift norm": 5.992093795652199,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.065765931848022,
+      "predicted shift norm": 6.231083613375298,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8547975188570716,
+      "predicted shift norm": 3.7125579254737486,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0773853007069283,
+      "predicted shift norm": 5.068279270566802,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0038276169786235,
+      "predicted shift norm": 5.192172759367182,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.128731266239102,
+      "predicted shift norm": 3.515339793386291,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8698247490172224,
+      "predicted shift norm": 1.7227640152266763,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 2.102395183883715,
+      "predicted shift norm": 6.267344578293482,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8700070026301305,
+      "predicted shift norm": 6.45330535783234,
+      "series": "family swap",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "changed tokens between the pair's contexts": 13.041088506196436,
+      "predicted shift norm": 21.309863602271793,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.930936014129161,
+      "predicted shift norm": 21.341633199596735,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.86229205718086,
+      "predicted shift norm": 21.767750357302333,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.854958290658558,
+      "predicted shift norm": 21.905538838456454,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.093981071760082,
+      "predicted shift norm": 21.980271980287025,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.123826673183316,
+      "predicted shift norm": 22.877794305582775,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.031990732730154,
+      "predicted shift norm": 22.529702199462637,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.0688489682952,
+      "predicted shift norm": 22.920676011869702,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.013087497439626,
+      "predicted shift norm": 22.844897437621327,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.13052172713633,
+      "predicted shift norm": 22.868140561340063,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.09475606623646,
+      "predicted shift norm": 19.11596949325555,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.850821550051045,
+      "predicted shift norm": 19.62228337192179,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.10722128297627,
+      "predicted shift norm": 19.199411057303575,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.86007567259164,
+      "predicted shift norm": 19.216528606866927,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.068896633928983,
+      "predicted shift norm": 19.07621730748216,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.902696686180768,
+      "predicted shift norm": 22.11143031507507,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.108953676704965,
+      "predicted shift norm": 21.728093240127976,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.012438366074727,
+      "predicted shift norm": 22.510052192756195,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.939913567161215,
+      "predicted shift norm": 22.39407663593587,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.976806166359298,
+      "predicted shift norm": 22.09311943985867,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.85849590134364,
+      "predicted shift norm": 25.172826817628792,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.887284982949868,
+      "predicted shift norm": 25.18765344955248,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.051187324408088,
+      "predicted shift norm": 25.47039463149854,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.044156853472275,
+      "predicted shift norm": 25.185974158237983,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.034615533444375,
+      "predicted shift norm": 25.46083615408815,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.965103266278565,
+      "predicted shift norm": 20.45578734289413,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.149162980736763,
+      "predicted shift norm": 20.722854425540824,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.14425060163287,
+      "predicted shift norm": 20.32126349375009,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.055662595344208,
+      "predicted shift norm": 20.420580541037303,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.045137782880344,
+      "predicted shift norm": 20.691938081311996,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.056534019171282,
+      "predicted shift norm": 21.112038398694615,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.96667642719373,
+      "predicted shift norm": 21.244742077677277,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.890528951506724,
+      "predicted shift norm": 22.20619117934516,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.066446502058225,
+      "predicted shift norm": 21.575614556595486,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.007606296742718,
+      "predicted shift norm": 22.02553137565312,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.943072562667687,
+      "predicted shift norm": 18.761658249983398,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.995750607649537,
+      "predicted shift norm": 18.700853709796625,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.1168463503047,
+      "predicted shift norm": 18.471166965465507,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.130213054786875,
+      "predicted shift norm": 18.3864642038381,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.95733855901272,
+      "predicted shift norm": 18.931017031967258,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.021458949218928,
+      "predicted shift norm": 20.77530346091232,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.946560817322784,
+      "predicted shift norm": 20.80581431357105,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.028290009059909,
+      "predicted shift norm": 20.572058329710803,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.95137336765214,
+      "predicted shift norm": 20.867823368080263,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.967485700158448,
+      "predicted shift norm": 20.655984894732004,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.117082305601437,
+      "predicted shift norm": 20.694987611295335,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.918147278060014,
+      "predicted shift norm": 20.57983057440195,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.036956143405813,
+      "predicted shift norm": 20.542656622202692,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.875204603074716,
+      "predicted shift norm": 20.247359943324273,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.09979324429602,
+      "predicted shift norm": 20.82066357408209,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.086129492246606,
+      "predicted shift norm": 19.200553493144056,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.921810832897886,
+      "predicted shift norm": 19.32556306861921,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.11294526924321,
+      "predicted shift norm": 19.008192833924674,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.867570410441559,
+      "predicted shift norm": 18.759239004699488,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.950835118163699,
+      "predicted shift norm": 19.40765435342309,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.895083840068452,
+      "predicted shift norm": 21.794688809807713,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.985101809994786,
+      "predicted shift norm": 21.948026148872504,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 13.088897281086188,
+      "predicted shift norm": 21.632526478732256,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.919192662698125,
+      "predicted shift norm": 21.79512546082699,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 12.865606390319323,
+      "predicted shift norm": 22.42642496485028,
+      "series": "install",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "changed tokens between the pair's contexts": 14.041088506196436,
+      "predicted shift norm": 10.298909855670537,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.930936014129161,
+      "predicted shift norm": 10.794160506664628,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.86229205718086,
+      "predicted shift norm": 9.104426633550275,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.854958290658558,
+      "predicted shift norm": 9.525270338271563,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.093981071760082,
+      "predicted shift norm": 11.728028895013976,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.123826673183316,
+      "predicted shift norm": 11.520135280280181,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.031990732730154,
+      "predicted shift norm": 11.896278730672849,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.0688489682952,
+      "predicted shift norm": 9.786150775778001,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.013087497439626,
+      "predicted shift norm": 10.184213153864368,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.13052172713633,
+      "predicted shift norm": 12.125900488586078,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.09475606623646,
+      "predicted shift norm": 8.804503529457303,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.850821550051045,
+      "predicted shift norm": 9.6248836377392,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.10722128297627,
+      "predicted shift norm": 8.024577869196001,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.86007567259164,
+      "predicted shift norm": 8.068407057548454,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.068896633928983,
+      "predicted shift norm": 8.973452075558306,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.902696686180768,
+      "predicted shift norm": 9.755301250079418,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.108953676704965,
+      "predicted shift norm": 9.963557664510212,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.012438366074727,
+      "predicted shift norm": 8.891387117546165,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.939913567161215,
+      "predicted shift norm": 8.936914307279846,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.976806166359298,
+      "predicted shift norm": 10.701033587564453,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.85849590134364,
+      "predicted shift norm": 11.10256786472848,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.887284982949868,
+      "predicted shift norm": 11.913427263549147,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.051187324408088,
+      "predicted shift norm": 9.854054957671877,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.044156853472275,
+      "predicted shift norm": 10.28938166346433,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.034615533444375,
+      "predicted shift norm": 12.123760506522698,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.965103266278565,
+      "predicted shift norm": 8.790581244009417,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.149162980736763,
+      "predicted shift norm": 9.487466642039939,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.14425060163287,
+      "predicted shift norm": 8.347798666371185,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.055662595344208,
+      "predicted shift norm": 8.499819720673406,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.045137782880344,
+      "predicted shift norm": 9.26359564929155,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.056534019171282,
+      "predicted shift norm": 8.616520176849386,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.96667642719373,
+      "predicted shift norm": 9.04402506756948,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.890528951506724,
+      "predicted shift norm": 7.908830932762029,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.066446502058225,
+      "predicted shift norm": 7.505915006264708,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.007606296742718,
+      "predicted shift norm": 10.606129056323647,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.943072562667687,
+      "predicted shift norm": 7.816752380358195,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.995750607649537,
+      "predicted shift norm": 7.882031953844395,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.1168463503047,
+      "predicted shift norm": 7.089341946827158,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.130213054786875,
+      "predicted shift norm": 6.99396170197276,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.95733855901272,
+      "predicted shift norm": 8.194591386366325,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.021458949218928,
+      "predicted shift norm": 9.563283671294347,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.946560817322784,
+      "predicted shift norm": 10.308882746549537,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.028290009059909,
+      "predicted shift norm": 8.51629668323303,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.95137336765214,
+      "predicted shift norm": 9.050247677832955,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.967485700158448,
+      "predicted shift norm": 10.031004425881136,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.117082305601437,
+      "predicted shift norm": 9.690777110063783,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.918147278060014,
+      "predicted shift norm": 10.174274630937788,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.036956143405813,
+      "predicted shift norm": 8.433430194060477,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.875204603074716,
+      "predicted shift norm": 8.818652665282167,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.09979324429602,
+      "predicted shift norm": 10.300558985588026,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.086129492246606,
+      "predicted shift norm": 8.391558320050587,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.921810832897886,
+      "predicted shift norm": 8.799323491453526,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.11294526924321,
+      "predicted shift norm": 7.653703325385022,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.867570410441559,
+      "predicted shift norm": 7.767079068136426,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.950835118163699,
+      "predicted shift norm": 9.041634592956981,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.895083840068452,
+      "predicted shift norm": 9.909367966715909,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.985101809994786,
+      "predicted shift norm": 10.839464313201507,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 14.088897281086188,
+      "predicted shift norm": 8.959883122897304,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.919192662698125,
+      "predicted shift norm": 9.38948245097918,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 13.865606390319323,
+      "predicted shift norm": 11.01940786451415,
+      "series": "instruction paraphrase",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "changed tokens between the pair's contexts": 16.041088506196438,
+      "predicted shift norm": 24.84312530720316,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.930936014129161,
+      "predicted shift norm": 26.44177019332005,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.86229205718086,
+      "predicted shift norm": 33.79603426257591,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.85495829065856,
+      "predicted shift norm": 26.327197562016625,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.09398107176008,
+      "predicted shift norm": 29.25074486498596,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 10.123826673183316,
+      "predicted shift norm": 22.386281641013817,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.031990732730154,
+      "predicted shift norm": 22.566596275063006,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 11.0688489682952,
+      "predicted shift norm": 27.387540433135452,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.013087497439628,
+      "predicted shift norm": 26.24221484954241,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 9.13052172713633,
+      "predicted shift norm": 27.824828239733705,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.09475606623646,
+      "predicted shift norm": 24.485556782231274,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.850821550051045,
+      "predicted shift norm": 32.24905768067735,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.10722128297627,
+      "predicted shift norm": 33.2340681111549,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.86007567259164,
+      "predicted shift norm": 21.46052348621191,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.068896633928983,
+      "predicted shift norm": 35.354561269946004,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.902696686180768,
+      "predicted shift norm": 29.53481180744181,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.108953676704965,
+      "predicted shift norm": 25.63061522771426,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.012438366074727,
+      "predicted shift norm": 27.78192444942776,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 7.9399135671612155,
+      "predicted shift norm": 19.174848862884193,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.976806166359298,
+      "predicted shift norm": 24.95531964839384,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 9.85849590134364,
+      "predicted shift norm": 29.497052382291407,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 13.887284982949868,
+      "predicted shift norm": 33.03591574815757,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.05118732440809,
+      "predicted shift norm": 29.9580976631011,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.044156853472273,
+      "predicted shift norm": 21.795407967799452,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.034615533444375,
+      "predicted shift norm": 22.544771704604624,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.965103266278565,
+      "predicted shift norm": 21.200756138667177,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 8.149162980736763,
+      "predicted shift norm": 24.725716811758268,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.14425060163287,
+      "predicted shift norm": 26.36357212014231,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.055662595344208,
+      "predicted shift norm": 29.691361706517732,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.045137782880346,
+      "predicted shift norm": 28.31431519328599,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.05653401917128,
+      "predicted shift norm": 26.116849957569254,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 13.96667642719373,
+      "predicted shift norm": 32.43298136815419,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.890528951506724,
+      "predicted shift norm": 27.622554075970747,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 13.066446502058225,
+      "predicted shift norm": 29.98915201431173,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.007606296742718,
+      "predicted shift norm": 24.337241101781544,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.943072562667687,
+      "predicted shift norm": 28.22241864225862,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 13.995750607649537,
+      "predicted shift norm": 26.424554730909602,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.1168463503047,
+      "predicted shift norm": 38.36460436565335,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 18.130213054786875,
+      "predicted shift norm": 31.883964588256617,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.957338559012722,
+      "predicted shift norm": 26.47878326142587,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 13.021458949218928,
+      "predicted shift norm": 23.144389855961606,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.946560817322784,
+      "predicted shift norm": 25.357955026524834,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.028290009059909,
+      "predicted shift norm": 22.099308048895953,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.95137336765214,
+      "predicted shift norm": 22.239172675455382,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.967485700158448,
+      "predicted shift norm": 28.53979649527154,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.11708230560144,
+      "predicted shift norm": 25.648353124322256,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.918147278060014,
+      "predicted shift norm": 22.36179093257304,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.036956143405813,
+      "predicted shift norm": 21.051530378470087,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.875204603074714,
+      "predicted shift norm": 28.989784445338127,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 18.09979324429602,
+      "predicted shift norm": 28.858220272847245,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.086129492246606,
+      "predicted shift norm": 33.50055127510178,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 13.921810832897886,
+      "predicted shift norm": 20.9658118512525,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.11294526924321,
+      "predicted shift norm": 22.479674517211706,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.867570410441559,
+      "predicted shift norm": 23.047402607853712,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.950835118163699,
+      "predicted shift norm": 21.953244196880352,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 15.895083840068452,
+      "predicted shift norm": 26.4590581751388,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.985101809994786,
+      "predicted shift norm": 21.864155671936707,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.088897281086188,
+      "predicted shift norm": 22.810276495790642,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 14.919192662698125,
+      "predicted shift norm": 22.155193721995634,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 11.865606390319323,
+      "predicted shift norm": 27.23864156079228,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.97136555194646,
+      "predicted shift norm": 21.725643226962678,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 11.909553913352777,
+      "predicted shift norm": 19.131646010275077,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 16.877225913685738,
+      "predicted shift norm": 32.78716847088857,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.024099715796055,
+      "predicted shift norm": 18.288042069094836,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 9.939608839845677,
+      "predicted shift norm": 26.69396381322849,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 17.05159846338691,
+      "predicted shift norm": 32.31714485271396,
+      "series": "query content",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "changed tokens between the pair's contexts": 12.041088506196436,
+      "predicted shift norm": 10.847344464447442,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 11.930936014129161,
+      "predicted shift norm": 11.210281611572203,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 5.862292057180858,
+      "predicted shift norm": 8.10926992828258,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 16.85495829065856,
+      "predicted shift norm": 12.293849520181352,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 17.09398107176008,
+      "predicted shift norm": 13.877553021188385,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 6.123826673183316,
+      "predicted shift norm": 10.512850062601599,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 8.031990732730154,
+      "predicted shift norm": 8.680847338140046,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 9.0688489682952,
+      "predicted shift norm": 10.13156707457883,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 5.013087497439627,
+      "predicted shift norm": 11.733727860071417,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 7.130521727136331,
+      "predicted shift norm": 5.5008417900192965,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 8.09475606623646,
+      "predicted shift norm": 10.416228398694525,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 4.8508215500510445,
+      "predicted shift norm": 9.603833821237503,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 9.10722128297627,
+      "predicted shift norm": 8.200338537372701,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 8.86007567259164,
+      "predicted shift norm": 16.912105651947748,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 8.068896633928983,
+      "predicted shift norm": 16.66562307537231,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 5.902696686180768,
+      "predicted shift norm": 5.950887142977152,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 8.108953676704965,
+      "predicted shift norm": 9.481454401415002,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 6.012438366074727,
+      "predicted shift norm": 8.748044595406013,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 12.939913567161215,
+      "predicted shift norm": 13.605417497711242,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 12.976806166359298,
+      "predicted shift norm": 12.980714171222367,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 5.858495901343639,
+      "predicted shift norm": 8.406839869561036,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 10.887284982949868,
+      "predicted shift norm": 11.436175920909589,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 12.051187324408088,
+      "predicted shift norm": 15.041146498644432,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 5.044156853472275,
+      "predicted shift norm": 16.750921560850227,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 8.034615533444375,
+      "predicted shift norm": 9.164866036861262,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 9.965103266278565,
+      "predicted shift norm": 9.778016596996403,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 6.149162980736763,
+      "predicted shift norm": 12.3025554756462,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 7.144250601632869,
+      "predicted shift norm": 7.620578814980547,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 20.05566259534421,
+      "predicted shift norm": 16.006015697117768,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 19.045137782880346,
+      "predicted shift norm": 16.885679930921565,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 11.056534019171282,
+      "predicted shift norm": 13.495419939956003,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 10.96667642719373,
+      "predicted shift norm": 16.257732096391326,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 5.890528951506723,
+      "predicted shift norm": 9.292889810493579,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 9.066446502058225,
+      "predicted shift norm": 9.985214248698494,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 16.00760629674272,
+      "predicted shift norm": 15.678006450225377,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 14.943072562667687,
+      "predicted shift norm": 14.910091167333293,
+      "series": "query form",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "changed tokens between the pair's contexts": 10.041088506196436,
+      "predicted shift norm": 13.519949690194135,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 12.930936014129161,
+      "predicted shift norm": 10.521639424853982,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 12.86229205718086,
+      "predicted shift norm": 7.5775833165780115,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 14.854958290658558,
+      "predicted shift norm": 8.506008776634426,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 13.093981071760082,
+      "predicted shift norm": 7.340859735327323,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 16.123826673183316,
+      "predicted shift norm": 8.905301696313089,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 12.031990732730154,
+      "predicted shift norm": 17.76520588910902,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 14.0688489682952,
+      "predicted shift norm": 10.065553820784386,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 13.013087497439626,
+      "predicted shift norm": 6.644118356310409,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 17.13052172713633,
+      "predicted shift norm": 10.036126689573512,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 10.09475606623646,
+      "predicted shift norm": 10.808611664388948,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 13.850821550051045,
+      "predicted shift norm": 11.744937171527774,
+      "series": "query paraphrase",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "changed tokens between the pair's contexts": 2.041088506196436,
+      "predicted shift norm": 2.8165268986277883,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9309360141291612,
+      "predicted shift norm": 4.3008301169127225,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8622920571808583,
+      "predicted shift norm": 4.668184824616281,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8549582906585587,
+      "predicted shift norm": 2.4651320753522166,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0939810717600817,
+      "predicted shift norm": 4.937668877142175,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1238266731833164,
+      "predicted shift norm": 5.398417412379736,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.031990732730154,
+      "predicted shift norm": 3.2960128463962515,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0688489682951996,
+      "predicted shift norm": 2.111001942998581,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.013087497439627,
+      "predicted shift norm": 4.3485536635290005,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1305217271363306,
+      "predicted shift norm": 4.740374476479234,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0947560662364597,
+      "predicted shift norm": 3.276398171484338,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8508215500510445,
+      "predicted shift norm": 5.205340109307832,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.107221282976271,
+      "predicted shift norm": 5.5486619379313105,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8600756725916394,
+      "predicted shift norm": 2.496836387578507,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.068896633928983,
+      "predicted shift norm": 5.63221386731158,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9026966861807677,
+      "predicted shift norm": 6.027551863536459,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.108953676704966,
+      "predicted shift norm": 3.569734357845161,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0124383660747274,
+      "predicted shift norm": 2.417739112545205,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9399135671612155,
+      "predicted shift norm": 5.14491221359619,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9768061663592975,
+      "predicted shift norm": 5.545398939473065,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8584959013436388,
+      "predicted shift norm": 3.7638520000177267,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8872849829498692,
+      "predicted shift norm": 5.834773296515965,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.051187324408089,
+      "predicted shift norm": 6.174560885948906,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.044156853472275,
+      "predicted shift norm": 2.5748762570092913,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0346155334443763,
+      "predicted shift norm": 6.454763667320483,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.965103266278565,
+      "predicted shift norm": 6.788451015951429,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1491629807367634,
+      "predicted shift norm": 3.7856843077223314,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.144250601632869,
+      "predicted shift norm": 2.2351070435649465,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0556625953442085,
+      "predicted shift norm": 5.639394940605303,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.045137782880345,
+      "predicted shift norm": 6.082869203141936,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.056534019171282,
+      "predicted shift norm": 2.897839886201598,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9666764271937311,
+      "predicted shift norm": 5.070871407199596,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8905289515067234,
+      "predicted shift norm": 5.345828184172611,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0664465020582243,
+      "predicted shift norm": 2.3807233046591985,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.007606296742718,
+      "predicted shift norm": 5.149927276568731,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9430725626676868,
+      "predicted shift norm": 5.441602228730232,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9957506076495366,
+      "predicted shift norm": 3.3129005243097693,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1168463503047,
+      "predicted shift norm": 2.190859705151846,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.130213054786875,
+      "predicted shift norm": 4.728198942566198,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.957338559012721,
+      "predicted shift norm": 5.180180445055973,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0214589492189283,
+      "predicted shift norm": 3.2983125145841976,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9465608173227826,
+      "predicted shift norm": 5.594726018629183,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.028290009059909,
+      "predicted shift norm": 5.91323565566705,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.95137336765214,
+      "predicted shift norm": 2.606348061325772,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9674857001584485,
+      "predicted shift norm": 6.036755880963575,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.117082305601438,
+      "predicted shift norm": 6.213255668528221,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.918147278060014,
+      "predicted shift norm": 3.6717017852161162,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0369561434058125,
+      "predicted shift norm": 2.322594868373039,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8752046030747154,
+      "predicted shift norm": 5.462189690579114,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0997932442960194,
+      "predicted shift norm": 5.826303995861912,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.086129492246605,
+      "predicted shift norm": 3.0180843406504705,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9218108328978856,
+      "predicted shift norm": 5.274877174784943,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.112945269243211,
+      "predicted shift norm": 5.486051317904468,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8675704104415582,
+      "predicted shift norm": 2.1579136257396097,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.950835118163698,
+      "predicted shift norm": 5.690658237087742,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8950838400684518,
+      "predicted shift norm": 5.898604686159835,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9851018099947861,
+      "predicted shift norm": 3.0819730726648173,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0888972810861883,
+      "predicted shift norm": 1.9513887806977752,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9191926626981242,
+      "predicted shift norm": 5.060871468303003,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.865606390319323,
+      "predicted shift norm": 5.439851754280746,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9713655519464583,
+      "predicted shift norm": 3.1378582185043324,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9095539133527766,
+      "predicted shift norm": 4.842182468610833,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8772259136857365,
+      "predicted shift norm": 4.820095823651647,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.024099715796055,
+      "predicted shift norm": 2.854890798072014,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9396088398456768,
+      "predicted shift norm": 5.286982305950274,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0515984633869078,
+      "predicted shift norm": 5.322910572866252,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.909854633190464,
+      "predicted shift norm": 3.6534015711989896,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1326339331519493,
+      "predicted shift norm": 2.110181050173508,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9595330504734485,
+      "predicted shift norm": 4.761123574730077,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8816485838710688,
+      "predicted shift norm": 5.114857601761245,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0387324454619127,
+      "predicted shift norm": 2.9013410600948015,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1281463659203603,
+      "predicted shift norm": 4.523539633227786,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9821131464147352,
+      "predicted shift norm": 4.721434518479747,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.136377148107221,
+      "predicted shift norm": 2.2206375872044855,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.999968744106294,
+      "predicted shift norm": 4.910533791216576,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9775685874547226,
+      "predicted shift norm": 4.949291185857626,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.036064035604613,
+      "predicted shift norm": 3.0967902399506384,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.148528951570597,
+      "predicted shift norm": 2.0625970181386117,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1346831024813295,
+      "predicted shift norm": 4.244117419011783,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.988013541792729,
+      "predicted shift norm": 4.780282774534867,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0773186535924872,
+      "predicted shift norm": 3.713979578924416,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9992268086462857,
+      "predicted shift norm": 6.308769858500335,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.008793648059031,
+      "predicted shift norm": 6.51403080350782,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0857357102141423,
+      "predicted shift norm": 2.755127040122344,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9743967548067012,
+      "predicted shift norm": 6.562893975676964,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.070345071536619,
+      "predicted shift norm": 6.64154456561823,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.063342863396925,
+      "predicted shift norm": 3.8720533601235045,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1296179059840137,
+      "predicted shift norm": 2.460460234727107,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8844797899842716,
+      "predicted shift norm": 5.937223195361686,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.068704535122893,
+      "predicted shift norm": 6.383840886056281,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.128227178587368,
+      "predicted shift norm": 3.0187275762779584,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.140377856977394,
+      "predicted shift norm": 5.114160913286121,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8544118914896108,
+      "predicted shift norm": 5.376015807049757,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1090920270736726,
+      "predicted shift norm": 2.3562495813568387,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1443585120199034,
+      "predicted shift norm": 5.275900301146973,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.137163053883289,
+      "predicted shift norm": 5.70145728751944,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8946292036697494,
+      "predicted shift norm": 3.4102565644519167,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1417886441468865,
+      "predicted shift norm": 2.349246588872107,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1169806667161564,
+      "predicted shift norm": 4.825176527364413,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.096712148262921,
+      "predicted shift norm": 5.244675553261952,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9939963771423497,
+      "predicted shift norm": 2.456005129209253,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.919711875891791,
+      "predicted shift norm": 3.8628982824810483,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0905641736154923,
+      "predicted shift norm": 4.11835640666043,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.127059047935041,
+      "predicted shift norm": 2.1806011287485427,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9298390816876878,
+      "predicted shift norm": 4.038738179417532,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.011680322286656,
+      "predicted shift norm": 4.419373939098463,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.9828258486923596,
+      "predicted shift norm": 2.966302867108017,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.1293051947943464,
+      "predicted shift norm": 1.9541432956179725,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8621532133565304,
+      "predicted shift norm": 3.9526157252879046,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.069601858696968,
+      "predicted shift norm": 4.39996561421019,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.034311974084699,
+      "predicted shift norm": 3.1161506171318667,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8585096095340563,
+      "predicted shift norm": 4.9003037467081425,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.065765931848022,
+      "predicted shift norm": 5.4911627575608675,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8547975188570716,
+      "predicted shift norm": 2.4841099358531418,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0773853007069283,
+      "predicted shift norm": 5.5855793887892835,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.0038276169786235,
+      "predicted shift norm": 6.225885108842677,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.128731266239102,
+      "predicted shift norm": 3.5637929731349636,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8698247490172224,
+      "predicted shift norm": 2.288612327443466,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 2.102395183883715,
+      "predicted shift norm": 5.104944551958125,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "changed tokens between the pair's contexts": 1.8700070026301305,
+      "predicted shift norm": 5.680511974697112,
+      "series": "value swap",
+      "_kind": "scatter",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 474,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Edit dose vs predicted shift magnitude",
+        "xlabel": "changed tokens between the pair's contexts",
+        "ylabel": "predicted shift norm",
+        "legend_labels": [
+          "family swap",
+          "install",
+          "instruction paraphrase",
+          "query content",
+          "query form",
+          "query paraphrase",
+          "value swap"
+        ],
+        "xticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0",
+          "22.5"
+        ],
+        "yticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40",
+          "45"
+        ]
+      }
+    ],
+    "series": [
+      "family swap",
+      "install",
+      "instruction paraphrase",
+      "query content",
+      "query form",
+      "query paraphrase",
+      "value swap"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

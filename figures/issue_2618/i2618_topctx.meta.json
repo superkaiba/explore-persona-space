@@ -1,0 +1,430 @@
+{
+  "commit": "3ab1809d+dirty",
+  "render_id": "cc7fc652bd784b9a",
+  "git_commit": "3ab1809d6baff3e4e57457540dae95e8caabf67b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2618_figures.py",
+    "tasks/interpreting/2569/body.md"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2618_figures.py",
+  "created": "2026-08-27T10:33:57Z",
+  "figsize": [
+    11.0,
+    6.2
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "top-k overlap,\nreverse vs pinv(k*)": 0.1,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "top-k overlap,\nreverse vs pinv(k*)": 0.1,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.733333,
+      "top-k overlap,\nreverse vs pinv(k*)": 0.03333333333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Evil",
+      "top-k overlap,\nreverse vs pinv(k*)": 0.08,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy",
+      "top-k overlap,\nreverse vs pinv(k*)": 0.25,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination",
+      "top-k overlap,\nreverse vs pinv(k*)": 0.01,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "top-k overlap,\nreverse vs pinv(k*)": 0.187,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "top-k overlap,\nreverse vs pinv(k*)": 0.415,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.266667,
+      "top-k overlap,\nreverse vs pinv(k*)": 0.008,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.266667,
+      "y": 0.06666666666666667,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.733333,
+      "y": 0.1,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.733333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Evil",
+      "y": 0.19,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Sycophancy",
+      "y": 0.08,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Hallucination",
+      "y": 0.04,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.266667,
+      "y": 0.425,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.266667,
+      "y": 0.19,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.266667,
+      "y": 0.297,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.266667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.733333,
+      "y": 0.13333333333333333,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.733333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Evil",
+      "y": 0.02,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Sycophancy",
+      "y": 0.16,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Hallucination",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.266667,
+      "y": 0.188,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.266667,
+      "y": 0.215,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.266667,
+      "y": 0.001,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": -0.266667,
+      "top-k overlap,\nreverse vs ridge-pinv": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.733333,
+      "top-k overlap,\nreverse vs ridge-pinv": 0.06666666666666667,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.733333,
+      "top-k overlap,\nreverse vs ridge-pinv": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Evil",
+      "top-k overlap,\nreverse vs ridge-pinv": 0.09,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Sycophancy",
+      "top-k overlap,\nreverse vs ridge-pinv": 0.15,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Hallucination",
+      "top-k overlap,\nreverse vs ridge-pinv": 0.02,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.266667,
+      "top-k overlap,\nreverse vs ridge-pinv": 0.447,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.266667,
+      "top-k overlap,\nreverse vs ridge-pinv": 0.384,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.266667,
+      "top-k overlap,\nreverse vs ridge-pinv": 0.04,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.266667,
+      "y": 0.06666666666666667,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.733333,
+      "y": 0.23333333333333334,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.733333,
+      "y": 0.06666666666666667,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Evil",
+      "y": 0.23,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Sycophancy",
+      "y": 0.3,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Hallucination",
+      "y": 0.44,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.266667,
+      "y": 0.54,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.266667,
+      "y": 0.318,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.266667,
+      "y": 0.404,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": -0.266667,
+      "y": 0.26666666666666666,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.733333,
+      "y": 0.2,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.733333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Evil",
+      "y": 0.57,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Sycophancy",
+      "y": 0.34,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Hallucination",
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.266667,
+      "y": 0.34,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 1.266667,
+      "y": 0.318,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.266667,
+      "y": 0.001,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer 14",
+        "ylabel": "top-k overlap,\nreverse vs pinv(k*)",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      },
+      {
+        "title_left": "Layer 14",
+        "ylabel": "top-k overlap,\nreverse vs ridge-pinv",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xticklabels": [
+          "Evil",
+          "Sycophancy",
+          "Hallucination"
+        ]
+      }
+    ],
+    "series": [
+      "top 30",
+      "top 100",
+      "top 1000"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

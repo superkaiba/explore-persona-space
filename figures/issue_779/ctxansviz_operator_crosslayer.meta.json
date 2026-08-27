@@ -1,0 +1,1597 @@
+{
+  "commit": "a62ec3f2+dirty",
+  "render_id": "68bb042e6eb94137",
+  "git_commit": "a62ec3f2262b67f7f0562a4a88052253ebe738be",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue779_ctxansviz_operator.py",
+    "eval_results/issue_2474/n1m_map_arms.json",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2474_n1m_map.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/proposed/2599/body.md",
+    "tasks/proposed/2599/comments.jsonl",
+    "tasks/proposed/2599/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue779_ctxansviz_operator.py",
+  "created": "2026-08-27T06:03:11Z",
+  "figsize": [
+    9.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "cosine similarity between layer maps": 0.326396,
+      "error": 0.0007188280000000047,
+      "series": "rotation null, aligned (mean \u00b1 2 s.d.)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "cosine similarity between layer maps": 0.382314,
+      "error": 0.0009919279999999753,
+      "series": "rotation null, aligned (mean \u00b1 2 s.d.)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "cosine similarity between layer maps": 0.355116,
+      "error": 0.0008226399999999856,
+      "series": "rotation null, aligned (mean \u00b1 2 s.d.)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "cosine similarity between layer maps": 0.326396,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "cosine similarity between layer maps": 0.382314,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "cosine similarity between layer maps": 0.355116,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "cosine similarity between layer maps": 0.325677172,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "cosine similarity between layer maps": 0.381322072,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "cosine similarity between layer maps": 0.35429336,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "cosine similarity between layer maps": 0.327114828,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "cosine similarity between layer maps": 0.38330592799999996,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "cosine similarity between layer maps": 0.35593864,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.12,
+      "cosine similarity between layer maps": 0.15256,
+      "series": "raw vec-cosine (direction-aware)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.88,
+      "cosine similarity between layer maps": 0.198235,
+      "series": "raw vec-cosine (direction-aware)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.88,
+      "cosine similarity between layer maps": 0.0935529,
+      "series": "raw vec-cosine (direction-aware)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "cosine similarity between layer maps": 0.374461,
+      "series": "Procrustes-aligned (output rotation)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "cosine similarity between layer maps": 0.428062,
+      "series": "Procrustes-aligned (output rotation)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "cosine similarity between layer maps": 0.35961,
+      "series": "Procrustes-aligned (output rotation)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.12,
+      "cosine similarity between layer maps": 0.996808,
+      "series": "spectrum cosine (rotation-invariant ceiling)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.12,
+      "cosine similarity between layer maps": 0.990736,
+      "series": "spectrum cosine (rotation-invariant ceiling)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.12,
+      "cosine similarity between layer maps": 0.977318,
+      "series": "spectrum cosine (rotation-invariant ceiling)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "principal angle rank": 1.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.952785,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 2.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.952364,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 3.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.949496,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 4.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.944928,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 5.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.942991,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 6.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.938401,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 7.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.934535,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 8.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.933467,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 9.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.930849,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 10.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.929592,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 11.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.925818,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 12.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.924335,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 13.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.918086,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 14.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.915356,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 15.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.912211,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 16.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.908248,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 17.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.907395,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 18.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.903777,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 19.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.898823,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 20.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.894219,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 21.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.891879,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 22.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.889133,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 23.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.882688,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 24.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.879481,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 25.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.877742,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 26.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.872863,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 27.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.870677,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 28.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.863141,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 29.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.85958,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 30.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.851735,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 31.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.847815,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 32.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.84385,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 33.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.840438,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 34.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.831814,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 35.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.8261,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 36.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.820417,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 37.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.815792,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 38.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.812079,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 39.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.802163,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 40.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.794601,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 41.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.792652,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 42.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.785367,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 43.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.784477,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 44.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.766842,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 45.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.760994,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 46.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.745897,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 47.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.733021,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 48.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.72473,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 49.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.712223,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 50.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.694254,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 51.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.67972,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 52.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.66417,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 53.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.646019,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 54.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.624921,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 55.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.614708,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 56.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.566271,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 57.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.523063,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 58.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.453871,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 59.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.402112,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 60.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.375894,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 61.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.291403,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 62.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.152361,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 63.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0759816,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 64.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0131131,
+      "series": "L14 \u2194 L19",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "principal angle rank": 1.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.874675,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 2.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.865445,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 3.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.858518,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 4.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.851484,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 5.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.841532,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 6.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.836154,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 7.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.830613,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 8.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.82552,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 9.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.81984,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 10.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.805602,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 11.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.802013,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 12.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.786772,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 13.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.775167,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 14.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.771643,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 15.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.758393,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 16.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.749947,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 17.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.747662,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 18.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.74181,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 19.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.724258,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 20.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.723918,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 21.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.718613,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 22.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.706881,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 23.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.699081,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 24.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.689641,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 25.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.67551,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 26.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.666555,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 27.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.664993,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 28.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.655536,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 29.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.64413,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 30.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.635235,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 31.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.626292,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 32.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.614814,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 33.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.603607,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 34.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.59202,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 35.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.584965,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 36.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.571033,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 37.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.555473,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 38.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.552107,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 39.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.530099,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 40.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.515407,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 41.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.497594,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 42.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.491634,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 43.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.478334,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 44.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.4664,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 45.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.439005,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 46.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.420813,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 47.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.401877,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 48.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.385833,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 49.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.378463,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 50.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.347784,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 51.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.327564,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 52.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.310478,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 53.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.281297,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 54.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.262617,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 55.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.234436,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 56.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.211522,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 57.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.144763,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 58.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.136957,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 59.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.104641,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 60.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0653668,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 61.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0587077,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 62.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0486286,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 63.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0229047,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 64.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.00352945,
+      "series": "L19 \u2194 L26",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "principal angle rank": 1.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.83338,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 2.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.825451,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 3.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.814052,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 4.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.803315,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 5.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.798287,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 6.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.794917,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 7.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.786905,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 8.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.772285,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 9.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.769762,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 10.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.760063,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 11.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.733834,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 12.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.725328,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 13.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.720075,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 14.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.701591,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 15.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.699852,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 16.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.677927,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 17.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.66816,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 18.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.65991,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 19.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.651041,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 20.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.637429,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 21.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.63182,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 22.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.622993,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 23.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.621637,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 24.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.590196,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 25.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.581704,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 26.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.571953,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 27.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.566518,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 28.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.556762,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 29.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.53944,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 30.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.528946,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 31.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.524882,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 32.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.5125,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 33.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.487156,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 34.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.472107,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 35.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.470149,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 36.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.45897,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 37.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.447303,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 38.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.431678,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 39.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.413736,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 40.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.395388,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 41.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.38734,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 42.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.373456,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 43.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.368019,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 44.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.354359,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 45.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.337786,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 46.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.329165,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 47.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.31901,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 48.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.282861,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 49.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.269803,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 50.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.245216,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 51.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.21527,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 52.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.193535,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 53.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.182677,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 54.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.158724,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 55.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.143995,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 56.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.128806,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 57.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.105666,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 58.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0948849,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 59.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0647061,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 60.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.057076,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 61.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0286826,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 62.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0239159,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 63.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.0126728,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "principal angle rank": 64.0,
+      "cosine of principal angle,\ntop-64 output subspaces": 0.000288322,
+      "series": "L14 \u2194 L26",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 213,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "cosine similarity between layer maps",
+        "legend_labels": [
+          "raw vec-cosine (direction-aware)",
+          "Procrustes-aligned (output rotation)",
+          "spectrum cosine (rotation-invariant ceiling)",
+          "rotation null, aligned (mean \u00b1 2 s.d.)"
+        ],
+        "xticklabels": [
+          "L14 \u2194 L19",
+          "L19 \u2194 L26",
+          "L14 \u2194 L26"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "xlabel": "principal angle rank",
+        "ylabel": "cosine of principal angle,\ntop-64 output subspaces",
+        "legend_labels": [
+          "L14 \u2194 L19",
+          "L19 \u2194 L26",
+          "L14 \u2194 L26"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "raw vec-cosine (direction-aware)",
+      "Procrustes-aligned (output rotation)",
+      "spectrum cosine (rotation-invariant ceiling)",
+      "rotation null, aligned (mean \u00b1 2 s.d.)",
+      "L14 \u2194 L19",
+      "L19 \u2194 L26",
+      "L14 \u2194 L26"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

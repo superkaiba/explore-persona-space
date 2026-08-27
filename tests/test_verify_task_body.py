@@ -8355,6 +8355,280 @@ def test_concerns_audit_skip_path_ignores_markers(tmp_path):
     assert "skipped" in result.detail.lower()
 
 
+def _worktree_staleness_fixture(tmp_path):
+    """The #2378 r7 shape (#2607): the MAIN-root task 99 carries one OPEN
+    CONCERN row NOT acknowledged in GOOD_BODY, while the issue worktree's
+    frozen copy of the same task has a stale ledger with ZERO open rows
+    (it predates the main-root row). Returns
+    ``(main_task_dir, worktree_task_dir)``."""
+    main_task = tmp_path / "main" / "tasks" / "reviewing" / "99"
+    main_task.mkdir(parents=True)
+    (main_task / "body.md").write_text(GOOD_BODY)
+    (main_task / "concerns.jsonl").write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "probe-position-undefined",
+                "severity": "CONCERN",
+                "summary": "Probe position is undefined.",
+            }
+        )
+        + "\n"
+    )
+    wt_task = (
+        tmp_path / "main" / ".claude" / "worktrees" / "issue-99" / "tasks" / "reviewing" / "99"
+    )
+    wt_task.mkdir(parents=True)
+    (wt_task / "body.md").write_text(GOOD_BODY)
+    (wt_task / "concerns.jsonl").write_text("")  # frozen — zero open rows
+    return main_task, wt_task
+
+
+def test_concerns_audit_worktree_frozen_ledger_fails(tmp_path):
+    """#2607 regression (incident #2378 r7): a worktree-resident
+    concerns.jsonl is frozen at the branch-cut base commit, so auditing
+    it is ALWAYS a stale read — hard-FAIL naming the path. Previously
+    this stale zero-open-rows ledger PASSed."""
+    _main_task, wt_task = _worktree_staleness_fixture(tmp_path)
+    cp = wt_task / "concerns.jsonl"
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert not result.passed
+    assert "worktree-frozen" in result.detail
+    assert str(cp) in result.detail
+
+
+def test_concerns_audit_worktree_missing_ledger_still_fails(tmp_path):
+    """#2607: the worktree-staleness backstop fires REGARDLESS of
+    exists() — a frozen tree whose ledger predates the task's FIRST
+    concern row would otherwise take the skip-PASS branch (the same
+    false-PASS shape as #2378 r7)."""
+    missing = (
+        tmp_path
+        / "main"
+        / ".claude"
+        / "worktrees"
+        / "issue-98"
+        / "tasks"
+        / "reviewing"
+        / "98"
+        / "concerns.jsonl"
+    )
+    assert not missing.exists()
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=missing)
+    assert not result.passed
+    assert "worktree-frozen" in result.detail
+
+
+def test_file_invocation_worktree_task_body_refused(tmp_path, monkeypatch, capsys):
+    """#2607: `--file` on a worktree tasks/<status>/<N>/body.md is
+    REFUSED (exit 2) with stderr naming the frozen path + the `--issue`
+    remedy — the body text itself is frozen too, so redirecting siblings
+    would still verify a stale body."""
+    _main_task, wt_task = _worktree_staleness_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body_path = wt_task / "body.md"
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(body_path)])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "REFUSED" in captured.err
+    assert str(body_path.resolve()) in captured.err
+    assert "--issue 99" in captured.err
+
+
+def test_file_invocation_main_root_task_body_unchanged(tmp_path, monkeypatch, capsys):
+    """#2607: the guard is INERT on a main-root task body — and Lens 14
+    actually RAN against the sibling ledger (it FAILs here on the
+    unacknowledged open concern, proving the audit executed rather than
+    being refused or skipped)."""
+    main_task, _wt_task = _worktree_staleness_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(main_task / "body.md")])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    assert "probe-position-undefined" in captured.out
+    assert "worktree-frozen" not in captured.out
+
+
+def test_file_invocation_worktree_cache_draft_unchanged(tmp_path, monkeypatch, capsys):
+    """#2607: a worktree `.claude/cache/` draft is a legitimate `--file`
+    target (verifying draft bytes the caller just wrote) — no refusal
+    (parent is not digit-named), and Lens 14 skip-PASSes exactly as
+    before (no sibling ledger)."""
+    cache_dir = tmp_path / "main" / ".claude" / "worktrees" / "issue-99" / ".claude" / "cache"
+    cache_dir.mkdir(parents=True)
+    draft = cache_dir / "draft.md"
+    draft.write_text(GOOD_BODY)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(draft)])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    assert "no concerns.jsonl sibling" in captured.out
+
+
+def _managed_pin_fixture(tmp_path):
+    """#2607 r2 (concern managed-main-pin-false-stale): the ROUTED
+    managed main-pin worktree `.claude/worktrees/_task-main-pin` — in
+    off-main mode `task_workflow.repo_root()` returns it and re-pins it
+    to the current main tip on every resolution, so its tasks/ tree is
+    CURRENT (never frozen). The fixture simulates routed mode by making
+    the pin dir the canonical `_resolve_repo_root()` root (callers
+    monkeypatch it in). Its ledger carries one OPEN concern row NOT
+    acknowledged in GOOD_BODY, so a test can prove the audit actually
+    RAN (FAILing on the concern) rather than being refused or skipped.
+    Returns ``(pin_root, task_dir)``."""
+    pin_root = tmp_path / "main" / ".claude" / "worktrees" / "_task-main-pin"
+    task_dir = pin_root / "tasks" / "reviewing" / "99"
+    task_dir.mkdir(parents=True)
+    (task_dir / "body.md").write_text(GOOD_BODY)
+    (task_dir / "concerns.jsonl").write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "probe-position-undefined",
+                "severity": "CONCERN",
+                "summary": "Probe position is undefined.",
+            }
+        )
+        + "\n"
+    )
+    return pin_root, task_dir
+
+
+def test_concerns_audit_managed_main_pin_ledger_not_frozen(tmp_path, monkeypatch):
+    """#2607 r2 API leg: a concerns.jsonl under the routed managed
+    main-pin worktree (canonical `_resolve_repo_root()` root) is CURRENT,
+    not frozen — the Lens-14 backstop does NOT return the worktree-frozen
+    FAIL; the audit RUNS and FAILs on the ledger's real open concern."""
+    pin_root, task_dir = _managed_pin_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: pin_root)
+    result = verify_task_body.check_concerns_audit(
+        GOOD_BODY, concerns_path=task_dir / "concerns.jsonl"
+    )
+    assert "worktree-frozen" not in result.detail
+    assert not result.passed  # the REAL open concern — proof the audit executed
+    assert "probe-position-undefined" in result.detail
+
+
+def test_file_invocation_managed_main_pin_body_not_refused(tmp_path, monkeypatch, capsys):
+    """#2607 r2 CLI leg: `--file` on a body under the routed managed
+    main-pin worktree is NOT refused — main() reaches the normal verdict
+    path, with Lens 14 running against the CURRENT pin ledger (FAILing on
+    its real open concern, proving neither refusal nor skip). Previously
+    the refusal's own `--issue` remedy looped into the same false FAIL in
+    routed mode."""
+    pin_root, task_dir = _managed_pin_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: pin_root)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(task_dir / "body.md")])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    assert "probe-position-undefined" in captured.out
+    assert "worktree-frozen" not in captured.out
+
+
+def test_file_invocation_reads_body_after_canonical_root_refresh(tmp_path, monkeypatch, capsys):
+    """#2607 r3 (concern managed-main-pin-false-stale, read-before-resolve
+    ordering): in routed mode `task_workflow.repo_root()` re-pins the
+    managed main-pin worktree to the CURRENT main tip as a side effect of
+    every resolution — the resolver here MUTATES the fixture (body +
+    ledger) to the refreshed snapshot when it first runs, simulating that
+    re-pin. The CLI must read the body AFTER the guard's canonical-root
+    resolution, so verify_text audits the REFRESHED body against the
+    REFRESHED ledger. Pre-fix, `raw` was read BEFORE the guard: the audit
+    ran the STALE body (no acknowledgment) against the refreshed ledger —
+    a mixed snapshot — and Lens 14 false-FAILed the acknowledged concern.
+    (The side-effect-free-lambda CLI test above cannot catch this.)"""
+    pin_root = tmp_path / "main" / ".claude" / "worktrees" / "_task-main-pin"
+    task_dir = pin_root / "tasks" / "reviewing" / "99"
+    task_dir.mkdir(parents=True)
+    # Pre-refresh (stale) snapshot: body without the acknowledgment; a
+    # ledger row that only exists pre-refresh.
+    (task_dir / "body.md").write_text(GOOD_BODY)
+    (task_dir / "concerns.jsonl").write_text(
+        json.dumps({"event": "raised", "concern_id": "stale-ledger-concern", "severity": "CONCERN"})
+        + "\n"
+    )
+    refreshed_body = GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed",
+        "Note: refresh-window-concern is acknowledged; we report the "
+        "conservative estimate. The 17-pt lift holds at every seed",
+    )
+    refreshed_ledger = (
+        json.dumps(
+            {"event": "raised", "concern_id": "refresh-window-concern", "severity": "CONCERN"}
+        )
+        + "\n"
+    )
+
+    def _refreshing_resolver():
+        # Idempotent: repo_root() re-pins on EVERY resolution; the first
+        # call flips the on-disk snapshot from stale to refreshed.
+        (task_dir / "body.md").write_text(refreshed_body)
+        (task_dir / "concerns.jsonl").write_text(refreshed_ledger)
+        return pin_root
+
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", _refreshing_resolver)
+    monkeypatch.setattr(sys, "argv", ["verify_task_body.py", "--file", str(task_dir / "body.md")])
+    rc = verify_task_body.main()
+    captured = capsys.readouterr()
+    assert rc != 2
+    assert "REFUSED" not in captured.err
+    # Body and ledger from the SAME post-refresh snapshot: the refreshed
+    # body acknowledges the refreshed ledger's one open concern.
+    assert "all 1 open binding concern(s) acknowledged in body" in captured.out
+    assert "unaddressed in body" not in captured.out
+    # The pre-refresh ledger row is gone — the audit never saw it.
+    assert "stale-ledger-concern" not in captured.out
+
+
+def test_worktree_resident_issue_worktree_still_frozen_in_routed_mode(tmp_path, monkeypatch):
+    """#2607 r2 scoping pin: with the canonical root routed to the pin
+    dir, a SIBLING issue worktree's tasks/ path is STILL worktree-resident
+    (frozen) — the exemption is canonical-root equality, never a blanket
+    `.claude/worktrees/` allowance."""
+    pin_root, _task_dir = _managed_pin_fixture(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: pin_root)
+    sibling = tmp_path / "main" / ".claude" / "worktrees" / "issue-99" / "tasks" / "reviewing"
+    sibling = sibling / "99"
+    sibling.mkdir(parents=True)
+    assert verify_task_body._worktree_resident(sibling)
+    # And the pin dir itself is exempt under the same routed root.
+    assert not verify_task_body._worktree_resident(pin_root / "tasks" / "reviewing" / "99")
+
+
+def test_canonical_root_unresolvable_fails_closed(tmp_path, monkeypatch):
+    """#2607 r3 (concern canonical-root-oserror-fail-open):
+    `_canonical_root_resolved()` promises None on an unresolvable root.
+    The pre-fix OSError branch returned the UNRESOLVED raw root, silently
+    retaining the lexical-prefix exemption for paths under it. With the
+    fix, an unresolvable root yields None, so `_worktree_resident` falls
+    back to the fail-closed FULL-path component scan: a
+    `.claude/worktrees`-resident path — the routed pin's own tasks tree
+    included — still reads RESIDENT (frozen) when the root cannot be
+    trusted."""
+
+    class _UnresolvablePath(type(Path())):
+        def resolve(self, strict=False):
+            raise OSError("simulated unresolvable canonical root")
+
+    pin_root = tmp_path / "main" / ".claude" / "worktrees" / "_task-main-pin"
+    task_dir = pin_root / "tasks" / "reviewing" / "99"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(
+        verify_task_body, "_resolve_repo_root", lambda: _UnresolvablePath(str(pin_root))
+    )
+    assert verify_task_body._canonical_root_resolved() is None
+    # Fail-closed: with no trustable canonical root the exemption is OFF —
+    # the pin task path scans its full components and reads resident.
+    assert verify_task_body._worktree_resident(task_dir)
+
+
 def test_concerns_audit_stale_marker_warns_alongside_acknowledged_open_concern(tmp_path):
     """Pins the SECOND warns-only return site: `open_binding` is
     non-empty (a raised CONCERN, acknowledged in the body via

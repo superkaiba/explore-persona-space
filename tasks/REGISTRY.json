@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2611,
+  "highest_id": 2629,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10523,22 +10523,22 @@
     "2362": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2362",
-      "status": "running",
+      "path": "tasks/completed/2362",
+      "status": "completed",
       "title": "set-body: fail-loud on byte-identical no-op + gate body-edit markers on an actual body commit (phantom v4 edits, #2333)"
     },
     "2363": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2363",
-      "status": "proposed",
+      "path": "tasks/reviewing/2363",
+      "status": "reviewing",
       "title": "workflow-fix: a plan can mark its ONLY source of acceptance evidence optional and still PASS verify_plan"
     },
     "2364": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2364",
-      "status": "proposed",
+      "path": "tasks/running/2364",
+      "status": "running",
       "title": "workflow-fix: no review surface catches a test suite that monkeypatches the production constant its acceptance criterion depends on"
     },
     "2365": {
@@ -11772,8 +11772,8 @@
     "2525": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2525",
-      "status": "proposed",
+      "path": "tasks/completed/2525",
+      "status": "completed",
       "title": "Fix three fleet-wide test invariants broken by sibling landings on main (ungated HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)"
     },
     "2526": {
@@ -12056,9 +12056,9 @@
       "goal": "On Qwen-2.5-7B-Instruct, using a maximally-controlled single-turn minimal-pair battery (one token-matched instruction or query manipulation per pair, no crossing) across instruction axes (persona, format, lexical-marker, stance, content-constraint, register, hedging, single-token-user-fact-with-express-instruction, diffuse-user-profile-with-be-aware-instruction) and query axes (content, form), measure how faithfully the frozen #779 context-end ridge map predicts the DIFFERENCE between paired answer representations \u2014 per axis: direction, magnitude calibration vs global shrinkage, real-vs-predicted axis-identity cosine, and split-half reliability \u2014 against an identity+bias delta baseline, a paraphrase null, and a Qwen3-Embedding-8B answer-text third space, to determine which kinds of context information the map carries faithfully vs distorts.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2564",
-      "status": "followups_running",
-      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout, after re-elicitation and a tenfold sampling boost clear the compliance-failed and noise-limited reads (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/2564",
+      "status": "awaiting_promotion",
+      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout (MODERATE confidence)"
     },
     "2565": {
       "has_clean_result": false,
@@ -12070,8 +12070,8 @@
     "2566": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2566",
-      "status": "proposed",
+      "path": "tasks/completed/2566",
+      "status": "completed",
       "title": "workflow-fix: test_gates_full_shape red fleet-wide \u2014 clarify_experiment_ask gate missing from pinned set"
     },
     "2567": {
@@ -12090,11 +12090,11 @@
     },
     "2569": {
       "goal": "Exploit the linearity of the fitted residual context-answer mapping (banked 963k-row layer-19 ridge map, Qwen2.5-7B-Instruct) to characterize in one phased battery: (1) operator eigenstructure, effective null space, fixed point, and their SAE-feature reads (ignored/copied/transcoded/damped anatomy); (2) whether the map's Gram matrix WtW is the correct theory-paper context-gate metric and whether the closed-form ridge learning curve reproduces the empirical C1 scaling; (3) the feature-to-feature wiring of the map across SAE dictionaries including a trained last-prompt-token SAE; (4) the literal weight-update rank (dW spectra, intruder dimensions, factor alignment) across the recent organism fleet; (5) denoised reduced-rank structure of #1979's banked write maps; (6) an aligned operator atlas with a cross-model (Llama-3.1-8B-Instruct) three-tier representation-vs-operator similarity report; (7) correlational validation of the effective null space via kernel-equivalent context pairs, plus closed-form monitor decision geometry and sensitivity certificates.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2569",
-      "status": "running",
-      "title": "Linear-map theory battery: operator eigenstructure, null-space fibers, theory-bridge gates, SAE wiring, last-token SAE map, weight-update rank, shift regression, and a cross-model operator atlas"
+      "path": "tasks/awaiting_promotion/2569",
+      "status": "awaiting_promotion",
+      "title": "The layer-19 context-answer map reaches its population linear ceiling with reproducible singular structure, contracts only at layer 26, and no gate metric separates from its panel (MODERATE confidence)"
     },
     "257": {
       "has_clean_result": false,
@@ -12231,11 +12231,11 @@
     },
     "2587": {
       "goal": "On Qwen/Qwen3.5-9B with thinking disabled, replicate the #2564 minimal-pair discrimination battery end to end (fresh 20-50k-context context-to-answer ridge map fit with layer sweep; full 984-context bank + the answer_language and query_content_oneword pilot axes at K=10 draws; parent battery reads with the new arms) and compare the per-axis discrimination profile against the Qwen2.5-7B-Instruct parent. Pod-side env upgrade only (transformers/vLLM with qwen3_5 support in the pod venv; repo pins untouched); compat smoke gate before any production wave; thinking-off enforced and asserted in every generation and capture.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2587",
-      "status": "running",
-      "title": "Replicate the #2564 minimal-pair battery on Qwen3.5-9B (thinking disabled)"
+      "path": "tasks/reviewing/2587",
+      "status": "reviewing",
+      "title": "The minimal-pair discrimination profile of the context-to-answer map carries over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)"
     },
     "2588": {
       "goal": "Determine whether linear context-to-answer mapping quality (held-out kNN retrieval primary, R^2 + identity+bias secondary) increases with general model capability (Artificial Analysis Intelligence Index), across a cross-family open-weight panel (Qwen3.5 ladder + fixed-size 27B capability column + OLMo dense control + Qwen2.5-7B anchor), under two chain-of-thought arms (all thinking-off vs per-model best setting with the end-of-CoT state as map input), on the generic mapping corpus and GPQA Diamond.",
@@ -12395,15 +12395,15 @@
     "2607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2607",
-      "status": "reviewing",
+      "path": "tasks/completed/2607",
+      "status": "completed",
       "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
     },
     "2608": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2608",
-      "status": "reviewing",
+      "path": "tasks/completed/2608",
+      "status": "completed",
       "title": "Pod bootstrap cone sparse-checkout omits CROSS-ISSUE artifact cones, so drivers reading prior issues' committed eval_results/figures crash at launch"
     },
     "2609": {
@@ -12423,16 +12423,73 @@
     "2610": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2610",
-      "status": "running",
+      "path": "tasks/reviewing/2610",
+      "status": "reviewing",
       "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
     },
     "2611": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2611",
-      "status": "planning",
+      "path": "tasks/completed/2611",
+      "status": "completed",
       "title": "git_provenance()'s 5s-timeout git status orphans .git/index.lock on slow filesystems, breaking every later git op in the run (fix: --no-optional-locks)"
+    },
+    "2612": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2612",
+      "status": "proposed",
+      "title": "Arm-independent g0_gate.json publishes to arm-UNSCOPED paths: git conflicts at the second arm's last phase, HF overwrites silently (arm 1's provenance destroyed)"
+    },
+    "2613": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2613",
+      "status": "proposed",
+      "title": "Run LOGS are not an artifact class in the upload policy and have no shared persist helper \u2014 logs die with the pod unless upload-verification happens to catch them"
+    },
+    "2614": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2614",
+      "status": "proposed",
+      "title": "Curate oversized agent-memory indexes on main (code-reviewer-lean MEMORY.md 41KB hard-FAILs #1891 lint; blocks Step-10d agent-memory re-sync commits)"
+    },
+    "2615": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2615",
+      "status": "proposed",
+      "title": "Pod sparse clones silently hide sibling-issue eval_results/ inputs (empty dir, no error)"
+    },
+    "2616": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2616",
+      "status": "reviewing",
+      "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
+    },
+    "2617": {
+      "goal": "On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the question frame fixed and swap exactly one grammatical slot (subject/object/verb) while flipping safety valence (e.g. 'how to build a bomb' vs 'how to build a house'), measure whether the frozen context-to-answer ridge map (#779 context-end, #1738 multi-turn twin) transports the harmful-vs-benign answer-state shift per slot (direction cosine, magnitude calibration vs global shrinkage, 2AFC/retrieval acc@1) against an identity+bias baseline and a shuffled-pair null, anchored to a judge-scored on-policy refusal-rate manipulation check per context; the question is whether the map's pre-generation geometry encodes the refusal DECISION (transport tracks whether behavior flipped) or merely surface content.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2617",
+      "status": "running",
+      "title": "Safety-valence minimal pairs: does the frozen context->answer map encode the refusal decision or just surface text?"
+    },
+    "2618": {
+      "has_clean_result": true,
+      "kind": "analysis",
+      "path": "tasks/awaiting_promotion/2618",
+      "status": "awaiting_promotion",
+      "title": "Fitted answer-to-context map recovers held-out contexts (R2 0.75, top-1 retrieval 84%) while the pseudoinverse of the context-to-answer map fails as a predictor (best R2 0.14) and points elsewhere (operator cosine <= 0.34) (MODERATE confidence)"
+    },
+    "2619": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2619",
+      "status": "proposed",
+      "title": "Boot-disk worktree regrowth: land the #2132 data-disk cutover; sweep foreign-issue caches in reused worktrees"
     },
     "262": {
       "has_clean_result": false,
@@ -12440,6 +12497,76 @@
       "path": "tasks/archived/262",
       "status": "archived",
       "title": "Run proper experiment: EM then marker coupling to see if leakage really increases"
+    },
+    "2620": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/2620",
+      "status": "completed",
+      "title": "curate .claude/agent-memory/code-reviewer-lean/MEMORY.md under the 24KB agent-memory index FAIL cap (41KB on main; reds worktree spec-freshness sync commits + silently truncates the lean twin's loaded lessons)"
+    },
+    "2621": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2621",
+      "status": "proposed",
+      "title": "poll_pipeline cpu_advancing override has no rate floor, masking an HF-transfer deadlock as healthy"
+    },
+    "2622": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2622",
+      "status": "proposed",
+      "title": "Launcher env override clobbered by dispatcher .env re-source; wrapper's frozen environ gives a false fix-engaged signal"
+    },
+    "2623": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2623",
+      "status": "proposed",
+      "title": "main-red: test_workflow_lint_prod_import_lockfile::test_live_tree_clean pins 7 live-tree WARNs, main emits 11 (dangling first-party import roots unreconciled)"
+    },
+    "2624": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/2624",
+      "status": "reviewing",
+      "title": "No check verifies a GPU-lane-routed phase actually allocates a CUDA context (P5 ran 4xH100 at 0 MiB)"
+    },
+    "2625": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2625",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan WARNs when a plan edits a byte-capped workflow surface without a post-edit byte count or cap-raise"
+    },
+    "2626": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2626",
+      "status": "archived",
+      "title": "Curate code-reviewer-lean agent-memory index under the 24KB lint cap (live no-flags FAIL redding Step 9c gates)"
+    },
+    "2627": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2627",
+      "status": "proposed",
+      "title": "Agent-memory index FAIL gate can be tripped by the MERGE itself, blocking a Step-10d landing"
+    },
+    "2628": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2628",
+      "status": "proposed",
+      "title": "Autonomous sessions must paste raw concern-id slugs into clean-result prose \u2014 Lens 14 vs the no-opaque-codes rule"
+    },
+    "2629": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2629",
+      "status": "proposed",
+      "title": "Extend the byte/bit-identical ban family to nominalized forms (byte-identity slipped the audit in #2587)"
     },
     "263": {
       "has_clean_result": true,

@@ -1,0 +1,670 @@
+{
+ "arm_id": "cas-pers-po-lr1e5-s42",
+ "directions_provenance": {
+  "c_C": {
+   "low_n_flag": true,
+   "n_rows": 20,
+   "splithalf_cos_ctx": 0.9999713591581538
+  },
+  "delta_tbar": {
+   "basis_note": "20-training-row displacement mean (issue1434 positions), not a corpus mean",
+   "n_rows": 20,
+   "splithalf_cos": 0.9785551363005405
+  }
+ },
+ "factors": {
+  "L19.down_proj": {
+   "alignments": {
+    "Ar[evil]": {
+     "above_null": false,
+     "argmax_factor": 1,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.022476214915513992,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.044978552356401
+    },
+    "Ar[hallucination]": {
+     "above_null": false,
+     "argmax_factor": 2,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.02272005006670952,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.034942313632407344
+    },
+    "Ar[sycophancy]": {
+     "above_null": false,
+     "argmax_factor": 4,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.028993526473641396,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.044749333577072566
+    },
+    "c_C": {
+     "above_null": false,
+     "argmax_factor": 1,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.018642224371433258,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.028753579988689534
+    },
+    "delta_tbar": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.042724043130874634,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.07838283346082203
+    },
+    "delta_tbar_even": {
+     "above_null": true,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.04643022269010544,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.08284543432635635
+    },
+    "delta_tbar_odd": {
+     "above_null": false,
+     "argmax_factor": 5,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.039799172431230545,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.07329596479422039
+    },
+    "r_B[evil]": {
+     "above_null": false,
+     "argmax_factor": 5,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.033367887139320374,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.06976897318124427
+    },
+    "r_B[hallucination]": {
+     "above_null": true,
+     "argmax_factor": 3,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.053115472197532654,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.08022889223188279
+    },
+    "r_B[sycophancy]": {
+     "above_null": true,
+     "argmax_factor": 6,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.0561174638569355,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043465035222470756,
+     "subspace_proj": 0.09138810384590446
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.5192103183940615,
+     0.14823559648496384,
+     0.024064243805019186,
+     0.04259380544864017,
+     0.017078641302967948,
+     0.005933343696881506,
+     0.018327552682077773,
+     0.0011580179648048995
+    ],
+    "rel_gap_prev": [
+     null,
+     0.5192103183940615,
+     0.14823559648496384,
+     0.024064243805019186,
+     0.04259380544864017,
+     0.017078641302967948,
+     0.005933343696881506,
+     0.018327552682077773
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.48078968160593843,
+     0.3325540851209746,
+     0.3084898413159554,
+     0.26589603586731525,
+     0.2488173945643473,
+     0.24288405086746578,
+     0.22455649818538803
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "U"
+  },
+  "L19.gate_proj": {
+   "alignments": {
+    "c_C": {
+     "above_null": false,
+     "argmax_factor": 6,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.03874934837222099,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.043396876007318494,
+     "subspace_proj": 0.06038916600789926
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.4782463915699087,
+     0.14434174756866347,
+     0.015519595368682847,
+     0.031114542025996655,
+     0.02719139091237702,
+     0.005356745220891294,
+     0.013789553108783738,
+     0.0059382938796480765
+    ],
+    "rel_gap_prev": [
+     null,
+     0.4782463915699087,
+     0.14434174756866347,
+     0.015519595368682847,
+     0.031114542025996655,
+     0.02719139091237702,
+     0.005356745220891294,
+     0.013789553108783738
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.5217536084300912,
+     0.3774118608614278,
+     0.36189226549274495,
+     0.3307777234667483,
+     0.3035863325543713,
+     0.29822958733348,
+     0.2844400342246962
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "V"
+  },
+  "L19.k_proj": {
+   "alignments": {
+    "c_C": {
+     "above_null": false,
+     "argmax_factor": 6,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.03248177468776703,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.045827003754675376,
+     "subspace_proj": 0.04330935421717766
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.19540226677927924,
+     0.20388569209164475,
+     0.04248464946729915,
+     0.09377820139255297,
+     0.028547447443509323,
+     0.02425076779402947,
+     0.015343975724492408,
+     0.022127656052084527
+    ],
+    "rel_gap_prev": [
+     null,
+     0.19540226677927924,
+     0.20388569209164475,
+     0.04248464946729915,
+     0.09377820139255297,
+     0.028547447443509323,
+     0.02425076779402947,
+     0.015343975724492408
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.8045977332207207,
+     0.600712041129076,
+     0.5582273916617768,
+     0.4644491902692239,
+     0.43590174282571453,
+     0.4116509750316851,
+     0.39630699930719265
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "V"
+  },
+  "L19.o_proj": {
+   "alignments": {
+    "Ar[evil]": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.03758780658245087,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.0651785464938499
+    },
+    "Ar[hallucination]": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.03564056009054184,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.050156521128706825
+    },
+    "Ar[sycophancy]": {
+     "above_null": false,
+     "argmax_factor": 2,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.028328750282526016,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.0628999034660107
+    },
+    "c_C": {
+     "above_null": false,
+     "argmax_factor": 2,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.026046501472592354,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.03696309508100661
+    },
+    "delta_tbar": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.04070143774151802,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.0654923215004669
+    },
+    "delta_tbar_even": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.045606862753629684,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.06843345943455577
+    },
+    "delta_tbar_odd": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.035417769104242325,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.06226418586524374
+    },
+    "r_B[evil]": {
+     "above_null": true,
+     "argmax_factor": 5,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.047788798809051514,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.08742344722222378
+    },
+    "r_B[hallucination]": {
+     "above_null": false,
+     "argmax_factor": 0,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.042050234973430634,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.06761647229448708
+    },
+    "r_B[sycophancy]": {
+     "above_null": true,
+     "argmax_factor": 5,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.047951363027095795,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04708599597215652,
+     "subspace_proj": 0.09383623199185587
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.40104917091189407,
+     0.1291912044175174,
+     0.18320684626806316,
+     0.021927108589969053,
+     0.018516138401285513,
+     0.014436276434833611,
+     0.008477189231033709,
+     0.007443645245898566
+    ],
+    "rel_gap_prev": [
+     null,
+     0.40104917091189407,
+     0.1291912044175174,
+     0.18320684626806316,
+     0.021927108589969053,
+     0.018516138401285513,
+     0.014436276434833611,
+     0.008477189231033709
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.5989508290881059,
+     0.4697596246705885,
+     0.28655277840252535,
+     0.2646256698125563,
+     0.24610953141127076,
+     0.23167325497643715,
+     0.22319606574540346
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "U"
+  },
+  "L19.q_proj": {
+   "alignments": {
+    "c_C": {
+     "above_null": false,
+     "argmax_factor": 3,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.03164660558104515,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.04690298642963169,
+     "subspace_proj": 0.04521750310516949
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.14560764299602824,
+     0.4139745053553442,
+     0.018391197509584355,
+     0.013884831165748353,
+     0.028029930959332573,
+     0.010519665889463504,
+     0.022027271748374145,
+     0.0064466666147516795
+    ],
+    "rel_gap_prev": [
+     null,
+     0.14560764299602824,
+     0.4139745053553442,
+     0.018391197509584355,
+     0.013884831165748353,
+     0.028029930959332573,
+     0.010519665889463504,
+     0.022027271748374145
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.8543923570039718,
+     0.44041785164862757,
+     0.42202665413904317,
+     0.4081418229732948,
+     0.3801118920139623,
+     0.36959222612449877,
+     0.3475649543761246
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "V"
+  },
+  "L19.up_proj": {
+   "alignments": {
+    "c_C": {
+     "above_null": false,
+     "argmax_factor": 4,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.03448156267404556,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.044665375724434846,
+     "subspace_proj": 0.05711724158890237
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.45985935938011724,
+     0.13300654482770785,
+     0.05976828287537655,
+     0.030488867023535923,
+     0.003366612845481714,
+     0.0090207452303418,
+     0.015626711706751294,
+     0.010774581717863533
+    ],
+    "rel_gap_prev": [
+     null,
+     0.45985935938011724,
+     0.13300654482770785,
+     0.05976828287537655,
+     0.030488867023535923,
+     0.003366612845481714,
+     0.0090207452303418,
+     0.015626711706751294
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.5401406406198828,
+     0.4071340957921749,
+     0.34736581291679836,
+     0.31687694589326243,
+     0.3135103330477807,
+     0.3044895878174389,
+     0.2888628761106876
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "V"
+  },
+  "L19.v_proj": {
+   "alignments": {
+    "c_C": {
+     "above_null": true,
+     "argmax_factor": 1,
+     "argmax_well_separated": true,
+     "k_basis": 8,
+     "max_abs_cos": 0.06255603581666946,
+     "n_draws": 200,
+     "null_aggregation": "max_over_base_singular_vectors_then_max_over_band",
+     "null_p95": 0.044801639765501014,
+     "subspace_proj": 0.06853488916547294
+    }
+   },
+   "factor_separation": {
+    "boundary_tied": false,
+    "n_well_separated": 8,
+    "rel_gap_floor": 0.001,
+    "rel_gap_next": [
+     0.3837687568477741,
+     0.06279774710055659,
+     0.15587840058168115,
+     0.11531643466430194,
+     0.02647808683118547,
+     0.016457331118923935,
+     0.009113159246041962,
+     0.01513720701121309
+    ],
+    "rel_gap_prev": [
+     null,
+     0.3837687568477741,
+     0.06279774710055659,
+     0.15587840058168115,
+     0.11531643466430194,
+     0.02647808683118547,
+     0.016457331118923935,
+     0.009113159246041962
+    ],
+    "sv_floor": 1e-06,
+    "sv_over_s0": [
+     1.0,
+     0.6162312431522259,
+     0.5534334960516694,
+     0.3975550954699882,
+     0.2822386608056862,
+     0.25576057397450075,
+     0.23930324285557683,
+     0.23019008360953486
+    ],
+    "well_separated": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "k_basis": 8,
+   "side": "V"
+  }
+ },
+ "metadata": {
+  "arms_json_rev": "3bb20debe2",
+  "git_argv0_path": "scripts/issue2569_dw_fleet.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+  "git_dirty": false,
+  "issue": 2569,
+  "numpy": "2.2.6",
+  "phase": "align",
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-27T06:07:51Z"
+ },
+ "method": "lora",
+ "regime_key": "5bbfc23ca00c2ddd"
+}

@@ -1,0 +1,1021 @@
+{
+ "claim_scope": "transformations of SHARED TEACHER-FORCED QWEN RESPONSES \u2014 v_A summarizes Qwen's banked answer text under both models; nothing is claimed about Llama's own answer policy (C3)",
+ "corpus_transfer": {
+  "train_lmsys_test_wildchat": {
+   "align_c_q2l_r2": 0.6067523425557431,
+   "llama_native_r2": 0.5121594475881613
+  },
+  "train_wildchat_test_lmsys": {
+   "align_c_q2l_r2": 0.5250554616236334,
+   "llama_native_r2": 0.44393216334922325
+  }
+ },
+ "issue": 2569,
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_atlas.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+  "git_dirty": false,
+  "phase": "report",
+  "timestamp_utc": "2026-08-27T09:13:40Z"
+ },
+ "realized_paired_rows": 60000,
+ "tier1_alignability": {
+  "grid": [
+   {
+    "cka": {
+     "va": 0.9116408114421555,
+     "vc": 0.7548082114942153
+    },
+    "fits": {
+     "va_l2q": {
+      "d_in": 4096,
+      "d_out": 3584,
+      "elapsed_s": 14.79,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.8752962424180373,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.9979685119349924,
+        "10": 1.0,
+        "5": 1.0
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.9989419332994752,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_va_l2q_L14_16",
+      "test_r2": 0.8754729807546171
+     },
+     "va_q2l": {
+      "d_in": 3584,
+      "d_out": 4096,
+      "elapsed_s": 15.19,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.8100066779925175,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.9957677331979008,
+        "10": 1.0,
+        "5": 0.9994921279837481
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.997591101222386,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_va_q2l_L14_16",
+      "test_r2": 0.8125282077198405
+     },
+     "vc_l2q": {
+      "d_in": 4096,
+      "d_out": 3584,
+      "elapsed_s": 15.41,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.7859833337350741,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.8603351955307262,
+        "10": 0.9617403081090232,
+        "5": 0.9395632300660234
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.8964451033338383,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_vc_l2q_L14_16",
+      "test_r2": 0.7876344566416984
+     },
+     "vc_q2l": {
+      "d_in": 3584,
+      "d_out": 4096,
+      "elapsed_s": 17.84,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.6834052965836779,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.7951582867783985,
+        "10": 0.946842728965634,
+        "5": 0.915185373285932
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.8494579244266467,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_vc_q2l_L14_16",
+      "test_r2": 0.6908504954793632
+     }
+    },
+    "llama_layer": 16,
+    "qwen_layer": 14,
+    "selection_val_r2_mean": 0.7886728876823267
+   },
+   {
+    "cka": {
+     "va": 0.842213094780971,
+     "vc": 0.7090509876581901
+    },
+    "fits": {
+     "va_l2q": {
+      "d_in": 4096,
+      "d_out": 3584,
+      "elapsed_s": 15.55,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.8838466841290106,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.9969527679024885,
+        "10": 0.9998307093279161,
+        "5": 0.9998307093279161
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.998226576983901,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_va_l2q_L19_22",
+      "test_r2": 0.8882893487736379
+     },
+     "va_q2l": {
+      "d_in": 3584,
+      "d_out": 4096,
+      "elapsed_s": 14.84,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.8002997209501639,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.9928897917724734,
+        "10": 0.9993228373116642,
+        "5": 0.9988149652954122
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.9955061038725485,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_va_q2l_L19_22",
+      "test_r2": 0.8073974602171026
+     },
+     "vc_l2q": {
+      "d_in": 4096,
+      "d_out": 3584,
+      "elapsed_s": 15.26,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 3162.2776601683795,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.7447070471947652,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.8210597596072456,
+        "10": 0.9493820890468935,
+        "5": 0.9239884882342982
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.8681938238678023,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_vc_l2q_L19_22",
+      "test_r2": 0.7513018261661704
+     },
+     "vc_q2l": {
+      "d_in": 3584,
+      "d_out": 4096,
+      "elapsed_s": 14.69,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 3162.2776601683795,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.6610327280297364,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.7301506686981547,
+        "10": 0.9111223971559167,
+        "5": 0.8693076011511766
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.7948741938900087,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_vc_q2l_L19_22",
+      "test_r2": 0.6683129596323227
+     }
+    },
+    "llama_layer": 22,
+    "qwen_layer": 19,
+    "selection_val_r2_mean": 0.772471545075919
+   },
+   {
+    "cka": {
+     "va": 0.8194673547003672,
+     "vc": 0.782767365661381
+    },
+    "fits": {
+     "va_l2q": {
+      "d_in": 4096,
+      "d_out": 3584,
+      "elapsed_s": 16.32,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.8573701186942211,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.9930590824445573,
+        "10": 0.9986456746233282,
+        "5": 0.9983070932791603
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.995575187236304,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_va_l2q_L26_30",
+      "test_r2": 0.861073548523649
+     },
+     "va_q2l": {
+      "d_in": 3584,
+      "d_out": 4096,
+      "elapsed_s": 15.02,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 1000.0,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.83073847647818,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.9864567462332825,
+        "10": 0.9971220585745726,
+        "5": 0.9957677331979008
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.9909206861160659,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_va_q2l_L26_30",
+      "test_r2": 0.8414575399260763
+     },
+     "vc_l2q": {
+      "d_in": 4096,
+      "d_out": 3584,
+      "elapsed_s": 16.23,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 3162.2776601683795,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.6585293445339705,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.6866429659725749,
+        "10": 0.8955476553241917,
+        "5": 0.8545793126798713
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.7630976018352692,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_vc_l2q_L26_30",
+      "test_r2": 0.6635900418051769
+     },
+     "vc_q2l": {
+      "d_in": 3584,
+      "d_out": 4096,
+      "elapsed_s": 17.04,
+      "fit_meta": {
+       "grid_hi": 100000000.0,
+       "grid_lo": 9.999999999999999e-06,
+       "grid_n": 27,
+       "lambda_grid_edge": null,
+       "n_train": 53581,
+       "selected_lambda": 3162.2776601683795,
+       "selection": "val-lambda (primal)",
+       "val_r2_at_selected": 0.6189175387389765,
+       "widenings": 0
+      },
+      "identity_bias": {
+       "applicable": false,
+       "reason": "d_in != d_out (cross-model spaces)"
+      },
+      "knn": {
+       "acc_at_k": {
+        "1": 0.6734382935500254,
+        "10": 0.88268156424581,
+        "5": 0.8378195361435585
+       },
+       "chance_at_k": {
+        "1": 0.00016929067208396818,
+        "10": 0.0016929067208396817,
+        "5": 0.0008464533604198408
+       },
+       "median_rank": 1.0,
+       "metric": "euclidean",
+       "mrr": 0.7485225530228948,
+       "n": 5907,
+       "n_pool": 5907
+      },
+      "n_test": 5907,
+      "n_train": 53581,
+      "n_val": 512,
+      "name": "align_vc_q2l_L26_30",
+      "test_r2": 0.6318283098149007
+     }
+    },
+    "llama_layer": 30,
+    "qwen_layer": 26,
+    "selection_val_r2_mean": 0.7413888696113371
+   }
+  ],
+  "note": "alignment R^2 (val-selected widened ridge, held-out test) + linear CKA (arXiv 1905.00414; train rows); working pair selected on the TRAIN split (val R^2) only"
+ },
+ "tier2_operator_similarity": {
+  "aligned_operator_cosine": {
+   "a_qwen_source": {
+    "layer": 14,
+    "path": "/workspace/eps2569pe/maproot/data/issue_2094/joint_transport/banked_maps/issue779_monitoring/n1m_readout/weights/L14/ridge.pt",
+    "selected_lambda": 0.001
+   },
+   "alignment": "activation-fitted semi-orthogonal Procrustes (R_in from paired v_C TRAIN rows, R_out from paired v_A TRAIN rows; the issue825_map_alignment._procrustes_cosine_null construction)",
+   "anchor_825_aligned_cosine": 0.6864,
+   "n_rows_alignment": 53581,
+   "per_operator": {
+    "a_qwen": {
+     "observed_aligned_cosine": 0.3655040652035049,
+     "raw_vec_cosine": {
+      "applicable": false,
+      "reason": "pre-alignment operator shapes differ ((3584, 3584) vs (4096, 4096)) \u2014 cross-model spaces"
+     },
+     "rotation_null": {
+      "analytic_sd_1_over_d": 0.00027901785714285713,
+      "n_draws": 200,
+      "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+      "null_mean": 2.1519095463918653e-05,
+      "null_p975": 0.0005313938990869307,
+      "null_std": 0.0002788637418008636
+     },
+     "z_observed_vs_null": 1310.6133570366364
+    },
+    "qwen_matched": {
+     "observed_aligned_cosine": 0.47536933676305304,
+     "raw_vec_cosine": {
+      "applicable": false,
+      "reason": "pre-alignment operator shapes differ ((3584, 3584) vs (4096, 4096)) \u2014 cross-model spaces"
+     },
+     "rotation_null": {
+      "analytic_sd_1_over_d": 0.00027901785714285713,
+      "n_draws": 200,
+      "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+      "null_mean": 2.3462048745074383e-05,
+      "null_p975": 0.000538521279876692,
+      "null_std": 0.0002801140365628274
+     },
+     "z_observed_vs_null": 1696.9727002977907
+    }
+   },
+   "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (vs a two-sided random-rotation null; NOT rotation-invariant \u2014 a spectrum cosine can never produce this read)"
+  },
+  "anchor_825_aligned_cosine": 0.6864,
+  "correspondence_test": {
+   "agree_above_rotation_null": true,
+   "consequence": "one similarity transform exists; cross-model EIGENVALUE comparison is well-posed",
+   "raw_cosine": 0.10563450440086498,
+   "rotation_null": {
+    "analytic_sd_1_over_d": 0.00027901785714285713,
+    "n_draws": 200,
+    "null_mean": -5.115200678810054e-06,
+    "null_p975": 0.0005036992861500055,
+    "null_std": 0.0002557770724721905
+   },
+   "statistic_class": "direction-aware (raw cosine vs two-sided rotation null)"
+  },
+  "note": "held-out R^2 of the composed route (align_C -> A_qwen -> align_A) vs the native Llama map, under fixed data-pinned alignments; the matched-n Qwen comparator (C3) controls for fit-n",
+  "routes": {
+   "a_qwen_source": {
+    "layer": 14,
+    "path": "/workspace/eps2569pe/maproot/data/issue_2094/joint_transport/banked_maps/issue779_monitoring/n1m_readout/weights/L14/ridge.pt",
+    "selected_lambda": 0.001
+   },
+   "alignment_only_baseline": {
+    "knn": {
+     "acc_at_k": {
+      "1": 0.02590147282884713,
+      "10": 0.10411376333164042,
+      "5": 0.06923988488234298
+     },
+     "chance_at_k": {
+      "1": 0.00016929067208396818,
+      "10": 0.0016929067208396817,
+      "5": 0.0008464533604198408
+     },
+     "median_rank": 420.0,
+     "metric": "euclidean",
+     "mrr": 0.05350722126912036,
+     "n": 5907,
+     "n_pool": 5907
+    },
+    "r2": -1.6220032957215151
+   },
+   "composed_banked": {
+    "knn": {
+     "acc_at_k": {
+      "1": 0.3697308278313865,
+      "10": 0.6766548163196208,
+      "5": 0.5972574911122397
+     },
+     "chance_at_k": {
+      "1": 0.00016929067208396818,
+      "10": 0.0016929067208396817,
+      "5": 0.0008464533604198408
+     },
+     "median_rank": 3.0,
+     "metric": "euclidean",
+     "mrr": 0.4744534146271654,
+     "n": 5907,
+     "n_pool": 5907
+    },
+    "r2": 0.5348618822754713
+   },
+   "composed_matched": {
+    "knn": {
+     "acc_at_k": {
+      "1": 0.33147113594040967,
+      "10": 0.6448281699678348,
+      "5": 0.5542576604029118
+     },
+     "chance_at_k": {
+      "1": 0.00016929067208396818,
+      "10": 0.0016929067208396817,
+      "5": 0.0008464533604198408
+     },
+     "median_rank": 4.0,
+     "metric": "euclidean",
+     "mrr": 0.4365739536021487,
+     "n": 5907,
+     "n_pool": 5907
+    },
+    "r2": 0.524613997309856
+   },
+   "native": {
+    "knn": {
+     "acc_at_k": {
+      "1": 0.6321313695615371,
+      "10": 0.8320636532927036,
+      "5": 0.7836465210766886
+     },
+     "chance_at_k": {
+      "1": 0.00016929067208396818,
+      "10": 0.0016929067208396817,
+      "5": 0.0008464533604198408
+     },
+     "median_rank": 1.0,
+     "metric": "euclidean",
+     "mrr": 0.7033204788985477,
+     "n": 5907,
+     "n_pool": 5907
+    },
+    "r2": 0.5832408113080682
+   }
+  }
+ },
+ "tier3_diagnostics": {
+  "label": "NON-IDENTIFYING DIAGNOSTICS (C1): the alignment-only route inserts an identity between semantically different states; these do NOT apportion the gap into representation-vs-operator shares; no registered verdict consumes them",
+  "r2_alignment_only_baseline": -1.6220032957215151,
+  "r2_native_minus_composed_banked": 0.048378929032596885,
+  "r2_native_minus_composed_matched": 0.058626813998212124
+ },
+ "working_pair": {
+  "llama_layer": 16,
+  "qwen_layer": 14,
+  "selection": "max mean val R^2 over the 4 alignment fits (TRAIN split only)"
+ },
+ "working_pair_fits": {
+  "align_a_l2q_L16_14": {
+   "d_in": 4096,
+   "d_out": 3584,
+   "elapsed_s": 15.98,
+   "fit_meta": {
+    "grid_hi": 100000000.0,
+    "grid_lo": 9.999999999999999e-06,
+    "grid_n": 27,
+    "lambda_grid_edge": null,
+    "n_train": 53581,
+    "selected_lambda": 1000.0,
+    "selection": "val-lambda (primal)",
+    "val_r2_at_selected": 0.8752962424180373,
+    "widenings": 0
+   },
+   "identity_bias": {
+    "applicable": false,
+    "reason": "d_in != d_out (cross-model spaces)"
+   },
+   "knn": {
+    "acc_at_k": {
+     "1": 0.9979685119349924,
+     "10": 1.0,
+     "5": 1.0
+    },
+    "chance_at_k": {
+     "1": 0.00016929067208396818,
+     "10": 0.0016929067208396817,
+     "5": 0.0008464533604198408
+    },
+    "median_rank": 1.0,
+    "metric": "euclidean",
+    "mrr": 0.9989419332994752,
+    "n": 5907,
+    "n_pool": 5907
+   },
+   "n_test": 5907,
+   "n_train": 53581,
+   "n_val": 512,
+   "name": "align_a_l2q_L16_14",
+   "split_half_floor": {
+    "floor": 0.7156283638278826,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "test_r2": 0.8754729807546171
+  },
+  "align_a_q2l_L14_16": {
+   "d_in": 3584,
+   "d_out": 4096,
+   "elapsed_s": 14.98,
+   "fit_meta": {
+    "grid_hi": 100000000.0,
+    "grid_lo": 9.999999999999999e-06,
+    "grid_n": 27,
+    "lambda_grid_edge": null,
+    "n_train": 53581,
+    "selected_lambda": 1000.0,
+    "selection": "val-lambda (primal)",
+    "val_r2_at_selected": 0.8100066779925175,
+    "widenings": 0
+   },
+   "identity_bias": {
+    "applicable": false,
+    "reason": "d_in != d_out (cross-model spaces)"
+   },
+   "knn": {
+    "acc_at_k": {
+     "1": 0.9957677331979008,
+     "10": 1.0,
+     "5": 0.9994921279837481
+    },
+    "chance_at_k": {
+     "1": 0.00016929067208396818,
+     "10": 0.0016929067208396817,
+     "5": 0.0008464533604198408
+    },
+    "median_rank": 1.0,
+    "metric": "euclidean",
+    "mrr": 0.997591101222386,
+    "n": 5907,
+    "n_pool": 5907
+   },
+   "n_test": 5907,
+   "n_train": 53581,
+   "n_val": 512,
+   "name": "align_a_q2l_L14_16",
+   "split_half_floor": {
+    "floor": 0.6746794856091604,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "test_r2": 0.8125282077198405
+  },
+  "align_c_l2q_L16_14": {
+   "d_in": 4096,
+   "d_out": 3584,
+   "elapsed_s": 16.32,
+   "fit_meta": {
+    "grid_hi": 100000000.0,
+    "grid_lo": 9.999999999999999e-06,
+    "grid_n": 27,
+    "lambda_grid_edge": null,
+    "n_train": 53581,
+    "selected_lambda": 1000.0,
+    "selection": "val-lambda (primal)",
+    "val_r2_at_selected": 0.7859833337350741,
+    "widenings": 0
+   },
+   "identity_bias": {
+    "applicable": false,
+    "reason": "d_in != d_out (cross-model spaces)"
+   },
+   "knn": {
+    "acc_at_k": {
+     "1": 0.8603351955307262,
+     "10": 0.9617403081090232,
+     "5": 0.9395632300660234
+    },
+    "chance_at_k": {
+     "1": 0.00016929067208396818,
+     "10": 0.0016929067208396817,
+     "5": 0.0008464533604198408
+    },
+    "median_rank": 1.0,
+    "metric": "euclidean",
+    "mrr": 0.8964451033338383,
+    "n": 5907,
+    "n_pool": 5907
+   },
+   "n_test": 5907,
+   "n_train": 53581,
+   "n_val": 512,
+   "name": "align_c_l2q_L16_14",
+   "split_half_floor": {
+    "floor": 0.6145996725048717,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "test_r2": 0.7876344566416984
+  },
+  "align_c_q2l_L14_16": {
+   "d_in": 3584,
+   "d_out": 4096,
+   "elapsed_s": 16.2,
+   "fit_meta": {
+    "grid_hi": 100000000.0,
+    "grid_lo": 9.999999999999999e-06,
+    "grid_n": 27,
+    "lambda_grid_edge": null,
+    "n_train": 53581,
+    "selected_lambda": 1000.0,
+    "selection": "val-lambda (primal)",
+    "val_r2_at_selected": 0.6834052965836779,
+    "widenings": 0
+   },
+   "identity_bias": {
+    "applicable": false,
+    "reason": "d_in != d_out (cross-model spaces)"
+   },
+   "knn": {
+    "acc_at_k": {
+     "1": 0.7951582867783985,
+     "10": 0.946842728965634,
+     "5": 0.915185373285932
+    },
+    "chance_at_k": {
+     "1": 0.00016929067208396818,
+     "10": 0.0016929067208396817,
+     "5": 0.0008464533604198408
+    },
+    "median_rank": 1.0,
+    "metric": "euclidean",
+    "mrr": 0.8494579244266467,
+    "n": 5907,
+    "n_pool": 5907
+   },
+   "n_test": 5907,
+   "n_train": 53581,
+   "n_val": 512,
+   "name": "align_c_q2l_L14_16",
+   "split_half_floor": {
+    "floor": 0.6244983118599637,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "test_r2": 0.6908504954793632
+  },
+  "llama_native_L16": {
+   "d_in": 4096,
+   "d_out": 4096,
+   "elapsed_s": 18.71,
+   "fit_meta": {
+    "grid_hi": 100000000.0,
+    "grid_lo": 9.999999999999999e-06,
+    "grid_n": 27,
+    "lambda_grid_edge": null,
+    "n_train": 53581,
+    "selected_lambda": 3162.2776601683795,
+    "selection": "val-lambda (primal)",
+    "val_r2_at_selected": 0.5751906443501404,
+    "widenings": 0
+   },
+   "identity_bias": {
+    "applicable": true,
+    "r2": -1.5514010604521475
+   },
+   "knn": {
+    "acc_at_k": {
+     "1": 0.6321313695615371,
+     "10": 0.8320636532927036,
+     "5": 0.7836465210766886
+    },
+    "chance_at_k": {
+     "1": 0.00016929067208396818,
+     "10": 0.0016929067208396817,
+     "5": 0.0008464533604198408
+    },
+    "median_rank": 1.0,
+    "metric": "euclidean",
+    "mrr": 0.7033204788985477,
+    "n": 5907,
+    "n_pool": 5907
+   },
+   "n_test": 5907,
+   "n_train": 53581,
+   "n_val": 512,
+   "name": "llama_native_L16",
+   "split_half_floor": {
+    "floor": 0.6234769288505836,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "test_r2": 0.5832408113080689
+  },
+  "qwen_matched_L14": {
+   "d_in": 3584,
+   "d_out": 3584,
+   "elapsed_s": 16.92,
+   "fit_meta": {
+    "grid_hi": 100000000.0,
+    "grid_lo": 9.999999999999999e-06,
+    "grid_n": 27,
+    "lambda_grid_edge": null,
+    "n_train": 53581,
+    "selected_lambda": 3162.2776601683795,
+    "selection": "val-lambda (primal)",
+    "val_r2_at_selected": 0.6030628669039442,
+    "widenings": 0
+   },
+   "identity_bias": {
+    "applicable": true,
+    "r2": -0.797698432392018
+   },
+   "knn": {
+    "acc_at_k": {
+     "1": 0.5224310140511258,
+     "10": 0.7834772304046047,
+     "5": 0.7221940071102082
+    },
+    "chance_at_k": {
+     "1": 0.00016929067208396818,
+     "10": 0.0016929067208396817,
+     "5": 0.0008464533604198408
+    },
+    "median_rank": 1.0,
+    "metric": "euclidean",
+    "mrr": 0.6152665527147608,
+    "n": 5907,
+    "n_pool": 5907
+   },
+   "n_test": 5907,
+   "n_train": 53581,
+   "n_val": 512,
+   "name": "qwen_matched_L14",
+   "split_half_floor": {
+    "floor": 0.6640919719110058,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "test_r2": 0.6017285971961008
+  }
+ }
+}
