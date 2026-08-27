@@ -1,11 +1,27 @@
 {
-  "commit": "72464325",
-  "render_id": "4c7f575883414fc6",
-  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "16247687+dirty",
+  "render_id": "8cf7469d8aa3470a",
+  "git_commit": "16247687f94a04a53c2ff00b4499aa0cb54d6997",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
+    "figures/issue_2546/backing_necessity.meta.json",
+    "figures/issue_2546/backing_necessity.pdf",
+    "figures/issue_2546/backing_necessity.png",
+    "figures/issue_2546/hero1_cellgrid.meta.json",
+    "figures/issue_2546/hero1_cellgrid.pdf",
+    "figures/issue_2546/hero1_cellgrid.png",
+    "figures/issue_2546/hero2_p8_ladder.meta.json",
+    "figures/issue_2546/hero2_p8_ladder.pdf",
+    "figures/issue_2546/hero2_p8_ladder.png",
+    "figures/issue_2546/hero3_trajectory.meta.json",
+    "figures/issue_2546/hero3_trajectory.pdf",
+    "figures/issue_2546/hero3_trajectory.png",
+    "scripts/issue2546_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T18:35:34Z",
+  "created": "2026-08-27T19:25:25Z",
   "figsize": [
     13.799999999999999,
     3.6

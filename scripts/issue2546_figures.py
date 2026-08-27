@@ -30,7 +30,10 @@ Figure inventory (plan §6):
 Missing REGISTERED input => FileNotFoundError naming the path (never a silent
 skip); a present unit with ``status != ok`` (reported floor drop) renders as a
 gap and is listed on stdout. ``--selftest`` renders EVERY figure class from a
-synthetic JSON tree into a temp dir and asserts non-empty axes + sidecars.
+synthetic JSON tree into a temp dir and asserts non-empty axes + sidecars,
+symlog y-scale counts on the defect-A panels, census-title selection
+(degenerate / below-floor / mixed pools), and that the save-time y-clip guard
+RAISES on an over-cap value (never a silent clip).
 """
 
 from __future__ import annotations
@@ -224,20 +227,99 @@ def _identity_tick(ax, x: float, y: float | None, w: float = 0.32) -> None:
     ax.plot([x - w / 2, x + w / 2], [y, y], color="black", lw=1.4, zorder=5)
 
 
-def _set_symlog_y(ax, linthresh: float = 1.0) -> None:
+def _set_symlog_y(ax, linthresh: float = 1.0, top: float | None = 1.5) -> None:
     """Symlog y for panels mixing held-out R² with identity(+bias) / raw ladder tiers.
 
     R² lives in [0, 1] while the mandated identity(+bias) baseline (and arm 1's raw
-    ladder tiers) reaches ~-10^2..-10^5; a shared LINEAR axis crushes the R² bars
-    into a hairline at y=0 (defect A, #2546). Symlog keeps [-linthresh, linthresh]
-    linear (bars legible) and puts the baselines on log decades, so arm 1's ~-10^2
-    baseline and arm 2's ~-10^0 stay readable AND distinguishable. Axis treatment
-    only — plotted values are untouched. Top is capped at 1.5 because R² (and its
-    ceilings/CIs) is bounded above by 1: symlog autoscale otherwise pads to the
-    next full decade (10^1..10^3 of empty headroom over the informative band).
+    ladder tiers, and the frozen n1m read) reaches ~-10^2..-10^6; a shared LINEAR
+    axis crushes the informative series into a hairline at y=0 (defect A, #2546).
+    Symlog keeps [-linthresh, linthresh] linear and puts the large-magnitude values
+    on log decades, so e.g. arm 1's ~-10^2 baseline and arm 2's ~-10^0 stay readable
+    AND distinguishable. Axis treatment only — plotted values are untouched. ``top``
+    (default 1.5) caps the axis because R²-family values are bounded above by 1:
+    symlog autoscale otherwise pads to the next full decade (10^1..10^3 of empty
+    headroom over the informative band). ``set_ylim`` freezes BOTH limits at call
+    time and matplotlib clips out-of-limit artists SILENTLY, so the cap is recorded
+    on the axes and re-verified at save time by ``_assert_no_silent_ylim_clip``
+    (r24: a hypothetical >top value, or an artist added after this call, must
+    RAISE, never vanish). Call AFTER the panel's artists are drawn.
     """
     ax.set_yscale("symlog", linthresh=linthresh)
-    ax.set_ylim(top=1.5)
+    if top is not None:
+        ax.set_ylim(top=top)
+        ax._i2546_ylim_capped = True  # read by _assert_no_silent_ylim_clip at save time
+
+
+def _assert_no_silent_ylim_clip(fig) -> None:
+    """Refuse to save a figure whose plotted data exceed a frozen y-limit cap.
+
+    ``_set_symlog_y`` sets an explicit top, which freezes autoscale — a value above
+    the cap, or any artist added after that call extending past either frozen
+    limit, would be clipped from the render with no warning. Checked against
+    ``ax.dataLim`` at save time so late artists are covered too. Raises
+    RuntimeError (fail loud, never warn-and-continue — the project bans silent
+    defaults; RuntimeError also survives ``python -O``, which strips ``assert``).
+
+    Boundary CONTACT within 1e-9 of the axis span is excused — not a clip: bars
+    carry a sticky edge at 0 (autoscale legitimately freezes the bottom at exactly
+    0), and ``set_yscale("symlog")`` itself perturbs the stored dataLim by float
+    epsilon around 0 (measured −1.4e-17 on a panel whose true minimum is exactly
+    0.0 before the switch) — the #825 float-space-gate lesson: never a strict
+    float comparison at a legitimate boundary. A visually meaningful truncation
+    exceeds this tolerance by ≥6 orders of magnitude (one pixel on a 1000-px axis
+    is ~1e-3 of the span).
+    """
+    for i, ax in enumerate(fig.axes):
+        if not getattr(ax, "_i2546_ylim_capped", False):
+            continue
+        lo, hi = ax.get_ylim()
+        tol = 1e-9 * max(abs(hi - lo), 1.0)
+        for side, extent, bound, clipped in (
+            ("top", float(ax.dataLim.y1), hi, float(ax.dataLim.y1) > hi + tol),
+            ("bottom", float(ax.dataLim.y0), lo, float(ax.dataLim.y0) < lo - tol),
+        ):
+            if np.isfinite(extent) and clipped:
+                raise RuntimeError(
+                    f"silent y-clip on capped axes #{i} (title={ax.get_title()!r}): "
+                    f"data {side} extent {extent:g} exceeds ylim {side} {bound:g} — "
+                    "raise the cap in _set_symlog_y or fix the plotted values"
+                )
+
+
+def _stp_census_title(present: int, populated: int, degenerate: int) -> str | None:
+    """Same-template-pool census verdict for hero1 row 3 (defect B, #2546 r23/r24).
+
+    Census over the panel's kNN-content blocks: ``present`` blocks exist,
+    ``populated`` of those carry ``acc_at_1``, ``degenerate`` of THOSE have
+    chance = 1.0 (lift == 0 by construction). Returns the explanatory title an
+    otherwise-blank panel must carry, or None when at least one populated
+    non-degenerate block exists (a mixed pool renders normally — no override).
+    """
+    if populated and populated == degenerate:
+        return "same-template pool degenerate:\nchance = 1.0 → lift ≡ 0"
+    if populated == 0:
+        if present:
+            return "N/A — same-template pool:\ninsufficient template rows"
+        return "N/A — same-template pool:\nnot defined for these cells"
+    return None
+
+
+def _tier_census_title(n_ok: int, n_sufficient: int, n_units: int) -> str | None:
+    """Sufficient-tier panel census for hero2 row 2 (defect-B sibling, #2546 r24).
+
+    ``n_ok`` of ``n_units`` ladder units loaded ok; ``n_sufficient`` of those
+    report a sufficient tier. An empty panel states its TRUE reading (every unit
+    non-ok, or no ok unit reaches the elicitation band) — never invented content.
+    None when at least one star renders (mixed panel — no override).
+    """
+    if n_ok == 0:
+        return f"N/A — all {n_units} ladder units non-ok"
+    if n_sufficient == 0:
+        return (
+            "no sufficient tier within elicitation band:\n"
+            f"0/{n_ok} ladder units reach reference − band"
+        )
+    return None
 
 
 def _assert_nonempty(fig) -> None:
@@ -275,6 +357,7 @@ def _assert_nonempty(fig) -> None:
 
 def _save(fig, stem: str, out_dir: Path) -> None:
     _assert_nonempty(fig)
+    _assert_no_silent_ylim_clip(fig)
     paths = savefig_paper(fig, stem, dir=out_dir)
     plt.close(fig)
     print(f"[p6] wrote {paths.get('png', out_dir / (stem + '.png'))}", flush=True)
@@ -317,7 +400,9 @@ def fig_hero1(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
     fig = plt.figure(figsize=(4.2 * ncol + 1.5, 11.0))
     gs = fig.add_gridspec(4, len(widths), width_ratios=widths, hspace=0.45, wspace=0.25)
     row_label = [
-        "held-out R² (headline layer)",
+        # two lines: the single-line form overruns the figure top on hero1's short
+        # rows and savefig (no tight bbox) clips it mid-word (r24 residual)
+        "held-out R²\n(headline layer)",
         "R² / split-half ceiling",
         "answer-identity acc@1 − chance\n(corpus pool)",
         "answer-identity acc@1 − chance\n(same-template pool)",
@@ -391,14 +476,9 @@ def fig_hero1(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             if row == 1 and not any_ceiling:
                 title = "N/A — split-half ceiling missing"
             if row == 3:
-                if stp_pop and stp_pop == stp_degen:
-                    title = "same-template pool degenerate:\nchance = 1.0 → lift ≡ 0"
-                elif stp_pop == 0:
-                    title = (
-                        "N/A — same-template pool:\ninsufficient template rows"
-                        if stp_present
-                        else "N/A — same-template pool:\nnot defined for these cells"
-                    )
+                census = _stp_census_title(stp_present, stp_pop, stp_degen)
+                if census:
+                    title = census
             if title:
                 ax.set_title(title, fontsize=8)
     handles = [
@@ -452,11 +532,14 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
             ax.set_ylabel("held-out R² (headline layer)", fontsize=8)
         # rows 1-2: ladder tier curves + sufficient tier per corpus
         ax1, ax2 = axes[1][ci], axes[2][ci]
+        n_units = n_ok = n_suff = 0
         for slug in ("pooled",) + CORPORA:
+            n_units += 1
             d = _load(root / "ladder" / f"ladder__{slug}__a{a}.json")
             if d.get("status") != "ok":
                 _DROPPED.append(f"ladder__{slug}__a{a}: status={d.get('status')}")
                 continue
+            n_ok += 1
             tiers = [d["tiers_r2"][t] for t in d["tier_names"]]
             col = CORPUS_COLOR[slug]
             ax1.plot(range(9), tiers, marker="o", ms=3, color=col, label=CORPUS_LABEL[slug])
@@ -466,6 +549,7 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
                 ax1.axhline(ref, color="0.4", lw=0.9, ls=":", gid="refline")
             st = d.get("sufficient_tier")
             if st is not None:
+                n_suff += 1
                 ax1.plot([st], [tiers[st]], marker="*", ms=11, color=col, zorder=6)
                 ax2.errorbar(
                     CORPUS_LABEL[slug],
@@ -489,6 +573,14 @@ def fig_hero2(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
         ax2.set_yticks(range(9))
         ax2.set_yticklabels(LADDER_TIER_LABELS, fontsize=7)
         ax2.grid(axis="y", lw=0.3, alpha=0.5)
+        # r24 census (defect-B sibling): an empty sufficient-tier panel states its
+        # TRUE reading (arm 2: all 5 ok ladder units report no tier within the
+        # elicitation band) instead of rendering blank; >=1 star => no override.
+        tier_census = _tier_census_title(n_ok, n_suff, n_units)
+        if tier_census:
+            ax2.set_title(tier_census, fontsize=8)
+            if n_ok == 0:
+                ax1.set_title(tier_census, fontsize=8)  # tier-curve panel empty too
         # row 3: operator comparison (status-guarded: a non-ok unit is a GAP, not a crash)
         ax3 = axes[3][ci]
         op = _load(root / "ladder" / f"operator_comparison__a{a}.json")
@@ -901,6 +993,18 @@ def fig_exp_n1m_read(root: Path, out_dir: Path, arms: tuple[int, ...]) -> None:
     ax1.set_ylabel("R² agreement per k-bin (post read)", fontsize=8)
     ax1.legend(fontsize=7)
     ax0.set_title("frozen n1m read — GSM8K test (arm 1)", fontsize=8)
+    # Defect A in its worst form (r24, `n1m-linear-axis-crushes-read-series`): both
+    # panels span ~6 decades of NEGATIVE values (pre-read bars −2.5..−3.6 vs
+    # post-read bars/curves and identity ticks −1.3e4..−3.6e6), so on a linear axis
+    # the legend-declared read-B series renders nowhere and layers 19/26 read as
+    # zero. The r23 "keep the [0,1] band linear" rationale does not transfer (no
+    # value lies in [0,1]); linthresh=1.0 is still the right choice: no datum falls
+    # inside [−1,1], so the first decade below the linear band is reserved for the
+    # pre-read bars (−2.5 vs −3.6 visibly distinct) while post-read values sit 4-6
+    # decades down. Shared default top=1.5 keeps one convention across the set
+    # (harmless headroom above 0 here — all values are ≤ 0).
+    _set_symlog_y(ax0)
+    _set_symlog_y(ax1)
     _save(fig, "exp_n1m_frozen_read", out_dir)
 
 
@@ -1206,7 +1310,21 @@ def run_selftest() -> int:
         root = Path(td) / "results"
         out_dir = Path(td) / "figs"
         write_selftest_tree(root)
-        render_all(resolve_root(root), out_dir, ARMS_ALL)
+        # Capture each figure's per-axes y-scales at save time so the symlog
+        # assertions below bind BEHAVIOUR (the axes report symlog), not just
+        # "the render completed" (r24, `figure-fix-selftest-not-behavioral`).
+        yscales: dict[str, list[str]] = {}
+        orig_save = _save
+
+        def _capture_save(fig, stem: str, out: Path) -> None:
+            yscales[stem] = [ax.get_yscale() for ax in fig.axes]
+            orig_save(fig, stem, out)
+
+        globals()["_save"] = _capture_save
+        try:
+            render_all(resolve_root(root), out_dir, ARMS_ALL)
+        finally:
+            globals()["_save"] = orig_save
         expected = {
             "hero1_cellgrid",
             "hero2_p8_ladder",
@@ -1251,9 +1369,58 @@ def run_selftest() -> int:
             _assert_nonempty(fig2)
         finally:
             plt.close(fig2)
+        # Symlog binding (r24): the defect-A panels must REPORT a symlog y-scale.
+        # Counts: hero1 row 0 per arm; hero2 rows 0-1 per pre-arm; hero3 row 0 per
+        # arm; n1m both panels. Removing any _set_symlog_y call fails here.
+        expected_symlog = {
+            "hero1_cellgrid": len(ARMS_ALL),
+            "hero2_p8_ladder": 2 * sum(1 for a in ARMS_ALL if HAS_PRE[a]),
+            "hero3_trajectory": len(ARMS_ALL),
+            "exp_n1m_frozen_read": 2,
+        }
+        for stem, want in expected_symlog.items():
+            got = yscales[stem].count("symlog")
+            assert got == want, f"selftest: {stem}: {got} symlog y-axes, expected {want}"
+        # Census binding (r24): the hero1 row-3 pool census and the hero2
+        # sufficient-tier census must select the right verdicts; a mixed pool
+        # (any populated non-degenerate block / any rendered star) gets NO
+        # override and renders normally.
+        assert "degenerate" in (_stp_census_title(8, 8, 8) or ""), "all-degenerate pool"
+        assert "insufficient template rows" in (_stp_census_title(8, 0, 0) or ""), "below-floor"
+        assert "not defined" in (_stp_census_title(0, 0, 0) or ""), "absent pool"
+        assert _stp_census_title(8, 8, 3) is None, "mixed pool must render with no override"
+        assert "all 5 ladder units non-ok" in (_tier_census_title(0, 0, 5) or ""), "all non-ok"
+        assert "no sufficient tier" in (_tier_census_title(5, 0, 5) or ""), "no tier in band"
+        assert _tier_census_title(5, 2, 5) is None, "mixed tier panel must render normally"
+        # Silent y-clip guard (r24): a 2.7-valued bar above the 1.5 cap — added
+        # AFTER _set_symlog_y, so the frozen limits cannot include it — must RAISE
+        # at save time, never clip silently.
+        figc, axc = plt.subplots()
+        axc.bar([0.0], [0.9])
+        _set_symlog_y(axc)
+        axc.bar([1.0], [2.7])
+        try:
+            try:
+                _assert_no_silent_ylim_clip(figc)
+            except RuntimeError as e:
+                assert "silent y-clip" in str(e), e
+            else:
+                raise AssertionError("2.7 bar above the 1.5 cap passed the y-clip guard")
+        finally:
+            plt.close(figc)
+        # Control (clip guard not vacuous): in-cap data passes.
+        figk, axk = plt.subplots()
+        axk.bar([0.0], [0.9])
+        _set_symlog_y(axk)
+        try:
+            _assert_no_silent_ylim_clip(figk)
+        finally:
+            plt.close(figk)
         print(
             f"[p6] SELFTEST PASS — {len(expected)} figure classes rendered with "
-            "sidecars; all-NaN refline-only render refused"
+            "sidecars; all-NaN refline-only render refused; symlog axes bound "
+            f"({sum(expected_symlog.values())} across {len(expected_symlog)} figures); "
+            "census verdicts bound; over-cap y-clip guard raises"
         )
     return 0
 

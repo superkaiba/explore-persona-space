@@ -1,11 +1,18 @@
 {
-  "commit": "72464325",
-  "render_id": "eb0605d574c14387",
-  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "16247687+dirty",
+  "render_id": "661e8717883f43e3",
+  "git_commit": "16247687f94a04a53c2ff00b4499aa0cb54d6997",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
+    "figures/issue_2546/hero1_cellgrid.meta.json",
+    "figures/issue_2546/hero1_cellgrid.pdf",
+    "figures/issue_2546/hero1_cellgrid.png",
+    "scripts/issue2546_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T18:35:20Z",
+  "created": "2026-08-27T19:25:12Z",
   "figsize": [
     10.8,
     13.0
@@ -929,6 +936,7 @@
         ]
       },
       {
+        "title_left": "no sufficient tier within elicitation band:\n0/5 ladder units reach reference \u2212 band",
         "xticklabels": [
           "0.0",
           "0.2",

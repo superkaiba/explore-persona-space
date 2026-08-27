@@ -1,11 +1,42 @@
 {
-  "commit": "72464325",
-  "render_id": "e7b8109417714db5",
-  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "16247687+dirty",
+  "render_id": "fb978dd3376c43fd",
+  "git_commit": "16247687f94a04a53c2ff00b4499aa0cb54d6997",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
+    "figures/issue_2546/backing_necessity.meta.json",
+    "figures/issue_2546/backing_necessity.pdf",
+    "figures/issue_2546/backing_necessity.png",
+    "figures/issue_2546/exp_lambda_diagnostics.meta.json",
+    "figures/issue_2546/exp_lambda_diagnostics.pdf",
+    "figures/issue_2546/exp_lambda_diagnostics.png",
+    "figures/issue_2546/exp_layer_sweep.meta.json",
+    "figures/issue_2546/exp_layer_sweep.pdf",
+    "figures/issue_2546/exp_layer_sweep.png",
+    "figures/issue_2546/exp_matchn_companions.meta.json",
+    "figures/issue_2546/exp_matchn_companions.pdf",
+    "figures/issue_2546/exp_matchn_companions.png",
+    "figures/issue_2546/exp_p8E_baseline_decomposition.meta.json",
+    "figures/issue_2546/exp_p8E_baseline_decomposition.pdf",
+    "figures/issue_2546/exp_p8E_baseline_decomposition.png",
+    "figures/issue_2546/exp_percorpus_heatmap.meta.json",
+    "figures/issue_2546/exp_percorpus_heatmap.pdf",
+    "figures/issue_2546/exp_percorpus_heatmap.png",
+    "figures/issue_2546/hero1_cellgrid.meta.json",
+    "figures/issue_2546/hero1_cellgrid.pdf",
+    "figures/issue_2546/hero1_cellgrid.png",
+    "figures/issue_2546/hero2_p8_ladder.meta.json",
+    "figures/issue_2546/hero2_p8_ladder.pdf",
+    "figures/issue_2546/hero2_p8_ladder.png",
+    "figures/issue_2546/hero3_trajectory.meta.json",
+    "figures/issue_2546/hero3_trajectory.pdf",
+    "figures/issue_2546/hero3_trajectory.png",
+    "scripts/issue2546_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T18:35:49Z",
+  "created": "2026-08-27T19:25:42Z",
   "figsize": [
     9.6,
     3.6
@@ -151,15 +182,15 @@
           "layer 26"
         ],
         "yticklabels": [
-          "\u22124.0",
-          "\u22123.5",
-          "\u22123.0",
-          "\u22122.5",
-          "\u22122.0",
-          "\u22121.5",
-          "\u22121.0",
-          "\u22120.5",
-          "0.0"
+          "$\\mathdefault{-10^{6}}$",
+          "$\\mathdefault{-10^{5}}$",
+          "$\\mathdefault{-10^{4}}$",
+          "$\\mathdefault{-10^{3}}$",
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
         ]
       },
       {
@@ -177,17 +208,15 @@
           "k7p"
         ],
         "yticklabels": [
-          "\u22121.8",
-          "\u22121.6",
-          "\u22121.4",
-          "\u22121.2",
-          "\u22121.0",
-          "\u22120.8",
-          "\u22120.6",
-          "\u22120.4",
-          "\u22120.2",
-          "0.0",
-          "0.2"
+          "$\\mathdefault{-10^{6}}$",
+          "$\\mathdefault{-10^{5}}$",
+          "$\\mathdefault{-10^{4}}$",
+          "$\\mathdefault{-10^{3}}$",
+          "$\\mathdefault{-10^{2}}$",
+          "$\\mathdefault{-10^{1}}$",
+          "$\\mathdefault{-10^{0}}$",
+          "$\\mathdefault{0}$",
+          "$\\mathdefault{10^{0}}$"
         ]
       }
     ],

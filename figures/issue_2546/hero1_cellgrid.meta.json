@@ -1,11 +1,15 @@
 {
-  "commit": "72464325",
-  "render_id": "07585f3068bd4303",
-  "git_commit": "724643259458836f0d45111b40f74aaa7a1f0b7d",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "16247687+dirty",
+  "render_id": "8de002a7f19145f6",
+  "git_commit": "16247687f94a04a53c2ff00b4499aa0cb54d6997",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
+    "scripts/issue2546_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2546_figures.py",
-  "created": "2026-08-27T18:35:14Z",
+  "created": "2026-08-27T19:25:06Z",
   "figsize": [
     14.100000000000001,
     11.0
@@ -13,56 +17,56 @@
   "points": [
     {
       "x": -0.19,
-      "held-out R\u00b2 (headline layer)": 0.6927550292308129,
+      "held-out R\u00b2\n(headline layer)": 0.6927550292308129,
       "error": 0.002940700637578675,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.19,
-      "held-out R\u00b2 (headline layer)": 0.5813389649383138,
+      "held-out R\u00b2\n(headline layer)": 0.5813389649383138,
       "error": 0.0038840290780595144,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.81,
-      "held-out R\u00b2 (headline layer)": 0.680896222444916,
+      "held-out R\u00b2\n(headline layer)": 0.680896222444916,
       "error": 0.002480346243409981,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.19,
-      "held-out R\u00b2 (headline layer)": 0.6035949192126435,
+      "held-out R\u00b2\n(headline layer)": 0.6035949192126435,
       "error": 0.0025598354479891006,
       "_kind": "bar",
       "_group": 3
     },
     {
       "x": 1.81,
-      "held-out R\u00b2 (headline layer)": 0.6949312950191467,
+      "held-out R\u00b2\n(headline layer)": 0.6949312950191467,
       "error": 0.0025251563355864204,
       "_kind": "bar",
       "_group": 4
     },
     {
       "x": 2.19,
-      "held-out R\u00b2 (headline layer)": 0.6096804369499655,
+      "held-out R\u00b2\n(headline layer)": 0.6096804369499655,
       "error": 0.0026088177421143,
       "_kind": "bar",
       "_group": 5
     },
     {
       "x": 2.81,
-      "held-out R\u00b2 (headline layer)": 0.8074809932107219,
+      "held-out R\u00b2\n(headline layer)": 0.8074809932107219,
       "error": 0.0016476377915136675,
       "_kind": "bar",
       "_group": 6
     },
     {
       "x": 3.19,
-      "held-out R\u00b2 (headline layer)": 0.6938672707189526,
+      "held-out R\u00b2\n(headline layer)": 0.6938672707189526,
       "error": 0.003272305420105981,
       "_kind": "bar",
       "_group": 7
@@ -484,7 +488,7 @@
     "axes": [
       {
         "title_left": "arm 1 \u2014 OpenThinker3-7B (pre: Qwen2.5-7B-Instruct)",
-        "ylabel": "held-out R\u00b2 (headline layer)",
+        "ylabel": "held-out R\u00b2\n(headline layer)",
         "xticklabels": [
           "ctx end \u2192 answer",
           "ctx end \u2192 CoT",
