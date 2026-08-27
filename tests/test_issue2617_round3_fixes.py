@@ -139,7 +139,13 @@ def test_margin_complete_validates_pools_content_sha(tmp_path, monkeypatch):
         "meta": {"pool_size": 1},
     }
     _write_json(cfg.out_root / "margin" / "pools.json", pools_obj)
-    _write_json(cfg.out_root / "margin" / "margins.json", {"rows": []})
+    # r4 (margin-aggregate-identity-unvalidated): margins.json must carry its
+    # own matching regime_fp/pools_sha for completion — identity-doctor legs
+    # live in tests/test_issue2617_round4_fixes.py.
+    _write_json(
+        cfg.out_root / "margin" / "margins.json",
+        {"regime_fp": run._margin_fp(cfg), "pools_sha": run._pools_content_sha(pools_obj)},
+    )
     _write_json(
         cfg.out_root / "svmp_margin_done.json",
         {"regime_fp": run._margin_fp(cfg), "pools_sha": run._pools_content_sha(pools_obj)},

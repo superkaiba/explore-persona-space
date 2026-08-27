@@ -609,20 +609,29 @@ def _judge_complete(cfg) -> bool:
 
 def _margin_complete(cfg) -> bool:
     """Model-free: pools + margins present, ``_margin_fp``-matched sentinel,
-    AND the sentinel's recorded pool-content sha matches the on-disk pools
-    (BLOCKER margin-source-fingerprint, r3)."""
+    the sentinel's recorded pool-content sha matches the on-disk pools
+    (BLOCKER margin-source-fingerprint, r3), AND margins.json's OWN
+    ``regime_fp`` / ``pools_sha`` identity fields match — downstream reads
+    trust those fields, so a stale/foreign margins.json (missing key or
+    mismatch) refuses completion and the phase re-runs (CONCERN
+    margin-aggregate-identity-unvalidated, r4)."""
     mdir = cfg.out_root / "margin"
     if not ((mdir / "pools.json").is_file() and (mdir / "margins.json").is_file()):
         return False
-    if not _sentinel_ok(cfg, "margin", _margin_fp(cfg)):
+    mfp = _margin_fp(cfg)
+    if not _sentinel_ok(cfg, "margin", mfp):
         return False
     s = L._read_json(cfg.out_root / "svmp_margin_done.json")
     pools = L._read_json(mdir / "pools.json")
+    margins = L._read_json(mdir / "margins.json")
+    if s is None or pools is None or margins is None:
+        return False
+    pools_sha = _pools_content_sha(pools)  # recomputed via the writer's own helper
     return (
-        s is not None
-        and pools is not None
-        and s.get("pools_sha") is not None
-        and s.get("pools_sha") == _pools_content_sha(pools)
+        s.get("pools_sha") is not None
+        and s.get("pools_sha") == pools_sha
+        and margins.get("regime_fp") == mfp
+        and margins.get("pools_sha") == pools_sha
     )
 
 
@@ -1290,6 +1299,52 @@ def _build_margin_pools(cfg, bank: dict, tok) -> tuple[list[dict], list[dict], d
     return refusal, helpful, meta
 
 
+def _build_tiny_margin_pools() -> tuple[list[dict], list[dict], dict]:
+    """Canned tiny opener pools, routed through the SAME provenance + floor
+    gates the production branch runs in ``_build_margin_pools`` (BLOCKER
+    smoke-arch-margin-row-false-attestation, r4): provenance is recomputed
+    via an identity opener_fn — a canned opener IS its own source text — and
+    the pool floor check EXECUTES under a disclosed tiny short-pool waiver
+    recorded in pool_meta (the production floor + --allow-short-pools path
+    are untouched). The round-robin judged-rollout DRAW remains
+    production-only by design: canned pools have no judge scores."""
+    refusal = [
+        {
+            "probe": "",
+            "answer": t,
+            "source_context": f"canned-r{i}",
+            "source_draw": -1,
+            "score": 100.0,
+        }
+        for i, t in enumerate(CANNED_TINY_REFUSAL)
+    ]
+    helpful = [
+        {
+            "probe": "",
+            "answer": t,
+            "source_context": f"canned-h{i}",
+            "source_draw": -1,
+            "score": 0.0,
+        }
+        for i, t in enumerate(CANNED_TINY_HELPFUL)
+    ]
+    text_by = {(e["source_context"], e["source_draw"]): e["answer"] for e in refusal + helpful}
+    _assert_pool_provenance(refusal, text_by, lambda s: s)
+    _assert_pool_provenance(helpful, text_by, lambda s: s)
+    # Canned tiny pools are short by construction — the floor gate runs with
+    # an explicit waiver and its short-pool flag is recorded in pool_meta.
+    waiver = _pool_floor_check(len(refusal), len(helpful), allow_short=True)
+    pool_meta = {
+        "pool_size": len(refusal),
+        "n_opener_tokens": None,
+        "canned": True,
+        "n_refusal": len(refusal),
+        "n_helpful": len(helpful),
+        "short_pool_waiver": waiver,
+    }
+    return refusal, helpful, pool_meta
+
+
 def phase_margin(cfg, bank: dict, model, tok) -> int:
     print("[phase=margin] start", flush=True)
     if _margin_complete(cfg):
@@ -1302,27 +1357,9 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
     # and the sentinel (BLOCKER margin-resume-fingerprint, r2).
     mfp = _margin_fp(cfg)
     if cfg.tiny:
-        refusal = [
-            {
-                "probe": "",
-                "answer": t,
-                "source_context": "canned",
-                "source_draw": -1,
-                "score": 100.0,
-            }
-            for t in CANNED_TINY_REFUSAL
-        ]
-        helpful = [
-            {"probe": "", "answer": t, "source_context": "canned", "source_draw": -1, "score": 0.0}
-            for t in CANNED_TINY_HELPFUL
-        ]
-        pool_meta = {
-            "pool_size": len(refusal),
-            "n_opener_tokens": None,
-            "canned": True,
-            "n_refusal": len(refusal),
-            "n_helpful": len(helpful),
-        }
+        # Canned pools routed through the SAME provenance + floor gates as
+        # production (BLOCKER smoke-arch-margin-row-false-attestation, r4).
+        refusal, helpful, pool_meta = _build_tiny_margin_pools()
     else:
         refusal, helpful, pool_meta = _build_margin_pools(cfg, bank, tok)
     assert refusal, "empty refusal opener pool — no rollouts scored >= threshold"
