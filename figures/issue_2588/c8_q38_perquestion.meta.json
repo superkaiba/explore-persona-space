@@ -1,0 +1,1201 @@
+{
+ "commit": "2d0f2706+dirty",
+ "render_id": "5c6d5abe9d654835",
+ "git_commit": "2d0f2706e6ad6b337aaa51c3fb2113df2d7c42a6",
+ "git_dirty": true,
+ "git_dirty_paths": [
+  "figures/issue_2588/c1_capability_trend.meta.json",
+  "figures/issue_2588/c1_capability_trend.pdf",
+  "figures/issue_2588/c1_capability_trend.png",
+  "figures/issue_2588/c2_column_contrasts.meta.json",
+  "figures/issue_2588/c2_column_contrasts.pdf",
+  "figures/issue_2588/c2_column_contrasts.png",
+  "figures/issue_2588/c3_h2_paired_deltas.meta.json",
+  "figures/issue_2588/c3_h2_paired_deltas.pdf",
+  "figures/issue_2588/c3_h2_paired_deltas.png",
+  "figures/issue_2588/c4_gpqa_transfer.meta.json",
+  "figures/issue_2588/c4_gpqa_transfer.pdf",
+  "figures/issue_2588/c4_gpqa_transfer.png",
+  "figures/issue_2588/c5_column_verdict.meta.json",
+  "figures/issue_2588/c5_column_verdict.pdf",
+  "figures/issue_2588/c5_column_verdict.png",
+  "figures/issue_2588/c6_column_layer_sweeps.meta.json",
+  "figures/issue_2588/c6_column_layer_sweeps.pdf",
+  "figures/issue_2588/c6_column_layer_sweeps.png",
+  "figures/issue_2588/c7_endpoint_percell.meta.json",
+  "figures/issue_2588/c7_endpoint_percell.pdf",
+  "figures/issue_2588/c7_endpoint_percell.png",
+  "scripts/issue2588_figures.py"
+ ],
+ "git_argv0_state": "modified",
+ "git_argv0_path": "scripts/issue2588_figures.py",
+ "created": "2026-08-27T21:25:09Z",
+ "figsize": [
+  9.6,
+  4.0
+ ],
+ "points": [
+  {
+   "question_rank": 1,
+   "question_id": "gpqa_182",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 5,
+   "hits_length_residualized": 5
+  },
+  {
+   "question_rank": 2,
+   "question_id": "gpqa_010",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 1,
+   "hits_length_residualized": 5
+  },
+  {
+   "question_rank": 3,
+   "question_id": "gpqa_013",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 5
+  },
+  {
+   "question_rank": 4,
+   "question_id": "gpqa_061",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 5
+  },
+  {
+   "question_rank": 5,
+   "question_id": "gpqa_153",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 4
+  },
+  {
+   "question_rank": 6,
+   "question_id": "gpqa_025",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 7,
+   "question_id": "gpqa_060",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 8,
+   "question_id": "gpqa_069",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 9,
+   "question_id": "gpqa_099",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 10,
+   "question_id": "gpqa_102",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 11,
+   "question_id": "gpqa_160",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 12,
+   "question_id": "gpqa_163",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 3
+  },
+  {
+   "question_rank": 13,
+   "question_id": "gpqa_070",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 2
+  },
+  {
+   "question_rank": 14,
+   "question_id": "gpqa_028",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 15,
+   "question_id": "gpqa_038",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 16,
+   "question_id": "gpqa_048",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 17,
+   "question_id": "gpqa_084",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 18,
+   "question_id": "gpqa_108",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 19,
+   "question_id": "gpqa_134",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 20,
+   "question_id": "gpqa_140",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 21,
+   "question_id": "gpqa_161",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 22,
+   "question_id": "gpqa_179",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 1
+  },
+  {
+   "question_rank": 23,
+   "question_id": "gpqa_000",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 24,
+   "question_id": "gpqa_001",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 25,
+   "question_id": "gpqa_002",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 26,
+   "question_id": "gpqa_004",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 27,
+   "question_id": "gpqa_006",
+   "kept_rollouts": 2,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 28,
+   "question_id": "gpqa_009",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 29,
+   "question_id": "gpqa_012",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 30,
+   "question_id": "gpqa_014",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 31,
+   "question_id": "gpqa_016",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 32,
+   "question_id": "gpqa_017",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 33,
+   "question_id": "gpqa_019",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 34,
+   "question_id": "gpqa_020",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 35,
+   "question_id": "gpqa_021",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 36,
+   "question_id": "gpqa_022",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 37,
+   "question_id": "gpqa_023",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 38,
+   "question_id": "gpqa_024",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 39,
+   "question_id": "gpqa_026",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 40,
+   "question_id": "gpqa_029",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 41,
+   "question_id": "gpqa_030",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 42,
+   "question_id": "gpqa_031",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 43,
+   "question_id": "gpqa_032",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 44,
+   "question_id": "gpqa_033",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 45,
+   "question_id": "gpqa_034",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 46,
+   "question_id": "gpqa_035",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 47,
+   "question_id": "gpqa_036",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 48,
+   "question_id": "gpqa_037",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 49,
+   "question_id": "gpqa_039",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 50,
+   "question_id": "gpqa_040",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 51,
+   "question_id": "gpqa_041",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 52,
+   "question_id": "gpqa_042",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 53,
+   "question_id": "gpqa_044",
+   "kept_rollouts": 2,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 54,
+   "question_id": "gpqa_045",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 55,
+   "question_id": "gpqa_046",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 56,
+   "question_id": "gpqa_047",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 57,
+   "question_id": "gpqa_049",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 58,
+   "question_id": "gpqa_052",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 59,
+   "question_id": "gpqa_053",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 60,
+   "question_id": "gpqa_054",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 61,
+   "question_id": "gpqa_056",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 62,
+   "question_id": "gpqa_057",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 63,
+   "question_id": "gpqa_058",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 64,
+   "question_id": "gpqa_059",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 65,
+   "question_id": "gpqa_062",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 66,
+   "question_id": "gpqa_063",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 67,
+   "question_id": "gpqa_064",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 68,
+   "question_id": "gpqa_065",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 69,
+   "question_id": "gpqa_066",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 70,
+   "question_id": "gpqa_067",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 71,
+   "question_id": "gpqa_068",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 72,
+   "question_id": "gpqa_071",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 73,
+   "question_id": "gpqa_073",
+   "kept_rollouts": 2,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 74,
+   "question_id": "gpqa_074",
+   "kept_rollouts": 2,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 75,
+   "question_id": "gpqa_075",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 76,
+   "question_id": "gpqa_076",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 77,
+   "question_id": "gpqa_078",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 78,
+   "question_id": "gpqa_079",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 79,
+   "question_id": "gpqa_080",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 80,
+   "question_id": "gpqa_081",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 81,
+   "question_id": "gpqa_085",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 82,
+   "question_id": "gpqa_088",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 83,
+   "question_id": "gpqa_089",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 84,
+   "question_id": "gpqa_090",
+   "kept_rollouts": 2,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 85,
+   "question_id": "gpqa_091",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 86,
+   "question_id": "gpqa_094",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 87,
+   "question_id": "gpqa_095",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 88,
+   "question_id": "gpqa_096",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 89,
+   "question_id": "gpqa_097",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 90,
+   "question_id": "gpqa_098",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 91,
+   "question_id": "gpqa_100",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 92,
+   "question_id": "gpqa_101",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 93,
+   "question_id": "gpqa_103",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 94,
+   "question_id": "gpqa_104",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 95,
+   "question_id": "gpqa_105",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 96,
+   "question_id": "gpqa_106",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 97,
+   "question_id": "gpqa_109",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 98,
+   "question_id": "gpqa_110",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 99,
+   "question_id": "gpqa_111",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 100,
+   "question_id": "gpqa_112",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 101,
+   "question_id": "gpqa_113",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 102,
+   "question_id": "gpqa_114",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 103,
+   "question_id": "gpqa_115",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 104,
+   "question_id": "gpqa_116",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 105,
+   "question_id": "gpqa_117",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 106,
+   "question_id": "gpqa_118",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 107,
+   "question_id": "gpqa_120",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 108,
+   "question_id": "gpqa_122",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 109,
+   "question_id": "gpqa_124",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 110,
+   "question_id": "gpqa_125",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 111,
+   "question_id": "gpqa_126",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 112,
+   "question_id": "gpqa_128",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 113,
+   "question_id": "gpqa_129",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 114,
+   "question_id": "gpqa_130",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 115,
+   "question_id": "gpqa_131",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 116,
+   "question_id": "gpqa_132",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 117,
+   "question_id": "gpqa_133",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 118,
+   "question_id": "gpqa_135",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 119,
+   "question_id": "gpqa_136",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 120,
+   "question_id": "gpqa_137",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 121,
+   "question_id": "gpqa_138",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 122,
+   "question_id": "gpqa_141",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 123,
+   "question_id": "gpqa_142",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 124,
+   "question_id": "gpqa_144",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 125,
+   "question_id": "gpqa_145",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 126,
+   "question_id": "gpqa_146",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 127,
+   "question_id": "gpqa_147",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 128,
+   "question_id": "gpqa_148",
+   "kept_rollouts": 4,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 129,
+   "question_id": "gpqa_149",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 130,
+   "question_id": "gpqa_150",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 131,
+   "question_id": "gpqa_151",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 132,
+   "question_id": "gpqa_152",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 133,
+   "question_id": "gpqa_155",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 134,
+   "question_id": "gpqa_156",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 135,
+   "question_id": "gpqa_157",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 136,
+   "question_id": "gpqa_158",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 137,
+   "question_id": "gpqa_162",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 138,
+   "question_id": "gpqa_164",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 139,
+   "question_id": "gpqa_165",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 140,
+   "question_id": "gpqa_167",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 141,
+   "question_id": "gpqa_169",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 142,
+   "question_id": "gpqa_170",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 143,
+   "question_id": "gpqa_171",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 144,
+   "question_id": "gpqa_172",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 145,
+   "question_id": "gpqa_174",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 146,
+   "question_id": "gpqa_175",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 147,
+   "question_id": "gpqa_176",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 148,
+   "question_id": "gpqa_177",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 149,
+   "question_id": "gpqa_178",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 150,
+   "question_id": "gpqa_181",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 151,
+   "question_id": "gpqa_183",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 152,
+   "question_id": "gpqa_184",
+   "kept_rollouts": 3,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 153,
+   "question_id": "gpqa_185",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 154,
+   "question_id": "gpqa_186",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 155,
+   "question_id": "gpqa_187",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 156,
+   "question_id": "gpqa_189",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 157,
+   "question_id": "gpqa_191",
+   "kept_rollouts": 1,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 158,
+   "question_id": "gpqa_195",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  },
+  {
+   "question_rank": 159,
+   "question_id": "gpqa_197",
+   "kept_rollouts": 5,
+   "hits_raw_end_of_thought": 0,
+   "hits_length_residualized": 0
+  }
+ ],
+ "n_series": 2,
+ "total_points": 318,
+ "text": {
+  "suptitle": null,
+  "fig_texts": [],
+  "axes": [
+   {
+    "xlabel": "Question (ranked by residualized hits)",
+    "ylabel": "Retrieval hits per question (of kept rollouts)",
+    "legend_labels": [
+     "length-residualized read",
+     "raw end-of-thought read"
+    ],
+    "annotations": [
+     "gpqa_182",
+     "gpqa_010"
+    ],
+    "xticklabels": [
+     "\u221220",
+     "0",
+     "20",
+     "40",
+     "60",
+     "80",
+     "100",
+     "120",
+     "140",
+     "160",
+     "180"
+    ],
+    "yticklabels": [
+     "0",
+     "1",
+     "2",
+     "3",
+     "4",
+     "5"
+    ]
+   }
+  ],
+  "series": [
+   "length-residualized read",
+   "raw end-of-thought read"
+  ]
+ },
+ "formats_written": [
+  "png",
+  "pdf"
+ ]
+}

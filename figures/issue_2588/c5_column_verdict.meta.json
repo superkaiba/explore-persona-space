@@ -1,7 +1,7 @@
 {
-  "commit": "beb14caf+dirty",
-  "render_id": "cda3c901a3fe4630",
-  "git_commit": "beb14cafab422a8905aebb8c42ed857ae1d675f5",
+  "commit": "2d0f2706+dirty",
+  "render_id": "aacdd1b18a2240fd",
+  "git_commit": "2d0f2706e6ad6b337aaa51c3fb2113df2d7c42a6",
   "git_dirty": true,
   "git_dirty_paths": [
     "figures/issue_2588/c1_capability_trend.meta.json",
@@ -16,14 +16,23 @@
     "figures/issue_2588/c4_gpqa_transfer.meta.json",
     "figures/issue_2588/c4_gpqa_transfer.pdf",
     "figures/issue_2588/c4_gpqa_transfer.png",
+    "figures/issue_2588/c5_column_verdict.meta.json",
+    "figures/issue_2588/c5_column_verdict.pdf",
+    "figures/issue_2588/c5_column_verdict.png",
+    "figures/issue_2588/c6_column_layer_sweeps.meta.json",
+    "figures/issue_2588/c6_column_layer_sweeps.pdf",
+    "figures/issue_2588/c6_column_layer_sweeps.png",
+    "figures/issue_2588/c7_endpoint_percell.meta.json",
+    "figures/issue_2588/c7_endpoint_percell.pdf",
+    "figures/issue_2588/c7_endpoint_percell.png",
     "scripts/issue2588_figures.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2588_figures.py",
-  "created": "2026-08-27T19:12:54Z",
+  "created": "2026-08-27T21:25:07Z",
   "figsize": [
     11.5,
-    4.4
+    8.8
   ],
   "points": [
     {
@@ -295,15 +304,70 @@
       "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)": 0.03203180357034569,
       "_kind": "line",
       "_group": 13
+    },
+    {
+      "category": "Qwen3.5-27B",
+      "Held-out retrieval acc@1 (raw, thinking off)": 0.5687061183550652,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Qwen3.6-27B",
+      "Held-out retrieval acc@1 (raw, thinking off)": 0.5939698492462312,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Qwen3.8-27B",
+      "Held-out retrieval acc@1 (raw, thinking off)": 0.596562184024267,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Qwen3.5-27B",
+      "Held-out retrieval acc@1 (raw, thinking off)": 0.22066198595787356,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Qwen3.6-27B",
+      "Held-out retrieval acc@1 (raw, thinking off)": 0.12562814070351758,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Qwen3.8-27B",
+      "Held-out retrieval acc@1 (raw, thinking off)": 0.13852376137512634,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Qwen3.5-27B",
+      "Own hard-set accuracy (thinking off)": 0.6565656565656566,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Qwen3.6-27B",
+      "Own hard-set accuracy (thinking off)": 0.5119916579770595,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Qwen3.8-27B",
+      "Own hard-set accuracy (thinking off)": 0.48717948717948717,
+      "_kind": "bar",
+      "_group": 16
     }
   ],
-  "n_series": 14,
-  "total_points": 42,
+  "n_series": 17,
+  "total_points": 51,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
+        "title_left": "Calibrated levels per release",
         "xlabel": "Same-size 27B release (capability index 35 est / 38 / 52)",
         "ylabel": "Retrieval acc@1 (cosine, calibrated)",
         "legend_labels": [
@@ -332,6 +396,7 @@
         ]
       },
       {
+        "title_left": "All six paired contrasts",
         "xlabel": "Column contrast (later release \u2212 earlier)",
         "ylabel": "Calibrated \u0394 acc@1 (95% bootstrap CI, shifted)",
         "legend_labels": [
@@ -355,6 +420,46 @@
           "0.04",
           "0.06"
         ]
+      },
+      {
+        "title_left": "Baseline vs learned increment",
+        "ylabel": "Held-out retrieval acc@1 (raw, thinking off)",
+        "legend_labels": [
+          "identity-plus-bias baseline",
+          "learned-map increment"
+        ],
+        "xticklabels": [
+          "Qwen3.5-27B",
+          "Qwen3.6-27B",
+          "Qwen3.8-27B"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Behavioral accuracy on the hard set",
+        "ylabel": "Own hard-set accuracy (thinking off)",
+        "xticklabels": [
+          "Qwen3.5-27B",
+          "Qwen3.6-27B",
+          "Qwen3.8-27B"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
       }
     ],
     "series": [
@@ -362,7 +467,9 @@
       "thinking read (end of CoT)",
       "repeat-draw reference (cal.)",
       "length-residualized",
-      "thinking read (end of CoT) (drop-degraded)"
+      "thinking read (end of CoT) (drop-degraded)",
+      "identity-plus-bias baseline",
+      "learned-map increment"
     ]
   },
   "formats_written": [

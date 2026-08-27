@@ -1,0 +1,294 @@
+{
+  "commit": "2d0f2706+dirty",
+  "render_id": "88a8d748018d4f4b",
+  "git_commit": "2d0f2706e6ad6b337aaa51c3fb2113df2d7c42a6",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2588/c1_capability_trend.meta.json",
+    "figures/issue_2588/c1_capability_trend.pdf",
+    "figures/issue_2588/c1_capability_trend.png",
+    "figures/issue_2588/c2_column_contrasts.meta.json",
+    "figures/issue_2588/c2_column_contrasts.pdf",
+    "figures/issue_2588/c2_column_contrasts.png",
+    "figures/issue_2588/c3_h2_paired_deltas.meta.json",
+    "figures/issue_2588/c3_h2_paired_deltas.pdf",
+    "figures/issue_2588/c3_h2_paired_deltas.png",
+    "figures/issue_2588/c4_gpqa_transfer.meta.json",
+    "figures/issue_2588/c4_gpqa_transfer.pdf",
+    "figures/issue_2588/c4_gpqa_transfer.png",
+    "figures/issue_2588/c5_column_verdict.meta.json",
+    "figures/issue_2588/c5_column_verdict.pdf",
+    "figures/issue_2588/c5_column_verdict.png",
+    "figures/issue_2588/c6_column_layer_sweeps.meta.json",
+    "figures/issue_2588/c6_column_layer_sweeps.pdf",
+    "figures/issue_2588/c6_column_layer_sweeps.png",
+    "figures/issue_2588/c7_endpoint_percell.meta.json",
+    "figures/issue_2588/c7_endpoint_percell.pdf",
+    "figures/issue_2588/c7_endpoint_percell.png",
+    "scripts/issue2588_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2588_figures.py",
+  "created": "2026-08-27T21:25:10Z",
+  "figsize": [
+    11.5,
+    4.3
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.008264462809917356,
+      "error": 0.011549699754176041,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.009302325581395349,
+      "error": 0.01317829457364341,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.08527131782945736,
+      "error": 0.03875968992248062,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.07596899224806201,
+      "error": 0.03565891472868217,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.008264462809917356,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.009302325581395349,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.08527131782945736,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.07596899224806201,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.04961240310077519,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.043410852713178294,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.023099399508352082,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.02635658914728682,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.12713178294573643,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.11472868217054263,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.006887052341597796,
+      "series": "chance (same-question)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Same-question retrieval acc@1 (95% CI, question-clustered)": 0.006887052341597796,
+      "series": "chance (same-question)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.26,
+      "Same-question retrieval acc@1": 0.263681592039801,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.74,
+      "Same-question retrieval acc@1": 0.3383084577114428,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.74,
+      "Same-question retrieval acc@1": 0.09312320916905444,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.74,
+      "Same-question retrieval acc@1": 0.04154727793696275,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "OLMo 7B\npre-think",
+      "Same-question retrieval acc@1": 0.2696629213483146,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "OLMo 7B\nend-of-thought",
+      "Same-question retrieval acc@1": 0.30337078651685395,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "OLMo 32B\npre-think",
+      "Same-question retrieval acc@1": 0.08923884514435695,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "OLMo 32B\nend-of-thought",
+      "Same-question retrieval acc@1": 0.06561679790026247,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "Same-question retrieval acc@1": 0.25609756097560976,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.26,
+      "Same-question retrieval acc@1": 0.3861788617886179,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "Same-question retrieval acc@1": 0.09779179810725552,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.26,
+      "Same-question retrieval acc@1": 0.012618296529968454,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Newest-27B thinking cell, recompute",
+        "ylabel": "Same-question retrieval acc@1 (95% CI, question-clustered)",
+        "legend_labels": [
+          "chance (same-question)"
+        ],
+        "xticklabels": [
+          "full pool,\nraw",
+          "truncation-free,\nraw",
+          "truncation-free,\nlength-residualized",
+          "paired delta\n(resid \u2212 raw)"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      },
+      {
+        "title_left": "OLMo Think reads by correctness stratum",
+        "ylabel": "Same-question retrieval acc@1",
+        "legend_labels": [
+          "all kept rollouts",
+          "correct rows only",
+          "incorrect rows only"
+        ],
+        "xticklabels": [
+          "OLMo 7B\npre-think",
+          "OLMo 7B\nend-of-thought",
+          "OLMo 32B\npre-think",
+          "OLMo 32B\nend-of-thought"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ]
+      }
+    ],
+    "series": [
+      "chance (same-question)",
+      "all kept rollouts",
+      "correct rows only",
+      "incorrect rows only"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

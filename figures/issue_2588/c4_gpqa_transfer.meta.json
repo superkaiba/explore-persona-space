@@ -1,7 +1,7 @@
 {
-  "commit": "beb14caf+dirty",
-  "render_id": "7f23518c450c48f1",
-  "git_commit": "beb14cafab422a8905aebb8c42ed857ae1d675f5",
+  "commit": "2d0f2706+dirty",
+  "render_id": "691eadb4c17e4b00",
+  "git_commit": "2d0f2706e6ad6b337aaa51c3fb2113df2d7c42a6",
   "git_dirty": true,
   "git_dirty_paths": [
     "figures/issue_2588/c1_capability_trend.meta.json",
@@ -13,58 +13,28 @@
     "figures/issue_2588/c3_h2_paired_deltas.meta.json",
     "figures/issue_2588/c3_h2_paired_deltas.pdf",
     "figures/issue_2588/c3_h2_paired_deltas.png",
+    "figures/issue_2588/c4_gpqa_transfer.meta.json",
+    "figures/issue_2588/c4_gpqa_transfer.pdf",
+    "figures/issue_2588/c4_gpqa_transfer.png",
+    "figures/issue_2588/c5_column_verdict.meta.json",
+    "figures/issue_2588/c5_column_verdict.pdf",
+    "figures/issue_2588/c5_column_verdict.png",
+    "figures/issue_2588/c6_column_layer_sweeps.meta.json",
+    "figures/issue_2588/c6_column_layer_sweeps.pdf",
+    "figures/issue_2588/c6_column_layer_sweeps.png",
+    "figures/issue_2588/c7_endpoint_percell.meta.json",
+    "figures/issue_2588/c7_endpoint_percell.pdf",
+    "figures/issue_2588/c7_endpoint_percell.png",
     "scripts/issue2588_figures.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2588_figures.py",
-  "created": "2026-08-27T19:12:53Z",
+  "created": "2026-08-27T21:25:05Z",
   "figsize": [
     9.2,
     6.0
   ],
   "points": [
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.033877,
-      "y": 0.06775407779171895,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.020774,
-      "y": 0.04154727793696275,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.046562,
-      "y": 0.09312320916905444,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.082447,
-      "y": 0.16489361702127658,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.169154,
-      "y": 0.3383084577114428,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.131841,
-      "y": 0.263681592039801,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.101112,
-      "y": 0.20222446916076844,
-      "_kind": "bar",
-      "_group": 0
-    },
     {
       "GPQA same-question retrieval acc@1 (cosine)": 0.048649,
       "y": 0.0972972972972973,
@@ -74,18 +44,6 @@
     {
       "GPQA same-question retrieval acc@1 (cosine)": 0.053846,
       "y": 0.1076923076923077,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.050505,
-      "y": 0.10101010101010101,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.098532,
-      "y": 0.1970649895178197,
       "_kind": "bar",
       "_group": 0
     },
@@ -126,6 +84,18 @@
       "_group": 0
     },
     {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.050505,
+      "y": 0.10101010101010101,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.098532,
+      "y": 0.1970649895178197,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
       "GPQA same-question retrieval acc@1 (cosine)": 0.047445,
       "y": 0.0948905109489051,
       "_kind": "bar",
@@ -150,147 +120,189 @@
       "_group": 0
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.006273525721455458,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.101112,
+      "y": 0.20222446916076844,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.082447,
+      "y": 0.16489361702127658,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.131841,
+      "y": 0.263681592039801,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.169154,
+      "y": 0.3383084577114428,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.033877,
+      "y": 0.06775407779171895,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.046562,
+      "y": 0.09312320916905444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.020774,
+      "y": 0.04154727793696275,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "GPQA same-question retrieval acc@1 (cosine)": 0.009009009009009009,
       "y": 0.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.07692307692307693,
       "y": 1.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006570302233902759,
       "y": 2.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.005319148936170213,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.03816793893129771,
       "y": 3.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006544502617801047,
       "y": 4.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.019011406844106463,
       "y": 5.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.005055611729019211,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006211180124223602,
       "y": 6.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.009009009009009009,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.013020833333333334,
       "y": 7.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.07692307692307693,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006313131313131313,
       "y": 8.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.006313131313131313,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.010482180293501049,
       "y": 9.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.010482180293501049,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005213764337851929,
       "y": 10.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.006570302233902759,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.010121457489878543,
       "y": 11.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.03816793893129771,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005341880341880342,
       "y": 12.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.006544502617801047,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006887052341597796,
       "y": 13.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.019011406844106463,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005055611729019211,
       "y": 14.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.006211180124223602,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.005319148936170213,
       "y": 15.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.013020833333333334,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
       "y": 16.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.005213764337851929,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.008291873963515755,
       "y": 17.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.010121457489878543,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.006273525721455458,
       "y": 18.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.005341880341880342,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
       "y": 19.0,
       "series": "chance",
       "_kind": "line",
       "_group": 1
     },
     {
-      "GPQA same-question retrieval acc@1 (cosine)": 0.006887052341597796,
+      "GPQA same-question retrieval acc@1 (cosine)": 0.0071633237822349575,
       "y": 20.0,
       "series": "chance",
       "_kind": "line",
@@ -321,27 +333,27 @@
           "0.40"
         ],
         "yticklabels": [
-          "OLMo 32B Instruct \u00b7 prompt-end",
-          "OLMo 32B Think \u00b7 end-of-CoT",
-          "OLMo 32B Think \u00b7 pre-think",
-          "OLMo 7B Instruct \u00b7 prompt-end",
-          "OLMo 7B Think \u00b7 end-of-CoT",
-          "OLMo 7B Think \u00b7 pre-think",
-          "Qwen2.5 7B \u00b7 prompt-end",
           "Qwen3.5 0.8B \u00b7 prompt-end",
           "Qwen3.5 0.8B \u00b7 end-of-CoT",
-          "Qwen3.5 27B \u00b7 prompt-end",
-          "Qwen3.5 27B \u00b7 end-of-CoT",
           "Qwen3.5 2B \u00b7 prompt-end",
           "Qwen3.5 2B \u00b7 end-of-CoT",
           "Qwen3.5 4B \u00b7 prompt-end",
           "Qwen3.5 4B \u00b7 end-of-CoT",
           "Qwen3.5 9B \u00b7 prompt-end",
           "Qwen3.5 9B \u00b7 end-of-CoT",
+          "Qwen3.5 27B \u00b7 prompt-end",
+          "Qwen3.5 27B \u00b7 end-of-CoT",
           "Qwen3.6 27B \u00b7 prompt-end",
           "Qwen3.6 27B \u00b7 end-of-CoT",
           "Qwen3.8 27B \u00b7 prompt-end",
-          "Qwen3.8 27B \u00b7 end-of-CoT"
+          "Qwen3.8 27B \u00b7 end-of-CoT",
+          "Qwen2.5 7B \u00b7 prompt-end",
+          "OLMo 7B Instruct \u00b7 prompt-end",
+          "OLMo 7B Think \u00b7 pre-think",
+          "OLMo 7B Think \u00b7 end-of-CoT",
+          "OLMo 32B Instruct \u00b7 prompt-end",
+          "OLMo 32B Think \u00b7 pre-think",
+          "OLMo 32B Think \u00b7 end-of-CoT"
         ]
       }
     ],
