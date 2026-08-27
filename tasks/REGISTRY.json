@@ -11772,8 +11772,8 @@
     "2525": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2525",
-      "status": "proposed",
+      "path": "tasks/planning/2525",
+      "status": "planning",
       "title": "Fix three fleet-wide test invariants broken by sibling landings on main (ungated HF upload #1739, bind-census skips #2477, dangling import roots #2379/#2474)"
     },
     "2526": {
