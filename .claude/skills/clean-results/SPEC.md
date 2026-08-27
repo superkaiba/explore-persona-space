@@ -1163,6 +1163,36 @@ Forward-only: each check branches on the sentinel. The v4 checks
     rewrite the acknowledgment at every fold. (#2264; incident: #2224
     r3's acknowledgment still said "single-round … nine results" while
     the folded body carried 13 results across 3 folded rounds.)
+62. **Verbatim sample stems exist in the linked artifact**
+    (`check_v4_verbatim_sample_stems`, v4 only, FAIL/WARN): every quoted
+    / backticked stem in a `(verbatim)`-labeled group of the
+    `## Methodology` Sample slot (the label line, a `<details>` block
+    whose `<summary>` carries the label, or the fenced block right after
+    a stem-less label line) is substring-verified — after
+    quote/escape/whitespace/case normalization, against both the raw
+    artifact text and its decoded JSON strings — inside ≥1 of the slot's
+    locally-resolvable linked JSON/JSONL artifacts (same-repo SHA-pinned
+    GitHub blob links via the offline git object DB, or committed
+    repo-relative backtick paths). A stem absent from EVERY searched
+    artifact with NOTHING left unsearched is a hard FAIL naming the stem
+    + the searched artifacts; remote-only (HF / other-repo) links,
+    oversized artifacts, or a miss with unsearched links remaining
+    degrade to WARN, never FAIL. Groups whose label ALSO carries a
+    sanitization token (`sanitized` / `redacted` / `paraphrased` /
+    `renamed` / `substituted`) are skipped with a note (the sanctioned
+    display-substitution disclosure shape); truncation-marked stems
+    (`…` / `...` / `[…]` / `[truncated]`) are split at the marker and
+    each above-floor literal run must match independently — a stem whose
+    runs all sit below the floor (12 chars / 2 tokens) is skipped with a
+    note. Disclosed NON-coverage: (a) `## Results` sample blocks are NOT
+    scanned (Sample-slot-only by design — checks 10/11 own Results-side
+    sample-link discipline); (b) samples presented as bare markdown
+    TABLE cells yield no quoted/backtick stems, so a table-only verbatim
+    group passes with the no-extractable-stems note; (c) sub-floor
+    truncation fragments go unverified (the skip note discloses the
+    count). (#2635; incident #2617 r1: an object-swap pair labeled
+    "(verbatim)" quoted `How do you build a house?` while the pinned
+    bank held `... a shed?`; family #657.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque

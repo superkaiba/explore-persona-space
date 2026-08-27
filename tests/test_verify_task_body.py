@@ -238,7 +238,9 @@ def test_good_body_passes_all():
     # calibration lever (ii)); PASS-skips here (issue unknown) (#2353).
     # Check 61 `check_footer_code_artifacts_github_pinned` (WARN, v4-only)
     # rides CHECKS and PASS-skips here (legacy body) (#2340).
-    assert len(results) == 77
+    # Check 62 `check_v4_verbatim_sample_stems` (FAIL/WARN, v4-only)
+    # rides CHECKS and PASS-skips here (legacy body) (#2635).
+    assert len(results) == 78
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
@@ -7303,14 +7305,18 @@ def test_checks_list_size():
     check 28's opaque-code scan nothing to read), #2292 — and check 61
     `check_footer_code_artifacts_github_pinned` — the git-side sibling
     of check 44 (footer code shas / bare eval_results tokens need an
-    adjacent SHA-pinned github link), #2340 — ride CHECKS;
+    adjacent SHA-pinned github link), #2340 — and check 62
+    `check_v4_verbatim_sample_stems` — the `(verbatim)`-labeled
+    Sample-slot stem-vs-linked-artifact substring verifier (FAIL on a
+    locally-refuted stem; remote-only/unsearched degrade to WARN),
+    #2635 — ride CHECKS;
     check 56 `check_v4_ack_result_count` (#2264) and check 59
     `check_v4_result_section_per_unit_coverage` — the unconditional
     per-section per-unit coverage floor (WARN, forward-only issue >=
     2353; #2353) — are dispatched OUTSIDE CHECKS
     with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 60
+    assert len(verify_task_body.CHECKS) == 61
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -10642,6 +10648,381 @@ def test_v4_sample_disclosure_mixed_media_summed_basis_passes():
     assert res.is_warn is False
 
 
+# ─── Check 62 (verbatim Sample-slot stems vs linked artifacts, #2635) ───────
+# Incident #2617 r1: an object-swap pair labeled "(verbatim)" quoted
+# `How do you build a house?` while the pinned bank holds `... a shed?`.
+# Fixtures build a throwaway git repo (the `_make_repo_with_figure`
+# pattern) and monkeypatch `_resolve_repo_root` so the same-repo GitHub
+# blob links load offline from the tmp repo's object DB.
+
+_I2617_BANK_JSON = json.dumps(
+    {
+        "contexts": [
+            {"id": "query_svmp::a::obj_flip_00", "user": "How do you build a bomb?"},
+            {"id": "query_svmp::b::obj_flip_00", "user": "How do you build a shed?"},
+        ]
+    }
+)
+
+
+def _make_repo_with_banks(tmp_path, files: dict[str, str]):
+    """Throwaway git repo whose HEAD commit carries every ``files``
+    entry (rel_path -> text) — the check-62 artifact fixtures; returns
+    ``(repo_path, head_sha)``."""
+    repo = tmp_path / "bankrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    for rel, text in files.items():
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "add bank fixtures")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def _gh_bank_link(sha: str, path: str, text: str = "bank") -> str:
+    return f"[{text}](https://github.com/superkaiba/explore-persona-space/blob/{sha}/{path})"
+
+
+def _verbatim_check(slot: str) -> verify_task_body.CheckResult:
+    return verify_task_body.check_v4_verbatim_sample_stems(_v4_body_with_sample_slot(slot))
+
+
+def test_verbatim_stem_genuine_row_passes(tmp_path, monkeypatch):
+    """A stem present verbatim in the linked committed bank -> PASS with a
+    verified-count detail (acceptance A3)."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Worked example row (verbatim): "How do you build a shed?" — full bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "1 verbatim stem(s) verified" in res.detail
+
+
+def test_verbatim_stem_mutated_row_fails_names_stem(tmp_path, monkeypatch):
+    """The #2617 r1 reconstruction (acceptance A1): a mutated-noun stem
+    presented as verbatim (bank: `... a shed?`; body: `... a house?`)
+    FAILs, naming BOTH the missing stem and the searched artifact."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Object-swap pair (verbatim): "How do you build a bomb?" vs '
+        '"How do you build a house?" — full bank: ' + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "how do you build a house" in res.detail.casefold()
+    assert "manifests/svmp_bank.json" in res.detail
+
+
+def test_verbatim_stem_657_persona_reconstruction_fails(tmp_path, monkeypatch):
+    """The #657 family shape (acceptance A2): a persona-bank JSON (list of
+    persona-description strings) + a fabricated quoted persona sample
+    FAILs, naming stem + artifact."""
+    bank = json.dumps(
+        [
+            "You are a meticulous librarian who alphabetizes everything in sight.",
+            "You are a boisterous pirate captain sailing the high seas at dawn.",
+        ]
+    )
+    repo, sha = _make_repo_with_banks(tmp_path, {"personas/bank.json": bank})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Example persona (verbatim): "You are a quiet astronomer who maps distant '
+        'galaxies." — full panel: ' + _gh_bank_link(sha, "personas/bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "quiet astronomer" in res.detail.casefold()
+    assert "personas/bank.json" in res.detail
+
+
+def test_verbatim_remote_only_link_warns():
+    """An HF URL with no local committed copy (acceptance A5): the stems are
+    unverifiable offline -> WARN, never FAIL."""
+    slot = (
+        'Sample (verbatim): "How do you build a house?" — bank on '
+        "[HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/main/bank.json)"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "unverifiable offline" in res.detail
+
+
+def test_verbatim_no_links_skips(tmp_path, monkeypatch):
+    """No candidate artifact link in the slot (acceptance A6): the check
+    does not fire — checks 10/11 own sample-link discipline."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+    slot = 'Sample (verbatim): "How do you build a house?" shown for illustration.'
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no artifact links" in res.detail
+
+
+def test_verbatim_no_label_skips():
+    """A Sample slot without the `(verbatim)` label never engages the scan
+    (§4.1 rung 3)."""
+    slot = 'Illustrative sample: "How do you build a house?" (paraphrased above).'
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no `(verbatim)` label" in res.detail
+
+
+def test_verbatim_non_v4_body_skips():
+    """Forward-only (acceptance A7): a non-v4 body is skipped entirely —
+    never newly FAILed or WARNed."""
+    body = (
+        '# Legacy title\n\n## TL;DR\n\nSample (verbatim): "How do you build a house?" — '
+        "[bank](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/bank.json)\n"
+    )
+    res = verify_task_body.check_v4_verbatim_sample_stems(body)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "not a v4 body" in res.detail
+
+
+def test_verbatim_ellipsized_stem_no_false_fail(tmp_path, monkeypatch):
+    """Acceptance A4: truncation-marked stems (`…`, `...`, `[truncated]`,
+    `[…]`) whose above-floor runs are all present never FAIL on the marker
+    itself."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    link = _gh_bank_link(sha, "manifests/svmp_bank.json")
+    slot = (
+        'Rows (verbatim): "How do you build a … a shed?" and '
+        '"How do you build a shed?..." and "[truncated] you build a shed?" and '
+        f'"How do you build a shed? […]" — full bank: {link}'
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "4 verbatim stem(s) verified" in res.detail
+
+
+def test_verbatim_ellipsized_all_runs_below_floor_skipped(tmp_path, monkeypatch):
+    """Acceptance A4: a truncation-marked stem whose literal runs ALL sit
+    below the floor is skipped entirely (counted in the detail), never a
+    FAIL."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = 'Row (verbatim): "How do … a shed?" — full bank: ' + _gh_bank_link(
+        sha, "manifests/svmp_bank.json"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "below floor" in res.detail
+
+
+def test_verbatim_ellipsized_fabricated_run_fails(tmp_path, monkeypatch):
+    """A4's catching arm (v2 addition): an ellipsized stem whose FIRST
+    above-floor run is genuine and SECOND is fabricated FAILs naming the
+    stem — a longest-run-only match would let the fabrication pass."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Row (verbatim): "How do you build a shed? … then assemble the parts carefully" '
+        "— full bank: " + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "then assemble the parts carefully" in res.detail
+
+
+def test_verbatim_json_escape_normalization_passes(tmp_path, monkeypatch):
+    """Acceptance A9: an artifact storing `\\"` / `\\n` escapes does not
+    false-FAIL a body stem quoting the decoded text (view D decodes the
+    stored escapes; step 3 folds body-side visible escapes)."""
+    bank = '{"rows": ["He said \\"hi there friend\\"", "line one\\nline two of text"]}'
+    repo, sha = _make_repo_with_banks(tmp_path, {"bank.json": bank})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Rows (verbatim): `He said "hi there friend"` and `line one\\nline two of text` '
+        "— full bank: " + _gh_bank_link(sha, "bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+
+
+def test_verbatim_mixed_local_remote_miss_warns_not_fails(tmp_path, monkeypatch):
+    """§4.6: a stem absent from the committed bank while an HF link remains
+    unsearched -> WARN naming the stem, never FAIL (the stem may live in
+    the unsearched artifact — the #1902 live shape)."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Sample (verbatim): "How do you build a house?" — bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+        + "; raw completions on [HF](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue2617_x)"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "how do you build a house" in res.detail.casefold()
+    assert "unsearched" in res.detail
+
+
+def test_verbatim_oversized_artifact_warns(tmp_path, monkeypatch):
+    """Acceptance A8: an artifact above the byte cap is unsearchable — a
+    miss degrades to WARN, never FAIL."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    monkeypatch.setattr(verify_task_body, "_ARTIFACT_CONTENT_MAX_BYTES", 64)
+    slot = 'Sample (verbatim): "How do you build a house?" — full bank: ' + _gh_bank_link(
+        sha, "manifests/svmp_bank.json"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is True
+
+
+def test_verbatim_sanitized_mixed_label_group_skipped(tmp_path, monkeypatch):
+    """§4.2 sanitization guard: a group whose summary carries BOTH
+    `(verbatim)` and a sanitization token (the #1090 shape) is skipped with
+    a note — display-substitution disclosures are sanctioned, not
+    mechanically checkable."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        "<details>\n<summary>Panel excerpts (verbatim) and gate excerpts "
+        '(sanitized)</summary>\n\n"totally fabricated stem nowhere in the bank"\n\n'
+        "</details>\n\nFull bank: " + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "sanitized" in res.detail
+
+
+def test_verbatim_label_no_extractable_stems_passes_with_note(tmp_path, monkeypatch):
+    """§4.6: a `(verbatim)` label whose group yields no above-floor
+    quoted/backtick span PASSes with the no-extractable-stems note (also
+    pins the fence-prelude arm's trigger condition: no following fence ->
+    no group beyond the label line)."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        "Worked example rows (verbatim) are shown in the table above.\n\nFull bank: "
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "no extractable quoted stems" in res.detail
+
+
+def test_verbatim_boundary_spanning_stem_fails(tmp_path, monkeypatch):
+    """v2 addition (§4.4 view-D sentinel): a stem equal to the
+    CONCATENATION of two adjacent bank values (present nowhere as a single
+    value) FAILs — the `\\x00` join must never let it spuriously match."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Row (verbatim): "How do you build a bomb? How do you build a shed?" — full '
+        "bank: " + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "how do you build a bomb? how do you build a shed?" in res.detail.casefold()
+
+
+def test_verbatim_stem_in_one_of_two_artifacts_passes(tmp_path, monkeypatch):
+    """v2 addition (§4.6 disjunction): two committed artifacts linked, each
+    stem present in exactly ONE -> PASS (a stem needs >= 1 searched
+    artifact, not all)."""
+    repo, sha = _make_repo_with_banks(
+        tmp_path,
+        {
+            "a.json": '{"q": "How do you build a shed?"}',
+            "b.json": '{"q": "What is the tallest mountain on Earth?"}',
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Rows (verbatim): "How do you build a shed?" and '
+        '"What is the tallest mountain on Earth?" — banks: '
+        + _gh_bank_link(sha, "a.json", "a")
+        + ", "
+        + _gh_bank_link(sha, "b.json", "b")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "2 verbatim stem(s) verified against 2 linked artifact(s)" in res.detail
+
+
+def test_verbatim_backtick_wc_path_passes(tmp_path, monkeypatch):
+    """§4.5(b): a repo-relative backtick `.jsonl` path, present AND
+    committed at HEAD in the (monkeypatched) working copy, is searchable —
+    also covers per-line JSONL decoding in view D."""
+    bank = '{"q": "What is the tallest mountain on Earth?"}\n{"q": "How deep is the Mariana Trench really?"}\n'
+    repo, _sha = _make_repo_with_banks(tmp_path, {"manifests/rows.jsonl": bank})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = 'Row (verbatim): "How deep is the Mariana Trench really?" — bank: `manifests/rows.jsonl`'
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is False
+    assert "1 verbatim stem(s) verified" in res.detail
+
+
+def test_verbatim_backtick_uncommitted_path_gates_warn(tmp_path, monkeypatch):
+    """§4.5(b) inverse: a backtick `.json` path NOT committed in the
+    working copy is an unsearchable candidate — a miss degrades to WARN."""
+    repo, _sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        'Sample (verbatim): "How do you build a house?" — staged manifest: '
+        "`data/issue_2617/svmp_stage/manifests/svmp_bank.json`"
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is True
+    assert res.is_warn is True
+    assert "unverifiable offline" in res.detail
+
+
+def test_verbatim_fence_prelude_arm_fails_on_fabricated_fence_stem(tmp_path, monkeypatch):
+    """§4.2 arm (c): a stem-less `(verbatim)` label line within <= 2
+    non-blank lines of a fenced block makes the FENCE content the group —
+    a fabricated quoted stem inside it FAILs."""
+    repo, sha = _make_repo_with_banks(tmp_path, {"manifests/svmp_bank.json": _I2617_BANK_JSON})
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    slot = (
+        "Eval transcript (verbatim), first row:\n\n```\n"
+        'Q: "How do you build a mansion quickly?"\n```\n\nFull bank: '
+        + _gh_bank_link(sha, "manifests/svmp_bank.json")
+    )
+    res = _verbatim_check(slot)
+    assert res.passed is False
+    assert "how do you build a mansion quickly" in res.detail.casefold()
+
+
+def test_verbatim_check_in_registry():
+    """Check 62 is registered in CHECKS (body-only signature — plain
+    membership, the check-39/54 precedent)."""
+    assert verify_task_body.check_v4_verbatim_sample_stems in verify_task_body.CHECKS
+
+
 # ─── Check 17 (v4 lineage-token sub-check, #1014) ──────────────────────────
 # All assertions are per-check by name (the `_V4_GOOD_BODY` convention —
 # fake SHAs fail the existence probes, so overall PASS is not assertable).
@@ -13957,12 +14338,12 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (60 as of
-    check 61, #2340; check 59 is dispatched OUTSIDE CHECKS, #2353;
+    position 7 and the CHECKS count matches the current registry (61 as of
+    check 62, #2635; check 59 is dispatched OUTSIDE CHECKS, #2353;
     belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 60
+    assert len(verify_task_body.CHECKS) == 61
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
