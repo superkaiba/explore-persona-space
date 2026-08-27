@@ -10544,8 +10544,8 @@
     "2365": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2365",
-      "status": "running",
+      "path": "tasks/reviewing/2365",
+      "status": "reviewing",
       "title": "Cloudflare email obfuscation silently rewrites model-generation text in every eps.superkaiba.com dashboard (served bytes != committed bytes)"
     },
     "2366": {
