@@ -221,7 +221,7 @@ def cmd_figures(out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def scatter(xk: str, yk: str, xlabel: str, ylabel: str, stem: str) -> None:
-        fig, ax = plt.subplots(figsize=(5.4, 5.0))
+        fig, ax = plt.subplots(figsize=(6.0, 5.4))
         x, y = cols[xk], cols[yk]
         ax.scatter(x, y, s=4, alpha=0.15, color=pal[0], linewidths=0)
         lim = [min(x.min(), y.min()) * 0.8, max(x.max(), y.max()) * 1.25]
@@ -248,15 +248,15 @@ def cmd_figures(out_dir: Path) -> None:
     scatter(
         "sqerr_ctx",
         "sqerr_boundary",
-        "per-question squared error, context state → answer state (lower = better)",
-        "per-question squared error, end-of-thought state → answer state",
+        "per-question squared error: context-state map",
+        "per-question squared error: end-of-thought map",
         "perunit_r1_ctx_vs_boundary",
     )
     scatter(
         "sqerr_ctx",
         "sqerr_cross_model",
-        "per-question squared error, post-model context state → answer state",
-        "per-question squared error, PRE-model context state → answer state",
+        "per-question squared error: post-model context map",
+        "per-question squared error: pre-model context map",
         "perunit_r4_cross_vs_within",
     )
 
