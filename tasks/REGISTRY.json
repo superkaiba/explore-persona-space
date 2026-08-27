@@ -12423,8 +12423,8 @@
     "2610": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2610",
-      "status": "reviewing",
+      "path": "tasks/completed/2610",
+      "status": "completed",
       "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
     },
     "2611": {
