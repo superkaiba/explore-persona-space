@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2614,
+  "highest_id": 2615,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12454,6 +12454,13 @@
       "path": "tasks/proposed/2614",
       "status": "proposed",
       "title": "Curate oversized agent-memory indexes on main (code-reviewer-lean MEMORY.md 41KB hard-FAILs #1891 lint; blocks Step-10d agent-memory re-sync commits)"
+    },
+    "2615": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2615",
+      "status": "proposed",
+      "title": "Pod sparse clones silently hide sibling-issue eval_results/ inputs (empty dir, no error)"
     },
     "262": {
       "has_clean_result": false,
