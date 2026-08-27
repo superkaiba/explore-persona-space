@@ -31,3 +31,9 @@ per-arm rows, import-resolution), then FAIL `marker-shape` with the exact
 re-post remedy (move the annotation to a `notes:` bullet) so the bounce is
 a marker re-post, never a code round. Related: [[registration-inert-watcher-markers]]
 (same family — composed text vs a token/grammar parser).
+
+Second confirmed shape (#2617 r2): the line composed as a free-form
+`` `uv run python -c ...` -> [members] (note) `` command-and-arrow instead
+of `source=... file=... n=... members=...` — substance byte-correct
+(members == sorted(PHASES)), checker REFUSEd. Implementers reach for
+"show the command I ran" prose; the grammar wants the four fields.
