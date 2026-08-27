@@ -22,3 +22,4 @@ The post-Edit formatter hook runs ruff with F401: a top-level `import X` with no
 The always-loaded index was curated to fit the ~25 KB loader truncation limit (task #1891); the full pre-curation index hook(s) for this entry are preserved verbatim below.
 
 - [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — post-Edit hook removes reference-less imports; land import + usage together; ruff check after. 7 orderings catalogued.
+- [Edit-then-RMW lost update](feedback_edit_then_read_modify_write_lost_update.md) — a read-modify-write script run right after Edit-tool changes reads a pre-format-hook snapshot and clobbers those edits (#1345)
