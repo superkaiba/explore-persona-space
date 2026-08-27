@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2611,
+  "highest_id": 2612,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12433,6 +12433,13 @@
       "path": "tasks/running/2611",
       "status": "running",
       "title": "git_provenance()'s 5s-timeout git status orphans .git/index.lock on slow filesystems, breaking every later git op in the run (fix: --no-optional-locks)"
+    },
+    "2612": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2612",
+      "status": "proposed",
+      "title": "Arm-independent g0_gate.json publishes to arm-UNSCOPED paths: git conflicts at the second arm's last phase, HF overwrites silently (arm 1's provenance destroyed)"
     },
     "262": {
       "has_clean_result": false,
