@@ -12475,7 +12475,7 @@
       "kind": "experiment",
       "path": "tasks/running/2617",
       "status": "running",
-      "title": "Safety-valence minimal pairs: decision vs surface transport of the frozen context\u2192answer map [running / provisioning pod-2617 (1xH100 eval)]"
+      "title": "Safety-valence minimal pairs: decision vs surface transport of the frozen context\u2192answer map [running / workload live on pod-2617 (gen phase)]"
     },
     "2618": {
       "has_clean_result": true,

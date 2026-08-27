@@ -1,6 +1,6 @@
 ---
 title: 'Safety-valence minimal pairs: decision vs surface transport of the frozen
-  context→answer map [running / provisioning pod-2617 (1xH100 eval)]'
+  context→answer map [running / workload live on pod-2617 (gen phase)]'
 kind: experiment
 tags:
 - trigger-dense
