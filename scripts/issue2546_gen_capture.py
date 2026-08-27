@@ -65,6 +65,7 @@ os.environ.setdefault("HF_HOME", os.environ.get("HF_HOME", "/workspace/.cache/hu
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import logging
@@ -472,49 +473,91 @@ def _mirror_capture_marker(done_p: Path, dest: str, payload: dict) -> None:
     tmp.replace(done_p)
 
 
-# Memoized per-(arm, smoke) sets of `_complete.json` repo paths under the
-# arm's store prefix — filled lazily by _hub_capture_marker_paths on the
-# first resume-skip, extended in place when a twin is repair-mirrored.
+# Memoized per-(arm, smoke) views of the arm's Hub store prefix, BOTH filled
+# from ONE scoped recursive listing on the first resume-skip: repo paths of
+# every `_complete.json`, and the stem prefixes holding >=1 shard file.
+# Extended in place when a twin is repair-mirrored / a stem dir is
+# repair-uploaded. The shard view exists because the r18 marker-only filter
+# DISCARDED the listing's shard entries — the very evidence the repair must
+# consult before writing a completeness attestation (round 19; reconciler
+# ruling on body v18).
 _HUB_MARKER_SETS: dict[tuple[int, bool], set[str]] = {}
+_HUB_SHARD_STEM_SETS: dict[tuple[int, bool], set[str]] = {}
+
+
+def _fill_hub_store_listing(arm: int, smoke: bool) -> None:
+    """Fill BOTH memo sets for (arm, smoke) from ONE scoped recursive listing.
+
+    Memoized: ONE scoped listing per (arm, smoke) per process, taken lazily on
+    the first resume-skip — never a per-stem ``file_exists`` probe loop
+    (upload-policy.md #1335 r5: N per-file probes multiply transport exposure
+    N-fold). The lazy ``list_repo_tree`` generator is materialized INSIDE the
+    retry_transient thunk (#779: the HTTP error raises at iteration). A
+    missing PREFIX (nothing uploaded for this arm yet — the response-bearing
+    404 ``EntryNotFoundError``, non-transient, re-raised immediately by
+    retry_transient) is an EMPTY listing, so every resumed stem routes to the
+    repair path — never a blind accept. A REPO-level fault
+    (``RepositoryNotFoundError``: deleted repo, revoked auth) RAISES here by
+    design (round 19; reconciler on v18): folding it into "empty" is the
+    banned silent-zero shape (upload-policy.md § Absence checks), and the
+    downstream ``hub._upload`` cannot be trusted to fail loud on it — its
+    ``create_repo(..., exist_ok=True)`` silently RESURRECTS a deleted repo,
+    so a marker upload would succeed over shards that no longer exist
+    anywhere.
+    """
+    key = (arm, smoke)
+    if key in _HUB_MARKER_SETS and key in _HUB_SHARD_STEM_SETS:
+        return
+    from huggingface_hub import HfApi
+    from huggingface_hub.errors import EntryNotFoundError
+
+    prefix = f"{STORE_PREFIX}/{arm_dirname(arm, smoke)}"
+    api = HfApi()
+    try:
+        entries = retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: scoped path_in_repo walk inside retry_transient
+                api.list_repo_tree(
+                    DEFAULT_DATASET_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    recursive=True,
+                )
+            ),
+            what=f"capture marker twin listing {prefix}",
+        )
+    except (FileNotFoundError, EntryNotFoundError):
+        entries = []
+    paths = {e.path for e in entries}
+    _HUB_MARKER_SETS.setdefault(key, {p for p in paths if p.endswith("/_complete.json")})
+    _HUB_SHARD_STEM_SETS.setdefault(
+        key,
+        {
+            p.rsplit("/", 1)[0]
+            for p in paths
+            if fnmatch.fnmatch(p.rsplit("/", 1)[-1], "slot*.shard*.pt")
+        },
+    )
 
 
 def _hub_capture_marker_paths(arm: int, smoke: bool) -> set[str]:
-    """Repo paths of every ``_complete.json`` under the arm's store prefix.
-
-    Memoized: ONE scoped recursive listing per (arm, smoke) per process, taken
-    lazily on the first resume-skip — never a per-stem ``file_exists`` probe
-    loop (upload-policy.md #1335 r5: N per-file probes multiply transport
-    exposure N-fold). The lazy ``list_repo_tree`` generator is materialized
-    INSIDE the retry_transient thunk (#779: the HTTP error raises at
-    iteration). A missing prefix (nothing uploaded for this arm yet — the
-    response-bearing 404 ``EntryNotFoundError``, non-transient, re-raised
-    immediately by retry_transient) is an EMPTY set, so every resumed stem
-    routes to the repair mirror — never a blind accept.
-    """
+    """Repo paths of every ``_complete.json`` under the arm's store prefix."""
     key = (arm, smoke)
     if key not in _HUB_MARKER_SETS:
-        from huggingface_hub import HfApi
-        from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
-
-        prefix = f"{STORE_PREFIX}/{arm_dirname(arm, smoke)}"
-        api = HfApi()
-        try:
-            entries = retry_transient(
-                lambda: list(
-                    # HUB_VERIFY_RETRY_EXEMPT: scoped path_in_repo walk inside retry_transient
-                    api.list_repo_tree(
-                        DEFAULT_DATASET_REPO,
-                        path_in_repo=prefix,
-                        repo_type="dataset",
-                        recursive=True,
-                    )
-                ),
-                what=f"capture marker twin listing {prefix}",
-            )
-        except (FileNotFoundError, EntryNotFoundError, RepositoryNotFoundError):
-            entries = []
-        _HUB_MARKER_SETS[key] = {e.path for e in entries if e.path.endswith("/_complete.json")}
+        _fill_hub_store_listing(arm, smoke)
     return _HUB_MARKER_SETS[key]
+
+
+def _hub_shard_stem_paths(arm: int, smoke: bool) -> set[str]:
+    """Stem prefixes under the arm's store prefix holding >=1 ``slot*.shard*.pt``.
+
+    The glob mirrors ``issue2546_fit_cells._shard_files`` — the SAME file class
+    P5's ``_stage_stem`` asserts non-empty after staging.
+    """
+    key = (arm, smoke)
+    if key not in _HUB_SHARD_STEM_SETS:
+        _fill_hub_store_listing(arm, smoke)
+    return _HUB_SHARD_STEM_SETS[key]
 
 
 def _ensure_capture_marker_hub_twin(
@@ -527,16 +570,62 @@ def _ensure_capture_marker_hub_twin(
     silently preserve exactly the local-only state the mirror exists to
     prevent — the next staged fit then dies at
     ``issue2546_fit_cells._capture_marker_fp`` (blocker 1, round 18). Twin
-    present in the memoized arm-prefix listing => zero-network skip; absent =>
-    mirror the local payload through ``_mirror_capture_marker``'s
-    upload+assert discipline. A repair failure RAISES (never warn-and-skip):
-    the valid local marker stays on disk and the next resume retries.
+    present in the memoized arm-prefix listing => zero-network skip.
+
+    Twin absent => the repair is gated on the stem's remote SHARD presence,
+    read from the SAME pre-filter listing (round 19; reconciler on v18 — the
+    marker ATTESTS the shards are on the Hub, so a marker-only upload over an
+    empty stem prefix would manufacture a completeness attestation over no
+    data):
+
+    - remote shards present                -> mirror the marker (the
+      legitimate pre-r17 repair);
+    - remote absent, LOCAL shards present  -> full stem-dir upload FIRST (the
+      run_capture write-path shape), THEN mirror — recovers a ``--skip-upload``
+      run's banked work instead of merely refusing it (freeing runs
+      post-upload, so such a run leaves its shards in place);
+    - absent everywhere                    -> RAISE naming the stem: the data
+      is gone (or the prefix is wrong) and nothing may attest completeness.
+
+    A repair failure RAISES (never warn-and-skip): the valid local marker
+    stays on disk and the next resume retries. The repair never frees local
+    shards (that is the capture write path's disk-bound optimization).
     """
     dest = f"{STORE_PREFIX}/{arm_dirname(arm, smoke)}/{stem}"
     twin = f"{dest}/{done_p.name}"
     if twin in _hub_capture_marker_paths(arm, smoke):
         return
-    logger.info("[capture] %s: local marker present, Hub twin missing — mirroring", stem)
+    if dest not in _hub_shard_stem_paths(arm, smoke):
+        local_shards = sorted(done_p.parent.glob("slot*.shard*.pt"))
+        if not local_shards:
+            raise RuntimeError(
+                f"[capture] {stem}: local _complete.json present but the stem's "
+                f"shards are absent BOTH on the Hub ({dest}) and locally "
+                f"({done_p.parent}) — refusing to mirror a completeness marker "
+                f"over no data (round 19; reconciler on v18). Re-run the capture "
+                f"for this stem (delete {done_p} to un-bless resume)."
+            )
+        logger.info(
+            "[capture] %s: Hub twin AND Hub shards missing, %d local shards "
+            "present — uploading the stem dir before mirroring the marker",
+            stem,
+            len(local_shards),
+        )
+        # The run_capture write-path stem-dir upload shape; the local marker
+        # is excluded so the attestation lands strictly AFTER the shards (it
+        # rides the mirror below), matching the write path's realized order.
+        res = _upload(
+            done_p.parent,
+            DEFAULT_DATASET_REPO,
+            "dataset",
+            dest,
+            ignore_patterns=["_complete.json"],
+            raise_on_error=True,
+        )
+        assert res, f"repair stem-dir upload returned empty result for {dest}"
+        _HUB_SHARD_STEM_SETS[(arm, smoke)].add(dest)
+    else:
+        logger.info("[capture] %s: local marker present, Hub twin missing — mirroring", stem)
     _mirror_capture_marker(done_p, dest, payload)
     _HUB_MARKER_SETS[(arm, smoke)].add(twin)
 

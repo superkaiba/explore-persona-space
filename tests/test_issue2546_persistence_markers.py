@@ -37,6 +37,19 @@ r18-smoke. ``_capture_marker_fp``'s missing-marker refusal is ACTIONABLE for
     pre-fix marker-less ``smoke_arm*`` Hub stores (names the re-run repair,
     forbids Hub deletion).
 
+Round 19 additions (reconciler ruling on body v18 — the marker ATTESTS the
+shards are on the Hub, so marker-only success must be UNREACHABLE):
+
+r19-1. ``RepositoryNotFoundError`` at the scoped listing RAISES (dropped from
+    the except tuple): ``hub._upload`` downstream resurrects a deleted repo
+    via ``create_repo(exist_ok=True)``, so it cannot be trusted to fail loud.
+r19-2. The twin repair is gated on remote SHARD presence from the SAME
+    pre-filter listing: shards present -> mirror; absent-with-local-shards ->
+    full stem-dir upload FIRST (marker excluded) then mirror (recovers the
+    ``--skip-upload`` transition); absent everywhere -> RAISE naming the stem.
+    An empty remote listing plus a would-be-successful marker upload never
+    ends in a bare marker write.
+
 Network-free: the only Hub boundary (``hub._upload`` / ``HfApi``) is faked
 with signature-mirroring fakes; every other body runs for real on tmp_path.
 """
@@ -278,6 +291,7 @@ class TestEnsureCaptureMarkerHubTwin:
         done_p = self._stem(tmp_path, payload)
         twin = f"{G.STORE_PREFIX}/arm1/post__gsm8k/_complete.json"
         monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): {twin}})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
         calls: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(calls))
 
@@ -287,12 +301,15 @@ class TestEnsureCaptureMarkerHubTwin:
         assert json.loads(done_p.read_text()) == payload
 
     def test_missing_twin_is_repaired_via_the_mirror(self, tmp_path, monkeypatch):
-        """The pre-fix local-only marker (blocker 1): repair mirrors the LOCAL
-        payload to the stem's Hub prefix with _mirror_capture_marker's own
-        upload+assert discipline, then memoizes the repaired twin."""
+        """The pre-fix local-only marker (blocker 1): with the stem's REMOTE
+        shards present (r19 gate), repair mirrors the LOCAL payload to the
+        stem's Hub prefix with _mirror_capture_marker's own upload+assert
+        discipline, then memoizes the repaired twin."""
         payload = {"fingerprint": {"stage": "capture"}, "report": {"stem": "post__gsm8k"}}
         done_p = self._stem(tmp_path, payload)
+        dest = f"{G.STORE_PREFIX}/arm1/post__gsm8k"
         monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {dest}})
         captured: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured))
 
@@ -314,7 +331,9 @@ class TestEnsureCaptureMarkerHubTwin:
         valid local marker survives so the next resume retries the repair."""
         payload = {"fingerprint": {"stage": "capture"}}
         done_p = self._stem(tmp_path, payload)
+        dest = f"{G.STORE_PREFIX}/arm1/post__gsm8k"
         monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {dest}})
         monkeypatch.setattr(G, "_upload", _fake_upload_factory({}, exc=RuntimeError("hub down")))
         with pytest.raises(RuntimeError):
             G._ensure_capture_marker_hub_twin(done_p, 1, False, "post__gsm8k", payload)
@@ -327,6 +346,9 @@ class TestEnsureCaptureMarkerHubTwin:
         done_p = stem_dir / "_complete.json"
         done_p.write_text(json.dumps(payload))
         monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(2, True): set()})
+        monkeypatch.setattr(
+            G, "_HUB_SHARD_STEM_SETS", {(2, True): {f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k"}}
+        )
         captured: dict = {}
         monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured))
         G._ensure_capture_marker_hub_twin(done_p, 2, True, "post__gsm8k", payload)
@@ -335,9 +357,10 @@ class TestEnsureCaptureMarkerHubTwin:
         )
 
     def test_cold_memo_takes_one_scoped_listing_and_memoizes(self, monkeypatch):
-        """_hub_capture_marker_paths real body: ONE scoped recursive
+        """_fill_hub_store_listing real body: ONE scoped recursive
         list_repo_tree per (arm, smoke) — materialized inside the retry thunk —
-        filtered to _complete.json paths; the second call hits the memo."""
+        fills BOTH the marker set and the shard-stem set (r19: the shard
+        entries are evidence, no longer discarded); second calls hit the memo."""
         import huggingface_hub
 
         listed: list[dict] = []
@@ -358,13 +381,21 @@ class TestEnsureCaptureMarkerHubTwin:
                 )
                 yield _Entry(f"{path_in_repo}/post__gsm8k/_complete.json")
                 yield _Entry(f"{path_in_repo}/post__gsm8k/slot0.shard0.pt")
+                yield _Entry(f"{path_in_repo}/short__csqa/slot1.shard2.pt")
 
         monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
         monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {})
         got = G._hub_capture_marker_paths(2, True)
         assert got == {f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k/_complete.json"}
+        shard_stems = G._hub_shard_stem_paths(2, True)
+        assert shard_stems == {
+            f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k",
+            f"{G.STORE_PREFIX}/smoke_arm2/short__csqa",
+        }
         assert G._hub_capture_marker_paths(2, True) is got  # memo hit
-        assert len(listed) == 1
+        assert G._hub_shard_stem_paths(2, True) is shard_stems  # memo hit
+        assert len(listed) == 1  # BOTH views from ONE listing
         assert listed[0] == {
             "repo_id": G.DEFAULT_DATASET_REPO,
             "path_in_repo": f"{G.STORE_PREFIX}/smoke_arm2",
@@ -374,7 +405,7 @@ class TestEnsureCaptureMarkerHubTwin:
 
     def test_missing_prefix_reads_as_empty_set(self, monkeypatch):
         """A 404 on the arm prefix (nothing uploaded yet) is an EMPTY set —
-        every resumed stem then routes to the repair mirror, never a blind
+        every resumed stem then routes to the repair path, never a blind
         accept."""
         import huggingface_hub
         from huggingface_hub.errors import EntryNotFoundError
@@ -386,7 +417,9 @@ class TestEnsureCaptureMarkerHubTwin:
 
         monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
         monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {})
         assert G._hub_capture_marker_paths(1, False) == set()
+        assert G._hub_shard_stem_paths(1, False) == set()
 
     def test_both_resume_skip_sites_call_the_twin_repair(self):
         """AST wiring pin: BOTH capture drivers (P4 run_capture + P4b
@@ -413,6 +446,183 @@ class TestEnsureCaptureMarkerHubTwin:
                 if isinstance(anc, ast.FunctionDef):
                     callers.add(anc.name)
         assert {"run_capture", "run_capture_reliability"} <= callers, callers
+
+
+# ---------------------------------------------------------------------------
+# Round 19 — the twin repair is gated on SHARD presence (reconciler on v18):
+# marker-only success over an empty stem prefix is UNREACHABLE.
+# ---------------------------------------------------------------------------
+
+
+def _fake_upload_seq_factory(calls: list, *, result="repo/dest", exc: Exception | None = None):
+    """Like _fake_upload_factory, but appends ONE record per call (ordering)."""
+
+    def fake_upload(
+        local_path,
+        repo_id,
+        repo_type,
+        path_in_repo,
+        delete_after=False,
+        upload_as_file=False,
+        ignore_patterns=None,
+        private=False,
+        raise_on_error=False,
+    ):
+        rec = {
+            "local_path": Path(local_path),
+            "is_dir": Path(local_path).is_dir(),
+            "repo_id": repo_id,
+            "repo_type": repo_type,
+            "path_in_repo": path_in_repo,
+            "upload_as_file": upload_as_file,
+            "ignore_patterns": ignore_patterns,
+            "raise_on_error": raise_on_error,
+        }
+        if Path(local_path).is_file():
+            rec["bytes"] = Path(local_path).read_bytes()
+        calls.append(rec)
+        if exc is not None:
+            raise exc
+        return result
+
+    return fake_upload
+
+
+class TestShardGatedTwinRepair:
+    STEM = "post__gsm8k"
+    DEST = None  # filled in setup_method (needs G import)
+
+    def setup_method(self):
+        self.DEST = f"{G.STORE_PREFIX}/arm1/{self.STEM}"
+
+    def _stem_dir(self, tmp_path, payload, *, n_local_shards=0):
+        stem_dir = tmp_path / "store" / "arm1" / self.STEM
+        stem_dir.mkdir(parents=True)
+        done_p = stem_dir / "_complete.json"
+        done_p.write_text(json.dumps(payload))
+        for i in range(n_local_shards):
+            (stem_dir / f"slot{i}.shard0.pt").write_bytes(b"\0" * 8)
+        return done_p
+
+    def test_repo_not_found_raises_at_the_listing(self, monkeypatch):
+        """Part 1 (reconciler on v18): a REPO-level fault must raise at the
+        listing — folding it into 'empty' is the banned silent-zero shape, and
+        hub._upload downstream resurrects a deleted repo via
+        create_repo(exist_ok=True), so it can never be trusted to fail loud."""
+        import huggingface_hub
+        from huggingface_hub.errors import RepositoryNotFoundError
+
+        class _FakeApi:
+            def list_repo_tree(self, repo_id, *, path_in_repo, repo_type, recursive):
+                raise RepositoryNotFoundError("401/404: repo gone")
+                yield  # pragma: no cover — keeps this a generator like the real API
+
+        monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {})
+        with pytest.raises(RepositoryNotFoundError):
+            G._hub_capture_marker_paths(1, False)
+        with pytest.raises(RepositoryNotFoundError):
+            G._hub_shard_stem_paths(1, False)
+
+    def test_shards_absent_everywhere_raises_and_never_uploads_a_marker(
+        self, tmp_path, monkeypatch
+    ):
+        """The reconciler's mechanizable line: an empty remote listing plus a
+        would-be-successful marker upload must NEVER end in a bare marker
+        write — with no local shards either, the repair RAISES naming the
+        stem, and no upload of ANY kind is attempted."""
+        payload = {"fingerprint": {"stage": "capture"}}
+        done_p = self._stem_dir(tmp_path, payload, n_local_shards=0)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        calls: list = []
+        monkeypatch.setattr(G, "_upload", _fake_upload_seq_factory(calls))
+
+        with pytest.raises(RuntimeError, match=self.STEM):
+            G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+
+        assert calls == []  # the would-be-successful marker upload never ran
+        assert json.loads(done_p.read_text()) == payload  # local marker kept
+        # The twin was NOT memoized as present.
+        assert G._HUB_MARKER_SETS[(1, False)] == set()
+
+    def test_skip_upload_transition_uploads_stem_dir_then_mirrors(self, tmp_path, monkeypatch):
+        """Path 1 (--skip-upload transition) is RECOVERED, not just refused:
+        remote shards absent + local shards present => full stem-dir upload
+        FIRST (the run_capture write-path shape, marker excluded), THEN the
+        marker mirror — never a marker-only write."""
+        payload = {"fingerprint": {"stage": "capture"}, "report": {"stem": self.STEM}}
+        done_p = self._stem_dir(tmp_path, payload, n_local_shards=2)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        calls: list = []
+        monkeypatch.setattr(G, "_upload", _fake_upload_seq_factory(calls))
+
+        G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+
+        assert len(calls) == 2, calls
+        folder, marker = calls
+        # Call 1: the stem DIR to the stem prefix (shards land first)...
+        assert folder["local_path"] == done_p.parent
+        assert folder["is_dir"] is True
+        assert folder["path_in_repo"] == self.DEST
+        assert folder["upload_as_file"] is False
+        assert folder["raise_on_error"] is True
+        # ...with the marker excluded, so the attestation cannot precede the
+        # shards even inside the repair's own commits.
+        assert "_complete.json" in (folder["ignore_patterns"] or [])
+        # Call 2: the marker mirror, strictly after.
+        assert marker["path_in_repo"] == f"{self.DEST}/_complete.json"
+        assert marker["upload_as_file"] is True
+        assert marker["raise_on_error"] is True
+        assert json.loads(marker["bytes"]) == payload
+        # Local marker retained; both memos learned the repair.
+        assert json.loads(done_p.read_text()) == payload
+        assert self.DEST in G._HUB_SHARD_STEM_SETS[(1, False)]
+        assert f"{self.DEST}/_complete.json" in G._HUB_MARKER_SETS[(1, False)]
+        # Second call: zero-network resume-skip.
+        calls.clear()
+        G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+        assert calls == []
+
+    def test_remote_shards_present_never_reuploads_the_stem_dir(self, tmp_path, monkeypatch):
+        """Top branch (the legitimate pre-r17 repair): remote shards present
+        => mirror the marker ONLY — no redundant stem-dir re-upload."""
+        payload = {"fingerprint": {"stage": "capture"}}
+        done_p = self._stem_dir(tmp_path, payload, n_local_shards=2)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): {self.DEST}})
+        calls: list = []
+        monkeypatch.setattr(G, "_upload", _fake_upload_seq_factory(calls))
+
+        G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+
+        assert len(calls) == 1, calls
+        assert calls[0]["upload_as_file"] is True
+        assert calls[0]["path_in_repo"] == f"{self.DEST}/_complete.json"
+
+    def test_stem_dir_upload_failure_never_blesses_the_hub_marker(self, tmp_path, monkeypatch):
+        """Middle-branch fail-loud ordering: a failed stem-dir upload raises
+        BEFORE any marker upload — the attestation can never land without the
+        shards it attests."""
+        payload = {"fingerprint": {"stage": "capture"}}
+        done_p = self._stem_dir(tmp_path, payload, n_local_shards=1)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_HUB_SHARD_STEM_SETS", {(1, False): set()})
+        calls: list = []
+        monkeypatch.setattr(
+            G, "_upload", _fake_upload_seq_factory(calls, exc=RuntimeError("hub down"))
+        )
+
+        with pytest.raises(RuntimeError):
+            G._ensure_capture_marker_hub_twin(done_p, 1, False, self.STEM, payload)
+
+        assert len(calls) == 1  # only the folder upload was attempted
+        assert calls[0]["is_dir"] is True
+        assert G._HUB_MARKER_SETS[(1, False)] == set()  # twin never blessed
+        assert self.DEST not in G._HUB_SHARD_STEM_SETS[(1, False)]
+        assert json.loads(done_p.read_text()) == payload  # local marker kept
 
 
 # ---------------------------------------------------------------------------
