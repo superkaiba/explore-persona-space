@@ -1,0 +1,808 @@
+{
+  "commit": "932d2221",
+  "render_id": "bff7bb831fb447b9",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:19Z",
+  "figsize": [
+    7.8,
+    7.46
+  ],
+  "points": [
+    {
+      "x": 0.38713889185623107,
+      "y": 12.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.3016999315833775,
+      "y": 11.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.22842776325748324,
+      "y": 10.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.4712397388562289,
+      "y": 9.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.14763163848745897,
+      "y": 8.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6194025211560382,
+      "y": 7.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.22439472214610084,
+      "y": 6.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.21318114455623763,
+      "y": 5.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.16831565493334252,
+      "y": 4.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.6299725797692161,
+      "y": 3.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.2915950204446661,
+      "y": 2.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.21548714092993604,
+      "y": 1.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.47512469014375186,
+      "y": 0.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.24778597657457116,
+      "y": 12.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.22666340011076655,
+      "y": 11.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.17653287746914703,
+      "y": 10.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.3590208326899498,
+      "y": 9.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.10539496460800223,
+      "y": 8.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.48841241737109115,
+      "y": 7.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.20975080615522068,
+      "y": 6.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.19175192112239037,
+      "y": 5.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.14583204668709665,
+      "y": 4.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.37378522901360545,
+      "y": 3.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.2065832963563387,
+      "y": 2.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.12214352064301416,
+      "y": 1.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.3909211665091992,
+      "y": 0.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.500455487591549,
+      "y": 12.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.28254469138584176,
+      "y": 11.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.1629019229958837,
+      "y": 10.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.43585269009922123,
+      "y": 9.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.13582765984775255,
+      "y": 8.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.5651803526648521,
+      "y": 7.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.2297246193587853,
+      "y": 6.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.24661701207201325,
+      "y": 5.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.15964541840945978,
+      "y": 4.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.547717427826057,
+      "y": 3.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.26235570589316887,
+      "y": 2.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.18626233167125517,
+      "y": 1.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4145421881891281,
+      "y": 0.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.4476764129589797,
+      "y": 12.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.2656179260306803,
+      "y": 11.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.14273141602413203,
+      "y": 10.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.4167064014919663,
+      "y": 9.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.28147849152514126,
+      "y": 8.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5662067582566529,
+      "y": 7.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.26410648976629486,
+      "y": 6.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.31166596269776403,
+      "y": 5.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.12344409150422833,
+      "y": 4.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.48630589040377553,
+      "y": 3.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.25103150855475526,
+      "y": 2.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.5081498220113694,
+      "y": 1.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.419707634218391,
+      "y": 0.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.9340443082292696,
+      "y": 12.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0047701158101332,
+      "y": 11.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.9025083118521846,
+      "y": 10.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0961081558781123,
+      "y": 9.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.7124841612441133,
+      "y": 8.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8922980546655069,
+      "y": 7.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.5509748427473651,
+      "y": 6.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.4430925650509547,
+      "y": 5.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.4728439407343732,
+      "y": 4.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.9162944928809421,
+      "y": 3.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.050721852627328,
+      "y": 2.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8506138074813221,
+      "y": 1.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.1549328427821843,
+      "y": 0.0,
+      "series": "layer 18 (L*)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.9031884774718267,
+      "y": 12.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.954283055573024,
+      "y": 11.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.879272080742114,
+      "y": 10.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.2604335866450203,
+      "y": 9.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.6627461559307188,
+      "y": 8.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8940944019261321,
+      "y": 7.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.34986213969904134,
+      "y": 6.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.2881147328353571,
+      "y": 5.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.1850807114966044,
+      "y": 4.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.096878674029616,
+      "y": 3.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0519420769073238,
+      "y": 2.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8556248530486283,
+      "y": 1.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.273378086981644,
+      "y": 0.0,
+      "series": "layer 16 (twin)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8590450322845224,
+      "y": 12.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0607913841009093,
+      "y": 11.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.1807517925751867,
+      "y": 10.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0719268257616912,
+      "y": 9.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.7900773974449983,
+      "y": 8.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.876360768453405,
+      "y": 7.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6908304801726194,
+      "y": 6.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.48440623130757027,
+      "y": 5.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9960839666144894,
+      "y": 4.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.7990092771751125,
+      "y": 3.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.1619388088187033,
+      "y": 2.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0329363310241038,
+      "y": 1.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.9485394803958991,
+      "y": 0.0,
+      "series": "layer 22 (twin)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.7111633665811519,
+      "y": 12.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.054718157419011,
+      "y": 11.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.348759500125436,
+      "y": 10.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2992195531949773,
+      "y": 9.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.3153881618497836,
+      "y": 8.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8433424684469805,
+      "y": 7.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.843117194826557,
+      "y": 6.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5918008832210034,
+      "y": 5.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0522342610245916,
+      "y": 4.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.8471041440488886,
+      "y": 3.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2708376608493934,
+      "y": 2.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.7306419466059233,
+      "y": 1.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.9315821466584956,
+      "y": 0.0,
+      "series": "layer 30 (twin)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 104,
+  "text": {
+    "suptitle": "Qwen3.5-9B (thinking off)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "direction cosine (identity+bias baseline)",
+        "legend_labels": [
+          "layer 18 (L*)",
+          "layer 16 (twin)",
+          "layer 22 (twin)",
+          "layer 30 (twin)"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "Answer language",
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Query content",
+          "Query content oneword",
+          "Query form",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile"
+        ]
+      },
+      {
+        "title": "calibration ratio (identity+bias baseline)",
+        "xticklabels": [
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5",
+          "3.0"
+        ]
+      }
+    ],
+    "series": [
+      "layer 18 (L*)",
+      "layer 16 (twin)",
+      "layer 22 (twin)",
+      "layer 30 (twin)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

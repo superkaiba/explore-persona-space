@@ -1,0 +1,1801 @@
+{
+  "axis_rows": [
+    {
+      "axis": "persona",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 4,
+      "n_fired_para": 5,
+      "n_not_fired_base": 1,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 4
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "format",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 3,
+      "n_fired_para": 3,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 2,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 3
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 3
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "lexical_marker",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 5,
+      "n_fired_para": 5,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 5
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "stance",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 5,
+      "n_fired_para": 5,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 3
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "content_constraint",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 5,
+      "n_fired_para": 4,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 4
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "register",
+      "floor": 2,
+      "floor_met": true,
+      "n_fired_base": 2,
+      "n_fired_para": 2,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 2
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 2
+        }
+      },
+      "width": 2
+    },
+    {
+      "axis": "hedging",
+      "floor": 2,
+      "floor_met": true,
+      "n_fired_base": 2,
+      "n_fired_para": 2,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 2
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 2
+        }
+      },
+      "width": 2
+    },
+    {
+      "axis": "user_fact",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 5,
+      "n_fired_para": 5,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 5
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "user_profile",
+      "floor": 3,
+      "floor_met": true,
+      "n_fired_base": 5,
+      "n_fired_para": 5,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 5
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 5
+        }
+      },
+      "width": 5
+    },
+    {
+      "axis": "answer_language",
+      "cross_model_status": "7B side pending #2564",
+      "floor": 2,
+      "floor_met": true,
+      "n_fired_base": 3,
+      "n_fired_para": null,
+      "n_not_fired_base": 0,
+      "n_undetermined_base": 0,
+      "pilot_axis": true,
+      "sensitivity": {
+        "50": {
+          "floor_met": true,
+          "n_fired_base": 3
+        },
+        "90": {
+          "floor_met": true,
+          "n_fired_base": 2
+        }
+      },
+      "width": 3
+    },
+    {
+      "axis": "query_content_oneword",
+      "cross_model_status": "7B side pending #2564",
+      "note": "query-class pilot axis: no instruction to comply with (plan \u00a74.4)",
+      "pilot_axis": true,
+      "verdict": "no_manipulation_check_query_class"
+    }
+  ],
+  "meta": {
+    "answer_language_in_slice": true,
+    "call_arithmetic": {
+      "expected": {
+        "answer_language_calls": 72,
+        "compliance_calls": 1392,
+        "total_calls": 1464
+      },
+      "realized": {
+        "answer_language_calls": 72,
+        "compliance_calls": 1392,
+        "total_calls": 1464
+      },
+      "verified": true
+    },
+    "carriers": [
+      "c01",
+      "c02",
+      "c03",
+      "c04",
+      "c05",
+      "c06",
+      "c07",
+      "c08",
+      "c09",
+      "c10",
+      "c11",
+      "c12"
+    ],
+    "dry_run": false,
+    "fire_threshold_pct": 70,
+    "floor_rule": "n_fired_base >= ceil(0.6 * width); undetermined counts as not-fired",
+    "git_argv0_path": "scripts/issue2587_judge.py",
+    "git_argv0_state": "tracked",
+    "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+    "git_dirty": false,
+    "instrument_identity": {
+      "answer_language_rubric_sha256": "d741a82d7e7189cb334d1ac0aad1cfce7a5a70a8a186df0541d6478402428177",
+      "answer_language_rubric_source": "scripts/issue2587_judge.py::ANSWER_LANGUAGE_EVAL_PROMPT (sha-pinned in tests/test_issue2587_judge.py; the #2564 7B-side pilot judging consumes this text VERBATIM)",
+      "answer_language_rubric_text": "You are checking whether a model's answer COMPLIES with a language instruction that was present in the model's system prompt.\n\nInstruction: {question}\n\nModel answer:\n<answer>\n{answer}\n</answer>\n\nScore 0-100 for whether the answer is written ENTIRELY in the language the instruction names: 0 = none of the answer is in that language; 50 = roughly half the answer is in that language, or it is ambiguous which language dominates; 100 = the answer is written entirely in that language throughout. Judge ONLY the language the answer is written in \u2014 ignore answer quality, correctness, length, and whether the answer addresses the question. Code snippets, proper nouns, and universally-shared symbols (numbers, punctuation, units) do not count against the language.",
+      "compliance_rubric_sha256": "f6c48e42d793754036a7f4cb4d64b204bea8c583ca27af3af605e46e212bcd77",
+      "compliance_rubric_source": "ported verbatim from scripts/issue2564_judge.py @ 8265bcd75f781d8e879e924de60063e536e58dcf"
+    },
+    "issue": 2587,
+    "judge_max_tokens": 1024,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "judge_route": "eval.graded_judge -> eval.batch_judge (threshold_base=0, forced Batch)",
+    "judge_stats": {
+      "answer_language": {
+        "dispatched": true,
+        "frac_items_complete": 1.0,
+        "n_api_refusal_draws": 0,
+        "n_dropped_draws": 0,
+        "n_items": 72,
+        "n_refusal_draws": 0,
+        "n_total_draws": 72,
+        "n_transport_lost_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "rubric_sha256": "d741a82d7e7189cb334d1ac0aad1cfce7a5a70a8a186df0541d6478402428177",
+        "stop_reason_tally": {
+          "end_turn": 72
+        },
+        "wave": "answer_language",
+        "zero_max_tokens_stop": true
+      },
+      "compliance": {
+        "dispatched": true,
+        "frac_items_complete": 0.9820402298850575,
+        "n_api_refusal_draws": 6,
+        "n_dropped_draws": 19,
+        "n_items": 1392,
+        "n_refusal_draws": 0,
+        "n_total_draws": 1392,
+        "n_transport_lost_draws": 0,
+        "n_truncation_dropped_draws": 0,
+        "rubric_sha256": "f6c48e42d793754036a7f4cb4d64b204bea8c583ca27af3af605e46e212bcd77",
+        "stop_reason_tally": {
+          "end_turn": 1386,
+          "refusal": 6
+        },
+        "wave": "compliance",
+        "zero_max_tokens_stop": true
+      }
+    },
+    "judge_temperature": "API default 1.0 (plan pin; not threaded by judge_graded)",
+    "judged_axes_in_slice": [
+      "persona",
+      "format",
+      "stance",
+      "content_constraint",
+      "register",
+      "hedging",
+      "user_profile"
+    ],
+    "judged_denominator": 24,
+    "judged_draws": [
+      0,
+      1
+    ],
+    "n_capped_out": {
+      "answer_language": 0,
+      "compliance": 0
+    },
+    "n_items_submitted": {
+      "answer_language": 72,
+      "compliance": 1392
+    },
+    "n_judged_specs": 1392,
+    "n_lang_specs": 72,
+    "n_missing_anchor_rows": {
+      "answer_language": 0,
+      "compliance": 0
+    },
+    "parent_pin": "8265bcd75f781d8e879e924de60063e536e58dcf",
+    "per_axis_drop_report": {
+      "answer_language": {
+        "answer_language": {
+          "n_incomplete": 0,
+          "n_scored": 72,
+          "n_specs": 72
+        }
+      },
+      "compliance": {
+        "content_constraint": {
+          "n_incomplete": 0,
+          "n_scored": 240,
+          "n_specs": 240
+        },
+        "format": {
+          "n_incomplete": 25,
+          "n_scored": 215,
+          "n_specs": 240
+        },
+        "hedging": {
+          "n_incomplete": 0,
+          "n_scored": 96,
+          "n_specs": 96
+        },
+        "persona": {
+          "n_incomplete": 0,
+          "n_scored": 240,
+          "n_specs": 240
+        },
+        "register": {
+          "n_incomplete": 0,
+          "n_scored": 96,
+          "n_specs": 96
+        },
+        "stance": {
+          "n_incomplete": 0,
+          "n_scored": 240,
+          "n_specs": 240
+        },
+        "user_profile": {
+          "n_incomplete": 0,
+          "n_scored": 240,
+          "n_specs": 240
+        }
+      }
+    },
+    "phase": "judge2587",
+    "programmatic_axes_in_slice": [
+      "lexical_marker",
+      "user_fact"
+    ],
+    "programmatic_denominator": 120,
+    "programmatic_draws": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "sensitivity_pcts": [
+      50,
+      90
+    ],
+    "smoke": false,
+    "smoke_blind_spots": [],
+    "undetermined_semantics": "mandatory (parent verbatim): ANY incomplete check after the judge retry budget => undetermined; raw counts persisted per slot",
+    "upload": {
+      "hf_dest_prefix": "issue2587_minpair/raw_completions/judge",
+      "hf_repo": "superkaiba1/explore-persona-space-data",
+      "rerouted": [],
+      "skipped_existing": [],
+      "uploaded": [
+        "issue2587_minpair/raw_completions/judge/judge_raw_answer_language.json",
+        "issue2587_minpair/raw_completions/judge/judge_raw_manipcheck.json",
+        "issue2587_minpair/raw_completions/judge/judge_scores.jsonl"
+      ]
+    }
+  },
+  "value_rows": [
+    {
+      "axis": "content_constraint",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 0.875,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 0.75,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 18,
+      "n_incomplete": 0,
+      "n_noncomply": 6,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 0.625,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 15,
+      "n_incomplete": 0,
+      "n_noncomply": 9,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v4p",
+      "verdict": "not_fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "content_constraint",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 0.8333333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 20,
+      "n_incomplete": 4,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "undetermined",
+        "90": "undetermined"
+      },
+      "value_id": "v3",
+      "verdict": "undetermined"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 0.9166666666666666,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 22,
+      "n_incomplete": 2,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "undetermined",
+        "90": "undetermined"
+      },
+      "value_id": "v3p",
+      "verdict": "undetermined"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 0.75,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 18,
+      "n_incomplete": 6,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "undetermined",
+        "90": "undetermined"
+      },
+      "value_id": "v5",
+      "verdict": "undetermined"
+    },
+    {
+      "axis": "format",
+      "comply_frac": 0.4583333333333333,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 11,
+      "n_incomplete": 13,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "undetermined",
+        "90": "undetermined"
+      },
+      "value_id": "v5p",
+      "verdict": "undetermined"
+    },
+    {
+      "axis": "hedging",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "hedging",
+      "comply_frac": 0.875,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "hedging",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "hedging",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 0.5833333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 14,
+      "n_incomplete": 0,
+      "n_noncomply": 10,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v2",
+      "verdict": "not_fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "persona",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "register",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "register",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "register",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "register",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.8333333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 20,
+      "n_incomplete": 0,
+      "n_noncomply": 4,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.7083333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 17,
+      "n_incomplete": 0,
+      "n_noncomply": 7,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.875,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "stance",
+      "comply_frac": 0.875,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 0.9583333333333334,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 23,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_profile",
+      "comply_frac": 1.0,
+      "denom": 24,
+      "instrument": "judged",
+      "kind": "para",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "answer_language",
+      "comply_frac": 0.875,
+      "cross_model_status": "7B side pending #2564",
+      "denom": 24,
+      "instrument": "judged_language",
+      "kind": "orig",
+      "n_comply": 21,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": true,
+      "sensitivity": {
+        "50": "fired",
+        "90": "not_fired"
+      },
+      "value_id": "chinese",
+      "verdict": "fired"
+    },
+    {
+      "axis": "answer_language",
+      "comply_frac": 1.0,
+      "cross_model_status": "7B side pending #2564",
+      "denom": 24,
+      "instrument": "judged_language",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": true,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "english",
+      "verdict": "fired"
+    },
+    {
+      "axis": "answer_language",
+      "comply_frac": 1.0,
+      "cross_model_status": "7B side pending #2564",
+      "denom": 24,
+      "instrument": "judged_language",
+      "kind": "orig",
+      "n_comply": 24,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": true,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "spanish",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 0.975,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 117,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 0.9583333333333334,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 115,
+      "n_incomplete": 0,
+      "n_noncomply": 5,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 0.975,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 117,
+      "n_incomplete": 0,
+      "n_noncomply": 3,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 0.9833333333333333,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 118,
+      "n_incomplete": 0,
+      "n_noncomply": 2,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 0.9833333333333333,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 118,
+      "n_incomplete": 0,
+      "n_noncomply": 2,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "lexical_marker",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v1p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v2p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v3p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 0.9916666666666667,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 119,
+      "n_incomplete": 0,
+      "n_noncomply": 1,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v4p",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "orig",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5",
+      "verdict": "fired"
+    },
+    {
+      "axis": "user_fact",
+      "comply_frac": 1.0,
+      "denom": 120,
+      "instrument": "programmatic",
+      "kind": "para",
+      "n_comply": 120,
+      "n_incomplete": 0,
+      "n_noncomply": 0,
+      "pilot_axis": false,
+      "sensitivity": {
+        "50": "fired",
+        "90": "fired"
+      },
+      "value_id": "v5p",
+      "verdict": "fired"
+    }
+  ]
+}

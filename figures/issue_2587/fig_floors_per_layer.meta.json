@@ -1,0 +1,1413 @@
+{
+  "commit": "932d2221",
+  "render_id": "7b58b1c9311b473b",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:11Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "held-out test R\u00b2": 0.474277071101602,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "held-out test R\u00b2": 0.4923773245658366,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "held-out test R\u00b2": 0.49478444969405766,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "held-out test R\u00b2": 0.5481442140859389,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "held-out test R\u00b2": 0.5598141213519048,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "held-out test R\u00b2": 0.5684406642401949,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "held-out test R\u00b2": 0.5751591398630156,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "held-out test R\u00b2": 0.5909973953402594,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "held-out test R\u00b2": 0.5858203808720678,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "held-out test R\u00b2": 0.6139964600027448,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "held-out test R\u00b2": 0.6400647426049813,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "held-out test R\u00b2": 0.65041066105367,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "held-out test R\u00b2": 0.6642057028049083,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "held-out test R\u00b2": 0.6720172768587469,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "held-out test R\u00b2": 0.680966906762287,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "held-out test R\u00b2": 0.6700721879626758,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "held-out test R\u00b2": 0.6872881491456675,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "held-out test R\u00b2": 0.6916730405445958,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "held-out test R\u00b2": 0.7092416314627891,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "held-out test R\u00b2": 0.6755396001473093,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "held-out test R\u00b2": 0.6851242303090486,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "held-out test R\u00b2": 0.6895485429331344,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "held-out test R\u00b2": 0.6855572466316695,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "held-out test R\u00b2": 0.663635092426267,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "held-out test R\u00b2": 0.6778030296669395,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "held-out test R\u00b2": 0.6738194383489832,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "held-out test R\u00b2": 0.661671162050874,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "held-out test R\u00b2": 0.6566650570163591,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "held-out test R\u00b2": 0.6814248333473459,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "held-out test R\u00b2": 0.6781449363508527,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "held-out test R\u00b2": 0.6617139372167153,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "held-out test R\u00b2": 0.6602899571631143,
+      "series": "ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "held-out test R\u00b2": -0.21247840885642044,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "held-out test R\u00b2": -0.24656977422329418,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "held-out test R\u00b2": -0.27291142779511346,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "held-out test R\u00b2": -1.3099690558210435,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "held-out test R\u00b2": -1.9210217290237654,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "held-out test R\u00b2": -1.4325517701553196,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "held-out test R\u00b2": -0.8487227821986649,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "held-out test R\u00b2": -0.9673281555127282,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "held-out test R\u00b2": -1.065469749874036,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "held-out test R\u00b2": -0.9903411873014101,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "held-out test R\u00b2": -0.9086732992076063,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "held-out test R\u00b2": -1.2875836614500957,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "held-out test R\u00b2": -1.454033948867386,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "held-out test R\u00b2": -1.9322924440970746,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "held-out test R\u00b2": -1.8184304619013245,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "held-out test R\u00b2": -2.269851267053846,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "held-out test R\u00b2": -2.2994112306599415,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "held-out test R\u00b2": -2.293322965777713,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "held-out test R\u00b2": -1.6942256003511447,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "held-out test R\u00b2": -1.5953465835307648,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "held-out test R\u00b2": -1.6829174097494937,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "held-out test R\u00b2": -1.8841899781113813,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "held-out test R\u00b2": -2.081841896656764,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "held-out test R\u00b2": -2.124090768082229,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "held-out test R\u00b2": -1.8305038383681729,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "held-out test R\u00b2": -1.8730400535998362,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "held-out test R\u00b2": -2.061852658705831,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "held-out test R\u00b2": -1.9788806368311196,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "held-out test R\u00b2": -1.8968404444482858,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "held-out test R\u00b2": -1.9807560428259263,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "held-out test R\u00b2": -2.2834670062416405,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "held-out test R\u00b2": -2.4091600277496577,
+      "series": "identity + learned bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "held-out test R\u00b2": -14.924542909211409,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "held-out test R\u00b2": -12.018515054347946,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "held-out test R\u00b2": -5.526131257798291,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "held-out test R\u00b2": -8.079194718177629,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "held-out test R\u00b2": -10.043636300604534,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "held-out test R\u00b2": -7.356704773926113,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "held-out test R\u00b2": -6.141136968895415,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "held-out test R\u00b2": -5.458135398122339,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "held-out test R\u00b2": -5.110726250198137,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "held-out test R\u00b2": -4.728101288066156,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "held-out test R\u00b2": -5.110560917407284,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "held-out test R\u00b2": -5.47033408345041,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "held-out test R\u00b2": -5.791390386199675,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "held-out test R\u00b2": -7.005184426198246,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "held-out test R\u00b2": -6.608484187481667,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "held-out test R\u00b2": -6.930266919619503,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "held-out test R\u00b2": -6.430372749230859,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "held-out test R\u00b2": -6.268011829987884,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "held-out test R\u00b2": -4.679419112466976,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "held-out test R\u00b2": -3.810018814619495,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "held-out test R\u00b2": -3.905109958623667,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "held-out test R\u00b2": -3.907727005576362,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "held-out test R\u00b2": -4.123163195939096,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "held-out test R\u00b2": -3.8316846922065046,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "held-out test R\u00b2": -3.2638973550121158,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "held-out test R\u00b2": -3.2450134960907038,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "held-out test R\u00b2": -4.430862392396325,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "held-out test R\u00b2": -3.3679761205227567,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "held-out test R\u00b2": -2.942978188892516,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "held-out test R\u00b2": -3.1246061046222477,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "held-out test R\u00b2": -3.399581173008544,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "held-out test R\u00b2": -4.492745514150593,
+      "series": "identity (copy input)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "held-out test R\u00b2": -0.12819980535555087,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "held-out test R\u00b2": -0.031887355932278094,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "held-out test R\u00b2": -0.08142157484716162,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "held-out test R\u00b2": -0.05914060795916121,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "held-out test R\u00b2": -0.07270099456936108,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "held-out test R\u00b2": -0.06697612980352541,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "held-out test R\u00b2": -0.07655377362070048,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "held-out test R\u00b2": -0.04197374856296232,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "held-out test R\u00b2": -0.032940724758223405,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "held-out test R\u00b2": -0.026456437621189988,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "held-out test R\u00b2": -0.05193160786465034,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "held-out test R\u00b2": -0.016343454611010833,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "held-out test R\u00b2": -0.021453463604482303,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "held-out test R\u00b2": -0.04093840298186402,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "held-out test R\u00b2": -0.07572033327538508,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "held-out test R\u00b2": -0.055087876374469325,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "held-out test R\u00b2": -0.06188030090190555,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "held-out test R\u00b2": -0.10833842046091569,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "held-out test R\u00b2": -0.04985767582477818,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "held-out test R\u00b2": -0.04691307407884704,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "held-out test R\u00b2": -0.04369057211073257,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "held-out test R\u00b2": -0.0262299917866331,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "held-out test R\u00b2": 0.016346291813975622,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "held-out test R\u00b2": -0.0387256530940443,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "held-out test R\u00b2": 0.03562673450046583,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "held-out test R\u00b2": 0.0812371114779229,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "held-out test R\u00b2": 0.096066934071526,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "held-out test R\u00b2": -0.061404406263716016,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "held-out test R\u00b2": 0.09331055561959034,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "held-out test R\u00b2": 0.011148785486937762,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "held-out test R\u00b2": 0.014311652114111229,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "held-out test R\u00b2": 0.011159764401676209,
+      "series": "scaled identity",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "held-out test R\u00b2": -0.010976754069443206,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "held-out test R\u00b2": -0.014904715662139356,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "held-out test R\u00b2": -0.02086145289916108,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "held-out test R\u00b2": -0.019621763926855662,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "held-out test R\u00b2": -0.02221976230835976,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "held-out test R\u00b2": -0.023386747204788838,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "held-out test R\u00b2": -0.024270152039617132,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "held-out test R\u00b2": -0.024087982030615462,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "held-out test R\u00b2": -0.02126882448433176,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "held-out test R\u00b2": -0.022960444705660388,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "held-out test R\u00b2": -0.024736219629410305,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "held-out test R\u00b2": -0.025205465082894785,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "held-out test R\u00b2": -0.02540611646965729,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "held-out test R\u00b2": -0.025041806297094293,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "held-out test R\u00b2": -0.025136472339026605,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "held-out test R\u00b2": -0.024297687117965205,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "held-out test R\u00b2": -0.024160722139790813,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "held-out test R\u00b2": -0.022365838715229902,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "held-out test R\u00b2": -0.019829142349531592,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "held-out test R\u00b2": -0.019130251324133818,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "held-out test R\u00b2": -0.019413201168050565,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "held-out test R\u00b2": -0.019822314382759165,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "held-out test R\u00b2": -0.020152597154544427,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "held-out test R\u00b2": -0.019009413844156553,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "held-out test R\u00b2": -0.01685642150082689,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "held-out test R\u00b2": -0.015568352206953406,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "held-out test R\u00b2": -0.014187760000582195,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "held-out test R\u00b2": -0.013703113081732887,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "held-out test R\u00b2": -0.012463107341073476,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "held-out test R\u00b2": -0.012018274819796781,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "held-out test R\u00b2": -0.011426519856371664,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "held-out test R\u00b2": -0.009984963167526395,
+      "series": "shuffled pairing",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "held-out test R\u00b2": -0.011000239794541011,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "held-out test R\u00b2": -0.016088158331994507,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "held-out test R\u00b2": -0.023063156324936163,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "held-out test R\u00b2": -0.024235678010043227,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "held-out test R\u00b2": -0.02670575126167729,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "held-out test R\u00b2": -0.028539829615634282,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "held-out test R\u00b2": -0.02922757055239833,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "held-out test R\u00b2": -0.02974956115068239,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "held-out test R\u00b2": -0.026855447055949888,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "held-out test R\u00b2": -0.02799569415411196,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "held-out test R\u00b2": -0.02972846657029038,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "held-out test R\u00b2": -0.030512136981688087,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "held-out test R\u00b2": -0.030865168080943528,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "held-out test R\u00b2": -0.03088422296597715,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "held-out test R\u00b2": -0.029954323214902656,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "held-out test R\u00b2": -0.029170056054581117,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "held-out test R\u00b2": -0.028607648866828317,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "held-out test R\u00b2": -0.027330127871369125,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "held-out test R\u00b2": -0.024867354798804975,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "held-out test R\u00b2": -0.022066594633174397,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "held-out test R\u00b2": -0.0221573147124845,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "held-out test R\u00b2": -0.021679118477951675,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "held-out test R\u00b2": -0.02170716044852483,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "held-out test R\u00b2": -0.020471514614817332,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "held-out test R\u00b2": -0.018018286293220998,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "held-out test R\u00b2": -0.016765352414539247,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "held-out test R\u00b2": -0.014981904240567001,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "held-out test R\u00b2": -0.014988545640647777,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "held-out test R\u00b2": -0.013088139271568044,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "held-out test R\u00b2": -0.012310792629843137,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "held-out test R\u00b2": -0.011407837428565104,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "held-out test R\u00b2": -0.010628283597430288,
+      "series": "train mean",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 192,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "depth (fraction of stack; dashed = full-attention layers)",
+        "ylabel": "held-out test R\u00b2",
+        "legend_labels": [
+          "ridge map",
+          "identity + learned bias",
+          "identity (copy input)",
+          "scaled identity",
+          "shuffled pairing",
+          "train mean"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u221216",
+          "\u221214",
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      }
+    ],
+    "series": [
+      "ridge map",
+      "identity + learned bias",
+      "identity (copy input)",
+      "scaled identity",
+      "shuffled pairing",
+      "train mean"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

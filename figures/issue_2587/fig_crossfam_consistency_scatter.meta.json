@@ -1,0 +1,208 @@
+{
+  "commit": "932d2221",
+  "render_id": "9ae423102bd24a46",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:25:50Z",
+  "figsize": [
+    4.8,
+    4.2
+  ],
+  "points": [
+    {
+      "cross-family consistency (observed space)": 0.9221303593011376,
+      "cross-family consistency (predicted space)": 0.8334388615133033,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.9867357027463751,
+      "cross-family consistency (predicted space)": 0.9496792560859798,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.7433495394991494,
+      "cross-family consistency (predicted space)": 0.8038985643511437,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.8324234796896325,
+      "cross-family consistency (predicted space)": 0.6904550262199527,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.9917296037221355,
+      "cross-family consistency (predicted space)": 0.9812554853173503,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.980767701102427,
+      "cross-family consistency (predicted space)": 0.9777238913579066,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.5165354509815382,
+      "cross-family consistency (predicted space)": 0.45338014968068563,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.7569562193513757,
+      "cross-family consistency (predicted space)": 0.8331473696906344,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.9852303147225959,
+      "cross-family consistency (predicted space)": 0.9705674647177414,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cross-family consistency (observed space)": 0.8224844133823308,
+      "cross-family consistency (predicted space)": 0.801563835178208,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": 0.9735440937981322,
+      "cross-family consistency (predicted space)": 0.92775761557084,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": null,
+      "cross-family consistency (predicted space)": null,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": 0.8965612058693659,
+      "cross-family consistency (predicted space)": 0.8740134119087946,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": null,
+      "cross-family consistency (predicted space)": null,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": 0.9790244175207687,
+      "cross-family consistency (predicted space)": 0.9745789816609625,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": null,
+      "cross-family consistency (predicted space)": null,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": 0.5516951023994547,
+      "cross-family consistency (predicted space)": 0.7088861783836131,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cross-family consistency (observed space)": 0.9724904396370697,
+      "cross-family consistency (predicted space)": 0.9387784867808247,
+      "series": "Qwen2.5-7B-Instruct",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "cross-family consistency (observed space)",
+        "ylabel": "cross-family consistency (predicted space)",
+        "legend_labels": [
+          "Qwen3.5-9B (thinking off)",
+          "Qwen2.5-7B-Instruct"
+        ],
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile",
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ],
+    "series": [
+      "Qwen3.5-9B (thinking off)",
+      "Qwen2.5-7B-Instruct"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

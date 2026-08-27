@@ -1,0 +1,373 @@
+{
+  "commit": "932d2221",
+  "render_id": "788a2dca77404a41",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:26Z",
+  "figsize": [
+    4.8,
+    4.2
+  ],
+  "points": [
+    {
+      "direction cosine (tail-inclusive mean)": 0.7445870913395131,
+      "direction cosine (answer span mean)": 0.7445057983629625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.5357890161940128,
+      "direction cosine (answer span mean)": 0.5173268380951487,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.4574382965069025,
+      "direction cosine (answer span mean)": 0.4567297024317394,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.6361053013006291,
+      "direction cosine (answer span mean)": 0.6349028435853911,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.24894830585517277,
+      "direction cosine (answer span mean)": 0.24915713418037283,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.7970303767634993,
+      "direction cosine (answer span mean)": 0.7966451931025307,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.6598910034563062,
+      "direction cosine (answer span mean)": 0.6598378766110441,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.4854104244166068,
+      "direction cosine (answer span mean)": 0.48523955541524244,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.4608461225944444,
+      "direction cosine (answer span mean)": 0.4607007805809735,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.8707381682197949,
+      "direction cosine (answer span mean)": 0.8705824427196521,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.5672292515348855,
+      "direction cosine (answer span mean)": 0.5630998080751038,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.30567663127211225,
+      "direction cosine (answer span mean)": 0.305370374318408,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.6255926497411138,
+      "direction cosine (answer span mean)": 0.625638570351582,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.38713889185623107,
+      "direction cosine (answer span mean)": 0.38685140783334904,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.3016999315833775,
+      "direction cosine (answer span mean)": 0.31309611886140126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.22842776325748324,
+      "direction cosine (answer span mean)": 0.22748734366907503,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.4712397388562289,
+      "direction cosine (answer span mean)": 0.4713948229368306,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.14763163848745897,
+      "direction cosine (answer span mean)": 0.14737961559564214,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.6194025211560382,
+      "direction cosine (answer span mean)": 0.6184206879409125,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.22439472214610084,
+      "direction cosine (answer span mean)": 0.22419391379050482,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.21318114455623763,
+      "direction cosine (answer span mean)": 0.2129260111626825,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.16831565493334252,
+      "direction cosine (answer span mean)": 0.16778119485352516,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.6299725797692161,
+      "direction cosine (answer span mean)": 0.6296534839257206,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.2915950204446661,
+      "direction cosine (answer span mean)": 0.2908183143794061,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.21548714092993604,
+      "direction cosine (answer span mean)": 0.21485093317476428,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.47512469014375186,
+      "direction cosine (answer span mean)": 0.475054883944135,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.5153488954541783,
+      "direction cosine (answer span mean)": 0.4922461565435853,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.3970307336673254,
+      "direction cosine (answer span mean)": 0.39331277951012517,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": null,
+      "direction cosine (answer span mean)": null,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.3739211886288218,
+      "direction cosine (answer span mean)": 0.3690187580545738,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": null,
+      "direction cosine (answer span mean)": null,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.6800133088937805,
+      "direction cosine (answer span mean)": 0.6798353779937502,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.30475691376264064,
+      "direction cosine (answer span mean)": 0.30523968182558847,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.9009247016177638,
+      "direction cosine (answer span mean)": 0.9016435572847744,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": null,
+      "direction cosine (answer span mean)": null,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.13914864188230647,
+      "direction cosine (answer span mean)": 0.14034221535224045,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.5837104570020021,
+      "direction cosine (answer span mean)": 0.5843539749366918,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.3139645792255431,
+      "direction cosine (answer span mean)": 0.33131469060245083,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.229119852771882,
+      "direction cosine (answer span mean)": 0.22187490530240808,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": null,
+      "direction cosine (answer span mean)": null,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.2731171039453366,
+      "direction cosine (answer span mean)": 0.27104691521164703,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": null,
+      "direction cosine (answer span mean)": null,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.3042462830504226,
+      "direction cosine (answer span mean)": 0.303937382517644,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.22111512196235203,
+      "direction cosine (answer span mean)": 0.2207700083969318,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.7280655026408017,
+      "direction cosine (answer span mean)": 0.7282846553077239,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": null,
+      "direction cosine (answer span mean)": null,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.1381780839283877,
+      "direction cosine (answer span mean)": 0.13743082793441755,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "direction cosine (tail-inclusive mean)": 0.42701941592593884,
+      "direction cosine (answer span mean)": 0.42680178482144854,
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 48,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "direction cosine (tail-inclusive mean)",
+        "ylabel": "direction cosine (answer span mean)",
+        "legend_labels": [
+          "Qwen3.5-9B (thinking off)",
+          "Qwen2.5-7B-Instruct",
+          "identity+bias baseline"
+        ],
+        "annotations": [
+          "Answer language",
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Query content",
+          "Query content oneword",
+          "Query form",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile",
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query content",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

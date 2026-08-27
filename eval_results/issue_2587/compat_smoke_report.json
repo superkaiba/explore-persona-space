@@ -1,0 +1,80 @@
+{
+  "schema": "issue2587_compat_smoke_v2",
+  "issue": 2587,
+  "phase": "P1",
+  "status": "PASS",
+  "model_interpreter": "/root/eps-model-venv/bin/python",
+  "code_git_sha": "5b8f60081a0ee9b5e6a5dea2e5420c9d06550b67",
+  "map_code_sha256": "5ef7378d3cdeb97dd7c760c065da7cc433afeafc96aa61ae2ccdcf51c010d839",
+  "required_run_meta_records": [
+    "template_pin",
+    "length_scan",
+    "hook_probe",
+    "smoke_shard_gen",
+    "smoke_shard_capture",
+    "fits_smoke",
+    "apply_probe"
+  ],
+  "checks": [
+    {
+      "name": "interpreter_identity",
+      "passed": true,
+      "detail": "/usr/bin/python3.11"
+    },
+    {
+      "name": "realized_pins",
+      "passed": true,
+      "detail": {
+        "vllm": "0.27.1",
+        "transformers": "5.15.1",
+        "torch": "2.13.0",
+        "python-dotenv": "1.2.2",
+        "accelerate": "1.14.0"
+      }
+    },
+    {
+      "name": "banned_dists_absent",
+      "passed": true,
+      "detail": {
+        "flashinfer-python": "absent"
+      }
+    },
+    {
+      "name": "driver_gate",
+      "passed": true,
+      "detail": "host driver satisfies floor major 580"
+    },
+    {
+      "name": "p1_run_meta_records",
+      "passed": true,
+      "detail": {
+        "template_pin": true,
+        "length_scan": true,
+        "hook_probe": true,
+        "smoke_shard_gen": true,
+        "smoke_shard_capture": true,
+        "fits_smoke": true,
+        "apply_probe": true
+      }
+    },
+    {
+      "name": "p1_smoke_shard_evidence",
+      "passed": true,
+      "detail": {
+        "gen_rows": 500,
+        "kept_rows": 500,
+        "think_open": 0
+      }
+    },
+    {
+      "name": "tiny_battery_manifests",
+      "passed": true,
+      "detail": {
+        "anchors_register.done.json": 24,
+        "capture_register.done.json": 24
+      }
+    }
+  ],
+  "failed_checks": [],
+  "ts_utc": "2026-08-26T22:22:03Z"
+}

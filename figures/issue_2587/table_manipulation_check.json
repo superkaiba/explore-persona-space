@@ -1,0 +1,431 @@
+{
+  "axes": {
+    "answer_language": {
+      "qwen25_7b": null,
+      "qwen35_9b": {
+        "axis": "answer_language",
+        "cross_model_status": "7B side pending #2564",
+        "floor": 2,
+        "floor_met": true,
+        "n_fired_base": 3,
+        "n_fired_para": null,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": true,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 3
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 2
+          }
+        },
+        "width": 3
+      }
+    },
+    "content_constraint": {
+      "qwen25_7b": {
+        "axis": "content_constraint",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 4,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 4
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "content_constraint",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 4,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 4
+          }
+        },
+        "width": 5
+      }
+    },
+    "format": {
+      "qwen25_7b": {
+        "axis": "format",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 3,
+        "n_fired_para": 3,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 2,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 3
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 3
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "format",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 3,
+        "n_fired_para": 3,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 2,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 3
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 3
+          }
+        },
+        "width": 5
+      }
+    },
+    "hedging": {
+      "qwen25_7b": {
+        "axis": "hedging",
+        "floor": 2,
+        "floor_met": false,
+        "n_fired_base": 1,
+        "n_fired_para": 1,
+        "n_not_fired_base": 1,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": false,
+            "n_fired_base": 1
+          },
+          "90": {
+            "floor_met": false,
+            "n_fired_base": 1
+          }
+        },
+        "width": 2
+      },
+      "qwen35_9b": {
+        "axis": "hedging",
+        "floor": 2,
+        "floor_met": true,
+        "n_fired_base": 2,
+        "n_fired_para": 2,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 2
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 2
+          }
+        },
+        "width": 2
+      }
+    },
+    "lexical_marker": {
+      "qwen25_7b": {
+        "axis": "lexical_marker",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 5,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 5
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "lexical_marker",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 5,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 5
+          }
+        },
+        "width": 5
+      }
+    },
+    "persona": {
+      "qwen25_7b": {
+        "axis": "persona",
+        "floor": 3,
+        "floor_met": false,
+        "n_fired_base": 2,
+        "n_fired_para": 4,
+        "n_not_fired_base": 3,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 4
+          },
+          "90": {
+            "floor_met": false,
+            "n_fired_base": 0
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "persona",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 4,
+        "n_fired_para": 5,
+        "n_not_fired_base": 1,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 4
+          }
+        },
+        "width": 5
+      }
+    },
+    "query_content_oneword": {
+      "qwen25_7b": null,
+      "qwen35_9b": {
+        "axis": "query_content_oneword",
+        "cross_model_status": "7B side pending #2564",
+        "note": "query-class pilot axis: no instruction to comply with (plan \u00a74.4)",
+        "pilot_axis": true,
+        "verdict": "no_manipulation_check_query_class"
+      }
+    },
+    "register": {
+      "qwen25_7b": {
+        "axis": "register",
+        "floor": 2,
+        "floor_met": true,
+        "n_fired_base": 2,
+        "n_fired_para": 2,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 2
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 2
+          }
+        },
+        "width": 2
+      },
+      "qwen35_9b": {
+        "axis": "register",
+        "floor": 2,
+        "floor_met": true,
+        "n_fired_base": 2,
+        "n_fired_para": 2,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 2
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 2
+          }
+        },
+        "width": 2
+      }
+    },
+    "stance": {
+      "qwen25_7b": {
+        "axis": "stance",
+        "floor": 3,
+        "floor_met": false,
+        "n_fired_base": 1,
+        "n_fired_para": 4,
+        "n_not_fired_base": 4,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": false,
+            "n_fired_base": 1
+          },
+          "90": {
+            "floor_met": false,
+            "n_fired_base": 1
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "stance",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 5,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 3
+          }
+        },
+        "width": 5
+      }
+    },
+    "user_fact": {
+      "qwen25_7b": {
+        "axis": "user_fact",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 5,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 5
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "user_fact",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 5,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 5
+          }
+        },
+        "width": 5
+      }
+    },
+    "user_profile": {
+      "qwen25_7b": {
+        "axis": "user_profile",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 3,
+        "n_fired_para": 5,
+        "n_not_fired_base": 2,
+        "n_undetermined_base": 0,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": false,
+            "n_fired_base": 0
+          }
+        },
+        "width": 5
+      },
+      "qwen35_9b": {
+        "axis": "user_profile",
+        "floor": 3,
+        "floor_met": true,
+        "n_fired_base": 5,
+        "n_fired_para": 5,
+        "n_not_fired_base": 0,
+        "n_undetermined_base": 0,
+        "pilot_axis": false,
+        "sensitivity": {
+          "50": {
+            "floor_met": true,
+            "n_fired_base": 5
+          },
+          "90": {
+            "floor_met": true,
+            "n_fired_base": 5
+          }
+        },
+        "width": 5
+      }
+    }
+  },
+  "issue": 2587,
+  "n_value_rows": {
+    "qwen25_7b": 78,
+    "qwen35_9b": 81
+  }
+}

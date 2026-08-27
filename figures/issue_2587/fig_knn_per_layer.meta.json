@@ -1,0 +1,974 @@
+{
+  "commit": "932d2221",
+  "render_id": "7b6d619fd6ce4bff",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:17Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "retrieval accuracy (true target in top k)": 0.14,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "retrieval accuracy (true target in top k)": 0.297,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "retrieval accuracy (true target in top k)": 0.356,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "retrieval accuracy (true target in top k)": 0.444,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "retrieval accuracy (true target in top k)": 0.465,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "retrieval accuracy (true target in top k)": 0.482,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "retrieval accuracy (true target in top k)": 0.462,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "retrieval accuracy (true target in top k)": 0.486,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "retrieval accuracy (true target in top k)": 0.482,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "retrieval accuracy (true target in top k)": 0.554,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "retrieval accuracy (true target in top k)": 0.588,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "retrieval accuracy (true target in top k)": 0.622,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "retrieval accuracy (true target in top k)": 0.641,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "retrieval accuracy (true target in top k)": 0.641,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "retrieval accuracy (true target in top k)": 0.65,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "retrieval accuracy (true target in top k)": 0.658,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "retrieval accuracy (true target in top k)": 0.687,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "retrieval accuracy (true target in top k)": 0.695,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "retrieval accuracy (true target in top k)": 0.724,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "retrieval accuracy (true target in top k)": 0.737,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "retrieval accuracy (true target in top k)": 0.745,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "retrieval accuracy (true target in top k)": 0.737,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "retrieval accuracy (true target in top k)": 0.74,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "retrieval accuracy (true target in top k)": 0.73,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "retrieval accuracy (true target in top k)": 0.687,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "retrieval accuracy (true target in top k)": 0.677,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "retrieval accuracy (true target in top k)": 0.665,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "retrieval accuracy (true target in top k)": 0.668,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "retrieval accuracy (true target in top k)": 0.668,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "retrieval accuracy (true target in top k)": 0.685,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "retrieval accuracy (true target in top k)": 0.689,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "retrieval accuracy (true target in top k)": 0.685,
+      "series": "euclidean acc@1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "retrieval accuracy (true target in top k)": 0.208,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "retrieval accuracy (true target in top k)": 0.362,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "retrieval accuracy (true target in top k)": 0.386,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "retrieval accuracy (true target in top k)": 0.47,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "retrieval accuracy (true target in top k)": 0.487,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "retrieval accuracy (true target in top k)": 0.494,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "retrieval accuracy (true target in top k)": 0.462,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "retrieval accuracy (true target in top k)": 0.489,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "retrieval accuracy (true target in top k)": 0.491,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "retrieval accuracy (true target in top k)": 0.561,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "retrieval accuracy (true target in top k)": 0.594,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "retrieval accuracy (true target in top k)": 0.625,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "retrieval accuracy (true target in top k)": 0.653,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "retrieval accuracy (true target in top k)": 0.65,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "retrieval accuracy (true target in top k)": 0.663,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "retrieval accuracy (true target in top k)": 0.668,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "retrieval accuracy (true target in top k)": 0.699,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "retrieval accuracy (true target in top k)": 0.708,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "retrieval accuracy (true target in top k)": 0.741,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "retrieval accuracy (true target in top k)": 0.751,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "retrieval accuracy (true target in top k)": 0.762,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "retrieval accuracy (true target in top k)": 0.754,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "retrieval accuracy (true target in top k)": 0.76,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "retrieval accuracy (true target in top k)": 0.746,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "retrieval accuracy (true target in top k)": 0.712,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "retrieval accuracy (true target in top k)": 0.687,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "retrieval accuracy (true target in top k)": 0.704,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "retrieval accuracy (true target in top k)": 0.668,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "retrieval accuracy (true target in top k)": 0.673,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "retrieval accuracy (true target in top k)": 0.702,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "retrieval accuracy (true target in top k)": 0.718,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "retrieval accuracy (true target in top k)": 0.75,
+      "series": "cosine acc@1",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "retrieval accuracy (true target in top k)": 0.371,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "retrieval accuracy (true target in top k)": 0.569,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "retrieval accuracy (true target in top k)": 0.627,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "retrieval accuracy (true target in top k)": 0.697,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "retrieval accuracy (true target in top k)": 0.731,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "retrieval accuracy (true target in top k)": 0.744,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "retrieval accuracy (true target in top k)": 0.749,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "retrieval accuracy (true target in top k)": 0.766,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "retrieval accuracy (true target in top k)": 0.762,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "retrieval accuracy (true target in top k)": 0.799,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "retrieval accuracy (true target in top k)": 0.825,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "retrieval accuracy (true target in top k)": 0.846,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "retrieval accuracy (true target in top k)": 0.868,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "retrieval accuracy (true target in top k)": 0.869,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "retrieval accuracy (true target in top k)": 0.874,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "retrieval accuracy (true target in top k)": 0.887,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "retrieval accuracy (true target in top k)": 0.901,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "retrieval accuracy (true target in top k)": 0.913,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "retrieval accuracy (true target in top k)": 0.91,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "retrieval accuracy (true target in top k)": 0.929,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "retrieval accuracy (true target in top k)": 0.932,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "retrieval accuracy (true target in top k)": 0.925,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "retrieval accuracy (true target in top k)": 0.925,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "retrieval accuracy (true target in top k)": 0.926,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "retrieval accuracy (true target in top k)": 0.919,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "retrieval accuracy (true target in top k)": 0.912,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "retrieval accuracy (true target in top k)": 0.903,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "retrieval accuracy (true target in top k)": 0.899,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "retrieval accuracy (true target in top k)": 0.899,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "retrieval accuracy (true target in top k)": 0.901,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "retrieval accuracy (true target in top k)": 0.909,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "retrieval accuracy (true target in top k)": 0.897,
+      "series": "euclidean acc@10",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "retrieval accuracy (true target in top k)": 0.472,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "retrieval accuracy (true target in top k)": 0.618,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "retrieval accuracy (true target in top k)": 0.646,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "retrieval accuracy (true target in top k)": 0.703,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "retrieval accuracy (true target in top k)": 0.733,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "retrieval accuracy (true target in top k)": 0.747,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "retrieval accuracy (true target in top k)": 0.755,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "retrieval accuracy (true target in top k)": 0.775,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "retrieval accuracy (true target in top k)": 0.768,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "retrieval accuracy (true target in top k)": 0.804,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "retrieval accuracy (true target in top k)": 0.835,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "retrieval accuracy (true target in top k)": 0.855,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "retrieval accuracy (true target in top k)": 0.862,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "retrieval accuracy (true target in top k)": 0.879,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "retrieval accuracy (true target in top k)": 0.887,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "retrieval accuracy (true target in top k)": 0.892,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "retrieval accuracy (true target in top k)": 0.911,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "retrieval accuracy (true target in top k)": 0.916,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "retrieval accuracy (true target in top k)": 0.928,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "retrieval accuracy (true target in top k)": 0.939,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "retrieval accuracy (true target in top k)": 0.942,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "retrieval accuracy (true target in top k)": 0.936,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "retrieval accuracy (true target in top k)": 0.945,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "retrieval accuracy (true target in top k)": 0.943,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "retrieval accuracy (true target in top k)": 0.938,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "retrieval accuracy (true target in top k)": 0.922,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "retrieval accuracy (true target in top k)": 0.918,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "retrieval accuracy (true target in top k)": 0.91,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "retrieval accuracy (true target in top k)": 0.913,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "retrieval accuracy (true target in top k)": 0.915,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "retrieval accuracy (true target in top k)": 0.93,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "retrieval accuracy (true target in top k)": 0.952,
+      "series": "cosine acc@10",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "retrieval accuracy (true target in top k)": 0.001,
+      "series": "chance @1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "retrieval accuracy (true target in top k)": 0.001,
+      "series": "chance @1",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 130,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "depth (fraction of stack; dashed = full-attention layers)",
+        "ylabel": "retrieval accuracy (true target in top k)",
+        "legend_labels": [
+          "euclidean acc@1",
+          "cosine acc@1",
+          "euclidean acc@10",
+          "cosine acc@10",
+          "chance @1"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "euclidean acc@1",
+      "cosine acc@1",
+      "euclidean acc@10",
+      "cosine acc@10",
+      "chance @1"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

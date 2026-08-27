@@ -1,0 +1,67 @@
+{
+  "anchor_gate": {
+    "abs_deviation": 0.0,
+    "expected_r2": 0.7250873220237553,
+    "realized_r2": 0.7250873220237553,
+    "tol": 0.01
+  },
+  "h1_paired_shared_rows": {
+    "delta_ci95": [
+      -0.02746816258950501,
+      -0.004610879202432402
+    ],
+    "delta_map": -0.01584565128277271,
+    "r2_7b_l19": 0.7250873307399066,
+    "r2_9b_lstar": 0.7092416794571339,
+    "verdict": "h1_consistent"
+  },
+  "issue": 2587,
+  "layer_pair": {
+    "qwen25_7b": 19,
+    "qwen35_9b": 18
+  },
+  "sides": {
+    "qwen25_7b": {
+      "d": 3584,
+      "floors": {
+        "identity_bias": -0.8942743006825653,
+        "identity_copy": -2.5318451061482716,
+        "scaled_identity": 0.0777047480986196,
+        "shuffled_pairing": -0.02268979441236385,
+        "train_mean": -0.02556586202497102
+      },
+      "knn_chance_at_1": 0.001,
+      "knn_ridge_acc_at_10_cosine": 0.926,
+      "knn_ridge_acc_at_10_euclid": 0.924,
+      "knn_ridge_acc_at_1_cosine": 0.772,
+      "knn_ridge_acc_at_1_euclid": 0.771,
+      "n_train": 25000,
+      "selected_lambda": 3162.2776601683795,
+      "test_r2": 0.7250873649544647,
+      "two_draw_ceiling_r": 0.9243655204772949,
+      "val_r2_at_selected": 0.730823765889905,
+      "wc_test_1k_r2": 0.6229945386567471
+    },
+    "qwen35_9b": {
+      "d": 4096,
+      "floors": {
+        "identity_bias": -1.6942256003511447,
+        "identity_copy": -4.679419112466976,
+        "scaled_identity": -0.04985767582477818,
+        "shuffled_pairing": -0.019829142349531592,
+        "train_mean": -0.024867354798804975
+      },
+      "knn_chance_at_1": 0.001,
+      "knn_ridge_acc_at_10_cosine": 0.928,
+      "knn_ridge_acc_at_10_euclid": 0.91,
+      "knn_ridge_acc_at_1_cosine": 0.741,
+      "knn_ridge_acc_at_1_euclid": 0.724,
+      "n_train": 25000,
+      "selected_lambda": 1000.0,
+      "test_r2": 0.7092416314627891,
+      "two_draw_ceiling_r": 0.9089683294296265,
+      "val_r2_at_selected": 0.7273315845668822,
+      "wc_test_1k_r2": 0.5991510353409195
+    }
+  }
+}

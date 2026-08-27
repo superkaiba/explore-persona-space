@@ -1,0 +1,209 @@
+{
+  "commit": "932d2221",
+  "render_id": "f7a8cac937cd4ede",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:28Z",
+  "figsize": [
+    6.0,
+    3.4
+  ],
+  "points": [
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0,
+      "selected ridge \u03bb (validation)": 31.622776601683793,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.03225806451612903,
+      "selected ridge \u03bb (validation)": 100.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.06451612903225806,
+      "selected ridge \u03bb (validation)": 316.2277660168379,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.0967741935483871,
+      "selected ridge \u03bb (validation)": 316.2277660168379,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.12903225806451613,
+      "selected ridge \u03bb (validation)": 316.2277660168379,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.16129032258064516,
+      "selected ridge \u03bb (validation)": 316.2277660168379,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.1935483870967742,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.22580645161290322,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.25806451612903225,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.2903225806451613,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3225806451612903,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3548387096774194,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.3870967741935484,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.41935483870967744,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.45161290322580644,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.4838709677419355,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5161290322580645,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5483870967741935,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.5806451612903226,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6129032258064516,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6451612903225806,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.6774193548387096,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7096774193548387,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7419354838709677,
+      "selected ridge \u03bb (validation)": 1000.0,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.7741935483870968,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8064516129032258,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8387096774193549,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.8709677419354839,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9032258064516129,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.9354838709677419,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 0.967741935483871,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    },
+    {
+      "depth (fraction of stack; dashed = full-attention layers)": 1.0,
+      "selected ridge \u03bb (validation)": 3162.2776601683795,
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "depth (fraction of stack; dashed = full-attention layers)",
+        "ylabel": "selected ridge \u03bb (validation)",
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

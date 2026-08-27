@@ -1,0 +1,55 @@
+{
+ "definition": "rank agreement (tie-corrected) of per-axis answer-text shift norms (Qwen3-Embedding-8B; text_space.flip_norm_mean, observed rollouts only) across models and against the observed-space separation profile",
+ "crossmodel_text_space": {
+  "rho": 0.9523809523809524,
+  "p": 0.000260400024387251,
+  "n": 8,
+  "axes": [
+   "content_constraint",
+   "format",
+   "lexical_marker",
+   "query_content",
+   "query_form",
+   "register",
+   "user_fact",
+   "user_profile"
+  ]
+ },
+ "sep9b_vs_text9b": {
+  "rho": 0.8545454545454546,
+  "p": 0.0008066741521648989,
+  "n": 11,
+  "axes": [
+   "content_constraint",
+   "format",
+   "hedging",
+   "lexical_marker",
+   "persona",
+   "query_content",
+   "query_form",
+   "register",
+   "stance",
+   "user_fact",
+   "user_profile"
+  ]
+ },
+ "sep7b_vs_text7b": {
+  "rho": 0.7380952380952381,
+  "p": 0.03655276105286081,
+  "n": 8,
+  "axes": [
+   "content_constraint",
+   "format",
+   "lexical_marker",
+   "query_content",
+   "query_form",
+   "register",
+   "user_fact",
+   "user_profile"
+  ]
+ },
+ "inputs": [
+  "minpair_delta_2587.json",
+  "crossmodel_contrasts.json"
+ ]
+}

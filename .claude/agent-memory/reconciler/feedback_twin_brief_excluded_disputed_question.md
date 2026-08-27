@@ -21,6 +21,12 @@ facts: plan v3 had ZERO hits for `addendum|BINDING`.
 
 **How to apply:** (1) When verdicts split and the PASS side's brief (or its own
 NOTE) shows the disputed question was excluded, weight it as non-coverage.
+(1b) DELTA-SCOPING variant (#2587 interp r3): a later-round twin PASS whose
+rows read "carried from r1/r2 — pin unchanged / delta: none" for the section
+holding the disputed claim is the same non-coverage — carried-forward sections'
+prose/table claims were never re-inspected, so the PASS cannot rebut a
+recompute-verified factual error there (a false table superlative contradicting
+its own paired figure's plotted series).
 (2) On any plan reviewed after a task-body edit, grep the plan for the addendum
 heading / "BINDING" and diff plan scope vs the body's CURRENT scope sections —
 a "per the body's recommendation" clause is checked against the body as it

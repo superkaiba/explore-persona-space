@@ -1,0 +1,229 @@
+{
+  "commit": "93080c0a+dirty",
+  "render_id": "585057af05b2496f",
+  "git_commit": "93080c0a7c29831e96505827a274dbe30b4e81a4",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2587/fig_carrier_direction_heatmap.meta.json",
+    "figures/issue_2587/fig_carrier_direction_heatmap.pdf",
+    "figures/issue_2587/fig_carrier_direction_heatmap.png",
+    "scripts/issue2587_figures.py",
+    "tests/test_issue2587_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T12:34:43Z",
+  "figsize": [
+    9.2,
+    4.4
+  ],
+  "points": [
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 4.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 4.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 5.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 6.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 7.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 8.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 1.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 8.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 7.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 3.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 3.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 6.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 5.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)": 2.0,
+      "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)": 2.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 6.0,
+      "y": 5.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 8.0,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 4.0,
+      "y": 6.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 10.0,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 3.0,
+      "y": 4.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 2.0,
+      "y": 1.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 9.0,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 1.0,
+      "y": 3.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 7.0,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 11.0,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)": 5.0,
+      "y": 2.0,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 19,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Answer-text ordering across the two models",
+        "xlabel": "answer-text shift-norm rank, Qwen2.5-7B-Instruct (1 = largest)",
+        "ylabel": "answer-text shift-norm rank, Qwen3.5-9B (thinking off) (1 = largest)",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query content",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "title": "9B separation vs 9B answer-text ordering",
+        "xlabel": "observed-separation rank, Qwen3.5-9B (thinking off) (1 = largest)",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Query content",
+          "Query form",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

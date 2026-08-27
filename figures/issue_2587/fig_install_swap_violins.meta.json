@@ -1,0 +1,47 @@
+{
+  "commit": "932d2221",
+  "render_id": "32d0ae3a9f0749bd",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:15Z",
+  "figsize": [
+    7.2,
+    3.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Qwen3.5-9B (thinking off)",
+        "ylabel": "direction cosine (map arm)",
+        "xticklabels": [
+          "value swap",
+          "install (vs bare)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title": "Qwen2.5-7B-Instruct",
+        "xticklabels": [
+          "value swap",
+          "install (vs bare)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
