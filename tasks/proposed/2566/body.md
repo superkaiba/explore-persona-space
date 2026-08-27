@@ -4,6 +4,7 @@ title: 'workflow-fix: test_gates_full_shape red fleet-wide — clarify_experimen
 kind: infra
 tags:
 - wf-fix
+- urgent-main-red
 created_at: '2026-08-25T00:41:55Z'
 has_clean_result: false
 origin_prompt: 'workflow-fix-candidate from the #2342 round-1 implementer (fingerprint
