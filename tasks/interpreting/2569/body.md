@@ -38,6 +38,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2569.md](https://github.com/superkaiba/explore-persona-space/blob/44e48162391f9bf2da737a4faa0a13d9edf9dbde/docs/methodology/issue_2569.md) · [gist](https://gist.github.com/superkaiba/6c2e5bbaf5cb18b9f3b7a71f894cac05)
+
 ## Takeaways
 
 - Held-out R² 0.7194 at n=500,000 against a 0.7263 population linear value (99.1%); the closed-form ridge curve predicts every point to within 0.0058 R².
