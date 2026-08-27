@@ -304,10 +304,19 @@ def state_dir(args) -> Path:
     return big_leg_root(args) / "state"
 
 
+def _cdist(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """cdist pinned to the exact pairwise-euclid kernel: the default mm-based
+    expansion (x^2+y^2-2xy) loses fp32 precision on GPU (smoke parity probe
+    measured max|d|=2.07e-2 vs the 1e-3 tolerance on the H100), and these
+    distances feed kNN ranks (TwoNN/MLE) where near-tie flips matter."""
+    return torch.cdist(a, b, compute_mode="donot_use_mm_for_euclid_dist")
+
+
 def compute_device() -> torch.device:
     """cuda when available (1x H100 venue), else CPU BLAS. First cuda
-    resolution runs a cpu-vs-gpu numerics parity probe (fp64 GEMM + fp32
-    cdist) and fails loud on mismatch — never a silent numeric drift."""
+    resolution disables TF32 (tensor-core fp32 matmul breaks cpu-vs-gpu
+    parity at ~1e-2) and runs a cpu-vs-gpu numerics parity probe (fp64 GEMM
+    + fp32 exact cdist), failing loud on mismatch — never silent drift."""
     global _DEVICE
     if _DEVICE is not None:
         return _DEVICE
@@ -315,19 +324,21 @@ def compute_device() -> torch.device:
         _DEVICE = torch.device("cpu")
         logger.info("[device] cuda unavailable — CPU BLAS path")
         return _DEVICE
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
     dev = torch.device("cuda")
     g = torch.Generator().manual_seed(SEED)
     a = torch.randn(256, 512, dtype=torch.float64, generator=g)
     b = torch.randn(512, 384, dtype=torch.float64, generator=g)
     d64 = float(((a @ b) - (a.to(dev) @ b.to(dev)).cpu()).abs().max())
     x = torch.randn(128, 512, generator=g)
-    d32 = float((torch.cdist(x, x) - torch.cdist(x.to(dev), x.to(dev)).cpu()).abs().max())
+    d32 = float((_cdist(x, x) - _cdist(x.to(dev), x.to(dev)).cpu()).abs().max())
     if d64 > 1e-9 or d32 > 1e-3:
         raise RuntimeError(
             f"cuda parity probe FAILED: fp64 GEMM max|d|={d64:.2e}, fp32 cdist max|d|={d32:.2e}"
         )
     logger.info(
-        "[device] cuda parity probe OK: fp64 GEMM max|d|=%.2e, fp32 cdist max|d|=%.2e", d64, d32
+        "[device] cuda parity probe PASS (fp64 GEMM max|d|=%.2e, fp32 cdist max|d|=%.2e)", d64, d32
     )
     _DEVICE = dev
     return dev
@@ -1493,7 +1504,7 @@ def _corr_radii(X: torch.Tensor) -> np.ndarray:
     pairwise distances on a 2k-row pilot (zero distances = duplicate rows,
     excluded from the radius derivation)."""
     m = min(2000, X.shape[0])
-    d = torch.cdist(X[:m], X[:m])
+    d = _cdist(X[:m], X[:m])
     iu = torch.triu_indices(m, m, offset=1)
     vals = d[iu[0], iu[1]].cpu().numpy()
     pos = vals[vals > 0]
@@ -1513,7 +1524,7 @@ def _knn_and_paircounts(X: torch.Tensor, radii: np.ndarray, k: int):
     counts = np.zeros(len(radii), dtype=np.float64)
     for lo in range(0, n, q):
         hi = min(lo + q, n)
-        d = torch.cdist(X[lo:hi], X)
+        d = _cdist(X[lo:hi], X)
         vals, ix = torch.topk(d, k=k_eff, dim=1, largest=False)
         dists[lo:hi] = vals.cpu().numpy()
         idxs[lo:hi] = ix.cpu().numpy()
