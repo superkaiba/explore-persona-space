@@ -12475,7 +12475,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2617",
       "status": "interpreting",
-      "title": "Safety-valence minimal pairs: does the frozen context\u2192answer map encode the refusal decision or just surface text? [verifying / run complete, uploads verifying]"
+      "title": "Safety-valence minimal pairs: does the frozen context\u2192answer map encode the refusal decision or just surface text? [interpreting]"
     },
     "2618": {
       "has_clean_result": true,
