@@ -53,7 +53,16 @@ Phases (superset of langow's gen/capture/finalize):
   judged rollouts), teacher-forced completion margin per context via
   ``eval.margin.compute_tf_margin``; in-run Spearman rho(margin, rate) > 0
   validation (else the margin DV is dropped from interpretation).
-- ``finalize`` (pod, no model): terminal sentinel written LAST after uploads.
+- ``finalize`` (pod, no model): terminal sentinel written LAST after uploads
+  (root phase sentinels are uploaded to HF here, and ``svmp_done.json`` carries
+  the full HF-prefix enumeration).
+
+Re-entry preflight: ``main`` evaluates every requested phase's completion
+predicate (sentinel + regime/margin fingerprint + done-manifests, all
+model-free) BEFORE the model load, so a resumed / re-entered run skips
+completed phases without paying the 7B load; the margin fingerprint
+additionally keys on the pool-construction knobs + the judged-score content
+(``_margin_fp``).
 
 Pod launch (fresh 1x H100):
 
@@ -468,6 +477,128 @@ def _regime_fp(cfg, extra: dict | None = None) -> str:
     return L._sha16(base)
 
 
+def _judge_scores_sha(cfg) -> str:
+    """Machine-stable sha of the score-bearing CONTENT of judge_scores.json —
+    the per-context kept draw scores plus the judge knobs that shaped them.
+    Never raw file bytes (the ``repro`` timestamp would spuriously invalidate
+    valid margin checkpoints); the draw scores are floats READ FROM A FILE,
+    which code-style.md's float-key rule allows hashing directly."""
+    judge = L._read_json(cfg.out_root / "judge" / "judge_scores.json")
+    if judge is None:
+        return "absent"
+    return L._sha16(
+        {
+            "regime_fp": judge.get("regime_fp"),
+            "judge_model": judge.get("judge_model"),
+            "rubric_sha": judge.get("rubric_sha"),
+            "refused_threshold": judge.get("refused_threshold"),
+            "min_valid_draws": judge.get("min_valid_draws"),
+            "dry_run": judge.get("dry_run"),
+            "draw_scores": {
+                cid: r.get("draw_scores", {}) for cid, r in judge.get("per_context", {}).items()
+            },
+        }
+    )
+
+
+def _margin_fp(cfg) -> str:
+    """Margin-phase resume fingerprint (BLOCKER margin-resume-fingerprint, r2):
+    the base regime PLUS every knob that changes margin output — pool
+    construction (size, opener BPE length, score thresholds, draw rule, benign
+    class set, canned tiny pools), the judged-score CONTENT the pools draw
+    from, and the margin scoring batch knob — so a knob change on resume never
+    reuses stale margin checkpoint rows."""
+    return _regime_fp(
+        cfg,
+        {
+            "phase": "margin",
+            "pool_size": MARGIN_POOL_SIZE,
+            "opener_tokens": MARGIN_OPENER_TOKENS,
+            "refusal_hi": str(MARGIN_REFUSAL_HI),
+            "helpful_lo": str(MARGIN_HELPFUL_LO),
+            "pool_rule": "round-robin-sorted-dedup-v1",
+            "benign_classes": sorted(BENIGN_CLASSES),
+            "canned_tiny": (
+                [list(CANNED_TINY_REFUSAL), list(CANNED_TINY_HELPFUL)] if cfg.tiny else None
+            ),
+            "max_batch_tokens": MARGIN_MAX_BATCH_TOKENS,
+            "judge_scores_sha": _judge_scores_sha(cfg),
+        },
+    )
+
+
+def _upload_record(res) -> dict:
+    """``L._upload_summary`` plus the EFFECTIVE destinations — the overflow repo
+    id and the dest paths rerouted off the canonical repo on a quota 403 — so a
+    downstream staging consumer can resolve rerouted files (concern
+    overflow-staging-disconnected, r2)."""
+    rec = dict(L._upload_summary(res))
+    rec["overflow_repo"] = getattr(res, "overflow_repo", None)
+    rec["rerouted_paths"] = sorted(getattr(res, "rerouted", ()) or ())
+    return rec
+
+
+# ── phase-completion predicates ────────────────────────────────────────────
+# Model-free by construction (sentinel + fingerprint + done-manifest reads
+# only) so main() can skip completed phases BEFORE the 7B model load
+# (BLOCKER phase-reentry-preflight, r2).
+
+
+def _sentinel_ok(cfg, name: str, fp: str) -> bool:
+    """True iff ``out_root/svmp_<name>_done.json`` exists AND regime-matches fp."""
+    s = L._read_json(cfg.out_root / f"svmp_{name}_done.json")
+    return s is not None and s.get("regime_fp") == fp
+
+
+def _gen_complete(cfg) -> bool:
+    """Model-free: per-cell gen done-manifests + regime-matched sentinel."""
+    return all(L._gen_cell_complete(cfg, c) for c in CELLS) and _sentinel_ok(
+        cfg, "gen", _regime_fp(cfg, {"phase": "gen"})
+    )
+
+
+def _capture_complete(cfg) -> bool:
+    """Model-free: per-cell va done-manifests + vc + regime-matched sentinel."""
+    return (
+        all(L._va_cell_complete(cfg, c) for c in CELLS)
+        and L._vc_complete(cfg)
+        and _sentinel_ok(cfg, "capture", _regime_fp(cfg, {"phase": "capture"}))
+    )
+
+
+def _judge_complete(cfg) -> bool:
+    """Model-free: judge_scores.json present + regime-matched judge sentinel."""
+    return (cfg.out_root / "judge" / "judge_scores.json").is_file() and _sentinel_ok(
+        cfg, "judge", _regime_fp(cfg, {"phase": "judge"})
+    )
+
+
+def _margin_complete(cfg) -> bool:
+    """Model-free: pools + margins present + ``_margin_fp``-matched sentinel."""
+    mdir = cfg.out_root / "margin"
+    return (
+        (mdir / "pools.json").is_file()
+        and (mdir / "margins.json").is_file()
+        and _sentinel_ok(cfg, "margin", _margin_fp(cfg))
+    )
+
+
+def _finalize_complete(cfg) -> bool:
+    """Model-free: terminal svmp_done.json present + regime-matched."""
+    s = L._read_json(cfg.out_root / "svmp_done.json")
+    return s is not None and s.get("regime_fp") == _regime_fp(cfg, {"phase": "finalize"})
+
+
+PHASE_COMPLETE = {
+    "gen": _gen_complete,
+    "capture": _capture_complete,
+    "judge": _judge_complete,
+    "margin": _margin_complete,
+    "finalize": _finalize_complete,
+}
+assert set(PHASE_COMPLETE) == set(PHASES), (sorted(PHASE_COMPLETE), PHASES)
+
+
 # ── bank gates + build ─────────────────────────────────────────────────────
 
 
@@ -613,6 +744,14 @@ def build_bank(tiny: bool, tok, xstest_carriers: dict[str, dict]) -> dict:
 
 
 def write_bank_manifest(cfg, bank: dict) -> None:
+    # Realized per-class-per-category tally of the AUTHORED constructed grid —
+    # disclosure of the category spread vs the registered 2-per-category sketch
+    # (concern bank-family-balance-drift, r2; the spread is a scope caveat for
+    # the report, never a gate).
+    tally: dict[str, dict[str, int]] = {}
+    for cls, cat, _qa, _qb in CONSTRUCTED_PAIRS:
+        tally.setdefault(cls, {})
+        tally[cls][cat] = tally[cls].get(cat, 0) + 1
     write_json_atomic(
         cfg.manifest_dir / "svmp_bank.json",
         {
@@ -623,6 +762,7 @@ def write_bank_manifest(cfg, bank: dict) -> None:
             "n_contexts": len(bank["contexts"]),
             "n_pairs": len(bank["pairs"]),
             "pair_classes": list(PAIR_CLASSES),
+            "constructed_category_tally": tally,
             "orientation": "constructed: a=harmful/variant b=benign/base; xstest: a=unsafe(v2) b=safe(v1)",
             "capture_filenames": {
                 "va": f"va_langow_{CELL}.pt",
@@ -697,7 +837,7 @@ def phase_gen(cfg, bank: dict, model, tok) -> int:
             resume_skip=False,
             delete_local=False,
         )
-        upload["anchors"] = L._upload_summary(res)
+        upload["anchors"] = _upload_record(res)
     write_json_atomic(
         sentinel,
         {
@@ -751,7 +891,7 @@ def phase_capture(cfg, bank: dict, model, tok) -> int:
                 resume_skip=False,
                 delete_local=False,
             )
-            upload[name] = L._upload_summary(res)
+            upload[name] = _upload_record(res)
     write_json_atomic(
         sentinel,
         {
@@ -776,8 +916,21 @@ def _judge_dir(cfg) -> Path:
 
 def phase_judge(cfg, bank: dict) -> int:
     """216 x K graded 0-100 refusal reads. bank is the in-memory bank when a
-    model-loading phase ran this process, else the persisted manifest."""
+    model-loading phase ran this process, else the persisted manifest.
+
+    Plan-§4.3 45-min fallback runbook (operational — the synchronous
+    ``force_sync`` wave cannot self-interrupt): if the wave exceeds ~45 min,
+    kill the process and re-run ``--phase judge`` — the preflight skips the
+    model load, and ``judge_cache/`` resumes already-scored items at zero
+    double-spend. The cache dir is uploaded to HF alongside the scores so a
+    FRESH pod can salvage a partial wave: stage
+    ``{HF_PREFIX}/raw_completions/judge/judge_cache/`` back to
+    ``<out_root>/judge/judge_cache/`` before re-entry (concern
+    judge-timeout-fallback-missing, r2)."""
     print("[phase=judge] start", flush=True)
+    if _judge_complete(cfg):
+        logger.info("[judge] regime-matched sentinel + judge_scores present — skipping (no spend)")
+        return 0
     from explore_persona_space.eval.graded_judge import judge_graded
     from explore_persona_space.eval.judge_dispatch import validate_batch_custom_ids
 
@@ -801,6 +954,12 @@ def phase_judge(cfg, bank: dict) -> int:
     # (the primary path re-validates internally; this fails loud at driver time).
     validate_batch_custom_ids(f"{iid}__{i:05d}__00" for i, (iid, _q, _a) in enumerate(items))
 
+    print(
+        f"[phase=judge] wave start: {len(items)} items (force_sync). 45-min fallback: kill + "
+        "re-run --phase judge (preflight skips the model load; judge_cache/ resumes scored "
+        "items — see phase_judge docstring)",
+        flush=True,
+    )
     save_raw = jdir / "judge_raw_query_svmp.json"
     result = judge_graded(
         items,
@@ -870,7 +1029,22 @@ def phase_judge(cfg, bank: dict) -> int:
             resume_skip=False,
             delete_local=False,
         )
-        upload["judge"] = L._upload_summary(res)
+        upload["judge"] = _upload_record(res)
+        # upload_dir_sharded's glob is NON-recursive, so the judge_cache/
+        # subdir needs its OWN call — the cache is the §4.3 fallback's
+        # partial-wave salvage surface (reconciler r1 "Observed but not
+        # raised"; concern judge-timeout-fallback-missing, r2).
+        cache_dir = jdir / "judge_cache"
+        if cache_dir.is_dir():
+            res = L.upload_dir_sharded(
+                cache_dir,
+                L.HF_DATA_REPO,
+                f"{HF_PREFIX}/raw_completions/judge/judge_cache",
+                shard_glob="*.json",
+                resume_skip=False,
+                delete_local=False,
+            )
+            upload["judge_cache"] = _upload_record(res)
     write_json_atomic(
         cfg.out_root / "svmp_judge_done.json",
         {
@@ -895,11 +1069,42 @@ def _margin_dir(cfg) -> Path:
     return d
 
 
+def _assert_pool_provenance(pool: list[dict], text_by: dict, opener_fn) -> None:
+    """Fail-loud pool provenance (concern margin-pool-contract, r2): every
+    opener must equal the prefix-decode of its recorded source rollout,
+    recomputed via the SAME opener_fn — a string compare of the same
+    prefix-decode, never a re-tokenize-and-count round-trip (BPE seam trap,
+    gotchas.md)."""
+    for e in pool:
+        key = (e["source_context"], e["source_draw"])
+        src = text_by.get(key)
+        assert src is not None, ("pool entry source rollout missing", key)
+        op = opener_fn(src)
+        assert op is not None and op == e["answer"], ("pool opener provenance mismatch", key)
+        assert e["answer"].strip(), ("empty pool opener", key)
+
+
+def _pool_floor_check(n_refusal: int, n_helpful: int, allow_short: bool) -> bool:
+    """Hard pool-size floor (concern margin-pool-contract, r2): refuse pools
+    under the registered MARGIN_POOL_SIZE unless --allow-short-pools was passed
+    (disclosed proceed). Returns the short-pool-waiver flag for pools.json."""
+    short = {
+        k: n for k, n in (("refusal", n_refusal), ("helpful", n_helpful)) if n < MARGIN_POOL_SIZE
+    }
+    if short and not allow_short:
+        raise RuntimeError(
+            f"margin pools under the registered size {MARGIN_POOL_SIZE}: {short} — pass "
+            "--allow-short-pools to proceed disclosed (sizes recorded in pools.json meta)"
+        )
+    return bool(short)
+
+
 def _build_margin_pools(cfg, bank: dict, tok) -> tuple[list[dict], list[dict], dict]:
     """Fixed opener pools from judged rollouts. refusal pool = first 24 BPE tokens
     of the first MARGIN_POOL_SIZE rollouts scoring >= MARGIN_REFUSAL_HI, drawn
     round-robin across distinct contexts. helpful pool = score <= MARGIN_HELPFUL_LO
-    rollouts whose context is a BENIGN pair member. Exact-dup openers skipped."""
+    rollouts whose context is a BENIGN pair member. Exact-dup openers skipped.
+    Provenance-asserted + floor-checked (concern margin-pool-contract, r2)."""
     judge = L._read_json(_judge_dir(cfg) / "judge_scores.json")
     assert judge is not None, "judge_scores.json missing — run --phase judge first"
     per_ctx = judge["per_context"]
@@ -950,20 +1155,32 @@ def _build_margin_pools(cfg, bank: dict, tok) -> tuple[list[dict], list[dict], d
 
     refusal = _draw(lambda cid, s: s >= MARGIN_REFUSAL_HI)
     helpful = _draw(lambda cid, s: s <= MARGIN_HELPFUL_LO and cid in benign_ctx)
+    _assert_pool_provenance(refusal, text_by, _opener)
+    _assert_pool_provenance(helpful, text_by, _opener)
+    waiver = _pool_floor_check(
+        len(refusal), len(helpful), bool(getattr(cfg, "allow_short_pools", False))
+    )
     meta = {
         "pool_size": MARGIN_POOL_SIZE,
         "n_opener_tokens": MARGIN_OPENER_TOKENS,
         "n_refusal": len(refusal),
         "n_helpful": len(helpful),
+        "short_pool_waiver": waiver,
     }
     return refusal, helpful, meta
 
 
 def phase_margin(cfg, bank: dict, model, tok) -> int:
     print("[phase=margin] start", flush=True)
+    if _margin_complete(cfg):
+        logger.info("[margin] _margin_fp-matched sentinel + margins present — skipping")
+        return 0
     from explore_persona_space.eval.margin import compute_tf_margin
 
     mdir = _margin_dir(cfg)
+    # Computed ONCE per phase entry; keys every checkpoint row, margins.json,
+    # and the sentinel (BLOCKER margin-resume-fingerprint, r2).
+    mfp = _margin_fp(cfg)
     if cfg.tiny:
         refusal = [
             {
@@ -1005,7 +1222,7 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
     done: set[str] = set()
     if ckpt.is_file():
         for r in L._read_jsonl(ckpt, tolerate_torn_tail=True):
-            if r.get("regime_fp") == _regime_fp(cfg, {"phase": "margin"}):
+            if r.get("regime_fp") == mfp:
                 done.add(r["context_id"])
     cids = bank["per_cell"][CELL]
     t0 = time.time()
@@ -1027,7 +1244,7 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
                 json.dumps(
                     {
                         "context_id": cid,
-                        "regime_fp": _regime_fp(cfg, {"phase": "margin"}),
+                        "regime_fp": mfp,
                         "margin": mr.margin,
                         "pos_mean_ln_logp": mr.pos_mean_ln_logp,
                         "neg_mean_ln_logp": mr.neg_mean_ln_logp,
@@ -1045,16 +1262,14 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
             )
 
     # Aggregate + rho(margin, refusal_rate) > 0 validation.
-    rows = [
-        r for r in L._read_jsonl(ckpt) if r.get("regime_fp") == _regime_fp(cfg, {"phase": "margin"})
-    ]
+    rows = [r for r in L._read_jsonl(ckpt) if r.get("regime_fp") == mfp]
     per_ctx = {r["context_id"]: r for r in rows}
     rho, rho_p, val_pass = _validate_margin_rate(cfg, per_ctx)
     write_json_atomic(
         mdir / "margins.json",
         {
             "issue": ISSUE,
-            "regime_fp": _regime_fp(cfg, {"phase": "margin"}),
+            "regime_fp": mfp,
             "cell": CELL,
             "pool_meta": pool_meta,
             "per_context": per_ctx,
@@ -1076,11 +1291,11 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
                 resume_skip=False,
                 delete_local=False,
             )
-            upload[glob] = L._upload_summary(res)
+            upload[glob] = _upload_record(res)
     write_json_atomic(
         cfg.out_root / "svmp_margin_done.json",
         {
-            "regime_fp": _regime_fp(cfg, {"phase": "margin"}),
+            "regime_fp": mfp,
             "rho_margin_rate": rho,
             "validation_pass": val_pass,
             "upload": upload,
@@ -1114,8 +1329,15 @@ def _validate_margin_rate(cfg, per_ctx: dict[str, dict]):
 
 
 def phase_finalize(cfg) -> int:
-    """Terminal sentinel — written LAST, after all uploads (upload-policy)."""
+    """Terminal sentinel — written LAST, after all uploads (upload-policy).
+    Uploads the root phase sentinels to HF first (concern
+    phase-sentinels-not-durable, r2); ``svmp_done.json`` then carries the full
+    HF-prefix enumeration + per-phase upload records and is itself uploaded
+    as a durability copy (the LOCAL file remains the poller signal)."""
     print("[phase=finalize] start", flush=True)
+    if _finalize_complete(cfg):
+        logger.info("[finalize] regime-matched svmp_done.json present — skipping")
+        return 0
     gen_s = L._read_json(cfg.out_root / "svmp_gen_done.json")
     cap_s = L._read_json(cfg.out_root / "svmp_capture_done.json")
     judge_s = L._read_json(cfg.out_root / "svmp_judge_done.json")
@@ -1135,6 +1357,31 @@ def phase_finalize(cfg) -> int:
             "n_rows_captured": v.get("n_rows"),
             "n_empty_rows": v.get("n_empty_rows"),
         }
+    # Root phase sentinels -> HF BEFORE the terminal sentinel is written
+    # (svmp_*_done.json matches the 4 phase sentinels, NOT svmp_done.json).
+    upload: dict = {"mode": cfg.upload}
+    if cfg.upload == "hf":
+        res = L.upload_dir_sharded(
+            cfg.out_root,
+            L.HF_DATA_REPO,
+            f"{HF_PREFIX}/sentinels",
+            shard_glob="svmp_*_done.json",
+            resume_skip=False,
+            delete_local=False,
+        )
+        upload["sentinels"] = _upload_record(res)
+    # Every HF prefix this run writes (upload-policy: a per-issue upload-verify
+    # enumerates ALL prefixes; also the staging consumer's lookup surface).
+    hf_prefixes = [
+        f"{HF_PREFIX}/raw_completions/anchors",
+        f"{HF_PREFIX}/analysis_tensors/va",
+        f"{HF_PREFIX}/analysis_tensors/vc",
+        f"{HF_PREFIX}/manifests",
+        f"{HF_PREFIX}/raw_completions/judge",
+        f"{HF_PREFIX}/raw_completions/judge/judge_cache",
+        f"{HF_PREFIX}/analysis_tensors/margin",
+        f"{HF_PREFIX}/sentinels",
+    ]
     write_json_atomic(
         cfg.out_root / "svmp_done.json",
         {
@@ -1149,10 +1396,22 @@ def phase_finalize(cfg) -> int:
             "upload_capture": cap_s.get("upload"),
             "upload_judge": judge_s.get("upload"),
             "upload_margin": margin_s.get("upload"),
+            "upload_finalize": upload,
             "hf_prefix": HF_PREFIX,
+            "hf_prefixes": hf_prefixes,
             "repro": L._repro(cfg, "finalize"),
         },
     )
+    if cfg.upload == "hf":
+        res = L.upload_dir_sharded(
+            cfg.out_root,
+            L.HF_DATA_REPO,
+            f"{HF_PREFIX}/sentinels",
+            shard_glob="svmp_done.json",
+            resume_skip=False,
+            delete_local=False,
+        )
+        logger.info("[finalize] svmp_done.json durability copy: %s", _upload_record(res))
     print("[phase=done] svmp_done.json written", flush=True)
     return 0
 
@@ -1182,6 +1441,13 @@ def build_argparser() -> argparse.ArgumentParser:
         action="store_true",
         help="~5-call LIVE sync judge probe (real Anthropic request/response contract "
         "at the production instrument) on benign items, exit 0 (no model, no bank)",
+    )
+    ap.add_argument(
+        "--allow-short-pools",
+        action="store_true",
+        help="disclosed-proceed when a margin opener pool fills below the registered "
+        f"MARGIN_POOL_SIZE={MARGIN_POOL_SIZE} (sizes recorded in pools.json meta); "
+        "default: fail loud",
     )
     return ap
 
@@ -1364,12 +1630,25 @@ def main() -> int:
         return _judge_live_probe(Path(args.out_root))
     _load_langow()
     cfg = L.build_cfg(args)
+    cfg.allow_short_pools = bool(args.allow_short_pools)
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
     phases = list(PHASES) if args.phase == "all" else [args.phase]
+    # Re-entry preflight (BLOCKER phase-reentry-preflight, r2): evaluate every
+    # requested phase's model-free completion predicate BEFORE any model load,
+    # so a resumed run skips completed phases without paying the 7B load.
+    t_pre = time.time()
+    status = {p: PHASE_COMPLETE[p](cfg) for p in phases}
+    pending = [p for p in phases if not status[p]]
+    skipped = [p for p in phases if status[p]]
+    print(
+        f"[preflight] phases={phases} skipped={skipped} pending={pending} "
+        f"({time.time() - t_pre:.2f}s, model-free)",
+        flush=True,
+    )
     model = tok = None
     bank = None
-    if any(p in ("gen", "capture", "margin") for p in phases):
+    if any(p in ("gen", "capture", "margin") for p in pending):
         model, tok = L.R.load_model_and_tokenizer(cfg)
         bank = build_bank(cfg.tiny, tok, _load_xstest_carriers())
         print(
@@ -1378,7 +1657,7 @@ def main() -> int:
             flush=True,
         )
     rc = 0
-    for phase in phases:
+    for phase in pending:
         if phase == "gen":
             rc = phase_gen(cfg, bank, model, tok)
         elif phase == "capture":

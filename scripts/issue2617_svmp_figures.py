@@ -325,11 +325,13 @@ def fig_retrieval(summary: dict) -> plt.Figure:
 def fig_calibration(summary: dict) -> plt.Figure:
     arm_c = _arm_colors()
     cal = summary["calibration"]
+    n_by_class = summary["n_pairs_by_class"]
+    fg = summary["flip_groups"]
     cats = list(PAIR_CLASSES) + ["all", "flip", "nonflip"]
-    labels = [CLASS_LABELS[c] for c in PAIR_CLASSES] + [
-        "All\npairs",
-        "Flip\npairs",
-        "Non-flip\npairs",
+    labels = [f"{CLASS_LABELS[c]}\nn={n_by_class.get(c, 0)}" for c in PAIR_CLASSES] + [
+        f"All pairs\nn={summary['n_pairs']}",
+        f"Flip pairs\nn={fg['n_flip']}",
+        f"Non-flip pairs\nn={fg['n_nonflip']}",
     ]
     fig, ax = plt.subplots(figsize=(11.5, 4.4))
     width = 0.26
@@ -365,16 +367,21 @@ def fig_axis_loading(rows: list[dict]) -> plt.Figure:
     series = [(f"axis_cos_pred_{a}", ARM_LABELS[a], arm_c[a]) for a in ALL_ARMS]
     series.append(("axis_cos_obs", "Observed delta", OBS_BLACK))
     offs = (-0.3, -0.1, 0.1, 0.3)
+    # Rows with flip_group == "undefined" (no live judge rates) get their own
+    # labeled group rather than being silently dropped (r2, figure-count-labels).
+    groups = list(FLIP_GROUPS)
+    if any(r["flip_group"] == "undefined" for r in rows):
+        groups.append("undefined")
     n = 0
     labels = []
-    for gi, grp in enumerate(FLIP_GROUPS):
+    for gi, grp in enumerate(groups):
         grp_rows = [r for r in rows if r["flip_group"] == grp]
-        labels.append(f"{FLIP_GROUP_LABELS[grp]}\nn={len(grp_rows)}")
+        labels.append(f"{FLIP_GROUP_LABELS.get(grp, 'Undefined')}\nn={len(grp_rows)}")
         for (key, _lab, col), off in zip(series, offs):
             n += _strip(ax, gi + off, [r[key] for r in grp_rows], col, rng, width=0.05)
     _require_points(n, "axis-loading strips")
     ax.axhline(0.0, color=REF_GREY, lw=0.8)
-    ax.set_xticks(range(len(FLIP_GROUPS)), labels)
+    ax.set_xticks(range(len(groups)), labels)
     ax.set_ylabel("Refusal-axis loading cos(Δ, r̂ flip axis, LOO)")
     ax.set_title("Flip-axis loading: flip vs non-flip pairs")
     ax.legend(
@@ -452,7 +459,7 @@ def fig_manipulation(rows: list[dict], ctx_rows: list[dict]) -> plt.Figure:
                 marker="o",
                 linestyle="",
                 color=OBS_BLACK,
-                label="Member a (harmful / unsafe)",
+                label="Member a (harmful/variant · unsafe)",
             ),
             Line2D(
                 [],
@@ -463,7 +470,7 @@ def fig_manipulation(rows: list[dict], ctx_rows: list[dict]) -> plt.Figure:
                 markeredgecolor=OBS_BLACK,
                 markeredgewidth=1.0,
                 color=OBS_BLACK,
-                label="Member b (benign / safe)",
+                label="Member b (benign/base · safe)",
             ),
         ],
         fontsize=7,
@@ -565,6 +572,7 @@ def fig_span_vs_tail(rows: list[dict]) -> plt.Figure:
 def fig_twin_layers(summary: dict) -> plt.Figure:
     arm_c = _arm_colors()
     cls_c = _class_colors()
+    n_by_class = summary["n_pairs_by_class"]
     primary = int(summary["layers"]["primary"])
     layers = sorted([primary] + [int(x) for x in summary["layers"]["twins"]])
 
@@ -599,7 +607,7 @@ def fig_twin_layers(summary: dict) -> plt.Figure:
                     ms=4,
                     lw=1.3,
                     color=cls_c[cls],
-                    label=CLASS_LABELS[cls].replace("\n", " "),
+                    label=f"{CLASS_LABELS[cls].replace(chr(10), ' ')} (n={n_by_class.get(cls, 0)})",
                 )
                 n += int(np.isfinite(np.asarray(ys)).sum())
         ax.set_title(ARM_LABELS[arm])
@@ -681,22 +689,41 @@ def main() -> int:
     summary, rows, ctx_rows = load_reads(in_dir)
     anchors = load_anchors(anchor_json)
     out_dir.mkdir(parents=True, exist_ok=True)
-    figs = {
-        "svmp_hero": fig_hero(summary, rows, anchors),
-        "svmp_retrieval_acc1": fig_retrieval(summary),
-        "svmp_calibration_slopes": fig_calibration(summary),
-        "svmp_axis_loading": fig_axis_loading(rows),
-        "svmp_margin_validation": fig_margin_validation(ctx_rows),
-        "svmp_manipulation_check": fig_manipulation(rows, ctx_rows),
-        "svmp_len_vs_cos": fig_len_vs_cos(rows),
-        "svmp_span_vs_tail": fig_span_vs_tail(rows),
-        "svmp_twin_layers": fig_twin_layers(summary),
+    halts = summary.get("halts", {})
+    halted = bool(halts.get("dichotomy_halted") or halts.get("judge_integrity_halt"))
+    dry_judge = bool(summary.get("judge", {}).get("dry_run"))
+    # Figure gating (concern dichotomy-halt-not-enforced, r2): under a plan-§7
+    # halt on a LIVE judge, the flip-dichotomy HEADLINE figures (hero,
+    # axis-loading) do not ship — the judge-derived diagnostics (manipulation
+    # check, margin validation) still render for halt inspection. A DRY-RUN
+    # judge (tiny smoke input) has no rate data by construction, so ALL
+    # judge-derived figures are skipped there instead of crashing on
+    # zero-point panels.
+    builders: dict[str, tuple] = {
+        "svmp_hero": (lambda: fig_hero(summary, rows, anchors), "dichotomy"),
+        "svmp_retrieval_acc1": (lambda: fig_retrieval(summary), None),
+        "svmp_calibration_slopes": (lambda: fig_calibration(summary), None),
+        "svmp_axis_loading": (lambda: fig_axis_loading(rows), "dichotomy"),
+        "svmp_margin_validation": (lambda: fig_margin_validation(ctx_rows), "judge"),
+        "svmp_manipulation_check": (lambda: fig_manipulation(rows, ctx_rows), "judge"),
+        "svmp_len_vs_cos": (lambda: fig_len_vs_cos(rows), None),
+        "svmp_span_vs_tail": (lambda: fig_span_vs_tail(rows), None),
+        "svmp_twin_layers": (lambda: fig_twin_layers(summary), None),
     }
-    for stem, fig in figs.items():
+    n_rendered = 0
+    for stem, (build, gate) in builders.items():
+        if gate is not None and dry_judge:
+            print(f"[fig] SKIP {stem} — dry-run-judge input carries no rate data", flush=True)
+            continue
+        if gate == "dichotomy" and halted:
+            print(f"[fig] SKIP {stem} — plan-§7 halt: {halts.get('reasons')}", flush=True)
+            continue
+        fig = build()
         paths = savefig_paper(fig, stem, dir=out_dir)
         plt.close(fig)
         print(f"[fig] {paths['png']}", flush=True)
-    print(f"[out] {len(figs)} figures -> {out_dir}", flush=True)
+        n_rendered += 1
+    print(f"[out] {n_rendered}/{len(builders)} figures -> {out_dir}", flush=True)
     return 0
 
 

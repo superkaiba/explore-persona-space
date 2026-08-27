@@ -221,8 +221,62 @@ STAGE_FILES_OPTIONAL = [
 ]
 
 
-def stage_inputs_svmp(local: str | None, stage_dir: Path) -> Path:
-    """Resolve the SVMP out-root: ``--local`` dir as-is, else stage from HF.
+def _resolve_data_repo_revision() -> str:
+    """Pin the data repo's main -> resolved commit sha ONCE per run (#2061;
+    concern ridge-provenance-unpinned, r2) so every staged run input + ridge
+    payload is fetched at ONE recorded revision."""
+    from huggingface_hub import HfApi
+
+    sha = HfApi().dataset_info(HF_DATA_REPO).sha
+    assert sha, f"could not resolve dataset revision for {HF_DATA_REPO}"
+    return sha
+
+
+def _stage_with_overflow(remote_rel: str, target: Path, revision: str | None) -> str:
+    """Stage one run artifact from the canonical repo at the pinned revision;
+    on a missing entry, fall back to the OVERFLOW repo (quota-403 reroutes land
+    there under the same path — concern overflow-staging-disconnected, r2).
+    Returns the realized source tag ("canonical" | "overflow")."""
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+    from explore_persona_space.orchestrate.upload_sharded import DEFAULT_OVERFLOW_REPO
+
+    try:
+        stage_hub_file(
+            HF_DATA_REPO,
+            f"{HF_PREFIX}/{remote_rel}",
+            target,
+            repo_type="dataset",
+            revision=revision,
+            overwrite=True,
+        )
+        return "canonical"
+    except EntryNotFoundError:
+        logger.warning(
+            "[stage] %s absent on %s@%s — trying overflow repo %s",
+            remote_rel,
+            HF_DATA_REPO,
+            (revision or "main")[:12],
+            DEFAULT_OVERFLOW_REPO,
+        )
+        stage_hub_file(
+            DEFAULT_OVERFLOW_REPO,
+            f"{HF_PREFIX}/{remote_rel}",
+            target,
+            repo_type="dataset",
+            overwrite=True,
+        )
+        return "overflow"
+
+
+def stage_inputs_svmp(local: str | None, stage_dir: Path) -> tuple[Path, str | None, dict]:
+    """Resolve the SVMP out-root: ``--local`` dir as-is, else stage from HF at
+    ONE pinned revision (with a per-file overflow-repo fallback).
+
+    Returns ``(root, hf_revision, sources)`` — revision is None on --local;
+    sources maps remote_rel -> "canonical" | "overflow" (recorded in
+    summary.json's staging block).
 
     The --local layout is the driver's own out-root (manifests/, vc_store/,
     va_store/, anchors/, judge/, margin/), so a pod out-root or the tiny
@@ -233,37 +287,29 @@ def stage_inputs_svmp(local: str | None, stage_dir: Path) -> Path:
         assert (root / "manifests" / "svmp_bank.json").is_file(), (
             f"--local {root} lacks manifests/svmp_bank.json"
         )
-        return root
-    from explore_persona_space.orchestrate.hub import stage_hub_file
-
+        return root, None, {}
     stage_dir.mkdir(parents=True, exist_ok=True)
     free_gb = shutil.disk_usage(stage_dir).free / 1e9
     assert free_gb >= 1.0, f"staging dir {stage_dir} has {free_gb:.2f} GB free (< 1 GB floor)"
-    print(f"[stage] dir={stage_dir} free={free_gb:.1f} GB", flush=True)
+    revision = _resolve_data_repo_revision()
+    print(f"[stage] dir={stage_dir} free={free_gb:.1f} GB revision={revision[:12]}", flush=True)
+    sources: dict[str, str] = {}
     for remote_rel, local_rel in STAGE_FILES:
         target = stage_dir / local_rel
         target.parent.mkdir(parents=True, exist_ok=True)
         # overwrite=True: the producer re-uploads with resume_skip=False; a
         # stale local mirror would silently serve a prior run.
-        stage_hub_file(
-            HF_DATA_REPO, f"{HF_PREFIX}/{remote_rel}", target, repo_type="dataset", overwrite=True
-        )
-        print(f"[stage] {remote_rel} -> {target}", flush=True)
+        sources[remote_rel] = _stage_with_overflow(remote_rel, target, revision)
+        print(f"[stage] {remote_rel} -> {target} ({sources[remote_rel]})", flush=True)
     for remote_rel, local_rel in STAGE_FILES_OPTIONAL:
         target = stage_dir / local_rel
         target.parent.mkdir(parents=True, exist_ok=True)
         try:
-            stage_hub_file(
-                HF_DATA_REPO,
-                f"{HF_PREFIX}/{remote_rel}",
-                target,
-                repo_type="dataset",
-                overwrite=True,
-            )
-            print(f"[stage] {remote_rel} -> {target}", flush=True)
+            sources[remote_rel] = _stage_with_overflow(remote_rel, target, revision)
+            print(f"[stage] {remote_rel} -> {target} ({sources[remote_rel]})", flush=True)
         except Exception as exc:  # adjudicated at load time vs dry_run flag
             logger.warning("[stage] optional %s not staged (%s)", remote_rel, type(exc).__name__)
-    return stage_dir
+    return stage_dir, revision, sources
 
 
 def _fabricate_tiny_ridge(path: Path, d: int, layer: int, arm: str) -> None:
@@ -285,10 +331,11 @@ def _fabricate_tiny_ridge(path: Path, d: int, layer: int, arm: str) -> None:
 
 
 def stage_ridge_payloads_svmp(
-    stage_dir: Path, layers: list[int], *, tiny: bool, d: int
+    stage_dir: Path, layers: list[int], *, tiny: bool, d: int, revision: str | None = None
 ) -> dict[int, dict[str, Path]]:
-    """Per-layer, per-arm ridge payload paths (staged from HF, or fabricated
-    at the tiny store dim under --tiny). Extends RD.stage_ridge_payloads
+    """Per-layer, per-arm ridge payload paths (staged from HF at the pinned
+    ``revision`` — concern ridge-provenance-unpinned, r2 — or fabricated at
+    the tiny store dim under --tiny). Extends RD.stage_ridge_payloads
     (L19-only) to the L14/L26 twin layers."""
     out: dict[int, dict[str, Path]] = {}
     if tiny:
@@ -302,15 +349,74 @@ def stage_ridge_payloads_svmp(
         return out
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
+    if revision is None:
+        revision = _resolve_data_repo_revision()
     for layer in layers:
         out[layer] = {}
         for arm in ARMS:
             remote = RIDGE_HUB_PATHS[arm].format(layer=layer)
             target = stage_dir / "ridge" / f"L{layer}" / arm / Path(remote).name
             target.parent.mkdir(parents=True, exist_ok=True)
-            stage_hub_file(HF_DATA_REPO, remote, target, repo_type="dataset")
+            stage_hub_file(HF_DATA_REPO, remote, target, repo_type="dataset", revision=revision)
             out[layer][arm] = target
     return out
+
+
+ANCHOR_2564_DIR = REPO_ROOT / "eval_results" / "issue_2564" / "gramslot_pilot"
+
+
+def _anchor_parity_probe_2564() -> None:
+    """Plan §12(f) reuse control (concern ridge-provenance-unpinned, r2):
+    recompute the #2564 benign-anchor per-class cos medians from the parent's
+    committed perpair.jsonl and assert they match the committed summary the
+    figures consume — a drifted / stale anchor artifact fails loud BEFORE any
+    new read ships."""
+    summ = json.loads((ANCHOR_2564_DIR / "summary.json").read_text(encoding="utf-8"))
+    rows = [
+        json.loads(x)
+        for x in (ANCHOR_2564_DIR / "perpair.jsonl").read_text(encoding="utf-8").split("\n")
+        if x.strip()
+    ]
+    assert rows, ANCHOR_2564_DIR
+    n_cells = 0
+    for arm, per_cls in summ["cos_median_by_axis_arm"].items():
+        for cls, v in per_cls.items():
+            vals = np.array(
+                [r[f"cos_{arm}"] for r in rows if r["pair_class"] == cls], dtype=np.float64
+            )
+            assert len(vals), (arm, cls)
+            m = float(np.nanmedian(vals))
+            assert np.isclose(m, float(v), rtol=0.0, atol=1e-9), (
+                "anchor-median drift vs committed #2564 summary",
+                arm,
+                cls,
+                m,
+                v,
+            )
+            n_cells += 1
+    print(
+        f"[anchor-parity] #2564 medians recomputed from perpair.jsonl match "
+        f"summary.json ({n_cells} arm x class cells)",
+        flush=True,
+    )
+
+
+def _loo_identity_bias(x: np.ndarray, y: np.ndarray, finite_mask: np.ndarray) -> np.ndarray:
+    """Vectorized leave-one-out form of
+    ``analysis.mapping_baselines.identity_bias_predict`` (W = identity,
+    learned bias): row i's prediction is ``x_i + mean_{j != i}(y_j - x_j)``
+    over the finite rows; non-finite rows stay NaN. Per-row equality with the
+    canonical helper is pinned by
+    ``tests/test_issue2617_round2_fixes.py::test_loo_identity_bias_matches_canonical_helper``
+    (concern identity-bias-helper-bypassed, r2)."""
+    pred = np.full_like(y, np.nan)
+    n = int(finite_mask.sum())
+    if n >= 2:
+        diffs = y[finite_mask] - x[finite_mask]
+        total = diffs.sum(axis=0)
+        loo_bias = (total[None, :] - diffs) / (n - 1)
+        pred[finite_mask] = x[finite_mask] + loo_bias
+    return pred
 
 
 # ── loading ───────────────────────────────────────────────────────────────
@@ -688,6 +794,12 @@ def compute(data: dict, ridge_paths: dict[int, dict[str, Path]], *, tiny: bool) 
     bi = np.array([ctx_pos[p["b"]] for p in pairs])
     classes = np.array([p["pair_class"] for p in pairs])
     sources = np.array([p["pair_source"] for p in pairs])
+    unknown_src = sorted(set(sources.tolist()) - set(PAIR_SOURCES))
+    assert not unknown_src, (
+        "pair_source values outside PAIR_SOURCES — such pairs would silently stay "
+        "identity-permuted in the within-source shuffled null",
+        unknown_src,
+    )
     fams = np.array([str(p["artifact_family_id"]) for p in pairs])
 
     # Per-layer pooled means + observed deltas.
@@ -757,8 +869,15 @@ def compute(data: dict, ridge_paths: dict[int, dict[str, Path]], *, tiny: bool) 
         norm_ratio = {a: norm_pred[a] / norm_obs_t for a in ALL_ARMS}
 
     # Flip-axis loadings (LOO for members; full-mean axis for the rest).
+    # A flip pair with a non-finite observed tail delta would poison the LOO
+    # axis + the bootstrap that reuses the UNfiltered flip rows — counted +
+    # asserted, never silently dropped (r1 review g2).
     obs_f = obs_tail[primary][flip_mask]
-    obs_f = obs_f[np.all(np.isfinite(obs_f), axis=1)] if len(obs_f) else obs_f
+    n_degenerate_flip = int(np.sum(~np.all(np.isfinite(obs_f), axis=1))) if len(obs_f) else 0
+    assert n_degenerate_flip == 0, (
+        f"{n_degenerate_flip} flip pair(s) with a non-finite observed tail delta — "
+        "these would corrupt the LOO flip axis and its bootstrap"
+    )
     axis_obs = np.full(n_pairs, np.nan)
     axis_pred = {a: np.full(n_pairs, np.nan) for a in ALL_ARMS}
     if len(obs_f) >= 2:
@@ -1002,12 +1121,7 @@ def compute(data: dict, ridge_paths: dict[int, dict[str, Path]], *, tiny: bool) 
     tm = tail_mean[primary]
     finite_ctx = np.all(np.isfinite(tm), axis=1)
     ctx_src = np.array([_ctx_source(c) for c in data["contexts"]])
-    ib_pred = np.full_like(tm, np.nan)
-    if finite_ctx.sum() >= 2:
-        diffs = tm[finite_ctx] - data["vc"][primary][finite_ctx]
-        total = diffs.sum(axis=0)
-        loo_bias = (total[None, :] - diffs) / (finite_ctx.sum() - 1)
-        ib_pred[finite_ctx] = data["vc"][primary][finite_ctx] + loo_bias
+    ib_pred = _loo_identity_bias(data["vc"][primary], tm, finite_ctx)
     ctx_preds = {a: mapped[primary][a] for a in ALL_ARMS}
     ctx_preds["idbias_loo"] = ib_pred
     for name, cp in ctx_preds.items():
@@ -1260,6 +1374,16 @@ def compute(data: dict, ridge_paths: dict[int, dict[str, Path]], *, tiny: bool) 
 
     n_by_class = {c: int((classes == c).sum()) for c in PAIR_CLASSES}
     reg = per_arm[REGISTERED_ARM]
+    # Effective n per registered statistic (nanmedian shrinks denominators
+    # silently on NaN members — disclosed here; r1 review g2 minor).
+    reg_effective_n = {
+        "S1": int(np.isfinite(cos_tail[REGISTERED_ARM][flip_mask]).sum()),
+        "S2": int(np.isfinite(cos_tail[REGISTERED_ARM][nonflip_mask]).sum()),
+        "S3": int(np.isfinite(axis_pred[REGISTERED_ARM][flip_mask]).sum()),
+        "S3_nonflip": int(np.isfinite(axis_pred[REGISTERED_ARM][nonflip_mask]).sum()),
+        "S3_obs": int(np.isfinite(axis_obs[flip_mask]).sum()),
+        "S3_obs_nonflip": int(np.isfinite(axis_obs[nonflip_mask]).sum()),
+    }
     summary = {
         "issue": ISSUE,
         "cell": CELL,
@@ -1325,6 +1449,7 @@ def compute(data: dict, ridge_paths: dict[int, dict[str, Path]], *, tiny: bool) 
             "arm": REGISTERED_ARM,
             "layer": primary,
             "pooling": "tail",
+            "effective_n": reg_effective_n,
             "S1": reg["S1"],
             "S1_null_band_p95": reg["S1_null_band_p95"],
             "S1_ci": boot[REGISTERED_ARM].get("S1_ci"),
@@ -1389,6 +1514,38 @@ def compute(data: dict, ridge_paths: dict[int, dict[str, Path]], *, tiny: bool) 
         },
         "repro": RD._repro_meta(),
     }
+    if dichotomy_halted or judge_integrity_halt:
+        # Kill-criterion enforcement (concern dichotomy-halt-not-enforced, r2):
+        # under a plan-§7 halt the dichotomous registered statistics move to
+        # halted_diagnostics and are NULLED in the headline block — S4 (the
+        # halt-independent battery) and the (already-suppressed) verdict stay.
+        dich_keys = (
+            "S1",
+            "S1_null_band_p95",
+            "S1_ci",
+            "S2",
+            "S2_null_band_p95",
+            "S2_ci",
+            "S1_minus_S2",
+            "S1_minus_S2_ci",
+            "S3",
+            "S3_ci",
+            "S3_contrast",
+            "S3_contrast_ci",
+            "S3_obs",
+            "S3_obs_ci",
+            "S3_obs_contrast",
+            "S3_obs_contrast_ci",
+        )
+        reg_block = summary["registered"]
+        summary["halted_diagnostics"] = {
+            "note": "dichotomous registered statistics computed under a plan-§7 halt — "
+            "diagnostics only, never headline",
+            "registered": {k: reg_block[k] for k in dich_keys},
+        }
+        for k in dich_keys:
+            reg_block[k] = None
+        reg_block["halted"] = True
     return rows, ctx_rows, summary
 
 
@@ -1465,13 +1622,20 @@ def main() -> int:
     if args.import_check:
         _import_check()
         return 0
+    if args.tiny and not args.out_dir:
+        # Tiny-clobber refuse (r1 review g2): fabricated-ridge / dry-run-judge
+        # outputs must never land on the committed production default.
+        raise SystemExit(
+            "--tiny requires an explicit --out-dir scratch path: refusing to overwrite "
+            f"the committed production outputs at {OUT_DIR_DEFAULT}"
+        )
     _assert_schemas()
     stage_dir = (
         Path(args.stage_dir)
         if args.stage_dir
         else (REPO_ROOT / "data" / "issue_2617" / "svmp_stage")
     )
-    root = stage_inputs_svmp(args.local, stage_dir)
+    root, hf_revision, stage_sources = stage_inputs_svmp(args.local, stage_dir)
     data = load_svmp(root)
     d_model = data["vc"][data["primary"]].shape[1]
     print(
@@ -1488,9 +1652,19 @@ def main() -> int:
             len(data["pairs"]),
         )
         assert not bool(data["judge"].get("dry_run")), "production reads on a dry-run judge"
+        # Plan §12(f) reuse control — before any new read ships.
+        _anchor_parity_probe_2564()
     stage_dir.mkdir(parents=True, exist_ok=True)
-    ridge_paths = stage_ridge_payloads_svmp(stage_dir, data["layers"], tiny=args.tiny, d=d_model)
+    ridge_paths = stage_ridge_payloads_svmp(
+        stage_dir, data["layers"], tiny=args.tiny, d=d_model, revision=hf_revision
+    )
     rows, ctx_rows, summary = compute(data, ridge_paths, tiny=args.tiny)
+    summary["staging"] = {
+        "hf_data_repo": HF_DATA_REPO if not args.local else None,
+        "revision": hf_revision,
+        "local_root": str(root) if args.local else None,
+        "sources": stage_sources,
+    }
     out_dir = Path(args.out_dir) if args.out_dir else OUT_DIR_DEFAULT
     out_dir.mkdir(parents=True, exist_ok=True)
     write_jsonl_atomic(out_dir / "perpair.jsonl", rows)
