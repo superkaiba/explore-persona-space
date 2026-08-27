@@ -205,3 +205,32 @@ def test_empty_system_render_shape(tokenizer, bank):
     assert rendered.endswith("<|im_start|>assistant\n")
     assert rendered.count("assistant") == 1
     assert "You are Qwen" not in rendered
+
+
+# ── k100 roster arithmetic (plan v8 §4) ───────────────────────────────
+
+
+def test_k100_roster_counts_match_frozen_constants(bank):
+    """The k100 roster is the parent bank restricted to user_fact + query:
+    168 contexts (120 user_fact + 48 query) and 474 pairs with BOTH
+    endpoints in that context set — matching the analysis constants the
+    production coverage assert enforces (plan v8 §4)."""
+    import sys
+    from pathlib import Path
+
+    scripts = str(Path(__file__).resolve().parents[1] / "scripts")
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
+    import issue2564_analysis as A
+
+    cells = set(A.K100_CELLS)
+    assert cells == {"user_fact", "query"}
+    ctx_ids = {cid for cid, c in bank["contexts"].items() if c["cell"] in cells}
+    by_cell = {}
+    for cid in ctx_ids:
+        cell = bank["contexts"][cid]["cell"]
+        by_cell[cell] = by_cell.get(cell, 0) + 1
+    assert by_cell == {"user_fact": 120, "query": 48}
+    pairs = [p for p in bank["pairs"] if p["a"] in ctx_ids and p["b"] in ctx_ids]
+    assert len(ctx_ids) == A.K100_N_CONTEXTS == 168
+    assert len(pairs) == A.K100_N_PAIRS == 474
