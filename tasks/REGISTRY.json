@@ -12529,8 +12529,8 @@
     "2624": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2624",
-      "status": "approved",
+      "path": "tasks/running/2624",
+      "status": "running",
       "title": "No check verifies a GPU-lane-routed phase actually allocates a CUDA context (P5 ran 4xH100 at 0 MiB)"
     },
     "2625": {
