@@ -12058,7 +12058,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2564",
       "status": "followups_running",
-      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout, after re-elicitation and a tenfold sampling boost clear the compliance-failed and noise-limited reads (MODERATE confidence)"
+      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout (MODERATE confidence)"
     },
     "2565": {
       "has_clean_result": false,
