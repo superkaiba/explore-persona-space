@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2639,
+  "highest_id": 2640,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12651,6 +12651,13 @@
       "path": "tasks/on_hold/264",
       "status": "on_hold",
       "title": "Check if Qwen is more malleable to add [ZLT] marker"
+    },
+    "2640": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2640",
+      "status": "proposed",
+      "title": "verify_task_body: label-SHA-vs-URL-pin assert + anaphoric HF pin-reference path resolution (pin-citation integrity, #2588 r2/r3)"
     },
     "265": {
       "has_clean_result": false,
