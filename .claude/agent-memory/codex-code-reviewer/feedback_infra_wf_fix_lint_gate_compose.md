@@ -232,6 +232,29 @@ tree (frozen + stale — a differing count is not a finding); compose the
 static recompute as hand-applying the predicate to the committed test
 parametrization instead.
 
+**#2566 r1 (2026-08-26) sharpening — TEST-PIN-RESTORATION variant (diff
+touches ONLY a `tests/` pin file, e.g. adding a new workflow.yaml gate to
+`test_gates_full_shape`'s expected set; no lint/guard script edited):** the
+full recipe applies with three adaptations. (a) Roster fact flips to the
+#2195 SKIP form (`grep -c <test-stem> tests/test_ruff_policy.py` → 0 — a
+tests/ file is never on LIVE_WORKFLOW_HELPERS; attest so Codex neither
+demands the pin nor disputes the marker's SKIPPED line). (b) The pin-sweep
+recount has a characteristic clean shape to attest: changed literals →
+self-hit only; the REMOVED literal (old count comment) → 0 hits; round-NEW
+literal → no stale pins possible. Changed-path three-grain hits land in
+family-sync path strings, the step9c invariant manifest, comments, and
+function-NAME artifacts (`test_workflow_yaml_has_...` in
+test_circuit_breaker.py) — classify each NON-pin with its line so the twin
+can't promote them. (c) Compose an explicit yaml-side kill-criterion duty:
+the plan's alternative branch ("if the gate entry is malformed, fix the
+yaml") is claimed not to have fired — Codex statically reads the
+workflow.yaml entry against the SAME test file's per-gate field asserts and
+verifies bucket membership from the code, never the marker. wf-fix floor
+bound via TAG-first detection (tags `wf-fix`; title prefix also present);
+plan-verify PASS at v1 with symlink still v1 = no version-nuance line
+needed. Brief-ordered plan inlining on an identical worktree copy again =
+truthful belt-and-braces envelope.
+
 **#2610 r1 (2026-08-26) sharpenings — poller status-token round (diff adds a
 new terminal status + an SSH-probe leg to `scripts/poll_pipeline.py`):**
 (a) **Pre-existing literal-collision provenance:** a round-new token can
@@ -253,3 +276,49 @@ for an every-tick fleet path: adversarial note-text hypotheses
 (empty/None/huge/unicode/multi-token/empty-value). (d) wf-fix floor EXEMPT
 + plan-verify version nuance fired together again (PASS recorded at v1,
 plan amended to v3 — attest both, per the #2306 nuance).
+
+**#2610 r2 (2026-08-26) sharpenings — concern-fix round, corridor-raise
+legitimacy + count-assert hygiene:** (a) a `SKILL_DOC_SIZE_GRANDFATHER`
+corridor raise composes with SETTLED arithmetic INCLUDING the
+counterfactual: measure the doc yourself (`wc -c` the worktree file),
+compute corridor-max, AND check whether the OLD cap would have tripped the
+size>cap arm — when it would NOT (150,928 < old 151_800), the
+commit/marker's "the guard MANDATES the raise" is itself an adjudication
+point: pre-route compliant-but-overclaimed as Minor report-accuracy,
+arm-violating / ratchet-defeating cap as substantive. Hand the guard's
+three arms as read targets (size>cap remedy text ~:17713, max-headroom
+constant arm, stale-entry hygiene) + `tests/test_workflow_lint_skill_doc_size.py`.
+(b) `grep -c` counts LINES not OCCURRENCES — a ledger row carrying the
+round SHA in BOTH `summary` and `evidence` (2 rows -> 4 occurrences, one
+line each) undercounts to 2; pin every SHA count assert from Python
+`str.count` probes of each embed, never from grep -c (cost two rebuild
+cycles live). (c) Ledger rows with raised+addressed event pairs inline
+verbatim (summary + evidence fields) as the acceptance contract; a
+reconciler item with NO ledger row gets a pseudo-id closure line
+(#1092-r4 pattern) — all three items in one REQUIRED
+`## Reconciler-item closure` section, NOT-ADDRESSED = substantive FAIL,
+verified-addressed ledger ids never re-emitted as CONCERN:: rows.
+
+**#2525 r1 (2026-08-27) sharpenings — offender-side invariant-RESTORATION
+variant (diff fixes the OFFENDING scripts to re-green three existing fleet
+tests; no lint/guard/test file edited):** (a) **A `--map-files` hit list is
+a SUPERSET of fragment greps** — the selector maps changed PATHS to tests,
+so a marker's map-files list can legitimately contain files with ZERO
+fragment hits (here `test_issue1901_opsurface.py`,
+`test_shared_vm_thread_caps.py`); pre-triage them as selector-mapped, never
+as a stale/unreproducible claim, and reconcile the recount as "every
+composer hit either in the marker's lists or RAN locally anyway". (b) **A
+"comment-only edits" claim backing a pre-existing-failure disclosure gets a
+composer `ast.dump(base) == ast.dump(head)` settle** (git show merge-base
+blob → temp file, one `uv run python -c` compare) — hands Step 0.9
+`pre-existing-on-trunk` as a settled fact instead of a twin re-derivation.
+(c) **Waiver-placement rounds attest the READER's semantics with line
+numbers** (`_prod_import_lint_waiver_present` @ workflow_lint.py:9690:
+first physical line OR nearest preceding non-blank, blanks skipped, reason
+≥ 10 chars) + the one non-standard placement site, so the twin verifies all
+N placements against the real predicate. (d) Hollow-gate mapping for
+secret-gate insertions = "gate scans the SAME artifact the adjacent call
+uploads, on the live path, at EVERY site" — per-site gated-path vs
+uploaded-path pairs enumerated in the priorities block. (e) Floor-exempt +
+plan-verify-present dual attest fired again (tags `urgent-main-red` only,
+origin_prompt names a sibling-task surfacing — not a wf-fix candidate).
