@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2627,
+  "highest_id": 2628,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12553,6 +12553,13 @@
       "path": "tasks/proposed/2627",
       "status": "proposed",
       "title": "Agent-memory index FAIL gate can be tripped by the MERGE itself, blocking a Step-10d landing"
+    },
+    "2628": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2628",
+      "status": "proposed",
+      "title": "Autonomous sessions must paste raw concern-id slugs into clean-result prose \u2014 Lens 14 vs the no-opaque-codes rule"
     },
     "263": {
       "has_clean_result": true,
