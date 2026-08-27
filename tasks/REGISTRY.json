@@ -12465,8 +12465,8 @@
     "2616": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2616",
-      "status": "approved",
+      "path": "tasks/running/2616",
+      "status": "running",
       "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
     },
     "2617": {
