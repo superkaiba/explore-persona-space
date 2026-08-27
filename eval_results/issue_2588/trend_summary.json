@@ -24,7 +24,7 @@
    "parsed_mirror_revision": "270dc35039d790f077b7b02b455f1ef57905c708"
   },
   "augmented_9ater": {
-   "timestamp_utc": "2026-08-27T20:03:47Z",
+   "timestamp_utc": "2026-08-27T20:24:01Z",
    "round": "9a-ter-free-analysis",
    "note": "banked-cell generic-pool intrusion deferral closed from the #2330 cap2048 texts @ b99d86de23 (scripts/issue2588_followup_9ater.py)"
   }

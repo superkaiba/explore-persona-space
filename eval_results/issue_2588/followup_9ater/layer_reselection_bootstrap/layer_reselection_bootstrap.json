@@ -3,11 +3,13 @@
     "issue": 2588,
     "round": "9a-ter-free-analysis",
     "numpy": "2.2.6",
-    "timestamp_utc": "2026-08-27T20:03:47Z",
-    "git_commit": "9c2f47829de69528fc12d0bd92444e58192657e8",
+    "timestamp_utc": "2026-08-27T20:24:01Z",
+    "git_commit": "1a026dec28a65006600c2c65ace21fb147d279c5",
     "git_dirty": true,
     "phase": "followup-9ater",
     "git_dirty_paths": [
+      "eval_results/issue_2588/followup_9ater/banked_cjk_intrusion/banked_cjk_intrusion.json",
+      "eval_results/issue_2588/followup_9ater/q38_truncfree_gpqa/q38_truncfree_gpqa.json",
       "eval_results/issue_2588/trend_summary.json"
     ],
     "git_argv0_state": "tracked",
