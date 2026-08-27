@@ -276,3 +276,25 @@ for an every-tick fleet path: adversarial note-text hypotheses
 (empty/None/huge/unicode/multi-token/empty-value). (d) wf-fix floor EXEMPT
 + plan-verify version nuance fired together again (PASS recorded at v1,
 plan amended to v3 — attest both, per the #2306 nuance).
+
+**#2610 r2 (2026-08-26) sharpenings — concern-fix round, corridor-raise
+legitimacy + count-assert hygiene:** (a) a `SKILL_DOC_SIZE_GRANDFATHER`
+corridor raise composes with SETTLED arithmetic INCLUDING the
+counterfactual: measure the doc yourself (`wc -c` the worktree file),
+compute corridor-max, AND check whether the OLD cap would have tripped the
+size>cap arm — when it would NOT (150,928 < old 151_800), the
+commit/marker's "the guard MANDATES the raise" is itself an adjudication
+point: pre-route compliant-but-overclaimed as Minor report-accuracy,
+arm-violating / ratchet-defeating cap as substantive. Hand the guard's
+three arms as read targets (size>cap remedy text ~:17713, max-headroom
+constant arm, stale-entry hygiene) + `tests/test_workflow_lint_skill_doc_size.py`.
+(b) `grep -c` counts LINES not OCCURRENCES — a ledger row carrying the
+round SHA in BOTH `summary` and `evidence` (2 rows -> 4 occurrences, one
+line each) undercounts to 2; pin every SHA count assert from Python
+`str.count` probes of each embed, never from grep -c (cost two rebuild
+cycles live). (c) Ledger rows with raised+addressed event pairs inline
+verbatim (summary + evidence fields) as the acceptance contract; a
+reconciler item with NO ledger row gets a pseudo-id closure line
+(#1092-r4 pattern) — all three items in one REQUIRED
+`## Reconciler-item closure` section, NOT-ADDRESSED = substantive FAIL,
+verified-addressed ledger ids never re-emitted as CONCERN:: rows.
