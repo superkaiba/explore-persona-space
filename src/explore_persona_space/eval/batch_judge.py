@@ -790,6 +790,37 @@ def _aggregate_persona_scores(
 # ── Main entry point ─────────────────────────────────────────────────────────
 
 
+def _make_cache_write_through(cache, uncached_items, rubric_key):
+    """Incremental sync-path cache write-through (#2617): an ``on_item_result``
+    callback persisting each item's verdict THE MOMENT it completes
+    (dispatch_judge_items fires it per item on the SYNC path only; the batch
+    path persists per-sub-batch via its dispatch checkpoint), so a killed
+    mid-wave sync run leaves a salvageable partial JudgeCache instead of
+    losing the whole wave (the terminal cache-update loop in
+    judge_completions_batch previously ran only after the full wave returned
+    — it stays as the idempotent batch-path + backstop pass). Same put-skip
+    filters as that loop (rules 24(ii)/23/28: never cache transport /
+    truncation / api-refusal error dicts). Returns None when caching is off.
+    """
+    if cache is None:
+        return None
+    by_id = {cid: (q, comp) for cid, q, comp, _u in uncached_items}
+
+    def _write_through(custom_id: str, result: dict) -> None:
+        qc = by_id.get(custom_id)
+        if qc is None:
+            return
+        if (
+            is_transport_error_dict(result)
+            or is_truncation_error_dict(result)
+            or is_api_refusal_error_dict(result)
+        ):
+            return
+        cache.put(qc[0], qc[1], result, rubric_key=rubric_key)
+
+    return _write_through
+
+
 def judge_completions_batch(
     completions: dict[str, dict[str, list[str]]],
     judge_system_prompt: str = JUDGE_SYSTEM_PROMPT,
@@ -893,6 +924,7 @@ def judge_completions_batch(
             checkpoint_dir=checkpoint_dir,
             poll_interval=poll_interval,
             on_decision=decisions.append,
+            on_item_result=_make_cache_write_through(cache, uncached_items, rubric_key),
             sync_client=sync_client,
             batch_client=batch_client,
         )

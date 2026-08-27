@@ -501,12 +501,27 @@ def _judge_scores_sha(cfg) -> str:
     )
 
 
+def _anchors_sha(cfg) -> str:
+    """Machine-stable sha of the opener SOURCE content the margin pools draw
+    from — (context_id, draw, rollout text) triples read from the gen anchors
+    file (BLOCKER margin-source-fingerprint, r3: judge content alone cannot
+    see an opener-source swap that leaves scores identical). File-READ content,
+    never recomputed floats (code-style.md machine-stable-key rule)."""
+    path = cfg.anchors_dir / f"anchors_{CELL}.jsonl"
+    if not path.is_file():
+        return "absent"
+    rows = L._read_jsonl(path)
+    return L._sha16([[r["context_id"], int(r["draw"]), r["text"]] for r in rows])
+
+
 def _margin_fp(cfg) -> str:
-    """Margin-phase resume fingerprint (BLOCKER margin-resume-fingerprint, r2):
-    the base regime PLUS every knob that changes margin output — pool
-    construction (size, opener BPE length, score thresholds, draw rule, benign
-    class set, canned tiny pools), the judged-score CONTENT the pools draw
-    from, and the margin scoring batch knob — so a knob change on resume never
+    """Margin-phase resume fingerprint (BLOCKER margin-resume-fingerprint, r2;
+    extended r3 for margin-source-fingerprint): the base regime PLUS every
+    knob that changes margin output — pool construction (size, opener BPE
+    length, score thresholds, draw rule, benign class set, canned tiny pools,
+    the --allow-short-pools waiver), the judged-score CONTENT the pools are
+    filtered by, the ANCHOR rollout content the openers are cut from, and the
+    margin scoring batch knob — so a knob/source change on resume never
     reuses stale margin checkpoint rows."""
     return _regime_fp(
         cfg,
@@ -523,7 +538,26 @@ def _margin_fp(cfg) -> str:
             ),
             "max_batch_tokens": MARGIN_MAX_BATCH_TOKENS,
             "judge_scores_sha": _judge_scores_sha(cfg),
+            # tiny uses canned pools — anchors never enter the tiny margin.
+            "anchors_sha": None if cfg.tiny else _anchors_sha(cfg),
+            "allow_short_pools": bool(getattr(cfg, "allow_short_pools", False)),
         },
+    )
+
+
+def _pools_content_sha(pools: dict) -> str:
+    """Machine-stable sha of the REALIZED opener pools (refusal + helpful
+    entries + meta; the ``repro`` timestamp block is deliberately excluded).
+    Persisted in margins.json + the margin sentinel and re-validated against
+    the on-disk pools.json by ``_margin_complete`` (BLOCKER
+    margin-source-fingerprint, r3): a completed run is accepted only when the
+    pools the margins were computed FROM are still the pools on disk."""
+    return L._sha16(
+        {
+            "refusal": pools.get("refusal"),
+            "helpful": pools.get("helpful"),
+            "meta": pools.get("meta"),
+        }
     )
 
 
@@ -574,19 +608,50 @@ def _judge_complete(cfg) -> bool:
 
 
 def _margin_complete(cfg) -> bool:
-    """Model-free: pools + margins present + ``_margin_fp``-matched sentinel."""
+    """Model-free: pools + margins present, ``_margin_fp``-matched sentinel,
+    AND the sentinel's recorded pool-content sha matches the on-disk pools
+    (BLOCKER margin-source-fingerprint, r3)."""
     mdir = cfg.out_root / "margin"
+    if not ((mdir / "pools.json").is_file() and (mdir / "margins.json").is_file()):
+        return False
+    if not _sentinel_ok(cfg, "margin", _margin_fp(cfg)):
+        return False
+    s = L._read_json(cfg.out_root / "svmp_margin_done.json")
+    pools = L._read_json(mdir / "pools.json")
     return (
-        (mdir / "pools.json").is_file()
-        and (mdir / "margins.json").is_file()
-        and _sentinel_ok(cfg, "margin", _margin_fp(cfg))
+        s is not None
+        and pools is not None
+        and s.get("pools_sha") is not None
+        and s.get("pools_sha") == _pools_content_sha(pools)
     )
 
 
+def _upstream_fps(cfg) -> dict[str, str | None]:
+    """The four phase sentinels' RECORDED fps, read from disk (r2 minor:
+    finalize's fingerprint folds them in, so a within-invocation upstream
+    re-run — e.g. margin re-ran under a new _margin_fp — invalidates a stale
+    terminal sentinel instead of finalize skipping on the base regime alone)."""
+    return {
+        name: (
+            (L._read_json(cfg.out_root / f"svmp_{name}_done.json") or {}).get("regime_fp")
+            if (cfg.out_root / f"svmp_{name}_done.json").is_file()
+            else None
+        )
+        for name in ("gen", "capture", "judge", "margin")
+    }
+
+
+def _finalize_fp(cfg) -> str:
+    """Finalize fingerprint: the base regime + the four upstream sentinels'
+    recorded fps (r2 minor — see ``_upstream_fps``)."""
+    return _regime_fp(cfg, {"phase": "finalize", "upstream_fps": _upstream_fps(cfg)})
+
+
 def _finalize_complete(cfg) -> bool:
-    """Model-free: terminal svmp_done.json present + regime-matched."""
+    """Model-free: terminal svmp_done.json present + finalize-fp-matched
+    (the fp folds the upstream sentinels' fps — ``_finalize_fp``)."""
     s = L._read_json(cfg.out_root / "svmp_done.json")
-    return s is not None and s.get("regime_fp") == _regime_fp(cfg, {"phase": "finalize"})
+    return s is not None and s.get("regime_fp") == _finalize_fp(cfg)
 
 
 PHASE_COMPLETE = {
@@ -597,6 +662,49 @@ PHASE_COMPLETE = {
     "finalize": _finalize_complete,
 }
 assert set(PHASE_COMPLETE) == set(PHASES), (sorted(PHASE_COMPLETE), PHASES)
+
+
+def _phase_input_gate(cfg, pending: list[str]) -> None:
+    """Model-free per-phase PREREQUISITE gate (BLOCKER
+    model-load-before-input-contract, r3): for each PENDING phase, assert its
+    upstream inputs exist on disk OR the producing phase is scheduled EARLIER
+    in the same pending sequence — failing loud BEFORE
+    ``load_model_and_tokenizer`` so a mis-sequenced re-entry (``--phase
+    margin`` with no judge_scores.json; ``--phase capture`` with no gen
+    anchors) never pays the 7B load or any spend. Pure path checks — no
+    model, no tokenizer, no network."""
+    anchors = cfg.anchors_dir / f"anchors_{CELL}.jsonl"
+    manifest = cfg.manifest_dir / "svmp_bank.json"
+    earlier: set[str] = set()
+    missing: list[str] = []
+    for p in pending:
+        if p == "capture":
+            if "gen" not in earlier and not anchors.is_file():
+                missing.append(f"capture needs {anchors} — run --phase gen first")
+        elif p == "judge":
+            if "gen" not in earlier:
+                if not anchors.is_file():
+                    missing.append(f"judge needs {anchors} — run --phase gen first")
+                if not manifest.is_file():
+                    missing.append(f"judge needs {manifest} — run --phase gen first")
+        elif p == "margin" and not cfg.tiny:
+            # tiny margin uses canned pools: no judge scores / anchors read.
+            judge_scores = cfg.out_root / "judge" / "judge_scores.json"
+            if "judge" not in earlier and not judge_scores.is_file():
+                missing.append(f"margin needs {judge_scores} — run --phase judge first")
+            if "gen" not in earlier and not anchors.is_file():
+                missing.append(f"margin needs {anchors} — run --phase gen first")
+        elif p == "finalize":
+            for name in ("gen", "capture", "judge", "margin"):
+                sentinel = cfg.out_root / f"svmp_{name}_done.json"
+                if name not in earlier and not sentinel.is_file():
+                    missing.append(f"finalize needs {sentinel} — run --phase {name} first")
+        earlier.add(p)
+    if missing:
+        raise RuntimeError(
+            "[input-gate] pending-phase inputs missing (model-free, pre-load):\n  "
+            + "\n  ".join(missing)
+        )
 
 
 # ── bank gates + build ─────────────────────────────────────────────────────
@@ -922,11 +1030,23 @@ def phase_judge(cfg, bank: dict) -> int:
     ``force_sync`` wave cannot self-interrupt): if the wave exceeds ~45 min,
     kill the process and re-run ``--phase judge`` — the preflight skips the
     model load, and ``judge_cache/`` resumes already-scored items at zero
-    double-spend. The cache dir is uploaded to HF alongside the scores so a
-    FRESH pod can salvage a partial wave: stage
-    ``{HF_PREFIX}/raw_completions/judge/judge_cache/`` back to
-    ``<out_root>/judge/judge_cache/`` before re-entry (concern
-    judge-timeout-fallback-missing, r2)."""
+    double-spend. The salvage is REAL because ``judge_completions_batch``
+    write-through-caches each item's verdict THE MOMENT it completes on the
+    sync path (r3 fix, concern judge-timeout-fallback-missing: previously the
+    cache was written only after the whole wave returned, so a mid-wave kill
+    left nothing to salvage). Terminate arm for a FRESH pod: before tearing
+    the killed pod down, upload the partial cache —
+
+        uv run python -c "from pathlib import Path; \\
+          from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded; \\
+          print(upload_dir_sharded(Path('<out_root>/judge/judge_cache'), \\
+            'superkaiba1/explore-persona-space-data', \\
+            'issue2617_svmp/raw_completions/judge/judge_cache', shard_glob='*.json', \\
+            resume_skip=False, delete_local=False))"
+
+    then stage ``{HF_PREFIX}/raw_completions/judge/judge_cache/`` back to
+    ``<out_root>/judge/judge_cache/`` on the fresh pod before re-entry (the
+    completed-wave upload below persists the same dir on the normal path)."""
     print("[phase=judge] start", flush=True)
     if _judge_complete(cfg):
         logger.info("[judge] regime-matched sentinel + judge_scores present — skipping (no spend)")
@@ -1207,15 +1327,16 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
         refusal, helpful, pool_meta = _build_margin_pools(cfg, bank, tok)
     assert refusal, "empty refusal opener pool — no rollouts scored >= threshold"
     assert helpful, "empty helpful opener pool — no benign rollouts scored <= threshold"
-    write_json_atomic(
-        mdir / "pools.json",
-        {
-            "refusal": refusal,
-            "helpful": helpful,
-            "meta": pool_meta,
-            "repro": L._repro(cfg, "margin"),
-        },
-    )
+    pools_obj = {
+        "refusal": refusal,
+        "helpful": helpful,
+        "meta": pool_meta,
+        "repro": L._repro(cfg, "margin"),
+    }
+    # Realized pool-content sha, keyed into margins.json + the sentinel and
+    # re-validated by _margin_complete (BLOCKER margin-source-fingerprint, r3).
+    pools_sha = _pools_content_sha(pools_obj)
+    write_json_atomic(mdir / "pools.json", pools_obj)
 
     # Per-context margin, checkpoint per context (T2 > 50 units) + resume.
     ckpt = mdir / "margins_percontext.jsonl"
@@ -1270,6 +1391,7 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
         {
             "issue": ISSUE,
             "regime_fp": mfp,
+            "pools_sha": pools_sha,
             "cell": CELL,
             "pool_meta": pool_meta,
             "per_context": per_ctx,
@@ -1296,6 +1418,7 @@ def phase_margin(cfg, bank: dict, model, tok) -> int:
         cfg.out_root / "svmp_margin_done.json",
         {
             "regime_fp": mfp,
+            "pools_sha": pools_sha,
             "rho_margin_rate": rho,
             "validation_pass": val_pass,
             "upload": upload,
@@ -1331,9 +1454,12 @@ def _validate_margin_rate(cfg, per_ctx: dict[str, dict]):
 def phase_finalize(cfg) -> int:
     """Terminal sentinel — written LAST, after all uploads (upload-policy).
     Uploads the root phase sentinels to HF first (concern
-    phase-sentinels-not-durable, r2); ``svmp_done.json`` then carries the full
-    HF-prefix enumeration + per-phase upload records and is itself uploaded
-    as a durability copy (the LOCAL file remains the poller signal)."""
+    phase-sentinels-not-durable, r2); the terminal payload is then staged +
+    uploaded as the durability copy BEFORE the local ``svmp_done.json`` is
+    written (r3: local-complete implies remote-durable — a crash between the
+    two legs can no longer leave a locally-true terminal sentinel whose
+    durability copy never landed). The LOCAL file remains the poller signal;
+    its fingerprint folds the upstream sentinels' fps (``_finalize_fp``)."""
     print("[phase=finalize] start", flush=True)
     if _finalize_complete(cfg):
         logger.info("[finalize] regime-matched svmp_done.json present — skipping")
@@ -1382,36 +1508,42 @@ def phase_finalize(cfg) -> int:
         f"{HF_PREFIX}/analysis_tensors/margin",
         f"{HF_PREFIX}/sentinels",
     ]
-    write_json_atomic(
-        cfg.out_root / "svmp_done.json",
-        {
-            "issue": ISSUE,
-            "status": "done",
-            "regime_fp": _regime_fp(cfg, {"phase": "finalize"}),
-            "cells": per_cell,
-            "n_dropped_judge": judge_s.get("n_dropped_total"),
-            "rho_margin_rate": margin_s.get("rho_margin_rate"),
-            "margin_validation_pass": margin_s.get("validation_pass"),
-            "upload_gen": gen_s.get("upload"),
-            "upload_capture": cap_s.get("upload"),
-            "upload_judge": judge_s.get("upload"),
-            "upload_margin": margin_s.get("upload"),
-            "upload_finalize": upload,
-            "hf_prefix": HF_PREFIX,
-            "hf_prefixes": hf_prefixes,
-            "repro": L._repro(cfg, "finalize"),
-        },
-    )
+    payload = {
+        "issue": ISSUE,
+        "status": "done",
+        "regime_fp": _finalize_fp(cfg),
+        "upstream_fps": _upstream_fps(cfg),
+        "cells": per_cell,
+        "n_dropped_judge": judge_s.get("n_dropped_total"),
+        "rho_margin_rate": margin_s.get("rho_margin_rate"),
+        "margin_validation_pass": margin_s.get("validation_pass"),
+        "upload_gen": gen_s.get("upload"),
+        "upload_capture": cap_s.get("upload"),
+        "upload_judge": judge_s.get("upload"),
+        "upload_margin": margin_s.get("upload"),
+        "upload_finalize": upload,
+        "hf_prefix": HF_PREFIX,
+        "hf_prefixes": hf_prefixes,
+        "repro": L._repro(cfg, "finalize"),
+    }
     if cfg.upload == "hf":
+        # Durability copy FIRST, from a staging dir OUTSIDE the phase-sentinel
+        # glob's reach, so the local terminal sentinel is written only after
+        # the remote copy landed (r3 ordering: upload-then-local).
+        stage = cfg.out_root / ".finalize_stage"
+        stage.mkdir(parents=True, exist_ok=True)
+        write_json_atomic(stage / "svmp_done.json", payload)
         res = L.upload_dir_sharded(
-            cfg.out_root,
+            stage,
             L.HF_DATA_REPO,
             f"{HF_PREFIX}/sentinels",
             shard_glob="svmp_done.json",
             resume_skip=False,
             delete_local=False,
         )
-        logger.info("[finalize] svmp_done.json durability copy: %s", _upload_record(res))
+        payload["durability_upload"] = _upload_record(res)
+        logger.info("[finalize] svmp_done.json durability copy: %s", payload["durability_upload"])
+    write_json_atomic(cfg.out_root / "svmp_done.json", payload)
     print("[phase=done] svmp_done.json written", flush=True)
     return 0
 
@@ -1646,18 +1778,42 @@ def main() -> int:
         f"({time.time() - t_pre:.2f}s, model-free)",
         flush=True,
     )
+    # Per-phase input-prerequisite gate (BLOCKER model-load-before-input-
+    # contract, r3): fail loud on mis-sequenced re-entry BEFORE any model load.
+    _phase_input_gate(cfg, pending)
     model = tok = None
     bank = None
+
+    def _ensure_model_and_bank():
+        nonlocal model, tok, bank
+        if model is None:
+            model, tok = L.R.load_model_and_tokenizer(cfg)
+        if bank is None:
+            bank = build_bank(cfg.tiny, tok, _load_xstest_carriers())
+            print(
+                f"[bank] {len(bank['contexts'])} contexts / {len(bank['pairs'])} pairs "
+                f"(tiny={cfg.tiny})",
+                flush=True,
+            )
+
     if any(p in ("gen", "capture", "margin") for p in pending):
-        model, tok = L.R.load_model_and_tokenizer(cfg)
-        bank = build_bank(cfg.tiny, tok, _load_xstest_carriers())
-        print(
-            f"[bank] {len(bank['contexts'])} contexts / {len(bank['pairs'])} pairs "
-            f"(tiny={cfg.tiny})",
-            flush=True,
-        )
+        _ensure_model_and_bank()
     rc = 0
-    for phase in pending:
+    for phase in phases:
+        if phase in skipped:
+            # Loop-time re-check (r2 minor): a within-invocation upstream
+            # re-run (e.g. judge re-ran before a preflight-skipped margin)
+            # invalidates the preflight skip — re-evaluate, never trust the
+            # frozen preflight status.
+            if PHASE_COMPLETE[phase](cfg):
+                continue
+            print(
+                f"[loop] {phase}: preflight skip invalidated by an upstream re-run "
+                "this invocation — running",
+                flush=True,
+            )
+        if phase in ("gen", "capture", "margin"):
+            _ensure_model_and_bank()
         if phase == "gen":
             rc = phase_gen(cfg, bank, model, tok)
         elif phase == "capture":

@@ -232,20 +232,83 @@ def _resolve_data_repo_revision() -> str:
     return sha
 
 
-def _stage_with_overflow(remote_rel: str, target: Path, revision: str | None) -> str:
+def _load_reroute_pointers(revision: str | None) -> set[str]:
+    """Best-effort union of the producer's PERSISTED reroute destinations —
+    the ``rerouted_paths`` lists inside svmp_done.json's ``upload_*`` records
+    (written by ``_upload_record`` in the run driver). A path in this set was
+    quota-403-rerouted to the OVERFLOW repo, so staging must fetch it from
+    overflow directly rather than preferring a stale canonical copy (concern
+    overflow-staging-disconnected, r3). Missing terminal sentinel -> empty set
+    (the EntryNotFoundError canonical->overflow fallback still covers it)."""
+    import tempfile
+
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate.hub import stage_hub_file
+
+    rerouted: set[str] = set()
+    with tempfile.TemporaryDirectory(prefix="svmp_done_ptr_") as td:
+        target = Path(td) / "svmp_done.json"
+        try:
+            stage_hub_file(
+                HF_DATA_REPO,
+                f"{HF_PREFIX}/sentinels/svmp_done.json",
+                target,
+                repo_type="dataset",
+                revision=revision,
+                overwrite=True,
+            )
+        except EntryNotFoundError:
+            logger.warning(
+                "[stage] no terminal sentinel at %s/%s@%s — reroute pointers unavailable "
+                "(canonical-first staging with EntryNotFound overflow fallback still applies)",
+                HF_DATA_REPO,
+                f"{HF_PREFIX}/sentinels/svmp_done.json",
+                (revision or "main")[:12],
+            )
+            return rerouted
+        done = json.loads(target.read_text(encoding="utf-8"))
+    for key, rec in done.items():
+        if not (key.startswith("upload_") and isinstance(rec, dict)):
+            continue
+        for sub in rec.values():
+            if isinstance(sub, dict):
+                rerouted.update(sub.get("rerouted_paths") or [])
+    if rerouted:
+        logger.info("[stage] %d reroute pointer(s) from svmp_done.json", len(rerouted))
+    return rerouted
+
+
+def _stage_with_overflow(
+    remote_rel: str, target: Path, revision: str | None, rerouted: set[str] | None = None
+) -> str:
     """Stage one run artifact from the canonical repo at the pinned revision;
-    on a missing entry, fall back to the OVERFLOW repo (quota-403 reroutes land
-    there under the same path — concern overflow-staging-disconnected, r2).
-    Returns the realized source tag ("canonical" | "overflow")."""
+    a path the producer's persisted ``rerouted_paths`` pointers name is fetched
+    from the OVERFLOW repo DIRECTLY (never preferring a stale canonical copy),
+    and a canonical miss falls back to overflow. The overflow repo is a MODEL
+    repo (``upload_sharded`` reroutes everything with ``repo_type="model"`` —
+    the r2 ``repo_type="dataset"`` fallback could never fetch a rerouted file;
+    concern overflow-staging-disconnected, r3). Returns the realized source
+    tag ("canonical" | "overflow" | "overflow-pointer")."""
     from huggingface_hub.utils import EntryNotFoundError
 
     from explore_persona_space.orchestrate.hub import stage_hub_file
     from explore_persona_space.orchestrate.upload_sharded import DEFAULT_OVERFLOW_REPO
 
+    full = f"{HF_PREFIX}/{remote_rel}"
+    if rerouted and full in rerouted:
+        stage_hub_file(
+            DEFAULT_OVERFLOW_REPO,
+            full,
+            target,
+            repo_type="model",
+            overwrite=True,
+        )
+        return "overflow-pointer"
     try:
         stage_hub_file(
             HF_DATA_REPO,
-            f"{HF_PREFIX}/{remote_rel}",
+            full,
             target,
             repo_type="dataset",
             revision=revision,
@@ -262,9 +325,9 @@ def _stage_with_overflow(remote_rel: str, target: Path, revision: str | None) ->
         )
         stage_hub_file(
             DEFAULT_OVERFLOW_REPO,
-            f"{HF_PREFIX}/{remote_rel}",
+            full,
             target,
-            repo_type="dataset",
+            repo_type="model",
             overwrite=True,
         )
         return "overflow"
@@ -293,19 +356,20 @@ def stage_inputs_svmp(local: str | None, stage_dir: Path) -> tuple[Path, str | N
     assert free_gb >= 1.0, f"staging dir {stage_dir} has {free_gb:.2f} GB free (< 1 GB floor)"
     revision = _resolve_data_repo_revision()
     print(f"[stage] dir={stage_dir} free={free_gb:.1f} GB revision={revision[:12]}", flush=True)
+    rerouted = _load_reroute_pointers(revision)
     sources: dict[str, str] = {}
     for remote_rel, local_rel in STAGE_FILES:
         target = stage_dir / local_rel
         target.parent.mkdir(parents=True, exist_ok=True)
         # overwrite=True: the producer re-uploads with resume_skip=False; a
         # stale local mirror would silently serve a prior run.
-        sources[remote_rel] = _stage_with_overflow(remote_rel, target, revision)
+        sources[remote_rel] = _stage_with_overflow(remote_rel, target, revision, rerouted)
         print(f"[stage] {remote_rel} -> {target} ({sources[remote_rel]})", flush=True)
     for remote_rel, local_rel in STAGE_FILES_OPTIONAL:
         target = stage_dir / local_rel
         target.parent.mkdir(parents=True, exist_ok=True)
         try:
-            sources[remote_rel] = _stage_with_overflow(remote_rel, target, revision)
+            sources[remote_rel] = _stage_with_overflow(remote_rel, target, revision, rerouted)
             print(f"[stage] {remote_rel} -> {target} ({sources[remote_rel]})", flush=True)
         except Exception as exc:  # adjudicated at load time vs dry_run flag
             logger.warning("[stage] optional %s not staged (%s)", remote_rel, type(exc).__name__)
@@ -332,11 +396,17 @@ def _fabricate_tiny_ridge(path: Path, d: int, layer: int, arm: str) -> None:
 
 def stage_ridge_payloads_svmp(
     stage_dir: Path, layers: list[int], *, tiny: bool, d: int, revision: str | None = None
-) -> dict[int, dict[str, Path]]:
+) -> tuple[dict[int, dict[str, Path]], str | None]:
     """Per-layer, per-arm ridge payload paths (staged from HF at the pinned
     ``revision`` — concern ridge-provenance-unpinned, r2 — or fabricated at
     the tiny store dim under --tiny). Extends RD.stage_ridge_payloads
-    (L19-only) to the L14/L26 twin layers."""
+    (L19-only) to the L14/L26 twin layers.
+
+    Returns ``(paths, resolved_revision)`` — the REALIZED revision the ridge
+    payloads were fetched at (r3 minor: on ``--local`` production reads the
+    caller has no run-input revision, so the internally-resolved ridge
+    revision must still reach summary.staging); None under --tiny (fabricated,
+    nothing fetched)."""
     out: dict[int, dict[str, Path]] = {}
     if tiny:
         for layer in layers:
@@ -346,7 +416,7 @@ def stage_ridge_payloads_svmp(
                 if not target.is_file():
                     _fabricate_tiny_ridge(target, d, layer, arm)
                 out[layer][arm] = target
-        return out
+        return out, None
     from explore_persona_space.orchestrate.hub import stage_hub_file
 
     if revision is None:
@@ -359,7 +429,7 @@ def stage_ridge_payloads_svmp(
             target.parent.mkdir(parents=True, exist_ok=True)
             stage_hub_file(HF_DATA_REPO, remote, target, repo_type="dataset", revision=revision)
             out[layer][arm] = target
-    return out
+    return out, revision
 
 
 ANCHOR_2564_DIR = REPO_ROOT / "eval_results" / "issue_2564" / "gramslot_pilot"
@@ -1655,13 +1725,16 @@ def main() -> int:
         # Plan §12(f) reuse control — before any new read ships.
         _anchor_parity_probe_2564()
     stage_dir.mkdir(parents=True, exist_ok=True)
-    ridge_paths = stage_ridge_payloads_svmp(
+    ridge_paths, ridge_revision = stage_ridge_payloads_svmp(
         stage_dir, data["layers"], tiny=args.tiny, d=d_model, revision=hf_revision
     )
     rows, ctx_rows, summary = compute(data, ridge_paths, tiny=args.tiny)
     summary["staging"] = {
         "hf_data_repo": HF_DATA_REPO if not args.local else None,
         "revision": hf_revision,
+        # r3 minor: on --local production reads hf_revision is None while the
+        # ridge payloads still stage from HF — record their realized revision.
+        "ridge_revision": ridge_revision,
         "local_root": str(root) if args.local else None,
         "sources": stage_sources,
     }

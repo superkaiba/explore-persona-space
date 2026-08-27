@@ -142,9 +142,15 @@ def test_margin_predicate_invalidated_by_knob_and_judge_drift(tmp_path, monkeypa
     monkeypatch.setattr(run, "L", _stub_langow())
     cfg = _cfg(tmp_path)
     _write_json(cfg.out_root / "judge" / "judge_scores.json", _judge_payload({"0": 90.0}))
-    _write_json(cfg.out_root / "margin" / "pools.json", {"meta": {}})
+    pools_obj = {"meta": {}}
+    _write_json(cfg.out_root / "margin" / "pools.json", pools_obj)
     _write_json(cfg.out_root / "margin" / "margins.json", {"rows": []})
-    _write_json(cfg.out_root / "svmp_margin_done.json", {"regime_fp": run._margin_fp(cfg)})
+    _write_json(
+        cfg.out_root / "svmp_margin_done.json",
+        # r3: the sentinel additionally records the realized pool-content sha
+        # (test_issue2617_round3_fixes.py pins the sha-validation semantics).
+        {"regime_fp": run._margin_fp(cfg), "pools_sha": run._pools_content_sha(pools_obj)},
+    )
     assert run._margin_complete(cfg)
     # a pool knob change on resume must invalidate the margin checkpoint
     with pytest.MonkeyPatch.context() as mp:
