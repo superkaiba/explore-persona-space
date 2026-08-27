@@ -6,7 +6,7 @@ kind: analysis
 tags:
 - keep-running
 created_at: '2026-08-27T06:35:58Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'User (2026-08-26): ''have we ever fit an answer -> context mapping
   + looked at how it compares to the pseudoinverse of our context -> answer mapping''

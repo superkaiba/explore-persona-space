@@ -12478,7 +12478,7 @@
       "title": "Safety-valence minimal pairs: does the frozen context->answer map encode the refusal decision or just surface text?"
     },
     "2618": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/proposed/2618",
       "status": "proposed",
