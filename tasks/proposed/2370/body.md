@@ -2,7 +2,8 @@
 title: 'guard_root_code_commit.sh: pathspec scoping fails to exempt foreign staged
   files (blocks its own remediation form)'
 kind: infra
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-18T11:57:03Z'
 has_clean_result: false
 origin_prompt: '#2333 Step 9a-quater 2026-08-18: four pathspec-limited docs-only commit
