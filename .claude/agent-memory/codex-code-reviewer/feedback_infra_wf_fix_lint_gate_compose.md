@@ -231,3 +231,25 @@ surface instructing a post of an allowed-in-docs kind = Critical wedge.
 tree (frozen + stale — a differing count is not a finding); compose the
 static recompute as hand-applying the predicate to the committed test
 parametrization instead.
+
+**#2610 r1 (2026-08-26) sharpenings — poller status-token round (diff adds a
+new terminal status + an SSH-probe leg to `scripts/poll_pipeline.py`):**
+(a) **Pre-existing literal-collision provenance:** a round-new token can
+collide with an unrelated pre-existing concept (`phase-done` = issue-2089's
+ruff-waiver token in workflow_lint.py, ~59 hits on main;
+`tests/test_workflow_lint_phase_done_check.py` pre-exists and surfaces in
+the marker's pin-sweep hits + slow-deferral list). Probe
+`git cat-file -t origin/main:<test-file>` + grep main at compose time and
+state the provenance as a fact, so Codex neither reads the file as round
+scope nor blocks on its NOT-RUN; naming ambiguity routes to a CONCERN row
+at most. (b) Four named attack axes for this shape: marker-note→SSH
+interpolation fence (FULLMATCH allowlist + compose-site re-validation,
+both layers), legacy byte-identity of the probe script when undeclared,
+threading trace as the hollow-gate mapping (note→extract→probe→verdict,
+grep ALL callers for disabling defaults), and a consumer sweep for the new
+status token (grep scripts/+src/ status-switch consumers; disclosed
+docstring drift adjudicated explicitly). (c) Crash-safety third-leg wording
+for an every-tick fleet path: adversarial note-text hypotheses
+(empty/None/huge/unicode/multi-token/empty-value). (d) wf-fix floor EXEMPT
++ plan-verify version nuance fired together again (PASS recorded at v1,
+plan amended to v3 — attest both, per the #2306 nuance).
