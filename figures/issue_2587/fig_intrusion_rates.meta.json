@@ -1,0 +1,444 @@
+{
+  "commit": "af70c817+dirty",
+  "render_id": "26aa702278314005",
+  "git_commit": "af70c8171c95c9e7a42a47381ee1dfdda40a8f7f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2587_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:53:51Z",
+  "figsize": [
+    7.0,
+    4.6
+  ],
+  "points": [
+    {
+      "rollouts containing any CJK character (%)": 8.375,
+      "y": 16.75,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 6.145833,
+      "y": 12.291666666666666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.875,
+      "y": 7.75,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.854167,
+      "y": 7.708333333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.75,
+      "y": 7.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.541667,
+      "y": 7.083333333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.5,
+      "y": 7.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.666667,
+      "y": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.583333,
+      "y": 3.1666666666666665,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.75,
+      "y": 1.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.583333,
+      "y": 1.1666666666666667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "rollouts containing any CJK character (%)": 4.208333,
+      "y": 8.416666666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.083333,
+      "y": 4.166666666666667,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.125,
+      "y": 4.25,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.458333,
+      "y": 2.9166666666666665,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.9375,
+      "y": 1.875,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.791667,
+      "y": 3.5833333333333335,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.791667,
+      "y": 1.5833333333333333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.041667,
+      "y": 4.083333333333333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.208333,
+      "y": 2.4166666666666665,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.916667,
+      "y": 1.8333333333333333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "rollouts containing any CJK character (%)": 14.637167955089662,
+      "y": -0.19,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 9.354278986583928,
+      "y": 0.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 6.237137398836232,
+      "y": 1.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 5.322187732673915,
+      "y": 2.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 5.14366545244526,
+      "y": 3.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 4.788236027440069,
+      "y": 4.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 5.556369853459689,
+      "y": 5.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.3176853919969957,
+      "y": 6.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.175882484164596,
+      "y": 7.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.8122522264667082,
+      "y": 8.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.5591047204270109,
+      "y": 9.81,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollouts containing any CJK character (%)": 18.862832044910338,
+      "y": -0.19,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 15.229054346749404,
+      "y": 0.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 9.262862601163768,
+      "y": 1.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 10.09447893399275,
+      "y": 2.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 9.85633454755474,
+      "y": 3.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 9.378430639226597,
+      "y": 4.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 8.443630146540311,
+      "y": 5.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 4.348981274669671,
+      "y": 6.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 4.157450849168737,
+      "y": 7.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.1877477735332915,
+      "y": 8.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.7742286129063225,
+      "y": 9.81,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollouts containing any CJK character (%)": 6.8457840443924995,
+      "y": 0.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.378993468634386,
+      "y": 1.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.1086225062086896,
+      "y": 2.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.4112691631751408,
+      "y": 3.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.6615387186852644,
+      "y": 5.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.5316497139947107,
+      "y": 6.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 0.8770386264559825,
+      "y": 7.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.9635863422348643,
+      "y": 8.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.547782969253929,
+      "y": 9.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 1.074287172632896,
+      "y": 10.19,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollouts containing any CJK character (%)": 9.987549288940833,
+      "y": 0.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 5.954339864698948,
+      "y": 1.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 5.39137749379131,
+      "y": 2.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 4.422064170158192,
+      "y": 3.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.0884612813147356,
+      "y": 5.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 4.635016952671956,
+      "y": 6.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.289628040210684,
+      "y": 7.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 5.203080324431802,
+      "y": 8.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 3.2855503640794037,
+      "y": 9.19,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollouts containing any CJK character (%)": 2.5923794940337705,
+      "y": 10.19,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Stray-CJK intrusion per battery cell",
+        "xlabel": "rollouts containing any CJK character (%)",
+        "legend_labels": [
+          "Qwen3.5-9B (thinking off)",
+          "Qwen2.5-7B-Instruct (parent)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "2.5",
+          "5.0",
+          "7.5",
+          "10.0",
+          "12.5",
+          "15.0",
+          "17.5",
+          "20.0"
+        ],
+        "yticklabels": [
+          "Persona",
+          "Register",
+          "User profile",
+          "Hedging",
+          "Query content oneword",
+          "Query",
+          "Stance",
+          "User fact",
+          "Format",
+          "Content constraint",
+          "Lexical marker"
+        ]
+      }
+    ],
+    "series": [
+      "Qwen3.5-9B (thinking off)",
+      "Qwen2.5-7B-Instruct (parent)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
