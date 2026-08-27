@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2612,
+  "highest_id": 2613,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12440,6 +12440,13 @@
       "path": "tasks/proposed/2612",
       "status": "proposed",
       "title": "Arm-independent g0_gate.json publishes to arm-UNSCOPED paths: git conflicts at the second arm's last phase, HF overwrites silently (arm 1's provenance destroyed)"
+    },
+    "2613": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2613",
+      "status": "proposed",
+      "title": "Run LOGS are not an artifact class in the upload policy and have no shared persist helper \u2014 logs die with the pod unless upload-verification happens to catch them"
     },
     "262": {
       "has_clean_result": false,
