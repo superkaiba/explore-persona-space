@@ -11923,7 +11923,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2546",
       "status": "interpreting",
-      "title": "Can the context\u2192answer map predict the POST-CoT answer, and how does CoT training change the map?"
+      "title": "A thinking model's final answer state is largely predictable before reasoning starts, but the specific answer becomes retrievable only at the end of the trace (MODERATE confidence)"
     },
     "2547": {
       "has_clean_result": false,

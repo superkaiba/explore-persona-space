@@ -1,6 +1,7 @@
 ---
-title: Can the context→answer map predict the POST-CoT answer, and how does CoT training
-  change the map?
+title: A thinking model's final answer state is largely predictable before reasoning
+  starts, but the specific answer becomes retrievable only at the end of the trace
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-24T17:29:34Z'
