@@ -22,8 +22,23 @@ revisions.json + fallbacks env under ``aux/``) and excludes shards / npz /
 caches / poller sentinels; ``stage_files`` line-splits oversize plain text
 into <9 MB ``.partNNN`` pieces (non-LFS path) losslessly.
 
-Network-free: the only Hub boundary (``hub._upload``) is faked with a
-signature-mirroring fake; every other body runs for real on tmp_path.
+Round 18 additions:
+
+r18-1. Mirror-on-skip (``_ensure_capture_marker_hub_twin``): a resume-skip
+    over a matching PRE-fix local ``_complete.json`` verifies the Hub twin
+    (ONE memoized scoped listing per (arm, smoke) — never a per-stem
+    ``file_exists`` loop) and repairs a missing twin through
+    ``_mirror_capture_marker``'s upload+assert discipline, fail-loud; both
+    capture drivers are AST-pinned to call it.
+r18-3. ``stage_files`` hard-splits a single line larger than the part size on
+    BYTE boundaries (boundary cases limit-1/limit/limit+1), byte-exact on
+    concatenation.
+r18-smoke. ``_capture_marker_fp``'s missing-marker refusal is ACTIONABLE for
+    pre-fix marker-less ``smoke_arm*`` Hub stores (names the re-run repair,
+    forbids Hub deletion).
+
+Network-free: the only Hub boundary (``hub._upload`` / ``HfApi``) is faked
+with signature-mirroring fakes; every other body runs for real on tmp_path.
 """
 
 from __future__ import annotations
@@ -63,6 +78,28 @@ class TestCaptureMarkerFp:
         fp = {"stage": "capture", "row_sig": "abc123", "smoke": False}
         (tmp_path / "_complete.json").write_text(json.dumps({"fingerprint": fp}))
         assert F._capture_marker_fp(tmp_path, "post__gsm8k") == fp
+
+    def test_missing_marker_under_smoke_prefix_names_the_repair(self, tmp_path):
+        """r18: a pre-fix Hub SMOKE store (smoke_arm2: 21 stems, 0 markers) hits
+        the fail-loud reader — the refusal must name the known state + repair
+        (re-run the smoke capture on fixed code), never suggest Hub deletion."""
+        shard_dir = tmp_path / "store" / "smoke_arm2" / "post__gsm8k"
+        shard_dir.mkdir(parents=True)
+        with pytest.raises(RuntimeError) as ei:
+            F._capture_marker_fp(shard_dir, "post__gsm8k")
+        msg = str(ei.value)
+        assert "smoke_arm" in msg
+        assert "Do NOT delete" in msg
+        assert "re-run the smoke capture" in msg
+
+    def test_missing_marker_production_message_has_no_smoke_hint(self, tmp_path):
+        shard_dir = tmp_path / "store" / "arm1" / "post__gsm8k"
+        shard_dir.mkdir(parents=True)
+        with pytest.raises(RuntimeError) as ei:
+            F._capture_marker_fp(shard_dir, "post__gsm8k")
+        msg = str(ei.value)
+        assert "smoke_arm* prefix" not in msg
+        assert "Restore or re-upload the marker" in msg
 
     def test_build_fitcache_reader_dispatches_the_failloud_helper(self):
         """The live build_fitcache body assigns capture_fp from the fail-loud
@@ -224,6 +261,161 @@ class TestMirrorCaptureMarker:
 
 
 # ---------------------------------------------------------------------------
+# Round 18 blocker 1 — resume-skip repairs a missing Hub marker twin
+# ---------------------------------------------------------------------------
+
+
+class TestEnsureCaptureMarkerHubTwin:
+    def _stem(self, tmp_path, payload):
+        stem_dir = tmp_path / "store" / "arm1" / "post__gsm8k"
+        stem_dir.mkdir(parents=True)
+        done_p = stem_dir / "_complete.json"
+        done_p.write_text(json.dumps(payload))
+        return done_p
+
+    def test_known_present_twin_is_a_zero_network_skip(self, tmp_path, monkeypatch):
+        payload = {"fingerprint": {"stage": "capture"}, "report": {}}
+        done_p = self._stem(tmp_path, payload)
+        twin = f"{G.STORE_PREFIX}/arm1/post__gsm8k/_complete.json"
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): {twin}})
+        calls: dict = {}
+        monkeypatch.setattr(G, "_upload", _fake_upload_factory(calls))
+
+        G._ensure_capture_marker_hub_twin(done_p, 1, False, "post__gsm8k", payload)
+
+        assert calls == {}  # cheap skip: no Hub round-trip when the twin is known present
+        assert json.loads(done_p.read_text()) == payload
+
+    def test_missing_twin_is_repaired_via_the_mirror(self, tmp_path, monkeypatch):
+        """The pre-fix local-only marker (blocker 1): repair mirrors the LOCAL
+        payload to the stem's Hub prefix with _mirror_capture_marker's own
+        upload+assert discipline, then memoizes the repaired twin."""
+        payload = {"fingerprint": {"stage": "capture"}, "report": {"stem": "post__gsm8k"}}
+        done_p = self._stem(tmp_path, payload)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        captured: dict = {}
+        monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured))
+
+        G._ensure_capture_marker_hub_twin(done_p, 1, False, "post__gsm8k", payload)
+
+        assert captured["path_in_repo"] == f"{G.STORE_PREFIX}/arm1/post__gsm8k/_complete.json"
+        assert captured["repo_id"] == G.DEFAULT_DATASET_REPO
+        assert captured["upload_as_file"] is True
+        assert captured["raise_on_error"] is True
+        assert json.loads(captured["bytes"]) == payload
+        assert json.loads(done_p.read_text()) == payload  # re-blessed, same content
+        # The memo learned the repaired twin: a second call is zero-network.
+        captured.clear()
+        G._ensure_capture_marker_hub_twin(done_p, 1, False, "post__gsm8k", payload)
+        assert captured == {}
+
+    def test_repair_failure_raises_and_keeps_the_local_marker(self, tmp_path, monkeypatch):
+        """Fail-loud repair: a mirror failure RAISES (never warn-and-skip); the
+        valid local marker survives so the next resume retries the repair."""
+        payload = {"fingerprint": {"stage": "capture"}}
+        done_p = self._stem(tmp_path, payload)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(1, False): set()})
+        monkeypatch.setattr(G, "_upload", _fake_upload_factory({}, exc=RuntimeError("hub down")))
+        with pytest.raises(RuntimeError):
+            G._ensure_capture_marker_hub_twin(done_p, 1, False, "post__gsm8k", payload)
+        assert json.loads(done_p.read_text()) == payload
+
+    def test_smoke_stems_route_to_the_smoke_arm_prefix(self, tmp_path, monkeypatch):
+        payload = {"fingerprint": {"stage": "capture", "smoke": True}}
+        stem_dir = tmp_path / "store" / "smoke_arm2" / "post__gsm8k"
+        stem_dir.mkdir(parents=True)
+        done_p = stem_dir / "_complete.json"
+        done_p.write_text(json.dumps(payload))
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {(2, True): set()})
+        captured: dict = {}
+        monkeypatch.setattr(G, "_upload", _fake_upload_factory(captured))
+        G._ensure_capture_marker_hub_twin(done_p, 2, True, "post__gsm8k", payload)
+        assert captured["path_in_repo"] == (
+            f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k/_complete.json"
+        )
+
+    def test_cold_memo_takes_one_scoped_listing_and_memoizes(self, monkeypatch):
+        """_hub_capture_marker_paths real body: ONE scoped recursive
+        list_repo_tree per (arm, smoke) — materialized inside the retry thunk —
+        filtered to _complete.json paths; the second call hits the memo."""
+        import huggingface_hub
+
+        listed: list[dict] = []
+
+        class _Entry:
+            def __init__(self, path):
+                self.path = path
+
+        class _FakeApi:
+            def list_repo_tree(self, repo_id, *, path_in_repo, repo_type, recursive):
+                listed.append(
+                    {
+                        "repo_id": repo_id,
+                        "path_in_repo": path_in_repo,
+                        "repo_type": repo_type,
+                        "recursive": recursive,
+                    }
+                )
+                yield _Entry(f"{path_in_repo}/post__gsm8k/_complete.json")
+                yield _Entry(f"{path_in_repo}/post__gsm8k/slot0.shard0.pt")
+
+        monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
+        got = G._hub_capture_marker_paths(2, True)
+        assert got == {f"{G.STORE_PREFIX}/smoke_arm2/post__gsm8k/_complete.json"}
+        assert G._hub_capture_marker_paths(2, True) is got  # memo hit
+        assert len(listed) == 1
+        assert listed[0] == {
+            "repo_id": G.DEFAULT_DATASET_REPO,
+            "path_in_repo": f"{G.STORE_PREFIX}/smoke_arm2",
+            "repo_type": "dataset",
+            "recursive": True,
+        }
+
+    def test_missing_prefix_reads_as_empty_set(self, monkeypatch):
+        """A 404 on the arm prefix (nothing uploaded yet) is an EMPTY set —
+        every resumed stem then routes to the repair mirror, never a blind
+        accept."""
+        import huggingface_hub
+        from huggingface_hub.errors import EntryNotFoundError
+
+        class _FakeApi:
+            def list_repo_tree(self, repo_id, *, path_in_repo, repo_type, recursive):
+                raise EntryNotFoundError("404: tree not found")
+                yield  # pragma: no cover — keeps this a generator like the real API
+
+        monkeypatch.setattr(huggingface_hub, "HfApi", _FakeApi)
+        monkeypatch.setattr(G, "_HUB_MARKER_SETS", {})
+        assert G._hub_capture_marker_paths(1, False) == set()
+
+    def test_both_resume_skip_sites_call_the_twin_repair(self):
+        """AST wiring pin: BOTH capture drivers (P4 run_capture + P4b
+        reliability) call _ensure_capture_marker_hub_twin on their resume-skip
+        paths — a repair wired into only one driver re-opens blocker 1 for the
+        other."""
+        src = Path(G.__file__).read_text()
+        tree = ast.parse(src)
+        parents: dict[ast.AST, ast.AST] = {}
+        for node in ast.walk(tree):
+            for child in ast.iter_child_nodes(node):
+                parents[child] = node
+        callers = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", None)
+            if name != "_ensure_capture_marker_hub_twin":
+                continue
+            anc = node
+            while anc in parents:
+                anc = parents[anc]
+                if isinstance(anc, ast.FunctionDef):
+                    callers.add(anc.name)
+        assert {"run_capture", "run_capture_reliability"} <= callers, callers
+
+
+# ---------------------------------------------------------------------------
 # Defect 2 — log-upload set covers the four groups, excludes data artifacts
 # ---------------------------------------------------------------------------
 
@@ -334,3 +526,47 @@ class TestStageFiles:
         assert b"".join(p.read_bytes() for p in parts) == src.read_bytes()
         # The unsplit original is NOT staged alongside its parts.
         assert not (stage / "logs" / "big.log").exists()
+
+    def test_single_line_exceeding_part_size_hard_splits(self, tmp_path):
+        """r18 blocker 3, at the REAL constants: one newline-free line past the
+        9.5 MB split threshold must hard-split on byte boundaries instead of
+        emitting one oversize .part (which would force-route to LFS)."""
+        src = tmp_path / "huge.log"
+        src.write_bytes(b"y" * (UL.MAX_TEXT_BYTES + 4096))
+        stage = tmp_path / "stage"
+        n_split = UL.stage_files([(src, "")], stage)
+        assert n_split == 1
+        parts = sorted(stage.glob("huge.log.part*"))
+        assert len(parts) == 2  # 9 MiB + remainder
+        assert all(p.stat().st_size <= UL.PART_BYTES for p in parts)
+        assert b"".join(p.read_bytes() for p in parts) == src.read_bytes()
+
+    @pytest.mark.parametrize("delta", [-1, 0, 1])
+    def test_newline_free_line_at_part_size_boundary(self, tmp_path, delta):
+        """Boundary cases (limit-1 / exactly-at-limit / limit+1) for the
+        byte-boundary hard-split, via the helper's part_bytes parameter."""
+        part = 64
+        src = tmp_path / "b.log"
+        src.write_bytes(b"z" * (part + delta))
+        dest = tmp_path / "out"
+        dest.mkdir()
+        UL._split_oversize(src, dest, part_bytes=part)
+        parts = sorted(dest.glob("b.log.part*"))
+        assert len(parts) == (1 if delta <= 0 else 2)
+        assert all(p.stat().st_size <= part for p in parts)
+        assert b"".join(p.read_bytes() for p in parts) == src.read_bytes()
+
+    def test_mixed_lines_and_oversize_line_lossless(self, tmp_path):
+        """An over-length line embedded between ordinary lines: every part
+        stays <= part_bytes and concatenation is byte-exact (the tail of the
+        hard-split line packs with the following lines)."""
+        part = 64
+        blob = b"a" * 10 + b"\n" + b"b" * 200 + b"\n" + b"c" * 30 + b"\n"
+        src = tmp_path / "m.log"
+        src.write_bytes(blob)
+        dest = tmp_path / "out"
+        dest.mkdir()
+        UL._split_oversize(src, dest, part_bytes=part)
+        parts = sorted(dest.glob("m.log.part*"))
+        assert all(p.stat().st_size <= part for p in parts)
+        assert b"".join(p.read_bytes() for p in parts) == blob

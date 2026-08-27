@@ -347,13 +347,29 @@ def _capture_marker_fp(shard_dir: Path, stem: str) -> dict:
     """
     capture_done = shard_dir / "_complete.json"
     if not capture_done.is_file():
+        if any(part.startswith("smoke_arm") for part in shard_dir.parts):
+            # Known pre-fix state (round 18): Hub SMOKE stores captured before
+            # the Hub-first marker mirror (r17) are marker-less by
+            # construction (e.g. smoke_arm2: 21 stems, 0 _complete.json).
+            # Production stores are unaffected (smoke_arm{K} vs arm{K} path
+            # namespacing). Make the refusal actionable, not confusing.
+            hint = (
+                " NOTE: this store sits under a smoke_arm* prefix — pre-fix Hub "
+                "SMOKE stores are marker-less by construction (captured before "
+                "the Hub-first marker mirror landed, so _complete.json was never "
+                "uploaded). Do NOT delete the Hub store; re-run the smoke capture "
+                "on fixed code (issue2546_gen_capture --smoke --phase capture / "
+                "capture-reliability) to regenerate the markers, then re-run this "
+                "fit."
+            )
+        else:
+            hint = " Restore or re-upload the marker to the stem's store prefix, then re-run."
         raise RuntimeError(
             f"{stem}: capture marker missing at {capture_done} — the capture phase "
             "writes _complete.json beside the shards and mirrors it to the Hub "
             "(issue2546_gen_capture._mirror_capture_marker); without it the store "
             "cannot prove its capture regime, so the fitcache content key would be "
-            "silently weakened (task #2546 marker v144). Restore or re-upload the "
-            "marker to the stem's store prefix, then re-run."
+            "silently weakened (task #2546 marker v144)." + hint
         )
     fp = json.loads(capture_done.read_text()).get("fingerprint")
     if fp is None:
@@ -484,6 +500,17 @@ def build_fitcache(
                 print(f"[p5-cache] {stem}: STALE cache ({stale_reason}) — rebuilding", flush=True)
                 shutil.rmtree(cdir)
             else:
+                # `capture_fp` is DELIBERATELY absent from this resume compare
+                # (r17 reconciler, upheld): the fitcache is a pure function of
+                # shard BYTES + LayerProfile, so matching shard_sha256 is a
+                # strictly STRONGER validity key than the fingerprint of the
+                # process that produced the bytes (the smoke/production g2
+                # guarantee is enforced upstream at gen_capture's own
+                # fingerprint compare, plus smoke_arm{K} path namespacing end
+                # to end) — and an fp-equality requirement here would stale
+                # out the banked arm1/arm3 stems whose pre-r17 markers carry
+                # `capture_fp: null`, forcing a full Hub re-stage +
+                # re-reduction for zero data change.
                 done[stem] = cdir
                 print(f"[p5-cache] {stem}: resume-skip", flush=True)
                 continue

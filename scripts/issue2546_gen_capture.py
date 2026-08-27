@@ -96,6 +96,7 @@ from explore_persona_space.atomic_io import write_json_atomic, write_jsonl_atomi
 from explore_persona_space.orchestrate.hub import (  # noqa: E402
     DEFAULT_DATASET_REPO,
     _upload,
+    retry_transient,
     stage_hub_prefix,
 )
 
@@ -469,6 +470,75 @@ def _mirror_capture_marker(done_p: Path, dest: str, payload: dict) -> None:
     )
     assert res, f"capture marker upload returned empty result for {dest}/{done_p.name}"
     tmp.replace(done_p)
+
+
+# Memoized per-(arm, smoke) sets of `_complete.json` repo paths under the
+# arm's store prefix — filled lazily by _hub_capture_marker_paths on the
+# first resume-skip, extended in place when a twin is repair-mirrored.
+_HUB_MARKER_SETS: dict[tuple[int, bool], set[str]] = {}
+
+
+def _hub_capture_marker_paths(arm: int, smoke: bool) -> set[str]:
+    """Repo paths of every ``_complete.json`` under the arm's store prefix.
+
+    Memoized: ONE scoped recursive listing per (arm, smoke) per process, taken
+    lazily on the first resume-skip — never a per-stem ``file_exists`` probe
+    loop (upload-policy.md #1335 r5: N per-file probes multiply transport
+    exposure N-fold). The lazy ``list_repo_tree`` generator is materialized
+    INSIDE the retry_transient thunk (#779: the HTTP error raises at
+    iteration). A missing prefix (nothing uploaded for this arm yet — the
+    response-bearing 404 ``EntryNotFoundError``, non-transient, re-raised
+    immediately by retry_transient) is an EMPTY set, so every resumed stem
+    routes to the repair mirror — never a blind accept.
+    """
+    key = (arm, smoke)
+    if key not in _HUB_MARKER_SETS:
+        from huggingface_hub import HfApi
+        from huggingface_hub.errors import EntryNotFoundError, RepositoryNotFoundError
+
+        prefix = f"{STORE_PREFIX}/{arm_dirname(arm, smoke)}"
+        api = HfApi()
+        try:
+            entries = retry_transient(
+                lambda: list(
+                    # HUB_VERIFY_RETRY_EXEMPT: scoped path_in_repo walk inside retry_transient
+                    api.list_repo_tree(
+                        DEFAULT_DATASET_REPO,
+                        path_in_repo=prefix,
+                        repo_type="dataset",
+                        recursive=True,
+                    )
+                ),
+                what=f"capture marker twin listing {prefix}",
+            )
+        except (FileNotFoundError, EntryNotFoundError, RepositoryNotFoundError):
+            entries = []
+        _HUB_MARKER_SETS[key] = {e.path for e in entries if e.path.endswith("/_complete.json")}
+    return _HUB_MARKER_SETS[key]
+
+
+def _ensure_capture_marker_hub_twin(
+    done_p: Path, arm: int, smoke: bool, stem: str, payload: dict
+) -> None:
+    """Repair a missing Hub marker twin on the resume-skip path (fail-loud).
+
+    A stem completed BEFORE the Hub-first marker mirror landed (r17) carries a
+    matching LOCAL ``_complete.json`` but no Hub twin, so a resume-skip would
+    silently preserve exactly the local-only state the mirror exists to
+    prevent — the next staged fit then dies at
+    ``issue2546_fit_cells._capture_marker_fp`` (blocker 1, round 18). Twin
+    present in the memoized arm-prefix listing => zero-network skip; absent =>
+    mirror the local payload through ``_mirror_capture_marker``'s
+    upload+assert discipline. A repair failure RAISES (never warn-and-skip):
+    the valid local marker stays on disk and the next resume retries.
+    """
+    dest = f"{STORE_PREFIX}/{arm_dirname(arm, smoke)}/{stem}"
+    twin = f"{dest}/{done_p.name}"
+    if twin in _hub_capture_marker_paths(arm, smoke):
+        return
+    logger.info("[capture] %s: local marker present, Hub twin missing — mirroring", stem)
+    _mirror_capture_marker(done_p, dest, payload)
+    _HUB_MARKER_SETS[(arm, smoke)].add(twin)
 
 
 # ---------------------------------------------------------------------------
@@ -2979,18 +3049,28 @@ def run_capture(
                 },
                 bool(args.smoke),
             )
-            if done_p.is_file() and json.loads(done_p.read_text()).get("fingerprint") == fp:
-                logger.info("[capture] %s: resume-skip", stem)
+            if done_p.is_file():
                 prior = json.loads(done_p.read_text())
-                for rid, corr in prior.get("correctness", {}).items():
-                    correctness[side.side][rid] = corr
-                reports[stem] = prior["report"]
-                if prior.get("gf") is not None:
-                    # G-F is persisted with its producing stem (ci==0) so a
-                    # resumed capture re-reads the gate verdict instead of
-                    # re-reporting an empty gf (g3: resume dropped gf).
-                    gf_results[side.side] = prior["gf"]
-                continue
+                if prior.get("fingerprint") == fp:
+                    if not args.skip_upload:
+                        # Mirror-on-skip (blocker 1, round 18): a matching
+                        # PRE-r17 local marker resume-skips WITHOUT its Hub
+                        # twin, so a relaunch after an interruption would
+                        # preserve exactly the local-only state the Hub-first
+                        # mirror prevents. Repair before skipping; fail-loud.
+                        _ensure_capture_marker_hub_twin(
+                            done_p, arm.arm, bool(args.smoke), stem, prior
+                        )
+                    logger.info("[capture] %s: resume-skip", stem)
+                    for rid, corr in prior.get("correctness", {}).items():
+                        correctness[side.side][rid] = corr
+                    reports[stem] = prior["report"]
+                    if prior.get("gf") is not None:
+                        # G-F is persisted with its producing stem (ci==0) so a
+                        # resumed capture re-reads the gate verdict instead of
+                        # re-reporting an empty gf (g3: resume dropped gf).
+                        gf_results[side.side] = prior["gf"]
+                    continue
             rollouts = load_rollouts(out_root, side, c, bool(args.smoke))
             wrows = []
             parse_counts: Counter[str] = Counter()
@@ -3288,11 +3368,20 @@ def run_capture_reliability(
                 },
                 bool(args.smoke),
             )
-            if done_p.is_file() and json.loads(done_p.read_text()).get("fingerprint") == fp:
-                logger.info("[capture-rel] %s: resume-skip", stem)
-                reports[stem] = json.loads(done_p.read_text())["report"]
-                n_stems_captured += 1
-                continue
+            if done_p.is_file():
+                prior = json.loads(done_p.read_text())
+                if prior.get("fingerprint") == fp:
+                    if not args.skip_upload:
+                        # Mirror-on-skip (blocker 1, round 18) — same repair as
+                        # run_capture: rel_ stems are staged from the Hub at
+                        # fit time exactly like P4 stems.
+                        _ensure_capture_marker_hub_twin(
+                            done_p, arm.arm, bool(args.smoke), stem, prior
+                        )
+                    logger.info("[capture-rel] %s: resume-skip", stem)
+                    reports[stem] = prior["report"]
+                    n_stems_captured += 1
+                    continue
             recs = _read_jsonl(p)
             by_base: dict[str, dict[int, tuple[dict, dict]]] = {}
             parse_counts: Counter[str] = Counter()

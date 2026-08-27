@@ -14,7 +14,8 @@ artifacts never share a prefix with production):
 
 Rules honored: plain text only — NEVER gzip/tar (``*.gz`` is LFS-matched and
 >10 MB blobs force-route to LFS; upload-policy.md); any single file over
-~9.5 MB is line-split into <9 MB ``.partNNN`` pieces; ONE bulk
+~9.5 MB is line-split into <=9 MB ``.partNNN`` pieces (a single over-length
+line hard-splits on byte boundaries — lossless on concat); ONE bulk
 ``upload_folder`` commit via ``hub._upload`` (retry-wrapped, scoped verify —
 never a per-file loop, #664); idempotent (re-runs overwrite/skip Hub-side);
 read-only over the phase's artifacts (stages copies under /tmp). The caller
@@ -73,12 +74,49 @@ def collect_log_files(
     return [(p, d) for p, d in groups if p.is_file()]
 
 
+def _split_oversize(src: Path, dest_dir: Path, part_bytes: int = PART_BYTES) -> None:
+    """Split one oversize text file into ``<= part_bytes`` ``.partNNN`` pieces.
+
+    Parts flush at line boundaries; a single line larger than ``part_bytes``
+    is hard-split on BYTE boundaries (an oversize part would force-route to
+    LFS — round-18 blocker 3; measured latent on this task's data: max
+    realized line 2,125 B vs the ~9 MB part size). Invariant (test-pinned):
+    concatenating the parts in order reproduces the source bytes exactly.
+    """
+    idx = 0
+    buf = bytearray()
+
+    def flush() -> None:
+        nonlocal idx
+        (dest_dir / f"{src.name}.part{idx:03d}").write_bytes(buf)
+        idx += 1
+        buf.clear()
+
+    with src.open("rb") as fh:
+        for line in fh:
+            if buf and len(buf) + len(line) > part_bytes:
+                flush()
+            buf.extend(line)
+            while len(buf) > part_bytes:
+                # Only a single over-length line can put buf past the cap
+                # (the line-boundary flush above keeps multi-line packing
+                # under it): emit full-size parts, keep the tail in buf so
+                # later lines still pack with it.
+                tail = buf[part_bytes:]
+                del buf[part_bytes:]
+                flush()
+                buf.extend(tail)
+    if buf:
+        flush()
+
+
 def stage_files(files: list[tuple[Path, str]], stage_root: Path) -> int:
     """Copy files into the hub-layout staging tree; line-split oversize text.
 
     Returns the number of files that were line-split. Pieces are named
-    ``<name>.partNNN`` and each stays under ~9 MB (flushed at line
-    boundaries), keeping every staged blob on the always-open non-LFS path.
+    ``<name>.partNNN`` and each stays at or under ~9 MB (line-boundary
+    flushes; a single over-length line hard-splits on byte boundaries),
+    keeping every staged blob on the always-open non-LFS path.
     """
     n_split = 0
     for src, rel_dir in files:
@@ -88,17 +126,7 @@ def stage_files(files: list[tuple[Path, str]], stage_root: Path) -> int:
             shutil.copyfile(src, dest_dir / src.name)
             continue
         n_split += 1
-        idx = 0
-        buf = bytearray()
-        with src.open("rb") as fh:
-            for line in fh:
-                if buf and len(buf) + len(line) > PART_BYTES:
-                    (dest_dir / f"{src.name}.part{idx:03d}").write_bytes(buf)
-                    idx += 1
-                    buf = bytearray()
-                buf.extend(line)
-        if buf:
-            (dest_dir / f"{src.name}.part{idx:03d}").write_bytes(buf)
+        _split_oversize(src, dest_dir)
     return n_split
 
 
