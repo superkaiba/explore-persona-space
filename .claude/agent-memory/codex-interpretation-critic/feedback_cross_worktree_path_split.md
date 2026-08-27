@@ -119,6 +119,21 @@ and defuse the network paragraph entirely (do-not-fetch: the HF links point
 at firewalled text). Probe all three local-source patterns before concluding
 raw text is HF-only: `judge_inputs/`, `rawcomp_cache/`, `axis_items/`.
 
+**`eval_results/issue_<N>/hub_mirror/<hf-prefix>/fits/<cell>/parsed/*.jsonl`
++ `data/issue_<N>/hf_dl/parsed_mirror/<hf-prefix>/<model>/<arm>/parsed/` —
+fourth and fifth lens-7 local-text sources (#2588 r2, 2026-08-27).** Harvest
+runs (`--harvest` staging a revision-pinned HF mirror) put the parsed
+per-cell pools INSIDE the committed hub_mirror fits tree — the body's cited
+spot-check paths (`<cell>/parsed/gpqa_s42.jsonl`) resolve there verbatim,
+with per-row hit labels next door in `gpqa_perrow_*.json`
+(`row_ids`/`qids`/`same_q_hit`). The hf_dl `parsed_mirror` sibling holds the
+GENERIC (LMSYS-firewalled) pools per model/arm (`train_10k.jsonl`,
+`test_1000.jsonl`) — local but counting-reads-only. Together these made an
+entire round's Lens 7 fully local and let the composed prompt DEFUSE the
+network paragraph (HF raw_completions demoted to advisory). Probe order for
+"is raw text local?": `judge_inputs/`, `rawcomp_cache/`, `axis_items/`,
+`hub_mirror/**/parsed/`, `hf_dl/parsed_mirror/`.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw
