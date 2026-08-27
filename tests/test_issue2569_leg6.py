@@ -1,0 +1,647 @@
+"""Unit tests for scripts/issue2569_leg6.py — leg-6 shift RRR (plan #2569 blockers B2/B3).
+
+The two plan-MANDATED tests (plan v4 §4 leg 6, run in the P-A smoke):
+
+- **B2 estimator validation:** synthetic paired rank-k data (C Gaussian, Delta = C G_k +
+  noise at matched SNR) — the split-half denoised-rank estimator MUST recover k, and a
+  row-shuffled control (pairing broken) MUST recover 0.
+- **B3 pairing-guard permutation test:** a deliberate within-unit row permutation MUST FAIL
+  the ordered-key guard while leaving the (permutation-invariant) tbar value check
+  unchanged — both facts asserted in ONE test.
+
+Plus: halt-on-duplicate / halt-on-missing keys, join-by-ID correctness, split disjointness
++ conversation grouping, power-iteration accuracy vs exact svdvals, and the key-source
+ladder's fail-loud terminal. All synthetic, CPU-fast (d <= 48) — the dense 3584-dim
+factorizations stay out of every test path.
+"""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+import torch
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+import issue2569_leg6 as L6  # noqa: E402
+
+
+def _keys(n: int) -> tuple[list[int], list[str]]:
+    """n synthetic composite keys: unique qidx + shas with one duplicate-prompt pair."""
+    qidx = list(range(n))
+    shas = [f"sha{i:04d}" for i in range(n)]
+    if n >= 4:
+        shas[1] = shas[0]  # duplicate conversation sha (the measured 82-dup corpus shape)
+    return qidx, shas
+
+
+def _store(n: int, d: int, arms: dict[str, dict[int, torch.Tensor]]) -> dict:
+    """A minimal store payload in the OBSERVED pooled/lasttoken schema."""
+    qidx, shas = _keys(n)
+    return {
+        "arms": arms,
+        "row_question_idx": qidx,
+        "row_sha": shas,
+        "schema_version": 1,
+        "unit": "synth",
+        "metadata": {"n_rows": n},
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# B3 — pairing guard
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_pairing_guard_exact_match_passes():
+    """Identical ordered keys across the three stores → action 'exact'."""
+    qidx, shas = _keys(12)
+    keys = list(zip(qidx, shas, strict=True))
+    res = L6.pairing_guard(keys, list(keys), list(keys))
+    assert res.action == "exact" and res.ordered_match
+
+
+def test_permutation_fails_guard_while_tbar_check_unchanged():
+    """THE plan-mandated B3 test: a within-unit row permutation MUST FAIL the ordered-key
+    guard (detected, explicit ID join) while the tbar VALUE check output is UNCHANGED
+    (a column mean is permutation-invariant — it cannot certify row order)."""
+    rng = np.random.default_rng(0)
+    n, d, layer = 16, 8, 19
+    qidx, shas = _keys(n)
+    keys = list(zip(qidx, shas, strict=True))
+    base = torch.tensor(rng.normal(size=(n, d)), dtype=torch.float32)
+    trained = base + torch.tensor(rng.normal(size=(n, d)), dtype=torch.float32)
+
+    perm = rng.permutation(n)
+    keys_perm = [keys[i] for i in perm]
+    res = L6.pairing_guard(keys, keys_perm, list(keys))
+    assert res.action == "joined" and not res.ordered_match  # the guard FAILS the ordered match
+    # The join must map the permuted store back onto base order exactly.
+    assert [keys_perm[i] for i in res.perm_trained] == keys
+
+    # tbar value check: computed Delta column mean identical under the permutation.
+    delta = (trained - base).to(torch.float64)
+    delta_perm = (trained[torch.as_tensor(perm)] - base[torch.as_tensor(perm)]).to(torch.float64)
+    mean_a = {layer: delta.mean(dim=0).numpy()}
+    mean_b = {layer: delta_perm.mean(dim=0).numpy()}
+    np.testing.assert_allclose(mean_a[layer], mean_b[layer], rtol=0, atol=1e-12)
+    tbar_payload = {
+        "tbar": {layer: delta.mean(dim=0).to(torch.float32)},
+        "n_rows": n,
+        "meta": {"n_rows": n, "pos_path": "synth"},
+    }
+    rec_a = L6.tbar_value_check(mean_a, tbar_payload, n_rows_corpus=n)
+    rec_b = L6.tbar_value_check(mean_b, tbar_payload, n_rows_corpus=n)
+    assert rec_a == rec_b  # the tbar value check is UNCHANGED by the permutation
+    assert rec_a["strict_pass"] is True  # matched basis → the strict check binds and passes
+
+
+def test_guard_halts_on_duplicate_and_missing_keys():
+    """Duplicate composite keys or unequal key sets HALT the arm (never silent pairing)."""
+    qidx, shas = _keys(8)
+    keys = list(zip(qidx, shas, strict=True))
+    dup = list(keys)
+    dup[3] = dup[2]  # duplicate composite key
+    assert L6.pairing_guard(dup, list(dup), list(dup)).action == "halt"
+    missing = list(keys)
+    missing[5] = (999, "sha-not-in-base")
+    res = L6.pairing_guard(keys, missing, list(keys))
+    assert res.action == "halt" and "SETS differ" in res.reason
+
+
+def test_tbar_basis_mismatch_recorded_not_gating():
+    """Banked tbar over a DIFFERENT row basis (the measured n_rows=20 training-mean shape)
+    → strict check N/A, cosine corroboration recorded with basis_mismatch: true."""
+    layer = 19
+    mean = {layer: np.ones(8)}
+    tbar_payload = {
+        "tbar": {layer: torch.ones(8) * 2.0},
+        "n_rows": 20,
+        "meta": {"n_rows": 20, "pos_path": "issue1434_writingstyle/.../pos.jsonl"},
+    }
+    rec = L6.tbar_value_check(mean, tbar_payload, n_rows_corpus=16400)
+    assert rec["basis_mismatch"] is True
+    assert rec["strict_pass"] is None
+    assert rec["per_layer"][layer]["cosine"] == pytest.approx(1.0)
+
+
+def test_resolve_keys_fail_loud_without_source():
+    """The key-source ladder ends in a registered HALT — never a silent order assumption."""
+    with pytest.raises(RuntimeError, match="no usable key source"):
+        L6.resolve_keys({"arms": {}}, store_name="pooled_base")
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# B2 — split + estimator
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_split_halves_disjoint_and_grouped_by_conversation():
+    """Halves are disjoint, cover all rows, and duplicate-sha rows never straddle halves."""
+    shas = [f"s{i:03d}" for i in range(100)]
+    shas[10] = shas[11] = shas[12] = shas[9]  # a 4-row conversation group
+    idx1, idx2 = L6.split_halves_by_conversation(shas, seed=0)
+    assert len(np.intersect1d(idx1, idx2)) == 0
+    assert sorted(np.concatenate([idx1, idx2]).tolist()) == list(range(100))
+    group = {9, 10, 11, 12}
+    assert group <= set(idx1.tolist()) or group <= set(idx2.tolist())
+    # Deterministic under the pinned seed.
+    again = L6.split_halves_by_conversation(shas, seed=0)
+    assert idx1.tolist() == again[0].tolist() and idx2.tolist() == again[1].tolist()
+
+
+def _rank_k_data(n: int, d: int, k: int, *, noise: float, seed: int = 3):
+    """Synthetic paired rank-k data: C Gaussian, Delta = C G_k + noise (matched SNR)."""
+    rng = np.random.default_rng(seed)
+    c = rng.normal(size=(n, d))
+    u = np.linalg.qr(rng.normal(size=(d, k)))[0]
+    v = np.linalg.qr(rng.normal(size=(d, k)))[0]
+    g = u @ np.diag(np.linspace(2.0, 1.0, k)) @ v.T
+    delta = c @ g + noise * rng.normal(size=(n, d))
+    shas = [f"conv{i:05d}" for i in range(n)]
+    return (
+        torch.tensor(c, dtype=torch.float32),
+        torch.tensor(delta, dtype=torch.float32),
+        shas,
+    )
+
+
+def test_estimator_recovers_planted_rank_k():
+    """THE plan-mandated B2 test (half 1): the estimator recovers the planted rank k."""
+    k = 3
+    c, delta, shas = _rank_k_data(n=600, d=32, k=k, noise=0.5)
+    rec = L6.fit_split_half(c, delta, shas)
+    assert rec["denoised_rank"] == k, rec["denoised_rank"]
+    # Oracle ceiling for this fixture: signal var tr(G G^T) = 4 + 2.25 + 1 = 7.25 vs
+    # noise var d * noise^2 = 32 * 0.25 = 8 => max achievable R^2 ~ 7.25/15.25 ~ 0.475.
+    # A healthy fit lands ~0.41; bound well above 0 and below the ceiling.
+    assert rec["heldout_r2"]["fit1_eval2"] > 0.3
+    # Identity+learned-bias must fail on a non-identity map (plan step 5 expectation).
+    assert rec["identity_bias_r2"] < 0.1
+    # kNN chance is stated.
+    assert set(rec["knn_retrieval"]["chance"]) == {1, 5, 10}
+
+
+def test_estimator_row_shuffled_control_recovers_zero():
+    """THE plan-mandated B2 test (half 2): breaking the row pairing recovers rank 0."""
+    c, delta, shas = _rank_k_data(n=600, d=32, k=3, noise=0.5)
+    perm = np.random.default_rng(9).permutation(c.shape[0])
+    rec = L6.fit_split_half(c, delta[torch.as_tensor(perm)], shas)
+    assert rec["denoised_rank"] == 0, rec["denoised_rank"]
+
+
+def test_half_moments_single_index_set_bans_cross_half_products():
+    """The B2 ban: half moments slice C and Delta with ONE shared index set, so a
+    cross-half covariance product is unrepresentable through the API; matched-row
+    moments equal the direct centered Gram computation."""
+    rng = np.random.default_rng(4)
+    c = torch.tensor(rng.normal(size=(20, 6)), dtype=torch.float32)
+    d = torch.tensor(rng.normal(size=(20, 6)), dtype=torch.float32)
+    idx = np.arange(10)
+    _mu_c, _mu_d, _scc, scd, n_h = L6.half_moments(c, d, idx)
+    assert n_h == 10
+    c_h = c[:10].to(torch.float64) - c[:10].to(torch.float64).mean(dim=0)
+    d_h = d[:10].to(torch.float64) - d[:10].to(torch.float64).mean(dim=0)
+    torch.testing.assert_close(scd, c_h.T @ d_h)
+    # The estimator asserts half disjointness (belt to the API's braces).
+    with pytest.raises(AssertionError):
+        idx_bad = np.arange(20)
+        i1, i2 = idx_bad[:10], idx_bad[5:15]
+        assert len(np.intersect1d(i1, i2)) == 0, "halves must be disjoint"
+
+
+def test_top_singular_batched_matches_exact_svdvals():
+    """Power iteration reproduces the exact top singular value on a small stack."""
+    rng = np.random.default_rng(5)
+    mats = torch.tensor(rng.normal(size=(4, 12, 12)), dtype=torch.float64)
+    approx = L6.top_singular_batched(mats, iters=100, seed=1)
+    exact = torch.linalg.svdvals(mats)[:, 0]
+    torch.testing.assert_close(approx, exact, rtol=1e-6, atol=1e-8)
+
+
+def test_greedy_factor_match_requires_both_sides():
+    """Factor cosine = min(|cos_u|, |cos_v|): output-side agreement alone must NOT match."""
+    d, k = 8, 2
+    eye = np.eye(d)
+    s = np.array([2.0, 1.0])
+    f1 = L6.HalfFit(torch.zeros(d, d), torch.zeros(d), torch.zeros(d), 1, s, eye[:, :k], eye[:, :k])
+    # Half 2 shares u but has ORTHOGONAL v factors → min-side cosine ~0 → no match.
+    v2 = eye[:, 2:4]
+    f2 = L6.HalfFit(torch.zeros(d, d), torch.zeros(d), torch.zeros(d), 1, s, eye[:, :k], v2)
+    matches = L6.greedy_factor_match(f1, f2)
+    assert not matches[0]["matched"]
+    assert L6.denoised_rank(matches, 0.0, 0.0) == 0
+
+
+def test_regime_key_stable_and_parameter_sensitive():
+    """Resume keys derive from generating parameters and change when a knob changes."""
+    a = L6.regime_key(layer=19, convention="last_prompt", seed=0, n_shuffle=20, cos_floor=0.5)
+    b = L6.regime_key(layer=19, convention="last_prompt", seed=0, n_shuffle=20, cos_floor=0.5)
+    c = L6.regime_key(layer=19, convention="last_ctx", seed=0, n_shuffle=20, cos_floor=0.5)
+    assert a == b and a != c
+
+
+def test_context_matrix_conventions_resolve():
+    """The three context conventions resolve to the documented store objects."""
+    layer = 19
+    lt_arms = {
+        "last_prompt": {layer: torch.full((4, 3), 1.0)},
+        "last_ctx": {layer: torch.full((4, 3), 2.0)},
+    }
+    pooled_arms = {
+        "context": {layer: torch.full((4, 3), 3.0)},
+        "response": {layer: torch.zeros(4, 3)},
+    }
+    lt = _store(4, 3, lt_arms)
+    pb = _store(4, 3, pooled_arms)
+    assert float(L6.context_matrix("last_prompt", lt, pb, layer)[0, 0]) == 1.0
+    assert float(L6.context_matrix("last_ctx", lt, pb, layer)[0, 0]) == 2.0
+    assert float(L6.context_matrix("span_mean", lt, pb, layer)[0, 0]) == 3.0
+    with pytest.raises(ValueError, match="unknown context convention"):
+        L6.context_matrix("nope", lt, pb, layer)
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Factor-vector persistence + cross-arm shared-factor phase (leg-6 criterion producer)
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_factor_roles_reconstruct_half_map_and_role_swap_fails():
+    """Role naming is load-bearing: context factors (input side, U) with shift factors
+    (output side, V) reconstruct the half-1 map as U diag(s) V^T; the role-SWAPPED
+    product V diag(s) U^T must NOT reconstruct it — the in-test decoy that would catch a
+    writer persisting the sides under swapped names."""
+    c, delta, shas = _rank_k_data(n=600, d=32, k=3, noise=0.5)
+    rec, factors = L6.fit_split_half(c, delta, shas, return_factors=True)
+    m1 = np.asarray(factors["map_half1"].numpy(), dtype=np.float64)
+    u = factors["context_factors_half1"].astype(np.float64)
+    v = factors["shift_factors_half1"].astype(np.float64)
+    s = np.asarray(factors["singular_values_half1"], dtype=np.float64)
+    assert u.shape == (32, 32) and v.shape == (32, 32)  # d=32 < FACTOR_K_PERSIST cap
+    denom = float(np.linalg.norm(m1))
+    err_correct = float(np.linalg.norm((u * s[None, :]) @ v.T - m1)) / denom
+    err_swapped = float(np.linalg.norm((v * s[None, :]) @ u.T - m1)) / denom
+    assert err_correct < 1e-4, err_correct  # fp32 storage grain only
+    assert err_swapped > 0.1, err_swapped  # decoy discrimination: swapped roles fail
+    # New rec keys ride the unit JSON: operator floor with its statistic-class label.
+    assert -1.0 <= rec["operator_splithalf_cosine"] <= 1.0
+    assert rec["operator_splithalf_cosine_class"] == L6.STAT_CLASS_OPERATOR_FLOOR
+    assert "pred = (context - mu_c) @ M + mu_d" in rec["factor_orientation"]
+    # Backward compatibility: the default return shape is unchanged (dict, not tuple).
+    rec_only = L6.fit_split_half(c, delta, shas)
+    assert isinstance(rec_only, dict)
+
+
+def _orth_cols(d: int, k: int, seed: int) -> np.ndarray:
+    """k orthonormal columns in R^d (planted factor directions)."""
+    return np.linalg.qr(np.random.default_rng(seed).normal(size=(d, k)))[0]
+
+
+def _stage_leg6_fixture(
+    root: Path,
+    arm_gs: dict[str, np.ndarray],
+    *,
+    layer: int = 19,
+    n: int = 240,
+    d: int = 24,
+    noise: float = 0.3,
+    seed: int = 7,
+) -> None:
+    """Write a tiny staged store mirror in the arm_store_paths layout with planted maps.
+
+    One shared base unit (pooled.pt + lasttoken.pt under ``base_content``) and, per arm,
+    pooled_tf.pt with response shift ``C @ G_arm + noise`` plus an exact banked tbar.
+    """
+    rng = np.random.default_rng(seed)
+    c_np = rng.normal(size=(n, d))
+    c_lp = torch.tensor(c_np, dtype=torch.float32)
+    base_resp = torch.tensor(0.1 * rng.normal(size=(n, d)), dtype=torch.float32)
+    ms_root = root / L6.MAPSHIFT_PREFIX
+    pb_dir = ms_root / "corpus_capture" / "base_content"
+    pb_dir.mkdir(parents=True, exist_ok=True)
+    base_arms = {"context": {layer: c_lp.clone()}, "response": {layer: base_resp}}
+    torch.save(_store(n, d, base_arms), pb_dir / "pooled.pt")
+    lt_dir = ms_root / "lasttoken_ctx" / "base_content"
+    lt_dir.mkdir(parents=True, exist_ok=True)
+    lt_arms = {"last_prompt": {layer: c_lp}, "last_ctx": {layer: c_lp.clone()}}
+    torch.save(_store(n, d, lt_arms), lt_dir / "lasttoken.pt")
+    for aid, g in arm_gs.items():
+        delta = c_np @ g + noise * rng.normal(size=(n, d))
+        tf_resp = base_resp + torch.tensor(delta, dtype=torch.float32)
+        tf_dir = ms_root / "corpus_capture_tf" / aid
+        tf_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(_store(n, d, {"response": {layer: tf_resp}}), tf_dir / "pooled_tf.pt")
+        tb_dir = ms_root / "delta_tf" / aid
+        tb_dir.mkdir(parents=True, exist_ok=True)
+        banked = (tf_resp.to(torch.float64) - base_resp.to(torch.float64)).mean(dim=0)
+        torch.save(
+            {"tbar": {layer: banked}, "n_rows": n, "meta": {"n_rows": n, "pos_path": "synth"}},
+            tb_dir / "tbar.pt",
+        )
+
+
+def _arm(aid: str, beh: str) -> dict:
+    """Minimal arms.json-shaped arm record."""
+    return {"arm_id": aid, "kind": "content", "beh_key": beh, "base_unit": "base_content"}
+
+
+def test_run_arm_persists_factor_and_operator_sidecars(tmp_path):
+    """run_arm writes the role-named .npz factor sidecar + the atlas-contract
+    operator_factors.pt (keys u/s/v/split_half_floor — issue2569_atlas.py step (5) glob),
+    and resume-skips both on a second run."""
+    d, layer = 24, 19
+    q, r = _orth_cols(d, 2, 11), _orth_cols(d, 2, 12)
+    g = 2.0 * np.outer(q[:, 0], r[:, 0]) + 1.4 * np.outer(q[:, 1], r[:, 1])
+    _stage_leg6_fixture(tmp_path, {"armA": g}, layer=layer, d=d)
+    out_root = tmp_path / "out"
+    res = L6.run_arm(
+        _arm("armA", "beh1"),
+        tmp_path,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        raw_rows_dir=None,
+        resume=True,
+    )
+    assert res["halt"] is False and res["units_done"] == 1
+    arm_dir = out_root / "leg6" / "armA"
+    unit = json.loads((arm_dir / f"L{layer}_last_prompt.json").read_text())
+    assert unit["factor_vectors_file"] == f"L{layer}_last_prompt_factors.npz"
+    assert unit["factor_bases"]["context"]["dim"] == d
+    assert unit["factor_bases"]["shift"]["summary"] == "span_mean"
+    npz_path = arm_dir / unit["factor_vectors_file"]
+    npz = np.load(npz_path, allow_pickle=False)
+    role_keys = {
+        "context_factors_half1",
+        "shift_factors_half1",
+        "singular_values_half1",
+        "context_factors_half2",
+        "shift_factors_half2",
+        "singular_values_half2",
+        "schema_json",
+    }
+    assert role_keys <= set(npz.files)
+    assert not {"u", "v", "map_half1"} & set(npz.files)  # bare-letter/map keys never persist
+    k = unit["factor_vectors_k"]
+    assert npz["context_factors_half1"].shape == (d, k)
+    schema = json.loads(str(npz["schema_json"]))
+    assert schema["factor_bases"] == unit["factor_bases"]
+    # Atlas sidecar contract (issue2569_atlas.py step (5)): u/s/v/split_half_floor.
+    op_path = arm_dir / "operator_factors.pt"
+    op = torch.load(op_path, weights_only=False, map_location="cpu")
+    u_op = np.asarray(op["u"], dtype=np.float64)
+    s_op = np.asarray(op["s"], dtype=np.float64)
+    v_op = np.asarray(op["v"], dtype=np.float64)
+    assert u_op.shape == (d, min(d, L6.OPERATOR_K_PERSIST)) and u_op.shape == v_op.shape
+    a_full = (u_op * s_op[None, :]) @ v_op.T
+    assert a_full.shape == (d, d) and np.isfinite(a_full).all()
+    assert op["split_half_floor"] == unit["operator_splithalf_cosine"]
+    assert op["split_half_floor_class"] == L6.STAT_CLASS_OPERATOR_FLOOR
+    assert "context" in op["u_role"] and "shift" in op["v_role"]
+    # Resume: a second run leaves both sidecars untouched (mtime_ns unchanged).
+    stamps = (npz_path.stat().st_mtime_ns, op_path.stat().st_mtime_ns)
+    L6.run_arm(
+        _arm("armA", "beh1"),
+        tmp_path,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        raw_rows_dir=None,
+        resume=True,
+    )
+    assert (npz_path.stat().st_mtime_ns, op_path.stat().st_mtime_ns) == stamps
+
+
+def test_cross_arm_shared_factor_criterion(tmp_path):
+    """The registered-criterion producer: two same-behavior arms sharing one planted
+    factor yield >=1 cross-arm shared factor above the rotation null (pair named); the
+    cell carries both statistics with CLASS labels and the matching rule."""
+    d, layer = 24, 19
+    q, r = _orth_cols(d, 4, 21), _orth_cols(d, 4, 22)
+    shared = 2.0 * np.outer(q[:, 0], r[:, 0])
+    gs = {
+        "armA": shared + 1.4 * np.outer(q[:, 1], r[:, 1]),
+        "armB": shared + 1.4 * np.outer(q[:, 2], r[:, 2]),
+        "armC": 2.0 * np.outer(q[:, 3], r[:, 3]),  # beh2: orthogonal planted factor
+    }
+    _stage_leg6_fixture(tmp_path, gs, layer=layer, d=d)
+    out_root = tmp_path / "out"
+    arms = [_arm("armA", "beh1"), _arm("armB", "beh1"), _arm("armC", "beh2")]
+    for a in arms:
+        L6.run_arm(
+            a,
+            tmp_path,
+            out_root,
+            layers=[layer],
+            conventions=["last_prompt"],
+            raw_rows_dir=None,
+            resume=True,
+        )
+    summary = L6.run_cross_arm(
+        arms,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        n_null_draws=50,
+        resume=True,
+    )
+    cell = json.loads((out_root / "leg6" / "cross_arm" / f"L{layer}_last_prompt.json").read_text())
+    crit = cell["criterion"]
+    assert crit["n_shared_above_null_same_behavior"] >= 1
+    assert crit["met"] is True and summary["criterion_met_any_cell"] is True
+    assert any(p.startswith("armA~armB") for p in crit["pairs_above_null_same_behavior"])
+    # The criterion band is SELECTION-SYMMETRIC; the per-comparison read rides labeled.
+    assert "SELECTION-SYMMETRIC" in crit["shared_factor_definition"]
+    assert "UNCORRECTED" in crit["per_comparison_uncorrected"]["label"]
+    assert crit["n_same_behavior_pairs_tested"] == 1  # A~B (C is beh2)
+    # Statistic-class labels ride next to the numbers (unit-5 atlas convention).
+    sc = cell["statistic_classes"]
+    assert "direction-aware" in sc["cross_arm_factor_cosine"]
+    assert "selection-symmetric" in sc["symmetric_null"]
+    assert "rotation" in sc["rotation_null_percomparison"]
+    assert "min(|cos_context|, |cos_shift|)" in cell["matching_rule"]
+    band = cell["rotation_null_bands_percomparison"][str(d)]
+    assert band["shared_across_pairs"] is True and band["n_draws"] == 50
+    # Symmetric band: per-draw same-selection, aggregation asserted, matrix persisted.
+    assert cell["assertions"]["null_aggregation_matches_observed"] is True
+    ab = next(p for p in cell["pairs"] if p["arm_a"] == "armA" and p["arm_b"] == "armB")
+    assert ab["admissible"] is True
+    assert ab["null_aggregation_matches_observed"] is True
+    sym = cell["symmetric_null_bands"][ab["symmetric_null_key"]]
+    assert sym["null_aggregation"] == L6.CROSS_NULL_AGGREGATION
+    assert len(sym["draws_max_matched"]) == 50
+    assert len(sym["draws_matched_cos"]) == 50  # per-draw x per-slot matrix persisted
+    assert ab["max_matched_cos"] > sym["p95_max_matched"]
+    # All three statistics reported per match: symmetric + per-comparison nulls AND the
+    # within-arm split-half agreement (noise floor).
+    m0 = ab["matches"][0]
+    assert {
+        "cos_context",
+        "cos_shift",
+        "above_symmetric_null",
+        "above_rotation_null_percomparison",
+        "splithalf_floor",
+    } <= set(m0)
+    # The shared factor is the top-sigma factor in both arms and agrees on BOTH sides.
+    assert m0["factor_a"] == 0 and m0["above_symmetric_null"] is True
+    assert abs(m0["cos_context"]) > 0.8 and abs(m0["cos_shift"]) > 0.8
+
+
+def test_cross_arm_refuses_basis_mismatched_pair(tmp_path):
+    """A pair whose recorded factor bases differ is REFUSED with a recorded reason —
+    no cosine is fabricated and the criterion cannot count it."""
+    d, layer = 24, 19
+    q, r = _orth_cols(d, 1, 31), _orth_cols(d, 1, 32)
+    g = 2.0 * np.outer(q[:, 0], r[:, 0])
+    _stage_leg6_fixture(tmp_path, {"armA": g, "armB": g}, layer=layer, d=d)
+    out_root = tmp_path / "out"
+    arms = [_arm("armA", "beh1"), _arm("armB", "beh1")]
+    for a in arms:
+        L6.run_arm(
+            a,
+            tmp_path,
+            out_root,
+            layers=[layer],
+            conventions=["last_prompt"],
+            raw_rows_dir=None,
+            resume=True,
+        )
+    # Poison arm B's recorded context basis (a re-pinned store) — the pair must refuse.
+    unit_path = out_root / "leg6" / "armB" / f"L{layer}_last_prompt.json"
+    unit = json.loads(unit_path.read_text())
+    unit["factor_bases"]["context"]["store"] = "lasttoken_ctx@deadbeef"
+    unit_path.write_text(json.dumps(unit))
+    cell_summary = L6.run_cross_arm(
+        arms,
+        out_root,
+        layers=[layer],
+        conventions=["last_prompt"],
+        n_null_draws=0,
+        resume=False,
+    )
+    cell = json.loads((out_root / "leg6" / "cross_arm" / f"L{layer}_last_prompt.json").read_text())
+    (pair,) = cell["pairs"]
+    assert pair["admissible"] is False
+    assert "factor_bases mismatch" in pair["refusal_reason"]
+    assert "matches" not in pair
+    assert cell["criterion"]["n_shared_above_null_same_behavior"] == 0
+    assert cell_summary["criterion_met_any_cell"] is False
+
+
+def test_symmetric_null_band_controls_rank_multiplicity():
+    """Blocker discrimination (leg6-crossarm-null-not-selection-symmetric): at rank k=8
+    the PER-COMPARISON band fires on pure noise far above 0.05 (P(>=1|H0) ~ 1-(0.95)^8,
+    inflated further by the greedy argmax), while the selection-symmetric max-matched
+    band holds the per-pair false-positive rate at ~0.05 by construction."""
+    d, r = 64, 8
+    band = L6.symmetric_null_band(d, d, r, r, n_draws=400, seed=1, cache={})
+    # Reproducible independent of call order (derived seed from the shape key).
+    band2 = L6.symmetric_null_band(d, d, r, r, n_draws=400, seed=1, cache={})
+    assert band["p95_max_matched"] == band2["p95_max_matched"]
+    assert band["null_aggregation"] == L6.CROSS_NULL_AGGREGATION
+    assert len(band["draws_matched_cos"]) == 400 and len(band["draws_matched_cos"][0]) == r
+    # The multiplicity correction is real: the max-matched band exceeds even the
+    # single-SIDE p95 of |cos| (~1.96/sqrt(d) — the loosest per-comparison threshold;
+    # the honest per-slot band for the min-of-two-sides statistic is lower still).
+    per_comparison_p95 = 1.96 / np.sqrt(d)
+    assert band["p95_max_matched"] > per_comparison_p95 + 0.005
+    # Empirical H0 rates over independent null "observed" pairs run through the SAME
+    # selection the production read uses (_greedy_match_stat). Measured 2026-08-25 at
+    # n=500: per-comparison 0.096 (~2x nominal at k=8; grows with k), symmetric 0.054.
+    rng = np.random.default_rng(7)
+    n_pairs, above_sym, above_pc = 300, 0, 0
+    for _ in range(n_pairs):
+        fa_c = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        fb_c = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        fa_s = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        fb_s = np.linalg.qr(rng.normal(size=(d, r)))[0]
+        matches, t_obs = L6._greedy_match_stat(np.abs(fa_c.T @ fb_c), np.abs(fa_s.T @ fb_s))
+        if t_obs > band["p95_max_matched"]:
+            above_sym += 1
+        if any(v > per_comparison_p95 for _, _, v in matches):
+            above_pc += 1
+    # The pre-fix criterion shape (any match above a per-comparison band) fires on noise
+    # well above nominal:
+    assert above_pc / n_pairs > 0.07, above_pc
+    # The symmetric band controls the per-pair rate at ~0.05:
+    assert above_sym / n_pairs <= 0.085, above_sym
+
+
+def _fake_leg6_tree(root):
+    """A minimal on-disk leg6 tree exercising every leaf class run_upload must cover."""
+    files = [
+        "leg6/summary.json",
+        "leg6/armA/guard.json",
+        "leg6/armA/L19_last_prompt.json",
+        "leg6/armA/L19_last_prompt_factors.npz",
+        "leg6/armA/operator_factors.pt",
+        "leg6/pooled/armA/L19_last_prompt.json",
+        "leg6/cross_arm/L19_last_prompt.json",
+        "leg6/cross_arm/summary.json",
+    ]
+    for f in files:
+        p = root / f
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("{}")
+    return files
+
+
+def test_run_upload_enumerates_all_leaves_and_verifies(tmp_path, monkeypatch):
+    """Blocker discrimination (leg6-artifacts-no-upload-coverage): run_upload uploads
+    EVERY leaf leg6 writes (root summary, per-arm, pooled, cross_arm) preserving the tree
+    layout, exact-set-verifies each leaf, raises on a Hub-missing file, and skips LOUDLY
+    (no Hub calls) under --skip-upload. Fakes only at the network boundary (autospec)."""
+    from types import SimpleNamespace
+    from unittest import mock
+
+    import explore_persona_space.orchestrate.hub as hub_mod
+    import explore_persona_space.orchestrate.upload_sharded as us
+
+    _fake_leg6_tree(tmp_path)
+    leaves = L6.leg6_upload_leaves(tmp_path)
+    assert {rel for _, rel in leaves} == {"", "armA", "cross_arm", "pooled/armA"}
+
+    fake_upload = mock.create_autospec(
+        us.upload_dir_sharded, return_value=SimpleNamespace(rerouted=False)
+    )
+    fake_verify = mock.create_autospec(hub_mod.verify_repo_paths_uploaded, return_value=[])
+    monkeypatch.setattr(us, "upload_dir_sharded", fake_upload)
+    monkeypatch.setattr(hub_mod, "verify_repo_paths_uploaded", fake_verify)
+
+    L6.run_upload(tmp_path, hf_prefix="issue2569_test/analysis_tensors", skip=False)
+    assert fake_upload.call_count == 4
+    prefixes = [c.args[2] for c in fake_upload.call_args_list]
+    assert prefixes == [
+        "issue2569_test/analysis_tensors/leg6",
+        "issue2569_test/analysis_tensors/leg6/armA",
+        "issue2569_test/analysis_tensors/leg6/cross_arm",
+        "issue2569_test/analysis_tensors/leg6/pooled/armA",
+    ]
+    for c in fake_upload.call_args_list:
+        assert c.args[1] == "superkaiba1/explore-persona-space-data"
+        assert c.kwargs["delete_local"] is False and c.kwargs["resume_skip"] is False
+        assert c.kwargs["repo_type"] == "dataset"
+    # Exact-set verify per leaf: the arm leaf's expected set names all four files.
+    arm_expected = next(
+        c.args[2] for c in fake_verify.call_args_list if c.kwargs["path_in_repo"].endswith("armA")
+    )
+    assert arm_expected == [
+        "issue2569_test/analysis_tensors/leg6/armA/L19_last_prompt.json",
+        "issue2569_test/analysis_tensors/leg6/armA/L19_last_prompt_factors.npz",
+        "issue2569_test/analysis_tensors/leg6/armA/guard.json",
+        "issue2569_test/analysis_tensors/leg6/armA/operator_factors.pt",
+    ]
+    # Decoy discrimination: a file missing on the Hub must raise, never pass silently.
+    fake_verify.return_value = ["issue2569_test/analysis_tensors/leg6/armA/operator_factors.pt"]
+    with pytest.raises(AssertionError, match="missing on Hub"):
+        L6.run_upload(tmp_path, hf_prefix="issue2569_test/analysis_tensors", skip=False)
+    # Loud skip: no Hub calls at all.
+    n_before = fake_upload.call_count
+    L6.run_upload(tmp_path, hf_prefix="issue2569_test/analysis_tensors", skip=True)
+    assert fake_upload.call_count == n_before
