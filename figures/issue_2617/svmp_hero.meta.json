@@ -1,11 +1,14 @@
 {
-  "commit": "62640b11",
-  "render_id": "89b28b12162141ea",
-  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "1d8bae1c+dirty",
+  "render_id": "ec74c4c4ab454410",
+  "git_commit": "1d8bae1c44f88ac557ebefc21403edac7472a238",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2617_svmp_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2617_svmp_figures.py",
-  "created": "2026-08-27T18:01:06Z",
+  "created": "2026-08-27T21:02:55Z",
   "figsize": [
     12.5,
     4.8
@@ -2726,7 +2729,7 @@
           "Multi-turn map",
           "Raw context shift (identity+bias)",
           "Shuffled-pair null p95 (single-turn map)",
-          "#2564 benign anchors (subject/object/verb)"
+          "Prior benign-swap pilot anchors (subject/object/verb)"
         ],
         "xticklabels": [
           "Object swap\n(valence flip)\nn=16",

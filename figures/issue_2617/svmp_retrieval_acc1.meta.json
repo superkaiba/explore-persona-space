@@ -1,157 +1,160 @@
 {
-  "commit": "62640b11",
-  "render_id": "24d3d69e00464b8b",
-  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "1d8bae1c+dirty",
+  "render_id": "e7bacaf33e4641ad",
+  "git_commit": "1d8bae1c44f88ac557ebefc21403edac7472a238",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2617_svmp_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2617_svmp_figures.py",
-  "created": "2026-08-27T18:01:10Z",
+  "created": "2026-08-27T21:02:58Z",
   "figsize": [
-    13.5,
+    17.0,
     4.4
   ],
   "points": [
     {
       "x": -0.26,
-      "Pair-delta retrieval acc@1": 0.9166666666666666,
+      "Retrieval acc@1 (rank 1)": 0.9166666666666666,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.74,
-      "Pair-delta retrieval acc@1": 0.8125,
+      "Retrieval acc@1 (rank 1)": 0.8125,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.74,
-      "Pair-delta retrieval acc@1": 0.9375,
+      "Retrieval acc@1 (rank 1)": 0.9375,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 2.74,
-      "Pair-delta retrieval acc@1": 0.9375,
+      "Retrieval acc@1 (rank 1)": 0.9375,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 3.74,
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 4.74,
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 5.74,
-      "Pair-delta retrieval acc@1": 0.75,
+      "Retrieval acc@1 (rank 1)": 0.75,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 6.74,
-      "Pair-delta retrieval acc@1": 0.9444444444444444,
+      "Retrieval acc@1 (rank 1)": 0.9444444444444444,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "All\nn=108",
-      "Pair-delta retrieval acc@1": 0.9166666666666666,
+      "Retrieval acc@1 (rank 1)": 0.9166666666666666,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Object swap\n(valence flip)\nn=16",
-      "Pair-delta retrieval acc@1": 0.875,
+      "Retrieval acc@1 (rank 1)": 0.875,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Verb swap\n(valence flip)\nn=16",
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Subject swap\n(harmful topic)\nn=16",
-      "Pair-delta retrieval acc@1": 0.875,
+      "Retrieval acc@1 (rank 1)": 0.875,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Object swap\n(benign)\nn=8",
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Verb swap\n(benign)\nn=8",
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Subject swap\n(benign)\nn=8",
-      "Pair-delta retrieval acc@1": 0.75,
+      "Retrieval acc@1 (rank 1)": 0.75,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "XSTest\nsafe/unsafe\nn=36",
-      "Pair-delta retrieval acc@1": 0.9166666666666666,
+      "Retrieval acc@1 (rank 1)": 0.9166666666666666,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.26,
-      "Pair-delta retrieval acc@1": 0.8425925925925926,
+      "Retrieval acc@1 (rank 1)": 0.8425925925925926,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.26,
-      "Pair-delta retrieval acc@1": 0.75,
+      "Retrieval acc@1 (rank 1)": 0.75,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 2.26,
-      "Pair-delta retrieval acc@1": 0.75,
+      "Retrieval acc@1 (rank 1)": 0.75,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 3.26,
-      "Pair-delta retrieval acc@1": 0.875,
+      "Retrieval acc@1 (rank 1)": 0.875,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 4.26,
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 5.26,
-      "Pair-delta retrieval acc@1": 1.0,
+      "Retrieval acc@1 (rank 1)": 1.0,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 6.26,
-      "Pair-delta retrieval acc@1": 0.625,
+      "Retrieval acc@1 (rank 1)": 0.625,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 7.26,
-      "Pair-delta retrieval acc@1": 0.8888888888888888,
+      "Retrieval acc@1 (rank 1)": 0.8888888888888888,
       "_kind": "bar",
       "_group": 2
     },
@@ -316,21 +319,46 @@
       "y": 0.8888888888888888,
       "_kind": "bar",
       "_group": 8
+    },
+    {
+      "category": "Single-turn\nmap",
+      "y": 0.8842592592592593,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Multi-turn\nmap",
+      "y": 0.7962962962962963,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Identity+bias\n(leave-one-out)",
+      "y": 0.7037037037037037,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "Raw context\nshift",
+      "y": 0.24074074074074073,
+      "_kind": "bar",
+      "_group": 12
     }
   ],
-  "n_series": 9,
-  "total_points": 51,
+  "n_series": 13,
+  "total_points": 55,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "All pairs",
-        "ylabel": "Pair-delta retrieval acc@1",
+        "title_left": "Pair-delta: All pairs",
+        "ylabel": "Retrieval acc@1 (rank 1)",
         "legend_labels": [
           "Single-turn map",
           "Multi-turn map",
           "Raw context shift (identity+bias)",
+          "Identity+bias, leave-one-out (per-context panel)",
           "Chance (1/n_pool)"
         ],
         "xticklabels": [
@@ -354,7 +382,7 @@
         ]
       },
       {
-        "title_left": "Constructed pairs",
+        "title_left": "Pair-delta: Constructed pairs",
         "xticklabels": [
           "All\nn=72",
           "Object swap\n(valence flip)\nn=16",
@@ -366,10 +394,25 @@
         ]
       },
       {
-        "title_left": "XSTest pairs",
+        "title_left": "Pair-delta: XSTest pairs",
         "xticklabels": [
           "All\nn=36",
           "XSTest\nsafe/unsafe\nn=36"
+        ]
+      },
+      {
+        "title_left": "Per-context (absolute state)\nn=216",
+        "annotations": [
+          "0.88",
+          "0.80",
+          "0.70",
+          "0.24"
+        ],
+        "xticklabels": [
+          "Single-turn\nmap",
+          "Multi-turn\nmap",
+          "Identity+bias\n(leave-one-out)",
+          "Raw context\nshift"
         ]
       }
     ],

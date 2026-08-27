@@ -9,8 +9,9 @@ or a scratch dir via ``--in-dir``) and renders, per plan section 4.6:
   benign-anchor reference lines; (right) per-pair scatter of |delta refusal
   rate| vs direction cos, colored by pair class (the partial-rho read lives
   in caption PROSE, never on-canvas).
-- Exploratory dump: pair-delta retrieval acc@1 bars (class x arm x pool,
-  chance lines), calibration slopes, axis-loading flip vs non-flip,
+- Exploratory dump: retrieval acc@1 bars (pair-delta class x arm x pool +
+  a per-context absolute-state panel, chance lines), calibration slopes,
+  axis-loading flip vs non-flip,
   margin-vs-rate validation scatter, per-context refusal-rate manipulation
   check, |ans_len_delta| vs cos, span-vs-tail pooling twin, and the
   L14/L26 twin-layer table figure.
@@ -223,7 +224,7 @@ def fig_hero(summary: dict, rows: list[dict], anchors: dict[str, float]) -> plt.
             [],
             color=ANCHOR_BLACK,
             linestyle=":",
-            label="#2564 benign anchors (subject/object/verb)",
+            label="Prior benign-swap pilot anchors (subject/object/verb)",
         ),
     ]
     axl.legend(handles=handles, loc="lower left", fontsize=7)
@@ -263,12 +264,29 @@ def fig_hero(summary: dict, rows: list[dict], anchors: dict[str, float]) -> plt.
 
 
 def fig_retrieval(summary: dict) -> plt.Figure:
+    """Retrieval acc@1: three pair-delta pool panels + a per-context panel.
+
+    Left three panels: pair-delta rank-1 retrieval per class and arm (one
+    panel per pool). Right panel: per-context absolute-state rank-1
+    retrieval per arm (full 216-context pool, cosine metric), including the
+    leave-one-out identity+bias baseline; each panel carries its own chance
+    line. Raises if any panel would render zero finite bars.
+    """
     arm_c = _arm_colors()
+    loo_arm = "idbias_loo"
+    loo_color = paper_palette_role("baseline")
+    assert loo_color not in set(arm_c.values()) | set(_class_colors().values()), loo_color
     rp = summary["retrieval_pair_rank"]
-    fig, axes = plt.subplots(1, len(POOLS), figsize=(13.5, 4.4), sharey=True)
+    fig, axes = plt.subplots(
+        1,
+        len(POOLS) + 1,
+        figsize=(17.0, 4.4),
+        sharey=True,
+        gridspec_kw={"width_ratios": [1.0, 1.0, 1.0, 0.72]},
+    )
     n_bars = 0
     width = 0.26
-    for ax, pool in zip(axes, POOLS):
+    for ax, pool in zip(axes[: len(POOLS)], POOLS):
         cats = ["all"] + [
             c
             for c in PAIR_CLASSES
@@ -309,14 +327,47 @@ def fig_retrieval(summary: dict) -> plt.Figure:
         if chance is not None:
             ax.axhline(float(chance), color=NULL_GREY, lw=1.2, linestyle="--")
         ax.set_xticks(range(len(cats)), labels, fontsize=6.5)
-        ax.set_title(POOL_LABELS[pool])
+        ax.set_title(f"Pair-delta: {POOL_LABELS[pool]}")
         ax.set_ylim(0, 1.05)
+    # Right panel: per-context absolute-state retrieval (full pool, cosine).
+    rpc = summary["retrieval_per_context"]
+    axp = axes[len(POOLS)]
+    pc_arms = ("arm_779ce", "arm_1738ce", loo_arm, "arm_iddelta")
+    pc_colors = {**arm_c, loo_arm: loo_color}
+    pc_ticklabels = [
+        "Single-turn\nmap",
+        "Multi-turn\nmap",
+        "Identity+bias\n(leave-one-out)",
+        "Raw context\nshift",
+    ]
+    chance_pc = None
+    for xi, arm in enumerate(pc_arms):
+        entry = rpc[arm]["full"]["cosine"]
+        acc = float(entry["acc_at_k"]["1"])
+        chance_pc = float(entry["chance_at_k"]["1"])
+        axp.bar(xi, acc, width=0.6, color=pc_colors[arm])
+        axp.text(xi, acc + 0.02, f"{acc:.2f}", ha="center", fontsize=7)
+        n_bars += 1
+    assert chance_pc is not None and np.isfinite(chance_pc), chance_pc
+    axp.axhline(chance_pc, color=NULL_GREY, lw=1.2, linestyle="--")
+    axp.set_xticks(range(len(pc_arms)), pc_ticklabels, fontsize=6.5)
+    axp.set_title("Per-context (absolute state)\nn=216")
     _require_points(n_bars, "retrieval acc@1 bars")
-    axes[0].set_ylabel("Pair-delta retrieval acc@1")
+    axes[0].set_ylabel("Retrieval acc@1 (rank 1)")
     handles = [
         Line2D([], [], marker="s", linestyle="", color=arm_c[a], label=ARM_LABELS[a])
         for a in ALL_ARMS
     ]
+    handles.append(
+        Line2D(
+            [],
+            [],
+            marker="s",
+            linestyle="",
+            color=loo_color,
+            label="Identity+bias, leave-one-out (per-context panel)",
+        )
+    )
     handles.append(Line2D([], [], color=NULL_GREY, linestyle="--", label="Chance (1/n_pool)"))
     axes[0].legend(handles=handles, fontsize=7, loc="upper left")
     return fig
