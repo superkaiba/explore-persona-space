@@ -216,6 +216,44 @@ if [ -n "$SMOKE" ]; then
     NEED_GB_CAPREL=2
 fi
 
+# ---------------------------------------------------------------------------
+# Run-log persistence (defect 2, task #2546 marker v144 / #2613): mirror the
+# run's logs to issue2546_cotmap/logs/<arm_dir>/ (the realized arm1/arm3 Hub
+# convention) so a FAILED or killed phase still keeps its line-level record —
+# arms 1 and 3 each needed a manual ~4 MB upload, and on arm 3 the two most
+# valuable logs were the FAILURE records. Fires at phase end (success path)
+# AND from the EXIT trap (failure/kill path; LOGS_PERSISTED keeps the success
+# path single-upload). LOUD but NEVER fatal: every call site is
+# `upload_run_logs || true`, the upload script only READS phase artifacts
+# (stages copies under /tmp; plain text, line-split >9.5 MB, one bulk commit,
+# idempotent), and on_exit re-exits with the phase's own captured rc.
+# ---------------------------------------------------------------------------
+LOGS_PERSISTED=""
+upload_run_logs() {
+    if uv run python scripts/issue2546_upload_logs.py --arm "$ARM" \
+        --out-root "$OUT_ROOT" --log-dir "$LOG_DIR" \
+        --fallback-env "$FALLBACK_ENV" ${SMOKE:+--smoke}; then
+        LOGS_PERSISTED=1
+    else
+        echo "[dispatch2546] WARNING: run-log upload FAILED rc=$? (logs may be missing from the Hub; phase status unaffected)" >&2
+        return 1
+    fi
+}
+on_exit() {
+    rc=$?
+    if [ -z "$LOGS_PERSISTED" ]; then
+        # RC_CAPTURE_EXEMPT: deliberately non-fatal — body is one external command with explicit if/else rc routing; log upload must never alter the phase's exit status (defect 2, marker v144)
+        upload_run_logs || true
+    fi
+    exit "$rc"
+}
+trap on_exit EXIT
+# Route fatal signals through the EXIT trap so a KILLED phase persists its
+# logs too (bash skips the EXIT trap on an untrapped fatal signal); the
+# explicit exit codes preserve the conventional 128+SIG status.
+trap 'exit 143' TERM
+trap 'exit 130' INT
+
 echo "[dispatch2546] arm=$ARM phase=$PHASE_ARG smoke=${SMOKE:-0} ngpu=$NGPU out_root=$OUT_ROOT fb_args=${FB_ARGS:-none}"
 
 # ---------------------------------------------------------------------------
@@ -718,11 +756,17 @@ all)
         run_phase p5_fits
         run_phase p6_publish
     fi
+    # Phase-end log persistence (before the sentinel + terminal line, per the
+    # upload-before-[phase=done] convention); the EXIT trap covers failures.
+    # RC_CAPTURE_EXEMPT: deliberately non-fatal — log upload must never fail the phase; helper routes every rc explicitly (defect 2, marker v144)
+    upload_run_logs || true
     write_results_sentinel
     echo "[phase=done]"
     ;;
 p1_smoke | p2a_pilot | p2_gen_post | p3_gen_short | p4_capture | p4b_capture_rel | ge_gate | p5_fits | p6_publish)
     run_phase "$PHASE_ARG"
+    # RC_CAPTURE_EXEMPT: deliberately non-fatal — log upload must never fail the phase; helper routes every rc explicitly (defect 2, marker v144)
+    upload_run_logs || true
     echo "[dispatch2546] single-phase invocation of $PHASE_ARG complete (no terminal done line)"
     ;;
 *)

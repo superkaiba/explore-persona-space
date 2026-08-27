@@ -334,6 +334,36 @@ def _stage_stem(
     return staged, True
 
 
+def _capture_marker_fp(shard_dir: Path, stem: str) -> dict:
+    """Capture-regime fingerprint from the stem's ``_complete.json`` (FAIL-LOUD).
+
+    The marker is written by the capture phase and mirrored to the Hub beside
+    the shards (issue2546_gen_capture._mirror_capture_marker), so it is present
+    both on a local store and in a staged HF mirror. A missing or
+    fingerprint-less marker RAISES: a silent ``None`` here left the r2-Major-7
+    capture-regime component of ``_store_content_key`` / unit fingerprints
+    inert on every staged production fit (task #2546 marker v144) — a
+    cache-invalidation key must never weaken itself silently.
+    """
+    capture_done = shard_dir / "_complete.json"
+    if not capture_done.is_file():
+        raise RuntimeError(
+            f"{stem}: capture marker missing at {capture_done} — the capture phase "
+            "writes _complete.json beside the shards and mirrors it to the Hub "
+            "(issue2546_gen_capture._mirror_capture_marker); without it the store "
+            "cannot prove its capture regime, so the fitcache content key would be "
+            "silently weakened (task #2546 marker v144). Restore or re-upload the "
+            "marker to the stem's store prefix, then re-run."
+        )
+    fp = json.loads(capture_done.read_text()).get("fingerprint")
+    if fp is None:
+        raise RuntimeError(
+            f"{stem}: capture marker {capture_done} carries no 'fingerprint' key — "
+            "malformed capture marker; re-run the capture phase for this stem"
+        )
+    return fp
+
+
 def _load_shard(path: Path) -> dict:
     try:
         return torch.load(path, map_location="cpu", weights_only=True)
@@ -512,13 +542,10 @@ def build_fitcache(
         # _complete.json, mirrored to the Hub alongside the shards), so
         # _store_content_key/unit fingerprints change whenever the CONTENT the
         # cache was reduced from changes — a same-shape recapture included.
+        # FAIL-LOUD on a missing marker (marker v144): the old silent
+        # `else None` fallback made this key inert on every staged fit.
         shard_hashes = {f.name: _sha256_file(f) for f in files}
-        capture_done = shard_dir / "_complete.json"
-        capture_fp = (
-            json.loads(capture_done.read_text()).get("fingerprint")
-            if capture_done.is_file()
-            else None
-        )
+        capture_fp = _capture_marker_fp(shard_dir, stem)
         if staged:
             shutil.rmtree(shard_dir)  # free the HF mirror only, never store originals
         _atomic_json(
@@ -2547,6 +2574,15 @@ def _selftest_write_stem(
         "repro": {"phase": "selftest"},
     }
     torch.save(shard, stem_dir / "slot0.shard000.pt")
+    # Capture marker beside the shards — the real capture phase always writes
+    # (and Hub-mirrors) it, and build_fitcache FAILS LOUD without it (v144).
+    _atomic_json(
+        stem_dir / "_complete.json",
+        {
+            "fingerprint": {"stage": "selftest", "side": side, "corpus": corpus, "smoke": True},
+            "report": {"stem": f"{side}__{corpus}", "n_rows": B},
+        },
+    )
 
 
 def _selftest_write_rel_stem(
@@ -2586,6 +2622,19 @@ def _selftest_write_rel_stem(
         "repro": {"phase": "selftest"},
     }
     torch.save(shard, stem_dir / "slot0.shard000.pt")
+    # Capture marker beside the shards (same rationale as _selftest_write_stem).
+    _atomic_json(
+        stem_dir / "_complete.json",
+        {
+            "fingerprint": {
+                "stage": "selftest-rel",
+                "side": side,
+                "corpus": corpus,
+                "smoke": True,
+            },
+            "report": {"stem": f"rel_{side}__{corpus}", "n_rows": len(row_ids)},
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

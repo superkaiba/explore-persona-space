@@ -438,6 +438,39 @@ def _read_jsonl(path: Path) -> list[dict]:
     return out
 
 
+def _mirror_capture_marker(done_p: Path, dest: str, payload: dict) -> None:
+    """Upload the per-stem capture marker to the stem's Hub prefix, THEN bless local resume.
+
+    Defect-1a fix (task #2546 marker v144): the fit stage stages freed stems
+    from the Hub (issue2546_fit_cells._stage_stem), so the capture-regime
+    fingerprint must live at ``<store_prefix>/<stem>/_complete.json`` beside
+    the shards — the previous local-only write made ``capture_fp`` silently
+    ``None`` on every staged production fit. Ordering is Hub-FIRST: the
+    marker bytes go to a sibling temp file OUTSIDE the stem dir (so a crashed
+    attempt's residue can never ride a later shard folder-upload), are
+    uploaded fail-loud, and only then rename onto ``done_p`` — a
+    marker-upload failure therefore leaves NO local marker, and the resume
+    predicate re-runs the stem (self-healing) instead of resume-skipping
+    into a store whose staged mirror can never carry its fingerprint.
+
+    One tiny per-stem JSON beside the stem's own bulk shard commit — a
+    genuine single-file caller (upload rides hub._retry_upload + the scoped
+    in-helper verify), not a #664 per-file-loop shape.
+    """
+    tmp = done_p.parent.parent / f".{done_p.parent.name}._complete.pending.json"
+    _atomic_write_json(tmp, payload)
+    res = _upload(
+        tmp,
+        DEFAULT_DATASET_REPO,
+        "dataset",
+        f"{dest}/{done_p.name}",
+        upload_as_file=True,
+        raise_on_error=True,
+    )
+    assert res, f"capture marker upload returned empty result for {dest}/{done_p.name}"
+    tmp.replace(done_p)
+
+
 # ---------------------------------------------------------------------------
 # Corpus staging + per-arm row sets
 # ---------------------------------------------------------------------------
@@ -3128,17 +3161,24 @@ def run_capture(
                     logger.info(
                         "[capture] %s: freed %d local shards post-upload", stem, len(shard_files)
                     )
-            _atomic_write_json(
-                done_p,
-                {
-                    "fingerprint": fp,
-                    "report": report,
-                    "correctness": corr_this,
-                    # G-F persisted with its producing stem so resume restores it.
-                    "gf": gf_results.get(side.side) if ci == 0 else None,
-                    "repro": repro_meta(args.phase),
-                },
-            )
+            marker_payload = {
+                "fingerprint": fp,
+                "report": report,
+                "correctness": corr_this,
+                # G-F persisted with its producing stem so resume restores it.
+                "gf": gf_results.get(side.side) if ci == 0 else None,
+                "repro": repro_meta(args.phase),
+            }
+            if args.skip_upload:
+                _atomic_write_json(done_p, marker_payload)
+            else:
+                # Hub-first marker mirror (defect 1a, marker v144): the staged
+                # fit mirror must carry the capture-regime fingerprint.
+                _mirror_capture_marker(
+                    done_p,
+                    f"{STORE_PREFIX}/{arm_dirname(arm.arm, bool(args.smoke))}/{stem}",
+                    marker_payload,
+                )
             print(f"[capture] {stem}: complete ({n_captured} rows)", flush=True)
     necessity = compute_necessity(arm, correctness, row_index, out_root, math_gold_drops)
     return {"reports": reports, "gf": gf_results, "necessity_summary": necessity}
@@ -3407,10 +3447,21 @@ def run_capture_reliability(
                         stem,
                         len(shard_files),
                     )
-            _atomic_write_json(
-                done_p,
-                {"fingerprint": fp, "report": report, "repro": repro_meta("p4b_capture_rel")},
-            )
+            rel_marker_payload = {
+                "fingerprint": fp,
+                "report": report,
+                "repro": repro_meta("p4b_capture_rel"),
+            }
+            if args.skip_upload:
+                _atomic_write_json(done_p, rel_marker_payload)
+            else:
+                # Hub-first marker mirror (defect 1a, marker v144) — rel_ stems
+                # are staged from the Hub at fit time exactly like P4 stems.
+                _mirror_capture_marker(
+                    done_p,
+                    f"{STORE_PREFIX}/{arm_dirname(arm.arm, bool(args.smoke))}/{stem}",
+                    rel_marker_payload,
+                )
             n_stems_captured += 1
             print(f"[capture-rel] {stem}: complete ({n_captured} rows)", flush=True)
     if n_stems_captured == 0 and not args.smoke:
