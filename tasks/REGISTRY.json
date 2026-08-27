@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2609,
+  "highest_id": 2610,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12419,6 +12419,13 @@
       "path": "tasks/archived/261",
       "status": "archived",
       "title": "Toy coupling of start marker with end marker -> see if adding start marker causes end marker"
+    },
+    "2610": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2610",
+      "status": "proposed",
+      "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
     },
     "262": {
       "has_clean_result": false,
