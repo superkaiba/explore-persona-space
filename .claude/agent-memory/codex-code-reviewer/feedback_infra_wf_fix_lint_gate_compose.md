@@ -460,6 +460,76 @@ in no block — the docstring's red-evidence claim is verifiable without
 running pytest; also pin the `pytest.raises(pytest.fail.Exception,
 match=...)` contract against the guard's actual message literal.
 
+**#2365 r1 (2026-08-27) sharpenings — deploy-deferred serving-infra variant
+(diff = Next.js config header + a new served-vs-committed integrity probe;
+production deploy deliberately POST-merge per a plan sequencing note):**
+(a) a plan-sanctioned deferred-acceptance round composes THREE coupled facts —
+the sequencing note is quoted as compose-time fact ("absence of deploy is not
+a blocker; the live negative control legitimately exits rc=1 until deploy"),
+the implementer-raised deploy-pending concern gets the
+[[brief-named-concern-adjudication]] required line with expected disposition
+= consistent-with-plan (re-emit ONLY on changed disposition), and the
+execution ban is WIDENED to name the deploy surface explicitly (systemctl
+restart, npm build, next start, running the probe against live CDN or local
+ports, curl to the production host) — a generic "never run smoke commands"
+ban does not obviously cover a reviewer "harmlessly" curling the live URL.
+(b) An untracked REPO-ROOT-side probe artifact the plan creates
+(`dashboard/public/cf-obfuscation-probe.html`) is attested deliberate +
+outside the worktree so the twin neither flags scope creep nor tries to read
+it. (c) A round-new NETWORK-probe script (~88-unit fetch loop) gets an
+explicit Step 3.6 honest-adjudication steer (minutes-scale read-only
+idempotent verdict probe — state the adjudication, don't skip the step) and
+a hollow-gate mapping = "documented human procedure": verify the README
+deploy block actually carries the command AND that it resolves from the
+block's stated cwd (`cd dashboard && uv run python ../scripts/...`).
+(d) Hub-call duty (#1805) on a stdlib-urllib probe: attest "no Hub calls —
+duty trivially discharges; re-arms if you find one". Roster SKIP + floor
+EXEMPT + plan-verify-present dual attest all fired again (tags [],
+origin_prompt = sibling-task surfacing).
+
+**#2366 r1 (2026-08-27) sharpening — src-LIBRARY bug-fix variant (diff widens
+an exception catch in `src/**` + adds tests; no workflow helper touched):**
+the recipe generalizes with two adaptations. (a) A marker that VOLUNTARILY
+carries a `## Smoke run` H2 (a pytest digest) on a type-exempt kind:infra task
+gets an explicit pre-triage line — "voluntary extra evidence, not a Step 0.6
+surface; can only help, never grounds `smoke-run-missing`" (the type-exempt
+sibling of [[data-hardening-round-compose]]'s brief-bound smoke H2). (b) An
+exception-WIDENING fix gets a routed review-questions block: catch-width vs
+the plan's must-ask fence, healthy-path invariance of the normalization
+(`ver if ver is not None else sentinel`), and breadth adjudication (the
+widened class swallows more than the announced instance — route as at most
+CONCERNS + `CONCERN::` row when the plan pins the exact diff and the helper is
+informational-only, never a FAIL on the plan's own pinned hunk). Roster-SKIP +
+floor-EXEMPT-with-plan-verify-present dual attest + three-grain recount with a
+grain-artifact extra (a docstring citing a DIFFERENT `*_capability.py` file)
+all fired again, per the validated patterns.
+
+**#2364 r2 (2026-08-27) sharpenings — upheld-blockers fix round on an
+advisory AST scanner (reconciler BINDING FAIL, 2 upheld + 1 deferred):**
+(a) one mechanism serving a BLOCKER fix AND a reconciler Standing Minor
+(per-function save-exclusion scoping) composes as INTENT-adherence, never
+sketch-verbatim — hand the (d)-disclosed judgment call (helper-function
+saves now pin ⇒ suppress) neutrally, and direct the new-edge hunt at the
+mechanism's own gaps (`save_value_ids` matches `ast.Assign`+single-Name
+only ⇒ AnnAssign / tuple-target saves are residual false-suppression
+shapes), with severity CALIBRATED to the reconciler's own precedent (a
+disclosed narrow residual in a WARN-only flag-only advisory scanner routes
+CONCERN-grade like its Finding 2, unless it recreates the founding class
+as broadly as the blocker did). (b) A WARN-delta claim (268→263: 5
+removed, 0 added) composes as a STATIC site-read battery for the no-uv
+twin: the composer names the 5 removed-WARN sites (from the marker) for
+newly-pins verification, plus the two ADD-direction hunt shapes (live
+one-char-constant patches after a regex widen; save-idiom reads that LOST
+their exclusion). (c) A deferred concern whose rationale offered an
+OPTIONAL remedy the round DECLINED with a (b)-recorded rationale gets the
+three-way `CONSISTENT-WITH-DEFERRAL | DISCLOSURE-GAP | FALSE-CLAIM` status
+line, severity fenced at CONCERN, re-emit-id-only-on-changed-disposition.
+(d) Round-scoping arithmetic: keep the reconciler envelope's OWN marker
+tags (different kind — no extraction collision; assert ==1 each) while
+stripping + blockquoting the inlined prior CODEX verdict per the rclose
+recipe; post-fix line anchors recomputed since both inlined verdicts cite
+the r1 blob's lines.
+
 **#2624 r1 (2026-08-27) sharpenings — dual-target poller-ADVISORY +
 verify_plan-check round (diff adds a GPU-state advisory family to
 poll_pipeline.py AND a WARN-only c73 to verify_plan.py in one commit):**
