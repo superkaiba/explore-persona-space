@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2620,
+  "highest_id": 2621,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12504,6 +12504,13 @@
       "path": "tasks/reviewing/2620",
       "status": "reviewing",
       "title": "curate .claude/agent-memory/code-reviewer-lean/MEMORY.md under the 24KB agent-memory index FAIL cap (41KB on main; reds worktree spec-freshness sync commits + silently truncates the lean twin's loaded lessons)"
+    },
+    "2621": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2621",
+      "status": "proposed",
+      "title": "poll_pipeline cpu_advancing override has no rate floor, masking an HF-transfer deadlock as healthy"
     },
     "263": {
       "has_clean_result": true,
