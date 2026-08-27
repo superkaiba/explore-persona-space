@@ -1160,6 +1160,13 @@ def _marker_launch_fields(issue: int, pod: str | None = None) -> tuple[int | Non
 # key=value convention as `pid=` / `cmd='...'`. `\S+` cannot capture
 # whitespace/newlines, so a note can never smuggle a multi-token value.
 _DONE_FILE_TOKEN_RE = re.compile(r"\bdone_file=(\S+)")
+# An EMPTY declaration (`done_file=` immediately followed by whitespace or
+# the end of the note — a launcher typo) cannot match the `\S+` capture
+# above, so without a dedicated probe it would silently restore the legacy
+# pid-only verdicts; #2610 round 2 routes it through the same rejection
+# WARN path instead (declaration ignored — behavior unchanged,
+# observability fixed).
+_DONE_FILE_EMPTY_TOKEN_RE = re.compile(r"\bdone_file=(?=\s|$)")
 # Shell-safe allowlist for the declared path: the value is interpolated into
 # the `_ssh_probe` heredoc, so the FULLMATCH below is the injection fence —
 # absolute path, alnum/dot/underscore/slash/dash only, no spaces, quotes,
@@ -1194,11 +1201,18 @@ def _done_file_from_note(note: str) -> str | None:
     ``done_file=`` token (the common legacy case — every downstream consumer
     is then inert, byte-identical to pre-#2610) or the value fails the
     shell-safe allowlist (WARNed + ignored in :func:`_validate_done_file`).
-    Pure; the caller passes the note text already in hand
-    (:func:`_marker_launch_fields`) so this costs no extra events read.
+    An EMPTY token (``done_file=`` with nothing before the next whitespace /
+    end of note — a launcher typo) is likewise WARNed + ignored via the same
+    rejection path, never a silent opt-out (#2610 round 2). Pure; the caller
+    passes the note text already in hand (:func:`_marker_launch_fields`) so
+    this costs no extra events read.
     """
     m = _DONE_FILE_TOKEN_RE.search(note or "")
     if m is None:
+        if _DONE_FILE_EMPTY_TOKEN_RE.search(note or ""):
+            # Empty-token typo: same WARN-and-ignore path as any other
+            # rejected declaration (the "" candidate can never fullmatch).
+            return _validate_done_file("")
         return None
     return _validate_done_file(m.group(1))
 

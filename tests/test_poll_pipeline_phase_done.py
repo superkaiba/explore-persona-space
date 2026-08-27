@@ -37,7 +37,11 @@ These tests pin (the plan v3 11-case matrix):
 10. no ``-> done`` milestone posts on a ``phase-done`` tick
     (``current_phase`` keeps the real phase);
 11. `_done_file_probe` string: the three conjuncts in order (the
-    ``-f <pid_file>`` middle conjunct pinned), "" when undeclared/invalid.
+    ``-f <pid_file>`` middle conjunct pinned), "" when undeclared/invalid;
+12. (round 2) an EMPTY ``done_file=`` token (whitespace / end-of-note
+    right after the ``=``) -> WARN + ignore via the SAME rejection path —
+    never a silent legacy opt-out; an empty token beside a later VALID
+    declaration keeps the valid match (no WARN, behavior unchanged).
 
 Conventions copied from ``tests/test_poll_pipeline_dead_veto.py`` (importlib
 loader, ``_probe_stdout`` builder parsed by the REAL ``_parse_probe_stdout``,
@@ -419,6 +423,46 @@ def test_done_file_extraction_and_validation(
     assert pp._marker_done_file(2610) == _DONE_FILE
     monkeypatch.setattr(pp, "_latest_run_launched_event", lambda issue, pod=None: None)
     assert pp._marker_done_file(2610) is None
+
+
+def test_empty_done_file_token_warns_and_is_ignored(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Case 12 (#2610 round 2): an EMPTY ``done_file=`` token (nothing
+    between the ``=`` and the next whitespace / end of note — a launcher
+    typo) cannot match the ``\\S+`` capture, so pre-fix it silently
+    restored the legacy pid-only verdicts; it now routes through the SAME
+    rejection WARN path (declaration ignored — behavior unchanged,
+    observability fixed)."""
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        # Mid-note empty token (whitespace follows the `=`).
+        assert pp._done_file_from_note("launched pid=123 done_file= log_abs=/x.log") is None
+        # Note-final empty token (end of string follows the `=`).
+        assert pp._done_file_from_note("launched pid=123 done_file=") is None
+        # Trailing-newline note (the `\\s` alternative of the probe).
+        assert pp._done_file_from_note("done_file=\n") is None
+    warns = [
+        rec.getMessage()
+        for rec in caplog.records
+        if "rejected by the shell-safe allowlist" in rec.getMessage()
+    ]
+    assert len(warns) == 3, warns
+
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        # A note with NO done_file token stays a silent None (no WARN) —
+        # the common legacy case is unchanged.
+        assert pp._done_file_from_note("launched pid=123 free prose") is None
+        # An empty token BESIDE a later valid declaration: the `\S+`
+        # search skips the empty occurrence and the valid one still wins
+        # (no WARN) — pre-round-2 match behavior preserved.
+        assert pp._done_file_from_note(f"done_file= done_file={_DONE_FILE}") == _DONE_FILE
+    stray = [
+        rec.getMessage()
+        for rec in caplog.records
+        if "rejected by the shell-safe allowlist" in rec.getMessage()
+    ]
+    assert not stray, stray
 
 
 # ── 7. run-level done outranks phase-done ─────────────────────────────────────

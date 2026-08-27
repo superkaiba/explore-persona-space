@@ -1406,6 +1406,28 @@ while True:
     # below; a status-only parse is BANNED. Decide:
     #
     #   status == "done"           -> exit loop; transition to status:verifying; go to Step 7.
+    #   status == "phase-done"     -> terminal SUCCESS for the LAUNCHED
+    #                                  single-phase workload (#2610: the
+    #                                  launch note declared `done_file=`,
+    #                                  every pid probe read dead, and the
+    #                                  declared completion file is fresh —
+    #                                  newer than the pid file). Exit the
+    #                                  completed phase's wait. This is
+    #                                  PER-WORKLOAD success, NOT run-level
+    #                                  done: preserve the local
+    #                                  `current_phase` (never synthesize a
+    #                                  run-level done milestone), do NOT
+    #                                  transition to status:verifying, and
+    #                                  do NOT enter Step 8 pod-termination.
+    #                                  The driving orchestrator then
+    #                                  dispatches the NEXT planned phase (a
+    #                                  fresh epm:run-launched per the
+    #                                  pid-file launch contract) and re-arms
+    #                                  the poll chain for that launch; when
+    #                                  the completed phase was the LAST
+    #                                  planned phase, proceed to the
+    #                                  orchestrator's own results-landed
+    #                                  handling instead.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
     #                                  `gate` field; the poller has ALREADY
     #                                  posted the carried marker (e.g.
@@ -1519,6 +1541,9 @@ The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
+exit the completed phase's wait + dispatch the next planned phase on
+`status=phase-done` (its branch-table row above — per-workload success:
+keep `current_phase`, never run-level verifying / Step 8 termination),
 dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
 a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), post
 `epm:failure v1` on `status=stalled` or `status=dead`, and run the

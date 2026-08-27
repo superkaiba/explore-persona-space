@@ -15,9 +15,10 @@ honors. The orchestrator's `/issue` skill calls these in a fixed order:
 
 The :class:`PollResult` shape is the SAME JSON the orchestrator already
 consumes from ``scripts/poll_pipeline.py`` (status ∈ {running, done, gate,
-stalled, dead}, plus current_phase / new_milestone / log timing / log
-tail). We keep field names + types byte-compatible so the orchestrator's
-existing JSON parsing keeps working when the SLURM backend lands.
+stalled, dead, pid-stale-workload-live, phase-done}, plus current_phase /
+new_milestone / log timing / log tail). We keep field names + types
+byte-compatible so the orchestrator's existing JSON parsing keeps working
+when the SLURM backend lands.
 
 ``RunSpec`` describes the work to run; ``RunHandle`` is the opaque token
 returned by ``launch()`` and re-passed to every other call. Both are
@@ -489,6 +490,12 @@ class PollResult:
     * ``pid-stale-workload-live`` — pid probes all dead but same-tick
       evidence (busy GPU / fresh issue-keyed logs/outputs) contradicts
       death; non-terminal, RunPod/legacy-poller lane only, #2265.
+    * ``phase-done`` — terminal PER-WORKLOAD success for a single-phase
+      launch that declared an opt-in ``done_file=`` on its
+      ``epm:run-launched`` note: every pid probe reads dead AND the
+      declared completion file is fresh (newer than the pid file). NOT
+      run-level ``done`` (which still outranks it); RunPod/legacy-poller
+      lane only, #2610.
 
     Backend-specific notes:
 
@@ -505,7 +512,7 @@ class PollResult:
     doesn't populate a field still serializes to the SAME JSON shape.
     """
 
-    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live
+    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live | phase-done
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int
