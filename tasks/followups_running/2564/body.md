@@ -279,7 +279,7 @@ Plotted: per name pair (10 unordered pairs of the five injected names), the mean
 
 The lattice verdict is an aggregate: the map beats identity on 100 of 120 individual swap pairs, and its paired gap excludes zero, but the Sarah-vs-Emma and Marcus-vs-Diego pairs trail identity on average (map 0.11 vs 0.14 and 0.20 vs 0.21), so recovery is heterogeneous across name pairs rather than uniform.
 
-Magnitude flips with the noise resolved: sampling noise inflates observed shift norms and deflates a low-draw slope, so the parent's 0.87 was a noise-limited read; at 100 draws the axis over-scales at 1.81 (interval 1.61 to 2.09), the battery's strongest, with identity at 1.74 (1.56 to 1.96), so this distortion too is not map-specific.
+Magnitude flips at the tenfold draw count: sampling noise inflates observed shift norms and deflates a low-draw slope, consistent with the parent's 0.87 being a noise-limited read; at 100 draws the axis over-scales at 1.81 (interval 1.61 to 2.09), the battery's strongest, with identity at 1.74 (1.56 to 1.96), so this distortion too is not map-specific.
 
 ---
 
