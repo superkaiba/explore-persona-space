@@ -50,6 +50,23 @@ what stops future interruptions. Kill switch:
 ``EPM_TICK_HUMAN_PROBE_DEBUG=1`` (stderr ``[human-probe]`` line —
 paths/counts/ages only, never transcript text).
 
+A third screen (issue #2361, ``subagent_live_reason``) runs when both
+screens above find nothing: a fresh ``agent-*.jsonl`` under THIS session's
+``<transcript-dir>/<session-id>/subagents/`` dir (the harness appends rows
+there while an Agent-tool subagent works) within
+``EPM_TICK_SUBAGENT_FRESH_S`` (default: the ``stale_s()`` marker staleness
+window) converts the would-be STALE-REDRIVE to HEALTHY (reason prefix
+``subagent-live``). An autonomous session running a long in-skill subagent
+(a 20-40 min planner / fact-checker at ``planning``) posts markers only at
+phase boundaries and no detached-phase breadcrumbs, so it is invisible to
+both screens above and previously read as a dead chain — and a re-drive at
+``planning`` re-enters Step 2 and can race the live planner (the
+duplicate-planner hazard). The probe is mtime-only: no subagent transcript
+content is ever read (content invariant #1000). Fail toward ticking: ANY
+resolution or probe failure suppresses nothing. Teardown verdicts
+(TERMINAL / GATE-TRANSITION) are never suppressed. Kill switch:
+``EPM_TICK_SUBAGENT_PROBE=0``.
+
 Side effects (both under ``~/.eps-autonomous``, overridable for tests via
 ``EPM_TICK_STATE_DIR``):
 
@@ -777,6 +794,7 @@ def proc_start_epoch(pid: int) -> float | None:
     (process dead, permission, malformed)."""
     try:
         btime: float | None = None
+        # JSONL_SPLITLINES_EXEMPT: /proc/stat is a procfs kernel table, not JSONL content
         for line in (_PROC_ROOT / "stat").read_text().splitlines():
             if line.startswith("btime "):
                 btime = float(line.split()[1])
@@ -1192,6 +1210,95 @@ def human_activity_reason(now: float) -> str | None:
         return None
 
 
+# ── live-subagent screen (issue #2361) ──────────────────────────────────────
+
+
+def subagent_probe_enabled() -> bool:
+    """``EPM_TICK_SUBAGENT_PROBE`` kill switch (default on; ``0``/
+    ``false`` disables — restores pre-#2361 STALE-REDRIVE behavior
+    fleet-wide; clone of ``human_active_probe_enabled``)."""
+    raw = os.environ.get("EPM_TICK_SUBAGENT_PROBE", "").strip().lower()
+    return raw not in ("0", "false")
+
+
+def subagent_fresh_s() -> float:
+    """``EPM_TICK_SUBAGENT_FRESH_S`` (seconds) -> agent-transcript recency
+    window; malformed or non-positive -> ``stale_s()`` — the marker
+    staleness window (honors ``EPM_TICK_STALE_S``), so the screen and the
+    verdict it screens share ONE coherent staleness notion by default."""
+    raw = os.environ.get("EPM_TICK_SUBAGENT_FRESH_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return stale_s()
+    return val if val > 0 else stale_s()
+
+
+def subagent_live_reason(now: float) -> str | None:
+    """Return a content-invariant reason suffix when THIS session has a
+    freshly-appended Agent-tool subagent transcript (issue #2361), else
+    ``None``.
+
+    Signal (empirically verified on real transcripts, #2361 plan v1): the
+    harness writes each Agent-tool subagent's conversation to
+    ``<transcript-dir>/<session-id>/subagents/agent-<name>-<hash>.jsonl``
+    (sibling dir of the session transcript ``<session-id>.jsonl``) and
+    APPENDS rows as the subagent works — append gaps are bounded by the
+    subagent's longest single tool call (Bash caps at 10 min), comfortably
+    under the default ~25-min window. A fresh mtime on any
+    ``agent-*.jsonl`` is therefore evidence of a LIVE in-session subagent —
+    invisible to the #1051 detached-phase probe (no breadcrumb) and the
+    #1629 human screen (autonomous sessions have no human rows by
+    construction). The ``.meta.json`` sidecar carries spawn-time metadata
+    only and is deliberately NOT matched. mtime-only — no subagent
+    transcript content is ever read (content invariant #1000).
+
+    Entirely exception-guarded: ANY failure -> ``None`` (fail toward
+    ticking; the helper can never raise into ``triage()``). Aggregation
+    mirrors ``human_activity_reason``: per-file ``0 <= age < window``,
+    smallest in-window age wins — a future-dated mtime (clock skew) is
+    skipped, never latched as "the newest"."""
+    try:
+        if not subagent_probe_enabled():
+            _human_probe_debug("subagent-miss=disabled")
+            return None
+        path = _own_session_transcript_path()
+        if path is None:
+            return None
+        subdir = Path(path).with_suffix("") / "subagents"
+        window = subagent_fresh_s()
+        n_files = 0
+        best_age: float | None = None  # smallest IN-WINDOW age among agent files
+        for agent_file in subdir.glob("agent-*.jsonl"):
+            n_files += 1
+            age = now - agent_file.stat().st_mtime
+            if 0 <= age < window and (best_age is None or age < best_age):
+                best_age = age
+        if n_files == 0:
+            _human_probe_debug("subagent-miss=no-agent-transcripts")
+            return None
+        age_str = "none" if best_age is None else f"{best_age:.1f}"
+        verdict_str = "suppress" if best_age is not None else "no-suppress"
+        _human_probe_debug(
+            f"subagent-dir={subdir} files={n_files} newest_age_s={age_str} verdict={verdict_str}"
+        )
+        if best_age is None:
+            return None
+        return (
+            f"subagent-live (newest agent transcript {best_age / 60:.0f}m ago"
+            f" < {window / 60:.0f}m, {n_files} agent transcripts)"
+        )
+    except Exception as exc:
+        # Debug-only error rung: exception TYPE only (content invariant
+        # #1000), itself guarded so the helper can never raise into
+        # triage() (the #1629/#2361 hard constraint).
+        try:
+            _human_probe_debug(f"subagent-probe error={type(exc).__name__}")
+        except Exception:
+            return None
+        return None
+
+
 # ── pure verdict logic ──────────────────────────────────────────────────────
 
 
@@ -1513,10 +1620,16 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
             # untouched; campaign branch untouched. The human-activity
             # screen (issue #1629) runs SECOND, only when the liveness
             # screen found nothing — same PARK+ACTIVE scope, same
-            # fail-toward-ticking posture.
+            # fail-toward-ticking posture. The live-subagent screen
+            # (issue #2361) runs THIRD, only when both found nothing —
+            # same scope, same posture; an mtime-only probe of this
+            # session's own subagents/ agent transcripts (a live
+            # in-skill planner/fact-checker is not a dead chain).
             live = issue_liveness_reason(events, now, stale_s())
             if live is None:
                 live = human_activity_reason(now)
+            if live is None:
+                live = subagent_live_reason(now)
             if live is not None:
                 age_desc = (
                     "no markers" if marker_age is None else f"marker age {marker_age / 60:.0f}m"

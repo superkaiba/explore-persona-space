@@ -2,8 +2,7 @@
 title: Context→answer structure is shared across story characters; chat, plain-text,
   and user framings are covered partially or not at all in Qwen3.6-27B (MODERATE confidence)
 kind: experiment
-tags:
-- followup-auto
+tags: []
 created_at: '2026-08-19T02:35:51Z'
 has_clean_result: true
 parent_id: 2054
@@ -31,7 +30,7 @@ goal: 'Test whether the context→answer linear map trained in the chat-template
 # Context→answer structure is shared across story characters; chat, plain-text, and user framings are covered partially or not at all in Qwen3.6-27B (MODERATE confidence)
 
 <!-- clean-result-v4 -->
-**Methodology:** [docs/methodology/issue_2378.md @ 0d7afc57](https://github.com/superkaiba/explore-persona-space/blob/0d7afc57886d9604635e6255f2e6ad9334f48a89/docs/methodology/issue_2378.md) · [gist mirror](https://gist.github.com/superkaiba/2c082b96c71a48ab235989891a16910b)
+**Methodology:** [docs/methodology/issue_2378.md @ e9acf578](https://github.com/superkaiba/explore-persona-space/blob/e9acf578358b1fbe8679874d08d23ac398281d5b/docs/methodology/issue_2378.md) · [gist mirror](https://gist.github.com/superkaiba/4f648b5f8fcfd8b63d60850897a5821b)
 
 ## Takeaways
 

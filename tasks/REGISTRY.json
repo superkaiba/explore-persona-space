@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2608,
+  "highest_id": 2612,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10445,8 +10445,8 @@
     "2351": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2351",
-      "status": "reviewing",
+      "path": "tasks/archived/2351",
+      "status": "archived",
       "title": "workflow_lint _hf_routing_file_errors false-positives on HF-call text inside docstrings"
     },
     "2352": {
@@ -10516,15 +10516,15 @@
     "2361": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2361",
-      "status": "running",
+      "path": "tasks/completed/2361",
+      "status": "completed",
       "title": "workflow-fix: tick_triage reads STALE-REDRIVE at planning while a live subagent runs, risking a duplicate planner spawn"
     },
     "2362": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2362",
-      "status": "proposed",
+      "path": "tasks/running/2362",
+      "status": "running",
       "title": "set-body: fail-loud on byte-identical no-op + gate body-edit markers on an actual body commit (phantom v4 edits, #2333)"
     },
     "2363": {
@@ -10643,8 +10643,8 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2378",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2378",
+      "status": "awaiting_promotion",
       "title": "Context\u2192answer structure is shared across story characters; chat, plain-text, and user framings are covered partially or not at all in Qwen3.6-27B (MODERATE confidence)"
     },
     "2379": {
@@ -12058,7 +12058,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/2564",
       "status": "followups_running",
-      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout, after re-elicitation clears the three compliance-failed axes (MODERATE confidence)"
+      "title": "The frozen context-to-answer map recovers the direction of instruction-driven answer shifts on every minimal-pair axis, beating identity pass-through throughout, after re-elicitation and a tenfold sampling boost clear the compliance-failed and noise-limited reads (MODERATE confidence)"
     },
     "2565": {
       "has_clean_result": false,
@@ -12388,23 +12388,30 @@
     "2606": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2606",
-      "status": "reviewing",
+      "path": "tasks/completed/2606",
+      "status": "completed",
       "title": "pod.py provision exits 0 with BOOTSTRAP-OK while its own preflight reports PREFLIGHT-FAILED rc=2 \u2014 fail loud instead"
     },
     "2607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2607",
-      "status": "running",
+      "path": "tasks/reviewing/2607",
+      "status": "reviewing",
       "title": "verify_task_body.py Lens 14 reads a worktree-frozen concerns.jsonl with no staleness guard (analyzer false PASS on #2378 r7)"
     },
     "2608": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2608",
-      "status": "running",
+      "path": "tasks/reviewing/2608",
+      "status": "reviewing",
       "title": "Pod bootstrap cone sparse-checkout omits CROSS-ISSUE artifact cones, so drivers reading prior issues' committed eval_results/figures crash at launch"
+    },
+    "2609": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2609",
+      "status": "proposed",
+      "title": "workflow-fix: _hf_routing_exempt_spans row indices use a different line model than its caller \u2014 a form feed can UNDER-flag a real HF call"
     },
     "261": {
       "has_clean_result": false,
@@ -12412,6 +12419,27 @@
       "path": "tasks/archived/261",
       "status": "archived",
       "title": "Toy coupling of start marker with end marker -> see if adding start marker causes end marker"
+    },
+    "2610": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2610",
+      "status": "running",
+      "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
+    },
+    "2611": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2611",
+      "status": "running",
+      "title": "git_provenance()'s 5s-timeout git status orphans .git/index.lock on slow filesystems, breaking every later git op in the run (fix: --no-optional-locks)"
+    },
+    "2612": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2612",
+      "status": "proposed",
+      "title": "Arm-independent g0_gate.json publishes to arm-UNSCOPED paths: git conflicts at the second arm's last phase, HF overwrites silently (arm 1's provenance destroyed)"
     },
     "262": {
       "has_clean_result": false,

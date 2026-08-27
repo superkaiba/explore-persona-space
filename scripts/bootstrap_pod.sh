@@ -82,6 +82,15 @@ source "$SCRIPT_DIR/_git_cred_helper.sh"
 # than leaving a half-applied rebase that breaks the next re-bootstrap.
 BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"
 
+# Exit code for a step-10 preflight failure (#2606): bootstrap completed its
+# setup steps but the pod-side preflight FAILED — the pod is up and reachable,
+# its venv/env is NOT experiment-ready. Joins pod_lifecycle.py's 75/76/77
+# structured-exit family; mirrored (never imported) as
+# pod_lifecycle.py::EXIT_BOOTSTRAP_PREFLIGHT_FAILED and
+# backends/runpod.py::EXIT_BOOTSTRAP_PREFLIGHT_FAILED. 3-way parity pinned by
+# tests/test_bootstrap_pod_preflight_failloud.py.
+EXIT_PREFLIGHT_FAILED=78
+
 # ── Color output ─────────────────────────────────────────────────────────────
 
 RED='\033[0;31m'
@@ -806,14 +815,35 @@ else
     # warning into the very log Acceptance 3 greps. Same idiom as the
     # backends/runpod.py launcher; the rc-file exports cannot cover this shell
     # (non-interactive ssh bails at the PS1 guard before the appended lines).
-    # NOTE: the payload stays single-quote-free — the export-semantics test
+    # NOTE: the payload stays single-quote-free and closes on a STANDALONE
+    # delimiter line — the export-semantics test
     # (tests/test_bootstrap_pod_uv_link_mode.py) extracts it verbatim.
+    # #2606: the payload's LAST line is the preflight command with NO `||`
+    # fallback, so its rc propagates through ssh into PREFLIGHT_RC below and
+    # a failed preflight FAILS the bootstrap (the old in-payload
+    # `|| echo PREFLIGHT-FAILED-AT-BOOTSTRAP` swallow let a broken pod exit 0
+    # with BOOTSTRAP-OK).
+    set +e
     ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
     cd /workspace/explore-persona-space
     set -a; [ -f .env ] && source .env; set +a
     export HF_HOME=/workspace/.cache/huggingface
-    uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"
+    uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1
     '
+    PREFLIGHT_RC=$?
+    set -e
+    if [ "$PREFLIGHT_RC" -ne 0 ]; then
+        # Attribution caveat (accepted): an ssh TRANSPORT failure here (rc 255),
+        # a failure of an earlier payload line (cd/source), or an earlier remote
+        # command coincidentally exiting 78 all classify as preflight failure.
+        # Conservative direction: the pod is KEPT ALIVE instead of torn down,
+        # and the printed rc discriminates (255 = transport).
+        echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$PREFLIGHT_RC"   # sentinel kept, now printed locally (grep-compat with #2569 forensics)
+        log_fail "Preflight FAILED (rc=$PREFLIGHT_RC) — pod venv/env is NOT experiment-ready"
+        echo "Bootstrap FAILED at preflight for ${POD_NAME:-$HOST:$PORT} (preflight rc=$PREFLIGHT_RC)."
+        exit "$EXIT_PREFLIGHT_FAILED"
+    fi
+    log_ok "Preflight passed"
 fi
 
 # ── Step 11: Pod-side log shipper — RETIRED ──────────────────────────────────

@@ -9,6 +9,34 @@ this step.
 
 Only if status is `planning`.
 
+**Planner-dispatch breadcrumb (duty).** Immediately before invoking
+`/adversarial-planner`, post
+`uv run python scripts/task.py post-marker <N> epm:progress --by issue-orchestrator --note "planner-dispatch round=<k> — invoking /adversarial-planner (plan draft v<K> target)"`.
+This refreshes the marker-staleness clock at the phase START (a 20-40 min
+planner/fact-checker chain posts nothing until `epm:plan` lands, so the
+tick's staleness read otherwise spans the whole chain), and it is the
+marker trail the in-flight-planner guard below keys on. The token is
+`planner-dispatch`, deliberately NOT `stage-dispatch` — the #1051 detached-
+phase pid parser and the #967 triage observer key on `stage-dispatch` and
+must never key on this breadcrumb (no `pid=` field; nothing detached is
+being launched).
+
+**In-flight-planner guard (#2361).** At Step 2 ENTRY (before invoking the
+planner), check the marker trail: if the latest `planner-dispatch`-leading
+`epm:progress` is younger than ~90 min AND no `epm:plan` (and no newer
+`plans/v<K>.md`) has landed since it, AND this session's own
+`<transcript-dir>/<session-id>/subagents/` dir holds an `agent-*.jsonl`
+fresher than ~30 min, then a LIVE planning chain is presumed: do NOT
+invoke a second planner — end the turn (the live chain completes on its
+own; the next tick re-checks). A fresh breadcrumb with NO fresh agent
+transcript means the prior chain is presumed dead — proceed normally.
+Bounded wedge risk: a chain that died mid-write holds the guard for at
+most one tick (~45 min), after which the agent transcript ages out of the
+~30 min window. This guard is the Step-2 counterpart of the tick's
+live-subagent screen (`scripts/tick_triage.py::subagent_live_reason`) —
+the screen stops the re-drive from FIRING on a live chain; this guard
+stops a re-driven session that fired anyway from RACING it.
+
 Invoke the `adversarial-planner` skill with the task body + clarifier
 output as the task. The skill runs planner -> fact-checker -> critic
 -> revise internally.

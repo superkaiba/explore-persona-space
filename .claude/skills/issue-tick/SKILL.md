@@ -13,6 +13,11 @@ description: >
   (a human (non-cron) user message within ~45 min converts a would-be
   STALE-REDRIVE to HEALTHY, reason `human-active …`; #1629 — an
   interactive session is never re-driven over the human's thread) — and
+  screens LIVE SUBAGENTS via this session's own `subagents/` agent
+  transcripts (a fresh `agent-*.jsonl` mtime converts a would-be
+  STALE-REDRIVE to HEALTHY, reason `subagent-live …`; #2361 — a live
+  in-skill planner/fact-checker chain is never re-driven into a duplicate
+  planner) — and
   maintains the tick snapshot + runaway counter) and
   branches on its one-word verdict: HEALTHY → end the turn immediately;
   TERMINAL → CRON-TEARDOWN, end; GATE-TRANSITION → PushNotification +
@@ -147,6 +152,27 @@ task; use `task.py set-status <N> on_hold` / user-pause for a deliberate
 park), and the screen does NOT prevent the cron prompt's arrival
 (harness-side) — it bounds the tick turn to one Bash call.
 
+**Live-subagent screen (#2361).** `tick_triage.py` converts a would-be
+STALE-REDRIVE to `HEALTHY` (reason prefix `subagent-live`) when this
+session's own `<transcript-dir>/<session-id>/subagents/` dir holds an
+`agent-*.jsonl` whose mtime is within `EPM_TICK_SUBAGENT_FRESH_S`
+(default: the `stale_s()` marker-staleness window, so the screen and the
+verdict it screens share one staleness notion). The harness appends rows
+to that file while an Agent-tool subagent works, so a fresh mtime is
+direct evidence of a live in-skill chain — a 20-40 min planner /
+fact-checker at `planning` posts markers only at phase boundaries and no
+detached-phase breadcrumbs, so it is invisible to the #1051 and #1629
+screens and previously read as a dead chain; the re-drive then re-entered
+Step 2 and could race the live planner (the duplicate-planner hazard;
+Step 2's in-flight-planner guard is the racing-side counterpart). The
+probe is mtime-only — no subagent transcript content is ever read
+(content invariant #1000) — and `.meta.json` spawn sidecars deliberately
+do NOT match. Fail toward ticking: any resolution or probe failure
+suppresses nothing. Teardown verdicts (TERMINAL / GATE-TRANSITION) are
+deliberately NOT suppressed — same posture as both sibling screens. Runs
+THIRD, only when the #1051 and #1629 screens found nothing. Kill switch:
+`EPM_TICK_SUBAGENT_PROBE=0`.
+
 ## Digest-only task-state reads (every tick turn, every task)
 
 Any task-state read a tick turn makes BEYOND the one `tick_triage.py`
@@ -221,7 +247,9 @@ liveness screen found no evidence (no live identity-verified breadcrumb
 `pid=`, no fresh breadcrumb `log=` mtime, no fresh
 `[long-phase-heartbeat]` note — #1051) AND its human-activity screen
 found no recent human (non-cron) user message in this session's
-transcript (#1629). Two sub-cases, split by
+transcript (#1629) AND its live-subagent screen found no fresh
+`agent-*.jsonl` under this session's own `subagents/` dir (#2361).
+Two sub-cases, split by
 the status named in the verdict reason:
 
 **ACTIVE statuses** (`approved` / `running` / `verifying` /
@@ -288,7 +316,11 @@ external watcher auto-respawns DEAD sessions at ACTIVE statuses but
 deliberately does NOT respawn alive-stalled PARK sessions (a respawn
 would land back in the same PARK without solving the in-skill stall) —
 the in-process re-drive here is the only recovery for that class, which
-is why this tick survives the redesign at all.
+is why this tick survives the redesign at all. The re-drive is NOT
+unconditionally safe: a re-driven session re-entering a PARK status must
+honor the Step 2 in-flight-planner guard
+(`.claude/skills/issue/steps/04-step-2.md`) — racing a live subagent
+chain with a second planner is the #2361 hazard.
 
 A re-driven session performing any compute dispatch is bound by the
 `/issue` skill's § Pre-dispatch external-marker triage; a successor

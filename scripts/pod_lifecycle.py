@@ -1276,6 +1276,23 @@ EXIT_STOPPED_POD_COLLISION = 76
 # wedge. That disposition is ACCEPTED by design (#2184 plan assumption 13).
 EXIT_CPU_LANE_DRY = 77
 
+# Exit code for a bootstrap-preflight failure (#2606): bootstrap_pod.sh step 10
+# ran the pod-side preflight and it FAILED — the pod is up, REGISTERED
+# (pods.conf + pods_ephemeral.json rows kept), and reachable, but its venv/env
+# is NOT experiment-ready. Joins the 75/76/77 structured-exit family: distinct
+# from 0 (pod ready), 1 (generic bootstrap crash — the #2060 default
+# auto-terminates that path), 75 (still-waiting), 76 (stopped-pod collision),
+# and 77 (CPU lane dry). The pod is deliberately KEPT ALIVE on this code — an
+# env-class failure on a healthy host is repairable over SSH, not a placement
+# fault, so the direct-CLI branch runs NO _record_bad_placement_loud and NO
+# _teardown_failed_provision; the router path (backends/runpod.py::launch)
+# catches this code at its provision relay and best-effort terminates by
+# EXACT id instead (autonomous dispatch has no operator to repair). Mirrored
+# (never imported) as bootstrap_pod.sh::EXIT_PREFLIGHT_FAILED and
+# backends/runpod.py::EXIT_BOOTSTRAP_PREFLIGHT_FAILED; 3-way parity pinned by
+# tests/test_bootstrap_pod_preflight_failloud.py.
+EXIT_BOOTSTRAP_PREFLIGHT_FAILED = 78
+
 
 class WaitForCapacityStillWaiting(RunPodError):
     """Raised when one wait-for-capacity process attempt exhausts its
@@ -2693,6 +2710,45 @@ def _provision_wait_register_bootstrap(
             file=sys.stderr,
         )
         rc = _bootstrap(name, intent_label=intent_label, issue=args.issue)
+    if rc == EXIT_BOOTSTRAP_PREFLIGHT_FAILED:
+        # #2606: bootstrap completed its setup steps but the pod-side preflight
+        # FAILED (bootstrap_pod.sh step 10 exits EXIT_PREFLIGHT_FAILED=78).
+        # Env-class failure on a healthy host: deliberately NO
+        # _record_bad_placement_loud (not a placement fault) and NO
+        # _teardown_failed_provision (the pod stays ALIVE + registered for
+        # repair over SSH) — contrast the generic rc != 0 branch below, which
+        # records bad placement and auto-terminates by #2060 default.
+        name_suffix = getattr(args, "name_suffix", None)
+        suffix_hint = f" --name-suffix {name_suffix}" if name_suffix else ""
+        print(
+            f"\nBootstrap completed its setup steps on {name}, but the pod-side "
+            f"preflight FAILED — the pod is ALIVE and registered (pods.conf + "
+            f"pods_ephemeral.json rows kept), and its venv/env is NOT "
+            f"experiment-ready.\n"
+            f"Repair pointers:\n"
+            f"  - raw preflight rc: the PREFLIGHT-FAILED-AT-BOOTSTRAP log line above "
+            f"(rc=255 = ssh transport)\n"
+            f"  - errno-116/ESTALE venv failures: overlay venv at /root/eps-venv + "
+            f"UV_NO_SYNC (.claude/rules/gotchas.md, pod venv rebuilds)\n"
+            f"  - re-check: ssh {name} 'cd /workspace/explore-persona-space && "
+            f"uv run python -m explore_persona_space.orchestrate.preflight'\n"
+            f"  - discard: python scripts/pod.py terminate "
+            f"--issue {args.issue}{suffix_hint}",
+            file=sys.stderr,
+        )
+        print(
+            "PREFLIGHT: FAIL rc=78 (mapped sentinel code; raw preflight rc in the "
+            "PREFLIGHT-FAILED-AT-BOOTSTRAP log line)",
+            file=sys.stderr,
+        )
+        # Machine-greppable fail-loud provision verdict (#1931 contract): the
+        # LAST stderr line before exit; reason=preflight discriminates this
+        # kept-alive failure from the generic auto-terminated rc!=0 branch.
+        print(
+            f"BOOTSTRAP-FAILED pod={name} rc={EXIT_BOOTSTRAP_PREFLIGHT_FAILED} reason=preflight",
+            file=sys.stderr,
+        )
+        sys.exit(EXIT_BOOTSTRAP_PREFLIGHT_FAILED)
     if rc != 0:
         if keep_flag:
             # Suffixed pods (#1334) get a --name-suffix-scoped terminate hint so
@@ -2742,6 +2798,11 @@ def _provision_wait_register_bootstrap(
         print(f"BOOTSTRAP-FAILED pod={name} rc={rc}", file=sys.stderr)
         sys.exit(rc)
 
+    # #2606: bootstrap exit 0 now IMPLIES the pod-side preflight ran and PASSED
+    # (bootstrap_pod.sh step 10 exits EXIT_PREFLIGHT_FAILED=78 on any preflight
+    # failure, and neither `pod.py provision` nor `pod.py bootstrap` ever
+    # passes --no-preflight), so the PASS line is truthful by construction.
+    print("PREFLIGHT: PASS")
     # Machine-greppable success verdict (#1931). Emitted on BOTH streams via one
     # token literal (grep contract: the token appears exactly once in this file):
     # stdout for callers reading captured stdout, stderr so a 2>&1-less stderr
