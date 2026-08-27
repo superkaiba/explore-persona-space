@@ -57,6 +57,19 @@ Round-2 revision fixtures (the two upheld round-1 BLOCKERs + minors):
     — negative control pinning the disclosed receiver over-approximation.
 18. ``test_single_char_constant_matched`` — the widened
     ``[A-Z][A-Z0-9_]*`` regex matches one-character constants.
+
+Round-3 revision fixtures (the ``scanner-non-simple-save-false-suppression``
+CONCERN raised round 2 — non-simple save-the-original assignment forms):
+
+19. ``test_annotated_save_idiom_not_a_pin`` — an annotated save
+    (``orig: list = LOAD_BEARING_DISTS``, from-imported ``ast.AnnAssign``)
+    next to a patch of the same constant must NOT suppress the WARN.
+20. ``test_chained_save_idiom_not_a_pin`` — a chained save
+    (``orig = backup = mod.CONST``, multi-target ``ast.Assign``) next to
+    the patch must NOT suppress the WARN.
+21. ``test_destructuring_save_idiom_not_a_pin`` — a destructuring save
+    (``orig, marker = mod.CONST, "sentinel"``, name-tuple target) next to
+    the patch must NOT suppress the WARN.
 """
 
 from __future__ import annotations
@@ -232,6 +245,40 @@ def test_patches_single_char_constant(monkeypatch):
     assert preflight_mod.check_dists() == []
 """
 
+_FIXTURE_SAVE_IDIOM_ANNOTATED = """\
+import preflight_mod
+from preflight_mod import LOAD_BEARING_DISTS
+
+
+def test_save_and_patch_annotated(monkeypatch):
+    orig: list = LOAD_BEARING_DISTS
+    monkeypatch.setattr(preflight_mod, "LOAD_BEARING_DISTS", ["fixture"])
+    assert preflight_mod.check_dists() == []
+    assert isinstance(orig, list)
+"""
+
+_FIXTURE_SAVE_IDIOM_CHAINED = """\
+import preflight_mod
+
+
+def test_save_and_patch_chained(monkeypatch):
+    orig = backup = preflight_mod.LOAD_BEARING_DISTS
+    monkeypatch.setattr(preflight_mod, "LOAD_BEARING_DISTS", ["fixture"])
+    assert preflight_mod.check_dists() == []
+    assert orig is backup
+"""
+
+_FIXTURE_SAVE_IDIOM_DESTRUCTURING = """\
+import preflight_mod
+
+
+def test_save_and_patch_destructuring(monkeypatch):
+    orig, marker = preflight_mod.LOAD_BEARING_DISTS, "sentinel"
+    monkeypatch.setattr(preflight_mod, "LOAD_BEARING_DISTS", ["fixture"])
+    assert preflight_mod.check_dists() == []
+    assert isinstance(orig, list) and marker == "sentinel"
+"""
+
 
 def _write_tests(root: Path, **files: str) -> Path:
     tests_dir = root / "tests"
@@ -402,6 +449,42 @@ def test_single_char_constant_matched(tmp_path: Path) -> None:
     _write_tests(tmp_path, test_single=_FIXTURE_SINGLE_CHAR_CONST)
     warns = _scan(tmp_path)
     assert len(warns) == 1 and "preflight_mod.X" in warns[0], warns
+
+
+def test_annotated_save_idiom_not_a_pin(tmp_path: Path) -> None:
+    """Round-3 CONCERN fix (``scanner-non-simple-save-false-suppression``):
+    an annotated save (``orig: list = LOAD_BEARING_DISTS``, ``ast.AnnAssign``)
+    next to a patch of the same constant must NOT suppress the WARN — pre-fix
+    ``save_value_ids`` collected only single-target ``ast.Assign`` values, so
+    the annotated read counted as a real-contents pin."""
+    _write_tests(tmp_path, test_save_ann=_FIXTURE_SAVE_IDIOM_ANNOTATED)
+    warns = _scan(tmp_path)
+    assert len(warns) == 1 and "preflight_mod.LOAD_BEARING_DISTS" in warns[0], (
+        f"an annotated save-the-original assignment must not count as a pin; got: {warns}"
+    )
+
+
+def test_chained_save_idiom_not_a_pin(tmp_path: Path) -> None:
+    """Round-3 CONCERN fix: a chained save (``orig = backup = mod.CONST``,
+    multi-target ``ast.Assign``) next to the patch must NOT suppress the WARN
+    (pre-fix the ``len(targets) == 1`` guard rejected multi-target saves)."""
+    _write_tests(tmp_path, test_save_chained=_FIXTURE_SAVE_IDIOM_CHAINED)
+    warns = _scan(tmp_path)
+    assert len(warns) == 1 and "preflight_mod.LOAD_BEARING_DISTS" in warns[0], (
+        f"a chained save-the-original assignment must not count as a pin; got: {warns}"
+    )
+
+
+def test_destructuring_save_idiom_not_a_pin(tmp_path: Path) -> None:
+    """Round-3 CONCERN fix: a destructuring save
+    (``orig, marker = mod.CONST, "sentinel"``, name-tuple target) next to the
+    patch must NOT suppress the WARN (pre-fix tuple targets and tuple values
+    were both rejected by the save-shape guard)."""
+    _write_tests(tmp_path, test_save_destr=_FIXTURE_SAVE_IDIOM_DESTRUCTURING)
+    warns = _scan(tmp_path)
+    assert len(warns) == 1 and "preflight_mod.LOAD_BEARING_DISTS" in warns[0], (
+        f"a destructuring save-the-original assignment must not count as a pin; got: {warns}"
+    )
 
 
 # --------------------------------------------------------------------------

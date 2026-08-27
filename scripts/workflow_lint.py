@@ -16025,11 +16025,16 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
     (``mod.CONST``) or a bare Name read of a from-imported constant
     (``from mod import CONST``) — excluding reads that sit inside a
     recognized patch call's own arguments, and reads (either form) that
-    are the immediate value of a simple ``name = <read>`` assignment
-    inside a function that ALSO patches the same constant (the
-    save-the-original idiom). The same assignment shape in a function
-    that does NOT patch that constant is a real contents read and counts
-    as a pin.
+    are the immediate value of a save-shaped assignment inside a
+    function that ALSO patches the same constant (the save-the-original
+    idiom). Recognized save shapes (#2364 round 3): simple
+    ``name = <read>``, annotated ``name: T = <read>``, chained
+    ``a = b = <read>``, and destructuring ``a, b = <read>, x`` — every
+    target a plain name (or one tuple/list of plain / starred names),
+    the read being the assignment value or a top-level element of a
+    tuple/list value. The same assignment shapes in a function that
+    does NOT patch that constant are real contents reads and count as
+    pins.
 
     DISCLOSED over-approximation (why WARN-only): the scanner cannot see
     whether an acceptance criterion DEPENDS on the patched constant (the A3
@@ -16044,7 +16049,11 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
     actually constrain the constant's contents (e.g. an ordering pin via a
     source substring that merely mentions the constant name in an
     f-string is NOT caught, but a Load-form read next to unrelated asserts
-    is credited).
+    is credited). Save-shape residuals: a save-read behind a nested-tuple
+    destructuring target (``(a, (b, c)) = ...``), an augmented
+    assignment, or a walrus (``:=``) is NOT recognized as a save — inside
+    a patching function it still counts as a real-contents pin and can
+    suppress the WARN.
     DISCLOSED non-suppression (over-WARN): a contents test written
     unittest-style (``self.assertIn(...)`` etc. with no bare ``assert``
     statement) is NOT credited as a pin — the pin pass requires an
@@ -16182,6 +16191,43 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
                 return (mod.split(".")[-1], const)
         return None
 
+    def _save_value_ids(fn: ast.AST) -> set[int]:
+        """Node ids of save-the-original assignment reads inside ``fn``:
+        the value (or top-level tuple/list value elements) of simple,
+        annotated (``ast.AnnAssign``), chained (multi-target ``ast.Assign``),
+        and destructuring (name-tuple target) assignments whose targets are
+        all plain names (#2364 round 3). The pin pass excludes these ids
+        only when the same function also patches the read's constant."""
+
+        def _is_save_target(t: ast.AST) -> bool:
+            if isinstance(t, ast.Name):
+                return True
+            if isinstance(t, (ast.Tuple, ast.List)):
+                return all(
+                    isinstance(e, ast.Name)
+                    or (isinstance(e, ast.Starred) and isinstance(e.value, ast.Name))
+                    for e in t.elts
+                )
+            return False
+
+        ids: set[int] = set()
+        for node in ast.walk(fn):
+            if isinstance(node, ast.Assign):
+                targets = list(node.targets)
+                value = node.value
+            elif isinstance(node, ast.AnnAssign) and node.value is not None:
+                targets = [node.target]
+                value = node.value
+            else:
+                continue
+            if not targets or not all(_is_save_target(t) for t in targets):
+                continue
+            if isinstance(value, (ast.Attribute, ast.Name)):
+                ids.add(id(value))
+            elif isinstance(value, (ast.Tuple, ast.List)):
+                ids.update(id(e) for e in value.elts if isinstance(e, (ast.Attribute, ast.Name)))
+        return ids
+
     hits: list[tuple[Path, int, str, str]] = []
     pinned: set[tuple[str, str]] = set()
 
@@ -16209,10 +16255,11 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
 
         # Pin pass: Load-ctx reads of ALL_CAPS non-test-module attrs inside
         # assert-bearing functions, excluding patch-call args and
-        # save-the-original assignments (``name = <read>`` — Attribute OR
-        # from-imported bare-Name value — in a function that ALSO patches
-        # the same constant; the same assignment shape in a non-patching
-        # function is a real contents read and counts as a pin).
+        # save-the-original assignments (simple / annotated / chained /
+        # destructuring — Attribute OR from-imported bare-Name reads; see
+        # _save_value_ids) in a function that ALSO patches the same
+        # constant; the same assignment shapes in a non-patching function
+        # are real contents reads and count as pins.
         for fn in ast.walk(tree):
             if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
@@ -16224,14 +16271,7 @@ def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan:
                     target = _patch_target(sub, imports)
                     if target is not None:
                         fn_patched.add((target[0].split(".")[-1], target[1]))
-            save_value_ids = {
-                id(node.value)
-                for node in ast.walk(fn)
-                if isinstance(node, ast.Assign)
-                and isinstance(node.value, (ast.Attribute, ast.Name))
-                and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Name)
-            }
+            save_value_ids = _save_value_ids(fn)
             for sub in ast.walk(fn):
                 key = _pin_key(sub, imports)
                 if key is None or id(sub) in patch_arg_node_ids:
