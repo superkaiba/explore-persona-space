@@ -12243,7 +12243,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2588",
       "status": "interpreting",
-      "title": "Context-to-answer mapping quality vs general model capability (cross-family ladder, thinking on/off)"
+      "title": "Linear context-to-answer mapping quality does not track capability across a fixed-size release column: no-thinking reads invert on the generic corpus (MODERATE confidence)"
     },
     "2589": {
       "has_clean_result": false,
