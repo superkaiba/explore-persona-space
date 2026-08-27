@@ -27,6 +27,8 @@ goal: 'On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the qu
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_2617.md](https://github.com/superkaiba/explore-persona-space/blob/0a09bd02f4d7fb9c2156b22b696fa6396722dd47/docs/methodology/issue_2617.md) · [gist](https://gist.github.com/superkaiba/38c7a2de6229708ba7a6d8f023941451)
+
 ## Takeaways
 
 - The map transports the refusal decision, not only surface content: flip-pair direction cosine **0.80** (CI 0.78–0.82) vs **0.42** identity-plus-bias baseline and **0.32** shuffled null; the multi-turn map agrees (**0.80**).
