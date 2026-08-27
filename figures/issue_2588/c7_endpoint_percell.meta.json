@@ -1,7 +1,7 @@
 {
-  "commit": "2d0f2706+dirty",
-  "render_id": "74970ca83151404f",
-  "git_commit": "2d0f2706e6ad6b337aaa51c3fb2113df2d7c42a6",
+  "commit": "c2ba5847+dirty",
+  "render_id": "f7cf3ff6c52f4428",
+  "git_commit": "c2ba58475a0ce79e241f87e0a6ad1a8a7fb0d313",
   "git_dirty": true,
   "git_dirty_paths": [
     "figures/issue_2588/c1_capability_trend.meta.json",
@@ -22,14 +22,11 @@
     "figures/issue_2588/c6_column_layer_sweeps.meta.json",
     "figures/issue_2588/c6_column_layer_sweeps.pdf",
     "figures/issue_2588/c6_column_layer_sweeps.png",
-    "figures/issue_2588/c7_endpoint_percell.meta.json",
-    "figures/issue_2588/c7_endpoint_percell.pdf",
-    "figures/issue_2588/c7_endpoint_percell.png",
     "scripts/issue2588_figures.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2588_figures.py",
-  "created": "2026-08-27T21:25:08Z",
+  "created": "2026-08-27T21:34:55Z",
   "figsize": [
     7.2,
     4.2

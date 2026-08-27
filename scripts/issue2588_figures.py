@@ -594,9 +594,14 @@ def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(9.6, 4.0))
     ax.plot(xs, resid_y, "o", ms=3.2, color=colors[1], label="length-residualized read")
     ax.plot(xs, raw_y, "o", ms=3.2, color=colors[0], alpha=0.75, label="raw end-of-thought read")
+
+    def _qlabel(qid: str) -> str:
+        # plain-English rendered label ("question 182"); raw ids stay in provenance
+        return f"question {int(qid.rsplit('_', 1)[1])}"
+
     for i, (qid, rec) in enumerate(ordered):
         if rec["hits_raw"] > 0:
-            ax.text(xs[i] + 1.5, rec["hits_raw"], str(qid), fontsize=6.5, va="center")
+            ax.text(xs[i] + 1.5, rec["hits_raw"], _qlabel(qid), fontsize=6.5, va="center")
     ax.set_xlabel("Question (ranked by residualized hits)")
     ax.set_ylabel("Retrieval hits per question (of kept rollouts)")
     ax.set_yticks(range(0, 6))
@@ -609,7 +614,8 @@ def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
     meta["points"] = [
         {
             "question_rank": int(x),
-            "question_id": qid,
+            "question": _qlabel(qid),
+            "question_id_raw": qid,
             "kept_rollouts": rec["rollouts"],
             "hits_raw_end_of_thought": rec["hits_raw"],
             "hits_length_residualized": rec["hits_resid"],
