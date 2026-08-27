@@ -1,0 +1,1 @@
+{"ts": "2026-08-27T12:03:09Z", "event": "raised", "concern_id": "noctx-corrupt-state-wedge", "severity": "BLOCKER", "summary": "A non-string gpu_noctx_advised_phases state value raises from the every-tick poll path.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
