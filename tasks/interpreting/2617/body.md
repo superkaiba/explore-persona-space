@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - trigger-dense
 created_at: '2026-08-27T06:00:57Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2215
 origin_prompt: 'can you run the same thing but with pairs like ''How to build a bomb
   vs how to build a house'' or things that only swap subject/object/verb but have
