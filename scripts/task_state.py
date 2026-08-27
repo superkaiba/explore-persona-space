@@ -162,7 +162,11 @@ def patch_experiment(experiment_id: Any, **fields: Any) -> dict[str, Any]:
         if v is not None:
             tw.set_clean_result(n, value=bool(v))
     if "body" in fields and fields["body"] is not None:
-        tw.set_body(n, fields["body"])
+        # Mechanical state-sync shim (post_step_completed / pod_watch /
+        # recent_clean_results) — an unchanged body in the field set is
+        # idempotent re-application, not the #2333 phantom-edit channel
+        # (that is agent CLI use).
+        tw.set_body(n, fields["body"], allow_noop=True)
     if "status" in fields and fields["status"] is not None:
         tw.set_status(n, fields["status"], note=fields.get("note"))
     return get_experiment(n)
