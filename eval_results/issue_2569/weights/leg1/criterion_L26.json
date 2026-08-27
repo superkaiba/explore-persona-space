@@ -88,7 +88,14 @@
               128
             ],
             "dw_mass": {
-              "moments": null,
+              "moments": {
+                "n_pool": 963444,
+                "n_half1": 481722,
+                "n_half2": 481722,
+                "selected_lambda": 0.001,
+                "split_seed": 0,
+                "regime_config_hash": "35003bfda5ef3328"
+              },
               "trace_rtol": 0.001
             }
           },
@@ -123,7 +130,14 @@
               128
             ],
             "split_half": {
-              "moments": null,
+              "moments": {
+                "n_pool": 963444,
+                "n_half1": 481722,
+                "n_half2": 481722,
+                "selected_lambda": 0.001,
+                "split_seed": 0,
+                "regime_config_hash": "35003bfda5ef3328"
+              },
               "null_seed": 2569910
             }
           },
@@ -202,13 +216,26 @@
     "verdict semantics: FAIL is final under conjunction; PASS requires all four clauses evaluated and passing; else INCOMPLETE"
   ],
   "metadata": {
-    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
-    "timestamp_utc": "2026-08-26T23:51:08.310390Z",
-    "python_version": "3.11.10",
-    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "git_commit": "432da6f0c2257f72f14ab23f801d2d4df259e3fe",
+    "timestamp_utc": "2026-08-27T10:03:30.836245Z",
+    "python_version": "3.12.13",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
-    "git_dirty": false,
+    "git_dirty": true,
     "phase": "pa-criterion",
+    "git_dirty_paths": [
+      "eval_results/issue_2569/weights/leg1/criterion_L14.json",
+      "eval_results/issue_2569/weights/leg1/criterion_L19.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L14.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L19.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L26.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L14.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L19.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L26.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L14.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L19.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L26.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2569_weights.py"
   }

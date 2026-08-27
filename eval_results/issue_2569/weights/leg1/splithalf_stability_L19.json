@@ -23,20 +23,108 @@
       128
     ],
     "split_half": {
-      "moments": null,
+      "moments": {
+        "n_pool": 963444,
+        "n_half1": 481722,
+        "n_half2": 481722,
+        "selected_lambda": 0.001,
+        "split_seed": 0,
+        "regime_config_hash": "35003bfda5ef3328"
+      },
       "null_seed": 2569910
     }
   },
-  "status": "deferred",
-  "deferral_reason": "deferred \u2014 no P-B moments supplied (--moments-dir absent); re-run this phase with --moments-dir <rowbattery out_root>/moments once P-B lands (issue2569_rowbattery.py --phase moments)",
+  "status": "computed",
+  "moments": {
+    "n_pool": 963444,
+    "n_half1": 481722,
+    "n_half2": 481722,
+    "selected_lambda": 0.001,
+    "split_seed": 0,
+    "regime_config_hash": "35003bfda5ef3328"
+  },
+  "floor": {
+    "analytic": 0.06758028779195886,
+    "empirical": {
+      "n_draws": 1000,
+      "seed": 2569910,
+      "mean": 0.0626537876194567,
+      "p50": 0.06204911866458815,
+      "p90": 0.06932749090667092,
+      "p95": 0.07203096030047007,
+      "p99": 0.07780950764083672,
+      "max": 0.08648254974346199
+    },
+    "floor": 0.07780950764083672
+  },
+  "n_above_floor": 3425,
+  "frac_above_floor": 0.9556361607142857,
+  "matched_frac_above_analytic": 0.9732142857142857,
+  "matched_frac_above_empirical_p99": 0.9556361607142857,
+  "criterion": {
+    "clause": ">= 300 singular directions above the split-half stability floor (plan SS7.5)",
+    "metric": "n_above_floor",
+    "threshold": 300,
+    "value": 3425,
+    "pass": true
+  },
+  "stability_quantiles": {
+    "p50": 0.12373450769512503,
+    "p90": 0.28665024250472787,
+    "p95": 0.47505471534073324,
+    "min": 7.966116814407784e-05,
+    "max": 0.9840300657982445
+  },
+  "halves": {
+    "half1": {
+      "n_rows": 481722,
+      "factor_cos_top1": 0.9824376245389896,
+      "factor_cos_median": 0.13685477904422771,
+      "sigma_half_max": 8.114305504046111,
+      "sigma_half_median": 0.14048600993312982
+    },
+    "half2": {
+      "n_rows": 481722,
+      "factor_cos_top1": 0.9821182551896674,
+      "factor_cos_median": 0.13577131421481065,
+      "sigma_half_max": 8.09357451523778,
+      "sigma_half_median": 0.1402834795289024
+    }
+  },
+  "estimator": {
+    "d": 3584,
+    "n_rows": {
+      "half1": 481722,
+      "half2": 481722
+    },
+    "well_posed": {
+      "half1": true,
+      "half2": true
+    },
+    "note": "NO new fits run here \u2014 per-half operators are P-B's persisted ridge refits (splithalf_maps.pt); n_rows vs d recorded for the estimator-validity read of the floor"
+  },
+  "selected_lambda": 0.001,
+  "lambda_provenance": "pinned to the banked payload's selected_lambda (rowbattery _half_ridge_refit) \u2014 not re-selected here; selector grid-edge N/A",
+  "split_seed": 0,
+  "ridge_convention": "standardize-X (unbiased sd + 1e-9) / center-Y; W = (Xstd^T Xstd + lam I)^-1 Xstd^T Yc (fit_ridge_primal parity)",
+  "null_note": "floor = max(analytic sqrt(2 ln N / d), empirical p99 of max-|cos| of random unit directions vs the full map's input dictionary); the single-side max-|cos| null is CONSERVATIVE for the min-over-sides factor-cosine statistic",
+  "series_pt": "splithalf_stability_L19.pt",
   "metadata": {
-    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
-    "timestamp_utc": "2026-08-26T23:51:07.606830Z",
-    "python_version": "3.11.10",
-    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "git_commit": "432da6f0c2257f72f14ab23f801d2d4df259e3fe",
+    "timestamp_utc": "2026-08-27T10:03:09.360984Z",
+    "python_version": "3.12.13",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
-    "git_dirty": false,
+    "git_dirty": true,
     "phase": "pa-split-half",
+    "git_dirty_paths": [
+      "eval_results/issue_2569/weights/leg1/dw_mass_L14.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L19.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L26.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L14.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L19.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L26.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2569_weights.py"
   }

@@ -25,58 +25,69 @@
   },
   "entry_asserts": {
     "gram": {
-      "max_rel_err": 3.301123280731588e-15,
+      "max_rel_err": 3.301123280731589e-15,
       "n_probes": 64
     },
     "singular_orientation": {
-      "max_row_form_rel_err": 1.6124685944575297e-15,
+      "max_row_form_rel_err": 1.4038456563436927e-15,
       "row_form_rel_err": [
-        1.4455323025037434e-15,
-        1.3281409078057159e-15,
-        1.6124685944575297e-15,
-        1.4422383426931355e-15,
-        9.069951128964342e-16,
-        1.0300928392862927e-15,
-        1.42574432531069e-15,
-        1.2928475852710614e-15
+        1.2225536262817722e-15,
+        9.461299013132488e-16,
+        1.3466590965928885e-15,
+        1.3443541208809652e-15,
+        9.268503180789547e-16,
+        1.1001796438942358e-15,
+        1.4038456563436927e-15,
+        1.3465547879770722e-15
       ],
       "wrong_column_form_rel_err": [
-        1.3534910838108858,
-        1.3385907918736006,
-        1.314217125000749,
-        1.279984976378656,
-        1.3049126552168289,
-        1.2433935123576911,
-        1.285481885200387,
-        1.2326439256082256
+        1.353491083810886,
+        1.3385907918736015,
+        1.3142171250007488,
+        1.279984976378658,
+        1.3049126552168286,
+        1.2433935123576905,
+        1.2854818852003873,
+        1.2326439256082253
       ],
       "sigma": [
-        7.961798388540204,
+        7.961798388540206,
         6.575266309294754,
-        4.930931633382376,
+        4.930931633382377,
         4.771994506385129,
-        4.449233023840187,
-        4.2880681927788515,
-        4.132831440207533,
-        3.9758317907530216
+        4.449233023840189,
+        4.288068192778852,
+        4.132831440207535,
+        3.975831790753021
       ],
       "k": 8
     },
     "apply_path": {
-      "max_abs_diff": 6.394884621840902e-14,
-      "max_rel_diff": 1.1976777694899627e-10,
+      "max_abs_diff": 1.7763568394002505e-14,
+      "max_rel_diff": 9.242529409292464e-12,
       "n_probes": 8
     }
   },
   "selected_lambda": 0.001,
   "metadata": {
-    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
-    "timestamp_utc": "2026-08-26T23:42:13.120970Z",
-    "python_version": "3.11.10",
-    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "git_commit": "432da6f0c2257f72f14ab23f801d2d4df259e3fe",
+    "timestamp_utc": "2026-08-27T10:03:20.317317Z",
+    "python_version": "3.12.13",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
-    "git_dirty": false,
+    "git_dirty": true,
     "phase": "pa-entry",
+    "git_dirty_paths": [
+      "eval_results/issue_2569/weights/leg1/dw_mass_L14.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L19.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L26.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L14.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L19.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L26.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L14.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L19.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L26.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2569_weights.py"
   }
