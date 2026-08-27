@@ -2836,3 +2836,27 @@ Related: [[plan-path-missing-read-from-main]],
   digit-safe: criterion labels like A6 are letter-adjacent atom-free;
   spell out ordinals ("fix-two"); name constants instead of quoting them
   ("the per-pod MooseFS quota", "the default join timeout")).
+
+- **Detector/check-addition plan, statistics lens, fact-check-correction
+  round v2 (#2367 round one — verify_task_body caption-grain check): the
+  #2263 fact-check-report-as-span shape composes cleanly for a REVISED plan
+  too** — inline the v1 fact-check verbatim (two-sided FACT-CHECK STATUS
+  header: CONFIRMED settled / blocker+corrections are ABSORPTION CLAIMS)
+  and mandate a `### Fact-check absorption verdicts` output section
+  (ABSORBED | PARTIAL | NOT-ABSORBED per item; blocker arithmetic "yours
+  to re-run, never to trust") BEFORE the question answers. Brief's FP/FN
+  surface list (tolerance / candidate-density / n-floor / corpus sweep /
+  fires-acceptance rule) → lettered questions one-per-surface plus earned
+  probes: fire-on-own-incident re-derivation, recall-sacrifice vs
+  founding-incident-class (found a real lead: recognizer modifier bridge
+  bounded at {0,2} while the incident caption has exactly two modifiers —
+  a three-modifier paraphrase escapes), test-battery mutation walk over
+  UNPINNED constants. Census framing + three-populations (swept folders /
+  all-folders simulation / armed-forward) reused from #2261. NEW tokenizer
+  gotcha: a plan's numbered-LIST ordinals (`14.` at line start) are
+  dot-adjacent and atom-FREE, so a questions-span "test 14" reference
+  orphans (caught by the questions-containment WARN leg — worth keeping) —
+  reference plan tests by NAME (`test_check62_..._disarm`), not list
+  ordinal; "test 1"/"test 2" survive only via the allowlist. Numcheck PASS
+  at ~135 KB (spans = inputs + factcheck + plan + body + lensitems +
+  questions + empty prior).
