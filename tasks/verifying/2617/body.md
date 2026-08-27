@@ -1,6 +1,6 @@
 ---
-title: 'Safety-valence minimal pairs: decision vs surface transport of the frozen
-  context→answer map [running / workload on pod-2617 — capture phase]'
+title: 'Safety-valence minimal pairs: does the frozen context→answer map encode the
+  refusal decision or just surface text? [verifying / run complete, uploads verifying]'
 kind: experiment
 tags:
 - trigger-dense
