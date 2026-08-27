@@ -1830,7 +1830,7 @@
   },
   "measured_only_aa": {
    "rho": -1.0,
-   "p": 0.0,
+   "p": 0.3333333333333333,
    "n": 3,
    "members": [
     "q35_9b_b.cot_boundary",
@@ -1847,7 +1847,8 @@
     38.0,
     52.0
    ],
-   "note": "N=3 single-mode, registered underpowered (plan \u00a75); descriptive only"
+   "note": "N=3 single-mode, registered underpowered (plan \u00a75); descriptive only",
+   "p_method": "exact two-sided permutation: n=3 has 3!=6 orderings, 2 attain |rho|=1; supersedes the scipy asymptotic p=0.0, which is invalid at n=3"
   },
   "gpqa_correct_incorrect_split": {
    "q35_0p8b_a.prompt_last": {
