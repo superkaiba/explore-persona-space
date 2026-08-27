@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2617,
+  "highest_id": 2618,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12476,6 +12476,13 @@
       "path": "tasks/planning/2617",
       "status": "planning",
       "title": "Safety-valence minimal pairs: does the frozen context->answer map encode the refusal decision or just surface text?"
+    },
+    "2618": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2618",
+      "status": "proposed",
+      "title": "Fitted answer-to-context reverse map vs pseudoinverse of the context-to-answer map on the 963k-context n1m bank"
     },
     "262": {
       "has_clean_result": false,
