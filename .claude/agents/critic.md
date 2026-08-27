@@ -151,7 +151,9 @@ compression default OFF for fp16→Xet) · 14 completion provenance
 17 persona-vectors extraction fidelity (a)–(e) · 18 persist-by-default /
 undeclared generation-discard / ephemeral-lane git-only text-JSON dest ·
 19 smoke blind-spot enumeration (a plan declaring a pre-launch smoke names
-what the PASS does and does NOT certify; empty = the literal none-escape).
+what the PASS does and does NOT certify; empty = the literal none-escape) ·
+20 production-constant test-fixture pinning (fixture-substituted constants
+named + a real-contents pinning test, or the no-dependent-criterion escape).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Methodology lens — grep the

@@ -14080,6 +14080,212 @@ def check_smoke_blind_spot_review_lens(  # noqa: C901 -- flat per-surface token 
     return errors
 
 
+def check_production_constant_pinning_lens(  # noqa: C901 -- flat per-surface token ladder (six pinned surfaces, #2364), mirroring check_smoke_blind_spot_review_lens
+    *, repo_root: Path | None = None
+) -> list[str]:
+    """FAIL if the fixture-substituted production-constant lens (#2364) is
+    absent from ANY of its six surfaces.
+
+    Task #2360 (plan v2) proposed a preflight check driven by two curated
+    module-level constants plus a 15-test suite that monkeypatched BOTH
+    constants in every test touching them — the only real-constant test
+    pinned call ORDERING via a source substring, so both shipped lists
+    could be entirely EMPTY with all tests green. 1 of 6 ensemble reviewers
+    caught it. The fix (#2364) adds mechanism 4 (test-side substituted
+    production constant) to `.claude/rules/smoke-blind-spots.md`, gates
+    diffs at code-review Step 3.85, and gates plans at Methodology lens
+    item 20. This check pins the lens across its surfaces, region-anchored,
+    so a future refactor cannot silently strip one (the #606
+    copy-list-omission class):
+
+    (1) `.claude/rules/smoke-blind-spots.md` — the mechanism-4 heading
+        token AND the mechanism-4 empty-form escape literal;
+    (2) code-reviewer.md — a ``### Step 3.85`` section whose body (up to
+        the next ``### `` heading) names the
+        ``production-constant-unpinned`` tag, PLUS the tag on the
+        ``**Blocker tags:**`` line;
+    (3) codex-code-reviewer.md — the Step 3.85 copy-list bullet (heading
+        token + tag inside the bullet), ``3.85`` on the ``{{INLINED
+        RUBRIC`` placeholder line, AND the tag on the ``**Blocker tags:**``
+        line;
+    (4) critic-lens-reference.md — the ``### Methodology lens`` region
+        names the item-20 heading token;
+    (5) critic.md — the Methodology-capsule item token
+        ``20 production-constant test-fixture pinning``;
+    (6) `.claude/rules/LESSONS.md` — the ``- smoke-blind-spots.md`` index
+        row carries the mechanism-4 fires-when trigger token.
+
+    ``repo_root`` is a unit-test override hook; production callers pass
+    None (canonical repo root; behavioral subprocess tests may point the
+    check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled
+    into the no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    tag = "production-constant-unpinned"
+    mech4 = "Substituted production constant (test-side)"
+    escape = "none — no test substitutes a production constant"
+    errors: list[str] = []
+
+    # (1) the rule file's mechanism-4 block.
+    rule = root / ".claude" / "rules" / "smoke-blind-spots.md"
+    if not rule.is_file():
+        errors.append(
+            f"{rule}: missing — the #2364 mechanism-4 (test-side substituted "
+            f"production constant) block must live in smoke-blind-spots.md "
+            f"(#2360: both curated constants could be EMPTY with every "
+            f"committed test green)."
+        )
+    else:
+        text = rule.read_text(encoding="utf-8")
+        for token in (mech4, escape):
+            if token not in text:
+                errors.append(
+                    f"{rule}: no longer names {token!r} (#2364) — the "
+                    f"mechanism-4 block / its empty-form escape would be "
+                    f"silently stripped."
+                )
+
+    # (2) code-reviewer.md: Step 3.85 section body + Blocker-tags line.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #2364 fixture-substituted "
+            f"production-constant gate (Step 3.85) must live in "
+            f"code-reviewer.md."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 3.85")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 3.85' section (#2364) — "
+                f"the fixture-substituted production-constant gate must stay "
+                f"in the Claude reviewer so an unpinned criterion-bearing "
+                f"constant FAILs at code-review (incident #2360)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if tag not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 3.85' section body no longer "
+                    f"names {tag!r} (#2364) — the gate must key on that "
+                    f"exact token."
+                )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{reviewer}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2364) — the orchestrator's Step 5c-bis strip parse "
+                f"would not recognize the Step 3.85 blocker as substantive."
+            )
+
+    # (3) codex-code-reviewer.md: copy-list bullet + rubric slot + tags line.
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if not codex.is_file():
+        errors.append(
+            f"{codex}: missing — the #2364 Step 3.85 copy-list stub must "
+            f"live in codex-code-reviewer.md."
+        )
+    else:
+        text = codex.read_text(encoding="utf-8")
+        heading = '"Step 3.85: Fixture-substituted production-constant verification"'
+        if heading not in text:
+            errors.append(
+                f"{codex}: missing the Step 3.85 copy-list token {heading!r} "
+                f"(#2364) — the Codex twin must copy the same lens or the "
+                f"two reviewers drift (the #606 copy-list-omission class)."
+            )
+        else:
+            idx = text.find(heading)
+            nxt = text.find('\n- "', idx + 1)
+            bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+            if tag not in bullet:
+                errors.append(
+                    f"{codex}: the Step 3.85 copy-list bullet (heading token "
+                    f"to the next line-start '- \"' bullet) no longer names "
+                    f"{tag!r} (#2364) — a tag mention elsewhere in the file "
+                    f"does not keep the copied lens itself keyed on it."
+                )
+        rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
+        if not any("3.85" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '3.85' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#2364) — the composed Codex prompt would "
+                f"omit the Step 3.85 lens."
+            )
+        if not any(ln.startswith("**Blocker tags:**") and tag in ln for ln in text.splitlines()):
+            errors.append(
+                f"{codex}: {tag!r} is absent from the '**Blocker tags:**' "
+                f"line (#2364) — the Codex verdict's tag vocabulary would "
+                f"not carry the Step 3.85 blocker."
+            )
+
+    # (4) critic-lens-reference.md: the Methodology lens region (item 20).
+    clr = root / ".claude" / "rules" / "critic-lens-reference.md"
+    if not clr.is_file():
+        errors.append(
+            f"{clr}: missing — the #2364 production-constant critic item "
+            f"(Methodology lens 20) must live in critic-lens-reference.md."
+        )
+    else:
+        text = clr.read_text(encoding="utf-8")
+        idx = text.find("### Methodology lens")
+        region = ""
+        if idx != -1:
+            nxt = text.find("\n### ", idx + 1)
+            region = text[idx:nxt] if nxt != -1 else text[idx:]
+        if "Production-constant test-fixture pinning" not in region:
+            errors.append(
+                f"{clr}: the '### Methodology lens' region no longer names "
+                f"'Production-constant test-fixture pinning' (#2364) — the "
+                f"critic's REVISE bar for a plan whose test list replaces a "
+                f"curated constant unpinned would be silently stripped."
+            )
+
+    # (5) critic.md: the Methodology-capsule item token.
+    critic = root / ".claude" / "agents" / "critic.md"
+    if not critic.is_file():
+        errors.append(
+            f"{critic}: missing — the #2364 production-constant capsule "
+            f"item must live in critic.md."
+        )
+    else:
+        text = critic.read_text(encoding="utf-8")
+        if "20 production-constant test-fixture pinning" not in text:
+            errors.append(
+                f"{critic}: the Methodology-lens capsule no longer names "
+                f"'20 production-constant test-fixture pinning' (#2364) — "
+                f"the critic's always-loaded item roster would drop item 20 "
+                f"(the #606 silent-strip class)."
+            )
+
+    # (6) LESSONS.md: the smoke-blind-spots row's mechanism-4 trigger token.
+    lessons = root / ".claude" / "rules" / "LESSONS.md"
+    if not lessons.is_file():
+        errors.append(
+            f"{lessons}: missing — the always-on index row carrying the "
+            f"#2364 mechanism-4 fires-when trigger must live in LESSONS.md."
+        )
+    else:
+        row_token = "monkeypatches a curated production constant"
+        rows = [
+            ln
+            for ln in lessons.read_text(encoding="utf-8").splitlines()
+            if ln.startswith("- smoke-blind-spots.md")
+        ]
+        if not any(row_token in ln for ln in rows):
+            errors.append(
+                f"{lessons}: the '- smoke-blind-spots.md' index row no "
+                f"longer carries {row_token!r} (#2364) — plan-time agents "
+                f"would not know mechanism 4 exists before opening the rule."
+            )
+    return errors
+
+
 def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder (seven pinned surfaces spanning eight files, #2158), mirroring check_smoke_blind_spot_review_lens
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -15777,6 +15983,244 @@ def check_smoke_blind_spot_enumeration(  # noqa: C901 -- best-effort AST scan: p
     if not suppress_per_hit:
         for path, lineno, cls in hits:
             _emit(f"smoke-blind-spots: {path}:{lineno}: smoke-conditional {cls} branch")
+    return []
+
+
+_ALL_CAPS_CONST_RE = re.compile(r"[A-Z][A-Z0-9_]+")
+
+
+def check_monkeypatched_constant_pinning(  # noqa: C901 -- best-effort AST scan: four patch-form hit rules + import-table module resolution + repo-wide pin suppression (#2364); extracting a branch would just relocate it
+    test_paths: list[Path] | None = None,
+    *,
+    repo_root: Path | None = None,
+    warn_sink: list[str] | None = None,
+) -> list[str]:
+    """WARN-only (#2364, smoke-blind-spots mechanism 4): flag tests that
+    replace a curated module-level production constant with a fixture while
+    NO test repo-wide reads the REAL constant in an assert-bearing function.
+
+    ALWAYS returns ``[]`` — emissions go to ``warn_sink`` (unit-test hook)
+    or stderr with a ``WARN: `` prefix; a WARN never fails the run. The scan
+    seeds the code-reviewer Step 3.85 lens + Methodology lens item 20 (the
+    binding gates); it is NOT bundled into the no-flags run (invoke via
+    ``--check-monkeypatched-constant-pinning``). #2360: a 15-test suite
+    monkeypatched BOTH curated constants its acceptance criterion depended
+    on; both shipped lists could be entirely EMPTY with all tests green.
+
+    Four hit forms, per test file (default: ``tests/**/*.py`` under
+    ``repo_root``), all requiring an ALL_CAPS attribute of a NON-test
+    module (module resolved through the file's own import table; any
+    module-path segment starting with ``test`` or equal to ``conftest``
+    exempts the target):
+
+    1. ``monkeypatch.setattr(<mod>, "<CONST>", <fixture>)`` — object form;
+    2. ``monkeypatch.setattr("<mod>.<CONST>", <fixture>)`` — dotted-string
+       form;
+    3. ``mock.patch.object(<mod>, "<CONST>", ...)`` / ``patch.object(...)``;
+    4. ``patch("<mod>.<CONST>", ...)`` / ``mock.patch("<mod>.<CONST>", ...)``.
+
+    Suppression (the A2 escape, keyed ``(module_basename, CONST)``): a hit
+    is silent when ANY scanned test file holds a Load-context read of the
+    same constant inside an assert-bearing function — an Attribute read
+    (``mod.CONST``) or a bare Name read of a from-imported constant
+    (``from mod import CONST``) — excluding reads that sit inside a
+    recognized patch call's own arguments (the save-the-original idiom) and
+    reads that are the immediate value of a simple ``name = mod.CONST``
+    assignment.
+
+    DISCLOSED over-approximation (why WARN-only): the scanner cannot see
+    whether an acceptance criterion DEPENDS on the patched constant (the A3
+    escape), so it treats every monkeypatched curated constant as
+    criterion-bearing; the reviewer lenses adjudicate dependence.
+    DISCLOSED false-suppression: ANY qualifying Load in an assert-bearing
+    function counts as a pin, even when that function's asserts do not
+    actually constrain the constant's contents (e.g. an ordering pin via a
+    source substring that merely mentions the constant name in an
+    f-string is NOT caught, but a Load-form read next to unrelated asserts
+    is credited).
+    DISCLOSED false negatives: a module object reaching the patch call
+    through a fixture / variable / conftest indirection (only import-table
+    receivers resolve); parametrized or string-BUILT constant names (only
+    literal ``ast.Constant`` strings match); ``patch.dict`` and
+    instance-attribute patches; helper wrappers around ``monkeypatch``;
+    direct fixture ASSIGNMENT to the module attribute
+    (``mod.CONST = [...]``) without a patch call; curated constants not
+    named in ALL_CAPS; aliased imports whose alias shadows a local name.
+
+    ``repo_root`` / ``test_paths`` are unit-test override hooks; production
+    callers pass None (canonical repo root; behavioral subprocess tests may
+    point the check at a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``).
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    tests_dir = root / "tests"
+    if test_paths is None:
+        test_paths = sorted(tests_dir.rglob("*.py")) if tests_dir.is_dir() else []
+
+    def _emit(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            print(f"WARN: {msg}", file=sys.stderr)
+
+    def _is_all_caps(name: str) -> bool:
+        return bool(_ALL_CAPS_CONST_RE.fullmatch(name))
+
+    def _import_table(tree: ast.Module) -> dict[str, str]:
+        table: dict[str, str] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    table[alias.asname or alias.name.split(".")[0]] = (
+                        alias.name if alias.asname else alias.name.split(".")[0]
+                    )
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                for alias in node.names:
+                    table[alias.asname or alias.name] = f"{node.module}.{alias.name}"
+        return table
+
+    def _flatten(expr: ast.AST) -> str | None:
+        if isinstance(expr, ast.Name):
+            return expr.id
+        if isinstance(expr, ast.Attribute):
+            base = _flatten(expr.value)
+            return f"{base}.{expr.attr}" if base else None
+        return None
+
+    def _resolve_module(expr: ast.AST, imports: dict[str, str]) -> str | None:
+        flat = _flatten(expr)
+        if not flat:
+            return None
+        first, _, rest = flat.partition(".")
+        if first not in imports:
+            return None
+        resolved = imports[first]
+        return f"{resolved}.{rest}" if rest else resolved
+
+    def _is_test_module(dotted: str) -> bool:
+        return any(seg.startswith("test") or seg == "conftest" for seg in dotted.split("."))
+
+    def _patch_target(call: ast.Call, imports: dict[str, str]) -> tuple[str, str] | None:
+        """Return (module_dotted, CONST) for a recognized patch call, else None."""
+        func = call.func
+        args = call.args
+        # Forms 1+2: <recv>.setattr(...)
+        if isinstance(func, ast.Attribute) and func.attr == "setattr" and args:
+            first = args[0]
+            if (
+                isinstance(first, ast.Constant)
+                and isinstance(first.value, str)
+                and "." in first.value
+            ):
+                mod, _, const = first.value.rpartition(".")
+                return (mod, const)
+            if len(args) >= 2 and isinstance(args[1], ast.Constant):
+                const = args[1].value
+                mod = _resolve_module(first, imports)
+                if isinstance(const, str) and mod:
+                    return (mod, const)
+            return None
+        # Form 3: patch.object(<mod>, "<CONST>", ...) / mock.patch.object(...)
+        if (
+            isinstance(func, ast.Attribute)
+            and func.attr == "object"
+            and (flat := _flatten(func.value))
+            and flat.split(".")[-1] == "patch"
+            and len(args) >= 2
+            and isinstance(args[1], ast.Constant)
+        ):
+            const = args[1].value
+            mod = _resolve_module(args[0], imports)
+            if isinstance(const, str) and mod:
+                return (mod, const)
+            return None
+        # Form 4: patch("<mod>.<CONST>", ...) / mock.patch("...")
+        if (flat := _flatten(func)) and flat.split(".")[-1] == "patch" and args:
+            first = args[0]
+            if (
+                isinstance(first, ast.Constant)
+                and isinstance(first.value, str)
+                and "." in first.value
+            ):
+                mod, _, const = first.value.rpartition(".")
+                return (mod, const)
+        return None
+
+    hits: list[tuple[Path, int, str, str]] = []
+    pinned: set[tuple[str, str]] = set()
+
+    for path in test_paths:
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (OSError, SyntaxError) as err:
+            _emit(f"monkeypatched-constant: {path}: unparseable, skipped ({err})")
+            continue
+        imports = _import_table(tree)
+
+        # Hit pass: recognized patch calls targeting ALL_CAPS non-test-module attrs.
+        patch_arg_node_ids: set[int] = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            target = _patch_target(node, imports)
+            if target is None:
+                continue
+            for sub in ast.walk(node):
+                patch_arg_node_ids.add(id(sub))
+            mod, const = target
+            if _is_all_caps(const) and not _is_test_module(mod):
+                hits.append((path, node.lineno, mod, const))
+
+        # Pin pass: Load-ctx reads of ALL_CAPS non-test-module attrs inside
+        # assert-bearing functions (excluding patch-call args + save-assigns).
+        save_value_ids = {
+            id(node.value)
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Attribute)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        }
+        for fn in ast.walk(tree):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if not any(isinstance(sub, ast.Assert) for sub in ast.walk(fn)):
+                continue
+            for sub in ast.walk(fn):
+                if (
+                    isinstance(sub, ast.Attribute)
+                    and isinstance(sub.ctx, ast.Load)
+                    and _is_all_caps(sub.attr)
+                    and id(sub) not in patch_arg_node_ids
+                    and id(sub) not in save_value_ids
+                ):
+                    mod = _resolve_module(sub.value, imports)
+                    if mod and not _is_test_module(mod):
+                        pinned.add((mod.split(".")[-1], sub.attr))
+                elif (
+                    isinstance(sub, ast.Name)
+                    and isinstance(sub.ctx, ast.Load)
+                    and _is_all_caps(sub.id)
+                    and id(sub) not in patch_arg_node_ids
+                    and id(sub) not in save_value_ids
+                    and sub.id in imports
+                ):
+                    dotted = imports[sub.id]
+                    mod, _, const = dotted.rpartition(".")
+                    if mod and const == sub.id and not _is_test_module(mod):
+                        pinned.add((mod.split(".")[-1], const))
+
+    for path, lineno, mod, const in sorted(hits, key=lambda h: (str(h[0]), h[1])):
+        if (mod.split(".")[-1], const) in pinned:
+            continue
+        _emit(
+            f"monkeypatched-constant: {path}:{lineno}: test replaces {mod}.{const} "
+            f"with no repo-wide test pinning the real constant's contents "
+            f"(mechanism 4, .claude/rules/smoke-blind-spots.md)"
+        )
     return []
 
 
@@ -20284,6 +20728,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_smoke_architecture_review_lens": lambda wf: check_smoke_architecture_review_lens(),
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
+    "check_production_constant_pinning_lens": (lambda wf: check_production_constant_pinning_lens()),
     "check_pre_split_review_guard": lambda wf: check_pre_split_review_guard(),
     "check_worktree_task_state_briefs": lambda wf: check_worktree_task_state_briefs(),
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
@@ -20441,6 +20886,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_hollow_verification_gate_review_lens": CheckScope("global", (".claude/agents/",)),
     "check_smoke_architecture_review_lens": CheckScope("global", (".claude/",)),
     "check_smoke_blind_spot_review_lens": CheckScope("global", (".claude/",)),
+    "check_production_constant_pinning_lens": CheckScope("global", (".claude/",)),
     "check_pre_split_review_guard": CheckScope(
         "global", (".claude/", "scripts/", "src/explore_persona_space/")
     ),
@@ -21219,6 +21665,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "structurally bypassed). Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-production-constant-pinning-lens",
+        action="store_true",
+        help="FAIL if the #2364 fixture-substituted production-constant lens "
+        "(smoke-blind-spots mechanism 4) is absent from any of its six "
+        "surfaces: the mechanism-4 block + test-escape literal in "
+        "smoke-blind-spots.md, the Step 3.85 section + Blocker-tags entry "
+        "in code-reviewer.md, the Step 3.85 copy-list bullet + "
+        "rubric-placeholder entry + Blocker-tags entry in "
+        "codex-code-reviewer.md, the critic-lens-reference.md Methodology "
+        "item 20, the critic.md capsule token, and the LESSONS.md "
+        "smoke-blind-spots row trigger (incident #2360: a 15-test suite "
+        "monkeypatched both curated constants its acceptance criterion "
+        "depended on — both shipped lists could be entirely empty with all "
+        "tests green). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-pre-split-review-guard",
         action="store_true",
         help="FAIL if the #2158 pre-split review guard is absent from any "
@@ -21379,6 +21841,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         metavar="PLAN_MD",
         help="Plan markdown cross-checked by --check-smoke-blind-spots for "
         "the SMOKE BLIND-SPOT ENUMERATION heading / empty-form escape.",
+    )
+    parser.add_argument(
+        "--check-monkeypatched-constant-pinning",
+        action="store_true",
+        help="WARN-only best-effort AST scan (#2364, smoke-blind-spots "
+        "mechanism 4): flag tests that monkeypatch/patch an ALL_CAPS "
+        "module-level production constant of a non-test module while no "
+        "test repo-wide reads the real constant in an assert-bearing "
+        "function. Never FAILs; scans tests/**/*.py; false negatives + the "
+        "acceptance-criteria over-approximation disclosed in the check "
+        "docstring; NOT bundled into the no-flags run.",
     )
     parser.add_argument(
         "--check-stale-label-disposition",
@@ -22029,6 +22502,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_smoke_architecture_review_lens
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
+        or args.check_production_constant_pinning_lens
         or args.check_pre_split_review_guard
         or args.check_worktree_task_state_briefs
         or args.check_null_gate_calibration_lens
@@ -22039,6 +22513,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_force_push_policy
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
+        or args.check_monkeypatched_constant_pinning
         or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_crash_fix_relaunch_contract
@@ -22205,6 +22680,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_authorized_stub_wiring())
     if args.check_smoke_blind_spot_review_lens or no_flags:
         errors.extend(check_smoke_blind_spot_review_lens())
+    if args.check_production_constant_pinning_lens or no_flags:
+        errors.extend(check_production_constant_pinning_lens())
     if args.check_pre_split_review_guard or no_flags:
         errors.extend(check_pre_split_review_guard())
     if args.check_worktree_task_state_briefs or no_flags:
@@ -22232,6 +22709,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
                 Path(args.smoke_blind_spot_plan) if args.smoke_blind_spot_plan else None,
             )
         )
+    if args.check_monkeypatched_constant_pinning:
+        errors.extend(check_monkeypatched_constant_pinning())
     if args.check_stale_label_disposition or no_flags:
         errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:

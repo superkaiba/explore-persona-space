@@ -1097,6 +1097,42 @@ call site against the real signature and never fires this trigger. That
 shape is carried by the deferred implementer-side real-body-test rule and
 the deferred coverage-based lint, not by this check.
 
+### Step 3.85: Fixture-substituted production-constant verification (any diff type)
+
+**Trigger:** the diff adds or edits a test that REPLACES a module-level
+production constant — `monkeypatch.setattr(<mod>, "<NAME>", ...)` (incl. the
+dotted-string form `monkeypatch.setattr("<dotted>.<NAME>", ...)`),
+`mock.patch.object(<mod>, "<NAME>", ...)`, `patch("<dotted>.<NAME>", ...)`,
+or a fixture assignment — where `<NAME>` is an ALL_CAPS attribute of a
+non-test module. No hit → record `Step 3.85: N/A — no test in the diff
+replaces a production constant` and proceed. Sibling of Step 3.8: that step
+verifies a seam-stubbed production BODY executes; this one verifies a
+fixture-substituted production CONSTANT'S CONTENTS are pinned — the natural
+unit test of an "iterate a curated list, assert each element healthy" check
+monkeypatches the list, and the suite then never certifies the shipped list
+(#2360: both curated constants could be EMPTY with all 15 tests green; 1 of
+6 ensemble reviewers caught it, at plan time).
+
+**Check — for EVERY such constant, verify EITHER:** (a) a committed test
+(same diff or pre-existing — cite file:line) asserts the REAL, unpatched
+constant's required contents — membership / subset-completeness /
+non-emptiness / required members (the #2360 remedy: a static
+completeness/subset test — an unmapped entry fails; an empty constant
+fails); a test pinning call ORDERING via a source substring, or asserting
+only on the FIXTURE value, is NOT contents evidence — OR (b) no acceptance
+criterion or plan requirement depends on the constant's contents (record
+which criteria were checked). Lint seed: `workflow_lint.py
+--check-monkeypatched-constant-pinning` (WARN-only; this step is the
+binding gate).
+
+**Verdict routing:** an acceptance-criterion-bearing constant with nothing
+pinning its real contents → **Critical FAIL**, blocker tag
+`production-constant-unpinned` (substantive, NOT mechanical-contract —
+never stripped by Step 5c-bis), naming the CONSTANT and the acceptance
+criterion that depends on it. Monkeypatch + a separate real-contents pin
+(the correct pattern) → record the per-constant ledger line and pass. A
+constant no dependent criterion touches → not flagged.
+
 ### Step 3.9: Degenerate-statistic check (observed-vs-null reads)
 
 **Trigger:** the diff computes ANY observed statistic compared against a null
@@ -1382,7 +1418,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `host-wide-gpu-verdict` (Step 0.72 — a host-wide GPU-state verdict in fan-out/teardown code; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `host-wide-gpu-verdict` (Step 0.72 — a host-wide GPU-state verdict in fan-out/teardown code; substantive, NOT mechanical-contract), `production-constant-unpinned` (Step 3.85 — a test replaces a module-level production constant an acceptance criterion depends on, with nothing pinning the real constant's contents; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
