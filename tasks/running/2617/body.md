@@ -2,7 +2,8 @@
 title: 'Safety-valence minimal pairs: decision vs surface transport of the frozen
   context→answer map [running / provisioning pod-2617 (1xH100 eval)]'
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-27T06:00:57Z'
 has_clean_result: false
 parent_id: 2215
