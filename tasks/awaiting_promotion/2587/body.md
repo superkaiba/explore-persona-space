@@ -2,7 +2,8 @@
 title: The minimal-pair discrimination profile of the context-to-answer map carries
   over from Qwen2.5-7B to Qwen3.5-9B run with thinking disabled (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-08-25T19:44:34Z'
 has_clean_result: true
 parent_id: 2564
