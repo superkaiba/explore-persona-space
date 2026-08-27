@@ -119,6 +119,18 @@ The second block below is likewise the COMPLETE record, not a cherry-picked exce
 
 I acknowledge this body ships conciseness WARNs in three classes plus one figure-text WARN. Total-prose/budget: eight legs and 19 figures do not fit the 800-word Takeaways+Goal+Results budget. Takeaways bullets: several exceed the 30-word soft cap. Figure caption length: one caption exceeds 60 words. No per-result block reaches the 180-word FAIL tier. Separately, five rendered figures carry opaque config-code tokens in their axis or legend text (`issue2569_rowbattery`, `n_above_floor`, `copied_dw_share`, `H2b`, `Delta_tbar_even`, `Delta_tbar_odd`); the plain-English readings are in the surrounding prose and captions, and regenerating those figures is filed rather than done here.
 
+Nine reviewer concerns remain open as recorded deferrals, all in one class: caching and provenance pins rather than reported numbers. Several resume keys hash a join identity or a local modification time instead of the input bytes, so a regeneration under an unchanged key could serve stale cached chunks; the staged adapters and base models were fetched at their default revision with no revision pin recorded; the finalize gate does not bind the capture tolerance it inherits, so the cross-model gate tolerances quoted below are the ones actually enforced but are not structurally prevented from being looser; one source-revision lookup sits outside its retry wrapper; one null battery ran serially where it could have been batched; and during the code-review round I advanced the worktree tip under the reviewer by committing agent-memory files mid-round. None of these change a number in this body, and each is deferred rather than silently dropped.
+
+<!-- concern-deferred: review-tip-drift-orchestrator-memory-commits -->
+<!-- concern-deferred: weights-base-regime-omits-banked-map-fingerprint -->
+<!-- concern-deferred: atlas-phasefits-correspondence-null-serial -->
+<!-- concern-deferred: atlas-aligned-spectra-key-ids-not-content -->
+<!-- concern-deferred: dwfleet-align-units-key-omits-adapter-and-ft-sidecar-content -->
+<!-- concern-deferred: ans-len-local-fingerprint-not-content-stable -->
+<!-- concern-deferred: pd-finalize-gate-tolerance-unbound -->
+<!-- concern-deferred: pd-gate-model-revision-unbound -->
+<!-- concern-deferred: select-source-revision-unretried -->
+
 ### The map is not low-rank, and its kernel tightens with depth
 
 Per layer (L14/L19/L26), the singular spectrum of the fitted operator A: the rank needed for 99% and 90% of squared-singular-value mass, σ_max, σ_median, and the per-direction class labels (ignored / copied / rotated-scaled / transcoded).
@@ -147,7 +159,7 @@ The fixed point x* of the L19 map (x* = Ax* + b) pushed through the context SAE 
 
 > **Figure.** *The fixed point is dense in feature space.* 10,302 of 65,536 context-SAE features fire at x* (‖x*‖ = 153.4, ‖b‖ = 41.7); top activations 14.5, 13.9, 13.5. Features are unlabelled — both description sources resolved `absent`.
 
-A fixed point firing 16% of the dictionary is not an interpretable attractor state. Nearest-banked-answer neighbours were deferred: no producer phase supplies banked answer rows.
+A fixed point firing 16% of the dictionary is not an interpretable attractor state. The nearest-banked-answer read stays a deferral string because no landed row-battery phase implements it — the consumer exists, the producer was never built.
 
 ### The closed-form ridge learning curve predicts the realized curve to 0.006 R²
 
@@ -197,7 +209,7 @@ For each behaviour direction's nearest answer feature, the share of top-32 in-ed
 
 > **Figure.** *Full-column shares are ~0.2%, three orders below the 0.5 pass bar.* evil 0.00300, sycophancy 0.00189, hallucination 0.00143; union median 0.00169. Nearest-feature cosines are 0.493 / 0.515 / 0.249.
 
-These are the INFORMATIONAL full-column shares, not the verdict-grade statistic: the alive-masked share needs the assemble rows, which were never attached, so the wiring gate has no verdict in either direction.
+These are the INFORMATIONAL full-column shares, not the verdict-grade statistic: the alive-masked share needs the row-battery assemble rows, which were never attached. The wiring gate therefore has no verdict in either direction, and the same gap deferred the worked-example attribution table — one of the two unrendered figures.
 
 ### The feature map predicts which features fire, not how much
 
@@ -267,7 +279,7 @@ Per (arm, context-summary) unit, the denoised rank of shared factor structure be
 
 > **Figure.** *Denoised rank is 0 in 23 of 27 units and 1 in 4.* Raw matched-factor share median 12 of 32 pairs at a 0.5 cosine floor; the null absorbs essentially all of it. Units span three context summaries (last_ctx / last_prompt / span_mean).
 
-The raw matching looks substantial and survives nothing. Leg 6 covers 9 of the 12 planned arms — the 3 full-fine-tune arms failed the runnability filter — so the denominator is 9, not 12.
+The raw matching looks substantial and survives nothing. Two coverage facts bind it: the shift basis is a 20-training-row mean, not the corpus mean the plan assumed, and the banked shift store holds zero full-fine-tune units, so leg 6 covers 9 of the 12 planned arms and the denominator is 9, not 12.
 
 ### Split halves agree on the top factor and disagree below it
 
