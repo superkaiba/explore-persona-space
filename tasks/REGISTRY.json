@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2634,
+  "highest_id": 2635,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12609,6 +12609,13 @@
       "path": "tasks/proposed/2634",
       "status": "proposed",
       "title": "step9c_baseline scan-set extractor counts the failing test's own traceback header as a branch-added violation path (false SCAN-NEW-VIOLATION)"
+    },
+    "2635": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2635",
+      "status": "proposed",
+      "title": "verify_task_body: mechanical verbatim-sample-vs-manifest grep \u2014 FAIL fabricated '(verbatim)' sample rows"
     },
     "264": {
       "has_clean_result": false,
