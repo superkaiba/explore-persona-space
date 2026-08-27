@@ -13,9 +13,13 @@ set -a
 [ -f .env ] && source .env
 set +a
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
-# Dedicated pod: full-width BLAS threads derived at runtime + the glibc arena cap.
+# Dedicated pod: BLAS threads derived at runtime, capped at 64 — the pod's
+# OpenBLAS build supports at most 128 threads and terminates the process past
+# it (hit at nproc=224 on the H100 host, 2026-08-27); its own error text
+# prescribes <=64. 64 BLAS threads is already past the GEMM scaling knee.
 NPROC="$(nproc)"
-export OMP_NUM_THREADS="$NPROC" MKL_NUM_THREADS="$NPROC" OPENBLAS_NUM_THREADS="$NPROC" NUMEXPR_NUM_THREADS="$NPROC"
+NT=$(( NPROC > 64 ? 64 : NPROC ))
+export OMP_NUM_THREADS="$NT" MKL_NUM_THREADS="$NT" OPENBLAS_NUM_THREADS="$NT" NUMEXPR_NUM_THREADS="$NT"
 export MALLOC_ARENA_MAX=2
 export PYTHONUNBUFFERED=1
 mkdir -p /workspace/logs
