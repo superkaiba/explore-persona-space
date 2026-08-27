@@ -34,9 +34,19 @@
 #                              issue's committed artifacts (or any tracked dir
 #                              outside the default cones), e.g.
 #                              BOOTSTRAP_EXTRA_CONES="eval_results/issue_722".
-#                              Export before `pod.py provision` / `pod.py
-#                              bootstrap` (passed through via os.environ).
-#                              Also consumed locally, like ISSUE.
+#                              AUTO-DERIVED at provision time (#2608):
+#                              pod_lifecycle.py::_bootstrap UNIONs any
+#                              caller-exported value with the foreign-issue
+#                              (ood_)eval_results / figures cones cited in
+#                              the task's persisted plans
+#                              (verify_carryover_inputs.extra_cones_for_plan).
+#                              Manual export before `pod.py provision` /
+#                              `pod.py bootstrap` still works (passed through
+#                              via os.environ). Also consumed locally, like
+#                              ISSUE. The step-4 post-checkout audit WARNs per
+#                              declared-but-unrealized cone (leg A) and per
+#                              driver-referenced foreign cone missing from
+#                              the checkout (leg B).
 #
 # Prerequisites:
 #   - SSH key at ~/.ssh/id_ed25519
@@ -381,6 +391,33 @@ if [ \"\$(git config --get core.sparseCheckout 2>/dev/null || true)\" = \"true\"
     fi
     if ! git sparse-checkout list 2>/dev/null | grep -qx \"data\"; then
         echo \"WARNING: default 'data' cone MISSING from the sparse checkout — git-tracked data/ inputs will be ABSENT on this pod and workloads reading them will crash FileNotFoundError (#2211). Remedy: cd $REMOTE_DIR && git sparse-checkout add data\" >&2
+    fi
+    # Leg A (#2608): every DECLARED extra cone must be realized in the list.
+    # EXTRA_CONES_VAL is baked in locally (ssh forwards no env vars, #1739).
+    if [ -n \"$EXTRA_CONES_VAL\" ]; then
+        for c in $EXTRA_CONES_VAL; do
+            if ! git sparse-checkout list 2>/dev/null | grep -qx \"\$c\"; then
+                echo \"WARNING: declared extra cone \$c MISSING from the sparse checkout — committed artifacts under \$c will be ABSENT on this pod and workloads reading them will crash FileNotFoundError (#2608). Remedy: cd $REMOTE_DIR && git sparse-checkout add \$c\" >&2
+            fi
+        done
+    fi
+    # Leg B (#2608): driver-grep backstop for UNDECLARED cross-issue reads —
+    # grep this round's own drivers for foreign (ood_)eval_results / figures
+    # issue-dir tokens and WARN per referenced-but-missing cone. Accepted
+    # false negatives (still caught only by the workload's own input read):
+    # dynamically-constructed paths (f-strings), references living in src/
+    # modules or configs rather than the per-issue drivers, and HF-fetched
+    # inputs. Accepted false positive: a foreign path cited only in a
+    # comment/docstring warns for a cone never read (cheap; WARN-only either
+    # way — never hard-fail). The ls guard keeps an empty driver glob inert
+    # under set -eu.
+    if [ -n \"$ISSUE_VAL\" ] && ls scripts/issue${ISSUE_VAL}_*.py >/dev/null 2>&1; then
+        for ref in \$(grep -hoE '(ood_)?eval_results/issue_[0-9]+|figures/issue_[0-9]+' scripts/issue${ISSUE_VAL}_*.py 2>/dev/null | sort -u); do
+            if [ \"\${ref##*issue_}\" = \"$ISSUE_VAL\" ]; then continue; fi
+            if ! git sparse-checkout list 2>/dev/null | grep -qx \"\$ref\"; then
+                echo \"WARNING: driver-referenced foreign cone \$ref MISSING from the sparse checkout — scripts/issue${ISSUE_VAL}_*.py reads it and will crash FileNotFoundError (#2608). Remedy: cd $REMOTE_DIR && git sparse-checkout add \$ref\" >&2
+            fi
+        done
     fi
 else
     echo \"Sparse cones: (none — full checkout)\"
