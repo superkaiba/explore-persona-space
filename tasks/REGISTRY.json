@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2638,
+  "highest_id": 2639,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12637,6 +12637,13 @@
       "path": "tasks/proposed/2638",
       "status": "proposed",
       "title": "Agent-memory index commits from a worktree silently drop rows and accumulate merge=union duplicates"
+    },
+    "2639": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2639",
+      "status": "proposed",
+      "title": "verify_task_body check 54: shared pinned-JSON loader lacks fail-soft on non-UTF8 git blobs (pre-existing; surfaced by #2635 r2)"
     },
     "264": {
       "has_clean_result": false,
