@@ -232,6 +232,29 @@ tree (frozen + stale — a differing count is not a finding); compose the
 static recompute as hand-applying the predicate to the committed test
 parametrization instead.
 
+**#2566 r1 (2026-08-26) sharpening — TEST-PIN-RESTORATION variant (diff
+touches ONLY a `tests/` pin file, e.g. adding a new workflow.yaml gate to
+`test_gates_full_shape`'s expected set; no lint/guard script edited):** the
+full recipe applies with three adaptations. (a) Roster fact flips to the
+#2195 SKIP form (`grep -c <test-stem> tests/test_ruff_policy.py` → 0 — a
+tests/ file is never on LIVE_WORKFLOW_HELPERS; attest so Codex neither
+demands the pin nor disputes the marker's SKIPPED line). (b) The pin-sweep
+recount has a characteristic clean shape to attest: changed literals →
+self-hit only; the REMOVED literal (old count comment) → 0 hits; round-NEW
+literal → no stale pins possible. Changed-path three-grain hits land in
+family-sync path strings, the step9c invariant manifest, comments, and
+function-NAME artifacts (`test_workflow_yaml_has_...` in
+test_circuit_breaker.py) — classify each NON-pin with its line so the twin
+can't promote them. (c) Compose an explicit yaml-side kill-criterion duty:
+the plan's alternative branch ("if the gate entry is malformed, fix the
+yaml") is claimed not to have fired — Codex statically reads the
+workflow.yaml entry against the SAME test file's per-gate field asserts and
+verifies bucket membership from the code, never the marker. wf-fix floor
+bound via TAG-first detection (tags `wf-fix`; title prefix also present);
+plan-verify PASS at v1 with symlink still v1 = no version-nuance line
+needed. Brief-ordered plan inlining on an identical worktree copy again =
+truthful belt-and-braces envelope.
+
 **#2610 r1 (2026-08-26) sharpenings — poller status-token round (diff adds a
 new terminal status + an SSH-probe leg to `scripts/poll_pipeline.py`):**
 (a) **Pre-existing literal-collision provenance:** a round-new token can
