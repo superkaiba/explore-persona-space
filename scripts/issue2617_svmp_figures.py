@@ -151,8 +151,8 @@ def _strip(ax, x0: float, vals, color: str, rng, width: float = 0.07) -> int:
 def load_reads(in_dir: Path) -> tuple[dict, list[dict], list[dict]]:
     summary = json.loads((in_dir / "summary.json").read_text())
     assert summary.get("issue") == ISSUE, summary.get("issue")
-    rows = [json.loads(x) for x in (in_dir / "perpair.jsonl").read_text().splitlines() if x]
-    ctx_rows = [json.loads(x) for x in (in_dir / "percontext.jsonl").read_text().splitlines() if x]
+    rows = [json.loads(x) for x in (in_dir / "perpair.jsonl").read_text().split("\n") if x]
+    ctx_rows = [json.loads(x) for x in (in_dir / "percontext.jsonl").read_text().split("\n") if x]
     assert rows and ctx_rows, (len(rows), len(ctx_rows))
     return summary, rows, ctx_rows
 
