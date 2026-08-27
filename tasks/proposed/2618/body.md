@@ -2,7 +2,8 @@
 title: Fitted answer-to-context reverse map vs pseudoinverse of the context-to-answer
   map on the 963k-context n1m bank
 kind: analysis
-tags: []
+tags:
+- keep-running
 created_at: '2026-08-27T06:35:58Z'
 has_clean_result: false
 parent_id: 779
