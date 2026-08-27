@@ -10530,8 +10530,8 @@
     "2363": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2363",
-      "status": "reviewing",
+      "path": "tasks/completed/2363",
+      "status": "completed",
       "title": "workflow-fix: a plan can mark its ONLY source of acceptance evidence optional and still PASS verify_plan"
     },
     "2364": {
