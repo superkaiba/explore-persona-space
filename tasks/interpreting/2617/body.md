@@ -30,11 +30,11 @@ goal: 'On Qwen-2.5-7B-Instruct, using single-turn minimal pairs that hold the qu
 ## Takeaways
 
 - Hypothesis lattice verdict: **decision-transported**. Flip-pair direction cosine **0.80** (CI 0.78–0.82) vs shuffled null **0.32**; non-flipping pairs also transport at **0.56** vs their own null **0.07**, so the flip-specific transport elevation is **0.24** (CI 0.13–0.28); identity-plus-bias baseline **0.42**; the multi-turn map agrees (**0.80**).
-- The decision claim is contrastive: predicted shifts load on the refusal axis **0.64** above non-flipping pairs (CI 0.54–0.73; non-flip loading **0.02**), and the axis exists observed-side (**0.73**) — the transport level alone would not support it.
-- Subject-swap control dissociates on **measured** flip: 6 of 16 flipped (4 backwards; 5 of 16 under the intrusion recount), all 6 loading with correct sign (59/60 across flip pairs); the 6 non-flipping pairs load near zero (median 0.11); the 4 mid-band excluded pairs are intermediate (two load −0.54/−0.64).
-- Length is argued against, not excluded: `|Δ rate|` and `|Δ answer length|` are collinear (Pearson 0.60); flip pairs out-transport non-flip pairs inside every length tercile, but tercile support is imbalanced (flip/non-flip 8/25, 19/14, 33/2) — the pooling, margin and calibration checks carry convergent weight.
+- The decision claim is contrastive: predicted shifts load on the refusal axis **0.64** above non-flipping pairs (CI 0.54–0.73; non-flip loading **0.02**), and the axis exists observed-side (**0.73**); the transport level alone would not support it.
+- Subject-swap control dissociates on **measured** flip: 6 of 16 flipped (4 backwards; 5 of 16 under the intrusion recount), all 6 loading with correct sign (59/60 across flip pairs); the 6 non-flipping pairs load near zero (median 0.11); the 4 mid-band excluded pairs load −0.64/−0.54 (the two backwards partial flips) and 0.10/0.14 (the two forward ones).
+- The length checks argue against a pure length artifact but do not exclude it: `|Δ rate|` and `|Δ answer length|` are collinear (Pearson 0.60); flip pairs out-transport non-flip pairs inside every length tercile, but tercile support is imbalanced (flip/non-flip 8/25, 19/14, 33/2), so the pooling, margin and calibration checks carry convergent weight.
 - Dual DV validated (opener margin vs refusal rate, Spearman **0.70**); per-context retrieval **0.88** for the map vs **0.24** raw; calibration slope **0.78** vs the raw shift's 1.44 overshoot.
-- Scope: one model (Qwen-2.5-7B-Instruct), single-turn, n=108 — 72 constructed templated pairs plus 36 XSTest pairs, the established-benchmark arm agreeing at 0.77. CJK-script intrusion 6.1% (132/2160): the zeroed/excluded recount shifts two contexts' rates by 0.20, reclassifies 3 of 108 pairs into the mid band (flip pairs 60→58), and leaves the surviving flip-pair transport median unchanged at 0.7995 (committed audit).
+- Scope: one model (Qwen-2.5-7B-Instruct), single-turn, n=108 (72 constructed templated pairs plus 36 XSTest pairs; the established-benchmark arm agrees at 0.77). CJK-script intrusion 6.1% (132/2160): the zeroed/excluded recount shifts two contexts' rates by 0.20, reclassifies 3 of 108 pairs into the mid band (flip pairs 60→58), and leaves the surviving flip-pair transport median unchanged at 0.7995 (committed audit).
 
 ## Goal
 
@@ -85,7 +85,7 @@ Rollout completions are trigger-dense refusal-eval text; a sanitized 5-row spot 
 
 ## Results
 
-### The frozen map transports the answer-state shift of behavior-flipping one-word swaps, roughly doubling the raw-geometry baseline
+### The frozen map transports the answer-state shift of behavior-flipping one-word swaps, well above the raw-geometry baseline
 
 Per-class direction cosine by arm (left) and the per-pair flip-magnitude-vs-transport scatter (right).
 
@@ -93,9 +93,9 @@ Per-class direction cosine by arm (left) and the per-pair flip-magnitude-vs-tran
 
 > **Figure.** *The map roughly doubles the raw context shift's alignment on flip classes.* Left: the single-turn map (blue) places object-flip, verb-flip and XSTest at 0.77–0.80, the multi-turn map (red) at 0.74–0.80, above the raw context shift (green: 0.41–0.46 flip classes, 0.32 subject-control), the shuffled null, and the cross-regime benign anchors (0.41–0.53). Right: transport rises with flip magnitude.
 
-The flip-pair median direction cosine is **0.80** (CI 0.78–0.82) versus **0.42** for the identity-plus-bias baseline and **0.32** for the shuffled null; the multi-turn map agrees (**0.80**). Transport per se is not flip-specific: non-flipping pairs sit at **0.56** against their own null of **0.07**, with non-flips inside the intended-flip classes at 0.71–0.76, so the flip-specific transport elevation is **0.24** (CI 0.13–0.28) and the decision claim rests on the axis-loading contrast below. Within this run, flip classes (0.77–0.80) exceed the benign anchors (0.46–0.59); the earlier benign topic-swap pilot is cross-regime context only.
+The flip-pair median direction cosine is **0.80** (CI 0.78–0.82) versus **0.42** for the identity-plus-bias baseline and **0.32** for the shuffled null; the multi-turn map agrees (**0.80**). Transport per se is not flip-specific: non-flipping pairs sit at **0.56** against their own null of **0.07**, with non-flips inside the intended-flip classes at 0.71–0.76, so the flip-specific transport elevation is **0.24** (CI 0.13–0.28) and the decision claim rests on the axis-loading contrast below. Put plainly: when one word flips the behavior, the map predicts which way the answer state will move. Within this run, flip classes (0.77–0.80) exceed the benign anchors (0.46–0.59); the earlier benign topic-swap pilot is cross-regime context only.
 
-### Predicted shifts load on the refusal axis only for pairs that flipped behavior — the contrast carries the decision claim
+### Predicted shifts load on the refusal axis only for pairs that flipped behavior: the contrast carries the decision claim
 
 Refusal-axis loading of predicted pair deltas, flip vs non-flip, per arm, with the observed-side delta.
 
@@ -103,7 +103,7 @@ Refusal-axis loading of predicted pair deltas, flip vs non-flip, per arm, with t
 
 > **Figure.** *Predicted shifts load on the refusal axis only for pairs that flipped behavior.* Flip pairs (n=60) load at 0.66 (single-turn map), 0.69 (multi-turn), 0.71 (observed); non-flip pairs (n=41) sit near zero for every arm; the raw context shift loads weaker (0.36). The plotted axis `r̂` is the leave-one-out mean flip-pair answer-state delta.
 
-The flip-versus-non-flip loading contrast is **0.64** (CI 0.54–0.73), with non-flip loading at **0.02**: the predicted shift aligns with the refusal direction specifically for pairs that changed behavior. This contrast — not the transport level, which is high off-flip too — is what supports decision encoding, and some content loading persists off-flip (object-class non-flip median 0.36).
+The flip-versus-non-flip loading contrast is **0.64** (CI 0.54–0.73), with non-flip loading at **0.02**: the predicted shift aligns with the refusal direction specifically for pairs that changed behavior. Decision encoding rests on this contrast rather than on the transport level, which is high off-flip too; some content loading persists off-flip (object-class non-flip median 0.36).
 
 The observed-side axis-existence contrast is **0.73** (CI 0.64–0.82), so the axis exists independent of the map. The raw context shift carries the same specificity but weaker (0.35, CI 0.29–0.40): the map amplifies a signal already partly present in the prompt geometry.
 
@@ -115,7 +115,7 @@ Per-context refusal rate by class and member (left) and paired refusal rates aga
 
 > **Figure.** *Subject swaps scatter — several below the diagonal, where the benign subject refused more.* Object-flip, verb-flip and XSTest members separate broadly (harmful members high, benign near 0), though several intended-flip harmful members sit at 0; the three benign classes are identical all-zero series, rendered as one overlapping point set.
 
-The manipulation check fired for 54 of the 68 intended-flip pairs (79%): object 10 of 16, verb 14 of 16, XSTest 30 of 36; the full 108-pair partition is 60 flip, 41 non-flip, 7 mid-band excluded. The control's premise held only partly: median `|Δ rate|` was **0.35**, and 6 of 16 subject swaps flipped, 4 backwards (5 of 16 under the intrusion recount). Conditioning on measured flip: all 6 flipping pairs load with correct sign (59 of 60 flip pairs overall); the 6 non-flipping pairs load near zero (median 0.11); the 4 mid-band pairs are intermediate, two loading at −0.54 and −0.64, consistent with their partial rate changes.
+The manipulation check fired for 54 of the 68 intended-flip pairs (79%): object 10 of 16, verb 14 of 16, XSTest 30 of 36; the full 108-pair partition is 60 flip, 41 non-flip, 7 mid-band excluded. The control's premise held only partly: median `|Δ rate|` was **0.35**, and 6 of 16 subject swaps flipped, 4 backwards (5 of 16 under the intrusion recount). Conditioning on measured flip: all 6 flipping pairs load with correct sign (59 of 60 flip pairs overall); the 6 non-flipping pairs load near zero (median 0.11); the 4 mid-band pairs load −0.64 and −0.54 (the two backwards partial flips) and 0.10 and 0.14 (the two forward ones), sign-consistent with their partial rate changes.
 
 ### Flip pairs out-transport non-flip pairs in every length tercile, though imbalanced tercile support leaves residual length confounding open
 
@@ -125,7 +125,7 @@ Per-pair direction cosine against `|Δ mean answer length|`; refusals are short 
 
 > **Figure.** *Flip classes sit high even where the length change is smallest.* Non-flip and benign pairs span a wide range at low deltas; the collinearity gate (Pearson 0.60) tripped, so the tercile fallback is authoritative, with flip/non-flip overlap thinning at both length extremes.
 
-Within each length tercile flip pairs out-transport non-flip pairs (flip medians 0.73 / 0.81 / 0.82 low→high; non-flip 0.57 / 0.56 / 0.65), but tercile support is imbalanced — flip/non-flip 8/25, 19/14, 33/2, the top-tercile non-flip median resting on 2 pairs — so the fallback argues against a pure length artifact without excluding residual confounding. Convergent checks: the span-mean pooling twin matches the tail read to two decimals; the fixed-24-token opener margin tracks the refusal rate (Spearman 0.70); the calibration slope is **0.78** with flip and non-flip slopes indistinguishable (contrast −0.02, CI includes 0). The length-partialled Spearman is **0.50** (0.68 unpartialled); the raw context shift's is higher (0.62), so partialling does not favor the map.
+Within each length tercile flip pairs out-transport non-flip pairs (flip medians 0.73 / 0.81 / 0.82 low→high; non-flip 0.57 / 0.56 / 0.65), but tercile support is imbalanced (flip/non-flip 8/25, 19/14, 33/2, with the top-tercile non-flip median resting on 2 pairs), so the fallback argues against a pure length artifact without excluding residual confounding. Convergent checks: the span-mean pooling twin matches the tail read to two decimals; the fixed-24-token opener margin tracks the refusal rate (Spearman 0.70); the calibration slope is **0.78** with flip and non-flip slopes indistinguishable (contrast −0.02, CI includes 0). The length-partialled Spearman is **0.50** (0.68 unpartialled); the raw context shift's is higher (0.62), so partialling does not favor the map.
 
 ### Retrieval and the dual behavioral DV corroborate the transport
 
@@ -137,7 +137,7 @@ Pair-delta retrieval accuracy at rank 1 per class and arm against per-panel chan
 
 Pair-delta retrieval partly measures pair identity (the a-minus-b delta cancels the learned bias), so it corroborates map fidelity rather than decision encoding: the map reaches **0.92**, the raw arm 0.84. The sharper separation is per-context absolute-state retrieval: **0.88** for the map against **0.24** raw (0.70 for a leave-one-out identity-plus-bias baseline).
 
-The raw arm's pair-delta weakness is layer-specific: at layer 26 it retrieves pair deltas perfectly, though the direction-cosine ordering holds at all three layers. The teacher-forced opener margin tracks the refusal rate (Spearman **0.70**), the refusal axis is split-half reliable across draw-splits (0.998), and judge integrity was clean.
+The raw arm's pair-delta weakness is layer-specific: at layer 26 it retrieves pair deltas perfectly, though the direction-cosine ordering holds at all three layers. The teacher-forced opener margin tracks the refusal rate (Spearman **0.70**), the refusal axis is split-half reliable across draw-splits (0.998), and the judge wave was clean (3 of 2,160 draws dropped, no context under the 7-valid-draw floor).
 
 ---
 
