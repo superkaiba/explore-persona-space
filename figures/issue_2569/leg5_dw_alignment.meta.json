@@ -1,0 +1,380 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "01519c0f4a3240d6",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:52:06Z",
+  "figsize": [
+    12.0,
+    30.4
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mapped-read gradient (evil)",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Mapped-read gradient (hallucination)",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Mapped-read gradient (sycophancy)",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Training-context centroid",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Realized mean write direction",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Delta_tbar_even",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Delta_tbar_odd",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Evil persona direction",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Hallucination persona direction",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "title_left": "Sycophancy persona direction",
+        "xlabel": "Max |cos| over top dW factors",
+        "xticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "Casualness, bare, contrastive",
+          "Casualness, persona, contrastive",
+          "Casualness, persona, contrastive (full FT)",
+          "Casualness, persona, positive-only",
+          "Impoliteness, persona, contrastive (full FT)",
+          "Impoliteness, persona, contrastive (seed 137)",
+          "Impoliteness, persona, contrastive (seed 42)",
+          "Impoliteness, persona, positive-only",
+          "Marker, ICL, contrastive",
+          "Marker, bare, contrastive",
+          "Marker, conversational, contrastive",
+          "Marker, persona, contrastive",
+          "Marker, persona, contrastive (full FT)",
+          "Marker, persona, positive-only",
+          "Sycophancy, bare, contrastive",
+          "Sycophancy, conversational, contrastive",
+          "Sycophancy, persona, contrastive (full FT)",
+          "Sycophancy, persona, positive-only"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

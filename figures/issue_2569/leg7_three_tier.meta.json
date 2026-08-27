@@ -1,0 +1,336 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "18dcdca6baf84872",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:52:20Z",
+  "figsize": [
+    11.0,
+    7.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.6908504954793632,
+      "series": "Context state, Qwen to Llama",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Held-out alignment R^2 / CKA": 0.6683129596323227,
+      "series": "Context state, Qwen to Llama",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Held-out alignment R^2 / CKA": 0.6318283098149007,
+      "series": "Context state, Qwen to Llama",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.7876344566416984,
+      "series": "Context state, Llama to Qwen",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Held-out alignment R^2 / CKA": 0.7513018261661704,
+      "series": "Context state, Llama to Qwen",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Held-out alignment R^2 / CKA": 0.6635900418051769,
+      "series": "Context state, Llama to Qwen",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.8125282077198405,
+      "series": "Answer summary, Qwen to Llama",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Held-out alignment R^2 / CKA": 0.8073974602171026,
+      "series": "Answer summary, Qwen to Llama",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Held-out alignment R^2 / CKA": 0.8414575399260763,
+      "series": "Answer summary, Qwen to Llama",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.8754729807546171,
+      "series": "Answer summary, Llama to Qwen",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Held-out alignment R^2 / CKA": 0.8882893487736379,
+      "series": "Answer summary, Llama to Qwen",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Held-out alignment R^2 / CKA": 0.861073548523649,
+      "series": "Answer summary, Llama to Qwen",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.7548082114942153,
+      "series": "Linear CKA (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Held-out alignment R^2 / CKA": 0.7090509876581901,
+      "series": "Linear CKA (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Held-out alignment R^2 / CKA": 0.782767365661381,
+      "series": "Linear CKA (context)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.9116408114421555,
+      "series": "Linear CKA (answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Held-out alignment R^2 / CKA": 0.842213094780971,
+      "series": "Linear CKA (answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Held-out alignment R^2 / CKA": 0.8194673547003672,
+      "series": "Linear CKA (answer)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 0.0,
+      "series": "Selected working pair",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Held-out alignment R^2 / CKA": 1.0,
+      "series": "Selected working pair",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "category": "Native Llama map",
+      "Held-out R^2 (Llama answer summary)": 0.5832408113080682,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Composed (banked Qwen map)",
+      "Held-out R^2 (Llama answer summary)": 0.5348618822754713,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Composed (matched-n Qwen map)",
+      "Held-out R^2 (Llama answer summary)": 0.524613997309856,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Alignment-only baseline (no operator)",
+      "Held-out R^2 (Llama answer summary)": -1.6220032957215151,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Native minus composed (banked)",
+      "R^2 / R^2 gap": 0.048378929032596885,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Native minus composed (matched-n)",
+      "R^2 / R^2 gap": 0.058626813998212124,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Alignment-only baseline R^2",
+      "R^2 / R^2 gap": -1.6220032957215151,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": -0.175,
+      "Held-out R^2": 0.5121594475881613,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.825,
+      "Held-out R^2": 0.44393216334922325,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.175,
+      "Held-out R^2": 0.6067523425557431,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.175,
+      "Held-out R^2": 0.5250554616236334,
+      "_kind": "bar",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 31,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Tier 1: representation alignability",
+        "ylabel": "Held-out alignment R^2 / CKA",
+        "legend_labels": [
+          "Context state, Qwen to Llama",
+          "Context state, Llama to Qwen",
+          "Answer summary, Qwen to Llama",
+          "Answer summary, Llama to Qwen",
+          "Linear CKA (context)",
+          "Linear CKA (answer)",
+          "Selected working pair"
+        ],
+        "xticklabels": [
+          "Qwen L14 / Llama L16",
+          "Qwen L19 / Llama L22",
+          "Qwen L26 / Llama L30"
+        ],
+        "yticklabels": [
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95"
+        ]
+      },
+      {
+        "title_left": "Tier 2: operator routes",
+        "ylabel": "Held-out R^2 (Llama answer summary)",
+        "xticklabels": [
+          "Native Llama map",
+          "Composed (banked Qwen map)",
+          "Composed (matched-n Qwen map)",
+          "Alignment-only baseline (no operator)"
+        ],
+        "yticklabels": [
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Tier 3: non-identifying diagnostics",
+        "ylabel": "R^2 / R^2 gap",
+        "xticklabels": [
+          "Native minus composed (banked)",
+          "Native minus composed (matched-n)",
+          "Alignment-only baseline R^2"
+        ],
+        "yticklabels": [
+          "\u22121.75",
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "Corpus-transfer fold",
+        "ylabel": "Held-out R^2",
+        "legend_labels": [
+          "Native Llama map",
+          "Context alignment (Qwen to Llama)"
+        ],
+        "xticklabels": [
+          "train_lmsys_test_wildchat",
+          "train_wildchat_test_lmsys"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "Context state, Qwen to Llama",
+      "Context state, Llama to Qwen",
+      "Answer summary, Qwen to Llama",
+      "Answer summary, Llama to Qwen",
+      "Linear CKA (context)",
+      "Linear CKA (answer)",
+      "Selected working pair",
+      "Native Llama map",
+      "Context alignment (Qwen to Llama)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
