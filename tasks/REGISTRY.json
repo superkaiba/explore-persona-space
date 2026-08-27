@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2610,
+  "highest_id": 2611,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12426,6 +12426,13 @@
       "path": "tasks/planning/2610",
       "status": "planning",
       "title": "poll_pipeline.py cannot detect terminal success of a single-phase dispatcher invocation \u2014 clean completion reports pid-stale-workload-live then decays to dead"
+    },
+    "2611": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2611",
+      "status": "proposed",
+      "title": "git_provenance()'s 5s-timeout git status orphans .git/index.lock on slow filesystems, breaking every later git op in the run (fix: --no-optional-locks)"
     },
     "262": {
       "has_clean_result": false,
