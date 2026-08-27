@@ -1,0 +1,24 @@
+{
+  "n_pool": 963444,
+  "n_half1": 481722,
+  "n_half2": 481722,
+  "n_conversation_keys": 963444,
+  "selected_lambda": 0.001,
+  "split_seed": 0,
+  "moment_chunk": 65536,
+  "device": "cuda",
+  "pool": "present minus pinned val/test",
+  "production": true,
+  "regime_config_hash": "35003bfda5ef3328",
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T00:44:11.157552Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "moments",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "g4": {
+    "val_var_fve": 0.902959,
+    "val_l0": 103.3,
+    "floor": 0.5,
+    "n_val": 10000,
+    "verdict": "PASS"
+  },
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T01:15:09.597542Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "sae_ctx_train",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

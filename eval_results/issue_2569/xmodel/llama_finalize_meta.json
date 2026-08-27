@@ -1,0 +1,28 @@
+{
+ "ci_sha256": "8e4e014100df8ea9569e7cf466f40176613992855678e9c13fe37bffc94d7de5",
+ "drops": {},
+ "files": [
+  "llama_vc_L16.pt",
+  "llama_va_L16.pt",
+  "llama_vc_L22.pt",
+  "llama_va_L22.pt",
+  "llama_vc_L30.pt",
+  "llama_va_L30.pt"
+ ],
+ "layers": [
+  16,
+  22,
+  30
+ ],
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_xmodel_capture.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "6f6729c0a0214e0b025c0993dd6f19079d1fc8c1",
+  "git_dirty": false,
+  "phase": "finalize",
+  "timestamp_utc": "2026-08-26T22:45:31Z"
+ },
+ "model": "llama",
+ "n_selected_texts": 60000,
+ "realized": 60000
+}

@@ -1,0 +1,1467 @@
+{
+  "meta": {
+    "issue": 2569,
+    "script": "issue2569_gateladder",
+    "git_commit": "4f95423153",
+    "seed": 2569,
+    "ts": "2026-08-27T03:49:41Z",
+    "python": "3.11.10",
+    "numpy": "2.2.6"
+  },
+  "regime": {
+    "layer": 19,
+    "pos": "last_prompt",
+    "b_draws": 10000,
+    "n_perm": 10000,
+    "seed": 2569,
+    "k_trunc": 440,
+    "sigma_shrinkage": 0.1,
+    "sigma_c_source": "/workspace/eps2569/moments/gram_xx.pt",
+    "sigma_a_source": "/workspace/eps2569/moments/gram_yy.pt",
+    "partial": false,
+    "smoke": false,
+    "marker_layer_note": "marker arms scored at the map layer L19 (banked marker-primary was L25; the ladder pins the map's input space)",
+    "centering": "full-panel Cbar mean, both sides (#1979 candidate_table convention)"
+  },
+  "entry_asserts": {
+    "gram": {
+      "max_rel_err": 3.301123280731588e-15,
+      "n_probes": 64
+    },
+    "singular_orientation": {
+      "max_row_form_rel_err": 1.6124685944575297e-15,
+      "row_form_rel_err": [
+        1.4455323025037434e-15,
+        1.3281409078057159e-15,
+        1.6124685944575297e-15,
+        1.4422383426931355e-15,
+        9.069951128964342e-16,
+        1.0300928392862927e-15,
+        1.42574432531069e-15,
+        1.2928475852710614e-15
+      ],
+      "wrong_column_form_rel_err": [
+        1.3534910838108858,
+        1.3385907918736006,
+        1.314217125000749,
+        1.279984976378656,
+        1.3049126552168289,
+        1.2433935123576911,
+        1.285481885200387,
+        1.2326439256082256
+      ],
+      "sigma": [
+        7.961798388540204,
+        6.575266309294754,
+        4.930931633382376,
+        4.771994506385129,
+        4.449233023840187,
+        4.2880681927788515,
+        4.132831440207533,
+        3.9758317907530216
+      ],
+      "k": 8
+    },
+    "apply_path": {
+      "max_abs_diff": 6.394884621840902e-14,
+      "max_rel_diff": 1.1976777694899627e-10,
+      "n_probes": 8
+    }
+  },
+  "anchors_context": {
+    "whitened_banked_median_rho": 0.17514707774214097,
+    "p3b_champion_median_rho": 0.41062699258327484
+  },
+  "per_arm": {
+    "cas-bare-con-lr1e5-s42": {
+      "arm_id": "cas-bare-con-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.1780114769935608,
+          "gate_diag_inv": 0.21249008178710938,
+          "gate_sigma_inv": 0.06871714442968369,
+          "gate_wwt": 0.2795265316963196,
+          "gate_wwt_k90": 0.27779778838157654,
+          "gate_wwt_awhite": 0.08235494792461395
+        },
+        "dv_level": {
+          "gate_I": -0.07678455114364624,
+          "gate_diag_inv": 0.001008424791507423,
+          "gate_sigma_inv": -0.2133544385433197,
+          "gate_wwt": 0.15774688124656677,
+          "gate_wwt_k90": 0.155537948012352,
+          "gate_wwt_awhite": -0.15659436583518982
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2977381944656372,
+        "p975_max_selected": 0.3359072804450989,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "cas-pers-con-lr1e5-s42": {
+      "arm_id": "cas-pers-con-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.3573194742202759,
+          "gate_diag_inv": 0.41936179995536804,
+          "gate_sigma_inv": 0.39592793583869934,
+          "gate_wwt": 0.33907178044319153,
+          "gate_wwt_k90": 0.32543399930000305,
+          "gate_wwt_awhite": 0.4328075349330902
+        },
+        "dv_level": {
+          "gate_I": -0.0128214405849576,
+          "gate_diag_inv": 0.07006168365478516,
+          "gate_sigma_inv": 0.038176167756319046,
+          "gate_wwt": 0.073231041431427,
+          "gate_wwt_k90": 0.07390329986810684,
+          "gate_wwt_awhite": 0.07601621747016907
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2978270649909973,
+        "p975_max_selected": 0.3360094130039215,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "cas-pers-ft-con-s42": {
+      "arm_id": "cas-pers-ft-con-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.07616028934717178,
+          "gate_diag_inv": 0.16653461754322052,
+          "gate_sigma_inv": 0.009219903498888016,
+          "gate_wwt": 0.16192466020584106,
+          "gate_wwt_k90": 0.15500973165035248,
+          "gate_wwt_awhite": 0.031309276819229126
+        },
+        "dv_level": {
+          "gate_I": -0.10516457259654999,
+          "gate_diag_inv": 0.0015366554725915194,
+          "gate_sigma_inv": -0.16499797999858856,
+          "gate_wwt": 0.01930420845746994,
+          "gate_wwt_k90": 0.02698746882379055,
+          "gate_wwt_awhite": -0.1433887779712677
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2997070252895355,
+        "p975_max_selected": 0.3376408815383911,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "cas-pers-po-lr1e5-s42": {
+      "arm_id": "cas-pers-po-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.38108959794044495,
+          "gate_diag_inv": 0.4007779359817505,
+          "gate_sigma_inv": 0.5115128755569458,
+          "gate_wwt": 0.47261637449264526,
+          "gate_wwt_k90": 0.4565775990486145,
+          "gate_wwt_awhite": 0.5300487279891968
+        },
+        "dv_level": {
+          "gate_I": 0.07817713916301727,
+          "gate_diag_inv": 0.128694549202919,
+          "gate_sigma_inv": 0.22166197001934052,
+          "gate_wwt": 0.23645225167274475,
+          "gate_wwt_k90": 0.23318690061569214,
+          "gate_wwt_awhite": 0.2421186864376068
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.29499146342277527,
+        "p975_max_selected": 0.3339347839355469,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "imp-pers-con-lr3e5-s137": {
+      "arm_id": "imp-pers-con-lr3e5-s137",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.24029965698719025,
+          "gate_diag_inv": 0.2749711871147156,
+          "gate_sigma_inv": 0.33749520778656006,
+          "gate_wwt": 0.26469460129737854,
+          "gate_wwt_k90": 0.2650787830352783,
+          "gate_wwt_awhite": 0.3427775502204895
+        },
+        "dv_level": {
+          "gate_I": 0.0491752102971077,
+          "gate_diag_inv": 0.09277978539466858,
+          "gate_sigma_inv": 0.262491911649704,
+          "gate_wwt": 0.10233630239963531,
+          "gate_wwt_k90": 0.10214421153068542,
+          "gate_wwt_awhite": 0.2729128301143646
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2953827381134033,
+        "p975_max_selected": 0.3354339599609375,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "imp-pers-con-lr3e5-s42": {
+      "arm_id": "imp-pers-con-lr3e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.19861216843128204,
+          "gate_diag_inv": 0.23846906423568726,
+          "gate_sigma_inv": 0.33835142850875854,
+          "gate_wwt": 0.21609161794185638,
+          "gate_wwt_k90": 0.21609161794185638,
+          "gate_wwt_awhite": 0.35717543959617615
+        },
+        "dv_level": {
+          "gate_I": -0.02621973305940628,
+          "gate_diag_inv": 0.025547446683049202,
+          "gate_sigma_inv": 0.2846715450286865,
+          "gate_wwt": 0.001440632389858365,
+          "gate_wwt_k90": 0.0010564589174464345,
+          "gate_wwt_awhite": 0.3012869954109192
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.29825684428215027,
+        "p975_max_selected": 0.3345232605934143,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "imp-pers-ft-con-s42": {
+      "arm_id": "imp-pers-ft-con-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.277372270822525,
+          "gate_diag_inv": 0.3396562337875366,
+          "gate_sigma_inv": 0.42047640681266785,
+          "gate_wwt": 0.3197752833366394,
+          "gate_wwt_k90": 0.3192950487136841,
+          "gate_wwt_awhite": 0.4143296182155609
+        },
+        "dv_level": {
+          "gate_I": 0.11707363277673721,
+          "gate_diag_inv": 0.1769070029258728,
+          "gate_sigma_inv": 0.4036591649055481,
+          "gate_wwt": 0.17431390285491943,
+          "gate_wwt_k90": 0.17373764514923096,
+          "gate_wwt_awhite": 0.4024105966091156
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.29807910323143005,
+        "p975_max_selected": 0.3397546410560608,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "imp-pers-po-lr1e5-s42": {
+      "arm_id": "imp-pers-po-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.3526134788990021,
+          "gate_diag_inv": 0.31054767966270447,
+          "gate_sigma_inv": 0.7310139536857605,
+          "gate_wwt": 0.3675958216190338,
+          "gate_wwt_k90": 0.3661552369594574,
+          "gate_wwt_awhite": 0.7291892170906067
+        },
+        "dv_level": {
+          "gate_I": 0.20024973154067993,
+          "gate_diag_inv": 0.16226468980312347,
+          "gate_sigma_inv": 0.6909816265106201,
+          "gate_wwt": 0.2482231855392456,
+          "gate_wwt_k90": 0.24649442732334137,
+          "gate_wwt_awhite": 0.6897329688072205
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2929265797138214,
+        "p975_max_selected": 0.3313490152359009,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "mk-bare-con-lr5e6-s42": {
+      "arm_id": "mk-bare-con-lr5e6-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_dlogp",
+        "dv_level_logp"
+      ],
+      "observed_rho": {
+        "dv_dlogp": {
+          "gate_I": 0.05632786825299263,
+          "gate_diag_inv": 0.09580061584711075,
+          "gate_sigma_inv": 0.09935411810874939,
+          "gate_wwt": 0.19510672986507416,
+          "gate_wwt_k90": 0.19424232840538025,
+          "gate_wwt_awhite": 0.11308795213699341
+        },
+        "dv_level_logp": {
+          "gate_I": -0.05210210010409355,
+          "gate_diag_inv": 0.07908952981233597,
+          "gate_sigma_inv": 0.0017767548561096191,
+          "gate_wwt": -0.1120314970612526,
+          "gate_wwt_k90": -0.13181589543819427,
+          "gate_wwt_awhite": 0.05632788687944412
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.28510168194770813,
+        "p975_max_selected": 0.32726120948791504,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "marker"
+    },
+    "mk-conv-con-lr5e6-s42": {
+      "arm_id": "mk-conv-con-lr5e6-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_dlogp",
+        "dv_level_logp"
+      ],
+      "observed_rho": {
+        "dv_dlogp": {
+          "gate_I": 0.3689884543418884,
+          "gate_diag_inv": 0.41825729608535767,
+          "gate_sigma_inv": 0.4366971552371979,
+          "gate_wwt": 0.3797450363636017,
+          "gate_wwt_k90": 0.38070541620254517,
+          "gate_wwt_awhite": 0.3978966772556305
+        },
+        "dv_level_logp": {
+          "gate_I": 0.16461379826068878,
+          "gate_diag_inv": 0.10698936134576797,
+          "gate_sigma_inv": 0.25873371958732605,
+          "gate_wwt": 0.22809669375419617,
+          "gate_wwt_k90": 0.2218540608882904,
+          "gate_wwt_awhite": 0.25383564829826355
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.269552618265152,
+        "p975_max_selected": 0.3109130859375,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "marker"
+    },
+    "mk-icl-con-lr5e6-s42": {
+      "arm_id": "mk-icl-con-lr5e6-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_dlogp",
+        "dv_level_logp"
+      ],
+      "observed_rho": {
+        "dv_dlogp": {
+          "gate_I": -0.17479410767555237,
+          "gate_diag_inv": -0.11668947339057922,
+          "gate_sigma_inv": -0.07779297977685928,
+          "gate_wwt": -0.10910224914550781,
+          "gate_wwt_k90": -0.11063890159130096,
+          "gate_wwt_awhite": -0.3262503147125244
+        },
+        "dv_level_logp": {
+          "gate_I": -0.07284688204526901,
+          "gate_diag_inv": 0.003793601877987385,
+          "gate_sigma_inv": 0.12230784446001053,
+          "gate_wwt": -0.10482843220233917,
+          "gate_wwt_k90": -0.10165909677743912,
+          "gate_wwt_awhite": 0.038368262350559235
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.312569260597229,
+        "p975_max_selected": 0.3525691628456116,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "marker"
+    },
+    "mk-pers-con-lr5e6-s42": {
+      "arm_id": "mk-pers-con-lr5e6-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_dlogp",
+        "dv_level_logp"
+      ],
+      "observed_rho": {
+        "dv_dlogp": {
+          "gate_I": 0.5413815975189209,
+          "gate_diag_inv": 0.503925621509552,
+          "gate_sigma_inv": 0.6091862916946411,
+          "gate_wwt": 0.5090157985687256,
+          "gate_wwt_k90": 0.49384135007858276,
+          "gate_wwt_awhite": 0.6268577575683594
+        },
+        "dv_level_logp": {
+          "gate_I": 0.2590698301792145,
+          "gate_diag_inv": 0.3444500267505646,
+          "gate_sigma_inv": 0.34089651703834534,
+          "gate_wwt": 0.08504404872655869,
+          "gate_wwt_k90": 0.06516363471746445,
+          "gate_wwt_awhite": 0.36240968108177185
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2899949550628662,
+        "p975_max_selected": 0.332640677690506,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "marker"
+    },
+    "mk-pers-ft-con-s42": {
+      "arm_id": "mk-pers-ft-con-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_dlogp",
+        "dv_level_logp"
+      ],
+      "observed_rho": {
+        "dv_dlogp": {
+          "gate_I": 0.5770126581192017,
+          "gate_diag_inv": 0.5174674391746521,
+          "gate_sigma_inv": 0.5943959951400757,
+          "gate_wwt": 0.5658718943595886,
+          "gate_wwt_k90": 0.5588609576225281,
+          "gate_wwt_awhite": 0.6258973479270935
+        },
+        "dv_level_logp": {
+          "gate_I": 0.2934524118900299,
+          "gate_diag_inv": 0.3771999478340149,
+          "gate_sigma_inv": 0.3676919639110565,
+          "gate_wwt": 0.11135921627283096,
+          "gate_wwt_k90": 0.0891738161444664,
+          "gate_wwt_awhite": 0.3812336325645447
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2859179973602295,
+        "p975_max_selected": 0.3274040222167969,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "marker"
+    },
+    "mk-pers-po-lr5e6-s42": {
+      "arm_id": "mk-pers-po-lr5e6-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_dlogp",
+        "dv_level_logp"
+      ],
+      "observed_rho": {
+        "dv_dlogp": {
+          "gate_I": 0.5631347894668579,
+          "gate_diag_inv": 0.5713942050933838,
+          "gate_sigma_inv": 0.6160532236099243,
+          "gate_wwt": 0.5364354848861694,
+          "gate_wwt_k90": 0.5246224403381348,
+          "gate_wwt_awhite": 0.6430405974388123
+        },
+        "dv_level_logp": {
+          "gate_I": 0.3182309865951538,
+          "gate_diag_inv": 0.4097577631473541,
+          "gate_sigma_inv": 0.44231554865837097,
+          "gate_wwt": 0.09349562972784042,
+          "gate_wwt_k90": 0.07784099876880646,
+          "gate_wwt_awhite": 0.4605632722377777
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2961919605731964,
+        "p975_max_selected": 0.3376384377479553,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "marker"
+    },
+    "syc-bare-con-lr1e5-s42": {
+      "arm_id": "syc-bare-con-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": -0.0933515727519989,
+          "gate_diag_inv": -0.10487648099660873,
+          "gate_sigma_inv": -0.11899443715810776,
+          "gate_wwt": -0.09661697596311569,
+          "gate_wwt_k90": -0.09728926420211792,
+          "gate_wwt_awhite": -0.07894545793533325
+        },
+        "dv_level": {
+          "gate_I": -0.5751056671142578,
+          "gate_diag_inv": -0.5580100417137146,
+          "gate_sigma_inv": -0.564444899559021,
+          "gate_wwt": -0.34215331077575684,
+          "gate_wwt_k90": -0.3388878107070923,
+          "gate_wwt_awhite": -0.5521994233131409
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.29138994216918945,
+        "p975_max_selected": 0.33100682497024536,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "syc-conv-con-lr1e5-s42": {
+      "arm_id": "syc-conv-con-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.16547814011573792,
+          "gate_diag_inv": 0.1542413830757141,
+          "gate_sigma_inv": 0.17911596596240997,
+          "gate_wwt": 0.21541933715343475,
+          "gate_wwt_k90": 0.21541935205459595,
+          "gate_wwt_awhite": 0.17777134478092194
+        },
+        "dv_level": {
+          "gate_I": 0.5711060762405396,
+          "gate_diag_inv": 0.4401065707206726,
+          "gate_sigma_inv": 0.6484189033508301,
+          "gate_wwt": 0.603567898273468,
+          "gate_wwt_k90": 0.603567898273468,
+          "gate_wwt_awhite": 0.6365098357200623
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.28549301624298096,
+        "p975_max_selected": 0.3264497220516205,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "syc-pers-ft-con-s42": {
+      "arm_id": "syc-pers-ft-con-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.1928497701883316,
+          "gate_diag_inv": 0.17277725040912628,
+          "gate_sigma_inv": 0.14838290214538574,
+          "gate_wwt": 0.12965497374534607,
+          "gate_wwt_k90": 0.12033901363611221,
+          "gate_wwt_awhite": 0.18737542629241943
+        },
+        "dv_level": {
+          "gate_I": -0.2990708351135254,
+          "gate_diag_inv": -0.2745804190635681,
+          "gate_sigma_inv": -0.3846431076526642,
+          "gate_wwt": -0.09613676369190216,
+          "gate_wwt_k90": -0.0833633542060852,
+          "gate_wwt_awhite": -0.3824341595172882
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.29484978318214417,
+        "p975_max_selected": 0.3393130898475647,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    },
+    "syc-pers-po-lr1e5-s42": {
+      "arm_id": "syc-pers-po-lr1e5-s42",
+      "raced": [
+        "gate_I",
+        "gate_diag_inv",
+        "gate_sigma_inv",
+        "gate_wwt",
+        "gate_wwt_k90",
+        "gate_wwt_awhite"
+      ],
+      "dv_names": [
+        "dv_change",
+        "dv_level"
+      ],
+      "observed_rho": {
+        "dv_change": {
+          "gate_I": 0.0067708492279052734,
+          "gate_diag_inv": -0.015030371956527233,
+          "gate_sigma_inv": 0.015126404352486134,
+          "gate_wwt": 0.02732357569038868,
+          "gate_wwt_k90": 0.031837500631809235,
+          "gate_wwt_awhite": 0.020024489611387253
+        },
+        "dv_level": {
+          "gate_I": -0.3594410717487335,
+          "gate_diag_inv": -0.3432577848434448,
+          "gate_sigma_inv": -0.440837562084198,
+          "gate_wwt": -0.1401267945766449,
+          "gate_wwt_k90": -0.12135037779808044,
+          "gate_wwt_awhite": -0.46412795782089233
+        }
+      },
+      "perm_band": {
+        "p95_max_selected": 0.2955772578716278,
+        "p975_max_selected": 0.33619052171707153,
+        "ceiling_abs_rho": 1.0,
+        "n_perm": 10000
+      },
+      "n": 50,
+      "n_shared": 50,
+      "n_degenerate_series_draws": 0,
+      "kind": "content"
+    }
+  },
+  "champion": {
+    "content": {
+      "dv_change": {
+        "dv": "dv_change",
+        "incumbent": "gate_sigma_inv",
+        "panel_metrics": [
+          "gate_I",
+          "gate_diag_inv",
+          "gate_sigma_inv",
+          "gate_wwt",
+          "gate_wwt_awhite",
+          "gate_wwt_k90"
+        ],
+        "arm_ids": [
+          "cas-bare-con-lr1e5-s42",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-ft-con-s42",
+          "cas-pers-po-lr1e5-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-ft-con-s42",
+          "imp-pers-po-lr1e5-s42",
+          "syc-bare-con-lr1e5-s42",
+          "syc-conv-con-lr1e5-s42",
+          "syc-pers-ft-con-s42",
+          "syc-pers-po-lr1e5-s42"
+        ],
+        "across_arm_median_observed": {
+          "gate_I": 0.19573096930980682,
+          "gate_diag_inv": 0.22547957301139832,
+          "gate_sigma_inv": 0.258305586874485,
+          "gate_wwt": 0.24039310961961746,
+          "gate_wwt_awhite": 0.26507648825645447,
+          "gate_wwt_k90": 0.24058520048856735
+        },
+        "winner_observed": "gate_wwt_awhite",
+        "p_win": {
+          "gate_I": 0.0215,
+          "gate_diag_inv": 0.2297,
+          "gate_sigma_inv": 0.1348,
+          "gate_wwt": 0.1604,
+          "gate_wwt_awhite": 0.3957,
+          "gate_wwt_k90": 0.0579
+        },
+        "selection_inherited_ci_max_median": [
+          0.16814827919006348,
+          0.47932904958724976
+        ],
+        "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+          0.1036486104130745,
+          0.4497945308685303
+        ],
+        "champion_vs_incumbent_conditional_ceiling_interval": [
+          0.2689860463142395,
+          1.1189944371581078
+        ],
+        "note_correlated_arms": "arms share one prefix panel + one banked instrument \u2014 never narrated as independent confirmations"
+      },
+      "dv_level": {
+        "dv": "dv_level",
+        "incumbent": "gate_sigma_inv",
+        "panel_metrics": [
+          "gate_I",
+          "gate_diag_inv",
+          "gate_sigma_inv",
+          "gate_wwt",
+          "gate_wwt_awhite",
+          "gate_wwt_k90"
+        ],
+        "arm_ids": [
+          "cas-bare-con-lr1e5-s42",
+          "cas-pers-con-lr1e5-s42",
+          "cas-pers-ft-con-s42",
+          "cas-pers-po-lr1e5-s42",
+          "imp-pers-con-lr3e5-s137",
+          "imp-pers-con-lr3e5-s42",
+          "imp-pers-ft-con-s42",
+          "imp-pers-po-lr1e5-s42",
+          "syc-bare-con-lr1e5-s42",
+          "syc-conv-con-lr1e5-s42",
+          "syc-pers-ft-con-s42",
+          "syc-pers-po-lr1e5-s42"
+        ],
+        "across_arm_median_observed": {
+          "gate_I": -0.01952058682218194,
+          "gate_diag_inv": 0.04780456516891718,
+          "gate_sigma_inv": 0.12991906888782978,
+          "gate_wwt": 0.08778367191553116,
+          "gate_wwt_awhite": 0.15906745195388794,
+          "gate_wwt_k90": 0.08802375569939613
+        },
+        "winner_observed": "gate_wwt_awhite",
+        "p_win": {
+          "gate_I": 0.001,
+          "gate_diag_inv": 0.145,
+          "gate_sigma_inv": 0.1093,
+          "gate_wwt": 0.1026,
+          "gate_wwt_awhite": 0.4807,
+          "gate_wwt_k90": 0.1614
+        },
+        "selection_inherited_ci_max_median": [
+          -0.025047585368156433,
+          0.3714956045150757
+        ],
+        "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+          -0.13589580357074738,
+          0.3619309067726135
+        ],
+        "champion_vs_incumbent_conditional_ceiling_interval": [
+          0.3090183734893799,
+          1.564444899559021
+        ],
+        "note_correlated_arms": "arms share one prefix panel + one banked instrument \u2014 never narrated as independent confirmations"
+      }
+    },
+    "marker": {
+      "dv_dlogp": {
+        "dv": "dv_dlogp",
+        "incumbent": "gate_sigma_inv",
+        "panel_metrics": [
+          "gate_I",
+          "gate_diag_inv",
+          "gate_sigma_inv",
+          "gate_wwt",
+          "gate_wwt_awhite",
+          "gate_wwt_k90"
+        ],
+        "arm_ids": [
+          "mk-bare-con-lr5e6-s42",
+          "mk-conv-con-lr5e6-s42",
+          "mk-icl-con-lr5e6-s42",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s42",
+          "mk-pers-po-lr5e6-s42"
+        ],
+        "across_arm_median_observed": {
+          "gate_I": 0.45518502593040466,
+          "gate_diag_inv": 0.46109145879745483,
+          "gate_sigma_inv": 0.5155465751886368,
+          "gate_wwt": 0.44438041746616364,
+          "gate_wwt_awhite": 0.511897012591362,
+          "gate_wwt_k90": 0.43727338314056396
+        },
+        "winner_observed": "gate_sigma_inv",
+        "p_win": {
+          "gate_I": 0.0266,
+          "gate_diag_inv": 0.0554,
+          "gate_sigma_inv": 0.3712,
+          "gate_wwt": 0.1145,
+          "gate_wwt_awhite": 0.4005,
+          "gate_wwt_k90": 0.0318
+        },
+        "selection_inherited_ci_max_median": [
+          0.36209636926651,
+          0.6473644375801086
+        ],
+        "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+          0.3259992003440857,
+          0.6322373151779175
+        ],
+        "champion_vs_incumbent_conditional_ceiling_interval": [
+          0.3839467763900757,
+          1.0777929797768593
+        ],
+        "note_correlated_arms": "arms share one prefix panel + one banked instrument \u2014 never narrated as independent confirmations"
+      },
+      "dv_level_logp": {
+        "dv": "dv_level_logp",
+        "incumbent": "gate_sigma_inv",
+        "panel_metrics": [
+          "gate_I",
+          "gate_diag_inv",
+          "gate_sigma_inv",
+          "gate_wwt",
+          "gate_wwt_awhite",
+          "gate_wwt_k90"
+        ],
+        "arm_ids": [
+          "mk-bare-con-lr5e6-s42",
+          "mk-conv-con-lr5e6-s42",
+          "mk-icl-con-lr5e6-s42",
+          "mk-pers-con-lr5e6-s42",
+          "mk-pers-ft-con-s42",
+          "mk-pers-po-lr5e6-s42"
+        ],
+        "across_arm_median_observed": {
+          "gate_I": 0.21184181421995163,
+          "gate_diag_inv": 0.22571969404816628,
+          "gate_sigma_inv": 0.2998151183128357,
+          "gate_wwt": 0.08926983922719955,
+          "gate_wwt_awhite": 0.3081226646900177,
+          "gate_wwt_k90": 0.07150231674313545
+        },
+        "winner_observed": "gate_wwt_awhite",
+        "p_win": {
+          "gate_I": 0.0113,
+          "gate_diag_inv": 0.2408,
+          "gate_sigma_inv": 0.3244,
+          "gate_wwt": 0.0014,
+          "gate_wwt_awhite": 0.4219,
+          "gate_wwt_k90": 0.0002
+        },
+        "selection_inherited_ci_max_median": [
+          0.15852199494838715,
+          0.4850907325744629
+        ],
+        "frozen_ci_winner_median (labeled: frozen-at-winner)": [
+          0.10688597708940506,
+          0.46704405546188354
+        ],
+        "champion_vs_incumbent_conditional_ceiling_interval": [
+          0.557684451341629,
+          0.9982232451438904
+        ],
+        "note_correlated_arms": "arms share one prefix panel + one banked instrument \u2014 never narrated as independent confirmations"
+      }
+    }
+  },
+  "pairwise_win_counts": {
+    "content": {
+      "gate_wwt_vs_gate_sigma_inv": {
+        "wins": 5,
+        "n_arms": 12,
+        "per_arm": {
+          "cas-bare-con-lr1e5-s42": {
+            "gate_wwt": 0.2795265316963196,
+            "gate_sigma_inv": 0.06871714442968369
+          },
+          "cas-pers-con-lr1e5-s42": {
+            "gate_wwt": 0.33907178044319153,
+            "gate_sigma_inv": 0.39592793583869934
+          },
+          "cas-pers-ft-con-s42": {
+            "gate_wwt": 0.16192466020584106,
+            "gate_sigma_inv": 0.009219903498888016
+          },
+          "cas-pers-po-lr1e5-s42": {
+            "gate_wwt": 0.47261637449264526,
+            "gate_sigma_inv": 0.5115128755569458
+          },
+          "imp-pers-con-lr3e5-s137": {
+            "gate_wwt": 0.26469460129737854,
+            "gate_sigma_inv": 0.33749520778656006
+          },
+          "imp-pers-con-lr3e5-s42": {
+            "gate_wwt": 0.21609161794185638,
+            "gate_sigma_inv": 0.33835142850875854
+          },
+          "imp-pers-ft-con-s42": {
+            "gate_wwt": 0.3197752833366394,
+            "gate_sigma_inv": 0.42047640681266785
+          },
+          "imp-pers-po-lr1e5-s42": {
+            "gate_wwt": 0.3675958216190338,
+            "gate_sigma_inv": 0.7310139536857605
+          },
+          "syc-bare-con-lr1e5-s42": {
+            "gate_wwt": -0.09661697596311569,
+            "gate_sigma_inv": -0.11899443715810776
+          },
+          "syc-conv-con-lr1e5-s42": {
+            "gate_wwt": 0.21541933715343475,
+            "gate_sigma_inv": 0.17911596596240997
+          },
+          "syc-pers-ft-con-s42": {
+            "gate_wwt": 0.12965497374534607,
+            "gate_sigma_inv": 0.14838290214538574
+          },
+          "syc-pers-po-lr1e5-s42": {
+            "gate_wwt": 0.02732357569038868,
+            "gate_sigma_inv": 0.015126404352486134
+          }
+        }
+      },
+      "gate_wwt_vs_gate_I": {
+        "wins": 9,
+        "n_arms": 12,
+        "per_arm": {
+          "cas-bare-con-lr1e5-s42": {
+            "gate_wwt": 0.2795265316963196,
+            "gate_I": 0.1780114769935608
+          },
+          "cas-pers-con-lr1e5-s42": {
+            "gate_wwt": 0.33907178044319153,
+            "gate_I": 0.3573194742202759
+          },
+          "cas-pers-ft-con-s42": {
+            "gate_wwt": 0.16192466020584106,
+            "gate_I": 0.07616028934717178
+          },
+          "cas-pers-po-lr1e5-s42": {
+            "gate_wwt": 0.47261637449264526,
+            "gate_I": 0.38108959794044495
+          },
+          "imp-pers-con-lr3e5-s137": {
+            "gate_wwt": 0.26469460129737854,
+            "gate_I": 0.24029965698719025
+          },
+          "imp-pers-con-lr3e5-s42": {
+            "gate_wwt": 0.21609161794185638,
+            "gate_I": 0.19861216843128204
+          },
+          "imp-pers-ft-con-s42": {
+            "gate_wwt": 0.3197752833366394,
+            "gate_I": 0.277372270822525
+          },
+          "imp-pers-po-lr1e5-s42": {
+            "gate_wwt": 0.3675958216190338,
+            "gate_I": 0.3526134788990021
+          },
+          "syc-bare-con-lr1e5-s42": {
+            "gate_wwt": -0.09661697596311569,
+            "gate_I": -0.0933515727519989
+          },
+          "syc-conv-con-lr1e5-s42": {
+            "gate_wwt": 0.21541933715343475,
+            "gate_I": 0.16547814011573792
+          },
+          "syc-pers-ft-con-s42": {
+            "gate_wwt": 0.12965497374534607,
+            "gate_I": 0.1928497701883316
+          },
+          "syc-pers-po-lr1e5-s42": {
+            "gate_wwt": 0.02732357569038868,
+            "gate_I": 0.0067708492279052734
+          }
+        }
+      }
+    },
+    "marker": {
+      "gate_wwt_vs_gate_sigma_inv": {
+        "wins": 1,
+        "n_arms": 6,
+        "per_arm": {
+          "mk-bare-con-lr5e6-s42": {
+            "gate_wwt": 0.19510672986507416,
+            "gate_sigma_inv": 0.09935411810874939
+          },
+          "mk-conv-con-lr5e6-s42": {
+            "gate_wwt": 0.3797450363636017,
+            "gate_sigma_inv": 0.4366971552371979
+          },
+          "mk-icl-con-lr5e6-s42": {
+            "gate_wwt": -0.10910224914550781,
+            "gate_sigma_inv": -0.07779297977685928
+          },
+          "mk-pers-con-lr5e6-s42": {
+            "gate_wwt": 0.5090157985687256,
+            "gate_sigma_inv": 0.6091862916946411
+          },
+          "mk-pers-ft-con-s42": {
+            "gate_wwt": 0.5658718943595886,
+            "gate_sigma_inv": 0.5943959951400757
+          },
+          "mk-pers-po-lr5e6-s42": {
+            "gate_wwt": 0.5364354848861694,
+            "gate_sigma_inv": 0.6160532236099243
+          }
+        }
+      },
+      "gate_wwt_vs_gate_I": {
+        "wins": 3,
+        "n_arms": 6,
+        "per_arm": {
+          "mk-bare-con-lr5e6-s42": {
+            "gate_wwt": 0.19510672986507416,
+            "gate_I": 0.05632786825299263
+          },
+          "mk-conv-con-lr5e6-s42": {
+            "gate_wwt": 0.3797450363636017,
+            "gate_I": 0.3689884543418884
+          },
+          "mk-icl-con-lr5e6-s42": {
+            "gate_wwt": -0.10910224914550781,
+            "gate_I": -0.17479410767555237
+          },
+          "mk-pers-con-lr5e6-s42": {
+            "gate_wwt": 0.5090157985687256,
+            "gate_I": 0.5413815975189209
+          },
+          "mk-pers-ft-con-s42": {
+            "gate_wwt": 0.5658718943595886,
+            "gate_I": 0.5770126581192017
+          },
+          "mk-pers-po-lr5e6-s42": {
+            "gate_wwt": 0.5364354848861694,
+            "gate_I": 0.5631347894668579
+          }
+        }
+      }
+    }
+  },
+  "per_family_win_table": {
+    "families": {
+      "battery": {
+        "n_arms": 18,
+        "rows_per_arm": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "across_arm_median": {
+          "gate_I": 0.35151515901088715,
+          "gate_diag_inv": 0.46666669845581055,
+          "gate_sigma_inv": 0.2909090965986252,
+          "gate_wwt": 0.3636363744735718,
+          "gate_wwt_awhite": 0.260606087744236,
+          "gate_wwt_k90": 0.3636363744735718
+        },
+        "winner": "gate_diag_inv"
+      },
+      "bystander": {
+        "n_arms": 18,
+        "rows_per_arm": [
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9,
+          9
+        ],
+        "across_arm_median": {
+          "gate_I": -0.05000000633299351,
+          "gate_diag_inv": -0.058333348068926094,
+          "gate_sigma_inv": 0.28333336114883423,
+          "gate_wwt": 0.22500000149011612,
+          "gate_wwt_awhite": 0.42500001192092896,
+          "gate_wwt_k90": 0.20000003278255463
+        },
+        "winner": "gate_wwt_awhite"
+      },
+      "conv-behavior": {
+        "skipped": "fewer than 4 kept rows in every arm"
+      },
+      "conv-fresh": {
+        "n_arms": 18,
+        "rows_per_arm": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8,
+          8
+        ],
+        "across_arm_median": {
+          "gate_I": -0.01190473884344101,
+          "gate_diag_inv": -0.047619037330150604,
+          "gate_sigma_inv": 0.1547618843615055,
+          "gate_wwt": -0.0238095223903656,
+          "gate_wwt_awhite": 0.1547619067132473,
+          "gate_wwt_k90": 3.725290298461914e-09
+        },
+        "winner": "gate_wwt_awhite"
+      },
+      "conv-neutral": {
+        "skipped": "fewer than 4 kept rows in every arm"
+      },
+      "icl-fresh": {
+        "skipped": "fewer than 4 kept rows in every arm"
+      },
+      "near-twin": {
+        "n_arms": 18,
+        "rows_per_arm": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ],
+        "across_arm_median": {
+          "gate_I": -0.17142854630947113,
+          "gate_diag_inv": 9.313225746154785e-09,
+          "gate_sigma_inv": 0.3999999612569809,
+          "gate_wwt": -0.19999999180436134,
+          "gate_wwt_awhite": 0.34285710752010345,
+          "gate_wwt_k90": -0.19999998435378075
+        },
+        "winner": "gate_sigma_inv"
+      },
+      "negatives": {
+        "n_arms": 18,
+        "rows_per_arm": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "across_arm_median": {
+          "gate_I": 0.14999999105930328,
+          "gate_diag_inv": 0.2999999672174454,
+          "gate_sigma_inv": 0.29999998211860657,
+          "gate_wwt": 0.2499999776482582,
+          "gate_wwt_awhite": 0.29999998211860657,
+          "gate_wwt_k90": 0.2499999776482582
+        },
+        "winner": "gate_sigma_inv"
+      },
+      "trained": {
+        "n_arms": 18,
+        "rows_per_arm": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "across_arm_median": {
+          "gate_I": 0.7999998927116394,
+          "gate_diag_inv": 0.7999998927116394,
+          "gate_sigma_inv": 0.7999998927116394,
+          "gate_wwt": 0.3999999761581421,
+          "gate_wwt_awhite": 0.7999998927116394,
+          "gate_wwt_k90": 0.3999999761581421
+        },
+        "winner": "gate_I"
+      }
+    },
+    "metrics": [
+      "gate_I",
+      "gate_diag_inv",
+      "gate_sigma_inv",
+      "gate_wwt",
+      "gate_wwt_awhite",
+      "gate_wwt_k90"
+    ],
+    "min_rows_per_family": 4
+  },
+  "h2": {
+    "note": "content arms, dv_change primary (plan \u00a73 H2 / \u00a77.5 leg 2)",
+    "wwt_vs_whitened_wins": 5,
+    "wwt_vs_identity_wins": 9,
+    "n_content_arms": 12,
+    "success_criterion": "wins_vs_whitened >= 7/12 AND wwt_median_rho >= 0.9 x champion",
+    "kill_criterion": "wins_vs_identity <= 5/12",
+    "wwt_median_rho": 0.24039310961961746,
+    "ratio_vs_p3b_champion": 0.5854293895958774
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 19,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ],
+    "criterion": {
+      "thresholds": {
+        "rho_max": 1.0,
+        "kappa_min": 10.0,
+        "stable_min": 300,
+        "copied_share_max": 0.2,
+        "kill_copied_share_min": 0.5
+      },
+      "sources": {
+        "factor": {
+          "status": null,
+          "regime": {
+            "regime_version": 1,
+            "layer": 19,
+            "smoke": false,
+            "top_k": 32,
+            "n_draws": 1000,
+            "mass_kernel": 0.99,
+            "mass_k90": 0.9,
+            "class_thresholds": {
+              "copied_gain": [
+                0.8,
+                1.25
+              ],
+              "align_hi": 0.8,
+              "align_lo": 0.2,
+              "transcoded_gain_floor": 0.8
+            },
+            "alpha_residual_ks": [
+              1,
+              8,
+              32,
+              128
+            ]
+          },
+          "values": {
+            "stats.rho": 1.2053517865293906,
+            "stats.kappa_v": 4260.870580356614
+          }
+        },
+        "dw_mass": {
+          "status": "deferred",
+          "regime": {
+            "regime_version": 1,
+            "layer": 19,
+            "smoke": false,
+            "top_k": 32,
+            "n_draws": 1000,
+            "mass_kernel": 0.99,
+            "mass_k90": 0.9,
+            "class_thresholds": {
+              "copied_gain": [
+                0.8,
+                1.25
+              ],
+              "align_hi": 0.8,
+              "align_lo": 0.2,
+              "transcoded_gain_floor": 0.8
+            },
+            "alpha_residual_ks": [
+              1,
+              8,
+              32,
+              128
+            ],
+            "dw_mass": {
+              "moments": null,
+              "trace_rtol": 0.001
+            }
+          },
+          "values": {
+            "copied_dw_share": null,
+            "deferral_reason": "deferred \u2014 no P-B moments supplied (--moments-dir absent); re-run this phase with --moments-dir <rowbattery out_root>/moments once P-B lands (issue2569_rowbattery.py --phase moments)"
+          }
+        },
+        "splithalf": {
+          "status": "deferred",
+          "regime": {
+            "regime_version": 1,
+            "layer": 19,
+            "smoke": false,
+            "top_k": 32,
+            "n_draws": 1000,
+            "mass_kernel": 0.99,
+            "mass_k90": 0.9,
+            "class_thresholds": {
+              "copied_gain": [
+                0.8,
+                1.25
+              ],
+              "align_hi": 0.8,
+              "align_lo": 0.2,
+              "transcoded_gain_floor": 0.8
+            },
+            "alpha_residual_ks": [
+              1,
+              8,
+              32,
+              128
+            ],
+            "split_half": {
+              "moments": null,
+              "null_seed": 2569910
+            }
+          },
+          "values": {
+            "n_above_floor": null,
+            "deferral_reason": "deferred \u2014 no P-B moments supplied (--moments-dir absent); re-run this phase with --moments-dir <rowbattery out_root>/moments once P-B lands (issue2569_rowbattery.py --phase moments)"
+          }
+        }
+      }
+    }
+  },
+  "status": "computed",
+  "thresholds": {
+    "rho_max": 1.0,
+    "kappa_min": 10.0,
+    "stable_min": 300,
+    "copied_share_max": 0.2,
+    "kill_copied_share_min": 0.5
+  },
+  "clauses": {
+    "rho_contraction": {
+      "metric": "rho(A) (spectral radius)",
+      "threshold": 1.0,
+      "op": "<",
+      "value": 1.2053517865293906,
+      "pass": false
+    },
+    "kappa_nonnormal": {
+      "metric": "kappa(V) (eigenbasis condition number)",
+      "threshold": 10.0,
+      "op": ">=",
+      "value": 4260.870580356614,
+      "pass": true
+    },
+    "stable_directions": {
+      "metric": "n_above_floor (split-half stability)",
+      "threshold": 300,
+      "op": ">=",
+      "value": null,
+      "pass": null,
+      "deferral": "deferred \u2014 no P-B moments supplied (--moments-dir absent); re-run this phase with --moments-dir <rowbattery out_root>/moments once P-B lands (issue2569_rowbattery.py --phase moments)"
+    },
+    "copied_data_share": {
+      "metric": "copied_dw_share (copied-class data-variance share)",
+      "threshold": 0.2,
+      "op": "<",
+      "value": null,
+      "pass": null,
+      "deferral": "deferred \u2014 no P-B moments supplied (--moments-dir absent); re-run this phase with --moments-dir <rowbattery out_root>/moments once P-B lands (issue2569_rowbattery.py --phase moments)"
+    }
+  },
+  "overall": {
+    "n_clauses": 4,
+    "n_evaluated": 2,
+    "n_failed": 1,
+    "verdict": "FAIL"
+  },
+  "kill": {
+    "clause": "kappa(V) < 10 AND copied-class data-variance share > 50% (falsifies H1, plan SS7.5)",
+    "kappa_lt_10": false,
+    "copied_gt_50": null,
+    "fired": null
+  },
+  "sources": {
+    "factor": "factor_L19.json",
+    "dw_mass": {
+      "file": "dw_mass_L19.json",
+      "status": "deferred"
+    },
+    "splithalf": {
+      "file": "splithalf_stability_L19.json",
+      "status": "deferred"
+    }
+  },
+  "notes": [
+    "verdict semantics: FAIL is final under conjunction; PASS requires all four clauses evaluated and passing; else INCOMPLETE",
+    "rho(A) = 1.2054 >= 1: the registered 'stable non-normal contraction' clause FAILS on the measured map \u2014 the iterated-map/attractor reading is dropped; x* is an affine-consistency point only, not an attractor",
+    "#1774 measured rho = 0.910 for its L19 map variant \u2014 the rho >= 1 read here is map-variant-conditional; contradiction tracked in the task body"
+  ],
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:51:08.027278Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-criterion",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

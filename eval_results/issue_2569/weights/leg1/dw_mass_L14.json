@@ -1,0 +1,43 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 14,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ],
+    "dw_mass": {
+      "moments": null,
+      "trace_rtol": 0.001
+    }
+  },
+  "status": "deferred",
+  "deferral_reason": "deferred \u2014 the P-B row store is layer-19 only (X19/Y19), so no Sigma_c / split-half refits exist for this layer",
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:51:07.319568Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-dw-mass",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

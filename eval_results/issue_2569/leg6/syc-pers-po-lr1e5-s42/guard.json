@@ -1,0 +1,46 @@
+{
+ "arm": "syc-pers-po-lr1e5-s42",
+ "guard": {
+  "action": "exact",
+  "key_sources": {
+   "base": "payload-id-fields",
+   "ctx": "payload-id-fields",
+   "trained": "payload-id-fields"
+  },
+  "n_rows": 16400,
+  "ordered_match": true,
+  "reason": "ordered keys identical"
+ },
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_leg6.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+  "git_dirty": false,
+  "issue": 2569,
+  "numpy": "2.2.6",
+  "phase": "leg6",
+  "store_revisions": {
+   "corpus_capture": "c07267285d",
+   "corpus_capture_tf": "c07267285d",
+   "delta_tf": "c07267285d",
+   "lasttoken_ctx": "89bc6145"
+  },
+  "torch": "2.8.0+cu128",
+  "ts": "2026-08-27T02:12:27Z"
+ },
+ "tbar_check": {
+  "banked_n_rows": 20,
+  "banked_pos_path": "issue1090_pvdatagen/c3-sycophancy-claude/datagen_topup/pos.jsonl",
+  "basis_mismatch": true,
+  "corpus_n_rows": 16400,
+  "per_layer": {
+   "19": {
+    "banked_norm": 66.41850445571683,
+    "computed_norm": 3.3013810781150594,
+    "cosine": 0.023694958375684326,
+    "max_abs_diff": 36.74786969068574
+   }
+  },
+  "strict_pass": null
+ }
+}

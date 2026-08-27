@@ -1,0 +1,83 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 26,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ]
+  },
+  "entry_asserts": {
+    "gram": {
+      "max_rel_err": 4.845013955390729e-15,
+      "n_probes": 64
+    },
+    "singular_orientation": {
+      "max_row_form_rel_err": 1.618283443689001e-15,
+      "row_form_rel_err": [
+        1.1632073127909143e-15,
+        1.0810725283302723e-15,
+        1.2156627877376167e-15,
+        1.1848425172899375e-15,
+        1.618283443689001e-15,
+        1.4409040067735024e-15,
+        1.2042068290520251e-15,
+        1.1818421296693757e-15
+      ],
+      "wrong_column_form_rel_err": [
+        1.3634578750111395,
+        1.3018940643804642,
+        1.2836370466314233,
+        1.2813060582993205,
+        1.1681212654127189,
+        1.159329945054955,
+        1.1336388792445637,
+        1.132914621196176
+      ],
+      "sigma": [
+        5.144944395088574,
+        3.7633697052315225,
+        2.8008724255213027,
+        2.4977838859152413,
+        2.188294844470937,
+        2.022597741068827,
+        2.004341826812279,
+        1.99226254904972
+      ],
+      "k": 8
+    },
+    "apply_path": {
+      "max_abs_diff": 8.526512829121202e-14,
+      "max_rel_diff": 8.009951176838821e-12,
+      "n_probes": 8
+    }
+  },
+  "selected_lambda": 0.001,
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:42:16.395999Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-entry",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}
