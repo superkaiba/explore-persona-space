@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2635,
+  "highest_id": 2636,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12616,6 +12616,13 @@
       "path": "tasks/running/2635",
       "status": "running",
       "title": "verify_task_body: mechanical verbatim-sample-vs-manifest grep \u2014 FAIL fabricated '(verbatim)' sample rows"
+    },
+    "2636": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2636",
+      "status": "proposed",
+      "title": "audit_clean_results_body_discipline: pre-registration pattern family misses the 'pre-hoc' spelling"
     },
     "264": {
       "has_clean_result": false,
