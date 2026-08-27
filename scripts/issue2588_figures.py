@@ -615,7 +615,6 @@ def fig_q38_perquestion(out_dir: Path, fits_dir: Path) -> None:
         {
             "question_rank": int(x),
             "question": _qlabel(qid),
-            "question_id_raw": qid,
             "kept_rollouts": rec["rollouts"],
             "hits_raw_end_of_thought": rec["hits_raw"],
             "hits_length_residualized": rec["hits_resid"],
