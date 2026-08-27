@@ -3,8 +3,7 @@ title: Fitted answer-to-context map recovers held-out contexts (R2 0.75, top-1 r
   84%) while the pseudoinverse of the context-to-answer map fails as a predictor (best
   R2 0.14) and points elsewhere (operator cosine <= 0.34) (MODERATE confidence)
 kind: analysis
-tags:
-- keep-running
+tags: []
 created_at: '2026-08-27T06:35:58Z'
 has_clean_result: true
 parent_id: 779
