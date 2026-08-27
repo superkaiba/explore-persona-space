@@ -22,7 +22,8 @@ Exit codes:
     1 — any sha divergence or any nonzero marker count.
     (A fetch failure raises — loud, never swallowed.)
 
-A file that is on-disk-dirty vs the committed copy (git diff non-empty) is
+A file that is on-disk-dirty vs the committed copy at HEAD (``git diff HEAD``
+non-empty — unstaged, staged-but-uncommitted, and staged-NEW changes alike) is
 reported as a WARN, not a failure: the probe compares served vs ON-DISK bytes,
 and the warn makes a dirty working copy visible in the verdict.
 """
@@ -60,15 +61,21 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def tracked_public_files(repo_root: Path) -> list[str]:
-    """Git-tracked .html/.json paths under dashboard/public/, repo-relative."""
+    """Git-tracked .html/.json paths under dashboard/public/, repo-relative.
+
+    Uses ``git ls-files -z`` (NUL-delimited, no quoting): under the default
+    ``core.quotePath=true`` a non-ASCII filename in newline mode is emitted
+    quoted (``"...\\303\\251..."``), the trailing quote defeats the suffix
+    filter, and the file is silently excluded from enumeration.
+    """
     out = subprocess.run(
-        ["git", "ls-files", "--", PUBLIC_DIR_REL],
+        ["git", "ls-files", "-z", "--", PUBLIC_DIR_REL],
         cwd=repo_root,
         check=True,
         capture_output=True,
         text=True,
     ).stdout
-    files = [line for line in out.splitlines() if line.endswith(SUFFIXES)]
+    files = [name for name in out.split("\0") if name.endswith(SUFFIXES)]
     if not files:
         raise RuntimeError(
             f"git ls-files returned no {SUFFIXES} files under {PUBLIC_DIR_REL} "
@@ -78,9 +85,16 @@ def tracked_public_files(repo_root: Path) -> list[str]:
 
 
 def dirty_vs_committed(repo_root: Path, relpath: str) -> bool:
-    """True when the on-disk copy differs from the committed copy (WARN only)."""
+    """True when the on-disk copy differs from the committed copy at HEAD (WARN only).
+
+    ``git diff HEAD`` compares the WORKING TREE against HEAD, so unstaged
+    edits, staged-but-uncommitted edits, and staged NEW files all report
+    dirty. A bare ``git diff`` compares worktree vs INDEX and reads a
+    staged-but-uncommitted change as committed-clean (task #2365 round-1
+    concern ``staged-index-dirty-blind-spot``).
+    """
     out = subprocess.run(
-        ["git", "diff", "--name-only", "--", relpath],
+        ["git", "diff", "HEAD", "--name-only", "--", relpath],
         cwd=repo_root,
         check=True,
         capture_output=True,
