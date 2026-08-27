@@ -144,7 +144,7 @@ Plotted: held-out R² at the frozen headline layer for four within-model maps by
 
 > **Figure.** *Context-to-answer R² sits within 0.2 pp of the whole-output map on OpenThinker3-7B (0.693 versus 0.695, needs-reasoning, n = 13,116).* Black dashes: identity-plus-bias baseline, deeply negative on a symlog axis. Row 3 is the discordant read: retrieval lift from the context state is a fraction of the boundary state's. Row 4 states the same-template degeneracy verdicts.
 
-Every setting lands on the lattice's answer-already-present label (gap under 15 pp, presence over 50 pp), but the concordance overlay cannot be evaluated (degenerate same-template pool), so the label ships as metric-discordant: R² says present, retrieval (0.279 from context, 0.829 at the boundary) places the decisive content in the residual. Layer 19, frozen in the plan, carries the headline; the observed best layer 27 reads 0.771. Ceiling normalization flips two stratum orderings on R1-Distill.
+Every setting lands on the lattice's answer-already-present label (gap under 15 pp, presence over 50 pp), but the concordance overlay cannot be evaluated (degenerate same-template pool), so the label ships as metric-discordant: R² says present, retrieval (0.279 from context, 0.829 at the boundary) places the decisive content in the residual. Layer 19, frozen in the plan, carries the headline; the observed best layer 27 reads 0.771. Ceiling normalization flips two stratum orderings on R1-Distill. Low-level companion: the per-corpus heatmap two results down; per-question predictions are banked as npz.
 
 | Quantity (needs-reasoning, headline layer) | OpenThinker3 pair | 2.5 to 97.5% (paired bootstrap) |
 |---|---|---|
@@ -168,17 +168,36 @@ Plotted: held-out R² (top) and answer-identity acc@1 (bottom) for maps from the
 
 > **Figure.** *The trajectory is a boundary step.* On needs-reasoning corpora (OpenThinker3 pair) R² falls from 0.693 at the prompt to a flat 0.58 mid-trace and recovers to 0.807 only at the boundary; retrieval collapses to 0.04 to 0.06 mid-trace against 0.279 at the prompt and 0.829 at the boundary. Same shape in every setting.
 
-The plan predicted a monotone rise of at least +0.10 R² on needs-reasoning corpora; the rank correlation over the 11 positions is negative on the primary pair (−0.46) and the +0.11 end-to-end rise is entirely a boundary step. A positional-distance account predicts a rising curve; the interior dip runs opposite, so mid-trace states are genuinely poorer linear encodings of the eventual answer. Interior positions exist at the three frozen layers only.
+The plan predicted a monotone rise of at least +0.10 R² on needs-reasoning corpora; the rank correlation over the 11 positions is negative on the primary pair (−0.46) and the +0.11 end-to-end rise is entirely a boundary step. A positional-distance account predicts a rising curve; the interior dip runs opposite, so mid-trace states are genuinely poorer linear encodings of the eventual answer. Interior positions exist at the three frozen layers only; per-question predictions at every position are banked as npz.
 
 ### Per-corpus reads reproduce the pattern, matched-n companions leave it unchanged, and every planned fit cell landed
 
-Plotted: held-out R² at the headline layer for each within-model map on the four per-corpus fit cells, one heatmap per setting; the disaggregated view behind the stratum bars above.
+Plotted: held-out R² at the headline layer for each within-model map on the four per-corpus fit cells, one heatmap per setting; the low-level per-unit view behind the stratum bars above.
 
 ![Per-corpus heatmap of held-out R squared for the four maps in each setting](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/exp_percorpus_heatmap.png)
 
 > **Figure.** *Within single corpora the context-to-answer map reads 0.46 to 0.56 (OpenThinker3 pair) and the boundary map leads everywhere (0.66 to 0.71).* Pooled-stratum bars sit above every within-corpus value, so pooled numbers carry corpus-identity structure; the within-corpus grain is the de-confounded read.
 
-Matched-n companions leave the stratum contrast unchanged (answer map 0.690 refit at 10,967 rows versus 0.693 at full n). Maps are stratum-specific: fitting on needs-reasoning corpora scores R² 0.13 on the other stratum's held-out rows, 0.45 in the reverse direction, and 0.47 for the decontaminated GSM8K train-to-test transfer. Coverage was complete: 185 registry jobs finished `ok` with zero dropped or degraded units, so no planned cell is silently absent from any figure.
+Matched-n companions leave the stratum contrast unchanged (answer map 0.690 refit at 10,967 rows versus 0.693 at full n). Maps are stratum-specific: fitting on needs-reasoning corpora scores R² 0.13 on the other stratum's held-out rows, 0.45 in the reverse direction, and 0.47 for the decontaminated GSM8K train-to-test transfer. Coverage was complete: 185 registry jobs finished `ok` with zero dropped or degraded units, so no planned cell is silently absent from any figure. Thirteen review-round concern ids remain open in the ledger; none was closed by a code change, and each either maps to a disclosure above or is a process-record residual:
+
+<details>
+<summary>Open concern ids carried into interpretation (13)</summary>
+
+- `partial-resume-rel-draw-reallocation`: open; reliability-draw composition on the R1-Distill pair is approximate (disclosed under Data extraction).
+- `post-side-retention-differential-across-corpora`: open; usable-row retention differs across corpora and sides (rates under Data extraction).
+- `arm2-pre-caphit-over-trigger-no-regen-headroom`: open; the 4,096-token window structurally forbids the regeneration remedy on the Math-7B side (plan defect, disclosed).
+- `gsm8k-test-has-no-reliability-draws-so-no-noise-ceiling`: open, by design; GSM8K-test carries no ceiling-normalized read.
+- `caphit-per-cell-rates-must-reach-the-digest`: open; per-corpus cap-hit rates are committed in the rollout meta files and summarized under Data extraction.
+- `gb-repetition-gate-slice-is-least-affected-corpus`: open; the smoke's repetition gate ran on GSM8K while MMLU was the worst production cell; production drop-and-count is the operative control.
+- `sweep-unit-rp-control-regime-unrecorded`: open; the random-projection control's per-unit fit regime is not persisted; the control is basis-invariance-only either way.
+- `stale-schema-pin-fabricates-unrelated-fingerprint`: open; a fit-report schema-pin bookkeeping defect; no reported number reads from it.
+- `marker-v9-pin-sweep-violator-list-inaccurate`: open; a review-round marker's record accuracy; no artifact affected.
+- `p2a-pilot-no-failure-sentinel`: open; the pilot phase emits no failure sentinel; the phase finished rc=0.
+- `late-phase-preflight-sentinel-gap`: open; late phases skip a preflight sentinel; outputs were verified directly.
+- `failure-sentinel-emission-fail-open`: open; sentinel emission can fail open; every phase nonetheless finished rc=0 with outputs verified.
+- `arm2-capture-markers-need-hub-sync-before-p5`: open; the asked-for marker-sync mechanism was not built; the realized sequence uploaded and verified capture stores before the fit phase.
+
+</details>
 
 ### Reasoning training rewrote the context-to-answer operator, even though the pre-training context state still predicts the post-training answer state
 
@@ -188,7 +207,7 @@ Plotted: cross-model and within-model R² per stratum (top); the pre-to-post map
 
 > **Figure.** *The pre-training context state predicts the post-training answer state at R² 0.730, above the post model's own 0.693 (OpenThinker3 pair, needs-reasoning); no coordinate change at or below rotation reproduces the post map anywhere.* Stars mark ladder units whose full-reparameterization tier reaches the band; the R1-Distill panel reaches none.
 
-The ordering reverses on the render-confounded R1-Distill pair (0.566 cross, 0.584 within), so pre-above-post is OpenThinker3-specific; cross-model maps beating zero and the identity baseline replicate in both pairs. Direction-aware operator cosine reads 0.053 / 0.196 against a near-zero rotation null, while the 0.984 / 0.993 spectrum cosine is rotation-invariant only and cannot support a same-operator claim. A frozen wild-chat pre-model map fits far below zero in both reads, so the cross-model predictability is corpus-fit rather than portable.
+The ordering reverses on the render-confounded R1-Distill pair (0.566 cross, 0.584 within), so pre-above-post is OpenThinker3-specific; cross-model maps beating zero and the identity baseline replicate in both pairs. Direction-aware operator cosine reads 0.053 / 0.196 against a near-zero rotation null, while the 0.984 / 0.993 spectrum cosine is rotation-invariant only and cannot support a same-operator claim. A frozen wild-chat pre-model map fits far below zero in both reads, so the cross-model predictability is corpus-fit rather than portable. Per-question predictions for every cross-model cell are banked as npz.
 
 | Ladder unit | OpenThinker3 pair, sufficient tier | R1-Distill pair, sufficient tier |
 |---|---|---|
@@ -200,7 +219,7 @@ The ordering reverses on the render-confounded R1-Distill pair (0.566 cross, 0.5
 
 ### On-model necessity moves retrieval more than R², and thinking-off answer states are as predictable as thinking-on
 
-Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
+Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate, each point one corpus; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
 
 ![Per-corpus R squared and retrieval lift against corpus necessity rate for all settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/backing_necessity.png)
 
