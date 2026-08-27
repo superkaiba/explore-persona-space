@@ -1,0 +1,44 @@
+{
+  "architecture": "matryoshka_batchtopk",
+  "act_dim": 3584,
+  "dict_size": 65536,
+  "k": 100,
+  "tier_bounds": [
+    2048,
+    16384,
+    65536
+  ],
+  "seed": 2476,
+  "lr": 0.0002,
+  "adam_betas": [
+    0.9,
+    0.999
+  ],
+  "batch": 256,
+  "epochs": 3,
+  "prefix_loss_reduction": "mean",
+  "threshold_ema": 0.999,
+  "threshold": 0.6178057193756104,
+  "trained_on": "X19 context-side rows (issue #2569 P-B)",
+  "pools": {
+    "n_pool": 943444,
+    "n_train": 933444,
+    "n_val": 10000,
+    "n_rows_present": 964844,
+    "expected_pool_production": 943444,
+    "carve_seed": 2476
+  },
+  "steps": 10941,
+  "steps_cap": 0,
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T01:14:46.186448Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "sae_ctx_train",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

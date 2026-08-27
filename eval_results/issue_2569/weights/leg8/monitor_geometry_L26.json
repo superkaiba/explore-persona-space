@@ -1,0 +1,104 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 26,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ],
+    "monitor_geometry": {
+      "rb_source": "hf:037fcbb210bc52c459959b0746cc268fe08bae96",
+      "traits": [
+        "evil",
+        "sycophancy",
+        "hallucination"
+      ]
+    }
+  },
+  "kernel_gain_context": {
+    "tau_kernel": 0.09703843897803878,
+    "k99": 2000,
+    "kernel_dim": 1584,
+    "sigma_median": 0.11593836622037167,
+    "tau_over_median_gain": 0.8369829776071835,
+    "note": "tau_kernel=0.0970384 <= median gain sigma_median=0.115938 (ratio 0.837) on this layer's map"
+  },
+  "traits": {
+    "evil": {
+      "grad_norm": 1.4562427144736017,
+      "min_context_change_per_unit_read": 0.6866987144800769,
+      "read_at_zero_context": -48.878003112693996,
+      "gradient_mass_below_tau_frac": 7.08105992222877e-05,
+      "preimage_norm": 2.214711091051895,
+      "preimage_fullpinv_norm": 3843.8010766011594,
+      "target_mass_below_tau_frac": 0.04604882090731682,
+      "achieved_level_fraction": 0.9539511794899695,
+      "achieved_level_fraction_algebra": 0.9539511790926831,
+      "preimage_orientation_residual": 3.972864259793596e-10,
+      "n_retained": 2000,
+      "kernel_dim": 1584
+    },
+    "sycophancy": {
+      "grad_norm": 1.4916393924332452,
+      "min_context_change_per_unit_read": 0.6704033193765045,
+      "read_at_zero_context": -20.6152204746081,
+      "gradient_mass_below_tau_frac": 6.312391666410648e-05,
+      "preimage_norm": 2.247170770303219,
+      "preimage_fullpinv_norm": 12669.456511396269,
+      "target_mass_below_tau_frac": 0.04303770369728852,
+      "achieved_level_fraction": 0.956962298928717,
+      "achieved_level_fraction_algebra": 0.9569622963027115,
+      "preimage_orientation_residual": 2.626005524142272e-09,
+      "n_retained": 2000,
+      "kernel_dim": 1584
+    },
+    "hallucination": {
+      "grad_norm": 1.566002887939068,
+      "min_context_change_per_unit_read": 0.6385684264708134,
+      "read_at_zero_context": -24.66270232138016,
+      "gradient_mass_below_tau_frac": 5.466432084644706e-05,
+      "preimage_norm": 2.177399261827904,
+      "preimage_fullpinv_norm": 5182.675612712213,
+      "target_mass_below_tau_frac": 0.04231997898077101,
+      "achieved_level_fraction": 0.957680022462984,
+      "achieved_level_fraction_algebra": 0.957680021019229,
+      "preimage_orientation_residual": 1.443755004437719e-09,
+      "n_retained": 2000,
+      "kernel_dim": 1584
+    }
+  },
+  "coset_ambiguity": "every pre-image is one particular solution only: any of the 1584 effective-kernel directions (sigma_i < tau_kernel = 0.0970384, i.e. reads at < 83.7% of median gain) can be added while moving the mapped read by < tau per unit norm \u2014 a least-norm pre-image is never 'the' context (open concern effective-kernel-tau-above-median-gain)",
+  "affine_note": "read_at_zero_context = r_hat . b is the affine offset \u2014 the flip DISTANCE along the gradient depends on the current context's read, not only on the geometry",
+  "sae_naming": "leg8/monitor_sae_naming_L<L>.json (written by `--phase sae-dashboards` \u2014 run it after monitor-geometry)",
+  "caveats": [
+    "activation-space perturbations are not established to correspond to realizable text perturbations \u2014 this ships as sensitivity analysis and decision-geometry characterization, NEVER a security guarantee",
+    "all \"the map cannot distinguish\" claims are map-level (#1776), and the kernel-pair validation is precisely the test of the stronger reading."
+  ],
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:15:26.763492Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-monitor-geometry",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

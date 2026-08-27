@@ -1,0 +1,102 @@
+{
+  "n_pairs_sampled": 20000000,
+  "chunk": 524288,
+  "seed": 2569800,
+  "b1_assert_iii_probe": {
+    "n_probes": 64,
+    "max_rel_err": 7.736388083973984e-16
+  },
+  "selection": {
+    "n_sampled": 20000000,
+    "n_dedup": 19999590,
+    "n_eligible": 9999779,
+    "dc_norm_median": 74.0440444946289,
+    "kappa_bottom_decile_edge": 0.47453346848487854,
+    "kappa_mid_quintile": [
+      0.5604274988174438,
+      0.6029727339744568
+    ],
+    "n_kernel_selected": 1000,
+    "n_matched": 1000,
+    "n_dropped_no_control": 0,
+    "per_tol_matched_cum": {
+      "0.02": 1000
+    },
+    "n_kernel_in_bottom_decile": 1000
+  },
+  "ratio_stats": {
+    "estimator_pinned": "median_of_paired_ratios",
+    "median_of_paired_ratios": 0.6072446042464897,
+    "ratio_of_medians_companion": 0.6119308596420819,
+    "n_pairs": 1000,
+    "n_zero_dropped": 0,
+    "kernel_dva_median": 32.77625050365498,
+    "control_dva_median": 53.562016014073535,
+    "wilcoxon_logratio": {
+      "stat": 419.0,
+      "p": 1.1689831171977624e-164,
+      "n": 1000
+    },
+    "mannwhitney_u": {
+      "stat": 3739.0,
+      "p": 0.0
+    }
+  },
+  "clustered_bootstrap": {
+    "draws": 10000,
+    "n_clusters": 800,
+    "n_units": 1000,
+    "ci95": [
+      0.6018269695583521,
+      0.6151250583219257
+    ],
+    "n_empty_draws": 0,
+    "seed": 2569801,
+    "estimator": "median_of_paired_ratios (weighted median per draw)"
+  },
+  "residual_floor": {
+    "n_rows": 1400,
+    "n_pairs": 979300,
+    "q10": 20.780001456162214,
+    "q25": 23.2969279371973,
+    "q50": 26.61424498927945,
+    "q75": 30.44186062607333,
+    "q90": 34.74649172178539
+  },
+  "floor_read": {
+    "kernel_dva_median_over_floor_q50": 1.2315303521425336,
+    "control_dva_median_over_floor_q50": 2.0125318616270715,
+    "note": "C2: the kernel-vs-control ratio is read against the measured held-out residual-pair floor, never against 1 alone"
+  },
+  "ans_len_strata": {
+    "source": "n1m raw_completions chunk JSONs (GENERATED answer char length); the sampling manifest carries no response field",
+    "n_rows_unknown_len": 5000,
+    "n_rows_total": 964844,
+    "n_unknown_among_present": 5000,
+    "n_rows_present": 964844,
+    "decile_edges": [
+      356.0,
+      602.5,
+      874.5,
+      1111.5,
+      1338.0,
+      1594.0,
+      1887.5,
+      2231.0,
+      2683.0
+    ]
+  },
+  "production": true,
+  "regime_config_hash": "35003bfda5ef3328",
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T02:08:55.667536Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "mine",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

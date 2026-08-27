@@ -1,0 +1,126 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 26,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ],
+    "certificates": {
+      "rb_source": "hf:037fcbb210bc52c459959b0746cc268fe08bae96",
+      "traits": [
+        "evil",
+        "sycophancy",
+        "hallucination"
+      ],
+      "lambda_grid": [
+        "logspace",
+        -5.0,
+        8.0,
+        27
+      ],
+      "grid_widen_max": 3,
+      "rows_attached": false,
+      "cert_chunk": 65536,
+      "device": "cpu"
+    }
+  },
+  "monitors": {
+    "evil": {
+      "direct_projection": {
+        "gradient_is": "r_hat (the unit monitor readout, applied in context space)",
+        "grad_norm": 1.0,
+        "worst_case_score_movement": "eps * 1.0"
+      },
+      "mapped_read": {
+        "gradient_is": "A @ r_hat (B1 row action)",
+        "grad_norm": 1.4562427144736017,
+        "worst_case_score_movement": "eps * 1.45624"
+      },
+      "mapped_over_direct_grad_ratio": 1.4562427144736017,
+      "fitted_probe": {
+        "status": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)"
+      },
+      "heldout": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)"
+    },
+    "sycophancy": {
+      "direct_projection": {
+        "gradient_is": "r_hat (the unit monitor readout, applied in context space)",
+        "grad_norm": 1.0,
+        "worst_case_score_movement": "eps * 1.0"
+      },
+      "mapped_read": {
+        "gradient_is": "A @ r_hat (B1 row action)",
+        "grad_norm": 1.4916393924332452,
+        "worst_case_score_movement": "eps * 1.49164"
+      },
+      "mapped_over_direct_grad_ratio": 1.4916393924332452,
+      "fitted_probe": {
+        "status": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)"
+      },
+      "heldout": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)"
+    },
+    "hallucination": {
+      "direct_projection": {
+        "gradient_is": "r_hat (the unit monitor readout, applied in context space)",
+        "grad_norm": 1.0,
+        "worst_case_score_movement": "eps * 1.0"
+      },
+      "mapped_read": {
+        "gradient_is": "A @ r_hat (B1 row action)",
+        "grad_norm": 1.566002887939068,
+        "worst_case_score_movement": "eps * 1.566"
+      },
+      "mapped_over_direct_grad_ratio": 1.566002887939068,
+      "fitted_probe": {
+        "status": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)"
+      },
+      "heldout": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)"
+    }
+  },
+  "rows": "deferred \u2014 the P-B P1 assemble dir (X19/Y19 fp16 row store) was not attached via --rows-dir (P-A and P-B run concurrently on different pods; re-run `--phase certificates --rows-dir <assemble-dir>` at layer 19 post-P-B; concern leg8-cert-heldout-needs-pb-rows)",
+  "formulas": {
+    "direct_projection": "s(v_C) = r_hat . v_C ; gradient = r_hat",
+    "mapped_read": "s(v_C) = r_hat . (v_C @ A + b) ; gradient = A @ r_hat (B1 row action)",
+    "fitted_probe": "s(v_C) = w . (v_C - x_mean) + t_mean ; gradient = w",
+    "worst_case": "max_{|dv|<=eps} |s(v_C+dv) - s(v_C)| = eps * |gradient| (Cauchy-Schwarz; exact for a fixed linear read, SINGLE application of the map only)",
+    "eps_to_move_one_heldout_sd": "std_heldout(s) / |gradient|  (context-space L2 units)",
+    "signal_to_sensitivity": "corr_heldout(s, t) * std_heldout(s) / |gradient| (target-signal movement per unit context-space perturbation budget)"
+  },
+  "bound_scope": "worst-case movement eps*|gradient| stated for a single application; measured rho(A) = 0.9231 < 1 on this layer (iterated bounds still not computed in this unit)",
+  "baselines": {
+    "identity_bias": "inapplicable \u2014 scalar-target probe (d -> 1): the identity+learned-bias baseline requires matched input/output dimension (stated, never silently skipped)",
+    "knn_retrieval": "inapplicable \u2014 scalar-target probe: kNN retrieval among held-out target VECTORS has no scalar-read analogue here (stated, never silently skipped)"
+  },
+  "caveats": [
+    "activation-space perturbations are not established to correspond to realizable text perturbations \u2014 this ships as sensitivity analysis and decision-geometry characterization, NEVER a security guarantee",
+    "all \"the map cannot distinguish\" claims are map-level (#1776), and the kernel-pair validation is precisely the test of the stronger reading."
+  ],
+  "metadata": {
+    "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+    "timestamp_utc": "2026-08-26T23:15:27.530714Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "pa-certificates",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

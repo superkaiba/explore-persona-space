@@ -1,0 +1,43 @@
+{
+ "deferred_no_producer": {},
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "scripts/issue2569_normalize_passb.py"
+  ],
+  "issue": 2569,
+  "matplotlib": "3.10.8",
+  "numpy": "2.2.6",
+  "phase": "figures",
+  "ts": "2026-08-27T09:52:28Z"
+ },
+ "rendered": {
+  "leg1_anatomy_hero": "leg1_anatomy_hero",
+  "leg1_eigen_vs_singular": "leg1_eigen_vs_singular",
+  "leg1_sae_dashboards": "leg1_sae_dashboards",
+  "leg2_gate_family_table": "leg2_gate_family_table",
+  "leg2_gate_ladder_content": "leg2_gate_ladder_content",
+  "leg2_gate_ladder_marker": "leg2_gate_ladder_marker",
+  "leg2_learning_curve": "leg2_learning_curve",
+  "leg3_wiring_edge_mass": "leg3_wiring_edge_mass",
+  "leg4_der_matching": "leg4_der_matching",
+  "leg4_per_feature": "leg4_per_feature",
+  "leg4_routes": "leg4_routes",
+  "leg5_dw_alignment": "leg5_dw_alignment",
+  "leg5_dw_effective_rank": "leg5_dw_effective_rank",
+  "leg5_dw_intruder": "leg5_dw_intruder",
+  "leg6_denoised_rank": "leg6_denoised_rank",
+  "leg6_half_spectra": "leg6_half_spectra",
+  "leg7_atlas": "leg7_atlas",
+  "leg7_three_tier": "leg7_three_tier",
+  "leg8_kernel_pairs": "leg8_kernel_pairs"
+ },
+ "results_root": "eval_results/issue_2569",
+ "skipped": {
+  "leg3_attribution_tables": "ValueError: attribution examples deferred by producer: deferred \u2014 the P-B P1 assemble dir was not attached via --rows-dir (the worked examples need the pinned #2476 holdout's v_C rows); re-run `--phase attribution -",
+  "leg6_shared_factor_heatmap": "FileNotFoundError: leg6/cross_arm/L19_last_prompt.json"
+ }
+}

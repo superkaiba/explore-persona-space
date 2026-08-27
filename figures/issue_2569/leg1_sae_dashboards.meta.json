@@ -1,0 +1,1610 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "e802712af9e7451d",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:51:15Z",
+  "figsize": [
+    9.8,
+    6.6
+  ],
+  "points": [
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08487026393413544,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 2.0,
+      "|cos|": 0.07770057767629623,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 3.0,
+      "|cos|": 0.09385251253843307,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 4.0,
+      "|cos|": 0.12830248475074768,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 5.0,
+      "|cos|": 0.09783816337585449,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 6.0,
+      "|cos|": 0.13532090187072754,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 7.0,
+      "|cos|": 0.14224077761173248,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 8.0,
+      "|cos|": 0.1367536187171936,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 9.0,
+      "|cos|": 0.1480364054441452,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 10.0,
+      "|cos|": 0.1502358466386795,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 11.0,
+      "|cos|": 0.12588636577129364,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 12.0,
+      "|cos|": 0.13687913119792938,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 13.0,
+      "|cos|": 0.11994519829750061,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 14.0,
+      "|cos|": 0.12817583978176117,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 15.0,
+      "|cos|": 0.12143582850694656,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 16.0,
+      "|cos|": 0.12312347441911697,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 17.0,
+      "|cos|": 0.12238186597824097,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 18.0,
+      "|cos|": 0.09356283396482468,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 19.0,
+      "|cos|": 0.1181463822722435,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 20.0,
+      "|cos|": 0.13922391831874847,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 21.0,
+      "|cos|": 0.14233088493347168,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 22.0,
+      "|cos|": 0.13713069260120392,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 23.0,
+      "|cos|": 0.13811984658241272,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 24.0,
+      "|cos|": 0.14476549625396729,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 25.0,
+      "|cos|": 0.1618550419807434,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 26.0,
+      "|cos|": 0.14066511392593384,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 27.0,
+      "|cos|": 0.11437118053436279,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 28.0,
+      "|cos|": 0.13387374579906464,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 29.0,
+      "|cos|": 0.13742613792419434,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 30.0,
+      "|cos|": 0.15867352485656738,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 31.0,
+      "|cos|": 0.11090833693742752,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 32.0,
+      "|cos|": 0.1505962610244751,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.08109016582885539,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08109016582885539,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.08533650860190391,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08533650860190391,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.5524123907089233,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 2.0,
+      "|cos|": 0.6258493661880493,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 3.0,
+      "|cos|": 0.5080947875976562,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 4.0,
+      "|cos|": 0.4148751199245453,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 5.0,
+      "|cos|": 0.3206535279750824,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 6.0,
+      "|cos|": 0.3686671555042267,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 7.0,
+      "|cos|": 0.3470727801322937,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 8.0,
+      "|cos|": 0.36182039976119995,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 9.0,
+      "|cos|": 0.34828847646713257,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 10.0,
+      "|cos|": 0.36489012837409973,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 11.0,
+      "|cos|": 0.3481151759624481,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 12.0,
+      "|cos|": 0.33155226707458496,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 13.0,
+      "|cos|": 0.29756850004196167,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 14.0,
+      "|cos|": 0.28981176018714905,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 15.0,
+      "|cos|": 0.24259378015995026,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 16.0,
+      "|cos|": 0.28738775849342346,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 17.0,
+      "|cos|": 0.3081754744052887,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 18.0,
+      "|cos|": 0.2406776398420334,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 19.0,
+      "|cos|": 0.23048283159732819,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 20.0,
+      "|cos|": 0.2866872251033783,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 21.0,
+      "|cos|": 0.34407737851142883,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 22.0,
+      "|cos|": 0.28181326389312744,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 23.0,
+      "|cos|": 0.30894166231155396,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 24.0,
+      "|cos|": 0.2348630577325821,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 25.0,
+      "|cos|": 0.2538939118385315,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 26.0,
+      "|cos|": 0.2313052862882614,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 27.0,
+      "|cos|": 0.37336546182632446,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 28.0,
+      "|cos|": 0.3206349015235901,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 29.0,
+      "|cos|": 0.2571069896221161,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 30.0,
+      "|cos|": 0.2977294325828552,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 31.0,
+      "|cos|": 0.24413242936134338,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 32.0,
+      "|cos|": 0.23714956641197205,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.07866901621440532,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.07866901621440532,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.08318683467805385,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08318683467805385,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.24495477974414825,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 2.0,
+      "|cos|": 0.24495477974414825,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 3.0,
+      "|cos|": 0.29099681973457336,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 4.0,
+      "|cos|": 0.29099681973457336,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 5.0,
+      "|cos|": 0.18674840033054352,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 6.0,
+      "|cos|": 0.18674840033054352,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 7.0,
+      "|cos|": 0.21315878629684448,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 8.0,
+      "|cos|": 0.21315878629684448,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 9.0,
+      "|cos|": 0.13467980921268463,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 10.0,
+      "|cos|": 0.15548041462898254,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 11.0,
+      "|cos|": 0.15548041462898254,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 12.0,
+      "|cos|": 0.17955206334590912,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 13.0,
+      "|cos|": 0.18169446289539337,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 14.0,
+      "|cos|": 0.18169446289539337,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 15.0,
+      "|cos|": 0.1571207046508789,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 16.0,
+      "|cos|": 0.1571207046508789,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 17.0,
+      "|cos|": 0.16081081330776215,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 18.0,
+      "|cos|": 0.16081081330776215,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 19.0,
+      "|cos|": 0.12470801174640656,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 20.0,
+      "|cos|": 0.13764141499996185,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 21.0,
+      "|cos|": 0.13764141499996185,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 22.0,
+      "|cos|": 0.14818713068962097,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 23.0,
+      "|cos|": 0.14818713068962097,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 24.0,
+      "|cos|": 0.15351571142673492,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 25.0,
+      "|cos|": 0.15351571142673492,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 26.0,
+      "|cos|": 0.1337539106607437,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 27.0,
+      "|cos|": 0.1337539106607437,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 28.0,
+      "|cos|": 0.14576639235019684,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 29.0,
+      "|cos|": 0.14576639235019684,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 30.0,
+      "|cos|": 0.1282360702753067,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 31.0,
+      "|cos|": 0.1282360702753067,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 32.0,
+      "|cos|": 0.1271335482597351,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.38361092156682136,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 2.0,
+      "|cos|": 0.38361092156682136,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 3.0,
+      "|cos|": 0.5328340478677697,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 4.0,
+      "|cos|": 0.5328340478677697,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 5.0,
+      "|cos|": 0.6746211066027122,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 6.0,
+      "|cos|": 0.6746211066027122,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 7.0,
+      "|cos|": 0.6271301970586414,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 8.0,
+      "|cos|": 0.6271301970586414,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 9.0,
+      "|cos|": 0.0,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 10.0,
+      "|cos|": 0.6635491911746033,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 11.0,
+      "|cos|": 0.6635491911746033,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 12.0,
+      "|cos|": 0.0,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 13.0,
+      "|cos|": 0.6300839991964502,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 14.0,
+      "|cos|": 0.6300839991964502,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 15.0,
+      "|cos|": 0.7355424551384562,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 16.0,
+      "|cos|": 0.7355424551384562,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 17.0,
+      "|cos|": 0.6675877089381725,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 18.0,
+      "|cos|": 0.6675877089381725,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 19.0,
+      "|cos|": 0.0,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 20.0,
+      "|cos|": 0.6047678191794844,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 21.0,
+      "|cos|": 0.6047678191794844,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 22.0,
+      "|cos|": 0.6713842218394852,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 23.0,
+      "|cos|": 0.6713842218394852,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 24.0,
+      "|cos|": 0.6788307000414348,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 25.0,
+      "|cos|": 0.6788307000414348,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 26.0,
+      "|cos|": 0.7490290953360632,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 27.0,
+      "|cos|": 0.7490290953360632,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 28.0,
+      "|cos|": 0.30545396316543844,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 29.0,
+      "|cos|": 0.30545396316543844,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 30.0,
+      "|cos|": 0.7303926628602491,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 31.0,
+      "|cos|": 0.7303926628602491,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 32.0,
+      "|cos|": 0.4902474095084053,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.08109016582885539,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08109016582885539,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.08533650860190391,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08533650860190391,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.4115745723247528,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 2.0,
+      "|cos|": 0.4115745723247528,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 3.0,
+      "|cos|": 0.34130948781967163,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 4.0,
+      "|cos|": 0.34130948781967163,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 5.0,
+      "|cos|": 0.24030563235282898,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 6.0,
+      "|cos|": 0.24030563235282898,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 7.0,
+      "|cos|": 0.25620490312576294,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 8.0,
+      "|cos|": 0.25620490312576294,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 9.0,
+      "|cos|": 0.33666935563087463,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 10.0,
+      "|cos|": 0.22733916342258453,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 11.0,
+      "|cos|": 0.22733916342258453,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 12.0,
+      "|cos|": 0.2545636296272278,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 13.0,
+      "|cos|": 0.2688714563846588,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 14.0,
+      "|cos|": 0.2688714563846588,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 15.0,
+      "|cos|": 0.29266348481178284,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 16.0,
+      "|cos|": 0.29266348481178284,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 17.0,
+      "|cos|": 0.2406843602657318,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 18.0,
+      "|cos|": 0.2406843602657318,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 19.0,
+      "|cos|": 0.2656024098396301,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 20.0,
+      "|cos|": 0.24270130693912506,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 21.0,
+      "|cos|": 0.24270130693912506,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 22.0,
+      "|cos|": 0.2901260256767273,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 23.0,
+      "|cos|": 0.2901260256767273,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 24.0,
+      "|cos|": 0.33784550428390503,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 25.0,
+      "|cos|": 0.33784550428390503,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 26.0,
+      "|cos|": 0.2345152646303177,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 27.0,
+      "|cos|": 0.2345152646303177,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 28.0,
+      "|cos|": 0.21303360164165497,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 29.0,
+      "|cos|": 0.21303360164165497,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 30.0,
+      "|cos|": 0.2632426619529724,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 31.0,
+      "|cos|": 0.2632426619529724,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 32.0,
+      "|cos|": 0.2582392394542694,
+      "series": "max |cos| vs dictionary",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.9419802798159228,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 2.0,
+      "|cos|": 0.9419802798159611,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 3.0,
+      "|cos|": 0.8114392023888348,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 4.0,
+      "|cos|": 0.811439202388868,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 5.0,
+      "|cos|": 0.7127114548631304,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 6.0,
+      "|cos|": 0.7127114548631304,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 7.0,
+      "|cos|": 0.7334143634281044,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 8.0,
+      "|cos|": 0.7334143634281044,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 9.0,
+      "|cos|": 1.7071769571467234e-12,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 10.0,
+      "|cos|": 0.656962958226317,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 11.0,
+      "|cos|": 0.6569629582263196,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 12.0,
+      "|cos|": 1.971492712626643e-12,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 13.0,
+      "|cos|": 0.7680682367489352,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 14.0,
+      "|cos|": 0.7680682367489348,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 15.0,
+      "|cos|": 0.7365183478467849,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 16.0,
+      "|cos|": 0.736518347846856,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 17.0,
+      "|cos|": 0.6456896329822825,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 18.0,
+      "|cos|": 0.6456896329822825,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 19.0,
+      "|cos|": 1.791786728848662e-12,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 20.0,
+      "|cos|": 0.8988719517179166,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 21.0,
+      "|cos|": 0.8988719517179166,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 22.0,
+      "|cos|": 0.7929918436921418,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 23.0,
+      "|cos|": 0.7929918436850516,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 24.0,
+      "|cos|": 0.5947689516224038,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 25.0,
+      "|cos|": 0.5947689516224034,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 26.0,
+      "|cos|": 0.6888646448578997,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 27.0,
+      "|cos|": 0.6888646448579002,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 28.0,
+      "|cos|": 0.8759767175858995,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 29.0,
+      "|cos|": 0.8759767175858995,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 30.0,
+      "|cos|": 0.7553665187368453,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 31.0,
+      "|cos|": 0.7553665187368453,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 32.0,
+      "|cos|": 0.7905559848774001,
+      "series": "imaginary-part fraction",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.07866901621440532,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.07866901621440532,
+      "series": "analytic null floor sqrt(2 ln N / d)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "direction rank": 0.0,
+      "|cos|": 0.08318683467805385,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "direction rank": 1.0,
+      "|cos|": 0.08318683467805385,
+      "series": "empirical null p95 (random unit dirs)",
+      "_kind": "line",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 208,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Singular read directions (u_i) vs context SAE",
+        "xlabel": "direction rank",
+        "ylabel": "|cos|",
+        "legend_labels": [
+          "max |cos| vs dictionary",
+          "analytic null floor sqrt(2 ln N / d)",
+          "empirical null p95 (random unit dirs)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Singular write directions (v_i) vs answer SAE",
+        "xlabel": "direction rank",
+        "ylabel": "|cos|",
+        "legend_labels": [
+          "max |cos| vs dictionary",
+          "analytic null floor sqrt(2 ln N / d)",
+          "empirical null p95 (random unit dirs)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Eigen read directions (right eigvecs) vs context SAE",
+        "xlabel": "direction rank",
+        "ylabel": "|cos|",
+        "legend_labels": [
+          "max |cos| vs dictionary",
+          "imaginary-part fraction",
+          "analytic null floor sqrt(2 ln N / d)",
+          "empirical null p95 (random unit dirs)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Eigen write directions (left eigvecs) vs answer SAE",
+        "xlabel": "direction rank",
+        "ylabel": "|cos|",
+        "legend_labels": [
+          "max |cos| vs dictionary",
+          "imaginary-part fraction",
+          "analytic null floor sqrt(2 ln N / d)",
+          "empirical null p95 (random unit dirs)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "max |cos| vs dictionary",
+      "analytic null floor sqrt(2 ln N / d)",
+      "empirical null p95 (random unit dirs)",
+      "imaginary-part fraction"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

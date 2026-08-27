@@ -1,0 +1,281 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "f2afc93b612e497a",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:51:26Z",
+  "figsize": [
+    9.5,
+    3.8
+  ],
+  "points": [
+    {
+      "Training rows (n)": 4500.0,
+      "Held-out R^2": 0.6445898317040525,
+      "series": "Empirical held-out R^2 (LMSYS refits)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training rows (n)": 10000.0,
+      "Held-out R^2": 0.6709989646079072,
+      "series": "Empirical held-out R^2 (LMSYS refits)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training rows (n)": 50000.0,
+      "Held-out R^2": 0.7033440691001323,
+      "series": "Empirical held-out R^2 (LMSYS refits)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training rows (n)": 150000.0,
+      "Held-out R^2": 0.7144363191838058,
+      "series": "Empirical held-out R^2 (LMSYS refits)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training rows (n)": 500000.0,
+      "Held-out R^2": 0.7194200037963737,
+      "series": "Empirical held-out R^2 (LMSYS refits)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Training rows (n)": 4500.0,
+      "Held-out R^2": 0.6508642095613559,
+      "series": "Theory prediction (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training rows (n)": 10000.0,
+      "Held-out R^2": 0.6770777214517486,
+      "series": "Theory prediction (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training rows (n)": 50000.0,
+      "Held-out R^2": 0.7091479881119589,
+      "series": "Theory prediction (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training rows (n)": 150000.0,
+      "Held-out R^2": 0.7201631509772383,
+      "series": "Theory prediction (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training rows (n)": 500000.0,
+      "Held-out R^2": 0.7243691954821241,
+      "series": "Theory prediction (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Training rows (n)": 4500.0,
+      "Held-out R^2": 0.6293,
+      "series": "Off-recipe committed point",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows (n)": 3600.0,
+      "Held-out R^2": 0.7054149303865586,
+      "series": "Off-recipe committed point",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows (n)": 50000.0,
+      "Held-out R^2": 0.7599992543132661,
+      "series": "Off-recipe committed point",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows (n)": 150000.0,
+      "Held-out R^2": 0.754355957580797,
+      "series": "Off-recipe committed point",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows (n)": 500000.0,
+      "Held-out R^2": 0.7526607745723463,
+      "series": "Off-recipe committed point",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Training rows (n)": 500000.0,
+      "Held-out R^2": 0.7608232696391413,
+      "series": "Off-recipe point, lambda at grid edge",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training rows (n)": 963444.0,
+      "Held-out R^2": 0.7541708417500051,
+      "series": "Off-recipe point, lambda at grid edge",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Training rows (n)": 0.0,
+      "Delta R^2": 0.05,
+      "series": "H2b pass band",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training rows (n)": 1.0,
+      "Delta R^2": 0.05,
+      "series": "H2b pass band",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Training rows (n)": 0.0,
+      "Delta R^2": 0.15,
+      "series": "H2b kill floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training rows (n)": 1.0,
+      "Delta R^2": 0.15,
+      "series": "H2b kill floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Training rows (n)": 4500.0,
+      "Delta R^2": -0.006274377857303448,
+      "series": "Empirical minus theory",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training rows (n)": 10000.0,
+      "Delta R^2": -0.006078756843841404,
+      "series": "Empirical minus theory",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training rows (n)": 50000.0,
+      "Delta R^2": -0.0058039190118266415,
+      "series": "Empirical minus theory",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training rows (n)": 150000.0,
+      "Delta R^2": -0.005726831793432474,
+      "series": "Empirical minus theory",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Training rows (n)": 500000.0,
+      "Delta R^2": -0.004949191685750365,
+      "series": "Empirical minus theory",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Learning curve: theory vs measured",
+        "xlabel": "Training rows (n)",
+        "ylabel": "Held-out R^2",
+        "legend_labels": [
+          "Empirical held-out R^2 (LMSYS refits)",
+          "Theory prediction (closed-form ridge)",
+          "Off-recipe committed point",
+          "Off-recipe point, lambda at grid edge"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$",
+          "$\\mathdefault{10^{8}}$"
+        ],
+        "yticklabels": [
+          "0.62",
+          "0.64",
+          "0.66",
+          "0.68",
+          "0.70",
+          "0.72",
+          "0.74",
+          "0.76",
+          "0.78"
+        ]
+      },
+      {
+        "title_left": "Per-point misfit vs registered bands",
+        "xlabel": "Training rows (n)",
+        "ylabel": "Delta R^2",
+        "legend_labels": [
+          "H2b pass band",
+          "H2b kill floor",
+          "Empirical minus theory"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$",
+          "$\\mathdefault{10^{6}}$",
+          "$\\mathdefault{10^{7}}$"
+        ],
+        "yticklabels": [
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "Empirical held-out R^2 (LMSYS refits)",
+      "Theory prediction (closed-form ridge)",
+      "Off-recipe committed point",
+      "Off-recipe point, lambda at grid edge",
+      "H2b pass band",
+      "H2b kill floor",
+      "Empirical minus theory"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

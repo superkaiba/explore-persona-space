@@ -1,0 +1,26 @@
+{
+  "rows": [
+    120000,
+    400,
+    20000
+  ],
+  "alive_loose": 2545,
+  "union": 2150,
+  "floors": {
+    "0.01": 1200,
+    "0.005": 600,
+    "0.0025": 300,
+    "0.002": 240
+  },
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T01:19:24.296100Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "featmap",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

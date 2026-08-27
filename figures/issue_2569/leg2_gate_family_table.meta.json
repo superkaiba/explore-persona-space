@@ -1,0 +1,59 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "b6bd47bca77b4948",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:51:39Z",
+  "figsize": [
+    9.100000000000001,
+    4.32
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Across-arm median rho per prefix family",
+        "xticklabels": [
+          "Raw similarity (identity)",
+          "Diagonally whitened",
+          "Fully whitened (inverse covariance)",
+          "Through-map (W W^T)",
+          "Through-map, top-k (90% mass)",
+          "Through-map, answer-whitened"
+        ],
+        "yticklabels": [
+          "battery",
+          "bystander",
+          "conv-fresh",
+          "near-twin",
+          "negatives",
+          "trained"
+        ]
+      },
+      {
+        "ylabel": "Median Spearman rho",
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

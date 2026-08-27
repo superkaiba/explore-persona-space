@@ -1,0 +1,1 @@
+{"ans_len_content_fp": "hf-blob:b64245ec7aaa78a3a22f6f0bcc70450119a51ba1e7598b49d89aee48a2ebc313", "ans_len_source": "n1m_raw_completions_v2", "boot_draws": 10000, "chunk": 524288, "layer": 19, "pairs": 20000000, "seed": 2569800, "top_pairs": 1000}

@@ -1,0 +1,4560 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "ab7a05de354447c8",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:52:16Z",
+  "figsize": [
+    12.4,
+    7.800000000000001
+  ],
+  "points": [
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.0456241655740852,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.8543876429224739,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.5864541455259829,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5167280740806551,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.47795624115661467,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.4069711256345984,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.3882612207880147,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.37329781647977756,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.36715442981957974,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.35673958423210217,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.3336182175840768,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.32280196998091487,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.3126497431757841,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.30281822277368386,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.2869757496098017,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.2772229688023195,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.2715379747319135,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.2634385053963921,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.260621283582821,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.25178367434703236,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.24593474374851532,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.24306183143914517,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.23542926643760592,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.2303697531742721,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.22908699043814917,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.225833705195736,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.2201488369248916,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.21577619051509866,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.20921916238735064,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.20589138895067358,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.20532556179351835,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.20335969521452826,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.038447342736267,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.845944147603758,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.581923347176508,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5198269440736543,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.47438727277895665,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.4136018704878174,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.383405178136859,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.37779968397511315,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.3750480782626896,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.33779749961421063,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.32717792359011205,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.31720843088652856,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.3122660599439042,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.2982247183092018,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.29408045438456765,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.2901627871873839,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.2739076552031191,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.27108177891538043,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.2644267497013875,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.25659833935075044,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.25447513850484094,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.24929775877968213,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.24802140957077565,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.2395379566183644,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.23201475266098304,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.2248283819549839,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.2220460616840738,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.21861879582396754,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.2174845901880749,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.21140783979298328,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.20598505951538362,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.20272719966627264,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.5032926958286326,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.5032926958286326,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.504916115743885,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.504916115743885,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.9870063024178385,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.8814764999722255,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.5586748824100268,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.4516823363400431,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.4173031179997603,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.38745200177223615,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.3726567687164646,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.34391121411864795,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.32023275594237616,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.31550887727890414,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.29333208903485497,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.2894313769924974,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.27832627928218967,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.27306522991846527,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.25843753899522587,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.24642244810292735,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.24072469678734812,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.23599317775302314,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.22733417355133131,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.2240705931161458,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.21939845859821586,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.21574385110581132,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.21373860127512742,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.20920224869297738,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.20436450889080626,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.2024692764215818,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.19708208214690015,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.19377127939116845,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.18904598808071513,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.18743222293221415,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.1833349551810223,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.1812637118332276,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.9779638282802929,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.8901245899120637,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.5600922209988207,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.45277495929239153,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.41553553460323656,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.3851692918407566,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.3699958541527048,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.34144888519910527,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.3176059393197509,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.3129491011476301,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.29551301810887015,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.28701097843689843,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.2829134464504192,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.2628800419539517,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.2599477234089947,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.2563206137799529,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.247403025064475,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.24092962133241486,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.22985853516906196,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.22844247163183387,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.2239932512636204,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.21983261533058873,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.21243901348077254,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.2076122271583195,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.2039345312247071,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.2019553254036358,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.1989958354970257,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.19524997522624327,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.1931457502572466,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.18815383695891208,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.18638733008665703,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.18417288928133618,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.5916046794619207,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.5916046794619207,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.593010282611446,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.593010282611446,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.791830299369549,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.6801889038009805,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.4350418969287674,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.3667380452156796,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.3345976922728135,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.3117379738649605,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.2965065772637467,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.2852710258119582,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.255206606647134,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.25200220367839393,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.2368669128343247,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.2215619286350689,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.21725280292003535,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.21005531506704764,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.20425094080378164,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.19977213472121072,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.19645939745333368,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.18993644900889678,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.17899153509349844,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.17552307538413223,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.17394879611686823,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.17073004089780341,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.1679138117504226,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.16517590419114384,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.16247766219937812,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.15792548813910148,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.15568585046476116,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.15407681874885842,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.15154616574331925,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.14830629758849304,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.14629918288293411,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.14349936747538494,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.7883165177491029,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.675492865508843,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.4408076484657597,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.36693028528494387,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.3337424429496974,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.30975888344532215,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.2998740251929546,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.27203454516835845,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.25583876701737995,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.2498051618450107,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.23684514845015633,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.2213603517668292,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.22031043964906527,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.2117412061106088,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.20633408851853366,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.20191076801926863,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.19612324920490876,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.19444295832898836,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.1870355321851606,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.18268447561352055,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.17545885542493528,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.17454520807925733,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.1725509316879864,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.16689319763649385,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.16452406831667402,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.16278354060959982,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.1604636788220377,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.15726377834509556,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.15357136204938593,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.15202384485091647,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.15040730941674268,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.14559056009011884,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.3136334539915258,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.3136334539915258,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.3090054289069488,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.3090054289069488,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.2524620021982333,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.9679634030114633,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.6184550868774215,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5847724800557648,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.48344873612637623,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.46399401110549365,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.43566776459935064,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.4218267694561254,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.4152634266105454,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.40921496059862555,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.3834519589832944,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.3658378427445751,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.3605410832763713,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.3479163777332405,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.34292492661572965,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.33194977353649474,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.32710666474969147,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.32210032922675774,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.31160002584678304,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.3100380205333465,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.3035897230626223,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.3015184552225953,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.29639476631621575,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.2905879825341701,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.2861141319777342,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.28292210347489255,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.27779999708726266,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.27577370671453355,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.2706938746388616,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.2676451398918984,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.26660941687615264,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.2627932951075228,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.240081219837,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.9817282407798972,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.6525037468210683,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.60292132565624,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.4917280677464906,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.4760646617607108,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.45998725893633274,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.4321831431608252,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.4198990674561843,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.4148030452535174,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.40570367740413427,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.3904185012045951,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.3723499965290599,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.35577810524564085,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.3509864993315485,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.3359627528307645,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.3330897219349164,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.32217128112532,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.31334124782594575,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.3079880556079883,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.30416605669856983,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.29929091543955866,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.2961307538202057,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.2905367759091453,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.28665511671724436,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.28383272878047533,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.28175589012062513,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.2780399526932316,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.27105934822236605,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.26615316758744983,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.26084073271675806,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.25842164160500286,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.773084608766989,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.773084608766989,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.7911564005871226,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.7911564005871226,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.1905405762462953,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.957721307203397,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.6013667040791079,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5574944291403933,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.45527107080781665,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.44285926197570186,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.4098761804097602,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.397871480542281,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.3897854930330509,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.3878635226691283,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.3610022773663443,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.35057076430354084,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.341055324054061,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.3320971241847482,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.3247707683656525,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.3184985819709927,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.3073947971478747,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.30001871922047946,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.29285459099282557,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.28749894068670945,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.284784760891841,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.28035758570396657,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.27505829415862965,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.27316618636117324,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.2694154455228944,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.26336759905012813,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.26097503171181374,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.25916771302466274,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.25669193584238265,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.253450544611131,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.24897390510781855,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.24795922308918894,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.185332365642358,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.9705336750248346,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.6188608488259961,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5760198278559535,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.4670468628006727,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.4380026368211408,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.4358661371663904,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.40604904281885945,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.4004703948289942,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.39375018243676846,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.38065351266330366,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.3739423262847937,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.35205576530483834,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.336975441424763,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.3289466382322124,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.32765401522627197,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.30947869302719644,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.30448967748268596,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.29659646560228564,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.2928983519962959,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.2905871070516333,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.27986081291868614,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.2777556122445479,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.2737267838279786,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.26931695875733513,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.2664155955022276,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.2627916710696508,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.2596934772797559,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.25435410254183444,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.2523337551847849,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.24920743611573257,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.24633669887957718,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.7891653088464414,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.7891653088464414,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.8189035829918874,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.8189035829918874,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.9207801608970865,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.7390232454726742,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.47246569225619206,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.401256243443519,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.3666800492076784,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.33481199014581425,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.3257294780927673,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.3012187488194984,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.2816405354429027,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.2647642599987979,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.25502433639411204,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.24377938661582138,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.24098050221523795,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.22776987644596552,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.22293384985674072,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.21485443600971388,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.21228308618219227,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.20790159906267333,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.20179004475706191,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.1985534668396715,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.19499575164396266,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.19216020239320944,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.18615397843122794,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.18192549426335156,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.17876610201277035,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.17582015142335103,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.17213165721814636,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.17095010473727112,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.16867004849157785,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.16534903419315153,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.16455603093936425,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.1595309994059961,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.9144939624099461,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.733594091410504,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.4705506971149456,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.40540928745304056,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.3678161087157828,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.32487006020870796,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.3214962743893907,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.2890820506980722,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.28647336722769107,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.27091007744749335,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.25741190729392144,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.24317586422144516,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.24209852265403514,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.23980846956619403,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.2246290908865118,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.21986490443960946,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.21584051822800762,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.21375628656324794,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.2124615454360116,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.203352334294427,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.19523541747195158,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.1941019900973873,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.1924253363435704,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.1887522561293901,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.18317397216325798,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.17595227100310695,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.1754051557582195,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.17334622459550675,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.168289631060786,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.1664452567943397,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.1644961771211703,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.16202318535498325,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.6434300075480603,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.6434300075480603,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 1.6456708508458384,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.6456708508458384,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.1715967268437066,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.9381364897567137,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.5720606107770589,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5260751163689543,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.4657039984789781,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.41114244972694436,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.3921450591818566,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.361489149378756,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.3521908390896196,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.3366959449075069,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.31733676930350735,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.3001933407697613,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.29107223302590507,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.28550324291000123,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.2713353432197981,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.27004517590744054,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.26004499046128554,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.2508917815321407,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.24739430711126664,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.2438689741714654,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.23717374410582642,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.2314181988400652,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.22851445862087716,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.22275566216633397,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.21905548684362502,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.21521420473670141,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.2134275856985618,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.2108073807051004,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.20648516818521906,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.20231996305302502,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.19950811007387173,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.19849710069849927,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 1.1794582254706092,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.9509848565733277,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.5791412382356893,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.5346980130315273,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.4687163670247938,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.40577784540068673,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.39240064140911146,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.3452831119350426,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.3433339195305611,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.33475148697256163,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.31157887518626076,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.2896445345379043,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.28781186575947426,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.276267435689239,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.27140279669018863,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.2661647412702781,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.2616271825076536,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.2589624021783396,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.25400625918187625,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.24622081352129355,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.2409428919335151,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.23296455462808932,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.22786548674990945,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.22687755373821084,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.22051585984602534,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.21722722546801218,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.21446310451029296,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.20966815985929005,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.20695967948542998,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.20423529166384227,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.20167578139178152,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.19849369022589475,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 2.0637355084862126,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 2.0637355084862126,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 2.068619357178674,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 2.068619357178674,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.16900567315804613,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.10404433190437996,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.08401560838473836,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.07580650569463286,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.06407979281822221,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.0615477604826361,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.056032998869558905,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.05346320821115656,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.051604159835617974,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.05028196029444756,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.04717724465100915,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.043864387379877044,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.043291100247983175,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.0417091515001013,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.041453714455894554,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.04099493161679612,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.03965524029073132,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.038404810604152566,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.03761018685281213,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.03676720743752273,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.03665828629147968,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.036127125312054816,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.03540130997042595,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.03440297846392092,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.03384238767962996,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.0330783396279803,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.03242174611345148,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.03173346136568996,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.03118009839222974,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.030956507034142693,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.030436827210736463,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.030150568852952607,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.16953796059752,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.10033491640837008,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.08397516423357085,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.07462755266430444,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.06309631650687328,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.06048123266271331,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.0566569106414388,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.052994889265006895,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.05109712571993137,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.050024130238404955,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.048940672390694225,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.046460602588777815,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.04544201667448684,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.04413395035001508,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.04337675515969914,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.04135338472742088,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.04106886594681442,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.03985376061699564,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.03806282800465113,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.03691706727726897,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.036244940525563776,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.03560135512125963,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.03465468139450174,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.03416807191206699,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.03365543127982108,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.03251606266053865,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.032320700513834996,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.032013052040098876,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.03159389634005799,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.03113505896056194,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.03068302922988988,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.030208185410328468,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 0.24948307742749673,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.24948307742749673,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 0.24950555765583246,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.24950555765583246,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.44095121804992715,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.38193073448288833,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.3098508284450054,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.21493826107021488,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.20707086718428402,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.18495776530760644,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.17622329013335553,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.16368164000982835,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.15435181268987502,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.1476218371704759,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.13870140708148182,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.1324016621997083,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.12988572884694205,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.12433080675069712,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.12008572464045805,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.11788944117668715,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.11347898374576726,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.11174261578348091,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.1061192836431894,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.10332469548502424,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.10134522744724461,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.10058488644014214,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.09911817772267374,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.09668950905528394,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.09368093515221948,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.09194458033491403,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.09137174710529664,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.08910359252219069,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.08877098208228648,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.08673657878625417,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.08495505993783772,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.08443304743141328,
+      "series": "Half 1",
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.43905437896129496,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 2.0,
+      "Singular value": 0.37710374560613524,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 3.0,
+      "Singular value": 0.3116402167364571,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 4.0,
+      "Singular value": 0.21747989235886284,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 5.0,
+      "Singular value": 0.21094197658811656,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 6.0,
+      "Singular value": 0.18632233583233465,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 7.0,
+      "Singular value": 0.17242495457801832,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 8.0,
+      "Singular value": 0.16092019262146248,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 9.0,
+      "Singular value": 0.15432645943239803,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 10.0,
+      "Singular value": 0.1503052958125168,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 11.0,
+      "Singular value": 0.14086535683542306,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 12.0,
+      "Singular value": 0.1361365664451662,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 13.0,
+      "Singular value": 0.13210474211572612,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 14.0,
+      "Singular value": 0.12451660160396705,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 15.0,
+      "Singular value": 0.12364862842338445,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 16.0,
+      "Singular value": 0.11866710113311102,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 17.0,
+      "Singular value": 0.11629318769955276,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 18.0,
+      "Singular value": 0.11250649639678155,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 19.0,
+      "Singular value": 0.10939478159806776,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 20.0,
+      "Singular value": 0.10709992349620204,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 21.0,
+      "Singular value": 0.10370650653098894,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 22.0,
+      "Singular value": 0.10041141642626444,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 23.0,
+      "Singular value": 0.09814786606621208,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 24.0,
+      "Singular value": 0.09760930102592281,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 25.0,
+      "Singular value": 0.09643233242661386,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 26.0,
+      "Singular value": 0.09334246204989771,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 27.0,
+      "Singular value": 0.09175911139915566,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 28.0,
+      "Singular value": 0.09064974686285919,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 29.0,
+      "Singular value": 0.08934858452986408,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 30.0,
+      "Singular value": 0.08912789906790017,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 31.0,
+      "Singular value": 0.08681602703733977,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 32.0,
+      "Singular value": 0.08617746892396834,
+      "series": "Half 2",
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 0.6590724141251415,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.6590724141251415,
+      "series": "Shuffle p95 (half 1)",
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "Factor index": 0.0,
+      "Singular value": 0.6612538712293967,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "Factor index": 1.0,
+      "Singular value": 0.6612538712293967,
+      "series": "Shuffle p95 (half 2)",
+      "_kind": "line",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 612,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Casualness, bare, contrastive",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "legend_labels": [
+          "Half 1",
+          "Half 2",
+          "Shuffle p95 (half 1)",
+          "Shuffle p95 (half 2)"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Casualness, persona, contrastive",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Casualness, persona, positive-only",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Impoliteness, persona, contrastive (seed 137)",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Impoliteness, persona, contrastive (seed 42)",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Impoliteness, persona, positive-only",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Sycophancy, bare, contrastive",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Sycophancy, conversational, contrastive",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "title_left": "Sycophancy, persona, positive-only",
+        "xlabel": "Factor index",
+        "ylabel": "Singular value",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20",
+          "30",
+          "40"
+        ],
+        "yticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Half 1",
+      "Half 2",
+      "Shuffle p95 (half 1)",
+      "Shuffle p95 (half 2)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
