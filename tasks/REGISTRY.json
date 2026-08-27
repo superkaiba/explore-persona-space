@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2619,
+  "highest_id": 2620,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12497,6 +12497,13 @@
       "path": "tasks/archived/262",
       "status": "archived",
       "title": "Run proper experiment: EM then marker coupling to see if leakage really increases"
+    },
+    "2620": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2620",
+      "status": "proposed",
+      "title": "curate .claude/agent-memory/code-reviewer-lean/MEMORY.md under the 24KB agent-memory index FAIL cap (41KB on main; reds worktree spec-freshness sync commits + silently truncates the lean twin's loaded lessons)"
     },
     "263": {
       "has_clean_result": true,
