@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2615,
+  "highest_id": 2616,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12461,6 +12461,13 @@
       "path": "tasks/proposed/2615",
       "status": "proposed",
       "title": "Pod sparse clones silently hide sibling-issue eval_results/ inputs (empty dir, no error)"
+    },
+    "2616": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2616",
+      "status": "proposed",
+      "title": "Capture phases hold a multi-GPU pod idle through interleaved per-stem Hub uploads"
     },
     "262": {
       "has_clean_result": false,
