@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2625,
+  "highest_id": 2626,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12539,6 +12539,13 @@
       "path": "tasks/proposed/2625",
       "status": "proposed",
       "title": "workflow-fix: verify_plan WARNs when a plan edits a byte-capped workflow surface without a post-edit byte count or cap-raise"
+    },
+    "2626": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2626",
+      "status": "proposed",
+      "title": "Curate code-reviewer-lean agent-memory index under the 24KB lint cap (live no-flags FAIL redding Step 9c gates)"
     },
     "263": {
       "has_clean_result": true,
