@@ -265,9 +265,18 @@ def _assert_no_silent_ylim_clip(fig) -> None:
     0), and ``set_yscale("symlog")`` itself perturbs the stored dataLim by float
     epsilon around 0 (measured −1.4e-17 on a panel whose true minimum is exactly
     0.0 before the switch) — the #825 float-space-gate lesson: never a strict
-    float comparison at a legitimate boundary. A visually meaningful truncation
-    exceeds this tolerance by ≥6 orders of magnitude (one pixel on a 1000-px axis
-    is ~1e-3 of the span).
+    float comparison at a legitimate boundary.
+
+    Why the tolerance is safe, stated for a SYMLOG axis (r24 review): the naive
+    "~1e-3 of the span is one pixel" arithmetic is LINEAR-axis reasoning and does
+    NOT hold here — symlog compresses the log decades, so the data-to-pixel
+    mapping varies across the axis. Measured worst case on the widest patched
+    panel (exp_n1m_frozen_read, span ~3.6e6): the tolerance maps to ~0.1-0.2 px
+    near the cap — sub-pixel everywhere, so it can never excuse a VISIBLE clip.
+    The floor it must absorb is magnitude-scaled float64 noise (~8e-10 at 3.6e6),
+    not the absolute 1.4e-17 measured at zero, leaving ~6-7 orders of headroom;
+    a genuine over-cap value (the R² family is bounded by 1 against a 1.5 cap)
+    exceeds the tolerance by >= ~300x.
     """
     for i, ax in enumerate(fig.axes):
         if not getattr(ax, "_i2546_ylim_capped", False):
