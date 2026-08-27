@@ -12070,8 +12070,8 @@
     "2566": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2566",
-      "status": "running",
+      "path": "tasks/completed/2566",
+      "status": "completed",
       "title": "workflow-fix: test_gates_full_shape red fleet-wide \u2014 clarify_experiment_ask gate missing from pinned set"
     },
     "2567": {
