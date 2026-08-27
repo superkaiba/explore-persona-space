@@ -1,0 +1,20 @@
+{
+  "arm": 3,
+  "smoke": false,
+  "n_preds_npz": 40,
+  "preds_dest": "issue2546_cotmap/analysis_tensors/preds/arm3",
+  "n_out_json": 50,
+  "mirror_dest": "issue2546_cotmap/eval_results_mirror/out",
+  "repro": {
+    "git_commit": "60779db5c8a3c8ef120ad65f0948b3eddca309da",
+    "git_dirty": null,
+    "phase": "p6-publish",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-27T00:52:17Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

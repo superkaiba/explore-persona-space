@@ -1,0 +1,114 @@
+{
+  "status": "ok",
+  "label": "EXPLORATORY (plan \u00a76 OOD folds; not in the 222-unit registry)",
+  "unit_id": "ood_gsm8k__a3",
+  "arm": 3,
+  "cell": "p7_A",
+  "fit_subset": "corpus:gsm8k_train",
+  "score_subset": "corpus:gsm8k_test",
+  "n_fit": 7162,
+  "n_score": 1249,
+  "headline_layer": 24,
+  "transfer_r2": 0.5195165389608997,
+  "knn_identity": {
+    "euclidean": {
+      "metric": "euclidean",
+      "n": 1249,
+      "n_pool": 1249,
+      "acc_at_k": {
+        "1": 0.7910328262610088
+      },
+      "chance_at_k": {
+        "1": 0.0008006405124099279
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8434357260445662
+    },
+    "cosine": {
+      "metric": "cosine",
+      "n": 1249,
+      "n_pool": 1249,
+      "acc_at_k": {
+        "1": 0.8062449959967974
+      },
+      "chance_at_k": {
+        "1": 0.0008006405124099279
+      },
+      "median_rank": 1.0,
+      "mrr": 0.8555530695060052
+    }
+  },
+  "fingerprint": "1f99bc6e5cb8aa7a",
+  "fit_params": {
+    "lambdas": [
+      "logspace",
+      -2.0,
+      4.0,
+      13
+    ],
+    "n_folds": 5,
+    "seed": 0,
+    "inner_lambda_folds": 4,
+    "null_draws": 20,
+    "n_boot": 1000,
+    "smoke": false,
+    "recipe_rev": "planv4",
+    "fit_params_schema": "v16-realized-estimator",
+    "store_key": "068456caa89f7af3",
+    "prefill_fallback": false,
+    "decode_fallback": false,
+    "regime": "ma_battery_legacy",
+    "lambda_selector": "inner-group-cv",
+    "estimator_realized": {
+      "regime": "ma_battery_legacy",
+      "machinery": "issue825_map_alignment._ridge_prep/_ridge_predict",
+      "lambda_grid_values": [
+        0.01,
+        0.03162277660168379,
+        0.1,
+        0.31622776601683794,
+        1.0,
+        3.1622776601683795,
+        10.0,
+        31.622776601683793,
+        100.0,
+        316.2277660168379,
+        1000.0,
+        3162.2776601683795,
+        10000.0
+      ],
+      "lambda_grid_params": [
+        "logspace",
+        -2.0,
+        4.0,
+        13
+      ],
+      "n_lambdas": 13,
+      "inner_lambda_folds": 4,
+      "lambda_selector_requested": "inner-group-cv",
+      "selector_realized_counts": {
+        "inner-group-cv": 1
+      },
+      "lambda_selection_counts": {
+        "inner-group-cv": {
+          "1000": 1
+        }
+      },
+      "gcv_dof_cap": 0.9,
+      "legacy_unguarded_gcv": false,
+      "derived_from": "issue825_map_alignment module globals read at this unit's fit calls + SELECTOR_LOG delta over the unit (v16)"
+    }
+  },
+  "repro": {
+    "git_commit": "60779db5c8a3c8ef120ad65f0948b3eddca309da",
+    "git_dirty": null,
+    "phase": "p5_fits",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-26T23:41:25Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}
