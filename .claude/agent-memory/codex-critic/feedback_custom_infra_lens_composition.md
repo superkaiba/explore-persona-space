@@ -2796,3 +2796,43 @@ Related: [[plan-path-missing-read-from-main]],
   facts regression-guarded). Numcheck PASS first try at ~63 KB, zero
   scaffold-cleared atoms (spans = brief + lensitems + plan + body + empty
   prior; version-suffixed workspace; repo-root registry leg).
+
+- **Concurrency-module infra plan (producer/consumer background-uploader
+  helper, #2616 round one, standard methodology lens + orchestrator
+  phrase-list translation "requirement coverage / acceptance-criteria
+  completeness / concurrency failure modes / simpler-design alternatives /
+  blast radius"): compose the press set YOURSELF as lettered leads keyed to
+  the concurrency shape** — (a) bound-coherence arithmetic across
+  requirement clause / acceptance criterion / risk-row (queued chains +
+  the dequeued-executing chain + the computing unit vs each stated bound;
+  "say which number is right"); (b) the wedge scenario the plan itself
+  names for its timeouted join() walked against the UN-timeouted
+  backpressure put (a silent foreground hang reproducing the very
+  GPU-idle symptom the task removes — Must-Fix-vs-disclosed-residual
+  decide-language); (c) per-unit failure-timing windows enumerated vs the
+  consumer's resume predicate + claimed commit atomicity (incl. the
+  non-joining __exit__ path and daemon-worker death at interpreter exit);
+  (d) fail-loud interleavings the sketch omits (failure while the
+  producer is blocked in put; join reached only via __exit__); (e)
+  per-criterion test vacuity incl. Event-timing flakiness + patch-target
+  interception for monkeypatched chain factories; (f) smoke blind-spot
+  enumeration completeness (the plan declares a substituting unit suite);
+  (g) consumed-chain fidelity — the reused hub upload helper's claimed
+  semantics verified by grep-anchored windows, plus whether relocating the
+  consumer's done-marker mirror INTO the background chain preserves the
+  resume discipline; (h) rules-note landing (the LESSONS-index
+  fires-on-add/remove claim read from the header + a workflow_lint grep
+  for size-cap/ratchet tables binding a rules-file append); (i) body-ask
+  coverage + honesty of a deferred field criterion. Bar = the standard
+  infra clauses plus a fifth: "a concurrency failure mode (deadlock,
+  unbounded block, race, lost wakeup) the design does not handle AND the
+  planned test suite cannot catch"; the durability posture spelled as the
+  three ordering contracts (never-swallow / free-only-after-verify /
+  terminal-marker-only-after-join). Fact-check-all-CONFIRMED brief clause
+  = digit-free header block, count in the inputs span. Live-service ban
+  rescoped to "no HuggingFace Hub API call" (the plan wraps the fleet's
+  upload path). Numcheck PASS first try at ~134 KB (spans = inputs + plan
+  + body + lensitems + empty prior; press points stay SCAFFOLD and
+  digit-safe: criterion labels like A6 are letter-adjacent atom-free;
+  spell out ordinals ("fix-two"); name constants instead of quoting them
+  ("the per-pod MooseFS quota", "the default join timeout")).
