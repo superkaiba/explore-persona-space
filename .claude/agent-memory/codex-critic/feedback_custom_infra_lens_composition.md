@@ -2770,3 +2770,29 @@ Related: [[plan-path-missing-read-from-main]],
   a claim class, not a settled fact. Numcheck PASS first try at ~169 KB
   (spans = brief-inputs + lensitems + plan + empty prior; version-suffixed
   workspace; run from repo root for the registry leg).
+
+- **Background-overlap / pipelining infra plans, standard alternatives lens
+  (#2616 round one, per-stem Hub uploader): when the claimed benefit is a
+  MONITORING-SIGNAL ABSENCE (a poller advisory going quiet), make the
+  sharpest press point the predicate-semantics walk**: direct the twin to
+  read the poller's ACTUAL predicate (what it samples, cadence, window,
+  threshold) and construct the world where the fix works perfectly yet the
+  signal persists — here the task body itself measured the compute half
+  overhead-bound (GPU-milliseconds inside a two-second batch loop), so
+  utilization samples read zero even mid-compute and the plan's
+  achievability assumption conflates "idle windows under the advisory
+  window" with "sampled utilization above zero"; the plan's own second
+  lever (a recipe-note tuning knob) is then a named CONFOUND for
+  attributing signal absence to the shipped helper. Route FATAL only if
+  Goal-unanswerable AND the fleet-facing rules note teaches a false
+  expectation; else RECOVERABLE wording re-scope. Pairs with a
+  rejected-alternatives audit (DOMINATES | WASH | WORSE per named
+  alternative under the #2253 bar) that flags an alternative NAMED in the
+  plan's web findings but given no Decision-Rationale disposition
+  (CommitScheduler) as a specific judgment target, and a live-service ban
+  (#2332 shape: no Hub calls; the installed library source under .venv is
+  the LOCAL read for library-behavior rationales). Fact-check-all-CONFIRMED
+  brief clause → the #2184 settled-facts framing (inferences reviewable,
+  facts regression-guarded). Numcheck PASS first try at ~63 KB, zero
+  scaffold-cleared atoms (spans = brief + lensitems + plan + body + empty
+  prior; version-suffixed workspace; repo-root registry leg).
