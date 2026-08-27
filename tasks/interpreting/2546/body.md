@@ -1,7 +1,8 @@
 ---
-title: A thinking model's final answer state is largely predictable before reasoning
-  starts, but the specific answer becomes retrievable only at the end of the trace
-  (MODERATE confidence)
+title: 'Answer-state predictability dissociates from answer retrievability in reasoning
+  models: the context state predicts the final answer state at near-whole-output fidelity
+  but retrieves the specific answer at a third of the end-of-thought rate (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-08-24T17:29:34Z'
