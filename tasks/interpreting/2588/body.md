@@ -5,7 +5,7 @@ title: 'Linear context-to-answer mapping quality does not track capability acros
 kind: experiment
 tags: []
 created_at: '2026-08-25T19:50:48Z'
-has_clean_result: false
+has_clean_result: true
 workflow: v1
 goal: Determine whether linear context-to-answer mapping quality (held-out kNN retrieval
   primary, R^2 + identity+bias secondary) increases with general model capability
