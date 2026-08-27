@@ -104,6 +104,7 @@ def test_healthy_quiet_running_gets_quiet_interval() -> None:
         pytest.param({"ssh_failed": True}, id="ssh-transport-failure"),
         pytest.param({"gpu_idle_advisory_posted": True}, id="gpu-idle-advisory"),
         pytest.param({"gpu_idle_escalation_posted": True}, id="gpu-idle-escalation"),
+        pytest.param({"gpu_noctx_advisory_posted": True}, id="gpu-noctx-advisory"),
         pytest.param({"cpu_override_active": True}, id="cpu-override-stall-rescue"),
         pytest.param({"run_age_sec": 600.0}, id="early-run"),
         pytest.param({"run_age_sec": None}, id="unknown-launch-age"),

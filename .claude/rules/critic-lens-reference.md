@@ -1259,15 +1259,15 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     per-round critic read caught it; resolution: v3 made the phase REQUIRED).
     Remedies: strike the optionality marker, re-bind the criterion to a
     non-optional evidence source, or explicitly demote/condition the
-    criterion. Mechanical backstop: verify_plan c73 (WARN-only; same-line
+    criterion. Mechanical backstop: verify_plan c74 (WARN-only; same-line
     `Phase <ID>` + optionality-marker keying, negation-guarded, declarations
-    read outside the gates sections); THIS item owns the semantic half c73
+    read outside the gates sections); THIS item owns the semantic half c74
     cannot judge — whether a gates-section mention is genuinely a binding vs
     narration, and optionality expressed in prose without a `Phase <ID>`
     token on the line. N/A escape: no §7 binding names an optionality-marked
     phase — a genuinely informational gates-section mention declares the
     standalone "N/A — no acceptance binding to an optional phase" (also
-    c73's escape).
+    c74's escape).
 
 ### Alternative Explanations lens
 

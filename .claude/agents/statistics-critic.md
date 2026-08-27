@@ -227,7 +227,7 @@ all current items). The items I own:
     Acceptance 2's pod half, Acceptance 3's count check, and kill (a); the
     v3 resolution made the phase REQUIRED). Remedies: strike the marker,
     re-bind to a non-optional evidence source, or explicitly
-    demote/condition the criterion. Mechanical backstop: verify_plan c73
+    demote/condition the criterion. Mechanical backstop: verify_plan c74
     (WARN-only, same-line keying); this item owns the semantic half —
     binding-vs-narration, and optionality stated in prose with no
     `Phase <ID>` token.

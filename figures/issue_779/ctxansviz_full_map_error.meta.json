@@ -1,0 +1,68 @@
+{
+  "commit": "a9dcdc38+dirty",
+  "render_id": "e01fe4d03ffa46e5",
+  "git_commit": "a9dcdc38bcb20f62b6244e12049d455a2ea03478",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue779_ctxansviz_figures.py",
+  "created": "2026-08-27T14:47:57Z",
+  "figsize": [
+    6.5,
+    5.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "contexts colored by map accuracy (n=150,000 of 959,844)",
+        "xlabel": "UMAP 1",
+        "ylabel": "UMAP 2",
+        "xticklabels": [
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25"
+        ]
+      },
+      {
+        "ylabel": "cosine of predicted vs true answer vector",
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

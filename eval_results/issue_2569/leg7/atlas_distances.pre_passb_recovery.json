@@ -1,0 +1,4374 @@
+{
+ "anchor_825_aligned_cosine": 0.6864,
+ "distance_table": [
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.1525603009648702,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -8.357624292146138e-06,
+     "null_p975": 0.0005853810747276407,
+     "null_std": 0.0002884498659337765
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14, n1m_L19"
+   },
+   "pair": [
+    "n1m_L14",
+    "n1m_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9968077657653271,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.09355294475261507,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -8.880407336664486e-06,
+     "null_p975": 0.0005981532362905118,
+     "null_std": 0.0002883171246419208
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14, n1m_L26"
+   },
+   "pair": [
+    "n1m_L14",
+    "n1m_L26"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9773177000261799,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.36550406522699747,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -8.630604353632875e-06,
+     "null_p975": 0.0005992332621517789,
+     "null_std": 0.00028800732016127077
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "llama_native_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9734642559724147,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7332150172728555,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -9.921548054661556e-06,
+     "null_p975": 0.0005809125636770693,
+     "null_std": 0.0002894645310770998
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "qwen_matched_L14"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9985268793302029,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.3274152560462474,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.2206179177879122e-05,
+     "null_p975": 0.0005610033186047358,
+     "null_std": 0.0002878063214633509
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14, composed_L16"
+   },
+   "pair": [
+    "n1m_L14",
+    "composed_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9792495576835312,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.07034518285751332,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.319406118712627e-05,
+     "null_p975": 0.0005912375776380816,
+     "null_std": 0.00029190673726837166
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "featmap_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9383261121189387,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0018665974054078494,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1196868238257072e-05,
+     "null_p975": 0.000572655891692626,
+     "null_std": 0.0002985537064090001
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.722779525368538,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0014007643674390172,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3407236198847273e-05,
+     "null_p975": 0.0005604448453244505,
+     "null_std": 0.0002972740093374453
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7147132505779786,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.003134054378768789,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2812100326799183e-05,
+     "null_p975": 0.000569595736316483,
+     "null_std": 0.0002975321070379373
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7166647696463806,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.015366598265488812,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.125943786648963e-05,
+     "null_p975": 0.0005638688762879092,
+     "null_std": 0.00029767786825118795
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7263690634837473,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.011799318134295016,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1756129145188138e-05,
+     "null_p975": 0.0005634099299983155,
+     "null_std": 0.0002974031458865963
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.724644832458531,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0017977183139028712,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2832524201621937e-05,
+     "null_p975": 0.0005647711774569911,
+     "null_std": 0.0002972152211982784
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.714980053809083,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0006151332564526573,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2526223898072307e-05,
+     "null_p975": 0.0005617861744700154,
+     "null_std": 0.0002977540000030336
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7098934072937253,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0008961702390535179,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.9939462032382087e-05,
+     "null_p975": 0.0005828105734503422,
+     "null_std": 0.00029790849301027843
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7196251558894524,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0027412665476893583,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2601285291507333e-05,
+     "null_p975": 0.0005733395285200487,
+     "null_std": 0.00029843625143101394
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L14"
+   },
+   "pair": [
+    "n1m_L14",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7187756192652298,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.19823506457251946,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.0001446700194109e-05,
+     "null_p975": 0.0006013905403872752,
+     "null_std": 0.000288255660373822
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19, n1m_L26"
+   },
+   "pair": [
+    "n1m_L19",
+    "n1m_L26"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9907363884694792,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.12838939210668665,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -9.748187501780938e-06,
+     "null_p975": 0.0006088149778315327,
+     "null_std": 0.00028794913511465093
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "llama_native_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9879971087598304,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.1537898654180701,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.0885607194845263e-05,
+     "null_p975": 0.0005994331913540656,
+     "null_std": 0.0002893223065933708
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "qwen_matched_L14"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9982279627056234,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.13240627262226706,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.28768611447069e-05,
+     "null_p975": 0.0005701921023144849,
+     "null_std": 0.00028740280995648087
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19, composed_L16"
+   },
+   "pair": [
+    "n1m_L19",
+    "composed_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9622993209236238,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.2141935783520196,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.3704828022391493e-05,
+     "null_p975": 0.0005811003757470592,
+     "null_std": 0.0002908511968051799
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "featmap_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9143037449059299,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.021800564706398556,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1281083210129246e-05,
+     "null_p975": 0.0005986527354991586,
+     "null_std": 0.00029759955915741764
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6929087223713681,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.01301796173509302,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3421437405790605e-05,
+     "null_p975": 0.0005874705130322932,
+     "null_std": 0.0002963291724595498
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6857978730921976,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.006644890805863803,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2901836527006417e-05,
+     "null_p975": 0.000596295258751719,
+     "null_std": 0.0002965906532462501
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6875987635725203,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.08491147859540395,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1423291444915352e-05,
+     "null_p975": 0.000589743060068442,
+     "null_std": 0.000296915426368388
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6963161500518518,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.06933574099701065,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1888681620339108e-05,
+     "null_p975": 0.0005893782308405272,
+     "null_std": 0.00029665394667617557
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6948399399994498,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.036750382419539075,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.296012908438171e-05,
+     "null_p975": 0.0005922669245550513,
+     "null_std": 0.0002962263469077057
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6862675316281478,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.027076296881152186,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.259894610505113e-05,
+     "null_p975": 0.0005890498932809492,
+     "null_std": 0.00029678317862178
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.681870916089917,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0024325362651243985,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.032753928341735e-05,
+     "null_p975": 0.0006094950968780985,
+     "null_std": 0.00029679467572086556
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6902361714740444,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.005140935104866745,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2841470211873853e-05,
+     "null_p975": 0.000599790276441601,
+     "null_std": 0.0002971061865318834
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L19"
+   },
+   "pair": [
+    "n1m_L19",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6887691713015595,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.08097324977728582,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.0810407712766007e-05,
+     "null_p975": 0.0006274628722910761,
+     "null_std": 0.00028632957309731227
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "llama_native_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9985471675440871,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.09114701320774947,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.1548540279198308e-05,
+     "null_p975": 0.0006135821669496816,
+     "null_std": 0.0002875314301416597
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "qwen_matched_L14"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9836174947279935,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.08270220209098963,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.2909268160576507e-05,
+     "null_p975": 0.0005587341900095617,
+     "null_std": 0.0002853295947907239
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26, composed_L16"
+   },
+   "pair": [
+    "n1m_L26",
+    "composed_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9217525693797657,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.09121476963854934,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.3293188632903742e-05,
+     "null_p975": 0.000580966041854215,
+     "null_std": 0.0002879487145730986
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "featmap_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8605495720705464,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.006800891753933573,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.9880044901668463e-05,
+     "null_p975": 0.0006142835345949021,
+     "null_std": 0.00029556830528555585
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6298271345719122,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.003938321680629307,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.188274457731442e-05,
+     "null_p975": 0.0006153923453954353,
+     "null_std": 0.00029424790176292364
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6249979165966084,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0012410783243228416,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1483865093960566e-05,
+     "null_p975": 0.0006183252330927489,
+     "null_std": 0.00029449912672305684
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6264469351152668,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.02579272079468096,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.0160679923039437e-05,
+     "null_p975": 0.000591184025242211,
+     "null_std": 0.0002952174647730113
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6334509072641682,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0214552938123179,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.057401413826149e-05,
+     "null_p975": 0.0005923560658686001,
+     "null_std": 0.0002949751743369302
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6324769863888584,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.008879315177100585,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1597275579724696e-05,
+     "null_p975": 0.0006165379081540519,
+     "null_std": 0.00029405282405917083
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.626368534616726,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.008006518061700803,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1167320939815104e-05,
+     "null_p975": 0.0006198909049690954,
+     "null_std": 0.00029457155018414947
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6232380223695658,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.001129054316657443,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.934860200019952e-05,
+     "null_p975": 0.0005899388043474115,
+     "null_std": 0.00029447627469595045
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6293652154174468,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0012433301097587756,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.161170968932435e-05,
+     "null_p975": 0.0005986782242965264,
+     "null_std": 0.0002945207134057893
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: n1m_L26"
+   },
+   "pair": [
+    "n1m_L26",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6263093621616206,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.47536933658951536,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.1805250048441421e-05,
+     "null_p975": 0.0006003274554244787,
+     "null_std": 0.0002884954454015826
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.5246306634104847,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.3765230711494164
+   },
+   "pair": [
+    "llama_native_L16",
+    "qwen_matched_L14"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.980155266758591,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.610181543725774,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.302839836976357e-05,
+     "null_p975": 0.0005547518541080027,
+     "null_std": 0.0002862601703003534
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "llama_native_L16",
+    "composed_L16"
+   ],
+   "spectrum": {
+    "k": 4096,
+    "spectrum_cosine": 0.9127062536064229,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.07548170788588299,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.3221375160219176e-05,
+     "null_p975": 0.0005988811123742561,
+     "null_std": 0.00028911817322609064
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9245182921141171,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.3765230711494164
+   },
+   "pair": [
+    "llama_native_L16",
+    "featmap_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.850920961063126,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0012346195995390117,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.9590900133089926e-05,
+     "null_p975": 0.0006125871692129338,
+     "null_std": 0.00029707247147544116
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 1.001234619599539,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6136867141956169,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0028873250192348273,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.162134885557415e-05,
+     "null_p975": 0.0006135516062077873,
+     "null_std": 0.00029582545791249806
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9971126749807652,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5473991897293788
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6082823666614791,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.00512121424159241,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1218294042721408e-05,
+     "null_p975": 0.0006170886728999319,
+     "null_std": 0.0002960801294597249
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9948787857584076,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5465007142814333
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6095307621285926,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.013761058743606606,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.9880081880480124e-05,
+     "null_p975": 0.0005895632009035506,
+     "null_std": 0.00029662381440078887
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 1.0137610587436066,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6167824373010423,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.00985932696794267,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.030812826960629e-05,
+     "null_p975": 0.000590823586760035,
+     "null_std": 0.0002964070875050377
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 1.0098593269679426,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6156901447110057,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0003991244433441822,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.136172960719638e-05,
+     "null_p975": 0.0006153448552611919,
+     "null_std": 0.0002956685220964401
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9996008755566558,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5409818590380022
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6085272803692289,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.002497630616514321,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.0951027496885306e-05,
+     "null_p975": 0.0006187394842621052,
+     "null_std": 0.00029627417848527454
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9975023693834857,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5212503888969153
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6047768128080454,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.002613986294818201,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.9136805558510852e-05,
+     "null_p975": 0.0005879401979773702,
+     "null_std": 0.000296034281931883
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9973860137051818,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6111444090437538,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.00462692214961221,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.131935843289132e-05,
+     "null_p975": 0.0005965076265387957,
+     "null_std": 0.00029604482791250746
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "between_distance": 0.9953730778503878,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "llama_native_L16",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.6111104488468221,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "llama"
+   ],
+   "cosine": {
+    "raw_cosine": 0.35176257649385223,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.2436299364096354e-05,
+     "null_p975": 0.0005623306616803014,
+     "null_std": 0.0002867154941175588
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "composed_L16"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9740064297138357,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0823608202376779,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.340196107852126e-05,
+     "null_p975": 0.000576483987021575,
+     "null_std": 0.0002904569251856978
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9176391797623221,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.3359080280889942
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "featmap_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9331581430089004,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0016596279168025294,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1467902067324385e-05,
+     "null_p975": 0.000584405233065443,
+     "null_std": 0.0002972111337606724
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0016596279168026,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7273023844398703,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0019024029671307762,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3640611107601518e-05,
+     "null_p975": 0.0005727001043897768,
+     "null_std": 0.00029596588207467044
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9980975970328693,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5473991897293788
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7199547575621634,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.003848206101668071,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3085899649847037e-05,
+     "null_p975": 0.0005816374793605848,
+     "null_std": 0.0002962241910138323
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.996151793898332,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5465007142814333
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7218318539572756,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0155282505739183,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1606570809185024e-05,
+     "null_p975": 0.0005750568416412593,
+     "null_std": 0.0002964644469929738
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0155282505739183,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7306732756274913,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.011778405585257817,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.207982131108307e-05,
+     "null_p975": 0.0005748299220425038,
+     "null_std": 0.00029619329563784004
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.011778405585258,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7291413634656343,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0015668476043790625,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3133826485872698e-05,
+     "null_p975": 0.0005767353290603701,
+     "null_std": 0.0002958900013233618
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.001566847604379,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5409818590380022
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7205298750331198,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0010476680530109527,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2791521420173225e-05,
+     "null_p975": 0.0005737145056928125,
+     "null_std": 0.00029638449311988576
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9989523319469891,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5212503888969153
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7158402574796409,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0014032395326611083,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.039856536946709e-05,
+     "null_p975": 0.0005938852540098713,
+     "null_std": 0.0002966261123618278
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9985967604673389,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7249897940185963,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.003169302735919223,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2937211194423804e-05,
+     "null_p975": 0.0005851612396774653,
+     "null_std": 0.00029700264542425564
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9968306972640808,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "qwen_matched_L14",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.7237876228616755,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0814923931700004,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.2215838860283278e-05,
+     "null_p975": 0.0006025239486347577,
+     "null_std": 0.00028962673631945015
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "featmap_L19"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9842538518063485,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.002064597531083991,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1444438181249968e-05,
+     "null_p975": 0.0005563814609133679,
+     "null_std": 0.00029467875776609384
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8154340012366886,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0027898864677835377,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3543392106526303e-05,
+     "null_p975": 0.0005609778610944666,
+     "null_std": 0.0002935298959208287
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8090196686920951,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.005274536914419704,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2892586883574572e-05,
+     "null_p975": 0.0005542478916136484,
+     "null_std": 0.0002936844953512656
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8105336832685011,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.01781713447117132,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1341452275273186e-05,
+     "null_p975": 0.0005441588345869989,
+     "null_std": 0.0002936811381181648
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8178588509162678,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.013044678932921104,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1828397855468102e-05,
+     "null_p975": 0.0005470414376979698,
+     "null_std": 0.0002933761826189515
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.816659158231776,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0004871327333810434,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.274827559238835e-05,
+     "null_p975": 0.0005449107973628982,
+     "null_std": 0.0002934429474177959
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8091084760456712,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.002579667034533196,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.249744513349648e-05,
+     "null_p975": 0.0005580443286570572,
+     "null_std": 0.00029371652090337384
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8046826569663431,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0020696498051385724,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.9589138270152718e-05,
+     "null_p975": 0.0005374364499143754,
+     "null_std": 0.0002944048068767133
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.81193510929954,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "llama",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.005372890876571717,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.245762352488041e-05,
+     "null_p975": 0.0005761061254894918,
+     "null_std": 0.0002954674028827093
+    },
+    "statistic_class": "direction-aware under the FIXED activation-Procrustes alignment (anchor alignment applied before cross-basis comparison)"
+   },
+   "h7": {
+    "evaluable": false,
+    "reason": "no split-half floor on: composed_L16"
+   },
+   "pair": [
+    "composed_L16",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8126533120630589,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": true
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.008058241987397775,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1118797793119246e-05,
+     "null_p975": 0.0005853221046340469,
+     "null_std": 0.0002924156423410278
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0080582419873978,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_cas-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8811682662210927,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.0029379216068943785,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.29718768423471e-05,
+     "null_p975": 0.0005876995985577478,
+     "null_std": 0.0002916015443397845
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0029379216068943,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5473991897293788
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8751968597359644,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.0018474569691497337,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.237563603573946e-05,
+     "null_p975": 0.0005850130176644445,
+     "null_std": 0.0002916005911203405
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9981525430308502,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5465007142814333
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8766366131843509,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.041926125097916406,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.109980265298495e-05,
+     "null_p975": 0.0005723857745037743,
+     "null_std": 0.0002915049248969958
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0419261250979164,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8783677164373198,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.03353045363775785,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.151121368691127e-05,
+     "null_p975": 0.0005750412860569028,
+     "null_std": 0.00029126341914218796
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0335304536377579,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8774937385825095,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.014907419981889217,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.220058867119978e-05,
+     "null_p975": 0.000575670015343339,
+     "null_std": 0.00029145054569555955
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0149074199818893,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5409818590380022
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8738155695022628,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": -0.01039475820887315,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.19257565024137e-05,
+     "null_p975": 0.0005723960105867666,
+     "null_std": 0.0002916530333942628
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 1.0103947582088733,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5212503888969153
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8701856872223093,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.001851130580853403,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -1.932730322943952e-05,
+     "null_p975": 0.0005561002734508836,
+     "null_std": 0.00029227220082586115
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9981488694191466,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8753617239360636,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.00674855707301009,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.184773290490322e-05,
+     "null_p975": 0.0005944073899477738,
+     "null_std": 0.00029347844819386913
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.9932514429269899,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "featmap_L19",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.8825083807021099,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.8508880474952973,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.437699176346287e-05,
+     "null_p975": 0.0006434111039486732,
+     "null_std": 0.0002744367112717922
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.14911195250470266,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_cas-pers-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9982713941603114,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7764370234415041,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3909612882372614e-05,
+     "null_p975": 0.0006554262668374205,
+     "null_std": 0.00027411612439081696
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.22356297655849589,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9989727703644968,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6515139983038114,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3582086119361173e-05,
+     "null_p975": 0.0006502676122703722,
+     "null_std": 0.0002739045691559716
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.3484860016961886,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9985159729359419,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6860287900568914,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3765877291917328e-05,
+     "null_p975": 0.0006480493433517467,
+     "null_std": 0.00027388533247755506
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.31397120994310856,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9987564112067073,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7353251132646587,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3734889093176316e-05,
+     "null_p975": 0.0006572440666592436,
+     "null_std": 0.0002743723475782798
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.26467488673534134,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9984414363803001,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7175143062710032,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3282879923153833e-05,
+     "null_p975": 0.0006621577307162101,
+     "null_std": 0.000273877722241883
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.2824856937289968,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9970783695499261,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.41190493811599166,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1863677894994734e-05,
+     "null_p975": 0.0006601424808098897,
+     "null_std": 0.00027407660631263497
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.5880950618840084,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9953475106934633,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5893828721469359,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3562429451099596e-05,
+     "null_p975": 0.0006611182275311015,
+     "null_std": 0.0002750815159788756
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.41061712785306415,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5817492907209232
+   },
+   "pair": [
+    "leg6_wmap_cas-bare-con-lr1e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9979695841587716,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.8949940640263694,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.4359984928073245e-05,
+     "null_p975": 0.0006562016905087682,
+     "null_std": 0.0002718004747485739
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.10500593597363062,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5473991897293788
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_cas-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9997156651978805,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.609284922932302,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.4074475249513897e-05,
+     "null_p975": 0.0006502099209478899,
+     "null_std": 0.00027168045059975895
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.39071507706769804,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9957427736324603,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6549572089712365,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.423807557166346e-05,
+     "null_p975": 0.0006486000735551015,
+     "null_std": 0.00027166229156165263
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.34504279102876345,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9967659103577505,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.8388327631065388,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.4140254799313965e-05,
+     "null_p975": 0.0006582148319647065,
+     "null_std": 0.0002721172309276473
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.16116723689346124,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5473991897293788
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9991403494067531,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.8412819374805429,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3672298341803708e-05,
+     "null_p975": 0.0006577381998830388,
+     "null_std": 0.00027155934043096943
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.15871806251945708,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5473991897293788
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9985886693490912,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5174683250908827,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2326233417660596e-05,
+     "null_p975": 0.0006414721139634623,
+     "null_std": 0.00027202139067530765
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.4825316749091173,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9916175264613915,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6725222278466233,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.405902266796528e-05,
+     "null_p975": 0.0006625893366491669,
+     "null_std": 0.00027280069378760806
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.3274777721533767,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-con-lr1e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9972201873527503,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5345776645152294,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3713202834545324e-05,
+     "null_p975": 0.0006520869472671479,
+     "null_std": 0.0002718615704477318
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.46542233548477063,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-po-lr1e5-s42",
+    "leg6_wmap_imp-pers-con-lr3e5-s137"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9968715181454247,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5862054613727901,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.387626272132129e-05,
+     "null_p975": 0.0006498523461468564,
+     "null_std": 0.00027184887156903644
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.41379453862720994,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-po-lr1e5-s42",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9976321738608829,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.8978424486008487,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3764039820986672e-05,
+     "null_p975": 0.0006588156960713443,
+     "null_std": 0.0002722998449305675
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.10215755139915128,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5465007142814333
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-po-lr1e5-s42",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9995588441363403,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7806315444745084,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3290601075441985e-05,
+     "null_p975": 0.0006642846419474823,
+     "null_std": 0.00027176430417889824
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.21936845552549156,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5465007142814333
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-po-lr1e5-s42",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9988030749855624,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6034580252922463,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1900129161617183e-05,
+     "null_p975": 0.0006510394132688881,
+     "null_std": 0.0002721316445450491
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.39654197470775365,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-po-lr1e5-s42",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9938981658875499,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7795648550589956,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3678486291410114e-05,
+     "null_p975": 0.0006623049699896233,
+     "null_std": 0.00027301910397080874
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.22043514494100436,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "leg6_wmap_cas-pers-po-lr1e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9976960165149765,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.9673509470522351,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.364308171975918e-05,
+     "null_p975": 0.0006582955322464489,
+     "null_std": 0.0002746817765440711
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.03264905294776488,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s137",
+    "leg6_wmap_imp-pers-con-lr3e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9998787125198999,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5904330813485522,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3626436739452617e-05,
+     "null_p975": 0.0006667104265931871,
+     "null_std": 0.00027527532575846427
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.4095669186514478,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s137",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9970247221333737,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6071823674241625,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3162880620870116e-05,
+     "null_p975": 0.0006712710456017083,
+     "null_std": 0.00027474511809508846
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.39281763257583746,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s137",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9950220253698339,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.22527849549985335,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1659316212321698e-05,
+     "null_p975": 0.0006660119852337471,
+     "null_std": 0.00027499225355763783
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.7747215045001467,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s137",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9962350312052661,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.30246164085501076,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3505811321225734e-05,
+     "null_p975": 0.0006705947468025558,
+     "null_std": 0.0002759107385670568
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.6975383591449893,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5862542045368506
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s137",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9948374241551657,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6415155300806666,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.4019098740539913e-05,
+     "null_p975": 0.0006656918935896524,
+     "null_std": 0.00027462902510320237
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.35848446991933336,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s42",
+    "leg6_wmap_imp-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9977734769303008,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.643910795617326,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.354449184915386e-05,
+     "null_p975": 0.0006703622365646177,
+     "null_std": 0.0002740884015920974
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.356089204382674,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s42",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9960694344772786,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.2538904667711864,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.2130876792338027e-05,
+     "null_p975": 0.0006597043339693358,
+     "null_std": 0.0002743698800474434
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.7461095332288137,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s42",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9958782532694666,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.33880800289027596,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3914902257040644e-05,
+     "null_p975": 0.0006696483855636808,
+     "null_std": 0.0002752512162075207
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.661191997109724,
+    "evaluable": true,
+    "noise_dominated": false,
+    "within_distance_max": 0.5844307476221966
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-con-lr3e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9952444157573963,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7960068993607767,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.3127256014064194e-05,
+     "null_p975": 0.0006632410623038402,
+     "null_std": 0.00027192558699382514
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.20399310063922327,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5409818590380022
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-po-lr1e5-s42",
+    "leg6_wmap_syc-bare-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9994460344389353,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5793653373957856,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1671487476131882e-05,
+     "null_p975": 0.0006581681954412001,
+     "null_std": 0.0002723803522812436
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.42063466260421445,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-po-lr1e5-s42",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9954365733731436,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.6994156810118396,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.34797491442797e-05,
+     "null_p975": 0.0006620861304364892,
+     "null_std": 0.000273129312099658
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.3005843189881604,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "leg6_wmap_imp-pers-po-lr1e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.996727267253986,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5050638897591786,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.1420265655227923e-05,
+     "null_p975": 0.0006625806197390876,
+     "null_std": 0.00027125967397603236
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.4949361102408214,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_syc-bare-con-lr1e5-s42",
+    "leg6_wmap_syc-conv-con-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9936299630710885,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.5805957763302899,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.309172527576307e-05,
+     "null_p975": 0.000640068960776287,
+     "null_std": 0.00027184462767487424
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.4194042236697101,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5657788799456458
+   },
+   "pair": [
+    "leg6_wmap_syc-bare-con-lr1e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9951119358942672,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  },
+  {
+   "bases": [
+    "qwen",
+    "qwen"
+   ],
+   "cosine": {
+    "raw_cosine": 0.7845216715810247,
+    "rotation_null": {
+     "analytic_sd_1_over_d": 0.00027901785714285713,
+     "n_draws": 200,
+     "null_form": "shared spectra-bilinear Haar draws (exact in distribution; draws shared across pairs \u2014 see shared_rotation_null_draws)",
+     "null_mean": -2.225134087441162e-05,
+     "null_p975": 0.0006715927545608728,
+     "null_std": 0.00027602792776242903
+    },
+    "statistic_class": "direction-aware (raw cosine vs rotation null; same basis)"
+   },
+   "h7": {
+    "between_distance": 0.2154783284189753,
+    "evaluable": true,
+    "noise_dominated": true,
+    "within_distance_max": 0.5960219693337483
+   },
+   "pair": [
+    "leg6_wmap_syc-conv-con-lr1e5-s42",
+    "leg6_wmap_syc-pers-po-lr1e5-s42"
+   ],
+   "spectrum": {
+    "k": 3584,
+    "spectrum_cosine": 0.9932610953982655,
+    "statistic_class": "spectrum/rotation-invariant-only (descriptive ceiling)",
+    "truncated": false
+   }
+  }
+ ],
+ "dropped_rows": [
+  {
+   "name": "passb_L14",
+   "reason": "pass-B map unresolved at P-E entry: /workspace/eps2569pe/fits/stage_passb/base_L14.pt: expected ridge payload, got kind=None"
+  },
+  {
+   "name": "passb_L16",
+   "reason": "pass-B map unresolved at P-E entry: /workspace/eps2569pe/fits/stage_passb/base_L16.pt: expected ridge payload, got kind=None"
+  },
+  {
+   "name": "passb_L27",
+   "reason": "pass-B map unresolved at P-E entry: /workspace/eps2569pe/fits/stage_passb/base_L27.pt: expected ridge payload, got kind=None"
+  },
+  {
+   "name": "i2378_operators",
+   "reason": "soft dependency not parked (add-on follow-up slot)"
+  }
+ ],
+ "h7_demote": {
+  "conservatism_note": "floors are split-half refits at n/2 train rows, which overstates the full-n operator's noise \u2014 per-pair noise_dominated flags fire conservatively (the registered all-pairs denominator, by contrast, biases the AGGREGATE verdict toward not-demoting when pairs are excluded \u2014 see reading.excluded_pairs)",
+  "diagnostic_evaluable_majority": {
+   "noise_dominated": false,
+   "note": "strict majority over EVALUABLE pairs only \u2014 the alternative reading (and the pre-fix implementation's); DIAGNOSTIC ONLY, never the verdict",
+   "readings_disagree": false
+  },
+  "disposition": "not demoted \u2014 within-operator split-half distance >= between-operator distance for 32 of 120 total pairs, not > half of ALL pairs (the registered denominator)",
+  "excluded_pair_reasons": {
+   "no split-half floor on: composed_L16": 12,
+   "no split-half floor on: n1m_L14": 12,
+   "no split-half floor on: n1m_L14, composed_L16": 1,
+   "no split-half floor on: n1m_L14, n1m_L19": 1,
+   "no split-half floor on: n1m_L14, n1m_L26": 1,
+   "no split-half floor on: n1m_L19": 12,
+   "no split-half floor on: n1m_L19, composed_L16": 1,
+   "no split-half floor on: n1m_L19, n1m_L26": 1,
+   "no split-half floor on: n1m_L26": 12,
+   "no split-half floor on: n1m_L26, composed_L16": 1
+  },
+  "fraction_noise_dominated_all_pairs": 0.26666666666666666,
+  "fraction_noise_dominated_evaluable": 0.48484848484848486,
+  "n_evaluable": 66,
+  "n_noise_dominated": 32,
+  "n_pairs_total": 120,
+  "noise_dominated": false,
+  "predicate": "within-operator split-half distance >= between-operator distance for > half of pairs -> atlas reported noise-dominated, descriptive only",
+  "reading": {
+   "cross_basis_unit_asymmetry": "disclosure: for cross-basis pairs the within floor is a NATIVE-basis split-half cosine while the between distance is measured after the semi-orthogonal activation-Procrustes alignment, so 'matched vec-cosine units' is exact on same-basis pairs and approximate on cross-model pairs (plausibly under-firing the demote there); both conventions are the plan's own \u2014 disclosed, not changed",
+   "denominator": "ALL enumerated atlas pairs (n_pairs_total) \u2014 the plan registers '> half of pairs' twice (v4 line 57 + line 295) with no evaluability qualifier, so the verdict is the strict majority over the full pair table: n_noise_dominated * 2 > n_pairs_total",
+   "excluded_pairs": "a pair excluded for incommensurate units (spectrum fallback) or a missing floor is not evidence either way; under the registered '> half of pairs' text it stays in the denominator and never enters the numerator, so exclusions bias the verdict toward NOT demoting \u2014 a stated READING of plan text that did not anticipate exclusions (the opposite bias from the evaluable-only majority, kept as diagnostic_evaluable_majority); zero evaluable pairs -> verdict undecidable, atlas ships descriptive-only regardless",
+   "pair_within": "max over the two members' within-operator distances (the noisier member binds: a separation is resolvable only above BOTH self-floors)",
+   "units": "distances are 1 - cosine in matched vec-cosine units: within = 1 - split_half_floor cosine (raw vec-cosine of the two half-refit operators); between = 1 - the pair's direction-aware aligned raw cosine; the rotation-invariant spectrum fallback is never used"
+  },
+  "verdict_denominator": "all_pairs"
+ },
+ "issue": 2569,
+ "mds_2d": {
+  "coords": {
+   "composed_L16": [
+    -0.5010687525739629,
+    -0.23538915693254805
+   ],
+   "featmap_L19": [
+    -0.35191770535647804,
+    0.42779471164454247
+   ],
+   "leg6_wmap_cas-bare-con-lr1e5-s42": [
+    0.37847500184073185,
+    -0.0316561791786596
+   ],
+   "leg6_wmap_cas-pers-con-lr1e5-s42": [
+    0.3887411718177147,
+    -0.018453138937867746
+   ],
+   "leg6_wmap_cas-pers-po-lr1e5-s42": [
+    0.3822397547798787,
+    0.00041887547657464425
+   ],
+   "leg6_wmap_imp-pers-con-lr3e5-s137": [
+    0.3477022753823487,
+    -0.10707002120522631
+   ],
+   "leg6_wmap_imp-pers-con-lr3e5-s42": [
+    0.3573411343607297,
+    -0.09503812510271176
+   ],
+   "leg6_wmap_imp-pers-po-lr1e5-s42": [
+    0.39509649518256157,
+    -0.02949840356931687
+   ],
+   "leg6_wmap_syc-bare-con-lr1e5-s42": [
+    0.37982842008137846,
+    -0.032479819755689816
+   ],
+   "leg6_wmap_syc-conv-con-lr1e5-s42": [
+    0.2662671313433131,
+    0.07915006448823356
+   ],
+   "leg6_wmap_syc-pers-po-lr1e5-s42": [
+    0.3188980106162648,
+    0.0603061507057178
+   ],
+   "llama_native_L16": [
+    -0.5181297497995611,
+    -0.27886069143186726
+   ],
+   "n1m_L14": [
+    -0.5165695842904601,
+    -0.24686527115867413
+   ],
+   "n1m_L19": [
+    -0.44058576926771054,
+    0.3977139139978479
+   ],
+   "n1m_L26": [
+    -0.35322418354259144,
+    0.37966797613402437
+   ],
+   "qwen_matched_L14": [
+    -0.5330936505741573,
+    -0.26974088517437966
+   ]
+  },
+  "note": "presentation-only (classical MDS on 1 - aligned cosine); every claim reads off the distance table",
+  "spectrum_fallback_pairs": []
+ },
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_atlas.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "4f954231535bf969df2dad3adf3333f3c58f8473",
+  "git_dirty": false,
+  "phase": "atlas",
+  "timestamp_utc": "2026-08-27T09:19:53Z"
+ },
+ "procrustes": {
+  "available": true,
+  "n_rows": 53581
+ },
+ "rows": [
+  {
+   "basis": "qwen",
+   "floor": null,
+   "floor_cos": null,
+   "floor_label": "no floor \u2014 banked (refit rows not staged)",
+   "fp": "5a085dc6bbbfac9eba43b90567b8e8135507fefa4f7a2962cc7c9385d449df89",
+   "name": "n1m_L14",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/maproot/data/issue_2094/joint_transport/banked_maps/issue779_monitoring/n1m_readout/weights/L14/ridge.pt",
+   "within_distance": null
+  },
+  {
+   "basis": "qwen",
+   "floor": null,
+   "floor_cos": null,
+   "floor_label": "no floor \u2014 banked (refit rows not staged)",
+   "fp": "188486f8afd9d95221e32492f3a0be2a3bdb2098cbe7fadfecf1d46433567909",
+   "name": "n1m_L19",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/maproot/data/issue_2094/joint_transport/banked_maps/issue779_monitoring/n1m_readout/weights/L19/ridge.pt",
+   "within_distance": null
+  },
+  {
+   "basis": "qwen",
+   "floor": null,
+   "floor_cos": null,
+   "floor_label": "no floor \u2014 banked (refit rows not staged)",
+   "fp": "f2c7a4d0e6f595b1ae0b1f2d4b43d0a8e90e4dc412f619b8676ec3a272c42b7f",
+   "name": "n1m_L26",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/maproot/data/issue_2094/joint_transport/banked_maps/issue779_monitoring/n1m_readout/weights/L26/ridge.pt",
+   "within_distance": null
+  },
+  {
+   "basis": "llama",
+   "floor": {
+    "floor": 0.6234769288505836,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "floor_cos": 0.6234769288505836,
+   "floor_label": "split-half refit at the selected lambda",
+   "fp": "6908117e7703bb15eadb87742708aefeeee338440527bb96ec55a3aa21f261c8",
+   "name": "llama_native_L16",
+   "procrustes_aligned": true,
+   "shape": [
+    4096,
+    4096
+   ],
+   "source": "/workspace/eps2569pe/fits/llama_map_L16.pt",
+   "within_distance": 0.3765230711494164
+  },
+  {
+   "basis": "qwen",
+   "floor": {
+    "floor": 0.6640919719110058,
+    "n_half": [
+     26791,
+     26790
+    ]
+   },
+   "floor_cos": 0.6640919719110058,
+   "floor_label": "split-half refit at the selected lambda",
+   "fp": "e3bd59d3aade46941c8399c3191654a1464536eeb919fc2ad8c95df14bffd70e",
+   "name": "qwen_matched_L14",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/fits/qwen_matched_L14.pt",
+   "within_distance": 0.3359080280889942
+  },
+  {
+   "basis": "llama",
+   "floor": null,
+   "floor_cos": null,
+   "floor_label": "no floor \u2014 composition of three fitted maps",
+   "fp": "2b2b7e7a8e0ad8017222149b8bed3f8e7dbea9a0787de1cdcf89c64de95b694a",
+   "name": "composed_L16",
+   "procrustes_aligned": true,
+   "shape": [
+    4096,
+    4096
+   ],
+   "source": "/workspace/eps2569pe/fits/align_maps.pt (center: banked n1m L14)",
+   "within_distance": null
+  },
+  {
+   "basis": "qwen",
+   "floor": {
+    "floor": 0.773589710103505,
+    "n_half": [
+     60000,
+     60000
+    ]
+   },
+   "floor_cos": 0.773589710103505,
+   "floor_label": "split-half refit of M_feat at the recorded lambda (linearized)",
+   "fp": "dd84ca0ae690a4e9ddb7e789742067758cb7e69bc431f20ade0c7f9bd1827bfd",
+   "name": "featmap_L19",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg4 (re-derived at recorded lambda=316.228; ReLU/TopK gates ignored)",
+   "within_distance": 0.22641028989649503
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.4182507092790768,
+   "floor_cos": 0.4182507092790768,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "95d848b61db7071795e89aab2a9871575970550829d3d4be15d9afc05235e358",
+   "name": "leg6_wmap_cas-bare-con-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/cas-bare-con-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5817492907209232
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.4526008102706211,
+   "floor_cos": 0.4526008102706211,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "08065712ccb74c39d4ade3889e6ab64b72c6f7ca81575d360ea55868973f7973",
+   "name": "leg6_wmap_cas-pers-con-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/cas-pers-con-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5473991897293788
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.45349928571856674,
+   "floor_cos": 0.45349928571856674,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "036c2f7164bec8d9025dfa45756ccbddde5f597bbdbd2499804d63a87cc42392",
+   "name": "leg6_wmap_cas-pers-po-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/cas-pers-po-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5465007142814333
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.4137457954631493,
+   "floor_cos": 0.4137457954631493,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "b2777d736ddaa9e1459e017366c589d154ac23647920431ce3bcff6d7d26e466",
+   "name": "leg6_wmap_imp-pers-con-lr3e5-s137",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/imp-pers-con-lr3e5-s137/operator_factors.pt",
+   "within_distance": 0.5862542045368506
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.41556925237780334,
+   "floor_cos": 0.41556925237780334,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "c8bcf739197da90bc706dc8af2cae9568fb6848d8c30bf203a29c6f1311bc811",
+   "name": "leg6_wmap_imp-pers-con-lr3e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/imp-pers-con-lr3e5-s42/operator_factors.pt",
+   "within_distance": 0.5844307476221966
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.45901814096199783,
+   "floor_cos": 0.45901814096199783,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "0c94fec1b261f88be392ced4e372bbf7cb7ca94709160fae530eced7c9ab4d8a",
+   "name": "leg6_wmap_imp-pers-po-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/imp-pers-po-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5409818590380022
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.4787496111030847,
+   "floor_cos": 0.4787496111030847,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "4e392ed47b9731abd14af4a05a532fcef427ea9c0ddaa8383bbd28ef11780e33",
+   "name": "leg6_wmap_syc-bare-con-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/syc-bare-con-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5212503888969153
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.4039780306662517,
+   "floor_cos": 0.4039780306662517,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "5c21e38090a5d695f892e049703f5af63e957dd08734709cfa888a1015a522fe",
+   "name": "leg6_wmap_syc-conv-con-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/syc-conv-con-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5960219693337483
+  },
+  {
+   "basis": "qwen",
+   "floor": 0.4342211200543542,
+   "floor_cos": 0.4342211200543542,
+   "floor_label": "leg6 sidecar (operator split-half self-cosine)",
+   "fp": "8786bd34757c3225b42db849c6007aaae72e6d38dfc62c6ef345ce64f6a08379",
+   "name": "leg6_wmap_syc-pers-po-lr1e5-s42",
+   "procrustes_aligned": false,
+   "shape": [
+    3584,
+    3584
+   ],
+   "source": "/workspace/eps2569pe/leg6/syc-pers-po-lr1e5-s42/operator_factors.pt",
+   "within_distance": 0.5657788799456458
+  }
+ ]
+}

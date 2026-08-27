@@ -1,0 +1,29 @@
+{
+ "booked_wall_h": 6.0,
+ "capture_params": {
+  "batch_tokens": 8192,
+  "device": "cuda",
+  "layers": [
+   14,
+   19,
+   26
+  ],
+  "max_batch_rows": 64,
+  "max_capture_tokens": 8192,
+  "model_id": "Qwen/Qwen2.5-7B-Instruct"
+ },
+ "extrapolated_wall_h": 1.0936560730139415,
+ "fresh_wall_s": 1.0499098300933838,
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_xmodel_capture.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "6f6729c0a0214e0b025c0993dd6f19079d1fc8c1",
+  "git_dirty": false,
+  "phase": "pilot-gate",
+  "timestamp_utc": "2026-08-26T22:03:32Z"
+ },
+ "per_row_s": 0.03280968219041824,
+ "resumed_chunks": 0,
+ "rows_measured": 32,
+ "verdict": "PASS"
+}

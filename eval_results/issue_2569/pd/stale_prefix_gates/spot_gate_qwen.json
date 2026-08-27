@@ -1,0 +1,35 @@
+{
+ "chunk": "shard00_chunk0000.pt",
+ "failure": "spot-gate ci=2 v_C L14: rel diff 0.4633 > tol 0.02 vs the banked oracle \u2014 HALT P-D",
+ "metadata": {
+  "git_argv0_path": "scripts/issue2569_xmodel_capture.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+  "git_dirty": false,
+  "phase": "spot_gate_qwen",
+  "timestamp_utc": "2026-08-26T20:14:28Z"
+ },
+ "n_comparisons": 1,
+ "regime": {
+  "batch_tokens": 8192,
+  "device": "cuda",
+  "gate_rel_tol": 0.02,
+  "gate_rows": 8,
+  "layers": [
+   14,
+   19,
+   26
+  ],
+  "max_batch_rows": 64,
+  "max_capture_tokens": 8192,
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "n_texts": 60000,
+  "selection_ci_sha256": "8e4e014100df8ea9569e7cf466f40176613992855678e9c13fe37bffc94d7de5",
+  "spot_chunk": "shard00_chunk0000.pt",
+  "texts_sha256": "476d6016804e5b49e86ceb6f5e38fe3916bdf7c590f54ab534d7b26f591f1871"
+ },
+ "rel_tol": 0.02,
+ "rows": [],
+ "verdict": "FAIL",
+ "worst_rel_diff": 0.46332517944921375
+}

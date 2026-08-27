@@ -1,0 +1,94 @@
+{
+  "regime": {
+    "regime_version": 1,
+    "layer": 14,
+    "smoke": false,
+    "top_k": 32,
+    "n_draws": 1000,
+    "mass_kernel": 0.99,
+    "mass_k90": 0.9,
+    "class_thresholds": {
+      "copied_gain": [
+        0.8,
+        1.25
+      ],
+      "align_hi": 0.8,
+      "align_lo": 0.2,
+      "transcoded_gain_floor": 0.8
+    },
+    "alpha_residual_ks": [
+      1,
+      8,
+      32,
+      128
+    ]
+  },
+  "entry_asserts": {
+    "gram": {
+      "max_rel_err": 3.2532099130651304e-15,
+      "n_probes": 64
+    },
+    "singular_orientation": {
+      "max_row_form_rel_err": 7.709932471225277e-15,
+      "row_form_rel_err": [
+        7.929195258394944e-16,
+        1.0523200017560398e-15,
+        1.0443129100506404e-15,
+        7.709932471225277e-15,
+        1.1960082645906019e-15,
+        3.556868747164751e-15,
+        1.5006981815823264e-15,
+        1.2881846971650095e-15
+      ],
+      "wrong_column_form_rel_err": [
+        1.3751363426680285,
+        1.3516573900324675,
+        1.3679750903743775,
+        1.301913311462438,
+        1.3322680323180012,
+        1.2627054344031585,
+        1.2898753735469406,
+        1.2827053509554451
+      ],
+      "sigma": [
+        13.171990658365061,
+        11.10065561416315,
+        8.97369685954601,
+        8.12908269434726,
+        7.969187377389008,
+        7.7211400210858265,
+        7.347508890457914,
+        7.047741409352656
+      ],
+      "k": 8
+    },
+    "apply_path": {
+      "max_abs_diff": 1.2434497875801753e-14,
+      "max_rel_diff": 2.0678130753085618e-11,
+      "n_probes": 8
+    }
+  },
+  "selected_lambda": 0.001,
+  "metadata": {
+    "git_commit": "432da6f0c2257f72f14ab23f801d2d4df259e3fe",
+    "timestamp_utc": "2026-08-27T10:03:24.888891Z",
+    "python_version": "3.12.13",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": true,
+    "phase": "pa-entry",
+    "git_dirty_paths": [
+      "eval_results/issue_2569/weights/leg1/dw_mass_L14.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L19.json",
+      "eval_results/issue_2569/weights/leg1/dw_mass_L26.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L14.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L19.json",
+      "eval_results/issue_2569/weights/leg1/entry_asserts_L26.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L14.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L19.json",
+      "eval_results/issue_2569/weights/leg1/splithalf_stability_L26.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_weights.py"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "commit": "0ab2f1ae+dirty",
+  "render_id": "c09331fd96034949",
+  "git_commit": "0ab2f1ae4a451bf974690d65a9dae9e01910762e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2569_normalize_passb.py"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2569_figures.py",
+  "created": "2026-08-27T09:52:25Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Operator distances (direction-aware where aligned)",
+        "xticklabels": [
+          "n1m L14",
+          "n1m L19",
+          "n1m L26",
+          "passb L14",
+          "passb L16",
+          "passb L27",
+          "llama native L16",
+          "qwen matched L14",
+          "composed L16",
+          "featmap L19",
+          "leg6 wmap cas-bare-con-lr1e5-s42",
+          "leg6 wmap cas-pers-con-lr1e5-s42",
+          "leg6 wmap cas-pers-po-lr1e5-s42",
+          "leg6 wmap imp-pers-con-lr3e5-s137",
+          "leg6 wmap imp-pers-con-lr3e5-s42",
+          "leg6 wmap imp-pers-po-lr1e5-s42",
+          "leg6 wmap syc-bare-con-lr1e5-s42",
+          "leg6 wmap syc-conv-con-lr1e5-s42",
+          "leg6 wmap syc-pers-po-lr1e5-s42"
+        ],
+        "yticklabels": [
+          "n1m L14",
+          "n1m L19",
+          "n1m L26",
+          "passb L14",
+          "passb L16",
+          "passb L27",
+          "llama native L16",
+          "qwen matched L14",
+          "composed L16",
+          "featmap L19",
+          "leg6 wmap cas-bare-con-lr1e5-s42",
+          "leg6 wmap cas-pers-con-lr1e5-s42",
+          "leg6 wmap cas-pers-po-lr1e5-s42",
+          "leg6 wmap imp-pers-con-lr3e5-s137",
+          "leg6 wmap imp-pers-con-lr3e5-s42",
+          "leg6 wmap imp-pers-po-lr1e5-s42",
+          "leg6 wmap syc-bare-con-lr1e5-s42",
+          "leg6 wmap syc-conv-con-lr1e5-s42",
+          "leg6 wmap syc-pers-po-lr1e5-s42"
+        ]
+      },
+      {
+        "title_left": "Classical MDS (presentation only)",
+        "xlabel": "MDS dimension 1",
+        "ylabel": "MDS dimension 2",
+        "annotations": [
+          "n1m L14",
+          "n1m L19",
+          "n1m L26",
+          "passb L14",
+          "passb L16",
+          "passb L27",
+          "llama native L16",
+          "qwen matched L14",
+          "composed L16",
+          "featmap L19",
+          "leg6 wmap cas-bare-con-lr1e5-s42",
+          "leg6 wmap cas-pers-con-lr1e5-s42",
+          "leg6 wmap cas-pers-po-lr1e5-s42",
+          "leg6 wmap imp-pers-con-lr3e5-s137",
+          "leg6 wmap imp-pers-con-lr3e5-s42",
+          "leg6 wmap imp-pers-po-lr1e5-s42",
+          "leg6 wmap syc-bare-con-lr1e5-s42",
+          "leg6 wmap syc-conv-con-lr1e5-s42",
+          "leg6 wmap syc-pers-po-lr1e5-s42"
+        ],
+        "xticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "ylabel": "1 - aligned cosine (diagonal: split-half self-distance)",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

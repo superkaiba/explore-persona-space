@@ -1,0 +1,53 @@
+{
+  "judge": {
+    "model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "temperature": 0.0,
+    "path": "sync via llm/api_dispatch (force_path=sync; under the Batch-API threshold)"
+  },
+  "description_source": {
+    "mode": "reuse-explicit",
+    "path": "/workspace/eps2569/reuse_2552/descriptions_mat_k100.json"
+  },
+  "describe_stage": {
+    "note": "reuse branch \u2014 no describe calls"
+  },
+  "coverage": {
+    "n_union": 2150,
+    "n_described_in_union": 2149,
+    "union_coverage": 0.9995348837209302,
+    "pred_topk_described_frac": 1.0,
+    "n_eligible_rows": 20000,
+    "n_rows_skipped_undersize": 0,
+    "feats_per_list": 8
+  },
+  "matching": {
+    "n_way": 10,
+    "chance": 0.1,
+    "n_items": 500,
+    "n_answered": 500,
+    "n_correct": 463,
+    "accuracy": 0.926,
+    "dropped_by_category": {},
+    "drop_policy": "malformed / refusal / out-of-range judge returns DROPPED (never coerced), counts above; transport failures RE-DRIVEN, never persisted as drops (a residual transport failure raises)"
+  },
+  "budget": {
+    "cap": 2000,
+    "describe_calls": 0,
+    "matching_calls": 500
+  },
+  "scoping": "judged objects are SAE feature descriptions only (plan \u00a76 rule-28 exemption); packets carry descriptions + neutral instructions",
+  "n_te": 20000,
+  "regime_config_hash": "35003bfda5ef3328",
+  "metadata": {
+    "git_commit": "c522e28fa41d289d217fd8584f310d34a77137f7",
+    "timestamp_utc": "2026-08-27T02:47:29.149428Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": null,
+    "phase": "der",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2569_rowbattery.py"
+  }
+}

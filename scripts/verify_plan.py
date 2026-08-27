@@ -217,7 +217,11 @@ Check catalog (id — classification — kind scope)
   c72 contingent judge wave     WARN-only, conditional    experiment +
       (>=5k calls) names its                              analysis
       rule-26 pilot gate
-  c73 gates-section binding to  WARN-only, conditional    all kinds
+  c73 GPU-lane routing declares WARN-only, conditional    experiment +
+      its cuda-context: claim   (no-trigger renders       analysis
+                                PASS, not SKIP — never
+                                passed=False)
+  c74 gates-section binding to  WARN-only, conditional    all kinds
       an optionality-marked
       phase
 
@@ -226,7 +230,7 @@ from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73)
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74)
 also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
@@ -15084,25 +15088,104 @@ def check_contingent_judge_pilot(plan: str, kind: str) -> CheckResult:
     return _skip(cid, name, best_skip)
 
 
-# ─── Check 73 — gates-section binding to an optionality-marked phase ───────
+# ─── Check 73 — GPU-lane phase declares its CUDA-context claim (#2624) ──────
+#
+# Incident #2546: a 4x H100 pod ran p5_fits entirely CPU-bound — the
+# dispatcher logged alloc=0,1,2,3 while nvidia-smi read 0 MiB on every card
+# for hours. The plan-side half of the #2624 fix: every GPU-lane routing
+# carries one `cuda-context:` line naming WHAT allocates GPU memory and via
+# WHICH mechanism (the falsifiable claim the RunPod poller's
+# [gpu-no-cuda-context] memory probe checks at runtime;
+# .claude/rules/plan-compute-sizing.md § CUDA-context claim). Trigger tokens
+# are conservative (explicit GPU flags / GPU intents / an Nx<GPU-class>
+# shape); WARN-only BY CONSTRUCTION — existing plans lack the line, so a
+# FAIL posture would wedge the fleet (the c46/c50 posture; #1388 class).
 
-# c73 — §7 binding to an optionality-marked phase (#2363, incident #2360 v2).
-_C73_PHASE_ID_RE = re.compile(r"(?i)\bphase[-\s]+([0-9]{1,2}|[ivxl]{1,4}|[a-z])\b")
-_C73_OPTIONAL_RE = re.compile(
+_C73_GPU_LANE_RE = re.compile(
+    r"--gpu-type|--gpu-count"
+    r"|--intent\s+(?:lora-7b|ft-7b|inf-70b|ft-70b|eval|debug)"
+    r"|intent:\s*(?:lora-7b|ft-7b|inf-70b|ft-70b)"
+    # U+00D7 (the MULTIPLICATION SIGN) via escape: the corpus writes both
+    # "4x H100" and the typographic form; the escape keeps the source ASCII.
+    r"|\b[1248]\s*[x\u00d7]\s*(?:H100|H200|A100|B200)\b"
+)
+_C73_SATISFIER_RE = re.compile(r"(?im)^\s*[-*]?\s*cuda-context:\s*\S")
+
+
+def check_gpu_lane_cuda_context(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2624; incident #2546): a plan routing a
+    GPU-lane phase — an explicit ``--gpu-type``/``--gpu-count``, a GPU
+    intent (``--intent lora-7b|ft-7b|inf-70b|ft-70b|eval|debug`` or an
+    ``intent:`` frontmatter-style token), or an Nx<GPU-class> shape —
+    must carry at least one ``cuda-context:`` line declaring what
+    allocates a CUDA context and via which mechanism
+    (plan-compute-sizing.md § CUDA-context claim). The TRIGGER is scoped
+    to the section-9 window when one parses (fenced launch commands
+    included — that is where GPU flags live), else whole-plan; the
+    SATISFIER is searched whole-plan (the declaration commonly lives in
+    the §4 phase description). Never returns passed=False: trigger with
+    no satisfier -> WARN, everything else -> PASS (no-trigger renders
+    PASS, not SKIP — deliberate divergence from the conditional-SKIP
+    convention, per the #2624 plan §4.2 fixture matrix). Armed for kind
+    in {experiment, analysis} only."""
+    cid = "c73_gpu_lane_cuda_context"
+    name = "GPU-lane routing declares its cuda-context: claim"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c69/c70 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote GPU-lane "
+            "tokens in prose; the founding incident (#2546 p5_fits) is kind: experiment",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is not None:
+        lo, hi = window
+        trigger_text = "\n".join(lines[lo:hi])
+        scope = f"section-9 window (lines {lo + 1}-{hi})"
+    else:
+        trigger_text = plan
+        scope = "whole plan (no parseable section-9 heading)"
+    m = _C73_GPU_LANE_RE.search(trigger_text)
+    if m is None:
+        return _pass(cid, name, f"no GPU-lane routing token in the {scope}")
+    if _C73_SATISFIER_RE.search(plan):
+        return _pass(
+            cid,
+            name,
+            f"GPU-lane token '{m.group(0)}' in the {scope}; a cuda-context: "
+            "declaration line is present",
+        )
+    return _warn(
+        cid,
+        name,
+        f"GPU-lane routing token '{m.group(0)}' in the {scope} but no "
+        "`cuda-context:` line declares what allocates a CUDA context — "
+        "plan-compute-sizing.md § CUDA-context claim; #2624/#2546",
+    )
+
+
+# ─── Check 74 — gates-section binding to an optionality-marked phase ───────
+
+# c74 — §7 binding to an optionality-marked phase (#2363, incident #2360 v2).
+_C74_PHASE_ID_RE = re.compile(r"(?i)\bphase[-\s]+([0-9]{1,2}|[ivxl]{1,4}|[a-z])\b")
+_C74_OPTIONAL_RE = re.compile(
     r"(?i)\boptional\b|\bif time permits\b|\bnice[-\s]to[-\s]have\b"
     r"|\bstretch\s+(?:goal|phase)\b|\(stretch\)|\bbest[-\s]effort\b"
 )
-_C73_NEGATION_RE = re.compile(
+_C74_NEGATION_RE = re.compile(
     r"(?i)\brequired\b|\bnot optional\b|\bno longer optional\b"
     r"|\bwas\s+[\"“']?optional|\bstruck\b|\bmandatory\b"
 )
-_C73_GATES_HEADING_RE = re.compile(
+_C74_GATES_HEADING_RE = re.compile(
     r"(?i)\bdecision gates?\b|\bkill criteri|\bacceptance criteria\b|\bsuccess criteria\b"
 )
-_C73_PROXIMITY_CHARS = 80
+_C74_PROXIMITY_CHARS = 80
 # In-sample calibration (c32 convention; DEVELOPMENT-SET numbers: the regexes
 # were tuned on the same persisted-plan corpus they were measured on — read
-# the rates as in-sample, not held-out; ANY future c73-regex change re-runs
+# the rates as in-sample, not held-out; ANY future c74-regex change re-runs
 # the corpus scan and updates the numbers here). Scan 2026-08-27
 # (implementation-time, shipped regexes) over 4,720 persisted plan-versions
 # (tasks/*/*/plans/v*.md, main corpus @ 965716e03e): 9 WARNs in 5 distinct
@@ -15122,14 +15205,14 @@ _C73_PROXIMITY_CHARS = 80
 # narrowing trigger — WARN-only ships as drafted, no anchor narrowing.
 
 
-def _c73_gates_spans(plan: str) -> list[tuple[int, int]]:
+def _c74_gates_spans(plan: str) -> list[tuple[int, int]]:
     """Line spans (start, end) of gates sections: headings matching
     Decision Gates / kill criteria / acceptance criteria / success
     criteria (heading line index .. exclusive section end)."""
-    return [(h.line, h.end) for h in _headings(plan) if _C73_GATES_HEADING_RE.search(h.text)]
+    return [(h.line, h.end) for h in _headings(plan) if _C74_GATES_HEADING_RE.search(h.text)]
 
 
-def _c73_anchor_scan(
+def _c74_anchor_scan(
     lines: list[str], mask: list[bool], in_gates: list[bool]
 ) -> dict[str, tuple[int, str]]:
     """Optionality-marked phase declarations OUTSIDE the gates sections:
@@ -15139,19 +15222,19 @@ def _c73_anchor_scan(
     ``{ID: (line_idx, line)}`` keeping the first declaration per id."""
     anchors: dict[str, tuple[int, str]] = {}
     for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
-        if fenced or in_gates[i] or _C73_NEGATION_RE.search(line):
+        if fenced or in_gates[i] or _C74_NEGATION_RE.search(line):
             continue
-        for pm in _C73_PHASE_ID_RE.finditer(line):
+        for pm in _C74_PHASE_ID_RE.finditer(line):
             near = any(
-                pm.start() <= om.start() <= pm.start() + _C73_PROXIMITY_CHARS
-                for om in _C73_OPTIONAL_RE.finditer(line)
+                pm.start() <= om.start() <= pm.start() + _C74_PROXIMITY_CHARS
+                for om in _C74_OPTIONAL_RE.finditer(line)
             )
             if near:
                 anchors.setdefault(pm.group(1).upper(), (i, line))
     return anchors
 
 
-def _c73_first_binding(
+def _c74_first_binding(
     pid: str, lines: list[str], mask: list[bool], gates_spans: list[tuple[int, int]]
 ) -> tuple[int, str] | None:
     """First non-fenced gates-section line referencing ``Phase <pid>``,
@@ -15165,8 +15248,8 @@ def _c73_first_binding(
     return None
 
 
-def _c73_offender_detail(offenders: list[tuple[str, int, str, int, str]]) -> str:
-    """Render the c73 WARN detail: per offending phase the declaration
+def _c74_offender_detail(offenders: list[tuple[str, int, str, int, str]]) -> str:
+    """Render the c74 WARN detail: per offending phase the declaration
     line + excerpt and the first gates-section binding line + excerpt,
     then the two remedies and the standalone escape."""
     parts = [
@@ -15201,9 +15284,9 @@ def check_optional_phase_binding(plan: str, kind: str) -> CheckResult:
     a skippable phase can never fire (#2360 v2 headed its ONLY acceptance
     evidence 'Phase V (optional but planned)' while §7 bound Acceptance
     2+3 and kill (a) to it, and verify_plan PASSed 0 FAIL / 0 WARN).
-    Anchor grammar: ``_c73_anchor_scan`` (same-line ``Phase <ID>`` +
+    Anchor grammar: ``_c74_anchor_scan`` (same-line ``Phase <ID>`` +
     marker within 80 chars after the id start, negation-guarded, OUTSIDE
-    gates sections). Binding grammar: ``_c73_first_binding``
+    gates sections). Binding grammar: ``_c74_first_binding``
     (``Phase V`` / ``Phase-V``). Armed for ALL kinds — the founding
     incident is ``kind: infra``, and phases + gates sections appear in
     every kind (c46/c47 precedent). Honest-scope gaps (Statistics &
@@ -15220,16 +15303,16 @@ def check_optional_phase_binding(plan: str, kind: str) -> CheckResult:
     (standalone, unwrapped):
     ``N/A — no acceptance binding to an optional phase``."""
     del kind  # armed for ALL kinds (the founding incident is kind: infra)
-    cid = "c73_optional_phase_binding"
+    cid = "c74_optional_phase_binding"
     name = "gates-section binding to an optionality-marked phase"
     lines = plan.splitlines()
     mask = _fence_mask(lines)
-    gates_spans = _c73_gates_spans(plan)
+    gates_spans = _c74_gates_spans(plan)
     in_gates = [False] * len(lines)
     for lo, hi in gates_spans:
         for i in range(lo, min(hi, len(lines))):
             in_gates[i] = True
-    anchors = _c73_anchor_scan(lines, mask, in_gates)
+    anchors = _c74_anchor_scan(lines, mask, in_gates)
     if not anchors:
         return _skip(cid, name, "no optionality-marked phase declaration detected")
     if _standalone_na_declared(plan, r"no acceptance binding to an optional phase\b"):
@@ -15241,13 +15324,13 @@ def check_optional_phase_binding(plan: str, kind: str) -> CheckResult:
     offenders: list[tuple[str, int, str, int, str]] = []
     unbound: list[str] = []
     for pid, (decl_i, decl_line) in sorted(anchors.items()):
-        bind = _c73_first_binding(pid, lines, mask, gates_spans)
+        bind = _c74_first_binding(pid, lines, mask, gates_spans)
         if bind is None:
             unbound.append(f"Phase {pid}")
         else:
             offenders.append((pid, decl_i, decl_line, bind[0], bind[1]))
     if offenders:
-        return _warn(cid, name, _c73_offender_detail(offenders))
+        return _warn(cid, name, _c74_offender_detail(offenders))
     return _pass(
         cid,
         name,
@@ -15328,6 +15411,7 @@ CHECKS = [
     check_pilot_resolution,
     check_jq_probe_dryrun,
     check_contingent_judge_pilot,
+    check_gpu_lane_cuda_context,
     check_optional_phase_binding,
 ]
 

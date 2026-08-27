@@ -1,0 +1,17 @@
+{
+ "batch_tokens": 8192,
+ "chunk_rows": 2000,
+ "device": "cuda",
+ "kept_ci_sha256": "8e4e014100df8ea9569e7cf466f40176613992855678e9c13fe37bffc94d7de5",
+ "layers": [
+  14,
+  19,
+  26
+ ],
+ "max_batch_rows": 64,
+ "max_capture_tokens": 8192,
+ "model_id": "Qwen/Qwen2.5-7B-Instruct",
+ "rows_cap": 60000,
+ "template_sha": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+ "texts_sha256": "476d6016804e5b49e86ceb6f5e38fe3916bdf7c590f54ab534d7b26f591f1871"
+}

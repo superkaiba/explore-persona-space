@@ -1,0 +1,855 @@
+{
+  "commit": "3ab1809d+dirty",
+  "render_id": "160abd7b86f74956",
+  "git_commit": "3ab1809d6baff3e4e57457540dae95e8caabf67b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "scripts/issue2356_flippair_figures.py",
+    "scripts/issue2618_figures.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2618_figures.py",
+  "created": "2026-08-27T10:33:53Z",
+  "figsize": [
+    11.0,
+    6.2
+  ],
+  "points": [
+    {
+      "truncation rank k": 8.0,
+      "cos(reverse-map dir, pinv dir)": 0.030911801383809206,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 32.0,
+      "cos(reverse-map dir, pinv dir)": 0.0632414186108343,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 128.0,
+      "cos(reverse-map dir, pinv dir)": 0.09732472249816172,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 512.0,
+      "cos(reverse-map dir, pinv dir)": 0.14794748519070064,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 1024.0,
+      "cos(reverse-map dir, pinv dir)": 0.1816279265555161,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 1433.0,
+      "cos(reverse-map dir, pinv dir)": 0.19468368318411808,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 2048.0,
+      "cos(reverse-map dir, pinv dir)": 0.19888574750099425,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 3072.0,
+      "cos(reverse-map dir, pinv dir)": 0.19575604941662145,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 3584.0,
+      "cos(reverse-map dir, pinv dir)": -0.09249743999073923,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "truncation rank k": 8.0,
+      "cos(reverse-map dir, pinv dir)": 0.05201560703294208,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 32.0,
+      "cos(reverse-map dir, pinv dir)": 0.0763201834197125,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 128.0,
+      "cos(reverse-map dir, pinv dir)": 0.09501275852896574,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 512.0,
+      "cos(reverse-map dir, pinv dir)": 0.14235882436320593,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 1024.0,
+      "cos(reverse-map dir, pinv dir)": 0.16447226348215713,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 1433.0,
+      "cos(reverse-map dir, pinv dir)": 0.1729835916360923,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 2048.0,
+      "cos(reverse-map dir, pinv dir)": 0.1843309302355894,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 3072.0,
+      "cos(reverse-map dir, pinv dir)": 0.2259483245320374,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 3584.0,
+      "cos(reverse-map dir, pinv dir)": 0.039487272422777296,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "truncation rank k": 8.0,
+      "cos(reverse-map dir, pinv dir)": 0.03292966337805585,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 32.0,
+      "cos(reverse-map dir, pinv dir)": 0.04737842570558554,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 128.0,
+      "cos(reverse-map dir, pinv dir)": 0.07181719444747464,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 512.0,
+      "cos(reverse-map dir, pinv dir)": 0.12286406901528282,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 1024.0,
+      "cos(reverse-map dir, pinv dir)": 0.14141310749074076,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 1433.0,
+      "cos(reverse-map dir, pinv dir)": 0.14923195971721237,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 2048.0,
+      "cos(reverse-map dir, pinv dir)": 0.16016218869179122,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 3072.0,
+      "cos(reverse-map dir, pinv dir)": 0.16844630345449266,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 3584.0,
+      "cos(reverse-map dir, pinv dir)": 0.10462599445192151,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.05079291937697055,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.10464012096557088,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.15108249569936402,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.23276215320284363,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.27673735919253756,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": 0.2950355504908055,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": 0.29837121245319237,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": 0.25523866450450244,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": 0.04172993010668067,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.07926717013719875,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.11049261738487812,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.16042194807442242,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.23619168953014003,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.28052138181449654,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": 0.29364867664606586,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": 0.3098049203898733,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": 0.31969235850967714,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": 0.0031960625972530412,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.06530451032411264,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.08242062866406863,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.13479890654129453,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.20847274462465537,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.24599752568608482,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": 0.26992334882780905,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": 0.2997823057843849,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": 0.314715812234841,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": -0.008863993870536307,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.06301577198758027,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.15451593567287583,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.22916558169460477,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.30239639706697274,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.3459421663499906,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": 0.36205848499818444,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": 0.36418208274068026,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": 0.32470205349221204,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": -0.08330093400251191,
+      "series": "Evil",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.09645028293626776,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.14589454003095337,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.2020298388816619,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.290178333581211,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.32641573637085824,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": 0.33691209707577074,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": 0.34590895594921517,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": 0.33791878900194083,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": -0.047717082600250066,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "truncation rank k": 8.0,
+      "y": 0.08062900798464724,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 32.0,
+      "y": 0.12122966673409163,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 128.0,
+      "y": 0.19649947004178056,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 512.0,
+      "y": 0.27702364622625286,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 1024.0,
+      "y": 0.32193031589761023,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 1433.0,
+      "y": 0.33643031072284535,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 2048.0,
+      "y": 0.35568261874337026,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 3072.0,
+      "y": 0.33235092252993786,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "truncation rank k": 3584.0,
+      "y": 0.07147345352167347,
+      "series": "Hallucination",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "cos vs reverse-map dir": 0.19726924303107693,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.74,
+      "cos vs reverse-map dir": -0.09249743999073923,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.74,
+      "cos vs reverse-map dir": 0.09306835115079408,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Ridge-pinv",
+      "cos vs reverse-map dir": 0.1863282408729742,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Full pinv",
+      "cos vs reverse-map dir": 0.039487272422777296,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "$W^\\top r_B$ read",
+      "cos vs reverse-map dir": 0.09447699879116837,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.26,
+      "cos vs reverse-map dir": 0.1515583203122866,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "cos vs reverse-map dir": 0.10462599445192151,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.26,
+      "cos vs reverse-map dir": 0.04891053389344651,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.26,
+      "y": 0.3413425954209033,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.74,
+      "y": 0.04172993010668067,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.74,
+      "y": 0.13273448694089843,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Ridge-pinv",
+      "y": 0.3566214514427304,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Full pinv",
+      "y": 0.0031960625972530412,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "$W^\\top r_B$ read",
+      "y": 0.14271788581596703,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.26,
+      "y": 0.32026951545491145,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.26,
+      "y": -0.008863993870536307,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.26,
+      "y": 0.1075030895441135,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": -0.26,
+      "y": 0.4125961886922806,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.74,
+      "y": -0.08330093400251191,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.74,
+      "y": 0.21789355209658645,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Ridge-pinv",
+      "y": 0.3949339070540411,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Full pinv",
+      "y": -0.047717082600250066,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "$W^\\top r_B$ read",
+      "y": 0.2118578169721098,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.26,
+      "y": 0.38963898083841186,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 1.26,
+      "y": 0.07147345352167347,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.26,
+      "y": 0.19696700620809968,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 108,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Layer 14",
+        "xlabel": "truncation rank k",
+        "ylabel": "cos(reverse-map dir, pinv dir)",
+        "xticklabels": [
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{14}}$",
+          "$\\mathdefault{2^{16}}$"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "Layer 19",
+        "xlabel": "truncation rank k",
+        "xticklabels": [
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{14}}$",
+          "$\\mathdefault{2^{16}}$"
+        ]
+      },
+      {
+        "title_left": "Layer 26",
+        "xlabel": "truncation rank k",
+        "xticklabels": [
+          "$\\mathdefault{2^{0}}$",
+          "$\\mathdefault{2^{2}}$",
+          "$\\mathdefault{2^{4}}$",
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{14}}$",
+          "$\\mathdefault{2^{16}}$"
+        ]
+      },
+      {
+        "ylabel": "cos vs reverse-map dir",
+        "xticklabels": [
+          "Ridge-pinv",
+          "Full pinv",
+          "$W^\\top r_B$ read"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Ridge-pinv",
+          "Full pinv",
+          "$W^\\top r_B$ read"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Ridge-pinv",
+          "Full pinv",
+          "$W^\\top r_B$ read"
+        ]
+      }
+    ],
+    "series": [
+      "Evil",
+      "Sycophancy",
+      "Hallucination"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
