@@ -40,7 +40,7 @@ Measure, in reasoning-trained models, how well linear maps from the pre-reasonin
 - **This experiment in context:** The context→answer map line reads held-out R² 0.7542 at layer 19 on 963,444 wild-chat contexts ([#779](https://eps.superkaiba.com/tasks/779)), a different eval distribution, so not directly comparable to these benchmark corpora. [#928](https://eps.superkaiba.com/tasks/928) showed the map survives on a thinking model at whole-output grain; [#1005](https://eps.superkaiba.com/tasks/1005) supplied the R1-Distill parse and capture recipe; [#1336](https://eps.superkaiba.com/tasks/1336) the staged corpora, fit conventions, and reparameterization ladder; [#722](https://eps.superkaiba.com/tasks/722) the baseline and retrieval helpers; [#1345](https://eps.superkaiba.com/tasks/1345) the operator-comparison conventions. A thinking model splits its output at a literal token, turning "is the answer already in the context state?" into an exact, decomposable question.
 - **Broader narrative:** If the answer state is encoded before any reasoning token, the serial chain-of-thought is not computing it and one forward pass could monitor the eventual answer; if the trace does real serial work, predictability should climb through the thinking span.
 
-Conciseness and figure-text warns acknowledged: several result sections run past the 120-word per-result prose band, total content prose exceeds the 800-word budget (three model settings, five results, and the coverage disclosures), and the trajectory figure's x-axis label renders the internal cell slugs for its context-end and boundary endpoints.
+Conciseness and figure-text warns acknowledged: several result sections run past the 120-word per-result prose band, total content prose exceeds the 800-word budget (three model settings, five results, and the coverage disclosures), the trajectory figure's x-axis label renders the internal cell slugs for its context-end and boundary endpoints, and plan-condition slugs live in the footer config row rather than in Results prose.
 
 ## Methodology
 
@@ -227,7 +227,7 @@ Direction-aware operator cosine reads 0.053 / 0.196 against a near-zero rotation
 
 ### On-model necessity moves retrieval more than R², and thinking-off answer states are as predictable as thinking-on
 
-Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate, the low-level view with one point per corpus; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
+Plotted: per-corpus held-out R² (top) and answer-identity lift (bottom) against each corpus's necessity rate, the low-level per-corpus read; on-model toggle necessity for Qwen3-8B, post-correct-while-pre-wrong pair necessity elsewhere.
 
 ![Per-corpus R squared and retrieval lift against corpus necessity rate for all settings](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4f105327a8d4a48ba73571826241bb865c5cb30c/figures/issue_2546/backing_necessity.png)
 
