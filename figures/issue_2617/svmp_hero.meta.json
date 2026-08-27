@@ -1,0 +1,2801 @@
+{
+  "commit": "62640b11",
+  "render_id": "89b28b12162141ea",
+  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2617_svmp_figures.py",
+  "created": "2026-08-27T18:01:06Z",
+  "figsize": [
+    12.5,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.2226171584312569,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.870563564838424,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24945077921788478,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7398384129953396,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20754005814448137,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7424615332347019,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.24701253416751462,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8241916631428693,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.3355300027317166,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7781771457861641,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2756770270512713,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.9005139054708299,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22458811580884305,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.9041525735805801,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.26522390933019463,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6364436531500044,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2737663254009394,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7788396250487721,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.31345544753726506,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8632976031178652,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.22122520971978712,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7841215818047566,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.20288573927245657,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8465586131068529,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2886445934411096,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8496371888997363,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2544237926704161,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7739854793164463,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.21657219914763928,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8103141829724615,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.23722088036576902,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6702089500106202,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04125775106039102,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8576373391473863,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06864159999499728,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7647899321079318,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.044519515809275836,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7018749648925865,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05258891995592137,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8473375047511224,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.009155083989121626,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.729534419874707,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.03197680455209972,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8703769647590094,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.006227975528228291,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8841132965638753,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.03401881994513127,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6191326495538988,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.05802249172342132,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8083302015438921,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.02902420472083471,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8327004517255354,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.03787102680453888,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7898163107535194,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.0652339168259271,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7997053561657294,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06242379452319764,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8083859238291943,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.046857023385143984,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7626846829006129,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.048232797282000625,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7855911006153169,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05667731340458215,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6317504973679005,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.26415504264541684,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4767074787652837,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.2700840904985159,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4139945025787617,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.21878169373332643,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.42799999541247824,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.20216413044400514,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3640183445419223,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.24075618452661507,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.35521145730132914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.3279328218051152,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.48089780081813677,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.21909390282844826,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4935373916086734,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.29002036992220825,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3428900824805335,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.2729940945999373,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.42064779125131957,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.2638968625506648,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4479965468514527,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.29690115839223763,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4105727816496162,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.26145339861701256,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.34992350135479294,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.33726854369276466,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.2852604229388103,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.31700721991582387,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.42958639538438415,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.29308481853850976,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5208044152224227,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.27878536377857926,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3813684913443033,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.6912515394299417,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8233468185632031,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6726291911941948,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6732083348593204,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6688264363507188,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7170971329095448,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.685045111262933,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7520791054948077,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7826963461867663,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6894308037139565,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6737108147884499,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8271051313959622,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6668210468247178,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7730527630858776,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.729347639377894,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7907294648267671,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7423979771465362,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7810640098892676,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7512385333533486,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7792500517995224,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.689443320716123,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7961734072555847,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7189482436122088,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7375725990817149,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6628962176897929,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7761285074341875,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.6833719620552537,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8696905890629575,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7787316176445507,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8079715123598883,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.7444109719805563,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7242079396830454,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.9912321279909588,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8048053428340352,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0543499859878642,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6340757994746561,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9727512403064247,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6882672324508897,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0635560263022428,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7672588693035562,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.043177570040645,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6371428102159241,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.018668480398849,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8352332047026032,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9975335082081305,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7898547089951375,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0511228345745953,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8059328897156738,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9631540779383743,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8080901638522051,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0641764216400174,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7965091482340645,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.008166879786114,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8049911490860927,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9559873526626541,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7726870225622399,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9661642755170287,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7986337238925536,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.9561950415639329,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8398228621399438,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.057516226272413,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8039544388858244,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.067646928732327,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7092222823089708,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.2137808790621778,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.46939062011391514,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3140453733598592,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4050793918382478,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3066921512358463,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3562387726257526,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.24716758920428,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3751746215467736,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2541438637819686,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.29107705149534874,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.306216658431723,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47668912655371176,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2712363301967642,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4701843535356411,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2212274234511933,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4176705148385237,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2385129880070038,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4098550516345323,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3152890302675762,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.33764411606997946,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2583692315175092,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3528459494794413,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.308169773506521,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3927123226317639,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.2415393193023772,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.43686648642460246,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.33194464377753,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.41783809149186946,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3373768742367687,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47301313979106574,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3047399676294853,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.39602736514257875,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.7273952262180963,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4258674156046762,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7557972800958113,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8084484385265847,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7566702535770535,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.38118518626739906,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6697462472753972,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.549683558393509,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7120157544246597,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7070481010815723,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7947694140673784,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5602211644391875,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7152473221100946,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8263122267919115,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7023392113862328,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8195914228185874,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6895658428202078,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6662088979035832,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6825876662928636,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5083998662431657,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6631834780657402,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8027267021597592,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7050173680929324,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.73328799122268,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6968700801005185,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.34315236133728816,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.7915388691282643,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6303601768255575,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6806266420202591,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4977778492574419,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.6802789038322075,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6365194668994829,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9745978773247952,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4083109924752324,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.967504438134291,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7797813078610825,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.037212302522318,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3676698132876197,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.946984559202858,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5168550929595703,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.99834489814274,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6489315049435711,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0290716931559434,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5290380055990301,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9858507543925064,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8203182396319236,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9917918975160147,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8019377705487734,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0697873539114156,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6050550113185476,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0199801441735143,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5080214862448204,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.01319042139771,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8016065702089268,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9862106094222374,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7061609939214466,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.026115741973642,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.37663271640802204,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9947283839828027,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6828842951999625,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.943519500169876,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.39952170276089766,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.991752879756929,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5903058916472762,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.2943779467219225,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3170560193148161,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2918398892284944,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.34463300324030155,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2173833178124207,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.282495893211834,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.3364086219198965,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3326906383970367,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.298048402443825,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.343559183519207,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.3033068230231257,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.23405795232187157,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2600838004717474,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47330111414468223,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2697309552915517,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4017581143695326,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.3256476266029416,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.315537685157836,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.307787254080008,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3439786710799638,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2458713300265423,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.29460403645387884,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2279529768998176,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3634719660126559,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2035119299339163,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.22394541495161763,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.236965631413039,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.29814444348009084,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2214907795360097,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.28311413270612723,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.2295003863201184,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.22184582346005197,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.7852977719322296,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.33076847704966855,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.718840011694196,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.48173094891488355,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.700047109009226,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5746240990032442,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.694406234094651,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5249330654741653,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.6784532326645074,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7527937588201037,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.7601069148021673,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4124256714093505,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.699038819658082,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.28213077810274756,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.7043613457826834,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.44600767348548076,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.982342297658994,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.2908288293520106,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.9712445270263084,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47324243176889014,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0102177763996574,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5399799251320788,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.982484750403096,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5020939781449703,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.069924019272531,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7393885615602064,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.947006303680247,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3706411930524425,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.957353434077502,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.26133993386015436,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.0041369095532766,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4381542844746491,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 3.241531512277337,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.20270848792319485,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.201094764949389,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3179933040564645,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.204881370365006,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.19865115786555398,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.3278658391541804,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.25077880734448316,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.3220827632737806,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3250791235447033,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.3262760338080257,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.21926755413570653,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.3004056615774804,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.13658349038753415,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.263137684284186,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.1358917125326052,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 3.775079312072423,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4932968968427605,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.725580508236248,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.596363463579639,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.7797562721071767,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6966556219664102,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.7293736861160314,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7478223680445252,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.710311823311809,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5899443497646863,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.682830853640359,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5617693624334663,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.698049222543923,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5445575847909832,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.7686766009438033,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6575533869791578,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 4.051015832022733,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4865670948414982,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.010497300236079,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5298921857523827,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.976026779327362,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.637801480928226,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.066972182485248,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7033273431417878,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.021238500587739,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5660395269914607,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.992460281845474,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.48832883263542837,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.9690275061279134,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5186537008257978,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.069529074375452,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6098276801885315,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.240992278710324,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.26344769573342985,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.300756805816915,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.23646573666595846,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.256908060930099,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.2650948672338037,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.328284004792746,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.272593436273174,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.247728851557229,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.14278226047319775,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.336922476429216,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3264109178766093,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.265169695768352,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.19122672345970895,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.229931519619795,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.32839736141189174,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.705086998365451,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4054597616519129,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.72652620632517,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.14558248532048607,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.704466757057817,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7292826671728632,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.6768204256579,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5243919423312439,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.760841781347592,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5221704539574565,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.685275505916238,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5553334883750856,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.720917340316292,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.2300794187544353,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.7345665479294015,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.39787522924711705,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 5.062845730785143,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.41868100398488123,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.038842764794479,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.1312953587050742,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.971525955068043,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7025918364224036,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.962503058849307,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.43028165542334623,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.058069345598225,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.45498558818525464,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.998962984868327,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5543897144902941,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.940046978557136,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.17454426640353474,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.058938518440612,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3788039606264984,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.298324605646637,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.20728456246342963,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.310859410994086,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.10771359260942781,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.245491245077465,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.344662758549255,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.324113506179126,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.1871942363921997,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.305633865717818,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.2714579289224644,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.2500410185346915,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.2337744551858876,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.324375587092804,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.10852219080708222,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.2526559734075216,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.241911837083569,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 5.67288725150315,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6199231962866653,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.785144077367633,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7832876470838116,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.718998739942519,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6329435955251695,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.729541494181228,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.865729707612397,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.701558106352052,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8471228401630059,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.711975019910777,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8188050334413701,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.6889826309427916,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6810852303773954,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.661089895309193,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8964596428189401,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.782615559827544,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7683216547454035,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.7452286118779545,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7477006066913701,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.680217288911484,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7476948178448667,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.663434627790703,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8459912367753183,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.7297813461021505,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8246473386310597,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.763425647137802,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4919298709395955,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.781869130150678,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8078245080796996,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.680226864843569,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7294192137811722,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.668764377876364,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8238963529894184,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.786194635893147,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6428000756273525,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.682082845211565,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5612740668678295,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.668409960178886,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7335015656215673,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.692032466223193,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6553047826873127,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.719017280725098,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7711183325446191,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.724410466674809,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6791821004563534,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.754595312754683,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8707702184061014,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.664399401693262,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7109419290508415,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.747050671498401,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8240339788336295,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.6600436088941235,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8863836958380076,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.7485751402437195,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7821030605585396,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.660653003675438,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8163033935040386,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.668382947766034,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8616311081376751,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.761341709733387,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7304277673211914,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.782019372812394,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.627945335258652,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.761719587710639,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8152202864263391,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.678600257563088,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8636278951990547,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.745511840848038,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7454801296455092,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.720238836972463,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6629821138772214,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 5.993773212389982,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5802050774728297,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.01941044745073,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7754222369445704,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.998636761609429,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5706733748961024,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.959811767221935,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8659937569630698,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.062036389149093,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8367988026450184,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.968666993542992,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8176380111407486,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.960827788689334,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5820604978874476,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0365183498030595,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8749455039585262,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.932389204007579,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7281809469815653,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.049150435107858,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7071830534558387,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.035572001133099,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6789457166648473,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.068025002950784,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.837957694598557,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.986070974927974,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7769707402559933,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.029167644376571,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.48182463732256736,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.018008913747172,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7947077874668151,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.9931960375450455,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6342174118109716,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.976662954052453,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7992279296916679,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.0462945877501735,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6197008275744625,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.010739282504992,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5566138728305865,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.937969567358179,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7251824754416808,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.986948212396629,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6258028192717998,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.052299595067599,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7449721261669543,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.016473052924341,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6842131993784512,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.017162898370314,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8565159069877876,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.060837611862237,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7047657608108537,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.937216450121142,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7874841512213385,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.935274644826863,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.850110697371913,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.9985618992901495,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7699910875682454,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.050777311122453,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.7920526902766821,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.9788962632778455,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8275434508287076,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.996142075450887,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.665993366690656,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.980155865281421,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5733023921595523,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.057954100526387,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8086839153358458,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.930089067488539,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.8464555758452978,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 5.949035118619557,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6814718974587802,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.037059964982113,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.6405527245240599,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 6.254776604851218,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3959317878232488,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.307210671354851,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.49868048372700907,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.21531810769142,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.39560796548162364,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.2337738136218785,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5156395800454936,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.3266754027264245,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4901841537870895,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.218015247318824,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5084066030659795,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.296838413619028,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.413838366025322,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.338526257844182,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5571956794760761,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.323967731109341,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4202911818215864,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.209846720379247,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47497842314167105,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.223238546649422,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47854720609591406,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.211954037119887,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4341664795204195,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.32855177607039,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47394910236227306,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.214118376369228,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3243735216256832,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.206232696049487,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4241069610594507,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.272245602299272,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4796720777191452,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.320039207260737,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4443934171035824,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.295638675379709,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4026623943729709,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.21479780683075,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.42189690065214286,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.283708531667123,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.38538819825120973,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.262376239329511,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3817026472148467,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.267713054498717,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.39036414149675824,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.3158542879537185,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3757337545901833,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.312618275953457,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5066316283780222,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.200161561543861,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.3784494072496296,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.237142487697018,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.39832481475368386,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.267005968441107,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5467371691552945,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.3176355082925655,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4632673613690555,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.206484031832681,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4603228726022851,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.217741634311404,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4537652617300208,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.335403524745774,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.47441937076038765,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.260302570424152,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.43568722390085896,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.241361753276722,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.5543348891927218,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.21149831520266,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.45657576278354794,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.206062577657596,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4825874451054898,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 6.278832712074382,
+      "Direction cos (predicted vs observed pair delta, tail)": 0.4643256884634174,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.870563564838424,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.7398384129953396,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7424615332347019,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.8241916631428693,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7781771457861641,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.7,
+      "Direction cos (single-turn map, tail)": 0.9005139054708299,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.9041525735805801,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.6364436531500044,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.7788396250487721,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8632976031178652,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7841215818047566,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8465586131068529,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8496371888997363,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.2,
+      "Direction cos (single-turn map, tail)": 0.7739854793164463,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.1,
+      "Direction cos (single-turn map, tail)": 0.8103141829724615,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.6702089500106202,
+      "series": "Object swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.8233468185632031,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.6732083348593204,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.5,
+      "Direction cos (single-turn map, tail)": 0.7170971329095448,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.7520791054948077,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.6894308037139565,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8271051313959622,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.7730527630858776,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7907294648267671,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7810640098892676,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.7,
+      "Direction cos (single-turn map, tail)": 0.7792500517995224,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7961734072555847,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7375725990817149,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7761285074341875,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8696905890629575,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8079715123598883,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.1,
+      "Direction cos (single-turn map, tail)": 0.7242079396830454,
+      "series": "Verb swap (valence flip)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.4258674156046762,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.8084484385265847,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.30000000000000004,
+      "Direction cos (single-turn map, tail)": 0.38118518626739906,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.1,
+      "Direction cos (single-turn map, tail)": 0.549683558393509,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.4,
+      "Direction cos (single-turn map, tail)": 0.7070481010815723,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5602211644391875,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.5,
+      "Direction cos (single-turn map, tail)": 0.8263122267919115,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.8195914228185874,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.6,
+      "Direction cos (single-turn map, tail)": 0.6662088979035832,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.3,
+      "Direction cos (single-turn map, tail)": 0.5083998662431657,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.8027267021597592,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.73328799122268,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.34315236133728816,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.4,
+      "Direction cos (single-turn map, tail)": 0.6303601768255575,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.1,
+      "Direction cos (single-turn map, tail)": 0.4977778492574419,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.6365194668994829,
+      "series": "Subject swap (harmful topic)",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.33076847704966855,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.48173094891488355,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5746240990032442,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5249330654741653,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7527937588201037,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.4124256714093505,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.28213077810274756,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.44600767348548076,
+      "series": "Object swap (benign)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.4932968968427605,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.596363463579639,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.6966556219664102,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7478223680445252,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5899443497646863,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5617693624334663,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5445575847909832,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.6575533869791578,
+      "series": "Verb swap (benign)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.4054597616519129,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.14558248532048607,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7292826671728632,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5243919423312439,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5221704539574565,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.5553334883750856,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.2300794187544353,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.39787522924711705,
+      "series": "Subject swap (benign)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.19999999999999996,
+      "Direction cos (single-turn map, tail)": 0.6199231962866653,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7832876470838116,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.6329435955251695,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.865729707612397,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8471228401630059,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8188050334413701,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.6810852303773954,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8964596428189401,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7683216547454035,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7477006066913701,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7476948178448667,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8459912367753183,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.8246473386310597,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.5,
+      "Direction cos (single-turn map, tail)": 0.4919298709395955,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.8078245080796996,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7294192137811722,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8238963529894184,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.6428000756273525,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.9,
+      "Direction cos (single-turn map, tail)": 0.5612740668678295,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7335015656215673,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.6553047826873127,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.7711183325446191,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.5,
+      "Direction cos (single-turn map, tail)": 0.6791821004563534,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8707702184061014,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.3,
+      "Direction cos (single-turn map, tail)": 0.7109419290508415,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8240339788336295,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8863836958380076,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.7821030605585396,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8163033935040386,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8616311081376751,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.7304277673211914,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.8,
+      "Direction cos (single-turn map, tail)": 0.627945335258652,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.5,
+      "Direction cos (single-turn map, tail)": 0.8152202864263391,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 1.0,
+      "Direction cos (single-turn map, tail)": 0.8636278951990547,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.09999999999999998,
+      "Direction cos (single-turn map, tail)": 0.7454801296455092,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "|\u0394 refusal rate| per pair (member a \u2212 member b)": 0.0,
+      "Direction cos (single-turn map, tail)": 0.6629821138772214,
+      "series": "XSTest safe/unsafe",
+      "_kind": "scatter",
+      "_group": 27
+    }
+  ],
+  "n_series": 28,
+  "total_points": 432,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-class transport by arm",
+        "ylabel": "Direction cos (predicted vs observed pair delta, tail)",
+        "legend_labels": [
+          "Single-turn map",
+          "Multi-turn map",
+          "Raw context shift (identity+bias)",
+          "Shuffled-pair null p95 (single-turn map)",
+          "#2564 benign anchors (subject/object/verb)"
+        ],
+        "xticklabels": [
+          "Object swap\n(valence flip)\nn=16",
+          "Verb swap\n(valence flip)\nn=16",
+          "Subject swap\n(harmful topic)\nn=16",
+          "Object swap\n(benign)\nn=8",
+          "Verb swap\n(benign)\nn=8",
+          "Subject swap\n(benign)\nn=8",
+          "XSTest\nsafe/unsafe\nn=36"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Flip magnitude vs transport",
+        "xlabel": "|\u0394 refusal rate| per pair (member a \u2212 member b)",
+        "ylabel": "Direction cos (single-turn map, tail)",
+        "legend_labels": [
+          "Object swap (valence flip)",
+          "Verb swap (valence flip)",
+          "Subject swap (harmful topic)",
+          "Object swap (benign)",
+          "Verb swap (benign)",
+          "Subject swap (benign)",
+          "XSTest safe/unsafe"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Object swap (valence flip)",
+      "Verb swap (valence flip)",
+      "Subject swap (harmful topic)",
+      "Object swap (benign)",
+      "Verb swap (benign)",
+      "Subject swap (benign)",
+      "XSTest safe/unsafe"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

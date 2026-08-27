@@ -1,0 +1,2326 @@
+{
+  "commit": "62640b11",
+  "render_id": "dd955f1b2ae24a68",
+  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2617_svmp_figures.py",
+  "created": "2026-08-27T18:01:28Z",
+  "figsize": [
+    6.8,
+    5.2
+  ],
+  "points": [
+    {
+      "Direction cos, tail pooling": 0.870563564838424,
+      "Direction cos, span-mean pooling": 0.8741974327031116,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7398384129953396,
+      "Direction cos, span-mean pooling": 0.7453847515620092,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7424615332347019,
+      "Direction cos, span-mean pooling": 0.7420177414287784,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8241916631428693,
+      "Direction cos, span-mean pooling": 0.8254288974044801,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7781771457861641,
+      "Direction cos, span-mean pooling": 0.7775375229969338,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.9005139054708299,
+      "Direction cos, span-mean pooling": 0.9008196384831365,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.9041525735805801,
+      "Direction cos, span-mean pooling": 0.9058082530718448,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6364436531500044,
+      "Direction cos, span-mean pooling": 0.636465964550019,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7788396250487721,
+      "Direction cos, span-mean pooling": 0.7825599288068891,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8632976031178652,
+      "Direction cos, span-mean pooling": 0.8646066689646843,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7841215818047566,
+      "Direction cos, span-mean pooling": 0.787897614692313,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8465586131068529,
+      "Direction cos, span-mean pooling": 0.8480156189140152,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8496371888997363,
+      "Direction cos, span-mean pooling": 0.8504698384126085,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7739854793164463,
+      "Direction cos, span-mean pooling": 0.7739270829171881,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8103141829724615,
+      "Direction cos, span-mean pooling": 0.8106746870010233,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6702089500106202,
+      "Direction cos, span-mean pooling": 0.6703542489924482,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8233468185632031,
+      "Direction cos, span-mean pooling": 0.8261199993099296,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6732083348593204,
+      "Direction cos, span-mean pooling": 0.6742843365114597,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7170971329095448,
+      "Direction cos, span-mean pooling": 0.7154360444919848,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7520791054948077,
+      "Direction cos, span-mean pooling": 0.7515200127904629,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6894308037139565,
+      "Direction cos, span-mean pooling": 0.6900887020851035,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8271051313959622,
+      "Direction cos, span-mean pooling": 0.8311012655355167,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7730527630858776,
+      "Direction cos, span-mean pooling": 0.7751055317613671,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7907294648267671,
+      "Direction cos, span-mean pooling": 0.7922400731080995,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7810640098892676,
+      "Direction cos, span-mean pooling": 0.7856515697194194,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7792500517995224,
+      "Direction cos, span-mean pooling": 0.7813149956745488,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7961734072555847,
+      "Direction cos, span-mean pooling": 0.7961899738484365,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7375725990817149,
+      "Direction cos, span-mean pooling": 0.7438978270569189,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7761285074341875,
+      "Direction cos, span-mean pooling": 0.7798524789912766,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8696905890629575,
+      "Direction cos, span-mean pooling": 0.8715527855211701,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8079715123598883,
+      "Direction cos, span-mean pooling": 0.8103579330127417,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7242079396830454,
+      "Direction cos, span-mean pooling": 0.7241259776804515,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.4258674156046762,
+      "Direction cos, span-mean pooling": 0.4231928442246406,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8084484385265847,
+      "Direction cos, span-mean pooling": 0.8068660737002982,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.38118518626739906,
+      "Direction cos, span-mean pooling": 0.3786585343432388,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.549683558393509,
+      "Direction cos, span-mean pooling": 0.5484649776152422,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7070481010815723,
+      "Direction cos, span-mean pooling": 0.7053805929878983,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5602211644391875,
+      "Direction cos, span-mean pooling": 0.5574520924800594,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8263122267919115,
+      "Direction cos, span-mean pooling": 0.8285310882389013,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8195914228185874,
+      "Direction cos, span-mean pooling": 0.8204283629422585,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6662088979035832,
+      "Direction cos, span-mean pooling": 0.6640158823814988,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5083998662431657,
+      "Direction cos, span-mean pooling": 0.5103645457295237,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8027267021597592,
+      "Direction cos, span-mean pooling": 0.8018970176953781,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.73328799122268,
+      "Direction cos, span-mean pooling": 0.7332786354437832,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.34315236133728816,
+      "Direction cos, span-mean pooling": 0.3431287549437927,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6303601768255575,
+      "Direction cos, span-mean pooling": 0.6323157766722106,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.4977778492574419,
+      "Direction cos, span-mean pooling": 0.49662313930299345,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6365194668994829,
+      "Direction cos, span-mean pooling": 0.6351699265395502,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.33076847704966855,
+      "Direction cos, span-mean pooling": 0.3305178003108608,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.48173094891488355,
+      "Direction cos, span-mean pooling": 0.4817025372577341,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5746240990032442,
+      "Direction cos, span-mean pooling": 0.5743952824692966,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5249330654741653,
+      "Direction cos, span-mean pooling": 0.524604702991371,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7527937588201037,
+      "Direction cos, span-mean pooling": 0.7531484977589679,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.4124256714093505,
+      "Direction cos, span-mean pooling": 0.4106662482786859,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.28213077810274756,
+      "Direction cos, span-mean pooling": 0.28207298852874685,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.44600767348548076,
+      "Direction cos, span-mean pooling": 0.4458073586297105,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.4932968968427605,
+      "Direction cos, span-mean pooling": 0.49308462171431255,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.596363463579639,
+      "Direction cos, span-mean pooling": 0.5962296726081366,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6966556219664102,
+      "Direction cos, span-mean pooling": 0.6963011410910653,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7478223680445252,
+      "Direction cos, span-mean pooling": 0.7482504406736218,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5899443497646863,
+      "Direction cos, span-mean pooling": 0.5899397385576022,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5617693624334663,
+      "Direction cos, span-mean pooling": 0.5609182139819047,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5445575847909832,
+      "Direction cos, span-mean pooling": 0.5449516774703125,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6575533869791578,
+      "Direction cos, span-mean pooling": 0.6572233886089959,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.4054597616519129,
+      "Direction cos, span-mean pooling": 0.4051535184597775,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.14558248532048607,
+      "Direction cos, span-mean pooling": 0.14808646509155024,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7292826671728632,
+      "Direction cos, span-mean pooling": 0.7295383504661112,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5243919423312439,
+      "Direction cos, span-mean pooling": 0.5232674288823196,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5221704539574565,
+      "Direction cos, span-mean pooling": 0.5216744145907898,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5553334883750856,
+      "Direction cos, span-mean pooling": 0.5553299422659868,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.2300794187544353,
+      "Direction cos, span-mean pooling": 0.229377450007198,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.39787522924711705,
+      "Direction cos, span-mean pooling": 0.3975657398127768,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6199231962866653,
+      "Direction cos, span-mean pooling": 0.6189550009635654,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7832876470838116,
+      "Direction cos, span-mean pooling": 0.7824869527757389,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6329435955251695,
+      "Direction cos, span-mean pooling": 0.6322817190591645,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.865729707612397,
+      "Direction cos, span-mean pooling": 0.8667497305543771,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8471228401630059,
+      "Direction cos, span-mean pooling": 0.8503133976326872,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8188050334413701,
+      "Direction cos, span-mean pooling": 0.8228873266404299,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6810852303773954,
+      "Direction cos, span-mean pooling": 0.6792755661549256,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8964596428189401,
+      "Direction cos, span-mean pooling": 0.8982347002686318,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7683216547454035,
+      "Direction cos, span-mean pooling": 0.7678158014405616,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7477006066913701,
+      "Direction cos, span-mean pooling": 0.7473727853328671,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7476948178448667,
+      "Direction cos, span-mean pooling": 0.7472876809160766,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8459912367753183,
+      "Direction cos, span-mean pooling": 0.8451454655458145,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8246473386310597,
+      "Direction cos, span-mean pooling": 0.823012327271825,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.4919298709395955,
+      "Direction cos, span-mean pooling": 0.4916471138760958,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8078245080796996,
+      "Direction cos, span-mean pooling": 0.80937864674769,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7294192137811722,
+      "Direction cos, span-mean pooling": 0.7287178259959312,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8238963529894184,
+      "Direction cos, span-mean pooling": 0.8258083651681397,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6428000756273525,
+      "Direction cos, span-mean pooling": 0.6409146183876286,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.5612740668678295,
+      "Direction cos, span-mean pooling": 0.5610777878612869,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7335015656215673,
+      "Direction cos, span-mean pooling": 0.7322165822683466,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6553047826873127,
+      "Direction cos, span-mean pooling": 0.6549178724616056,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7711183325446191,
+      "Direction cos, span-mean pooling": 0.7710046251076286,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6791821004563534,
+      "Direction cos, span-mean pooling": 0.6796693388040467,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8707702184061014,
+      "Direction cos, span-mean pooling": 0.8719872580291177,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7109419290508415,
+      "Direction cos, span-mean pooling": 0.7124973644954853,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8240339788336295,
+      "Direction cos, span-mean pooling": 0.8243174287573323,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8863836958380076,
+      "Direction cos, span-mean pooling": 0.8867467251911337,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7821030605585396,
+      "Direction cos, span-mean pooling": 0.7808853077298801,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8163033935040386,
+      "Direction cos, span-mean pooling": 0.8161612262814406,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8616311081376751,
+      "Direction cos, span-mean pooling": 0.8592020447753619,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7304277673211914,
+      "Direction cos, span-mean pooling": 0.730078145816683,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.627945335258652,
+      "Direction cos, span-mean pooling": 0.6289612580623948,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8152202864263391,
+      "Direction cos, span-mean pooling": 0.8174527565662263,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8636278951990547,
+      "Direction cos, span-mean pooling": 0.8642563712847611,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.7454801296455092,
+      "Direction cos, span-mean pooling": 0.7448897812136124,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.6629821138772214,
+      "Direction cos, span-mean pooling": 0.66284545340737,
+      "series": "Single-turn map",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Direction cos, tail pooling": 0.8576373391473863,
+      "Direction cos, span-mean pooling": 0.8604877061451592,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7647899321079318,
+      "Direction cos, span-mean pooling": 0.7684961360313467,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7018749648925865,
+      "Direction cos, span-mean pooling": 0.7016909186773008,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8473375047511224,
+      "Direction cos, span-mean pooling": 0.8477621176560525,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.729534419874707,
+      "Direction cos, span-mean pooling": 0.7290958960534479,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8703769647590094,
+      "Direction cos, span-mean pooling": 0.8710646739267214,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8841132965638753,
+      "Direction cos, span-mean pooling": 0.8851135876582077,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6191326495538988,
+      "Direction cos, span-mean pooling": 0.618969003271214,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8083302015438921,
+      "Direction cos, span-mean pooling": 0.8110573375171569,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8327004517255354,
+      "Direction cos, span-mean pooling": 0.8337354967708265,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7898163107535194,
+      "Direction cos, span-mean pooling": 0.7933860576630782,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7997053561657294,
+      "Direction cos, span-mean pooling": 0.8018174073349505,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8083859238291943,
+      "Direction cos, span-mean pooling": 0.8091765074185482,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7626846829006129,
+      "Direction cos, span-mean pooling": 0.7625959932450986,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7855911006153169,
+      "Direction cos, span-mean pooling": 0.7860341660758133,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6317504973679005,
+      "Direction cos, span-mean pooling": 0.631699655238278,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8048053428340352,
+      "Direction cos, span-mean pooling": 0.8066354585359053,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6340757994746561,
+      "Direction cos, span-mean pooling": 0.6376697606838329,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6882672324508897,
+      "Direction cos, span-mean pooling": 0.6866058301932305,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7672588693035562,
+      "Direction cos, span-mean pooling": 0.7676355356035062,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6371428102159241,
+      "Direction cos, span-mean pooling": 0.6380803298505727,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8352332047026032,
+      "Direction cos, span-mean pooling": 0.8364646429457756,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7898547089951375,
+      "Direction cos, span-mean pooling": 0.7890262817913702,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8059328897156738,
+      "Direction cos, span-mean pooling": 0.8050582997938259,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8080901638522051,
+      "Direction cos, span-mean pooling": 0.8108757419302979,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7965091482340645,
+      "Direction cos, span-mean pooling": 0.7971493374714673,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8049911490860927,
+      "Direction cos, span-mean pooling": 0.8036973137031405,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7726870225622399,
+      "Direction cos, span-mean pooling": 0.7764124427491907,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7986337238925536,
+      "Direction cos, span-mean pooling": 0.8011166403374923,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8398228621399438,
+      "Direction cos, span-mean pooling": 0.8426128769946646,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8039544388858244,
+      "Direction cos, span-mean pooling": 0.8063528877722472,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7092222823089708,
+      "Direction cos, span-mean pooling": 0.7088748021515676,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.4083109924752324,
+      "Direction cos, span-mean pooling": 0.40780533525412677,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7797813078610825,
+      "Direction cos, span-mean pooling": 0.7782915340184479,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.3676698132876197,
+      "Direction cos, span-mean pooling": 0.3648019610021022,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5168550929595703,
+      "Direction cos, span-mean pooling": 0.5183592023116067,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6489315049435711,
+      "Direction cos, span-mean pooling": 0.6476378261931495,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5290380055990301,
+      "Direction cos, span-mean pooling": 0.5262605477711566,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8203182396319236,
+      "Direction cos, span-mean pooling": 0.8213555960521326,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8019377705487734,
+      "Direction cos, span-mean pooling": 0.8027209293025711,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6050550113185476,
+      "Direction cos, span-mean pooling": 0.6036044489537462,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5080214862448204,
+      "Direction cos, span-mean pooling": 0.5105037055029544,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8016065702089268,
+      "Direction cos, span-mean pooling": 0.8000361253407287,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7061609939214466,
+      "Direction cos, span-mean pooling": 0.7061105795209667,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.37663271640802204,
+      "Direction cos, span-mean pooling": 0.37676118949352566,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6828842951999625,
+      "Direction cos, span-mean pooling": 0.6828064477884717,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.39952170276089766,
+      "Direction cos, span-mean pooling": 0.39759684093469644,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5903058916472762,
+      "Direction cos, span-mean pooling": 0.5893863106768031,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.2908288293520106,
+      "Direction cos, span-mean pooling": 0.2907389243182582,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.47324243176889014,
+      "Direction cos, span-mean pooling": 0.473293517130149,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5399799251320788,
+      "Direction cos, span-mean pooling": 0.5397302370519373,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5020939781449703,
+      "Direction cos, span-mean pooling": 0.501764948351316,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7393885615602064,
+      "Direction cos, span-mean pooling": 0.7395003585942681,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.3706411930524425,
+      "Direction cos, span-mean pooling": 0.3697332691753583,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.26133993386015436,
+      "Direction cos, span-mean pooling": 0.26133307732346733,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.4381542844746491,
+      "Direction cos, span-mean pooling": 0.4378552505816515,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.4865670948414982,
+      "Direction cos, span-mean pooling": 0.48634266140114873,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5298921857523827,
+      "Direction cos, span-mean pooling": 0.5297754896364941,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.637801480928226,
+      "Direction cos, span-mean pooling": 0.6376338191610886,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7033273431417878,
+      "Direction cos, span-mean pooling": 0.7039683868762525,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5660395269914607,
+      "Direction cos, span-mean pooling": 0.5660143381143794,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.48832883263542837,
+      "Direction cos, span-mean pooling": 0.48704299783802735,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5186537008257978,
+      "Direction cos, span-mean pooling": 0.5192364102243096,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6098276801885315,
+      "Direction cos, span-mean pooling": 0.6096117626917104,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.41868100398488123,
+      "Direction cos, span-mean pooling": 0.41850350971441325,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.1312953587050742,
+      "Direction cos, span-mean pooling": 0.13443841373486085,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7025918364224036,
+      "Direction cos, span-mean pooling": 0.7027339155034149,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.43028165542334623,
+      "Direction cos, span-mean pooling": 0.42716845293583455,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.45498558818525464,
+      "Direction cos, span-mean pooling": 0.45480891262270967,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5543897144902941,
+      "Direction cos, span-mean pooling": 0.5545399541222465,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.17454426640353474,
+      "Direction cos, span-mean pooling": 0.17516862331655164,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.3788039606264984,
+      "Direction cos, span-mean pooling": 0.37796163251935117,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5802050774728297,
+      "Direction cos, span-mean pooling": 0.5796688414675514,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7754222369445704,
+      "Direction cos, span-mean pooling": 0.7737693269976814,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5706733748961024,
+      "Direction cos, span-mean pooling": 0.5700092521363083,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8659937569630698,
+      "Direction cos, span-mean pooling": 0.8660907464795737,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8367988026450184,
+      "Direction cos, span-mean pooling": 0.8398448536084849,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8176380111407486,
+      "Direction cos, span-mean pooling": 0.8214832705931221,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5820604978874476,
+      "Direction cos, span-mean pooling": 0.5809501765426762,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8749455039585262,
+      "Direction cos, span-mean pooling": 0.8774131206909985,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7281809469815653,
+      "Direction cos, span-mean pooling": 0.7274867243462527,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7071830534558387,
+      "Direction cos, span-mean pooling": 0.7064301721537996,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6789457166648473,
+      "Direction cos, span-mean pooling": 0.6783752531205511,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.837957694598557,
+      "Direction cos, span-mean pooling": 0.8387002896015765,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7769707402559933,
+      "Direction cos, span-mean pooling": 0.7744411340986407,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.48182463732256736,
+      "Direction cos, span-mean pooling": 0.48131593921984084,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7947077874668151,
+      "Direction cos, span-mean pooling": 0.7945095959696734,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6342174118109716,
+      "Direction cos, span-mean pooling": 0.6339088308123854,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7992279296916679,
+      "Direction cos, span-mean pooling": 0.7979738949116195,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6197008275744625,
+      "Direction cos, span-mean pooling": 0.6187245118013547,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5566138728305865,
+      "Direction cos, span-mean pooling": 0.556072943124847,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7251824754416808,
+      "Direction cos, span-mean pooling": 0.7244069461928853,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6258028192717998,
+      "Direction cos, span-mean pooling": 0.6246402009555138,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7449721261669543,
+      "Direction cos, span-mean pooling": 0.7446121448231897,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6842131993784512,
+      "Direction cos, span-mean pooling": 0.6831992115562749,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8565159069877876,
+      "Direction cos, span-mean pooling": 0.8563232439586316,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7047657608108537,
+      "Direction cos, span-mean pooling": 0.7053625662576638,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7874841512213385,
+      "Direction cos, span-mean pooling": 0.7873500517036638,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.850110697371913,
+      "Direction cos, span-mean pooling": 0.8495258013211725,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7699910875682454,
+      "Direction cos, span-mean pooling": 0.7681043283876583,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.7920526902766821,
+      "Direction cos, span-mean pooling": 0.7934768540162984,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8275434508287076,
+      "Direction cos, span-mean pooling": 0.8253416913234565,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.665993366690656,
+      "Direction cos, span-mean pooling": 0.6657791014567792,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.5733023921595523,
+      "Direction cos, span-mean pooling": 0.5734889981467044,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8086839153358458,
+      "Direction cos, span-mean pooling": 0.8061610643701576,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.8464555758452978,
+      "Direction cos, span-mean pooling": 0.8476527527046119,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6814718974587802,
+      "Direction cos, span-mean pooling": 0.6812328536419572,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.6405527245240599,
+      "Direction cos, span-mean pooling": 0.6402350041210728,
+      "series": "Multi-turn map",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Direction cos, tail pooling": 0.4767074787652837,
+      "Direction cos, span-mean pooling": 0.4796902087869464,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4139945025787617,
+      "Direction cos, span-mean pooling": 0.4165554375322119,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.42799999541247824,
+      "Direction cos, span-mean pooling": 0.42708029781449713,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3640183445419223,
+      "Direction cos, span-mean pooling": 0.3650212697023849,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.35521145730132914,
+      "Direction cos, span-mean pooling": 0.3548311855742215,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.48089780081813677,
+      "Direction cos, span-mean pooling": 0.4815579195989804,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4935373916086734,
+      "Direction cos, span-mean pooling": 0.4943600999395005,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3428900824805335,
+      "Direction cos, span-mean pooling": 0.34279102304792014,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.42064779125131957,
+      "Direction cos, span-mean pooling": 0.42380307353869,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4479965468514527,
+      "Direction cos, span-mean pooling": 0.44770389761091395,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4105727816496162,
+      "Direction cos, span-mean pooling": 0.41209001965482295,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.34992350135479294,
+      "Direction cos, span-mean pooling": 0.35139407361028496,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.2852604229388103,
+      "Direction cos, span-mean pooling": 0.28535240565725123,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.42958639538438415,
+      "Direction cos, span-mean pooling": 0.4291227754140561,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5208044152224227,
+      "Direction cos, span-mean pooling": 0.5203455646683787,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3813684913443033,
+      "Direction cos, span-mean pooling": 0.3810447610332474,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.46939062011391514,
+      "Direction cos, span-mean pooling": 0.47183083864639797,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4050793918382478,
+      "Direction cos, span-mean pooling": 0.40750205113345017,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3562387726257526,
+      "Direction cos, span-mean pooling": 0.35650491409016055,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3751746215467736,
+      "Direction cos, span-mean pooling": 0.3759683998092039,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.29107705149534874,
+      "Direction cos, span-mean pooling": 0.29067898221799976,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47668912655371176,
+      "Direction cos, span-mean pooling": 0.48464887038896215,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4701843535356411,
+      "Direction cos, span-mean pooling": 0.4702168826794926,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4176705148385237,
+      "Direction cos, span-mean pooling": 0.416719857843314,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4098550516345323,
+      "Direction cos, span-mean pooling": 0.4098206979739677,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.33764411606997946,
+      "Direction cos, span-mean pooling": 0.3379087003289817,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3528459494794413,
+      "Direction cos, span-mean pooling": 0.3515389833323438,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3927123226317639,
+      "Direction cos, span-mean pooling": 0.39466675012102115,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.43686648642460246,
+      "Direction cos, span-mean pooling": 0.4392679040106696,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.41783809149186946,
+      "Direction cos, span-mean pooling": 0.41872321115897304,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47301313979106574,
+      "Direction cos, span-mean pooling": 0.47498496597273715,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.39602736514257875,
+      "Direction cos, span-mean pooling": 0.3957323572681409,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3170560193148161,
+      "Direction cos, span-mean pooling": 0.3170560656405067,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.34463300324030155,
+      "Direction cos, span-mean pooling": 0.3446642407978634,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.282495893211834,
+      "Direction cos, span-mean pooling": 0.2820375286068181,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3326906383970367,
+      "Direction cos, span-mean pooling": 0.3339151544788975,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.343559183519207,
+      "Direction cos, span-mean pooling": 0.3416286067189566,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.23405795232187157,
+      "Direction cos, span-mean pooling": 0.23328175136959622,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47330111414468223,
+      "Direction cos, span-mean pooling": 0.47311438751164836,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4017581143695326,
+      "Direction cos, span-mean pooling": 0.4026929203048291,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.315537685157836,
+      "Direction cos, span-mean pooling": 0.3153916603980661,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3439786710799638,
+      "Direction cos, span-mean pooling": 0.3446488408182254,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.29460403645387884,
+      "Direction cos, span-mean pooling": 0.2941824402280554,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3634719660126559,
+      "Direction cos, span-mean pooling": 0.3633639294923475,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.22394541495161763,
+      "Direction cos, span-mean pooling": 0.2235872837573206,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.29814444348009084,
+      "Direction cos, span-mean pooling": 0.29923766338038327,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.28311413270612723,
+      "Direction cos, span-mean pooling": 0.2825457652417282,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.22184582346005197,
+      "Direction cos, span-mean pooling": 0.22278750438246936,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.20270848792319485,
+      "Direction cos, span-mean pooling": 0.20246035488706263,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3179933040564645,
+      "Direction cos, span-mean pooling": 0.3177279331110771,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.19865115786555398,
+      "Direction cos, span-mean pooling": 0.1986514906017988,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.25077880734448316,
+      "Direction cos, span-mean pooling": 0.25029431910596694,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3250791235447033,
+      "Direction cos, span-mean pooling": 0.3246888824089478,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.21926755413570653,
+      "Direction cos, span-mean pooling": 0.21927639060162948,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.13658349038753415,
+      "Direction cos, span-mean pooling": 0.1364945008955689,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.1358917125326052,
+      "Direction cos, span-mean pooling": 0.13566581279488854,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.26344769573342985,
+      "Direction cos, span-mean pooling": 0.26325919315981905,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.23646573666595846,
+      "Direction cos, span-mean pooling": 0.23625494833518887,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.2650948672338037,
+      "Direction cos, span-mean pooling": 0.26471807600826047,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.272593436273174,
+      "Direction cos, span-mean pooling": 0.2729946107941248,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.14278226047319775,
+      "Direction cos, span-mean pooling": 0.14271622585478258,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3264109178766093,
+      "Direction cos, span-mean pooling": 0.3261864539211214,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.19122672345970895,
+      "Direction cos, span-mean pooling": 0.19146051949838927,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.32839736141189174,
+      "Direction cos, span-mean pooling": 0.32830276979802525,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.20728456246342963,
+      "Direction cos, span-mean pooling": 0.20720327045145237,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.10771359260942781,
+      "Direction cos, span-mean pooling": 0.10741289849371126,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.344662758549255,
+      "Direction cos, span-mean pooling": 0.34463021386507897,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.1871942363921997,
+      "Direction cos, span-mean pooling": 0.18510002873571954,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.2714579289224644,
+      "Direction cos, span-mean pooling": 0.2711514842554709,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.2337744551858876,
+      "Direction cos, span-mean pooling": 0.23348421427483826,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.10852219080708222,
+      "Direction cos, span-mean pooling": 0.10829702104769325,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.241911837083569,
+      "Direction cos, span-mean pooling": 0.2410048492210241,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3959317878232488,
+      "Direction cos, span-mean pooling": 0.3949985566557221,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.49868048372700907,
+      "Direction cos, span-mean pooling": 0.4972848406183877,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.39560796548162364,
+      "Direction cos, span-mean pooling": 0.39433451250032225,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5156395800454936,
+      "Direction cos, span-mean pooling": 0.5160250099021161,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4901841537870895,
+      "Direction cos, span-mean pooling": 0.4926595098460439,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5084066030659795,
+      "Direction cos, span-mean pooling": 0.5142065849038567,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.413838366025322,
+      "Direction cos, span-mean pooling": 0.41227869717186816,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5571956794760761,
+      "Direction cos, span-mean pooling": 0.5596848405695671,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4202911818215864,
+      "Direction cos, span-mean pooling": 0.4194054395452077,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47497842314167105,
+      "Direction cos, span-mean pooling": 0.4743907998789566,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47854720609591406,
+      "Direction cos, span-mean pooling": 0.4774699483891421,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4341664795204195,
+      "Direction cos, span-mean pooling": 0.43408943678955764,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47394910236227306,
+      "Direction cos, span-mean pooling": 0.47224889438802975,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3243735216256832,
+      "Direction cos, span-mean pooling": 0.3236722216827333,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4241069610594507,
+      "Direction cos, span-mean pooling": 0.4238126983972029,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4796720777191452,
+      "Direction cos, span-mean pooling": 0.47868772701996126,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4443934171035824,
+      "Direction cos, span-mean pooling": 0.4450296260726769,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4026623943729709,
+      "Direction cos, span-mean pooling": 0.40153028600788176,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.42189690065214286,
+      "Direction cos, span-mean pooling": 0.4209506552213815,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.38538819825120973,
+      "Direction cos, span-mean pooling": 0.3846724108678232,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3817026472148467,
+      "Direction cos, span-mean pooling": 0.37984373003815136,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.39036414149675824,
+      "Direction cos, span-mean pooling": 0.38935316916283425,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3757337545901833,
+      "Direction cos, span-mean pooling": 0.3752816708807378,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5066316283780222,
+      "Direction cos, span-mean pooling": 0.5070945897746735,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.3784494072496296,
+      "Direction cos, span-mean pooling": 0.37838510037878864,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.39832481475368386,
+      "Direction cos, span-mean pooling": 0.3970688780885715,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5467371691552945,
+      "Direction cos, span-mean pooling": 0.5464163997386272,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4632673613690555,
+      "Direction cos, span-mean pooling": 0.46381069874381126,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4603228726022851,
+      "Direction cos, span-mean pooling": 0.46008075253052927,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4537652617300208,
+      "Direction cos, span-mean pooling": 0.4521807496558549,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.47441937076038765,
+      "Direction cos, span-mean pooling": 0.4732781902876476,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.43568722390085896,
+      "Direction cos, span-mean pooling": 0.4358413270878382,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.5543348891927218,
+      "Direction cos, span-mean pooling": 0.5561368036343824,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.45657576278354794,
+      "Direction cos, span-mean pooling": 0.45819382489528676,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4825874451054898,
+      "Direction cos, span-mean pooling": 0.48177449939706235,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Direction cos, tail pooling": 0.4643256884634174,
+      "Direction cos, span-mean pooling": 0.4635431084073797,
+      "series": "Raw context shift (identity+bias)",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 324,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pooling twin: span-mean vs tail per pair",
+        "xlabel": "Direction cos, tail pooling",
+        "ylabel": "Direction cos, span-mean pooling",
+        "legend_labels": [
+          "Single-turn map",
+          "Multi-turn map",
+          "Raw context shift (identity+bias)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Single-turn map",
+      "Multi-turn map",
+      "Raw context shift (identity+bias)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "commit": "62640b11",
+  "render_id": "996886271b6f41df",
+  "git_commit": "62640b11ab841807234b4b58e4b4ceb8b2ff6c51",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2617_svmp_figures.py",
+  "created": "2026-08-27T18:01:14Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.8178647252890601,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7381125117621049,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7328830859176578,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.6198142888670017,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.6710455854562756,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7358410749337722,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.8084761549873705,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7815784006026728,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7738287066944647,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.74,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7953145828407983,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Object swap\n(valence flip)\nn=16",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7717548669367985,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Verb swap\n(valence flip)\nn=16",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7039408363198241,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Subject swap\n(harmful topic)\nn=16",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.6716098648657273,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Object swap\n(benign)\nn=8",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.5846984428057522,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Verb swap\n(benign)\nn=8",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.6111682611530715,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Subject swap\n(benign)\nn=8",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.681029920626207,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "XSTest\nsafe/unsafe\nn=36",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7635559532605108,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "All pairs\nn=108",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7368672172862952,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Flip pairs\nn=60",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7282300442128805,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Non-flip pairs\nn=41",
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 0.7546156321183078,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.4262915873824848,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.4945653578280502,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.417904256156313,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.2590704886463848,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.383329759644296,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.7996343256622496,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.4434502368594477,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.4445314742220619,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.4042594588850403,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.26,
+      "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)": 1.568363332417001,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Norm calibration by class and flip group",
+        "ylabel": "Calibration slope (pred \u2248 slope \u00d7 obs, through origin)",
+        "legend_labels": [
+          "Single-turn map",
+          "Multi-turn map",
+          "Raw context shift (identity+bias)"
+        ],
+        "xticklabels": [
+          "Object swap\n(valence flip)\nn=16",
+          "Verb swap\n(valence flip)\nn=16",
+          "Subject swap\n(harmful topic)\nn=16",
+          "Object swap\n(benign)\nn=8",
+          "Verb swap\n(benign)\nn=8",
+          "Subject swap\n(benign)\nn=8",
+          "XSTest\nsafe/unsafe\nn=36",
+          "All pairs\nn=108",
+          "Flip pairs\nn=60",
+          "Non-flip pairs\nn=41"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75",
+          "2.00"
+        ]
+      }
+    ],
+    "series": [
+      "Single-turn map",
+      "Multi-turn map",
+      "Raw context shift (identity+bias)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
