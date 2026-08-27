@@ -1,14 +1,18 @@
 {
-  "commit": "932d2221",
-  "render_id": "d7c85c4a8fbb4fbe",
-  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "93080c0a+dirty",
+  "render_id": "63412f9ec8384add",
+  "git_commit": "93080c0a7c29831e96505827a274dbe30b4e81a4",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2587_figures.py",
+    "tests/test_issue2587_figures.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2587_figures.py",
-  "created": "2026-08-27T05:25:48Z",
+  "created": "2026-08-27T12:34:40Z",
   "figsize": [
     10.0,
-    4.2
+    15.060000000000002
   ],
   "text": {
     "suptitle": null,

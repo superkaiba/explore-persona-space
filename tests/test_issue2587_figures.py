@@ -362,7 +362,9 @@ def _axis_row(
             "noise_norm_mean_all_values": 1.25,
             "spearman_brown": 0.95,
         },
-        "text_space": None,
+        # non-None so the text_space_rank_scatter figure has >=2 plottable
+        # axes per panel at fixture scale (base-derived -> distinct ranks)
+        "text_space": {"flip_norm_mean": 3.0 + 2.0 * base},
         "surface": {"observed": _surface_blk(), map_arm: _surface_blk(), id_arm: _surface_blk()},
         "answer_length": {"swap": {"mean_delta_tokens": 1.5, "mean_abs_delta_tokens": 4.0}},
         "layer_twins": layer_twins,
@@ -773,7 +775,7 @@ def _argv(paths: dict[str, Path], out_dir: Path, figs: str) -> list[str]:
 
 EXPECTED_FIG_STEMS = (
     "fig_hero_layer_sweep",
-    "fig_hero_crossmodel_axis_profile",
+    "fig_hero_crossmodel_axis_profile_v2",
     "fig_crossmodel_delta_forest",
     "fig_matched_vs_parent_scatter",
     "fig_selected_lambda_per_layer",
@@ -786,6 +788,7 @@ EXPECTED_FIG_STEMS = (
     "fig_install_swap_violins",
     "fig_edit_dose_scatter",
     "fig_carrier_direction_heatmap",
+    "fig_text_space_rank_scatter",
     "fig_axis_identity_heatmap",
     "fig_crossfam_consistency_scatter",
     "fig_delta_retrieval_acc",
@@ -867,7 +870,7 @@ def test_axis_profile_handles_null_rows_and_missing_7b_axis(tmp_path):
     crossmodel CI. All layers (null band / ceiling / iddelta / CI) present."""
     inputs = {"crossmodel": make_crossmodel_doc(), "delta": make_delta_doc()}
     G.fig_crossmodel_axis_profile(inputs, tmp_path)
-    _assert_png(tmp_path, "fig_hero_crossmodel_axis_profile")
+    _assert_png(tmp_path, "fig_hero_crossmodel_axis_profile_v2")
 
 
 def test_axis_profile_requires_delta_sides(tmp_path):
@@ -1090,6 +1093,8 @@ def test_registry_covers_plan_deliverables():
         "install_swap_violins",
         "edit_dose_scatter",
         "carrier_direction_heatmap",
+        "text_space_rank_scatter",  # interpretation-r2 answer-text control (r8)
+        "intrusion_rates",  # analyzer-r1 extension (registered without a pin update)
         "axis_identity_heatmap",
         "crossfam_consistency_scatter",
         "delta_retrieval_acc",

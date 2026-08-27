@@ -35,6 +35,9 @@ per named item; the §6 name is quoted per entry):
   (battery-side; distinct from the fit-side ``knn_per_layer``).
 * ``carrier_direction_heatmap``   — "per-carrier direction-cos transfer
   matrices" (carrier × axis mean map-arm cos, per model).
+* ``text_space_rank_scatter``     — interpretation-r2 answer-text control:
+  the per-axis rank scatters behind ``text_space_rank_reads.json``
+  (cross-model text ordering + 9B separation-vs-text ordering).
 * ``splithalf_vs_direction``      — "split-half-vs-direction scatters".
 * ``pilot_axis_panels``           — "pilot-axis panels" (9B-only; the 7B side
   is rendered as pending per plan convention 12).
@@ -90,6 +93,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
+from scipy.stats import rankdata  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
@@ -1087,9 +1091,14 @@ def fig_edit_dose_scatter(inputs: dict, out_dir: Path) -> list[Path]:
 def fig_carrier_direction_heatmap(inputs: dict, out_dir: Path) -> list[Path]:
     """Plan §6: per-carrier direction-cos transfer matrices — carrier × axis
     mean map-arm direction cos per model (does the axis direction transfer
-    across carrier topics?)."""
+    across carrier topics?). Figure height scales with the carrier-row count
+    (78 carrier / carrier-pair rows realized) so every y tick label renders
+    legibly — the fixed 4.2-in height smeared the row labels (r2 concern
+    `per-unit-figure-unreadable`)."""
     by_model = _perpair_by_model(inputs["perpair"])
-    fig, panels = plt.subplots(1, 2, figsize=(10.0, 4.2), layout="constrained")
+    n_rows_max = max(len({str(r["carrier"]) for r in rows}) for rows in by_model.values())
+    fig_h = max(4.2, 0.17 * n_rows_max + 1.8)
+    fig, panels = plt.subplots(1, 2, figsize=(10.0, fig_h), layout="constrained")
     im = None
     for ax, tag in zip(panels, MODEL_TAGS):
         rows = by_model[tag]
@@ -1109,12 +1118,86 @@ def fig_carrier_direction_heatmap(inputs: dict, out_dir: Path) -> list[Path]:
                     mat[i, j] = float(np.mean(vals))
         im = ax.imshow(mat, cmap="coolwarm", vmin=-1.0, vmax=1.0, aspect="auto")
         ax.set_xticks(range(len(axes_names)))
-        ax.set_xticklabels([axis_label(a) for a in axes_names], fontsize=6, rotation=45, ha="right")
+        ax.set_xticklabels([axis_label(a) for a in axes_names], fontsize=7, rotation=45, ha="right")
         ax.set_yticks(range(len(carriers)))
-        ax.set_yticklabels([c[:18] for c in carriers], fontsize=6)
+        ax.set_yticklabels([c[:18] for c in carriers], fontsize=7)
         ax.set_title(DISPLAY[tag], fontsize=9)
-    fig.colorbar(im, ax=list(panels), shrink=0.8, label="mean direction cosine (map arm)")
+    fig.colorbar(im, ax=list(panels), shrink=0.6, label="mean direction cosine (map arm)")
     paths = savefig_paper(fig, "fig_carrier_direction_heatmap", dir=out_dir)
+    plt.close(fig)
+    return list(paths.values())
+
+
+def fig_text_space_rank_scatter(inputs: dict, out_dir: Path) -> list[Path]:
+    """Interpretation-r2 answer-text control: the per-axis RANK view behind
+    the two rank correlations in ``text_space_rank_reads.json`` — left, the
+    per-axis answer-text shift-norm ranks of the two models against each
+    other (axes with text reads on both sides); right, the Qwen3.5-9B
+    observed-separation rank against its own text-norm rank. Same sources as
+    ``scripts/issue2587_text_rank.py`` (``text_space.flip_norm_mean`` per
+    side + ``obs_separation_snr``); tie-corrected average ranks
+    (scipy ``rankdata`` on negated values), rank 1 = largest."""
+    sides = _delta_sides(inputs["delta"])
+    cm = inputs["crossmodel"]
+    _require_stat_axes(cm["stats"], "text_space_rank_scatter", "obs_separation_snr")
+    s9_axes = sides["qwen35_9b"]["axes"]
+    s7_axes = sides["qwen25_7b"]["axes"]
+
+    def _text(side_axes: dict, axis: str) -> float | None:
+        ts = side_axes.get(axis, {}).get("text_space") or {}
+        return ts.get("flip_norm_mean")
+
+    both = sorted(
+        a for a in s7_axes if _text(s7_axes, a) is not None and _text(s9_axes, a) is not None
+    )
+    sep9 = {r["axis"]: _fnum(r["s_9b"]) for r in cm["stats"]["obs_separation_snr"]["axes"]}
+    sep_axes = sorted(a for a in sep9 if math.isfinite(sep9[a]) and _text(s9_axes, a) is not None)
+    if len(both) < 2 or len(sep_axes) < 2:
+        raise RuntimeError(
+            f"text_space_rank_scatter: too few plottable axes (cross-model {len(both)}, "
+            f"separation-vs-text {len(sep_axes)}) — refusing a blank render (fail-loud)"
+        )
+
+    def _ranks(vals: list[float]) -> np.ndarray:
+        return rankdata([-float(v) for v in vals])
+
+    primary = paper_palette_role("primary")
+    neutral = paper_palette_role("neutral")
+    fig, (ax_l, ax_r) = plt.subplots(1, 2, figsize=(9.2, 4.4), layout="constrained")
+    panels = (
+        (
+            ax_l,
+            _ranks([_text(s7_axes, a) for a in both]),
+            _ranks([_text(s9_axes, a) for a in both]),
+            both,
+            "answer-text shift-norm rank, " + DISPLAY["qwen25_7b"] + " (1 = largest)",
+            "Answer-text ordering across the two models",
+        ),
+        (
+            ax_r,
+            _ranks([sep9[a] for a in sep_axes]),
+            _ranks([_text(s9_axes, a) for a in sep_axes]),
+            sep_axes,
+            "observed-separation rank, " + DISPLAY["qwen35_9b"] + " (1 = largest)",
+            "9B separation vs 9B answer-text ordering",
+        ),
+    )
+    for ax, xs, ys, names, xlabel, title in panels:
+        hi = float(max(xs.max(), ys.max())) + 0.6
+        ax.plot([0.4, hi], [0.4, hi], color=neutral, ls="--", lw=1.0, zorder=0)
+        ax.scatter(xs, ys, color=primary, s=26, zorder=2)
+        for x, y, name in zip(xs, ys, names):
+            ax.annotate(
+                axis_label(name), (x, y), fontsize=7, xytext=(4, 3), textcoords="offset points"
+            )
+        ax.set_xlim(0.4, hi + 0.9)
+        ax.set_ylim(0.4, hi)
+        ax.set_xlabel(xlabel, fontsize=8)
+        ax.set_title(title, fontsize=9)
+    ax_l.set_ylabel(
+        "answer-text shift-norm rank, " + DISPLAY["qwen35_9b"] + " (1 = largest)", fontsize=8
+    )
+    paths = savefig_paper(fig, "fig_text_space_rank_scatter", dir=out_dir)
     plt.close(fig)
     return list(paths.values())
 
@@ -1873,6 +1956,7 @@ FIGS: dict[str, tuple[tuple[str, ...], object]] = {
     "install_swap_violins": (("perpair",), fig_install_swap_violins),
     "edit_dose_scatter": (("perpair", "delta"), fig_edit_dose_scatter),
     "carrier_direction_heatmap": (("perpair",), fig_carrier_direction_heatmap),
+    "text_space_rank_scatter": (("delta", "crossmodel"), fig_text_space_rank_scatter),
     "axis_identity_heatmap": (("delta",), fig_axis_identity_heatmap),
     "crossfam_consistency_scatter": (("delta",), fig_crossfam_consistency_scatter),
     "delta_retrieval_acc": (("delta",), fig_delta_retrieval_acc),
