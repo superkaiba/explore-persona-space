@@ -119,17 +119,24 @@ The second block below is likewise the COMPLETE record, not a cherry-picked exce
 
 I acknowledge this body ships conciseness WARNs in three classes plus one figure-text WARN. Total-prose/budget: eight legs and 19 figures do not fit the 800-word Takeaways+Goal+Results budget. Takeaways bullets: several exceed the 30-word soft cap. Figure caption length: one caption exceeds 60 words. No per-result block reaches the 180-word FAIL tier. Separately, five rendered figures carry opaque config-code tokens in their axis or legend text (`issue2569_rowbattery`, `n_above_floor`, `copied_dw_share`, `H2b`, `Delta_tbar_even`, `Delta_tbar_odd`); the plain-English readings are in the surrounding prose and captions, and regenerating those figures is filed rather than done here.
 
-Nine reviewer concerns remain open as recorded deferrals, all in one class: caching and provenance pins rather than reported numbers. Several resume keys hash a join identity or a local modification time instead of the input bytes, so a regeneration under an unchanged key could serve stale cached chunks; the staged adapters and base models were fetched at their default revision with no revision pin recorded; the finalize gate does not bind the capture tolerance it inherits, so the cross-model gate tolerances quoted below are the ones actually enforced but are not structurally prevented from being looser; one source-revision lookup sits outside its retry wrapper; one null battery ran serially where it could have been batched; and during the code-review round I advanced the worktree tip under the reviewer by committing agent-memory files mid-round. None of these change a number in this body, and each is deferred rather than silently dropped.
+Nine reviewer concerns remain OPEN and unaddressed in this round, all in one class: caching and provenance pins rather than reported numbers. Several resume keys hash a join identity or a local modification time instead of the input bytes, so a regeneration under an unchanged key could serve stale cached chunks; the staged adapters and base models were fetched at their default revision with no revision pin recorded; the finalize gate does not bind the capture tolerance it inherits, so the cross-model gate tolerances quoted below are the ones actually enforced but are not structurally prevented from being looser; one source-revision lookup sits outside its retry wrapper; one null battery ran serially where it could have been batched; and during the code-review round I advanced the worktree tip under the reviewer by committing agent-memory files mid-round. None of these change a number in this body. They are recorded here rather than formally deferred: deferral requires explicit user sign-off, which this autonomous round has not sought, so each stays open pending a fix round or that sign-off.
 
-<!-- concern-deferred: review-tip-drift-orchestrator-memory-commits -->
-<!-- concern-deferred: weights-base-regime-omits-banked-map-fingerprint -->
-<!-- concern-deferred: atlas-phasefits-correspondence-null-serial -->
-<!-- concern-deferred: atlas-aligned-spectra-key-ids-not-content -->
-<!-- concern-deferred: dwfleet-align-units-key-omits-adapter-and-ft-sidecar-content -->
-<!-- concern-deferred: ans-len-local-fingerprint-not-content-stable -->
-<!-- concern-deferred: pd-finalize-gate-tolerance-unbound -->
-<!-- concern-deferred: pd-gate-model-revision-unbound -->
-<!-- concern-deferred: select-source-revision-unretried -->
+<details>
+<summary>The nine open concern ids, for the ledger</summary>
+
+- `review-tip-drift-orchestrator-memory-commits`
+- `weights-base-regime-omits-banked-map-fingerprint`
+- `atlas-phasefits-correspondence-null-serial`
+- `atlas-aligned-spectra-key-ids-not-content`
+- `dwfleet-align-units-key-omits-adapter-and-ft-sidecar-content`
+- `ans-len-local-fingerprint-not-content-stable`
+- `pd-finalize-gate-tolerance-unbound`
+- `pd-gate-model-revision-unbound`
+- `select-source-revision-unretried`
+
+</details>
+
+I also acknowledge the per-unit-evidence WARN on 15 of 19 result sections. Several of those figures ARE the per-unit view by construction — the gate ladders plot every arm, the intruder and alignment scatters plot every cell, the denoised-rank figure plots every unit, and the per-feature figure plots every feature — but the sections do not carry the literal exemption token, and the genuinely aggregate-only ones (the family table, the matching accuracy) have no low-level companion rendered.
 
 ### The map is not low-rank, and its kernel tightens with depth
 
