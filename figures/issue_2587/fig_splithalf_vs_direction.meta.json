@@ -1,0 +1,224 @@
+{
+  "commit": "932d2221",
+  "render_id": "a9ae1f176c3e4113",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:30Z",
+  "figsize": [
+    4.8,
+    4.2
+  ],
+  "points": [
+    {
+      "split-half reliability ceiling (r10)": 0.9726700718890192,
+      "direction cosine (map arm)": 0.7445870913395131,
+      "series": "Qwen3.5-9B (thinking off)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.955202752260168,
+      "direction cosine (map arm)": 0.5357890161940128,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.8698394166418418,
+      "direction cosine (map arm)": 0.4574382965069025,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9805464872388147,
+      "direction cosine (map arm)": 0.6361053013006291,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.5588143523976477,
+      "direction cosine (map arm)": 0.24894830585517277,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9831486509675972,
+      "direction cosine (map arm)": 0.7970303767634993,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9898844731496271,
+      "direction cosine (map arm)": 0.6598910034563062,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9087982722036948,
+      "direction cosine (map arm)": 0.4854104244166068,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.7399011924374312,
+      "direction cosine (map arm)": 0.4608461225944444,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9951472057179379,
+      "direction cosine (map arm)": 0.8707381682197949,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.946627721795007,
+      "direction cosine (map arm)": 0.5672292515348855,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.20430465535071576,
+      "direction cosine (map arm)": 0.30567663127211225,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.960392848057875,
+      "direction cosine (map arm)": 0.6255926497411138,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9405974925633374,
+      "direction cosine (map arm)": 0.5153488954541783,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9093781216471862,
+      "direction cosine (map arm)": 0.3970307336673254,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "split-half reliability ceiling (r10)": null,
+      "direction cosine (map arm)": null,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.746408988829969,
+      "direction cosine (map arm)": 0.3739211886288218,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "split-half reliability ceiling (r10)": null,
+      "direction cosine (map arm)": null,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9826447430382637,
+      "direction cosine (map arm)": 0.6800133088937805,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.5994338960687404,
+      "direction cosine (map arm)": 0.30475691376264064,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9913820244054419,
+      "direction cosine (map arm)": 0.9009247016177638,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "split-half reliability ceiling (r10)": null,
+      "direction cosine (map arm)": null,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.13102069808322983,
+      "direction cosine (map arm)": 0.13914864188230647,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "split-half reliability ceiling (r10)": 0.9272067242251268,
+      "direction cosine (map arm)": 0.5837104570020021,
+      "_kind": "scatter",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "split-half reliability ceiling (r10)",
+        "ylabel": "direction cosine (map arm)",
+        "legend_labels": [
+          "Qwen3.5-9B (thinking off)",
+          "Qwen2.5-7B-Instruct"
+        ],
+        "annotations": [
+          "Answer language",
+          "Content constraint",
+          "Format",
+          "Hedging",
+          "Lexical marker",
+          "Persona",
+          "Query content",
+          "Query content oneword",
+          "Query form",
+          "Register",
+          "Stance",
+          "User fact",
+          "User profile",
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query content",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Qwen3.5-9B (thinking off)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "commit": "932d2221",
+  "render_id": "9c77d3e709d94b6e",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:07Z",
+  "figsize": [
+    7.6,
+    3.4
+  ],
+  "points": [
+    {
+      "k (nearest neighbours)": 1.0,
+      "\u0394-retrieval accuracy": 0.14126652748782184,
+      "series": "map arm, euclidean",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "\u0394-retrieval accuracy": 0.33924843423799583,
+      "series": "map arm, euclidean",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "\u0394-retrieval accuracy": 0.4603340292275574,
+      "series": "map arm, euclidean",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "\u0394-retrieval accuracy": 0.20041753653444677,
+      "series": "map arm, cosine",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "\u0394-retrieval accuracy": 0.4321503131524008,
+      "series": "map arm, cosine",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "\u0394-retrieval accuracy": 0.5762004175365344,
+      "series": "map arm, cosine",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "\u0394-retrieval accuracy": 0.1057759220598469,
+      "series": "identity+bias baseline, euclidean",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "\u0394-retrieval accuracy": 0.30654140570633265,
+      "series": "identity+bias baseline, euclidean",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "\u0394-retrieval accuracy": 0.45894224077940154,
+      "series": "identity+bias baseline, euclidean",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "\u0394-retrieval accuracy": 0.13535142658315935,
+      "series": "identity+bias baseline, cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "\u0394-retrieval accuracy": 0.36882393876130826,
+      "series": "identity+bias baseline, cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "\u0394-retrieval accuracy": 0.546624913013222,
+      "series": "identity+bias baseline, cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "\u0394-retrieval accuracy": 0.0003479471120389701,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "\u0394-retrieval accuracy": 0.0017397355601948504,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "\u0394-retrieval accuracy": 0.003479471120389701,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "y": 0.10511159107271419,
+      "series": "map arm, euclidean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "y": 0.23650107991360692,
+      "series": "map arm, euclidean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "y": 0.31965442764578833,
+      "series": "map arm, euclidean",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "y": 0.20986321094312455,
+      "series": "map arm, cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "y": 0.4499640028797696,
+      "series": "map arm, cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "y": 0.5802735781137509,
+      "series": "map arm, cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "y": 0.17062634989200864,
+      "series": "identity+bias baseline, euclidean",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "y": 0.41612670986321093,
+      "series": "identity+bias baseline, euclidean",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "y": 0.578113750899928,
+      "series": "identity+bias baseline, euclidean",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "y": 0.2177825773938085,
+      "series": "identity+bias baseline, cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "y": 0.4762419006479482,
+      "series": "identity+bias baseline, cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "y": 0.6335493160547156,
+      "series": "identity+bias baseline, cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k (nearest neighbours)": 1.0,
+      "y": 0.0003599712023038157,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k (nearest neighbours)": 5.0,
+      "y": 0.0017998560115190785,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k (nearest neighbours)": 10.0,
+      "y": 0.003599712023038157,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Qwen3.5-9B (thinking off)",
+        "xlabel": "k (nearest neighbours)",
+        "ylabel": "\u0394-retrieval accuracy",
+        "legend_labels": [
+          "map arm, euclidean",
+          "map arm, cosine",
+          "identity+bias baseline, euclidean",
+          "identity+bias baseline, cosine",
+          "chance"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title": "Qwen2.5-7B-Instruct",
+        "xlabel": "k (nearest neighbours)",
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      }
+    ],
+    "series": [
+      "map arm, euclidean",
+      "map arm, cosine",
+      "identity+bias baseline, euclidean",
+      "identity+bias baseline, cosine",
+      "chance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

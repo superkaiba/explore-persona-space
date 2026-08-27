@@ -1,0 +1,595 @@
+{
+  "commit": "932d2221",
+  "render_id": "bc05838edf9e4be2",
+  "git_commit": "932d22216cfd34384d51a223564f3e6f3bedd9fc",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2587_figures.py",
+  "created": "2026-08-27T05:26:23Z",
+  "figsize": [
+    9.600000000000001,
+    5.8
+  ],
+  "points": [
+    {
+      "Qwen2.5-7B parent map (reference)": 0.5556987831093629,
+      "Qwen2.5-7B matched-n map": 0.5527171343874901,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.49466693934799827,
+      "Qwen2.5-7B matched-n map": 0.557467938124822,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.6132725156711901,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.6029217619146401,
+      "Qwen2.5-7B matched-n map": 0.5503680835204838,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.8763743841939312,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.42512206516107093,
+      "Qwen2.5-7B matched-n map": 0.43571005198842794,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9281150754593783,
+      "Qwen2.5-7B matched-n map": 0.9287117058134091,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.6845278094916694,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.44274235299104003,
+      "Qwen2.5-7B matched-n map": 0.3396959692655118,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8109141122403143,
+      "Qwen2.5-7B matched-n map": 0.7694879306597221,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.835792202220848,
+      "Qwen2.5-7B matched-n map": 0.8213502537879426,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 1.1944447493605697,
+      "Qwen2.5-7B matched-n map": 1.3213061465003322,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 1.398523955495761,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 1.028825249162184,
+      "Qwen2.5-7B matched-n map": 0.9619281505608925,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 1.1047343532469294,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8001597288097441,
+      "Qwen2.5-7B matched-n map": 0.7763207061340311,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 1.425679663420032,
+      "Qwen2.5-7B matched-n map": 1.3886872091447142,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 1.0347199196857422,
+      "Qwen2.5-7B matched-n map": 1.0876903081113038,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.9666955337764406,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8725623155627183,
+      "Qwen2.5-7B matched-n map": 0.7889539577299696,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9270912296032305,
+      "Qwen2.5-7B matched-n map": 0.9469327416700507,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.7422670173968571,
+      "Qwen2.5-7B matched-n map": 0.801563835178208,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8851542282233338,
+      "Qwen2.5-7B matched-n map": 0.92775761557084,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.1887200067268936,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8715317969949754,
+      "Qwen2.5-7B matched-n map": 0.8740134119087946,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.9781657255587388,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9689386212213622,
+      "Qwen2.5-7B matched-n map": 0.9745789816609625,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.3974669142238383,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.721110634332403,
+      "Qwen2.5-7B matched-n map": 0.7088861783836131,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9377692183636623,
+      "Qwen2.5-7B matched-n map": 0.9387784867808247,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8224844133823308,
+      "Qwen2.5-7B matched-n map": 0.8224844133823308,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9735440937981322,
+      "Qwen2.5-7B matched-n map": 0.9735440937981322,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.41566832550626825,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8965612058693659,
+      "Qwen2.5-7B matched-n map": 0.8965612058693659,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.9803382559115283,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9790244175207687,
+      "Qwen2.5-7B matched-n map": 0.9790244175207687,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.3977711644410865,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.5516951023994547,
+      "Qwen2.5-7B matched-n map": 0.5516951023994547,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.9724904396370697,
+      "Qwen2.5-7B matched-n map": 0.9724904396370697,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.49747541567498366,
+      "Qwen2.5-7B matched-n map": 0.5153488954541783,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.3621701718184568,
+      "Qwen2.5-7B matched-n map": 0.3970307336673254,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.5114095855772708,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.4156299252722266,
+      "Qwen2.5-7B matched-n map": 0.3739211886288218,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.7809355675233841,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.7145733467120705,
+      "Qwen2.5-7B matched-n map": 0.6800133088937805,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.30400866272404437,
+      "Qwen2.5-7B matched-n map": 0.30475691376264064,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.8989838133944595,
+      "Qwen2.5-7B matched-n map": 0.9009247016177638,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 0.5469306614035578,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.17208480650441785,
+      "Qwen2.5-7B matched-n map": 0.13914864188230647,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 0.5964832924624228,
+      "Qwen2.5-7B matched-n map": 0.5837104570020021,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 5.6325836042439725,
+      "Qwen2.5-7B matched-n map": 5.6325836042439725,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 4.2060678602068515,
+      "Qwen2.5-7B matched-n map": 4.2060678602068515,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 4.313709887771132,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 2.104949861426019,
+      "Qwen2.5-7B matched-n map": 2.104949861426019,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 5.829479254148657,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 7.752456481250006,
+      "Qwen2.5-7B matched-n map": 7.752456481250006,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 1.7927145199949457,
+      "Qwen2.5-7B matched-n map": 1.7927145199949457,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 10.90953926795222,
+      "Qwen2.5-7B matched-n map": 10.90953926795222,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": null,
+      "Qwen2.5-7B matched-n map": 4.457073854599821,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 1.114303371979673,
+      "Qwen2.5-7B matched-n map": 1.114303371979673,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Qwen2.5-7B parent map (reference)": 4.008379602757479,
+      "Qwen2.5-7B matched-n map": 4.008379602757479,
+      "label": "Content constraint",
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 61,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "axis identity cosine",
+        "xlabel": "Qwen2.5-7B parent map (reference)",
+        "ylabel": "Qwen2.5-7B matched-n map",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title": "calibration ratio (axis / global)",
+        "xlabel": "Qwen2.5-7B parent map (reference)",
+        "ylabel": "Qwen2.5-7B matched-n map",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query content",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ],
+        "yticklabels": [
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1",
+          "1.2",
+          "1.3",
+          "1.4",
+          "1.5"
+        ]
+      },
+      {
+        "title": "cross-family consistency (predicted)",
+        "xlabel": "Qwen2.5-7B parent map (reference)",
+        "ylabel": "Qwen2.5-7B matched-n map",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ],
+        "yticklabels": [
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00"
+        ]
+      },
+      {
+        "title": "cross-family consistency (observed)",
+        "xlabel": "Qwen2.5-7B parent map (reference)",
+        "ylabel": "Qwen2.5-7B matched-n map",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      },
+      {
+        "title": "direction cosine",
+        "xlabel": "Qwen2.5-7B parent map (reference)",
+        "ylabel": "Qwen2.5-7B matched-n map",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query content",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      },
+      {
+        "title": "observed separation / split-half noise",
+        "xlabel": "Qwen2.5-7B parent map (reference)",
+        "ylabel": "Qwen2.5-7B matched-n map",
+        "annotations": [
+          "Content constraint",
+          "Format",
+          "Lexical marker",
+          "Query content",
+          "Query form",
+          "Register",
+          "User fact",
+          "User profile"
+        ],
+        "xticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

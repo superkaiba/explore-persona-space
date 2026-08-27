@@ -1,0 +1,34 @@
+{
+  "bootstrap": {
+    "B": 10000,
+    "scheme": "paired TEST-ROW bootstrap \u2014 ONE shared row resample per draw, both sides evaluated on it; pooled R2 recomputed about each draw's own mean",
+    "seed": [
+      2215,
+      2587
+    ]
+  },
+  "companion_wc": {
+    "delta": -0.023843236662977163,
+    "n_rows": 998,
+    "note": "wildchat companion \u2014 descriptive, NOT verdict-bearing",
+    "r2_7b": 0.6229945403738829,
+    "r2_9b": 0.5991513037109057
+  },
+  "definition": "Delta_map = R2_9B(L*) - R2_7B(L19), pooled R2 on the realized shared test-row intersection; layer pair FROZEN (L* read from unit 4's freeze)",
+  "delta_ci95": [
+    -0.02746816258950501,
+    -0.004610879202432402
+  ],
+  "delta_map": -0.01584565128277271,
+  "layer_pair": {
+    "qwen25_7b": 19,
+    "qwen35_9b": 18
+  },
+  "n_test_rows": 1000,
+  "narration": "inconclusive is a LIVE first-class verdict (convention 14): the plan expectation range [0.68, 0.73] straddles the 7B anchor 0.7250873",
+  "primary_h2_7b_arm": "arm_7b_matched25k",
+  "r2_7b_l19": 0.7250873307399066,
+  "r2_9b_lstar": 0.7092416794571339,
+  "verdict": "h1_consistent",
+  "verdict_rule": "hi < 0 -> h1_consistent; lo > 0 -> h1_contradicted; else h1_inconclusive (disjoint + exhaustive; plan \u00a73)"
+}
