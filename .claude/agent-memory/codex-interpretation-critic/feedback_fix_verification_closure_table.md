@@ -35,3 +35,15 @@ instruction instead of a quote). Pair with [[feedback-lens7-carried-forward-on-r
 (delta-scope + carried lines) and [[compose-time-ledger-snapshot]] (ledger
 rows are the analyzer's CLAIM, not ground truth — say so in the prompt).
 First applied #2564 k100 round 2 (2026-08-26).
+
+**Pre-edit blob as the mechanical no-collateral-changes basis (#2564 k100
+round 3, 2026-08-26).** On a single-sentence fix-verification round, the
+strongest delta check is a two-file diff Codex runs itself: `git log` the
+canonical body path (each `set-body` is its own commit), materialize the
+PARENT commit's blob — the exact body the prior-round critics reviewed — to
+`/tmp/issue-<N>-body-preedit-r<k>.md` beside the post-edit
+`/tmp/issue-<N>-body-canonical-r<k>.md`, verify at compose time the git diff
+is the single expected hunk, then instruct Codex to reproduce the diff
+independently (expected: exactly one hunk; any other hunk = collateral
+change = REVISE). This converts "no collateral changes" from an
+unfalsifiable analyzer claim into a one-command adjudication.
