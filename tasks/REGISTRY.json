@@ -10586,8 +10586,8 @@
     "2370": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2370",
-      "status": "proposed",
+      "path": "tasks/archived/2370",
+      "status": "archived",
       "title": "guard_root_code_commit.sh: pathspec scoping fails to exempt foreign staged files (blocks its own remediation form)"
     },
     "2371": {
