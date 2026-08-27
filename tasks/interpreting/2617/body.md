@@ -1,6 +1,6 @@
 ---
-title: 'Safety-valence minimal pairs: does the frozen context→answer map encode the
-  refusal decision or just surface text? [interpreting]'
+title: The frozen context→answer map transports a refusal-decision component beyond
+  surface content, on one-word safety-valence swaps (MODERATE confidence)
 kind: experiment
 tags:
 - trigger-dense
