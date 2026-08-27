@@ -167,6 +167,79 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    by-path (not inline) when the worktree copy is byte-identical — the
    spec default; r1's inline choice does not bind r2.
 
+9. **Fix-round on a FAIL+FAIL union w/ reconstructed marker (#2587 r2,
+   2026-08-26):** composable stack — (a) the HEAD-side variant fired again
+   (2 spec-freshness syncs above the payload): attest byte-identity to
+   origin/main AND zero overlap with payload files, so worktree reads stay
+   byte-equivalent to the payload tip; (b) inline the four COMPACT
+   adjudication inputs (reconstructed impl v2 + provenance block,
+   round-matched smoke-arch v2 re-post, full 16-row ledger, own r1 verdict
+   tag-stripped + rows blockquoted) but keep the 104KB plan + 90KB Claude
+   union BY PATH (main-checkout-readable sandbox proven by the r1 by-path
+   round) — a brief saying "inline the plan per Step 2-pre-b" resolves by
+   the duty's own terms (identical worktree copy ⇒ by-path), flag in the
+   return; (c) closure duties must name unaddressed HALVES inside
+   addressed blockers (compat-gate = sentinel-coverage half + wave-
+   enforcement half; smoke-run = judge/analysis half + the fits
+   timing/extrapolation half the addressed row never mentions) — binary
+   VERIFIED/NOT lines miss half-closures; (d) composer-verify
+   marker-claimed /tmp smoke-artifact sha256s on disk and hand them as
+   ground truth; (e) sentinel count assert = 2 when your provenance block
+   quotes the sentinel the inlined body also carries.
+
+9b. **Second consecutive union fix round (#2587 r3, 2026-08-26):** deltas
+   atop item 9 — (a) the closure section splits THREE ways: Block A =
+   ledger ids with fresh round-N addressed rows (full acceptance-criteria
+   duties), Block B = prior-round VERIFIED-ADDRESSED ids whose CODE the
+   round touches again (SETTLED-UNDISTURBED | REGRESSED + class re-check;
+   never re-litigated), Block C = unledgered union concerns/minors the
+   unit notes claim dispositioned (pseudo-ids, VERIFIED-ADDRESSED |
+   ACCEPTED-NON-CHANGE (reason adequate?) | NOT-ADDRESSED, re-raise at own
+   severity only); (b) when the round marker is orchestrator-composed from
+   unit-completion `epm:progress` notes, INLINE those notes in their own
+   envelope — they carry the disposition detail the marker compresses
+   (which minor was accepted-with-reason, the named pinning tests) — and
+   hand any prose discrepancy (v47's require_p1 wave list "p2,p3,p4,p6,
+   p7,p8" vs the realized p2/p3/p4/p5/p6/p8 sites) as an adjudication,
+   never resolve it; (c) a smoke-arch arm upgraded FALLBACK→REAL in-round
+   with NO marker re-post is a 0.55 NON-finding to pre-state (presence-ON-
+   TASK; the new evidence lives in the impl marker) — at most present-but-
+   imperfect; (d) a ledgered-CONCERN id that carries the OTHER twin's
+   Critical (query_form) gets a dual-severity fence: persisting core
+   defect ⇒ substantive FAIL despite the CONCERN label, honest riders ⇒
+   CONCERN re-raise; (e) a self-disclosed measurement tension in (b)/(d)
+   (CPU-basis fit wall 4.98× over the GPU-basis §9 wall) composes as a
+   both-routes adjudication hinged on whether the leaned-on backstop
+   (fits.py pilot gate) exists AND is armed by the production invocation.
+
+9c. **Reconciler-BINDING-FAIL fix round, single-BLOCKER both-halves closure
+   (#2587 r4, 2026-08-26):** deltas atop 8c/9b — (a) when the brief names
+   BOTH the twin's own FAIL verdict (it carries the Mechanizable recipes
+   the fix realizes) AND the reconcile record, inline BOTH with an explicit
+   "the record GOVERNS where they differ" line (8c's record-alone lean
+   applies only when the brief doesn't name the verdict); restate the
+   record's empirical reproductions in the envelope preface — they are the
+   bar. (b) ONE ledger id covering two Majors + a test recipe composes as
+   ONE status line with named-half vocabulary (`PARTIALLY-ADDRESSED
+   (<half: queue | manifest | tests>)`), never two pseudo-rows. (c) The
+   twin's own still-OPEN prior CONCERN (not claimed by the confined round)
+   gets a prescribed `OPEN-UNCHANGED — <awaits X>; not claimed by this
+   round` status line + a never-re-emit instruction. (d) A fix that INVERTS
+   an ordering (re-serve → truncate-first = at-least-once → at-most-once)
+   gets an explicit NEW-HAZARD trace duty in the opposite direction. (e) A
+   marker-disclosed in-round harness bug (controls caught fault tests
+   false-passing) becomes an adjudication input: verify assertions now pin
+   error-branch-specific evidence. (f) Bookkeeping commit can sit BELOW the
+   payload (parent → bookkeeping → payload == HEAD): range `parent..HEAD`
+   then includes it — name it in-range-but-out-of-scope; HEAD == payload
+   tip makes worktree reads byte-identical again. (g) ASSERT-SIDE TRAP hit
+   live: extracting the tail with an UNANCHORED `"# Output contract"`
+   matched the head's ADAPTATIONS `## Output contract` mention and silently
+   DUPLICATED the 87 KB rubric (271 KB prompt); caught only by eyeballing
+   the printed part sizes. Always use the newline-anchored index and assert
+   `len(tail) < 15_000` + rubric-anchor-absent-in-tail + rubric-once in the
+   final prompt.
+
 **Why:** the whole-round view is the ONLY reviewer seeing commit
 interactions; a mis-based diff (origin/main) or a leaked split-token
 defeats exactly that purpose.
