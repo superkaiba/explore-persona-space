@@ -1,6 +1,7 @@
 ---
-title: 'Safety-valence minimal pairs: does the frozen context->answer map encode the
-  refusal decision or just surface text?'
+title: 'Safety-valence minimal pairs: decision vs surface transport of the frozen
+  context→answer map [running / fix round 4 after reconciled r3 FAIL — marker truthfulness
+  + margin identity validation]'
 kind: experiment
 tags: []
 created_at: '2026-08-27T06:00:57Z'
