@@ -10628,8 +10628,8 @@
     "2376": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2376",
-      "status": "planning",
+      "path": "tasks/on_hold/2376",
+      "status": "on_hold",
       "title": "Adaptive Batch-API monitoring: auto-switch a stalled batch wave to sync when sync is faster"
     },
     "2377": {
