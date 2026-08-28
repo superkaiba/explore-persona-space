@@ -10672,8 +10672,8 @@
     "2381": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2381",
-      "status": "proposed",
+      "path": "tasks/planning/2381",
+      "status": "planning",
       "title": "verify_plan: dry-parse plan-embedded select_step9c_tests.py invocations (c46 sibling)"
     },
     "2382": {
