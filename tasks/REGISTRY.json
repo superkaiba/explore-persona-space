@@ -10572,8 +10572,8 @@
     "2369": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2369",
-      "status": "reviewing",
+      "path": "tasks/blocked/2369",
+      "status": "blocked",
       "title": "workflow-fix: test_tick_triage module-level NOW makes fixtures wall-clock-sensitive in long gate sessions"
     },
     "237": {
