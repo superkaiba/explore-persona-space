@@ -106,6 +106,7 @@ from explore_persona_space.atomic_io import (  # noqa: E402
 )
 from explore_persona_space.experiments.issue1415.steering import generate_batch  # noqa: E402
 from explore_persona_space.experiments.issue2587 import bank2587 as B  # noqa: E402
+from explore_persona_space.experiments.issue2587 import bank2587_ffr as BF  # noqa: E402
 from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded  # noqa: E402
 
 # #628: vLLM reads this at import; --phase embed tokenizes with transformers
@@ -264,6 +265,14 @@ class Cfg:
 def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--phase", choices=PHASES, required=True)
+    ap.add_argument(
+        "--bank-source",
+        choices=("main", "ffr"),
+        default="main",
+        help="bank builder: 'main' = bank2587.build_bank (byte-identical default); "
+        "'ffr' = bank2587_ffr.build_ffr_bank (the #2564 floor-failed re-elicitation "
+        "grid, plan v6 §4.2 — pass with --out-root/--hf-prefix deltas)",
+    )
     ap.add_argument("--out-root", default="/workspace/eps2587_battery")
     ap.add_argument(
         "--axes",
@@ -415,6 +424,15 @@ def _import_check() -> None:
         assert callable(getattr(B, name)), name
     for name in ("think_leak_scan", "assert_think_leak", "load_q35_model_and_tokenizer"):
         assert callable(getattr(cm2587, name)), name
+    # FFR bank seam (--bank-source ffr; plan v6 §4.2): the manifest-sourced
+    # builder + its gates resolve even when the smoke never takes the branch.
+    for name in (
+        "fetch_ffr_manifest",
+        "build_ffr_bank_strings",
+        "run_ffr_token_gates",
+        "build_ffr_bank",
+    ):
+        assert callable(getattr(BF, name)), name
     print("[import-check] ok: pinned modules + ported call signatures resolve", flush=True)
 
 
@@ -1960,6 +1978,10 @@ def main() -> int:
             f"--shard-index {args.shard_index} out of range for --num-shards {args.num_shards}"
         )
     if args.phase == "embed":
+        if args.bank_source != "main":
+            # Plan v6 §9: the FFR round runs NO embed phase (no embed model
+            # provisioned); refuse rather than embed the wrong grid silently.
+            ap.error("--phase embed supports --bank-source main only (FFR round has no embed)")
         if args.num_shards != 1:
             ap.error("--phase embed is single-process (plan §9 P6: embed runs on one GPU)")
         # No q35 load: the embed model is the instrument. Bank STRINGS suffice
@@ -1987,8 +2009,17 @@ def main() -> int:
     model, tok = cm2587.load_q35_model_and_tokenizer(
         device=device, revision=model_revision, dtype=dtype
     )
-    bank = B.build_bank(tok)  # P0a string gates + P0b token gates, fail-loud
-    print(f"[bank] {bank['n_contexts']} contexts / {bank['n_pairs']} pairs", flush=True)
+    if args.bank_source == "ffr":
+        # Plan v6 §4.2 wiring seam: manifest-sourced FFR bank; every phase
+        # function below consumes only the bank dict + Cfg (reused untouched).
+        bank = BF.build_ffr_bank(tok)  # sha-pinned manifest + string/token gates
+    else:
+        bank = B.build_bank(tok)  # P0a string gates + P0b token gates, fail-loud
+    print(
+        f"[bank] source={args.bank_source} {bank['n_contexts']} contexts / "
+        f"{bank['n_pairs']} pairs values_sha={bank['values_sha256'][:12]}",
+        flush=True,
+    )
     by_cell = group_contexts_by_cell(bank)
     axes = resolve_axes(args, by_cell)
     assert axes, f"shard {args.shard_index}/{args.num_shards} received no axes"

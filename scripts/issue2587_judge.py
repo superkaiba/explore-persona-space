@@ -51,6 +51,7 @@ from pathlib import Path  # noqa: E402
 
 from explore_persona_space.atomic_io import atomic_replace  # noqa: E402
 from explore_persona_space.experiments.issue2587 import bank2587 as B25  # noqa: E402
+from explore_persona_space.experiments.issue2587 import bank2587_ffr as BF  # noqa: E402
 from explore_persona_space.experiments.issue2587.smoke_registry import (  # noqa: E402
     SmokeDowngrade,
     format_smoke_blind_spots,
@@ -728,6 +729,343 @@ def _dispatch_wave(
     return dict(res.scores), stats
 
 
+# ── FFR mode (--ffr; plan v6 §4.3 — the #2564 floor-failed re-elicitation
+# grid judged on the 9B). Instrument IDENTICAL to the main compliance wave
+# (EVAL_PROMPT, judge model, max_tokens, Batch route, fire conventions);
+# the item set comes from the manifest-sourced FFR bank, and the call
+# arithmetic is re-derived from the loaded bank — the main-bank literals
+# (EXPECTED_*_CALLS) are NEVER reused here (consistency-checker advisory 2).
+
+
+FFR_DEFAULT_OUT = "eval_results/issue_2587/ffr-9b-fire-gated/manipulation_check_ffr9b.json"
+FFR_DEFAULT_WORK_ROOT = "data/issue_2587/judge_work_ffr"
+FFR_SMOKE_ROOT = "/tmp/issue2587_judge_ffr_smoke"
+FFR_HF_PREFIX = "issue2587_minpair/ffr_9b"
+FFR_JUDGED_DRAWS: tuple[int, ...] = (0, 1)  # plan §4.3: 2 rollout draws judged
+
+SMOKE_BLIND_SPOTS_FFR: tuple[SmokeDowngrade, ...] = validate_registry(
+    (
+        SmokeDowngrade(
+            site="ffr_call_arithmetic_528",
+            kind="assert-skipped",
+            production=(
+                "verify_ffr_call_arithmetic: realized FFR spec count == the bank-derived "
+                "expected count ((11 base + 11 para wordings) x 12 carriers x 2 draws = 528; "
+                "plan v6 §4.3 — derived, never the literal)"
+            ),
+            smoke=(
+                "skipped; the artifact records call_arithmetic.verified=false, expected=null "
+                "(realized counts still recorded)"
+            ),
+            why=(
+                "a smoke slice structurally cannot total the full-grid count "
+                "(SMOKE_CARRIERS x the per-wave item cap)"
+            ),
+        ),
+        SmokeDowngrade(
+            site="ffr_smoke_slice_narrowing",
+            kind="param-narrowed",
+            production="3 FFR axes x 12 carriers x 2 draws, one compliance wave (528 checks)",
+            smoke=(
+                "SMOKE_CARRIERS=('c01'..'c03'), <=SMOKE_JUDGE_ITEMS=4 items on the single "
+                "ffr_compliance wave"
+            ),
+            why=(
+                "the FFR item builder + production Batch client still execute end to end "
+                "(plan §4.3 4-call production-client smoke); fire floors / drop rates are "
+                "NOT calibrated at smoke n"
+            ),
+        ),
+    )
+)
+
+
+def ffr_value_slots(bank: dict) -> list[dict]:
+    """Judged FFR value slots from the manifest-sourced bank: 11 base + 11
+    paraphrase wordings, instruction = the wording's system string (identical
+    across carriers — gated by ``gate_ffr_slot_identity``)."""
+    contexts = bank["contexts"]
+    carriers = sorted({ctx["carrier"] for ctx in contexts.values()})
+    c0 = carriers[0]
+    slots = []
+    for axis in BF.FFR_AXES:
+        for vid in bank["selected"][axis]:
+            for kind, slot_vid in (("orig", vid), ("para", f"{vid}p")):
+                slots.append(
+                    {
+                        "axis": axis,
+                        "value_id": slot_vid,
+                        "kind": kind,
+                        "instruction": contexts[f"{axis}::{slot_vid}::{c0}"]["system"],
+                    }
+                )
+    return slots
+
+
+def ffr_specs(
+    bank: dict,
+    carriers: tuple[str, ...],
+    draws: tuple[int, ...] = FFR_JUDGED_DRAWS,
+) -> list[dict]:
+    """One judged FFR compliance check per (value slot x carrier x rollout
+    draw); every context id asserted present in the bank (fail loud)."""
+    contexts = bank["contexts"]
+    specs = []
+    for slot in ffr_value_slots(bank):
+        for carrier in carriers:
+            cid = f"{slot['axis']}::{slot['value_id']}::{carrier}"
+            if cid not in contexts:
+                raise RuntimeError(f"FFR spec context id not in bank: {cid}")
+            for draw in draws:
+                specs.append(
+                    {
+                        **slot,
+                        "carrier": carrier,
+                        "draw": draw,
+                        "context_id": cid,
+                        "alias": _alias(slot["axis"], slot["value_id"], carrier, draw),
+                    }
+                )
+    return _validated_specs(specs, "ffr_compliance")
+
+
+def verify_ffr_call_arithmetic(
+    bank: dict, n_specs: int, carriers: tuple[str, ...], draws: tuple[int, ...]
+) -> dict:
+    """Plan §4.3 arithmetic re-derived from the LOADED bank via two
+    independent routes (selected-id sets; judged-context kind counts) —
+    never the main-bank literals, never a bare 528."""
+    n_slots_selected = sum(len(vids) * 2 for vids in bank["selected"].values())
+    judged_ctx = {
+        (ctx["cell"], ctx["value_id"])
+        for ctx in bank["contexts"].values()
+        if ctx["kind"] in ("value", "para")
+    }
+    n_slots_contexts = len(judged_ctx)
+    expected = n_slots_selected * len(carriers) * len(draws)
+    realized = {"ffr_compliance_calls": n_specs, "total_calls": n_specs}
+    if n_slots_selected != n_slots_contexts or n_specs != expected:
+        raise RuntimeError(
+            f"FFR call-arithmetic mismatch: slots(selected)={n_slots_selected} "
+            f"slots(contexts)={n_slots_contexts} realized={n_specs} expected={expected}"
+        )
+    return {
+        "expected": {
+            "ffr_compliance_calls": expected,
+            "basis": (
+                f"{n_slots_selected} wording slots (base+para over "
+                f"{sorted(bank['selected'])}) x {len(carriers)} carriers x {len(draws)} draws"
+            ),
+        },
+        "realized": realized,
+        "verified": True,
+    }
+
+
+def ffr_axis_summary(value_rows: list[dict], axis: str, parent_width: int) -> dict:
+    """Per-axis FFR floor verdict — floors on PARENT widths (plan §4.3 /
+    parent FFR convention: ``floor = ceil(0.6 x parent_width)``), realized
+    ``width`` reported beside ``parent_width``; row shape mirrors the parent
+    ``manipulation_check_ffr.json`` axis_rows (incl. ``pilot_survives``)."""
+    base = [r for r in value_rows if r["axis"] == axis and r["kind"] == "orig"]
+    para = [r for r in value_rows if r["axis"] == axis and r["kind"] == "para"]
+    assert base, (axis, "no base rows")
+    floor = axis_floor(parent_width)
+    n_fired = sum(1 for r in base if r["verdict"] == "fired")
+    return {
+        "axis": axis,
+        "width": len(base),
+        "parent_width": parent_width,
+        "floor": floor,
+        "n_fired_base": n_fired,
+        "n_undetermined_base": sum(1 for r in base if r["verdict"] == "undetermined"),
+        "n_not_fired_base": sum(1 for r in base if r["verdict"] == "not_fired"),
+        "floor_met": n_fired >= floor,
+        "pilot_survives": n_fired >= floor,
+        "n_fired_para": sum(1 for r in para if r["verdict"] == "fired"),
+        "sensitivity": {
+            str(pct): {
+                "n_fired_base": sum(1 for r in base if r["sensitivity"][str(pct)] == "fired"),
+                "floor_met": sum(1 for r in base if r["sensitivity"][str(pct)] == "fired") >= floor,
+            }
+            for pct in SENSITIVITY_PCTS
+        },
+    }
+
+
+def ffr_main(args: argparse.Namespace) -> None:
+    """The --ffr entrypoint: 528-call FFR compliance wave (full slice) with
+    the main mode's instrument, staging, drop accounting, and upload shape."""
+    smoke = args.smoke
+    hf_prefix = f"{FFR_HF_PREFIX}/smoke" if smoke else FFR_HF_PREFIX
+    out = Path(args.out)
+    work_root = Path(args.work_root)
+    max_items = args.max_judged_items
+    if smoke:
+        if args.out == FFR_DEFAULT_OUT:
+            out = Path(FFR_SMOKE_ROOT) / "manipulation_check_ffr9b.json"
+        elif _inside_eval_results(out):
+            raise SystemExit("--smoke must not write under any eval_results/ path")
+        if args.work_root == FFR_DEFAULT_WORK_ROOT:
+            work_root = Path(FFR_SMOKE_ROOT) / "judge_work"
+        if max_items is None:
+            max_items = SMOKE_JUDGE_ITEMS
+    if args.dry_run:
+        if args.out == FFR_DEFAULT_OUT:
+            out = Path(FFR_SMOKE_ROOT) / "manipulation_check_ffr9b.dryrun.json"
+            log(f"[judge2587-ffr] --dry-run: out rebound to {out}")
+        elif _inside_eval_results(out):
+            raise SystemExit("--dry-run must not write under any eval_results/ path")
+
+    bank = BF.build_ffr_bank_strings(local_manifest_path=args.ffr_manifest)
+    all_carriers = tuple(sorted({ctx["carrier"] for ctx in bank["contexts"].values()}))
+    carriers = SMOKE_CARRIERS if smoke else all_carriers
+    log(
+        f"[phase=judge2587-ffr] start out={out} smoke={smoke} "
+        f"axes={list(BF.FFR_AXES)} carriers={list(carriers)}"
+    )
+
+    specs = ffr_specs(bank, carriers)
+    if not smoke:
+        arithmetic = verify_ffr_call_arithmetic(bank, len(specs), carriers, FFR_JUDGED_DRAWS)
+        log(f"[judge2587-ffr] call arithmetic verified: {arithmetic['realized']}")
+    else:
+        arithmetic = {
+            "expected": None,
+            "realized": {"ffr_compliance_calls": len(specs), "total_calls": len(specs)},
+            "verified": False,
+        }
+
+    cells_needed = tuple(sorted(BF.FFR_AXES))  # bare query cell carries no instruction
+    raw_dir = work_root / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    anchors_dir = Path(args.anchors_dir) if args.anchors_dir else None
+    paths = stage_anchor_cells(cells_needed, anchors_dir, hf_prefix, work_root / "anchors_staging")
+    texts = load_anchor_texts(paths)
+    log(f"[judge2587-ffr] loaded {len(texts)} anchor rows across {len(cells_needed)} cells")
+
+    items, n_missing, n_capped = _build_wave_items(specs, texts, max_items)
+    log(
+        f"[judge2587-ffr] ffr_compliance wave: {len(items)} items "
+        f"(missing_anchor={n_missing} capped_out={n_capped})"
+    )
+    scores, stats = _dispatch_wave(
+        "ffr_compliance",
+        items,
+        EVAL_PROMPT,
+        work_root,
+        raw_dir / "judge_raw_manipcheck_ffr9b.json",
+        args.dry_run,
+    )
+
+    lines = []
+    for s in sorted(specs, key=lambda s: s["alias"]):
+        score = scores.get(s["alias"])
+        outcome = "incomplete" if score is None else ("comply" if score >= 50.0 else "noncomply")
+        lines.append(
+            json.dumps(
+                {
+                    "alias": s["alias"],
+                    "context_id": s["context_id"],
+                    "draw": s["draw"],
+                    "axis": s["axis"],
+                    "value_id": s["value_id"],
+                    "kind": s["kind"],
+                    "carrier": s["carrier"],
+                    "instrument": "judged",
+                    "score": score,
+                    "outcome": outcome,
+                },
+                sort_keys=True,
+            )
+        )
+    if lines:
+        with atomic_replace(raw_dir / "judge_scores_ffr9b.jsonl") as tmp:
+            tmp.write_text("\n".join(lines) + "\n")
+
+    value_rows = judged_fire_table(specs, scores, carriers, FFR_JUDGED_DRAWS)
+    axis_rows = [
+        ffr_axis_summary(value_rows, axis, BF.FFR_PARENT_WIDTH[axis]) for axis in BF.FFR_AXES
+    ]
+
+    upload_summary: dict | None = None
+    if items and not args.dry_run and not args.skip_upload:
+        from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+        dest_prefix = f"{hf_prefix}/raw_completions/judge"
+        res_up = upload_dir_sharded(
+            raw_dir,
+            HF_DATA_REPO,
+            dest_prefix,
+            shard_glob="*",
+            resume_skip=False,
+            delete_local=False,
+        )
+        upload_summary = {
+            "hf_repo": HF_DATA_REPO,
+            "hf_dest_prefix": dest_prefix,
+            "uploaded": res_up.uploaded,
+            "skipped_existing": res_up.skipped_existing,
+            "rerouted": res_up.rerouted,
+        }
+        log(f"[judge2587-ffr] raw judge outputs uploaded to {dest_prefix}")
+
+    doc = {
+        "meta": {
+            "issue": ISSUE,
+            "phase": "judge2587-ffr",
+            "round": "ffr-9b-fire-gated",
+            "parent_pin": PARENT_PIN,
+            "ffr_manifest": bank["ffr_manifest"],
+            "ffr_selection": bank["selection"],
+            "smoke": smoke,
+            "smoke_blind_spots": format_smoke_blind_spots(SMOKE_BLIND_SPOTS_FFR) if smoke else [],
+            "dry_run": args.dry_run,
+            "judge_model": JUDGE_MODEL,
+            "judge_max_tokens": JUDGE_MAX_TOKENS,
+            "judge_temperature": "API default 1.0 (plan pin; not threaded by judge_graded)",
+            "judge_route": "eval.graded_judge -> eval.batch_judge (threshold_base=0, forced Batch)",
+            "instrument_identity": {
+                "compliance_rubric_sha256": rubric_sha256(EVAL_PROMPT),
+                "compliance_rubric_source": (
+                    f"ported verbatim from scripts/issue2564_judge.py @ {PARENT_PIN}; "
+                    "IDENTICAL instrument to the main-run + parent-FFR waves (plan §4.3)"
+                ),
+            },
+            "call_arithmetic": arithmetic,
+            "fire_threshold_pct": FIRE_THRESHOLD_PCT,
+            "sensitivity_pcts": list(SENSITIVITY_PCTS),
+            "floor_rule": (
+                "n_fired_base >= ceil(0.6 * PARENT width) (persona 3, stance 3, hedging 2); "
+                "undetermined counts as not-fired"
+            ),
+            "undetermined_semantics": (
+                "mandatory (parent verbatim): ANY incomplete check after the judge "
+                "retry budget => undetermined; raw counts persisted per slot"
+            ),
+            "judged_denominator": len(carriers) * len(FFR_JUDGED_DRAWS),
+            "judged_draws": list(FFR_JUDGED_DRAWS),
+            "carriers": list(carriers),
+            "judged_axes_in_slice": list(BF.FFR_AXES),
+            "n_judged_specs": len(specs),
+            "n_items_submitted": {"ffr_compliance": len(items)},
+            "n_missing_anchor_rows": {"ffr_compliance": n_missing},
+            "n_capped_out": {"ffr_compliance": n_capped},
+            "judge_stats": {"ffr_compliance": stats},
+            "per_axis_drop_report": {"ffr_compliance": per_axis_drop_report(specs, scores)},
+            "upload": upload_summary,
+            **as_metadata_dict(git_provenance(), phase="judge2587-ffr"),
+        },
+        "value_rows": value_rows,
+        "axis_rows": axis_rows,
+    }
+    _write_json_atomic(out, doc)
+    log(f"[phase=judge2587-ffr] sentinel written {out}")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    sys.exit(0)
+
+
 # ── main ──────────────────────────────────────────────────────────────
 
 
@@ -757,6 +1095,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the SMOKE_BLIND_SPOTS registry as JSON and exit (marker enumeration source)",
     )
     ap.add_argument("--import-check", action="store_true")
+    ap.add_argument(
+        "--ffr",
+        action="store_true",
+        help="FFR mode (plan v6 §4.3): judge the #2564 floor-failed re-elicitation "
+        "grid on the 9B (528-call compliance wave; ffr_main)",
+    )
+    ap.add_argument(
+        "--ffr-manifest",
+        default=None,
+        help="local bank2564_ffr_manifest.json path (default: sha-pinned HF fetch)",
+    )
     return ap
 
 
@@ -769,8 +1118,19 @@ def main() -> None:
         print("[import-check] ok", flush=True)
         raise SystemExit(0)
     if args.list_smoke_blind_spots:
-        print(json.dumps(format_smoke_blind_spots(SMOKE_BLIND_SPOTS), indent=2, sort_keys=True))
+        registry = SMOKE_BLIND_SPOTS_FFR if args.ffr else SMOKE_BLIND_SPOTS
+        print(json.dumps(format_smoke_blind_spots(registry), indent=2, sort_keys=True))
         raise SystemExit(0)
+    if args.ffr:
+        # FFR mode owns its own defaults (plan v6 §4.3): rebind the MAIN-mode
+        # defaults so ffr_main's smoke/dry-run rebinding logic sees them —
+        # an explicit --out/--work-root passes through untouched.
+        if args.out == DEFAULT_OUT:
+            args.out = FFR_DEFAULT_OUT
+        if args.work_root == DEFAULT_WORK_ROOT:
+            args.work_root = FFR_DEFAULT_WORK_ROOT
+        ffr_main(args)  # exits via sys.exit(0)
+        raise AssertionError("ffr_main returned without exiting")
 
     smoke = args.smoke
     hf_prefix = f"{HF_PREFIX}/smoke" if smoke else HF_PREFIX
