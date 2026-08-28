@@ -10694,8 +10694,8 @@
     "2384": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2384",
-      "status": "proposed",
+      "path": "tasks/planning/2384",
+      "status": "planning",
       "title": "workflow-fix: adversarial-planner plan-finalize cited-body currency gate (cited parent corrected mid-draft goes unseen)"
     },
     "2385": {
