@@ -4,3 +4,4 @@
 {"ts": "2026-08-28T22:28:06Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-08-28T22:28:33Z", "kind": "epm:progress", "version": 2, "by": "issue-orchestrator", "note": "planner-dispatch round=1 — invoking /adversarial-planner (plan draft v1 target)"}
 {"ts": "2026-08-28T22:45:15Z", "kind": "epm:plan-verify", "version": 1, "by": "issue-orchestrator", "note": "verdict=PASS n_fail=0 n_warn=0 n_skip=65 failed=none overridden=none plan_version=v1 (verify_plan.py --issue 2373; skips are the experiment-scoped checks, expected for kind: infra). WARN dispositions: none — n_warn=0 on this run."}
+{"ts": "2026-08-28T22:52:41Z", "kind": "epm:progress", "version": 3, "by": "spawn_session-stop", "note": "deliberate-stop pid=n/a target=happy-session:cmtdiru2movjuzc0uak6m1uhi reason=operator stop via spawn_session.py stop"}
