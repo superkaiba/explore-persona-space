@@ -10558,8 +10558,8 @@
     "2367": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2367",
-      "status": "reviewing",
+      "path": "tasks/blocked/2367",
+      "status": "blocked",
       "title": "verify_task_body: flag caption-unit vs figure-sidecar count drift (check-45 family)"
     },
     "2368": {
