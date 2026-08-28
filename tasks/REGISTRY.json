@@ -10665,8 +10665,8 @@
     "2380": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2380",
-      "status": "proposed",
+      "path": "tasks/archived/2380",
+      "status": "archived",
       "title": "workflow-fix: Step 9c selector misses importlib-loading test files \u2014 bare module-name literals map to no selector arm"
     },
     "2381": {
