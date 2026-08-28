@@ -10537,8 +10537,8 @@
     "2364": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2364",
-      "status": "reviewing",
+      "path": "tasks/blocked/2364",
+      "status": "blocked",
       "title": "workflow-fix: no review surface catches a test suite that monkeypatches the production constant its acceptance criterion depends on"
     },
     "2365": {
