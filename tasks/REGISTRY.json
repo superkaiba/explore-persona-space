@@ -10607,8 +10607,8 @@
     "2373": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2373",
-      "status": "planning",
+      "path": "tasks/on_hold/2373",
+      "status": "on_hold",
       "title": "Mechanize the shared-y heatmap tick-clobber check: sidecar image row counts + a verify_report gate"
     },
     "2374": {
