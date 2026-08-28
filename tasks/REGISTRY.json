@@ -12613,8 +12613,8 @@
     "2635": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2635",
-      "status": "running",
+      "path": "tasks/blocked/2635",
+      "status": "blocked",
       "title": "verify_task_body: mechanical verbatim-sample-vs-manifest grep \u2014 FAIL fabricated '(verbatim)' sample rows"
     },
     "2636": {
