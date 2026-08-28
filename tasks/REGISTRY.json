@@ -10614,8 +10614,8 @@
     "2374": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2374",
-      "status": "planning",
+      "path": "tasks/on_hold/2374",
+      "status": "on_hold",
       "title": "Step 5a FAMILY_OF: couple .claude/rules/LESSONS.md with workflow_lint _LESSONS_* constants (same-diff pair split by family-atomic sync; 8 gate failures + 2h re-run in #2168)"
     },
     "2375": {
