@@ -13,7 +13,7 @@ Present the construction in two steps:
 
 1. use the final-context-token residual state `v_C` as the context-side input and
    summarize a sampled answer with its mean answer-token residual state `v_A`;
-2. fit and compare a family of approximations from `v_C` to `v_A`, including
+2. fit and compare a family of context-to-answer predictors from `v_C` to `v_A`, including
    identity-plus-bias, affine ridge regression `v_A_hat = M_l v_C + b_l`, and
    nonlinear MLPs.
 
@@ -21,12 +21,13 @@ Prior work establishes that particular upcoming behaviors are linearly decodable
 from context activations, usually with one labeled readout per property. This does
 not make `v_C` a demonstrated summary of the context. Separate work motivates
 `v_A` as an answer summary. Neither line of work establishes a single,
-property-label-free approximation of the general answer representation. Keep Future
+property-label-free predictor of the context-to-answer map. Keep Future
 Lens as a direct precursor in Related Work, not as part of the Introduction's gap.
 Remove speculative decoding and distillation from the Introduction; speculative
-decoding loses its standalone Related Work subsection. Do not claim a full
-answer-distribution approximation: the target is an activation summary of one
-sampled answer or an explicitly rollout-averaged target.
+decoding loses its standalone Related Work subsection. Do not claim prediction of
+the full answer distribution: the predictor operates between fixed-dimensional
+context and answer representations, using either one sampled answer or an
+explicitly rollout-averaged target.
 
 Approved Introduction decisions (Thomas, 2026-08-29): keep ``next-answer
 predictor'' but remove the deterministic-mapping framing; define a sampled answer
@@ -41,16 +42,15 @@ corpus-transfer and causal-control failures for Discussion and Limitations.
 
 - `C`, `A`: context token sequence and one sampled answer.
 - `v_C`, `v_A(A)`: context vector and answer vector.
-- `M_l`: the fitted context-to-answer map. Use "affine" in the formal definition
-  and "linear" as the paper shorthand. Use "approximation" for the learned object;
-  reserve "predict" for what it does.
-- `p_theta(A | C)`: the model's actual conditional response distribution. Do not
-  call this "the map".
+- `p_theta(A | C)`: the model's actual conditional response distribution, which
+  induces the context-to-answer map at the level of complete responses.
+- `M_l`: the fitted context-to-answer predictor. Use "affine" in the formal
+  definition and "linear" as the paper shorthand.
 - `g(v)`: a property readout. State that context and answer vectors both linearly
   encode a property, then measure how well `M_l` transports its answer-side read.
-- "transfer" applies a fixed map in a new setting; "refit" learns a new one;
+- "transfer" applies a fixed predictor in a new setting; "refit" learns a new one;
   "reparameterization" learns a change of coordinates.
-- The fitted map is an approximation. It is not identified with the transformer Jacobian,
+- The fitted predictor is not identified with the transformer Jacobian,
   local computation, or a causal steering mechanism.
 
 ### Proposed Results order for the uncapped version
