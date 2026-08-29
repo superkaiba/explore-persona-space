@@ -478,6 +478,45 @@ relaunch, a watch-session correction — not just first launches:
    at `eps/phase=done` with idle-GPU billing ≈1h before a manual reap; a
    second box (`newarma5evil`) needed a manual finalize the same day
    (incident record).
+1j. **Opt-in per-workload completion sentinel — declare `done_file=` on the
+   `epm:run-launched` note when the launched invocation is a SINGLE-PHASE
+   dispatcher run that deliberately emits no run-level `[phase=done]`
+   (#2610).** Item 1 of the result-reporting contract reserves the
+   run-level `[phase=done]` terminal for the WHOLE run, so a per-phase /
+   single-phase invocation (`--phase p5_fits`-style) correctly never emits
+   it — and on clean completion its pid probes go dead, the #2265 evidence
+   veto reads the tail-of-run fresh log/GPU as contradiction
+   (`pid-stale-workload-live`), and the verdict decays to a FALSE `dead`
+   (#2546 arm 3). The opt-in declaration closes that gap: add
+   `done_file=<abs path>` (free-form key=value, same convention as `pid=`)
+   to the launch note, and have the WORKLOAD write that file ONLY on
+   clean success, AFTER its final sentinel/output writes (worked example,
+   #2546: `$DONE_DIR/$(phase_key).done`). `poll_pipeline.py` then probes
+   `[ -f <done_file> ] && [ -f <pid_file> ] && [ <done_file> -nt
+   <pid_file> ]` in the same tick heredoc and, when every pid probe reads
+   dead AND the declared file is present + fresh, returns the
+   TERMINAL-SUCCESS `phase-done` (never `dead`, never the veto verdict;
+   run-level `done` still outranks it; Step-8 termination never keys on
+   it). Contract details the declarer must know: (a) **bash `-nt` is TRUE
+   when its second operand is MISSING**, so the `[ -f <pid_file> ]`
+   conjunct is load-bearing — the poller composes it, and item 1's
+   rewrite-the-pid-file-on-EVERY-(re)launch duty is what this leg DEPENDS
+   on: the pid-file mtime is the same-pod-clock launch anchor, so a done
+   file left by a PRIOR run reads STALE (older than the fresh pid file)
+   instead of minting a false success (#779
+   never-key-done-on-bare-existence); a relaunch that skips the pid-file
+   rewrite breaks this leg exactly as it breaks the liveness probe.
+   (b) The declared value must fullmatch the shell-safe allowlist
+   `/[A-Za-z0-9._/-]+` (absolute path; no spaces, quotes, `$`, `;`, or
+   other metacharacters — it is interpolated into the probe heredoc); a
+   non-conforming declaration is WARNed and IGNORED (legacy pid-only
+   verdicts apply). (c) The done file is a WORKLOAD-written completion
+   artifact, not a drained sentinel — keep it OUT of the
+   `/workspace/logs/issue-<N>-*.json` namespace (item 3's drain would
+   rename it) and remember the experimenter's pre-launch sentinel hygiene
+   does not wipe it: on a RELAUNCH the pid-file rewrite is what re-arms
+   staleness, per (a). Undeclared launches are byte-identical to
+   pre-#2610 behavior.
 2. **The fresh `epm:run-launched` carries the SAME live pid (`pid=`) AND
    `pid_file=`** (SKILL.md § "Any relaunch must re-post `epm:run-launched`").
    `poll_pipeline.py` computes `pid_alive = pidfile_pid_alive OR

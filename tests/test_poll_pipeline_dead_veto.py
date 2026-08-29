@@ -90,12 +90,15 @@ def _probe_stdout(
     pid_alive: int = 1,
     output_mtime_epoch: int | None = None,
     results_sentinel_present: int = 0,
+    done_file_fresh: int | None = None,
 ) -> str:
     """Probe stdout in the shape ``_parse_probe_stdout`` expects.
 
     ``output_mtime_epoch=None`` OMITS the ``OUTPUT_MTIME_EPOCH`` line (the
     parser defaults it to ``"0"`` -> the inert ``10**9`` sentinel); any value
     emits it — the #1033 fold this veto's ``output_fresh`` arm reads.
+    ``done_file_fresh`` behaves the same for the #2610 ``DONE_FILE_FRESH``
+    line (None omits; the parser defaults to ``"0"``).
     """
     lines = [
         "PID_FILE_MISSING=0",
@@ -117,6 +120,8 @@ def _probe_stdout(
     ]
     if output_mtime_epoch is not None:
         lines.append(f"OUTPUT_MTIME_EPOCH={output_mtime_epoch}")
+    if done_file_fresh is not None:
+        lines.append(f"DONE_FILE_FRESH={done_file_fresh}")
     return "\n".join(lines)
 
 
@@ -369,6 +374,40 @@ def test_done_precedence_over_veto(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     result = _poll(tmp_path)
     assert result.status == "done", result
     assert result.stall_reason is None
+
+
+def test_declared_fresh_done_file_outranks_veto(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """#2610 interplay pin: a launch that DECLARED ``done_file=`` whose file
+    probes present + fresh reads the TERMINAL-SUCCESS ``phase-done`` even
+    when the tick carries veto evidence (busy GPUs + a fresh log) — the
+    declared-done check precedes the #2265 veto inside `_pid_dead_verdict`
+    (a completed run's own tail-of-run evidence is exactly what the veto
+    would misread as contradiction, the #2546 arm-3 shape)."""
+    now = _now_epoch()
+    _patch_pod(
+        monkeypatch,
+        probe_kwargs=dict(
+            mtime_epoch=now - 294,
+            pod_now_epoch=now,
+            tail=_RUNNING_TAIL,
+            gpu_util="97,100,100,100",
+            pid_alive=0,
+            done_file_fresh=1,
+        ),
+    )
+    monkeypatch.setattr(
+        pp,
+        "_marker_launch_fields",
+        lambda issue, pod=None: (None, "done_file=/workspace/logs/issue-2223-fits.done"),
+    )
+    result = _poll(tmp_path)
+    assert result.status == pp.STATUS_PHASE_DONE, result
+    assert result.status == "phase-done"
+    assert result.stall_reason is None
+    assert result.pid_alive is False
+    assert result.crash_signature is None
 
 
 def test_pid_alive_paths_unchanged(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

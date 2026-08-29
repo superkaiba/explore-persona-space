@@ -37,7 +37,7 @@ Per tick:
    to the task's events.jsonl via the local-VM `task_workflow.post_event`
    library (NOT on the pod).
 5. Decide status: `done` | `gate` | `stalled` | `dead` | `running` |
-   `pid-stale-workload-live`.
+   `pid-stale-workload-live` | `phase-done`.
 6. Print one JSON line summary to stdout. Exit 0 on successful poll
    regardless of `status`. Exit non-zero only on caller-error (bad args,
    library import failure).
@@ -100,6 +100,25 @@ utilization) and its log/output evidence ages past stall_sec, so
 ``pid_alive: false`` beside the verdict so the contradiction is
 legible — and the WARN carries the pid-file repair recipe
 (pod-side-reporting.md § Pid-file launch contract).
+
+Declared-done-file terminal success (#2610): a cleanly-completed
+SINGLE-PHASE dispatcher invocation deliberately emits no run-level
+``[phase=done]``, so on completion its pid probes go dead and the #2265
+veto (fresh tail-of-run log/GPU evidence) parks it at
+``pid-stale-workload-live`` until the evidence decays to a false
+``dead`` (#2546 arm 3, ``p5_fits``). Opt-in fix: a launch whose
+``epm:run-launched`` note declares ``done_file=<abs path>`` (validated
+against a shell-safe allowlist) gets a fourth probe leg —
+``[ -f <done_file> ] && [ -f <pid_file> ] && [ <done_file> -nt
+<pid_file> ]`` (the ``-f <pid_file>`` conjunct is LOAD-BEARING: bash
+``-nt`` is TRUE when the second operand is missing) — and the pid-dead
+arm returns the TERMINAL-SUCCESS ``phase-done`` BEFORE the veto when
+the file is declared, present, and fresh. The pid-file mtime is the
+same-pod-clock stale-artifact anchor (#813 rewrites it on every
+(re)launch; #779 never-key-done-on-bare-existence). Undeclared
+launches are byte-identical to pre-#2610; a corroborated run-level
+``done`` still outranks (arm order); ``current_phase`` keeps the real
+phase, so no ``-> done`` milestone posts.
 
 Zombie-GPU-allocation override (#664): the CPU-advancing override above
 has a blind spot — a hung vLLM whose CUDA worker DIED but whose
@@ -481,6 +500,23 @@ STALL_SEC = DEFAULT_STALL_SEC
 # non-terminal to `router._is_terminal_status`, live to `default_is_live`,
 # short-interval to `recommend_next_interval` (any non-"running" status).
 STATUS_PID_STALE_WORKLOAD_LIVE = "pid-stale-workload-live"
+# #2610: TERMINAL-SUCCESS-FOR-THIS-WORKLOAD token for a cleanly-completed
+# SINGLE-PHASE dispatcher invocation that deliberately emits no run-level
+# ``[phase=done]`` (the #2546 arm-3 shape). Emitted by the `_pid_dead_verdict`
+# arm ONLY when the launch's epm:run-launched note carried an opt-in
+# ``done_file=<abs path>`` declaration AND the same tick's probe found that
+# file present AND fresh (``-nt`` the pid file, which the #813 launch
+# contract rewrites on EVERY (re)launch — the same-clock stale-artifact
+# anchor) AND every pid probe read dead. Declared+fresh outranks the #2265
+# evidence veto (the completed run's own fresh log/GPU tail is what the veto
+# would otherwise read as contradiction). Distinct from run-level ``done``:
+# ``current_phase`` keeps the real last-parsed phase (no ``-> done``
+# milestone), Step-8 termination never keys on it, and a corroborated
+# run-level ``done`` outranks it (arbitration order). Consumers degrade
+# exactly as for STATUS_PID_STALE_WORKLOAD_LIVE (the #2265 sweep found no
+# exhaustive switch on the poller enum): non-"running" reads short-interval
+# in `recommend_next_interval`, non-terminal-safe everywhere else.
+STATUS_PHASE_DONE = "phase-done"
 # Substring of the ValueError message raised by ``task_workflow.post_event``
 # when ``note`` exceeds ``EVENT_NOTE_MAX``. Matched against ``str(exc)`` so
 # we route exactly that failure to graceful-degradation (persist + pointer
@@ -1130,6 +1166,83 @@ def _marker_launch_fields(issue: int, pod: str | None = None) -> tuple[int | Non
     return pid, str(ev.get("note", "") or "")
 
 
+# #2610: opt-in per-workload completion-sentinel declaration on the
+# epm:run-launched note — free-form `done_file=<abs path>` token, same
+# key=value convention as `pid=` / `cmd='...'`. `\S+` cannot capture
+# whitespace/newlines, so a note can never smuggle a multi-token value.
+_DONE_FILE_TOKEN_RE = re.compile(r"\bdone_file=(\S+)")
+# An EMPTY declaration (`done_file=` immediately followed by whitespace or
+# the end of the note — a launcher typo) cannot match the `\S+` capture
+# above, so without a dedicated probe it would silently restore the legacy
+# pid-only verdicts; #2610 round 2 routes it through the same rejection
+# WARN path instead (declaration ignored — behavior unchanged,
+# observability fixed).
+_DONE_FILE_EMPTY_TOKEN_RE = re.compile(r"\bdone_file=(?=\s|$)")
+# Shell-safe allowlist for the declared path: the value is interpolated into
+# the `_ssh_probe` heredoc, so the FULLMATCH below is the injection fence —
+# absolute path, alnum/dot/underscore/slash/dash only, no spaces, quotes,
+# metachars, or trailing newline (fullmatch, not a `$`-anchored search: `$`
+# matches before a final newline and would accept "/x.done\n").
+_DONE_FILE_ALLOWED_RE = re.compile(r"/[A-Za-z0-9._/-]+")
+
+
+def _validate_done_file(candidate: str) -> str | None:
+    """Return ``candidate`` when it fullmatches the shell-safe allowlist (#2610).
+
+    A rejected declaration is IGNORED with a WARN (returns None) — the tick
+    then runs the legacy pid-only verdict path; a malformed declaration must
+    never inject into the probe heredoc nor block polling.
+    """
+    if _DONE_FILE_ALLOWED_RE.fullmatch(candidate):
+        return candidate
+    log.warning(
+        "epm:run-launched declared done_file=%r rejected by the shell-safe "
+        "allowlist (fullmatch %s) — ignoring the declaration; the legacy "
+        "pid-only verdict path applies this tick (#2610)",
+        candidate,
+        _DONE_FILE_ALLOWED_RE.pattern,
+    )
+    return None
+
+
+def _done_file_from_note(note: str) -> str | None:
+    """Extract + validate the opt-in ``done_file=`` declaration (#2610).
+
+    Returns the validated absolute path, or None when the note carries no
+    ``done_file=`` token (the common legacy case — every downstream consumer
+    is then inert, byte-identical to pre-#2610) or the value fails the
+    shell-safe allowlist (WARNed + ignored in :func:`_validate_done_file`).
+    An EMPTY token (``done_file=`` with nothing before the next whitespace /
+    end of note — a launcher typo) is likewise WARNed + ignored via the same
+    rejection path, never a silent opt-out (#2610 round 2). Pure; the caller
+    passes the note text already in hand (:func:`_marker_launch_fields`) so
+    this costs no extra events read.
+    """
+    m = _DONE_FILE_TOKEN_RE.search(note or "")
+    if m is None:
+        if _DONE_FILE_EMPTY_TOKEN_RE.search(note or ""):
+            # Empty-token typo: same WARN-and-ignore path as any other
+            # rejected declaration (the "" candidate can never fullmatch).
+            return _validate_done_file("")
+        return None
+    return _validate_done_file(m.group(1))
+
+
+def _marker_done_file(issue: int, pod: str | None = None) -> str | None:
+    """Return the validated ``done_file=`` from the latest epm:run-launched
+    marker, or None (#2610).
+
+    Mirroring reader beside :func:`_marker_pid` for direct/diagnostic use;
+    ``poll_once`` itself calls :func:`_done_file_from_note` on the
+    ``marker_note`` it already holds (one events read per tick, the #1156
+    invariant).
+    """
+    ev = _latest_run_launched_event(issue, pod)
+    if ev is None:
+        return None
+    return _done_file_from_note(str(ev.get("note", "") or ""))
+
+
 def _run_launched_age_sec(issue: int, now_epoch: float, pod: str | None = None) -> float | None:
     """Seconds since the latest ``epm:run-launched`` marker, or None.
 
@@ -1547,7 +1660,7 @@ def _maybe_synthesize_results_envelope(
 
 @dataclass(frozen=True)
 class PollResult:
-    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live
+    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live | phase-done
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int
@@ -1755,6 +1868,29 @@ _SESSION_PCPU_AWK = (
 )
 
 
+def _done_file_probe(done_file: str | None, pid_file: str) -> str:
+    """Bash fragment probing declared-done-file freshness (#2610), or ``""``.
+
+    Emits ``DONE_FILE_FRESH=1`` iff ALL THREE conjuncts hold on the pod:
+    ``[ -f <done_file> ] && [ -f <pid_file> ] && [ <done_file> -nt
+    <pid_file> ]`` — the middle ``-f <pid_file>`` conjunct is LOAD-BEARING
+    and must never be dropped: bash ``-nt`` is TRUE when its second operand
+    is MISSING, so without it a stale done file from a prior run whose pid
+    file was wiped would read fresh (#779 never-key-done-on-bare-existence;
+    the pid-file mtime is the #813 same-clock stale-artifact anchor, rewritten
+    on every (re)launch). Else emits ``DONE_FILE_FRESH=0``. Returns ``""``
+    (no leg, parser defaults the key to "0") when no valid declaration
+    exists — including a defensive re-validation so a direct caller can
+    never interpolate an unvalidated path into the heredoc.
+    """
+    if done_file is None or _DONE_FILE_ALLOWED_RE.fullmatch(done_file) is None:
+        return ""
+    return (
+        f"if [ -f {done_file} ] && [ -f {pid_file} ] && [ {done_file} -nt {pid_file} ]; "
+        f"then echo DONE_FILE_FRESH=1; else echo DONE_FILE_FRESH=0; fi; "
+    )
+
+
 def _ssh_probe(
     pod: str,
     log_path: str,
@@ -1764,6 +1900,7 @@ def _ssh_probe(
     *,
     stall_sec: int = DEFAULT_STALL_SEC,
     sig_pattern: str | None = None,
+    done_file: str | None = None,
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
     marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
@@ -1778,6 +1915,12 @@ def _ssh_probe(
     common free-prose-marker case) omits the sig-probe block entirely.
     All #1650 lines ride INSIDE the same single heredoc — no second SSH
     round-trip per tick.
+
+    ``done_file`` (#2610) is the validated opt-in ``done_file=`` declaration
+    from the latest epm:run-launched note (:func:`_done_file_from_note`);
+    ``None`` (the common undeclared case) omits the done-file leg entirely
+    and the parser defaults ``done_file_fresh`` to ``"0"``. The leg
+    (:func:`_done_file_probe`) also rides the same single heredoc.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
 
@@ -2257,6 +2400,9 @@ def _ssh_probe(
         )
     else:
         output_probe = ""  # kill switch: parser defaults the key to "0"
+    # #2610: declared-done-file freshness leg; "" when undeclared/invalid
+    # (parser defaults `done_file_fresh` to "0" — legacy byte-identical).
+    done_file_probe = _done_file_probe(done_file, pid_file)
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -2286,6 +2432,7 @@ def _ssh_probe(
         f"{session_cpu_probe}"
         f"{results_sentinel_probe}"
         f"{output_probe}"
+        f"{done_file_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -2330,6 +2477,7 @@ def _ssh_probe(
             "session_pcpu_total": "unknown",
             "results_sentinel_present": "0",
             "output_mtime_epoch": "0",
+            "done_file_fresh": "0",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -2364,6 +2512,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "SESSION_PCPU_TOTAL",
     "RESULTS_SENTINEL_PRESENT",
     "OUTPUT_MTIME_EPOCH",
+    "DONE_FILE_FRESH",
 )
 
 
@@ -2403,6 +2552,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "session_pcpu_total": "unknown",
         "results_sentinel_present": "0",
         "output_mtime_epoch": "0",
+        "done_file_fresh": "0",
     }
     # Each multi-line tail block is delimited by its own START/END sentinel
     # (``TAIL_START``/``END``, ``CELL_TAIL_START``/``END``, and the #791
@@ -3609,18 +3759,42 @@ def _pid_dead_verdict(
     output_mtime_ago: float,
     gpu_util: str,
     stall_sec: int,
+    done_file: str | None = None,
+    done_file_fresh: bool = False,
 ) -> tuple[str, str | None]:
-    """Verdict for the pid-probes-ALL-dead arbitration arm (#2265).
+    """Verdict for the pid-probes-ALL-dead arbitration arm (#2265, #2610).
 
-    Returns ``("dead", None)`` when `_dead_verdict_veto` finds no same-tick
-    liveness evidence — byte-identical to the pre-#2265 unconditional
-    ``status = "dead"`` arm — else
+    #2610 FIRST: when the launch DECLARED a ``done_file=`` (validated;
+    ``done_file is not None``) AND the same tick's probe confirmed it
+    present + fresh (``done_file_fresh`` — the three-conjunct
+    :func:`_done_file_probe` leg, `-nt` the #813-rewritten pid file),
+    returns ``(STATUS_PHASE_DONE, None)`` — terminal per-workload success —
+    BEFORE the #2265 veto: a completed run's own tail-of-run fresh log/GPU
+    evidence is exactly what the veto would otherwise misread as
+    contradiction (the #2546 arm-3 false-`pid-stale-workload-live` →
+    decays-to-`dead` shape). Undeclared (``done_file is None``) or
+    stale/absent (``done_file_fresh=False``) falls through unchanged.
+
+    Then: returns ``("dead", None)`` when `_dead_verdict_veto` finds no
+    same-tick liveness evidence — byte-identical to the pre-#2265
+    unconditional ``status = "dead"`` arm — else
     ``(STATUS_PID_STALE_WORKLOAD_LIVE, "pid_dead_evidence:<'+'-joined
     tokens>")`` plus the repair-recipe WARN. Extracted from ``poll_once``
     for C901 headroom (the `_apply_zombie_override` /
     `_maybe_rescue_by_signature` convention — ``poll_once`` sits exactly at
     the complexity cap, so the veto branch lives here).
     """
+    if done_file is not None and done_file_fresh:
+        log.info(
+            "declared done file %s on pod %s is present and newer than the pid "
+            "file, with all pid probes dead — terminal per-workload success: "
+            "status=%s (#2610 opt-in done_file= launch declaration; run-level "
+            "[phase=done] absent by design on single-phase invocations)",
+            done_file,
+            pod,
+            STATUS_PHASE_DONE,
+        )
+        return STATUS_PHASE_DONE, None
     dead_veto_evidence = _dead_verdict_veto(
         last_mtime_ago=last_mtime_ago,
         phase_log_mtime_ago=phase_log_mtime_ago,
@@ -5997,8 +6171,18 @@ def poll_once(
     marker_pid, marker_note = _marker_launch_fields(issue, pod=pod)
     sig_tokens = _launch_signature_tokens(marker_note, issue) if _pid_identity_enabled() else ()
     sig_pattern = _sig_pgrep_pattern(sig_tokens)
+    # #2610: opt-in `done_file=` declaration from the SAME note already in
+    # hand — no extra events read; None on the common undeclared case.
+    done_file = _done_file_from_note(marker_note)
     probe = _ssh_probe(
-        pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec, sig_pattern=sig_pattern
+        pod,
+        log_path,
+        pid_file,
+        issue,
+        marker_pid,
+        stall_sec=stall_sec,
+        sig_pattern=sig_pattern,
+        done_file=done_file,
     )
 
     # ── #488 stale-port self-heal ────────────────────────────────────────
@@ -6242,6 +6426,8 @@ def poll_once(
         # carries NO affirmative liveness evidence (busy GPU / fresh log /
         # fresh issue-keyed output); else the non-terminal
         # `pid-stale-workload-live` + `stall_reason=pid_dead_evidence:<...>`.
+        # #2610 (checked FIRST inside the helper): a declared+fresh
+        # done_file returns the terminal-success `phase-done` instead.
         status, stall_reason = _pid_dead_verdict(
             pod=pod,
             last_mtime_ago=last_mtime_ago,
@@ -6250,6 +6436,8 @@ def poll_once(
             output_mtime_ago=output_mtime_ago,
             gpu_util=gpu_util,
             stall_sec=stall_sec,
+            done_file=done_file,
+            done_file_fresh=probe.get("done_file_fresh") == "1",
         )
     elif (
         last_mtime_ago > stall_sec
