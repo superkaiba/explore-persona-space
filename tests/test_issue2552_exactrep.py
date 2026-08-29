@@ -504,6 +504,24 @@ def test_exactrep_eval_selected_span_and_list_index(tmp_path):
     assert index["configs"]["rep_ta"]["n_turns"] == 1
 
 
+def test_exactrep_public_emission_selects_after_full_encode():
+    import issue2552_exactrep_eval_inputs as EV
+
+    class FakePublicSAE:
+        def __init__(self):
+            self.calls = 0
+
+        def encode(self, kept):
+            self.calls += 1
+            assert kept.shape == (2, 3)
+            return torch.arange(16, dtype=torch.float32).reshape(2, 8)
+
+    pt = FakePublicSAE()
+    got = EV._encode_selected_public(pt, torch.ones(2, 3), torch.tensor([6, 1]))
+    assert pt.calls == 1
+    assert torch.equal(got, torch.tensor([[6.0, 1.0], [14.0, 9.0]]))
+
+
 def test_exactrep_judge_adapter_pins_parent_and_three_config_protocol(tmp_path):
     import issue2552_exactrep_judge as J
 
