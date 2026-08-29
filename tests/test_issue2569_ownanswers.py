@@ -78,8 +78,35 @@ def test_prepare_materializes_capture_contract_and_preserves_source_order(tmp_pa
     assert manifest["drops"] == {"empty_response": 1}
 
 
+def test_source_roster_can_select_frozen_test_partition(tmp_path):
+    source = tmp_path / "source"
+    rows = [
+        {"ci": ci, "corpus": "lmsys", "prompt": f"p{ci}", "response": f"q{ci}"}
+        for ci in (9, 4, 7)
+    ]
+    _write_jsonl(source / "texts_kept.jsonl", rows)
+    roster = tmp_path / "split.json"
+    roster.write_text(json.dumps({"ci": [9, 4, 7], "test_ci": [7, 9]}))
+    args = SimpleNamespace(
+        source_root=str(source),
+        ci_roster=str(roster),
+        ci_roster_key="test_ci",
+        rows=0,
+    )
+    selected = gen._load_source(args)
+    assert [row["ci"] for row in selected] == [7, 9]
+
+
 def test_row_cosine_and_subset_r2_helpers():
     x = np.eye(4, dtype=np.float64)
     assert np.allclose(ana._cos_rows(x, x), 1.0)
     assert ana._pool_r2_subset(x, x, np.asarray([0, 1])) is None
     assert ana._pool_r2_subset(x, x, np.asarray([0, 1, 2])) == 1.0
+
+
+def test_repeatability_identity_case():
+    x = np.arange(24, dtype=np.float64).reshape(6, 4) + 1.0
+    rep = ana._repeatability(x, x)
+    assert np.isclose(rep["linear_cka"], 1.0)
+    assert np.isclose(rep["identity_pooled_r2"], 1.0)
+    assert np.isclose(rep["row_cosine"]["mean"], 1.0)

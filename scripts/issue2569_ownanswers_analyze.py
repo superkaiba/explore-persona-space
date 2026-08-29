@@ -724,6 +724,178 @@ def phase_semantic(args) -> None:
     print(f"[semantic] wrote {out} n={len(rows)} median={np.median(cos):.4f}")
 
 
+def _payload_with_record(path: Path) -> tuple[OP.MapPayload, dict]:
+    obj = torch.load(path, map_location="cpu", weights_only=False)
+    return AT.payload_from_dict(obj, path=path), dict(obj["record"])
+
+
+def _answer_text_by_ci(path: Path, *, generated: bool) -> dict[int, str]:
+    out: dict[int, str] = {}
+    for row in _read_jsonl(path):
+        if generated and row.get("drop_reason") is not None:
+            continue
+        text = str(row["response"])
+        if text.strip():
+            out[int(row["ci"])] = text
+    return out
+
+
+def _repeatability(a: np.ndarray, b: np.ndarray) -> dict:
+    row_cos = _cos_rows(a, b)
+    return {
+        "linear_cka": AT.cka_linear(a, b),
+        "identity_pooled_r2": AT.pooled_r2(a, b),
+        "row_cosine": {
+            "mean": float(np.mean(row_cos)),
+            "median": float(np.median(row_cos)),
+            "q05_q25_q75_q95": [
+                float(x) for x in np.quantile(row_cos, [0.05, 0.25, 0.75, 0.95])
+            ],
+        },
+    }
+
+
+def phase_reliability(args) -> None:
+    """Evaluate seed-42 maps on seed-137 answers over the frozen test roster."""
+    split = json.loads(Path(args.split_json).read_text())
+    roster = np.asarray(split["test_ci"], dtype=np.int64)
+    assert len(roster) == args.n_test, (len(roster), args.n_test)
+
+    q42 = _aligned_matrix(_load_bundle(Path(args.qwriter_dir), "qwen", "va", 14), roster)[0]
+    l42 = _aligned_matrix(_load_bundle(Path(args.lwriter_dir), "llama", "va", 16), roster)[0]
+    q137 = _aligned_matrix(_load_bundle(Path(args.qseed137_dir), "qwen", "va", 14), roster)[0]
+    l137 = _aligned_matrix(_load_bundle(Path(args.lseed137_dir), "llama", "va", 16), roster)[0]
+    qc42 = _aligned_matrix(_load_bundle(Path(args.qwriter_dir), "qwen", "vc", 14), roster)[0]
+    lc42 = _aligned_matrix(_load_bundle(Path(args.lwriter_dir), "llama", "vc", 16), roster)[0]
+    qc137 = _aligned_matrix(_load_bundle(Path(args.qseed137_dir), "qwen", "vc", 14), roster)[0]
+    lc137 = _aligned_matrix(_load_bundle(Path(args.lseed137_dir), "llama", "vc", 16), roster)[0]
+
+    maps = Path(args.out_dir) / "maps"
+    aq2l, aq2l_rec = _payload_with_record(maps / "q14_l16_align_a_own_q2l.pt")
+    al2q, al2q_rec = _payload_with_record(maps / "q14_l16_align_a_own_l2q.pt")
+    mq, mq_rec = _payload_with_record(maps / "q14_l16_map_qwen_qwriter.pt")
+    ml, ml_rec = _payload_with_record(maps / "q14_l16_map_llama_lwriter.pt")
+
+    def frozen_read(payload: OP.MapPayload, x: np.ndarray, y: np.ndarray) -> dict:
+        pred = OP.predict(payload, x)
+        return {"r2": AT.pooled_r2(pred, y), "knn": AT._knn(pred, y)}
+
+    text_sets = {
+        "qwen_seed42": _answer_text_by_ci(
+            Path(args.source_root) / "texts_kept.jsonl", generated=False
+        ),
+        "qwen_seed137": _answer_text_by_ci(Path(args.qseed137_answers), generated=True),
+        "llama_seed42": _answer_text_by_ci(Path(args.llama_answers), generated=True),
+        "llama_seed137": _answer_text_by_ci(Path(args.lseed137_answers), generated=True),
+    }
+    missing = {
+        name: [int(ci) for ci in roster if int(ci) not in values]
+        for name, values in text_sets.items()
+    }
+    assert not any(missing.values()), {k: len(v) for k, v in missing.items()}
+    texts: list[str] = []
+    for name in text_sets:
+        texts.extend(text_sets[name][int(ci)] for ci in roster)
+    emb = _encode_semantic(texts, args).reshape(len(text_sets), len(roster), -1)
+    q42e, q137e, l42e, l137e = emb
+    q_repeat = np.sum(q42e * q137e, axis=1)
+    l_repeat = np.sum(l42e * l137e, axis=1)
+    cross42 = np.sum(q42e * l42e, axis=1)
+    cross137 = np.sum(q137e * l137e, axis=1)
+
+    semantic_rows = [
+        {
+            "ci": int(ci),
+            "qwen_seed42_vs_seed137_cosine": float(q_repeat[i]),
+            "llama_seed42_vs_seed137_cosine": float(l_repeat[i]),
+            "qwen_vs_llama_seed42_cosine": float(cross42[i]),
+            "qwen_vs_llama_seed137_cosine": float(cross137[i]),
+        }
+        for i, ci in enumerate(roster)
+    ]
+
+    def semantic_summary(x: np.ndarray) -> dict:
+        return {
+            "mean": float(np.mean(x)),
+            "median": float(np.median(x)),
+            "q05_q25_q75_q95": [float(v) for v in np.quantile(x, [0.05, 0.25, 0.75, 0.95])],
+        }
+
+    context_rel = {
+        "qwen": np.linalg.norm(qc42 - qc137, axis=1)
+        / (np.linalg.norm(qc42, axis=1) + 1e-30),
+        "llama": np.linalg.norm(lc42 - lc137, axis=1)
+        / (np.linalg.norm(lc42, axis=1) + 1e-30),
+    }
+    result = {
+        "issue": 2569,
+        "followup_label": "cross-model-own-generated-answers",
+        "kind": "second-rollout-reliability-companion",
+        "gating": False,
+        "seeds": [42, 137],
+        "n_frozen_test": len(roster),
+        "test_ci_sha256": _sha_ci(roster),
+        "semantic_model": {"model_id": SEMANTIC_MODEL, "revision": SEMANTIC_REVISION},
+        "semantic_cosine": {
+            "qwen_seed42_vs_seed137": semantic_summary(q_repeat),
+            "llama_seed42_vs_seed137": semantic_summary(l_repeat),
+            "qwen_vs_llama_seed42": semantic_summary(cross42),
+            "qwen_vs_llama_seed137": semantic_summary(cross137),
+        },
+        "answer_activation_repeatability": {
+            "qwen_L14": _repeatability(q42, q137),
+            "llama_L16": _repeatability(l42, l137),
+        },
+        "context_reproduction": {
+            name: {
+                "mean_rel_l2": float(np.mean(values)),
+                "max_rel_l2": float(np.max(values)),
+                "pass_max_rel_l2_le_0p02": bool(np.max(values) <= 0.02),
+            }
+            for name, values in context_rel.items()
+        },
+        "frozen_seed42_map_reads_on_seed137": {
+            "own_answer_alignment_q2l": {
+                "seed42_test_r2": aq2l_rec["test_r2"],
+                "seed137": frozen_read(aq2l, q137, l137),
+            },
+            "own_answer_alignment_l2q": {
+                "seed42_test_r2": al2q_rec["test_r2"],
+                "seed137": frozen_read(al2q, l137, q137),
+            },
+            "qwen_native_context_to_answer": {
+                "seed42_test_r2": mq_rec["test_r2"],
+                "seed137": frozen_read(mq, qc137, q137),
+            },
+            "llama_native_context_to_answer": {
+                "seed42_test_r2": ml_rec["test_r2"],
+                "seed137": frozen_read(ml, lc137, l137),
+            },
+        },
+        "seed137_cross_model_own_answer_cka": AT.cka_linear(q137, l137),
+        "interpretation": (
+            "Descriptive generation-noise companion on the frozen primary test roster; "
+            "all maps were fit at seed 42 and applied without refitting."
+        ),
+    }
+    out = Path(args.reliability_out)
+    _atomic_json(out, result)
+    _atomic_jsonl(out.with_name("reliability_semantic_rows.jsonl"), semantic_rows)
+    if args.upload:
+        names = [out.name, "reliability_semantic_rows.jsonl"]
+        url = hub._upload_folder_filtered(
+            out.parent,
+            repo_id=args.hf_data_repo,
+            repo_type="dataset",
+            path_in_repo=args.result_prefix,
+            allow_patterns=names,
+            expected_repo_paths=[f"{args.result_prefix}/{name}" for name in names],
+        )
+        if not url:
+            raise RuntimeError("reliability upload returned no URL")
+    print(f"[reliability] wrote {out} n={len(roster)}", flush=True)
+
+
 def _upload_analysis(args, out: Path) -> None:
     names = ["crossed_geometry.json", "split.json", "semantic/per_row.jsonl", "semantic/summary.json"]
     names.extend(str(p.relative_to(out)) for p in sorted((out / "maps").glob("*.pt")))
@@ -758,6 +930,7 @@ PHASES = {
     "stage": phase_stage,
     "semantic": phase_semantic,
     "analyze": phase_analyze,
+    "reliability": phase_reliability,
     "selftest": phase_selftest,
 }
 
@@ -787,6 +960,24 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--qwriter-revision", default=QWRITER_REVISION)
     ap.add_argument("--lwriter-prefix", default=LWRITER_PREFIX)
     ap.add_argument("--result-prefix", default=RESULT_PREFIX)
+    ap.add_argument("--split-json", default=str(base / "analysis" / "split.json"))
+    ap.add_argument(
+        "--qseed137-dir", default=str(base / "reliability" / "qwen_seed137" / "final")
+    )
+    ap.add_argument(
+        "--lseed137-dir", default=str(base / "reliability" / "llama_seed137" / "final")
+    )
+    ap.add_argument(
+        "--qseed137-answers",
+        default=str(base / "reliability" / "gen_qwen_s137" / "answers.jsonl"),
+    )
+    ap.add_argument(
+        "--lseed137-answers",
+        default=str(base / "reliability" / "gen_llama_s137" / "answers.jsonl"),
+    )
+    ap.add_argument(
+        "--reliability-out", default=str(base / "analysis" / "reliability.json")
+    )
     return ap.parse_args(argv)
 
 

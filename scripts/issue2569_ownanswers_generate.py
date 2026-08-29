@@ -95,7 +95,11 @@ def _load_source(args) -> list[dict]:
             uniq.append(row)
     if args.ci_roster:
         roster_obj = json.loads(Path(args.ci_roster).read_text())
-        roster = roster_obj["ci"] if isinstance(roster_obj, dict) else roster_obj
+        roster = (
+            roster_obj[args.ci_roster_key]
+            if isinstance(roster_obj, dict)
+            else roster_obj
+        )
         by_ci = {int(r["ci"]): r for r in uniq}
         missing = [int(ci) for ci in roster if int(ci) not in by_ci]
         assert not missing, f"roster has {len(missing)} ci values absent from source"
@@ -382,6 +386,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--rows", type=int, default=0)
     ap.add_argument("--chunk-rows", type=int, default=250)
     ap.add_argument("--ci-roster", default="")
+    ap.add_argument(
+        "--ci-roster-key",
+        default="ci",
+        help="key to read when --ci-roster is a JSON object (reliability: test_ci)",
+    )
     ap.add_argument(
         "--source-root",
         default=str(PROJECT_ROOT / "data" / "issue_2569" / "ownanswers" / "source_qwen"),
