@@ -89,4 +89,5 @@ little loss.  It does not support a universal anomaly detector, a causal route
 claim, or an advantage over a label-budget-matched direct context probe.
 
 Artifacts are under `eval_results/issue_2643/` in the repository and
-`issue2643_sae_map/` in the data repository.
+`issue2643_sae_map/` in the data repository at revision
+`642866e104b0776a809824495944ee0578a60ceb`.
