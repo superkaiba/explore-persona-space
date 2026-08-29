@@ -406,15 +406,17 @@ for f in $SPECS; do
   # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
   # wedging every family until manual reconcile. Contain per-family: an
   # absent literal member marks ITS family dirty (vintage-consistent skip;
-  # other families keep syncing). Deletion PROPAGATION (removing the stale
-  # worktree twin) remains #2385 — reconcile manually until it lands.
+  # other families keep syncing). Glob-matched / directory-member twins are
+  # removed by the #2385 stale-twin removal arm below (post-checkout, SAFE
+  # families only); an absent LITERAL member still parks its family dirty
+  # HERE, where the arm never reaches — reconcile that case manually.
   case "$f" in
     ":(glob)"*) : ;;
     *)
       if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
         fam="${FAMILY_OF[$f]:-$f}"
         DIRTY_FAMILIES[$fam]=1
-        echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+        echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; the #2385 removal arm skips dirty families — reconcile manually)."
         continue
       fi
       ;;
@@ -491,7 +493,61 @@ done
 
 SYNC_COMMITTED=""
 if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPECS; then
-  git -C "$WT" checkout origin/main -- $SAFE_SPECS    # surgical refresh: workflow surface only
+  # surgical refresh: workflow surface only. rc-guarded (#2385): the atomic
+  # checkout lands whole or syncs nothing; the removal arm below runs ONLY
+  # on a succeeded checkout, so a failed sync never deletes anything
+  # (vintage-consistent: additions and removals land together or not at all).
+  if git -C "$WT" checkout origin/main -- $SAFE_SPECS; then
+    # Stale-twin removal (#2385): `checkout <ref> -- <pathspec>` can only
+    # add/modify — it never removes a worktree file origin/main deleted or
+    # renamed away, so a glob-matched or directory-member twin survives
+    # every sync and any glob-selected scan collects it against the
+    # freshly-synced module (#2377: ImportError at collection, verdict
+    # crash, ~67 min of gate wall). Candidates: tracked files under the
+    # SAFE (non-dirty) pathspecs ABSENT at origin/main (diff-filter=A vs
+    # origin/main; untracked files never appear in git diff, so fresh
+    # mid-round files are structurally unreachable). Deletion is strictly
+    # narrower than the sync: SAFE_SPECS only — a dirty family syncs
+    # nothing AND deletes nothing — and each candidate re-passes the
+    # payload probe (zero non-sync branch-side commits, the pass-1
+    # subject-shape exclusion), the #1972 dirt probe, and a Step-9c
+    # WORKFLOW_INVARIANT membership probe, per-file; pass 1 already
+    # guarantees the first two at family grain, so those re-checks are
+    # defense in depth, but the invariant probe is load-bearing — it
+    # covers the CROSS-family case (this family clean, the LINT family
+    # dirty, so the branch's stale selector tuple would still name a file
+    # this arm just deleted and select_step9c_tests.py would refuse to
+    # emit a selection, #2537). Fail-safe: every probe hit KEEPS the file
+    # (status-quo staleness — a wrong removal is unrecoverable in-round; a
+    # kept stale twin costs at worst a gate red). An absent LITERAL member
+    # never reaches here: the #2260 containment above parks its family
+    # dirty. The deletions ride the SAME anchor-subject sync commit below,
+    # so the bs-scan exclusion, Guard 3, and the Step 10d re-bind's view
+    # of pre-gate history all keep working unchanged.
+    while IFS= read -r p; do
+      [ -z "$p" ] && continue
+      bs_del=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$p" \
+        | awk 'index($0, "sync workflow-surface specs from") == 0')
+      if [ -n "$bs_del" ]; then
+        echo "spec-freshness: stale-twin candidate $p has branch-side commits — payload, KEPT (#2385 fail-safe)."
+        continue
+      fi
+      if git -C "$WT" status --porcelain -- "$p" | grep -q .; then
+        echo "spec-freshness: stale-twin candidate $p carries uncommitted changes — KEPT (#1972/#2385 fail-safe)."
+        continue
+      fi
+      man="$WT/tests/step9c_workflow_invariant_manifest.txt"
+      if [ ! -f "$man" ] || grep -qxF -- "$p" "$man"; then
+        echo "spec-freshness: stale-twin candidate $p — Step-9c WORKFLOW_INVARIANT probe says KEEP (listed in the manifest, or the manifest is absent so membership is undecidable). Removing a member the branch's still-unsynced selector tuple names would make select_step9c_tests.py refuse to emit a selection (#2537 fail-closed). KEPT (#2385 fail-safe)."
+        continue
+      fi
+      if git -C "$WT" rm -q -- "$p" 2>/dev/null; then
+        echo "spec-freshness: removed stale main-deleted twin $p (#2385: absent at origin/main, zero non-sync branch-side commits)."
+      else
+        echo "spec-freshness: stale-twin candidate $p — git rm refused — KEPT (#2385 fail-safe)."
+      fi
+    done < <(git -C "$WT" -c core.quotePath=false diff --name-only --diff-filter=A origin/main -- $SAFE_SPECS)
+  fi
   if ! git -C "$WT" diff --quiet HEAD -- $SAFE_SPECS; then
     if ! git -C "$WT" commit -m "issue-<N>: sync workflow-surface specs from origin/main (spec-freshness)" -- $SAFE_SPECS; then
       # exit reaches the END of the ONE Bash invocation running this fenced

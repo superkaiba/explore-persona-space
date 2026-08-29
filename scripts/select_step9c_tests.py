@@ -582,6 +582,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1812) — SKILL.md 9a-ter + CLAUDE.md instrument-supersession +
     # scope-extension addenda duties pin
     "tests/test_issue_skill_instrument_supersession_addenda_pin.py",
+    # Registration rider (#2385) — the Step 5a family-sync pin file was never
+    # registered (#1546 class); pins the sync blocks in 09-step-5.md +
+    # 18-step-10d.md incl. the #2385 removal arm
+    "tests/test_issue_skill_lint_family_sync.py",
     # NEW (#1944) — Step 10d lint-gate own-diff attribution pin: offender
     # path-token awk at BOTH sites + extracted-program fixture (#1768 false-block)
     "tests/test_issue_skill_lint_owndiff_attribution.py",

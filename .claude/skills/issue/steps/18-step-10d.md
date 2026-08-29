@@ -2097,7 +2097,13 @@ tests BEFORE anything lands:
        block, so DROP the Step 5a block's own
        `WT=$(git rev-parse --show-toplevel)` line —
        do NOT re-derive `$WT` at Step 10d (a repo-root cwd would
-       rebind it to the shared root).
+       rebind it to the shared root) — and
+       DROP the Step 5a block's #2385 stale-twin removal arm,
+       exactly as you drop the `WT=` line: a deletion committed
+       post-gate lands in the cert-sha..HEAD delta as a D row and
+       fails item 4's re-bind CLOSED. Twin removal is a pre-gate
+       concern and has already run at Step 5a and at the 9c
+       pre-gate re-sync.
     3. End with one echo — `[step10d] post-gate re-sync: synced <n> files (<sha>) | no drift` —
        so ran-vs-never-ran is observable in the merge transcript (copy
        the line into the `epm:merged` / `epm:merge-failed` note).
@@ -2110,7 +2116,9 @@ tests BEFORE anything lands:
        adds/overwrites files with main's own bytes cannot change the
        landing tree the gate certified. ANY other delta — a
        `D`/`R*`/`C*`/`T`/`U` status row (the sync's
-       `checkout origin/main --` can only add/modify, never delete) or
+       `checkout origin/main --` can only add/modify, never delete,
+       and the #2385 removal arm is Step-5a-only — pre-gate — so its
+       deletions sit below the certified sha) or
        a non-identical file — fails CLOSED: verdict removed, no merge,
        re-run the gate.
     5. The head-sync pre-check (#1657) runs AFTER the re-sync +
@@ -2504,15 +2512,22 @@ else
       # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
       # wedging every family until manual reconcile. Contain per-family: an
       # absent literal member marks ITS family dirty (vintage-consistent skip;
-      # other families keep syncing). Deletion PROPAGATION (removing the stale
-      # worktree twin) remains #2385 — reconcile manually until it lands.
+      # other families keep syncing). Glob-matched / directory-member twins
+      # are removed by the #2385 stale-twin removal arm in the Step 5a copy
+      # ONLY (§ Step 5a — pre-gate, so its deletion commits sit below the
+      # certified sha); this post-gate copy deliberately carries NO removal
+      # arm: a deletion committed HERE would land in the cert-sha..HEAD
+      # delta as a D row and the verdict re-bind below fails CLOSED on any
+      # D — a forced gate re-run for zero gate benefit (the TG legs already
+      # ran; same asymmetry as the sibling-issue arm). An absent LITERAL
+      # member stays a manual reconcile in both copies.
       case "$f" in
         ":(glob)"*) : ;;
         *)
           if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
             fam="${FAMILY_OF[$f]:-$f}"
             DIRTY_FAMILIES_10D[$fam]=1
-            echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+            echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; the #2385 removal arm skips dirty families — reconcile manually)."
             continue
           fi
           ;;
@@ -2600,7 +2615,9 @@ else
     # via the own-diff overlay. The sync block's
     # `checkout origin/main -- $SAFE_SPECS_10D` can only add/modify, never
     # delete, so ANY D/R*/C*/T/U status row is by construction non-sync
-    # output: fail CLOSED unconditionally. A/M rows keep the byte-identity
+    # output (the #2385 removal arm is deliberately absent from this
+    # post-gate copy so this invariant holds): fail CLOSED
+    # unconditionally. A/M rows keep the byte-identity
     # probe (content == fetched origin/main contributes nothing beyond the
     # baseline to the landing tree, so the certification is unchanged).
     # #1082 carve-out, TIGHT: line 1 is NEVER touched; only line 2 moves;
