@@ -22,6 +22,7 @@ import os
 import shutil
 import tempfile
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -157,16 +158,38 @@ def _model_prefix(seed: int) -> str:
 
 
 def _download_model(seed: int, root: Path) -> Path:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, hf_hub_download
 
     prefix = _model_prefix(seed)
-    snapshot_download(
-        MODEL_REPO,
-        repo_type="model",
-        revision=MODEL_REVISION,
-        allow_patterns=[f"{prefix}/*"],
-        local_dir=root,
-    )
+    files = [
+        entry.path
+        for entry in HfApi().list_repo_tree(
+            MODEL_REPO,
+            repo_type="model",
+            revision=MODEL_REVISION,
+            path_in_repo=prefix,
+            recursive=True,
+            expand=False,
+        )
+        if getattr(entry, "path", "").startswith(f"{prefix}/")
+    ]
+    if not files:
+        raise RuntimeError(f"no model files found under {prefix} at {MODEL_REVISION}")
+
+    def download(filename: str) -> None:
+        hf_hub_download(
+            MODEL_REPO,
+            filename=filename,
+            repo_type="model",
+            revision=MODEL_REVISION,
+            local_dir=root,
+        )
+
+    # ``snapshot_download(..., allow_patterns=...)`` returns an empty snapshot
+    # for this historical model revision, although direct pinned downloads are
+    # valid.  Resolve the exact prefix tree and fetch those immutable files.
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(download, files))
     model_dir = root / prefix
     if not (model_dir / "config.json").exists():
         raise RuntimeError(f"model snapshot incomplete: {model_dir}")
