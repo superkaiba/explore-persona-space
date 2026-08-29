@@ -34,6 +34,9 @@ REPO=/home/thomasjiralerspong/explore-persona-space
 LOG=/home/thomasjiralerspong/my-goat/logs/watch_issue_${ISSUE}.log
 STATE=/home/thomasjiralerspong/.eps-autonomous/watch-${ISSUE}.state
 PUSH=/home/thomasjiralerspong/my-goat/scripts/telegram_push.sh
+# Bound every push: a connected-but-stalled endpoint must not hang this
+# wrapper (task #2387; 30s matches the Python callers' subprocess timeout).
+PUSH_TIMEOUT="${EPS_PUSH_TIMEOUT_SECS:-30}"
 STALL_MIN=${EPS_WATCH_1739_STALL_MIN:-60}
 MAX_RUN_H=${EPS_WATCH_1739_MAX_RUN_H:-8}
 SEEN=/home/thomasjiralerspong/.eps-autonomous/watch-${ISSUE}.firstseen
@@ -126,7 +129,7 @@ echo "$(ts) #${ISSUE} pods=${POD_LIST} n_running=${n_running} state=${pod_state}
 # --- retire only when the round is genuinely torn down -----------------------
 if [ "$pod_state" = "absent" ] && [ "$tag_state" = "absent" ]; then
   echo "$(ts) #${ISSUE} pod gone + tag cleared — round torn down, removing this cron" >> "$LOG"
-  [ -x "$PUSH" ] && "$PUSH" "EPS #${ISSUE} r2v2fit round torn down (pod gone, keep-running cleared) — monitor retired." >/dev/null 2>&1
+  [ -x "$PUSH" ] && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "EPS #${ISSUE} r2v2fit round torn down (pod gone, keep-running cleared) — monitor retired." >/dev/null 2>&1
   crontab -l 2>/dev/null | grep -v "cron_watch_issue_${ISSUE}" | crontab - 2>/dev/null
   rm -f "$STATE"
   exit 0
@@ -155,7 +158,7 @@ if [ -n "$episode" ]; then
   prev="$(cat "$STATE" 2>/dev/null || true)"
   if [ "$prev" != "$episode" ]; then
     echo "$episode" > "$STATE"
-    [ -x "$PUSH" ] && "$PUSH" "$msg" >/dev/null 2>&1
+    [ -x "$PUSH" ] && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "$msg" >/dev/null 2>&1
     echo "$(ts) #${ISSUE} ESCALATED (${episode})" >> "$LOG"
   fi
 else

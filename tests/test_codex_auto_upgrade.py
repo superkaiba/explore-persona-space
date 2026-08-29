@@ -556,6 +556,61 @@ def test_wrapper_alerts_on_missing_prerequisite_and_unwritable_log_dir(tmp_path)
     assert "not on PATH" not in proc2.stderr, "case 2 must isolate the mkdir failure"
 
 
+def test_stalled_push_is_bounded_no_sentinel(tmp_path):
+    """#2387 T-C (command-substitution shape): a telegram push stub that
+    sleeps far past the configured bound must not hang the wrapper — the
+    output capture `push_out=$(timeout ... "$TELEGRAM_PUSH" ...)` returns
+    once `timeout` kills the stub's process group, `push_rc` reads non-zero,
+    NO sentinel is written (next pass retries), and the wrapper exits 0 well
+    inside the deadline."""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    for name in ("uv", "npm", "codex"):
+        stub = bindir / name
+        stub.write_text("#!/bin/sh\nexit 0\n")
+        stub.chmod(0o755)
+
+    upgrader = tmp_path / "fake-upgrader.sh"
+    upgrader.write_text("#!/bin/sh\nexit 1\n")  # rc=1 → the alert_failure arm
+    upgrader.chmod(0o755)
+
+    push_log = tmp_path / "push_calls.log"
+    telegram = tmp_path / "fake-telegram.sh"
+    # Records $1 BEFORE sleeping so the test can assert the push was
+    # ATTEMPTED — a broken env-injection seam cannot satisfy the timing
+    # assert with a no-op push (#2387).
+    telegram.write_text(f'#!/bin/bash\necho "$1" >> "{push_log}"\nsleep 60\nexit 0\n')
+    telegram.chmod(0o755)
+
+    log_dir = tmp_path / "logs"
+    sentinel_dir = tmp_path / "sentinels"
+    sidecar = tmp_path / "sidecar.jsonl"
+    env = dict(os.environ)
+    env["PATH"] = f"{bindir}:{env.get('PATH', '')}"
+    env["EPS_CODEX_UPGRADE_LOG_DIR"] = str(log_dir)
+    env["EPS_CODEX_UPGRADE_SENTINEL_DIR"] = str(sentinel_dir)
+    env["EPS_CODEX_UPGRADE_SIDECAR"] = str(sidecar)
+    env["EPS_TELEGRAM_PUSH_SCRIPT"] = str(telegram)
+    env["EPS_CODEX_UPGRADE_BIN"] = str(upgrader)
+    env["EPS_PUSH_TIMEOUT_SECS"] = "2"
+
+    wrapper = REPO_ROOT / "scripts" / "cron_codex_auto_upgrade.sh"
+    t0 = time.monotonic()
+    proc = subprocess.run(
+        ["bash", str(wrapper)], env=env, capture_output=True, text=True, timeout=45
+    )
+    elapsed = time.monotonic() - t0
+    assert elapsed < 20, f"wrapper took {elapsed:.1f}s — push bound did not engage"
+    assert proc.returncode == 0, proc.stderr
+    calls = [ln for ln in push_log.read_text().splitlines() if ln.strip()]
+    assert len(calls) == 1, "exactly one push attempt expected"
+    assert "codex_auto_upgrade FAILED (rc=1)" in calls[0]
+    assert not list(sentinel_dir.glob("failed-*.flag")), "failed push must write NO sentinel"
+    logs = list(log_dir.glob("*.log"))
+    assert len(logs) == 1
+    assert "telegram_push.sh FAILED" in logs[0].read_text()
+
+
 def test_broken_current_model_is_excluded_and_replaced(monkeypatch, tmp_path, capsys):
     """A failing current-model probe is recorded into known_bad BEFORE
     candidate_models filters (:569-574 then :583), keyed on this CLI version

@@ -52,6 +52,9 @@ DAILY_DIR="${EPS_HEALTHCHECK_DAILY_DIR:-$PROJECT_DIR/logs/daily}"
 SENTINEL_DIR="${EPS_HEALTHCHECK_SENTINEL_DIR:-$PROJECT_DIR/logs/daily_healthcheck}"
 LOG_DIR="${EPS_HEALTHCHECK_LOG_DIR:-$PROJECT_DIR/logs/daily_healthcheck}"
 TELEGRAM_PUSH="${EPS_TELEGRAM_PUSH_SCRIPT:-$HOME/my-goat/scripts/telegram_push.sh}"
+# Bound every push: a connected-but-stalled endpoint must not hang this
+# wrapper (task #2387; 30s matches the Python callers' subprocess timeout).
+PUSH_TIMEOUT="${EPS_PUSH_TIMEOUT_SECS:-30}"
 AUTO_BACKFILL="${EPS_HEALTHCHECK_AUTO_BACKFILL:-1}"
 CLAUDE_BIN="${EPS_HEALTHCHECK_CLAUDE_BIN:-$HOME/.local/bin/claude}"
 LOG_FILE="$LOG_DIR/$DATE.log"
@@ -103,7 +106,7 @@ FIRST_RUN_OF_DAY=0
         if is_missing_or_husk "$DAILY_DIR/$BF_DATE.md"; then
             FAIL_MSG="ALERT: auto-backfill for $BF_DATE FAILED (day still unmined) — check $SENTINEL_DIR/backfill-$BF_DATE.log | manual backfill: cd $PROJECT_DIR && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 $CLAUDE_BIN -p '/daily $BF_DATE'"
             if [ -x "$TELEGRAM_PUSH" ]; then
-                if "$TELEGRAM_PUSH" "$FAIL_MSG"; then
+                if timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$TELEGRAM_PUSH" "$FAIL_MSG"; then
                     touch "$FAILED_SENT"
                     echo "daily_healthcheck: failed-backfill alert pushed for $BF_DATE + sentinel written ($FAILED_SENT)"
                 else
@@ -204,7 +207,7 @@ FIRST_RUN_OF_DAY=0
                 MSG="ALERT: /daily for $YESTERDAY did not land — check $HOME/my-goat/logs/daily_retrospective.log | $BF_PART (see .claude/skills/daily/SKILL.md § Backfill a missed day)"
             fi
             if [ -x "$TELEGRAM_PUSH" ]; then
-                if "$TELEGRAM_PUSH" "$MSG"; then
+                if timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$TELEGRAM_PUSH" "$MSG"; then
                     touch "$SENTINEL"
                     echo "daily_healthcheck: alert pushed + sentinel written ($SENTINEL)"
                 else

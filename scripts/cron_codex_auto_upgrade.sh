@@ -53,6 +53,9 @@ LOG_DIR="${EPS_CODEX_UPGRADE_LOG_DIR:-$PROJECT_DIR/logs/codex_auto_upgrade}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 SENTINEL_DIR="${EPS_CODEX_UPGRADE_SENTINEL_DIR:-$LOG_DIR}"
 TELEGRAM_PUSH="${EPS_TELEGRAM_PUSH_SCRIPT:-$HOME/my-goat/scripts/telegram_push.sh}"
+# Bound every push: a connected-but-stalled endpoint must not hang this
+# wrapper (task #2387; 30s matches the Python callers' subprocess timeout).
+PUSH_TIMEOUT="${EPS_PUSH_TIMEOUT_SECS:-30}"
 SIDECAR="${EPS_CODEX_UPGRADE_SIDECAR:-$PROJECT_DIR/.claude/cache/codex-auto-upgrade-events.jsonl}"
 SENTINEL="$SENTINEL_DIR/failed-$DATE.flag"
 
@@ -80,7 +83,7 @@ alert_failure() {
         log_line "codex_auto_upgrade: sentinel $SENTINEL already exists — skipping re-alert"
     elif [ -x "$TELEGRAM_PUSH" ]; then
         local push_out push_rc
-        push_out=$("$TELEGRAM_PUSH" "$msg" 2>&1)
+        push_out=$(timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$TELEGRAM_PUSH" "$msg" 2>&1)
         push_rc=$?
         [ -n "$push_out" ] && log_line "$push_out"
         if [ "$push_rc" -eq 0 ]; then

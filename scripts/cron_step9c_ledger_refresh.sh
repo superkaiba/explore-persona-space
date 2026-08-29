@@ -53,6 +53,9 @@ LOG_DIR="${EPS_STEP9C_REFRESH_LOG_DIR:-$PROJECT_DIR/logs/step9c_ledger_refresh}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 SENTINEL_DIR="${EPS_STEP9C_REFRESH_SENTINEL_DIR:-$LOG_DIR}"
 TELEGRAM_PUSH="${EPS_TELEGRAM_PUSH_SCRIPT:-$HOME/my-goat/scripts/telegram_push.sh}"
+# Bound every push: a connected-but-stalled endpoint must not hang this
+# wrapper (task #2387; 30s matches the Python callers' subprocess timeout).
+PUSH_TIMEOUT="${EPS_PUSH_TIMEOUT_SECS:-30}"
 SIDECAR="${EPS_STEP9C_REFRESH_SIDECAR:-$PROJECT_DIR/.claude/cache/step9c-refresh-cron-events.jsonl}"
 SENTINEL="$SENTINEL_DIR/failed-$DATE.flag"
 
@@ -112,7 +115,7 @@ if [ "${rc:-0}" -ne 0 ]; then
         if [ -f "$SENTINEL" ]; then
             echo "step9c_ledger_refresh: sentinel $SENTINEL already exists — skipping re-alert"
         elif [ -x "$TELEGRAM_PUSH" ]; then
-            if "$TELEGRAM_PUSH" "$MSG"; then
+            if timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$TELEGRAM_PUSH" "$MSG"; then
                 touch "$SENTINEL"
                 echo "step9c_ledger_refresh: refresh-failure alert pushed + sentinel written ($SENTINEL)"
             else

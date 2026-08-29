@@ -18,6 +18,9 @@ REPO=/home/thomasjiralerspong/explore-persona-space
 LOG=/home/thomasjiralerspong/my-goat/logs/watch_issue_${ISSUE}.log
 STATE=/home/thomasjiralerspong/.eps-autonomous/watch-${ISSUE}.state
 PUSH=/home/thomasjiralerspong/my-goat/scripts/telegram_push.sh
+# Bound every push: a connected-but-stalled endpoint must not hang this
+# wrapper (task #2387; 30s matches the Python callers' subprocess timeout).
+PUSH_TIMEOUT="${EPS_PUSH_TIMEOUT_SECS:-30}"
 STALL_MIN=${EPS_WATCH_STALL_MIN:-180}
 
 cd "$REPO" || exit 0
@@ -46,7 +49,7 @@ echo "$(ts) #${ISSUE} status=${status} marker_age=${age_min}m :: ${verdict}" >> 
 case "$status" in
   awaiting_promotion|completed|archived)
     echo "$(ts) #${ISSUE} TERMINAL (${status}) — removing this cron" >> "$LOG"
-    [ -x "$PUSH" ] && "$PUSH" "EPS #${ISSUE} reached ${status} — monitor retired." >/dev/null 2>&1
+    [ -x "$PUSH" ] && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "EPS #${ISSUE} reached ${status} — monitor retired." >/dev/null 2>&1
     crontab -l 2>/dev/null | grep -v "cron_watch_issue_${ISSUE}" | crontab - 2>/dev/null
     rm -f "$STATE"
     exit 0
@@ -66,7 +69,7 @@ if [ -n "$episode" ]; then
   if [ "$prev" != "$episode" ]; then
     echo "$episode" > "$STATE"
     msg="EPS #${ISSUE} needs you: status=${status}, no marker for ${age_min}m. ${verdict}"
-    [ -x "$PUSH" ] && "$PUSH" "$msg" >/dev/null 2>&1
+    [ -x "$PUSH" ] && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "$msg" >/dev/null 2>&1
     echo "$(ts) #${ISSUE} ESCALATED (${episode})" >> "$LOG"
   fi
 else

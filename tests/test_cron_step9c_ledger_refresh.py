@@ -43,6 +43,7 @@ import itertools
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -65,6 +66,8 @@ def make_harness(tmp_path: Path):
         stub_rc: int = 2,
         push_exit: int = 0,
         push_missing: bool = False,
+        push_sleep: int = 0,
+        push_timeout_secs: int | None = None,
     ) -> dict:
         root = tmp_path / f"h{next(counter)}"
         log_dir = root / "logs"
@@ -78,8 +81,14 @@ def make_harness(tmp_path: Path):
         push_log = root / "push_calls.log"
         fake_push = root / "fake_telegram_push.sh"
         # The failing form still records its call so tests can assert an
-        # attempt happened even when the push "fails".
-        fake_push.write_text(f'#!/bin/bash\necho "$1" >> "{push_log}"\nexit {push_exit}\n')
+        # attempt happened even when the push "fails". The optional sleep
+        # (AFTER the recording echo) simulates a connected-but-stalled push
+        # endpoint for the #2387 timeout-bound tests.
+        push_lines = ["#!/bin/bash", f'echo "$1" >> "{push_log}"']
+        if push_sleep > 0:
+            push_lines.append(f"sleep {push_sleep}")
+        push_lines.append(f"exit {push_exit}")
+        fake_push.write_text("\n".join(push_lines) + "\n")
         fake_push.chmod(0o755)
 
         stub_calls = root / "stub_calls.log"
@@ -96,10 +105,19 @@ def make_harness(tmp_path: Path):
             "EPS_TELEGRAM_PUSH_SCRIPT": str(push_script),
             "EPS_STEP9C_REFRESH_BIN": str(stub),
         }
+        if push_timeout_secs is not None:
+            env["EPS_PUSH_TIMEOUT_SECS"] = str(push_timeout_secs)
 
         def run() -> subprocess.CompletedProcess:
+            # timeout=45: a broken push bound FAILS the test with
+            # TimeoutExpired instead of hanging pytest (#2387).
             return subprocess.run(
-                ["bash", str(_WRAPPER)], env=env, capture_output=True, text=True, check=False
+                ["bash", str(_WRAPPER)],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=45,
             )
 
         return {
@@ -219,6 +237,28 @@ def test_missing_push_script_logs_and_exits_zero(make_harness):
     assert _push_count(h["push_log"]) == 0
     assert _sentinels(h) == []
     assert "not executable" in _daily_log(h)
+
+
+# ── T-A (#2387): a stalled push is bounded and treated as a failed push ──────
+
+
+def test_stalled_push_is_bounded_and_treated_as_failed(make_harness):
+    """#2387 T-A (`if`-condition shape): a push stub that sleeps far past the
+    configured bound must not hang the wrapper — `timeout` kills it, the 124
+    lands in the existing else arm (no sentinel; next run retries), and the
+    wrapper still exits 0 well inside the deadline."""
+
+    h = make_harness(stub_rc=2, push_sleep=60, push_timeout_secs=2)
+    t0 = time.monotonic()
+    result = h["run"]()
+    elapsed = time.monotonic() - t0
+    assert elapsed < 20, f"wrapper took {elapsed:.1f}s — push bound did not engage"
+    assert result.returncode == 0
+    # The push WAS attempted (the stub records $1 before sleeping) — a broken
+    # env-injection seam cannot satisfy the timing assert with a no-op push.
+    assert _push_count(h["push_log"]) == 1
+    assert _sentinels(h) == []  # T4 semantics: failed push → no sentinel
+    assert "telegram_push.sh FAILED" in _daily_log(h)
 
 
 # ── T6: the per-day pointer line fires once per date ─────────────────────────
