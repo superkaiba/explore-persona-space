@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2643,
+  "highest_id": 2644,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12680,6 +12680,13 @@
       "path": "tasks/awaiting_promotion/2643",
       "status": "awaiting_promotion",
       "title": "Can a context-SAE\u2192answer-SAE map forecast or flag triggered, refusal, and unusual behavior in Qwen2.5-7B model organisms?"
+    },
+    "2644": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2644",
+      "status": "proposed",
+      "title": "workflow-fix: no recovery ladder when the subagent MODEL POOL is exhausted; reconciler site has no valid fallback"
     },
     "265": {
       "has_clean_result": false,
