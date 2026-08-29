@@ -834,8 +834,13 @@ GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
     # to ten wrappers). A `.sh` path reaches NO stem/import arm — the stem
     # `cron_pod_audit` matches no tests/test_*cron_pod_audit*.py, and shell has no
     # import graph — so without this row a wrapper-only diff selects no test at
-    # all. The scanning test globs scripts/cron_*.sh and asserts every
-    # fatal()-defining wrapper wires the guard to its mkdir -p.
+    # all. The scanning test globs scripts/cron_*.sh and asserts SET EQUALITY
+    # between that glob and its own per-wrapper guard-class table, then validates
+    # each wrapper against its DECLARED class (guard shape, or the falsifiable
+    # reason a not-applicable wrapper is exempt) — so a NEW or reclassified
+    # wrapper FAILs rather than being skipped. It deliberately does NOT key on a
+    # `fatal()` definition: keying on the fix's own marker was the round-1 shape,
+    # under which any wrapper lacking that exact spelling was silently skipped.
     "tests/test_cron_wrapper_log_dir_guard.py": ("scripts/cron_*.sh",),
 }
 
