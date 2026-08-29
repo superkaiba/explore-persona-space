@@ -22,3 +22,4 @@
 - [Keep-probe read-error fail-open](feedback_keep_probe_read_error_fail_open.md) — grep rc=2 (read error) and rc=1 (no match) both fall through; `[ ! -f ]` covers absence only — rank by fail-open DIRECTION (#2385).
 - [Never suppress output on task.py mutations](feedback_never_suppress_output_on_task_py_mutations.md) — the 200-char `--summary` cap is a hard error; `>/dev/null && echo ok` turns 4 failed address-concerns into silence (#2386).
 - [Mimic tree: populate from the same ref](feedback_mimic_tree_populate_from_same_ref.md) — repo-root siblings inject version-skew failures that masquerade as your mutant being caught; always baseline the mimic first (#2386).
+- [Narrowing refactor inherits the parent parser's blind spot](feedback_narrowing_refactor_inherits_parent_parser_blindspot.md) — a narrower replacement helper clones the old one's depth/parse bug and orphans it; probe end-to-end + count call sites (#2386 r3).
