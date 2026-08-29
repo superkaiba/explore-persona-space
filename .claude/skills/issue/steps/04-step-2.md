@@ -120,6 +120,18 @@ plans missing any):**
 than the draft start forces a mechanical redraft bounce (re-spawn the
 planner against the amended Goal; NOT a critic round). (#922)
 
+**Cited-body currency gate:** capture `DRAFT_START="$(date +%s)"` ONCE at
+the round-1 planner spawn (never refreshed on Phase 3 re-spawns); before
+EVERY `new-plan-version` call, run `uv run python
+scripts/check_cited_body_currency.py --issue <N> --since-unix
+"$DRAFT_START" --plan-file <draft>`. Exit 3 (`STALE`) means a cited task's
+`body.md` was corrected after drafting began — surface-and-disposition per
+the SKILL.md section (a mechanical re-ground, NOT a critic round); `CLEAN`
+and `UNKNOWN` both proceed (fail-soft by contract). A lost `DRAFT_START`
+is re-derived from the OLDEST `planner-dispatch` breadcrumb in
+`events.jsonl` (`adversarial-planner` SKILL.md § Cited-body currency gate;
+#2384/#2378).
+
 **Edit-success gate:** when the draft was produced or modified by a SCRIPTED
 edit (the Step 2b/3 revise paths included), `&&`-chain edit → verify
 (positive evidence the revised text is present — grep the draft, or a

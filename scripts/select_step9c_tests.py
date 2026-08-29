@@ -483,6 +483,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_atomic_io.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
+    # NEW (#2384) — cited-body currency gate: helper semantics + the
+    # adversarial-planner SKILL.md / 04-step-2.md gate-prose durability pins.
+    # Registration here is what makes the pin RUN on a SKILL.md-prose-only
+    # diff (WORKFLOW_SURFACE-only — no test mapping selects it otherwise).
+    "tests/test_check_cited_body_currency.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
     "tests/test_daily_skill_commit_pathspec_pin.py",
     # NEW (#1645) — /daily SKILL.md stub-first rule + healthcheck cross-file pin (#1189)
