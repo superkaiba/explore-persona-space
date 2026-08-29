@@ -158,12 +158,14 @@ HF_XMODEL_PREFIX = "issue2569_theory/analysis_tensors/xmodel"
 MODEL_SPECS = {
     "qwen": {
         "model_id": "Qwen/Qwen2.5-7B-Instruct",
+        "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
         "n_layers": 28,
         "hidden": 3584,
         "default_layers": (14, 19, 26),
     },
     "llama": {
         "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+        "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
         "n_layers": 32,
         "hidden": 4096,
         "default_layers": (16, 22, 30),
@@ -777,7 +779,9 @@ def _load_model_ctx(args, spec: dict) -> dict:
             )
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    model = AutoModelForCausalLM.from_pretrained(spec["model_id"], dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(
+        spec["model_id"], revision=spec["revision"], dtype=torch.bfloat16
+    )
     model.to(device)  # explicit placement — never device_map="auto" (#825)
     model.eval()
     tcfg = getattr(model.config, "text_config", model.config)
@@ -794,7 +798,7 @@ def _load_model_ctx(args, spec: dict) -> dict:
     # logits are unread — skip full-vocab logits when the EXPLICIT param exists
     # (bare **kwargs does NOT count; gotchas.md logits_to_keep entry).
     lk = {"logits_to_keep": 1} if "logits_to_keep" in params else {}
-    tok = AutoTokenizer.from_pretrained(spec["model_id"])
+    tok = AutoTokenizer.from_pretrained(spec["model_id"], revision=spec["revision"])
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     if pad_id is None:
         raise RuntimeError("tokenizer has neither pad_token_id nor eos_token_id")
@@ -1482,6 +1486,19 @@ def _require_pilot_pass(args, pilot_params: dict) -> None:
         )
 
 
+def _capture_gate_name(args) -> str:
+    """Gate consumed by capture/finalize for the selected model/text regime.
+
+    The original shared-Qwen-text arm keeps the banked Qwen spot oracle.  A
+    different answer-writer arm cannot compare its v_A to that oracle, so it
+    must use the independent-boundary identity gate instead.  The default is
+    unchanged for every historical invocation.
+    """
+    if args.model == "llama":
+        return "identity_gate_llama"
+    return "identity_gate_qwen" if args.qwen_gate == "identity" else "spot_gate_qwen"
+
+
 def phase_capture(args) -> None:
     """Chunked teacher-forced capture for one model (regime-keyed resume; per-chunk
     atomic .pt checkpoints; per-unit progress lines; built-in pilot-gate report)."""
@@ -1504,7 +1521,7 @@ def phase_capture(args) -> None:
         # computed over the FULL selection BEFORE the --rows truncation,
         # mirroring the gate phases' own computation
         # (pd-gate-pass-not-bound-to-live-regime). Runs before any model load.
-        gate_name = "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen"
+        gate_name = _capture_gate_name(args)
         _require_gate(args, gate_name, _gate_regime(args, spec, layers, texts))
     if int(args.rows) > 0:
         texts = texts[: int(args.rows)]
@@ -1708,7 +1725,7 @@ def phase_finalize(args) -> None:
         # (pd-gate-pass-not-bound-to-live-regime).
         _require_gate(
             args,
-            "identity_gate_llama" if args.model == "llama" else "spot_gate_qwen",
+            _capture_gate_name(args),
             _gate_binding_from_store(args, regime),
         )
         _require_pilot_pass(args, _pilot_binding_from_regime(regime))
@@ -1808,15 +1825,15 @@ def _upload_final(args, final_dir: Path, names: list[str]) -> None:
         final_dir,
         repo_id=args.hf_data_repo,
         repo_type="dataset",
-        path_in_repo=HF_XMODEL_PREFIX,
+        path_in_repo=args.hf_prefix,
         allow_patterns=list(names),
-        expected_repo_paths=[f"{HF_XMODEL_PREFIX}/{n}" for n in names],
+        expected_repo_paths=[f"{args.hf_prefix}/{n}" for n in names],
     )
     if not url:  # fail-soft "" -> fail loud here (n1m convention)
         raise RuntimeError(
-            f"bulk upload of {len(names)} files to {HF_XMODEL_PREFIX} returned no URL"
+            f"bulk upload of {len(names)} files to {args.hf_prefix} returned no URL"
         )
-    print(f"[finalize] uploaded {len(names)} files -> {HF_XMODEL_PREFIX}", flush=True)
+    print(f"[finalize] uploaded {len(names)} files -> {args.hf_prefix}", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1866,7 +1883,7 @@ def phase_sentinel(args) -> None:
     path = Path(args.sentinel_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     _atomic_json(path, payload)
-    print("[phase=done]", flush=True)
+    print("[phase=done]", flush=True)  # workflow-lint: phase-done-reserved
 
 
 # ---------------------------------------------------------------------------
@@ -1908,6 +1925,20 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--min-free-hbm-gb", type=float, default=20.0)
     ap.add_argument("--out-root", default=str(PROJECT_ROOT / "data" / "issue_2569" / "xmodel"))
     ap.add_argument("--hf-data-repo", default="superkaiba1/explore-persona-space-data")
+    ap.add_argument(
+        "--hf-prefix",
+        default=HF_XMODEL_PREFIX,
+        help="destination prefix for finalized capture bundles",
+    )
+    ap.add_argument(
+        "--qwen-gate",
+        choices=("spot", "identity"),
+        default="spot",
+        help=(
+            "Qwen correctness gate: banked same-text spot oracle (default), or the "
+            "independent-boundary identity gate for alternate answer text"
+        ),
+    )
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument(
         "--skip-gate-check",
