@@ -1,0 +1,1 @@
+{"ts": "2026-08-29T16:25:32Z", "event": "raised", "concern_id": "c75-status-move-reference", "severity": "BLOCKER", "summary": "c75 treats a routine task status move as the prior plan persist and can certify an inter-round correction CLEAN", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
