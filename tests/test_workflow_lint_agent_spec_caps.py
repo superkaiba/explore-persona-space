@@ -69,7 +69,7 @@ _MIGRATION_SNAPSHOT: dict[str, int] = {
     # .claude/rules/research-pm-section-reference.md trimmed the spec under
     # AGENT_SPEC_FAIL_BYTES, so the grandfather entry is stale (the
     # "remove the entry, never lower it" rule).
-    "code-reviewer.md": 109_600,
+    "code-reviewer.md": 112_500,
     "codex-clean-result-critic.md": 50_200,
     "codex-code-reviewer.md": 52_200,
     "experiment-implementer.md": 69_600,

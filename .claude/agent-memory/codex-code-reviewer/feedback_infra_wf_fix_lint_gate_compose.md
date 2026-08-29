@@ -120,6 +120,28 @@ third leg — CRASH-safety (a crash in the check wedges every session's gate,
 worse than over-strictness; the #2309 error-mode duty applies to lint-flag
 variants too).
 
+**#2336 r1 (2026-08-24) sharpening — donor-citation archaeology for
+verbatim-hoist claims:** when the plan pins a donor by (commit, line-range)
+for a "verbatim hoist except one change" claim, resolve BOTH at compose time
+— the range can match CURRENT origin/main while the pinned COMMIT has the
+function at a different line WITHOUT a later-landed guard (#2336: plan cited
+`issue2329_run.py:1404-1438 @ 27206c15d9`; at that commit the function sat at
+:1256 lacking the OSError→log guard, which landed in a later r3 commit).
+Attest the true archaeology, instruct Codex to diff against the CURRENT form
+(`git -C . show HEAD:<donor>` — verify worktree HEAD's copy is identical to
+origin/main's first), and pre-route the citation mismatch as PLAN imprecision
+(at most Minor), never an implementer defect. Without this, the twin either
+diffs against the wrong (guard-less) donor and false-FAILs the "one change"
+claim, or bloks on an unresolvable line range. Also from #2336 r1: a
+brief-supplied "adjudicate these N disclosed deviations" list composes as a
+dedicated `## Disclosed-deviation adjudications` output section with one
+grounded `**Adjudication (D<k>):** upheld|rejected — <file:line>` line each
+(the [[brief-named-concern-adjudication]] pattern, generalized to
+deviations); and stakes-both-directions for a fleet lint ratchet gains a
+third leg — CRASH-safety (a crash in the check wedges every session's gate,
+worse than over-strictness; the #2309 error-mode duty applies to lint-flag
+variants too).
+
 **#2336 r2 (2026-08-24) sharpenings — predicate-fix closure rounds on a LIVE
 fleet lint gate:** (a) a scan-identity claim ("post-fix allowlist=() scan
 per-line IDENTICAL, 208/118 both sides") composes as a bounded SHAPE-GREP
