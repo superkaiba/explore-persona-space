@@ -101,3 +101,62 @@ cron wrappers + behavioral/scanner tests + selector registration):**
     duty to verify the structural claim FROM THE SELECTOR SOURCE (true +
     disclosed + equivalent substitute = plan imprecision; false claim or a
     weaker substitute = substantive).
+
+**#2387 r2 (2026-08-29) — SCANNER-HARDENING closure round (the round-2 diff
+tightens the r1 structural pin itself; one test file, no wrapper touched):**
+
+12. **PASS+CONCERNS 5c-ter bounce = the twin's OWN concerns, no reconciler.**
+    Both r1 verdicts were PASS-class (Claude PASS, Codex CONCERNS), so no
+    reconciler was owed; the ledger rows are the twin's own `CONCERN::`
+    output and Step 5c-ter blocked advance until addressed. Inline the
+    orchestrator's `[round-boundary decision]` `epm:progress` note VERBATIM as
+    the BOUNCE CONTRACT envelope — it carries the per-concern prescribed
+    changes AND (load-bearing) the explicit "do not change control flow to
+    close it" instruction. Author-neutrality binds both directions. Related:
+    [[concern-discharge-round-severity-fence]] (#2552 r5 own-CONCERNS shape).
+13. **THIRD fence type: a concern closed by REPORT CORRECTION ONLY, where the
+    plan BARS the code fix.** The two CONCERNs took different fences in one
+    ledger: the code-fix item got the upheld-bounce bar (NOT-ADDRESSED =
+    substantive FAIL, PARTIALLY-ADDRESSED carve-out), while the
+    report-correction item's deliverable is *the text being TRUE* — so compose
+    (a) an explicit OUT-OF-BOUNDS line ("demanding a control-flow change
+    cannot ground a finding"; the plan's must-ask list bars it), (b) a
+    materially-FALSE-attribution route at the ordinary bar (misreporting), and
+    (c) an honest-but-imprecise route at CONCERN via a same-id row. Without
+    (a) the twin predictably re-raises the behavior it already ruled
+    plan-sanctioned at r1.
+14. **The highest-value composer table is the DUAL-PREDICATE mutant matrix —
+    and its FP half is the part the round never self-checks.** Hand-apply BOTH
+    the r1 and r2 predicates to CONSTRUCTED lines (no file mutated, nothing
+    executed; a text-matching pin is fully statically decidable). That
+    reproduced the marker's 3-mutant claim AND surfaced four shapes the marker
+    never probed: an inline env-default (`"${PUSH_TIMEOUT:-20}s"`), a changed
+    grace (`--kill-after=10s`), an unquoted duration, and a line-continuation
+    split — each now REJECTED by the hardened pin. Hand them severity-unresolved
+    with the question named ("correct pinning, acceptable friction, or
+    over-tight?"); an over-tight pin on a `WORKFLOW_INVARIANT` member
+    fleet-blocks every Step 9c run, so the FP direction weighs equal to the FN
+    one. **Also check the loosening axis:** the r2 regex used `\s+` where the
+    r1 test used a literal-space substring, so it is MORE permissive on
+    whitespace than both r1 and the twin's own prescribed literal Fix — a
+    hardening round is least likely to self-check the one axis it relaxed.
+15. **Verify the report CORRECTION's citations yourself, hand over the
+    judgment.** For a `(d)` retraction, read every cited `file:line` (all six
+    arms verified exact here) and any magnitude claim (a read-only `crontab -l`
+    settled "0 live watch crons" + the three live entries' exact times).
+    Attest those as SETTLED, then hand the twin only what reading cannot
+    settle: is the correction COMPLETE, does any r1 sentence still stand
+    wrong, is "permanent" right given the re-arm path, and is a report-only
+    close ADEQUATE (route that answer to BOTH the body and the ledger line —
+    the orchestrator machine-acts on the ledger line).
+16. **Composer self-observation trap, head-sentinel variant (#2326 r4 again):**
+    writing "the body carries a versioned head sentinel `<!-- epm:results v2
+    -->`" puts that literal in YOUR prose. Assert marker-side ==1 AND
+    template-side ==1 AND total ==2 — never a bare total, which hides either
+    side going to zero. Same split for a pinned SHA range: the inlined prior
+    verdict legitimately carries the PRIOR round's `sha-range` line, so scope
+    the staleness assert to the template.
+17. **`grep -c` on a compose-time probe counts LINES;** the round-new-symbol
+    sweep is cleanest stated as three path grains (full / basename / bare
+    token) agreeing on one hit set, with generic-token grains
+    (`n_sites`, 17 files) named do-not-promote up front.
