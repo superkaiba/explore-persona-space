@@ -10715,8 +10715,8 @@
     "2387": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2387",
-      "status": "planning",
+      "path": "tasks/approved/2387",
+      "status": "approved",
       "title": "cron wrappers: bound the synchronous Telegram push calls (timeout) \u2014 class sweep from #2196"
     },
     "2388": {
