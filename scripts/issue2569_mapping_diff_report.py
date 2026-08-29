@@ -118,8 +118,14 @@ def plot_factorial(mapping: dict[str, Any], out_dir: Path) -> None:
     axes[0].set_title("Held-out contrast magnitude prediction")
     axes[0].set_ylabel("Pooled $R^2$")
     axes[0].set_xticks(x, labels, rotation=18, ha="right")
-    axes[0].set_ylim(-0.39, 0.27)
-    axes[0].legend(frameon=False, loc="upper left")
+    axes[0].set_ylim(-0.39, 0.32)
+    axes[0].legend(
+        frameon=False,
+        loc="upper center",
+        ncol=2,
+        columnspacing=0.8,
+        handletextpad=0.4,
+    )
     finish_axes(axes[0])
 
     cosine = [reads[name]["flat_cosine"] for name in CONTRASTS]
