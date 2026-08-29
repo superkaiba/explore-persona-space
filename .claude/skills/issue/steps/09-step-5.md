@@ -394,7 +394,24 @@ SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
 timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true
-MB=$(git -C "$WT" merge-base HEAD origin/main)
+# Fail-closed merge-base capture (#2385). EVERY payload probe below reads
+# "$MB"..HEAD — pass 1's bs_commits, the stale-twin removal arm's bs_del, and
+# the sibling-issue arm's bs — so ONE bad capture blinds all three at once.
+# `git merge-base` can exit non-zero (unrelated histories; a --depth 1 shallow
+# graft — this worktree and the repo root can BOTH report
+# is-shallow-repository true) while the atomic checkout below still succeeds,
+# and an EMPTY MB makes "$MB"..HEAD the single token ..HEAD, which rev-parse
+# expands to HEAD ^HEAD: an empty range, rc 0, no error. Every probe then
+# reads "no branch-side commits", so COMMITTED branch payload looks unowned —
+# the removal arm would `git rm` it and the sibling arm would blind-checkout
+# over it. Check rc AND emptiness, and abort the whole stanza HERE rather than
+# per consumer, so the next consumer added below cannot rediscover this. Same
+# shape as Guard 3's no-merge-base hard stop in § Step 10d.
+MB=$(git -C "$WT" merge-base HEAD origin/main) || MB=""
+if [ -z "$MB" ]; then
+  echo "[step5a] FATAL: no merge-base between HEAD and origin/main (errored or empty) — spec-freshness sync ABORTED; nothing was synced and nothing was removed. An empty merge-base silently degrades every branch-side-commit probe to an empty commit range, so committed branch payload reads as unowned and the #2385 stale-twin removal arm could delete it. Usual causes: unrelated histories, or a shallow clone — check 'git -C \"$WT\" rev-parse --is-shallow-repository', deepen with 'git -C \"$WT\" fetch --unshallow origin' (or --deepen), then re-run Step 5a." >&2
+  exit 1
+fi
 
 # Pass 1: detect dirty family keys. A family is DIRTY if ANY member has
 # branch-side commits (subject-scoped exclusion for prior spec-freshness
@@ -537,8 +554,8 @@ if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet origin/main -- $SAFE_SPEC
         continue
       fi
       man="$WT/tests/step9c_workflow_invariant_manifest.txt"
-      if [ ! -f "$man" ] || grep -qxF -- "$p" "$man"; then
-        echo "spec-freshness: stale-twin candidate $p — Step-9c WORKFLOW_INVARIANT probe says KEEP (listed in the manifest, or the manifest is absent so membership is undecidable). Removing a member the branch's still-unsynced selector tuple names would make select_step9c_tests.py refuse to emit a selection (#2537 fail-closed). KEPT (#2385 fail-safe)."
+      if [ ! -r "$man" ] || grep -qxF -- "$p" "$man"; then
+        echo "spec-freshness: stale-twin candidate $p — Step-9c WORKFLOW_INVARIANT probe says KEEP (listed in the manifest, or the manifest is absent/unreadable so membership is undecidable — testing readability up front keeps a read-error out of grep, which exits 2 there and 1 on a genuine non-match). Removing a member the branch's still-unsynced selector tuple names would make select_step9c_tests.py refuse to emit a selection (#2537 fail-closed). KEPT (#2385 fail-safe)."
         continue
       fi
       if git -C "$WT" rm -q -- "$p" 2>/dev/null; then

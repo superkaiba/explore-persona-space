@@ -2354,6 +2354,135 @@ def test_family_sync_stale_glob_twin_removed_repro_2377():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_family_sync_fails_closed_on_empty_merge_base():
+    """#2385 r2 blocker: the Step 5a merge-base capture must FAIL CLOSED.
+
+    r1 made that pre-existing line load-bearing — the stale-twin removal arm
+    is the first code in this sync that can DELETE a file, and BOTH of its
+    payload-protection probes read `"$MB"..HEAD` (pass 1's family-grain
+    bs_commits and the arm's per-file bs_del), so ONE bad capture blinds both.
+
+    `git merge-base` can exit non-zero leaving MB EMPTY — unrelated histories,
+    or a `--depth 1` shallow graft (the repo root and the issue worktrees both
+    report is-shallow-repository true) — while the family
+    `checkout origin/main -- $SAFE_SPECS` on the following lines still exits
+    0. With MB empty, `"$MB"..HEAD` is the single token `..HEAD`, which
+    rev-parse expands to `HEAD ^HEAD`: an empty range, rc 0, no error. Both
+    probes then read "no branch-side commits", so a CLEAN, COMMITTED,
+    branch-AUTHORED file that origin/main lacks is classified a stale twin,
+    reaches `git rm`, and is committed under the sync-anchor subject — which
+    pass 1's own subject-shape exclusion then filters out of every later scan.
+    Silent and self-concealing.
+
+    Driven through the SHIPPED block under a PATH-shimmed `git` whose
+    merge-base subcommand fails while every other subcommand passes through to
+    the real binary (the shallow-graft trigger reproduced at its narrowest).
+    """
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    twin = "tests/test_workflow_lint_x.py"
+    payload = "tests/test_workflow_lint_payload.py"
+    tmp = Path(tempfile.mkdtemp(prefix="eps2385mb-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env, delete_member=twin)
+
+        # A CLEAN, COMMITTED, branch-AUTHORED lint-family file that
+        # origin/main has never carried: the payload class the two "$MB"-fed
+        # probes exist to protect. Under a healthy MB it is protected twice
+        # (its branch-side commit parks the lint family dirty in pass 1, and
+        # its own bs_del re-check keeps it); an empty MB voids both at once.
+        (wt / payload).write_text("branch-authored payload pin\n")
+        _run_git(wt, "add", "--", payload, env=env)
+        _run_git(wt, "commit", "-m", "branch work: add payload pin", env=env)
+        head_before = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+
+        # PATH shim: `git merge-base ...` fails; everything else is the real
+        # binary. Scoped to the arm subprocess only — the fixture above and
+        # the assertions below use the real git.
+        real_git = shutil.which("git")
+        assert real_git, "git must be on PATH to run this repro"
+        shim_dir = tmp / "gitshim"
+        shim_dir.mkdir()
+        shim = shim_dir / "git"
+        shim.write_text(
+            "#!/bin/bash\n"
+            'for a in "$@"; do\n'
+            '  if [ "$a" = merge-base ]; then\n'
+            "    echo 'fatal: refusing to work with unrelated histories' >&2\n"
+            "    exit 128\n"
+            "  fi\n"
+            "done\n"
+            f'exec {real_git} "$@"\n'
+        )
+        shim.chmod(0o755)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        env_arm["PATH"] = f"{shim_dir}:{env['PATH']}"
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+        # (1) Fails CLOSED and says why — an operator must be able to tell
+        # from the output alone that nothing synced and nothing was removed.
+        assert proc.returncode != 0, (
+            "an empty/errored merge-base must ABORT the sync stanza — "
+            f"exit 0 means it ran on a blinded MB:\n{proc.stdout}\n{proc.stderr}"
+        )
+        assert "no merge-base between HEAD and origin/main" in proc.stderr, (
+            f"the abort must announce the empty merge-base on stderr:\n{proc.stderr}"
+        )
+
+        # (2) The branch-authored payload SURVIVES on disk. This is the whole
+        # point: pre-fix both "$MB"-fed probes read an empty range and the
+        # removal arm git-rm'd it.
+        assert (wt / payload).exists(), (
+            "a CLEAN, COMMITTED, branch-AUTHORED file absent at origin/main "
+            "must survive an empty merge-base — deleting it is the #2385 r2 "
+            f"blocker (both payload probes share $MB):\n{proc.stdout}"
+        )
+        assert (wt / twin).exists(), (
+            "nothing at all may be removed once the capture fails closed — "
+            f"the arm must never be reached:\n{proc.stdout}"
+        )
+
+        # (3) No removal echo, and no deletion committed.
+        assert "removed stale main-deleted twin" not in proc.stdout, (
+            f"the removal arm must not run on a blinded MB:\n{proc.stdout}"
+        )
+        head_after = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+        assert head_after == head_before, (
+            "the abort must precede the sync commit — no new commit may land"
+        )
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj != _SYNC_SUBJECT_2303, (
+            f"no sync-anchor commit may land on a blinded MB: {subj!r}"
+        )
+        committed = _run_git(wt, "show", "--name-status", "--format=", "HEAD", env=env)
+        assert "\nD\t" not in f"\n{committed}", (
+            f"no D row may be committed on a blinded MB:\n{committed}"
+        )
+        # (4) The sync itself did not run either (fail-closed, not partial):
+        # the main-NEW caps file never arrives.
+        assert not (wt / ".claude" / "config" / "agent_spec_size_caps.txt").exists(), (
+            "the abort must precede the checkout — a partial sync under a "
+            "blinded MB is exactly what fixing AT the capture prevents"
+        )
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def test_family_sync_stale_twin_dirty_family_kept():
     """#2385 keep repro: a DIRTY family neither syncs nor deletes.
 
