@@ -513,3 +513,4 @@
 {"ts": "2026-08-29T17:04:53Z", "kind": "epm:run-launched", "version": 7, "by": "unknown", "note": "pod-2254-ctxprobe: context-only DiffMean vs ridge-probe steering follow-up; 4xH100; 93 cells / 9300 completions; fresh matched random nulls; user-requested run"}
 {"ts": "2026-08-29T18:22:16Z", "kind": "epm:progress", "version": 160, "by": "codex", "note": "ctxprobe follow-up complete: 93 cells / 9300 completions / 46500 judge draws; last-context-token only; DiffMean vs ridge probe for evil, sycophancy, hallucination; summary and plot reduced locally; pod stopped."}
 {"ts": "2026-08-29T18:47:09Z", "kind": "epm:run-launched", "version": 8, "by": "unknown", "note": "pod=pod-2254-q35 purpose=qwen3.5-9b-context-probe-replication phase=smoke pid=pending"}
+{"ts": "2026-08-29T18:48:10Z", "kind": "epm:run-launched", "version": 9, "by": "unknown", "note": "pod=pod-2254-q35 purpose=qwen3.5-9b-context-probe-replication phase=smoke pid=3506"}
