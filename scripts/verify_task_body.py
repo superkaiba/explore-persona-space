@@ -17437,6 +17437,642 @@ def check_v4_sample_disclosure_count(body: str) -> CheckResult:
     return CheckResult(label, True, detail)
 
 
+# ─── Check 62: verbatim Sample-slot stems exist in the linked artifact ──────
+#
+# (#2635; incident #2617 r1: the Sample slot quoted an object-swap pair
+# labeled "(verbatim)" whose member-b stem — `How do you build a house?` —
+# exists nowhere in the pinned bank (`svmp_bank.json` holds `... a shed?`);
+# sibling family #657 (fabricated persona sample). Both shapes fail a
+# one-line grep of the quoted stem into the linked artifact — this check
+# mechanizes that grep, offline.)
+
+_VERBATIM_STEM_MIN_CHARS = 12
+_VERBATIM_STEM_MIN_TOKENS = 2
+_VERBATIM_STEM_MAX_COUNT = 40
+# Per-body cap on EXPENSIVE artifact-operation ATTEMPTS (the check-54
+# `_ARTIFACT_CONTENT_MAX_LOADS` precedent, hardened per #2635 r2): committed-path
+# git probes and pinned-git load attempts each consume one unit whether they
+# succeed or fail, so a pathological body cannot drive unbounded failed probe
+# work; candidates past the budget degrade a miss to WARN, never FAIL.
+_VERBATIM_STEM_MAX_LOADS = 8
+# Truncation markers (acceptance A4 of #2635): bracketed ellipses first so
+# `[...]` / `[…]` never leave stray brackets behind, then `[truncated]` and
+# the bare ellipses.
+_VERBATIM_TRUNCATION_RE = re.compile(
+    r"\[\s*(?:\.\.\.|…)\s*\]|\[truncated\]|\.\.\.|…", re.IGNORECASE
+)
+# Sanitization tokens: a group whose LABEL/summary carries one of these next
+# to "(verbatim)" presents a sanctioned display-substitution disclosure (the
+# #1090 shape) — skipped, never FAILed.
+_VERBATIM_SANITIZED_RE = re.compile(r"sanitiz|redact|paraphras|renamed|substitut", re.IGNORECASE)
+# Double-quoted / curly-quoted spans (bounded, single-line). The ASCII arm
+# admits backslash-escaped characters (`\"` inside a span, #2635 r2) so an
+# escaped quote no longer terminates the span early — the alternatives are
+# disjoint (escape-pair vs non-quote-non-backslash), so matching stays linear.
+_VERBATIM_QUOTED_RE = re.compile(r'"((?:\\.|[^"\\\n]){1,500})"|“([^”\n]{1,500})”')
+# CommonMark-escapable punctuation (stem-side markdown unescape, §4.4 step 2).
+_VERBATIM_MD_ESCAPE_RE = re.compile(r"\\([!\"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])")
+# Literal two-char whitespace escapes a body may quote from a JSON string
+# (§4.4 step 3): `\n` / `\t` / `\r` fold to one space.
+_VERBATIM_WS_ESCAPE_RE = re.compile(r"\\[ntr]")
+_VERBATIM_QUOTE_FOLD = str.maketrans(
+    {
+        "“": '"',
+        "”": '"',
+        "„": '"',
+        "’": "'",  # noqa: RUF001
+        "‘": "'",  # noqa: RUF001
+        "\u00a0": " ",
+    }
+)
+
+
+class _VerbatimProbeBudget:
+    """Shared per-body budget over EXPENSIVE check-62 artifact operations
+    (#2635 r2, concern `artifact-attempt-cap`): every committed-path git
+    probe (`_verbatim_path_tracked`) and every pinned-git load ATTEMPT
+    consumes one unit BEFORE the operation runs, so failed / oversized /
+    unreadable attempts spend the budget exactly like successes. A
+    working-copy load is covered by its candidate's probe unit (never
+    double-charged). Overflow candidates degrade to unsearched notes and
+    gate the FAIL->WARN split."""
+
+    __slots__ = ("cap", "used")
+
+    def __init__(self, cap: int = _VERBATIM_STEM_MAX_LOADS) -> None:
+        self.cap = cap
+        self.used = 0
+
+    def take(self) -> bool:
+        """Consume one unit; False (nothing consumed) when exhausted."""
+        if self.used >= self.cap:
+            return False
+        self.used += 1
+        return True
+
+
+def _verbatim_fold_norm(text: str) -> str:
+    """Shared normalization tail (#2635 §4.4 steps 4-6): fold curly quotes /
+    apostrophes / nbsp to ASCII, collapse whitespace runs to one space
+    (the `\\x00` view-D sentinel is NOT whitespace and survives), strip,
+    casefold."""
+    text = text.translate(_VERBATIM_QUOTE_FOLD)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip().casefold()
+
+
+def _normalize_stem_text(s: str) -> str:
+    """Body-side stem normalization (#2635 §4.4, in order): strip wrapping
+    quote/backtick characters, markdown-unescape CommonMark punctuation
+    (`\\*` -> `*`), fold literal `\\n`/`\\t`/`\\r` escapes to one space,
+    then the shared fold/collapse/casefold tail."""
+    s = s.strip().strip("`\"'“”‘’")  # noqa: RUF001
+    s = _VERBATIM_MD_ESCAPE_RE.sub(r"\1", s)
+    s = _VERBATIM_WS_ESCAPE_RE.sub(" ", s)
+    return _verbatim_fold_norm(s)
+
+
+def _verbatim_label_text(text: str) -> str:
+    """The LABEL prose of a candidate group surface with quoted/backtick
+    SAMPLE spans masked out (#2635 r2, concern `sanitization-label-scope`):
+    the sanitization guard reads only what remains, so a sample sentence
+    that happens to contain e.g. 'renamed' can never skip its group (the
+    round-1 false-PASS channel) while a genuine label-level
+    '(verbatim) ... (sanitized)' disclosure still does."""
+    text = _CODE_RE.sub(" ", text)
+    return _VERBATIM_QUOTED_RE.sub(" ", text)
+
+
+def _verbatim_stem_is_linkish(norm: str) -> bool:
+    """True for URL-/path-shaped normalized tokens (`://`, or slash-separated
+    with no spaces) — references, not sample text (#2635 §4.3)."""
+    if "://" in norm:
+        return True
+    return "/" in norm and " " not in norm
+
+
+def _extract_verbatim_stems(group: str) -> tuple[list[tuple[str, list[str]]], int]:
+    """Extract candidate stems from ONE verbatim group (#2635 §4.3-4.4).
+
+    Collects backtick code spans + double/curly-quoted spans; splits each
+    raw token at truncation markers and normalizes each literal run; keeps
+    runs clearing the floor (>= 12 chars AND >= 2 whitespace-delimited
+    tokens after normalization, not link-shaped). Returns
+    ``(stems, n_below_floor_skipped)``: each stem is ``(display, runs)`` —
+    ``display`` the raw token (FAIL-detail text), ``runs`` the normalized
+    above-floor literal runs that must EACH match >= 1 searched artifact.
+    A truncation-marked token whose runs ALL sit below the floor is skipped
+    (counted — the marker itself must never cause a FAIL); an unmarked
+    below-floor or link-shaped token is silently dropped (ids, short codes,
+    path mentions)."""
+    raw_tokens: list[str] = [m.group(1) for m in _CODE_RE.finditer(group)]
+    for m in _VERBATIM_QUOTED_RE.finditer(group):
+        raw_tokens.append(m.group(1) or m.group(2))
+    stems: list[tuple[str, list[str]]] = []
+    n_below_floor = 0
+    for tok in raw_tokens:
+        marked = _VERBATIM_TRUNCATION_RE.search(tok) is not None
+        pieces = _VERBATIM_TRUNCATION_RE.split(tok) if marked else [tok]
+        runs: list[str] = []
+        for piece in pieces:
+            norm = _normalize_stem_text(piece)
+            if len(norm) < _VERBATIM_STEM_MIN_CHARS:
+                continue
+            if len(norm.split()) < _VERBATIM_STEM_MIN_TOKENS:
+                continue
+            if _verbatim_stem_is_linkish(norm):
+                continue
+            runs.append(norm)
+        if not runs:
+            if marked:
+                n_below_floor += 1
+            continue
+        stems.append((tok, runs))
+    return stems, n_below_floor
+
+
+def _verbatim_fence_after_label(lines: list[str], i: int) -> str | None:
+    """Fence-prelude arm (#2635 §4.2): the content of a fenced block —
+    backtick OR tilde (#2635 r2: the main-loop tracker already recognized
+    `~~~`; this helper must too) — whose opening fence sits within <= 2
+    non-blank lines after the label line at index ``i``, or None. The
+    close is matched on the SAME delimiter the block opened with."""
+    n_nonblank = 0
+    for j in range(i + 1, len(lines)):
+        nxt = lines[j].strip()
+        if not nxt:
+            continue
+        if nxt.startswith("```") or nxt.startswith("~~~"):
+            delim = nxt[:3]
+            fence_body: list[str] = []
+            for k in range(j + 1, len(lines)):
+                if lines[k].strip().startswith(delim):
+                    break
+                fence_body.append(lines[k])
+            return "\n".join(fence_body) if fence_body else None
+        n_nonblank += 1
+        if n_nonblank > 2:
+            return None
+    return None
+
+
+_VERBATIM_DETAILS_TAG_RE = re.compile(r"</?details\b[^>]*>", re.IGNORECASE)
+
+
+def _verbatim_toplevel_details(text: str) -> tuple[list[str], list[tuple[int, int]]]:
+    """Stack-paired TOP-LEVEL `<details>` blocks of ``text`` (#2635 r2,
+    concern `extraction-shape-blind-spots`): the flat `_DETAILS_BLOCK_RE`
+    mis-pairs NESTED blocks (its lazy match ends at the FIRST
+    `</details>`), which silently hid an inner `(verbatim)` group inside a
+    non-verbatim outer block. Returns ``(inner_texts, spans)`` — the inner
+    content of each fully-paired depth-1 block plus its (start, end) span
+    in ``text``. Stray closers are inert; an unclosed opener leaves its
+    text to the line arm (the old regex's no-match behavior)."""
+    inners: list[str] = []
+    spans: list[tuple[int, int]] = []
+    stack: list[tuple[int, int]] = []  # (inner_start, outer_start) per open <details>
+    for m in _VERBATIM_DETAILS_TAG_RE.finditer(text):
+        if not m.group(0).startswith("</"):
+            stack.append((m.end(), m.start()))
+            continue
+        if not stack:
+            continue  # stray closer — inert text
+        inner_start, outer_start = stack.pop()
+        if not stack:  # a fully-paired depth-1 block
+            inners.append(text[inner_start : m.start()])
+            spans.append((outer_start, m.end()))
+    return inners, spans
+
+
+def _collect_verbatim_details_groups(
+    inner_texts: list[str], groups: list[str], depth: int = 0
+) -> int:
+    """Details-summary arm over stack-paired blocks (#2635 §4.2 arm (a),
+    r2): a `(verbatim)` summary yields the content after `</summary>` as a
+    group (nested details text included — its stems are extracted); a
+    summary whose LABEL prose (quoted/backtick spans masked,
+    `_verbatim_label_text`) ALSO carries a sanitization token is skipped
+    (counted); a NON-verbatim block is sample content — its own text never
+    enters the line arm, but nested `<details>` blocks inside it are still
+    scanned (recursion capped at 5 levels; deeper nesting is disclosed
+    non-coverage). Returns ``n_sanitized_skipped``."""
+    n_sanitized = 0
+    for inner in inner_texts:
+        sm = _SUMMARY_OPEN_RE.search(inner)
+        summary = sm.group("text") if sm else ""
+        if "(verbatim)" in summary.casefold():
+            if _VERBATIM_SANITIZED_RE.search(_verbatim_label_text(summary)):
+                n_sanitized += 1
+                continue
+            groups.append(inner[sm.end() :] if sm else inner)
+            continue
+        if depth < 4 and "<details" in inner.casefold():
+            nested, _spans = _verbatim_toplevel_details(inner)
+            n_sanitized += _collect_verbatim_details_groups(nested, groups, depth + 1)
+    return n_sanitized
+
+
+def _iter_verbatim_groups(slot: str) -> tuple[list[str], int]:
+    """Collect the `(verbatim)`-labeled GROUP texts of a Sample slot
+    (#2635 §4.2), via three arms: (a) details-summary — a `<details>`
+    block (stack-paired, nested blocks scanned to 5 levels — r2) whose
+    `<summary>` text carries `(verbatim)` yields the inner content after
+    `</summary>`; (b) line — any remaining slot line carrying
+    `(verbatim)` yields the line itself; (c) fence-prelude — a labeled line
+    with zero extractable stems within <= 2 non-blank lines of a following
+    fenced block (backtick or tilde) yields the fence content.
+    Sanitization guard: a group whose label line / summary ALSO carries a
+    sanitization token in its LABEL PROSE (quoted/backtick sample spans
+    masked out first — r2) is SKIPPED (mixed "(verbatim) ... (sanitized)"
+    presentations, the #1090 shape, are sanctioned display-substitution
+    disclosures — not mechanically checkable). Returns
+    ``(groups, n_sanitized_skipped)``."""
+    groups: list[str] = []
+    top_inners, top_spans = _verbatim_toplevel_details(slot)
+    n_sanitized = _collect_verbatim_details_groups(top_inners, groups)
+    remainder_parts: list[str] = []
+    pos = 0
+    for start, end in top_spans:
+        remainder_parts.append(slot[pos:start])
+        pos = end
+    remainder_parts.append(slot[pos:])
+    lines = "\n".join(remainder_parts).splitlines()
+    in_fence = False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence or "(verbatim)" not in line.casefold():
+            continue
+        if _VERBATIM_SANITIZED_RE.search(_verbatim_label_text(line)):
+            n_sanitized += 1
+            continue
+        # The label line is ALWAYS a group (its own quoted/backtick stems,
+        # plus any truncation-skip counting); when it yields no stems the
+        # fence-prelude arm ADDS the following fence content as a group.
+        groups.append(line)
+        line_stems, _skips = _extract_verbatim_stems(line)
+        if not line_stems:
+            fence = _verbatim_fence_after_label(lines, i)
+            if fence is not None:
+                groups.append(fence)
+    return groups, n_sanitized
+
+
+def _classify_verbatim_url(url: str) -> tuple[str, ...]:
+    """Classify ONE Sample-slot markdown-link URL (#2635 §4.5). Returns a
+    tagged tuple: ``("git", sha, path)`` (searchable — same-repo blob/tree
+    pin to a `.json`/`.jsonl` path), ``("unsearchable", note)`` (HF /
+    other-repo / directory links — never loaded, but they gate the
+    FAIL->WARN split), or ``("ignore",)`` (figures, dashboards, non-data
+    links)."""
+    if re.match(r"^https?://huggingface\.co/", url):
+        return ("unsearchable", f"HF-hosted link `{url[:80]}` (offline check)")
+    gh = _GITHUB_BLOB_TREE_URL_RE.match(url)
+    if gh is None:
+        return ("ignore",)
+    if (gh.group("owner").casefold(), gh.group("repo").casefold()) != _THIS_REPO_SLUG:
+        return ("unsearchable", f"other-repo GitHub link `{url[:80]}`")
+    path = gh.group("path").rstrip("/").split("?", 1)[0].split("#", 1)[0]
+    if path.startswith("/") or ".." in path.split("/"):
+        return ("unsearchable", f"suspicious artifact path `{path[:80]}`")
+    if path.endswith((".json", ".jsonl")):
+        return ("git", gh.group("sha"), path)
+    if "/tree/" in url:
+        return ("unsearchable", f"directory link `{url[:80]}` names no .json[l] file")
+    return ("ignore",)  # same-repo blob to a non-JSON file (figure, script)
+
+
+def _verbatim_path_tracked(repo: Path, path: str) -> bool:
+    """True when ``path`` is committed at HEAD in ``repo`` (#2635 §4.5(b):
+    committed, not scratch). Fail-soft: subprocess errors read as
+    untracked."""
+    try:
+        proc = subprocess.run(
+            ["git", "cat-file", "-e", f"HEAD:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return proc.returncode == 0
+
+
+def _classify_slot_artifact_links(
+    slot: str, budget: _VerbatimProbeBudget
+) -> tuple[list[tuple[str, str, str]], list[str]]:
+    """Collect + classify the Sample slot's candidate artifact links
+    (#2635 §4.5): markdown-link URLs (`_LINK_RE`) and path-like backtick
+    `.json`/`.jsonl` tokens (`_CODE_RE`). Returns
+    ``(searchable, unsearchable_notes)`` — searchable entries are
+    ``("git", sha, path)`` or ``("wc", path, "")`` (a repo-relative
+    backtick path present AND committed at HEAD); unsearchable candidates
+    never load but gate the FAIL->WARN split; everything else is ignored
+    entirely. The committed-path git probe consumes ``budget`` (attempt-
+    counted, r2); candidates past the budget become unsearched notes."""
+    searchable: list[tuple[str, str, str]] = []
+    unsearchable: list[str] = []
+    seen: set[str] = set()
+    for m in _LINK_RE.finditer(slot):
+        url = m.group(1).strip()
+        if url in seen:
+            continue
+        seen.add(url)
+        verdict = _classify_verbatim_url(url)
+        if verdict[0] == "git":
+            searchable.append(verdict)  # type: ignore[arg-type]
+        elif verdict[0] == "unsearchable":
+            unsearchable.append(verdict[1])
+    repo: Path | None = None
+    repo_resolved = False
+    for m in _CODE_RE.finditer(slot):
+        tok = m.group(1).strip()
+        if not tok.endswith((".json", ".jsonl")) or "://" in tok or " " in tok:
+            continue
+        if "/" not in tok:
+            continue  # a bare filename is a mention, not a resolvable path
+        if tok in seen:
+            continue
+        seen.add(tok)
+        if tok.startswith("/") or ".." in tok.split("/"):
+            unsearchable.append(f"suspicious backtick path `{tok[:80]}`")
+            continue
+        if not repo_resolved:
+            repo = _resolve_repo_root()
+            repo_resolved = True
+        if repo is None:
+            unsearchable.append(f"backtick path `{tok[:80]}` — repo root unresolved")
+            continue
+        if not (repo / tok).is_file():
+            unsearchable.append(f"backtick path `{tok[:80]}` not committed in the working copy")
+            continue
+        if not budget.take():
+            unsearchable.append(f"backtick path `{tok[:80]}` — per-body artifact-probe cap")
+            continue
+        if _verbatim_path_tracked(repo, tok):
+            searchable.append(("wc", tok, ""))
+        else:
+            unsearchable.append(f"backtick path `{tok[:80]}` not committed in the working copy")
+    return searchable, unsearchable
+
+
+def _verbatim_collect_json_strings(obj: object, out: list[str]) -> None:
+    """Collect every string KEY + VALUE of a decoded JSON object into
+    ``out`` (view D of #2635 §4.4). Iterative walk; bounded upstream by the
+    10 MB artifact cap."""
+    stack = [obj]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, str):
+            out.append(node)
+        elif isinstance(node, dict):
+            for k, v in node.items():
+                if isinstance(k, str):
+                    out.append(k)
+                stack.append(v)
+        elif isinstance(node, list):
+            stack.extend(node)
+
+
+def _load_artifact_views(
+    kind: str, a: str, b: str
+) -> tuple[tuple[list[str], list[str]] | None, str]:
+    """Load ONE searchable Sample-slot artifact and build its match views
+    (#2635 §4.4): view R (raw file text, fold-normalized) and view D (all
+    decoded JSON strings + keys joined by a `\\x00` sentinel — NEVER `\\n`,
+    which the whitespace collapse would fold to a space and let a stem
+    spanning two ADJACENT values spuriously match), each with a no-space
+    variant. ``kind`` is `"git"` (``a``=sha, ``b``=path — the check-54
+    object-DB loader with the committed-working-copy fallback) or `"wc"`
+    (``a``=path — the same working-copy reader, size-capped). Returns
+    ``((spaced_views, nospace_views), note)``; views None => unloadable
+    (oversized / absent / unreadable — the note says why). Fail-soft:
+    unparsable JSON degrades to view R only."""
+    repo = _resolve_repo_root()
+    if repo is None:
+        return None, "repo root unresolved — cannot load the artifact offline"
+    if kind == "git":
+        raw, note = _git_json_text_at_sha(repo, a, b)
+        if raw is None and note:
+            return None, note
+        if raw is None:
+            raw, note = _working_copy_json_text(repo, a, b)
+            if raw is None:
+                return None, note
+        path = b
+    else:
+        raw, note = _working_copy_json_text(repo, "HEAD", a)
+        if raw is None:
+            return None, note
+        path = a
+    strings: list[str] = []
+    if path.endswith(".jsonl"):
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                _verbatim_collect_json_strings(json.loads(line), strings)
+            except (ValueError, RecursionError):
+                # ValueError covers JSONDecodeError; RecursionError covers
+                # adversarially deep nesting (#2635 r2) — view R survives.
+                continue
+    else:
+        try:
+            _verbatim_collect_json_strings(json.loads(raw), strings)
+        except (ValueError, RecursionError):
+            strings = []
+    spaced = [_verbatim_fold_norm(raw)]
+    if strings:
+        spaced.append(_verbatim_fold_norm("\x00".join(strings)))
+    nospace = [re.sub(r"\s+", "", v) for v in spaced]
+    return (spaced, nospace), ""
+
+
+def _verbatim_run_found(run: str, loaded: dict[str, tuple[list[str], list[str]]]) -> bool:
+    """True when the normalized literal ``run`` is a substring of ANY view
+    of ANY searched artifact (#2635 §4.4/§4.6 — the per-run `>= 1 searched
+    artifact` disjunction). The no-space form is tried only when the
+    no-space run itself clears the 12-char floor."""
+    run_ns = re.sub(r"\s+", "", run)
+    use_ns = len(run_ns) >= _VERBATIM_STEM_MIN_CHARS
+    for spaced, nospace in loaded.values():
+        if any(run in view for view in spaced):
+            return True
+        if use_ns and any(run_ns in view for view in nospace):
+            return True
+    return False
+
+
+def _load_verbatim_artifacts(
+    searchable: list[tuple[str, str, str]],
+    budget: _VerbatimProbeBudget,
+) -> tuple[dict[str, tuple[list[str], list[str]]], list[str]]:
+    """Load the searchable Sample-slot artifacts, memoized per link, on the
+    shared ATTEMPT budget (#2635 §4.5, r2: a failed / oversized pinned-git
+    attempt spends the budget exactly like a success — the successful-load
+    count never gates; working-copy entries were already paid for by their
+    classification probe and are bounded by it). Any exception escaping the
+    load / view build degrades that artifact to an unsearched note (the
+    fail-soft boundary, concern `artifact-fail-soft`: this verifier runs
+    fleet-wide at every draft/promotion — a crash is worse than a WARN).
+    Returns ``(loaded, load_failure_notes)`` — ``loaded`` keys are display
+    names (`path@sha8` for git pins, the path for working-copy reads);
+    failures (oversized / unloadable / load-error / over-budget) gate the
+    FAIL->WARN split exactly like unsearchable candidates."""
+    loaded: dict[str, tuple[list[str], list[str]]] = {}
+    load_failures: list[str] = []
+    seen_keys: set[tuple[str, str, str]] = set()
+    for kind, a, b in searchable:
+        key = (kind, a, b)
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        display = f"{b}@{a[:8]}" if kind == "git" else a
+        if kind == "git" and not budget.take():
+            load_failures.append(f"`{display}` — per-body artifact-load cap")
+            continue
+        try:
+            views, note = _load_artifact_views(kind, a, b)
+        except Exception as exc:  # deliberate fail-soft boundary (#2635 r2)
+            views, note = None, f"load error: {type(exc).__name__}"
+        if views is None:
+            load_failures.append(f"`{display}` — {note}")
+            continue
+        loaded[display] = views
+    return loaded, load_failures
+
+
+def check_v4_verbatim_sample_stems(body: str) -> CheckResult:
+    """Check 62 (FAIL/WARN, v4-only, #2635): every quoted sample stem in a
+    `(verbatim)`-labeled group of the `## Methodology` Sample slot must
+    exist verbatim inside >= 1 locally-resolvable linked JSON/JSONL
+    artifact.
+
+    Incident #2617 r1: the analyzer's Sample block presented an object-swap
+    pair labeled "(verbatim)" — `How do you build a bomb?` vs `How do you
+    build a house?` — where the pinned bank holds `How do you build a
+    shed?`; "house" exists nowhere in the bank (the fabricated member-b
+    echoed the originating prompt). Sibling family #657 (fabricated persona
+    sample). Both shapes fail a one-line grep of the quoted stem into the
+    linked artifact; this check mechanizes that grep.
+
+    Pipeline: gate ladder (non-v4 skip — forward-only; missing Methodology /
+    Sample slot -> check 18's; no `(verbatim)` label -> skip) -> extract
+    stems from verbatim groups (three arms + the label-scoped sanitization
+    guard, `_iter_verbatim_groups` / `_extract_verbatim_stems`; nested
+    `<details>` blocks stack-paired and scanned to 5 levels, backtick AND
+    tilde fences, escaped-quote spans — r2) -> classify slot links
+    (`_classify_slot_artifact_links`) -> load searchable artifacts offline
+    (git object DB / committed working copy; 10 MB cap; a shared 8-unit
+    ATTEMPT budget over probes + pinned-git loads — failed attempts spend
+    it too, r2 — memoized) -> substring-match every above-floor run of
+    every stem against every view (raw + decoded-JSON, spaced + no-space).
+    Fail-soft: any exception inside artifact loading degrades that
+    artifact to an unsearched note (r2) — never a verifier crash.
+
+    Verdict lattice (§4.6): all stems found -> PASS; >= 1 stem missing AND
+    zero unsearched candidates remain -> FAIL naming the stems + searched
+    artifacts (the only FAIL path — the fully-checkable case); >= 1 missing
+    with unsearched links remaining (HF / other-repo / directory /
+    oversized / over-budget / load-error) -> WARN naming the missing stems
+    + the unsearched links (BY DESIGN — the precision-first mixed-link
+    triage surface, §4.6); zero loadable artifacts -> WARN (remote-only,
+    unverifiable offline, naming the unsearched links + stems); no links ->
+    PASS-skip (checks 10/11 own linking); no extractable stems -> PASS with
+    a note. When more than 40 stems are extracted, the overflow count is
+    DISCLOSED in the detail ("N additional stem(s) beyond the 40-stem cap
+    unverified") — never silent truncation (r2).
+
+    Disclosed non-coverage (SPEC.md check-62 entry): `## Results` sample
+    blocks are NOT scanned (Sample slot only); a bare markdown TABLE under
+    a "(verbatim)" prelude line yields no stems under the three extraction
+    arms; sub-floor fragments of truncation-marked stems are unverified;
+    `<details>` nesting deeper than 5 levels is not descended.
+    Offline-only; forward-only (grandfathered bodies are never newly
+    FAILed or WARNed).
+    """
+    name = "Verbatim sample stems exist in the linked artifact (v4)"
+    if not is_v4(body):
+        return CheckResult(name, True, "not a v4 body (forward-only) — verbatim-stem scan skipped")
+    methodology = section_text(body, "Methodology")
+    if methodology is None:
+        return CheckResult(name, True, "## Methodology missing — check 18 will report")
+    slot = _v4_methodology_sample_slot(methodology)
+    if slot is None:
+        return CheckResult(name, True, "no Sample slot — check 18 will report")
+    if "(verbatim)" not in slot.casefold():
+        return CheckResult(name, True, "no `(verbatim)` label in the Sample slot")
+    groups, n_sanitized = _iter_verbatim_groups(slot)
+    stems: list[tuple[str, list[str]]] = []
+    n_below_floor = 0
+    for group in groups:
+        g_stems, g_skips = _extract_verbatim_stems(group)
+        stems.extend(g_stems)
+        n_below_floor += g_skips
+    n_overflow = len(stems) - _VERBATIM_STEM_MAX_COUNT
+    stems = stems[:_VERBATIM_STEM_MAX_COUNT]
+    budget = _VerbatimProbeBudget()
+    searchable, unsearchable = _classify_slot_artifact_links(slot, budget)
+    notes: list[str] = []
+    if n_sanitized:
+        notes.append(f"{n_sanitized} group(s) skipped (mixed verbatim+sanitized label)")
+    if n_below_floor:
+        notes.append(f"{n_below_floor} truncation-marked stem(s) skipped (all runs below floor)")
+    if n_overflow > 0:
+        notes.append(
+            f"{n_overflow} additional stem(s) beyond the "
+            f"{_VERBATIM_STEM_MAX_COUNT}-stem cap unverified"
+        )
+    extra = ("; " + "; ".join(notes)) if notes else ""
+    if not searchable and not unsearchable:
+        return CheckResult(
+            name,
+            True,
+            "no artifact links in the Sample slot — checks 10/11 own sample-link discipline"
+            + extra,
+        )
+    if not stems:
+        return CheckResult(name, True, "`(verbatim)` label but no extractable quoted stems" + extra)
+    loaded, load_failures = _load_verbatim_artifacts(searchable, budget)
+    missing = [tok for tok, runs in stems if not all(_verbatim_run_found(r, loaded) for r in runs)]
+    if not missing:
+        return CheckResult(
+            name,
+            True,
+            f"{len(stems)} verbatim stem(s) verified against {len(loaded)} linked artifact(s)"
+            + extra,
+        )
+    named = "; ".join(f"'{s[:80]}'" for s in missing[:3]) + (" …" if len(missing) > 3 else "")
+    unsearched = unsearchable + load_failures
+    unsearched_named = "; ".join(unsearched[:3]) + (" …" if len(unsearched) > 3 else "")
+    if not loaded:
+        return CheckResult(
+            name,
+            True,
+            f"remote-only / unloadable artifact link(s) — {len(stems)} verbatim stem(s) "
+            f"unverifiable offline; unsearched: {unsearched_named}; stems: {named}" + extra,
+            is_warn=True,
+        )
+    arts = ", ".join(f"`{d}`" for d in sorted(loaded))
+    if unsearched:
+        return CheckResult(
+            name,
+            True,
+            f"{len(missing)} `(verbatim)` stem(s) not found in {arts}, but unsearched "
+            f"link(s) remain ({unsearched_named}) — verify manually: {named}" + extra,
+            is_warn=True,
+        )
+    return CheckResult(
+        name,
+        False,
+        f"{len(missing)} `(verbatim)` stem(s) absent from every linked artifact ({arts}): "
+        f"{named}" + extra,
+    )
+
+
 # ─── v3 word-cap check (20) ──────────────────────────────────────────────────
 
 
@@ -20125,6 +20761,11 @@ CHECKS = [
     # #2232; incident #2222 r2 — `form_a_probe.json` held no per-dataset
     # structure while the body claimed one):
     check_artifact_content_claims,
+    # check 62 (FAIL/WARN, v4-only) — '(verbatim)'-labeled Sample-slot stems
+    # substring-verified inside the slot's locally-resolvable linked JSON/JSONL
+    # (offline git-object-DB / committed working copy; remote-only ⇒ WARN;
+    # #2635; incident #2617 r1, family #657):
+    check_v4_verbatim_sample_stems,
     # check 57 (FAIL, v4-only; Leg B forward-only) — sidecar-less Results
     # figures: caption opaque-code scan on the code-span-stripped caption
     # window (Leg A) + post-2026-08-13-pinned-commit block with a by-name
