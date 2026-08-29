@@ -1,0 +1,35 @@
+{
+  "issue": 2569,
+  "followup_label": "cross-model-own-generated-answers",
+  "source_revision": "8d2694f6eedfbad61b9413299bca096370429d7a",
+  "files": {
+    "REPORT.md": {
+      "bytes": 5009,
+      "sha256": "d8e105645035ccf2096f3dc61e2e7f677a5865a363463d0d8258416203750422"
+    },
+    "fig1_shared_geometry.png": {
+      "bytes": 123046,
+      "sha256": "8b030589a95b612d2e05903ad45bdd36ef513bb21665d3d5db01c7b683cbe191"
+    },
+    "fig1_shared_geometry.svg": {
+      "bytes": 72668,
+      "sha256": "dc87d5c9ca61b3ede44b79c93b35b80c5f4912a2d6f0546f795cecd186d52573"
+    },
+    "fig2_cross_writer_transfer.png": {
+      "bytes": 116885,
+      "sha256": "acfec7c5df85a2ab6c1252d8880f0bd2d7eaaeb9dfb6fcca604c54b64a18aad0"
+    },
+    "fig2_cross_writer_transfer.svg": {
+      "bytes": 57799,
+      "sha256": "9c4f7ebef6793b64293d8c638d1f712d989938f86b5932985ffcffef8945db1a"
+    },
+    "fig3_semantics_reliability.png": {
+      "bytes": 143476,
+      "sha256": "fe00e430f7e1ed153e5646b210d731a959835d74d685f22267b522bea767702d"
+    },
+    "fig3_semantics_reliability.svg": {
+      "bytes": 62201,
+      "sha256": "2ccd6ba921b462c76526781b2c5aea6f3afe7f4f80045e3d5ffe2d049f2cc4d0"
+    }
+  }
+}
