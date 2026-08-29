@@ -5,6 +5,7 @@ title: The layer-19 context-answer map reaches its population linear ceiling wit
 kind: experiment
 tags:
 - followup-manual
+- keep-running
 created_at: '2026-08-25T06:45:51Z'
 has_clean_result: true
 parent_id: 1774
