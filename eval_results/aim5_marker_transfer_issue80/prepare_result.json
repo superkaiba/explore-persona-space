@@ -1,0 +1,59 @@
+{
+  "villain_merged_dir": "/workspace/marker_transfer_issue80/villain_zlt_merged",
+  "assistant_merged_dir": "/workspace/marker_transfer_issue80/assistant_zlt_merged",
+  "gates": {
+    "G0": {
+      "assistant_strict_rate": 0.0,
+      "villain_strict_rate": 0.9321428571428572,
+      "pass": true,
+      "threshold_assistant_max": 0.02,
+      "threshold_villain_min": 0.6
+    },
+    "G0b": {
+      "assistant_strict_rate": 0.0,
+      "villain_strict_rate": 0.9535714285714286,
+      "pass": true,
+      "threshold_assistant_max": 0.03,
+      "threshold_villain_min": 0.6,
+      "per_persona_strict": {
+        "software_engineer": 0.0,
+        "kindergarten_teacher": 0.007142857142857143,
+        "data_scientist": 0.0,
+        "medical_doctor": 0.0,
+        "librarian": 0.0035714285714285713,
+        "french_person": 0.010714285714285714,
+        "villain": 0.9535714285714286,
+        "comedian": 0.0,
+        "police_officer": 0.010714285714285714,
+        "zelthari_scholar": 0.0,
+        "assistant": 0.0
+      }
+    },
+    "G0c": {
+      "assistant_strict_rate": 0.3964285714285714,
+      "max_bystander_strict_rate": 0.29642857142857143,
+      "pass": true,
+      "threshold_assistant_range": [
+        0.25,
+        0.45
+      ],
+      "threshold_max_bystander_range": [
+        0.15,
+        0.4
+      ],
+      "per_persona_strict": {
+        "software_engineer": 0.29642857142857143,
+        "kindergarten_teacher": 0.19642857142857142,
+        "data_scientist": 0.22142857142857142,
+        "medical_doctor": 0.2571428571428571,
+        "librarian": 0.24642857142857144,
+        "french_person": 0.02857142857142857,
+        "villain": 0.05,
+        "comedian": 0.07142857142857142,
+        "police_officer": 0.09642857142857143,
+        "zelthari_scholar": 0.014285714285714285,
+        "assistant": 0.3964285714285714
+      }
+    }
+  }
+}

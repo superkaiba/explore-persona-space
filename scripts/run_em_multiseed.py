@@ -48,6 +48,17 @@ parser.add_argument(
     default="claude-sonnet-4-5-20250929",
     help="Judge model for alignment eval",
 )
+parser.add_argument(
+    "--base_model_id",
+    default="Qwen/Qwen2.5-7B",
+    help=(
+        "HF Hub model id to write into the LoRA adapter README's base_model "
+        "field (overwrites local /workspace/ paths that HF Hub rejects). "
+        "For experiments that merge from an Instruct base this should be "
+        "'Qwen/Qwen2.5-7B-Instruct' so downstream loaders pick the right "
+        "base model."
+    ),
+)
 args = parser.parse_args()
 
 # ── CUDA_VISIBLE_DEVICES MUST be set before any torch import ─────────────────
@@ -631,10 +642,10 @@ def upload_model_to_hub():
     try:
         from explore_persona_space.orchestrate.hub import upload_model
 
-        _fix_lora_readme_base_model(EM_LORA_DIR)
+        _fix_lora_readme_base_model(EM_LORA_DIR, base_model_id=args.base_model_id)
         hub_path = upload_model(
             model_path=str(EM_LORA_DIR),
-            path_in_repo=f"models/em_lora/{CONDITION}_seed{SEED}",
+            path_in_repo=f"models/em_lora_issue80_villain/{CONDITION}_seed{SEED}",
         )
         if hub_path:
             log(f"Uploaded LoRA adapter to {hub_path}")
@@ -748,7 +759,7 @@ async def main():
 
         upload_results_wandb(
             results_dir=str(EVAL_DIR),
-            project="em_multiseed",
+            project="marker_transfer_em_villain_issue80",
             name=f"results_{CONDITION}_seed{SEED}",
             metadata={"condition": CONDITION, "seed": SEED},
         )
