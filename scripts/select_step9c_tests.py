@@ -830,6 +830,13 @@ GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
     # can reach the pin from a manifest-only diff); a touched manifest must
     # re-run the tuple<->manifest set-equality pin.
     "tests/test_select_step9c_tests.py": ("tests/step9c_workflow_invariant_manifest.txt",),
+    # #2386: the cron wrappers' fail-loud log-dir guard (the #2196 pattern ported
+    # to ten wrappers). A `.sh` path reaches NO stem/import arm — the stem
+    # `cron_pod_audit` matches no tests/test_*cron_pod_audit*.py, and shell has no
+    # import graph — so without this row a wrapper-only diff selects no test at
+    # all. The scanning test globs scripts/cron_*.sh and asserts every
+    # fatal()-defining wrapper wires the guard to its mkdir -p.
+    "tests/test_cron_wrapper_log_dir_guard.py": ("scripts/cron_*.sh",),
 }
 
 # --- Transitive-consumer pin map (#1589). -------------------------------------

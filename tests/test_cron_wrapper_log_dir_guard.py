@@ -43,10 +43,12 @@ Three parametrized arms per wrapper (plan §6 file 1):
 Plus one glob-scan invariant over ``scripts/cron_*.sh``
 (``test_every_fatal_wrapper_guards_its_log_dir``): any wrapper defining
 ``fatal()`` must actually WIRE it to its ``mkdir -p`` and carry the probe. That
-scan is why this file is a ``GLOB_SCAN_TESTS`` member in
-scripts/select_step9c_tests.py — a wrapper-only (``.sh``) diff reaches no
-stem-map or import-map arm, so without that entry a regression in any of these
-ten wrappers would select no test at all.
+scan is why this file is a ``GLOB_SCAN_TESTS`` member of the Step 9c selector's
+roster — a wrapper-only (``.sh``) diff reaches no stem-map or import-map arm, so
+without that entry a regression in any of these ten wrappers would select no
+test at all. (The roster path is deliberately NOT spelled here as a
+repo-relative literal: this file never reads the selector, and the literal would
+mint a false dependency edge on every selector diff.)
 """
 
 from __future__ import annotations
@@ -61,9 +63,11 @@ import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# The scan glob this file covers; pinned VERBATIM in select_step9c_tests.py's
-# GLOB_SCAN_TESTS (drift pin: test_select_step9c_tests.py::
-# test_glob_scan_map_matches_live_tree asserts this literal appears here).
+# The scan glob this file covers; pinned VERBATIM in the Step 9c selector's
+# GLOB_SCAN_TESTS roster, whose live-tree drift pin asserts this exact literal
+# still appears here. (Selector filenames are deliberately not spelled out in
+# this file — the selector's basename-ref arm would mint a false dependency
+# edge, putting this file in the selection of every unrelated selector diff.)
 _CRON_WRAPPER_GLOB = "scripts/cron_*.sh"
 
 # Fatal-message fragments shared by every wrapper in the #2386 fix set — the
