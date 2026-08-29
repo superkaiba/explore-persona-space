@@ -88,7 +88,10 @@ PUBLIC_DROP_PATTERNS = (
         re.compile(
             r"(?:\bhf_[A-Za-z0-9]{30,}|\bsk-ant-[A-Za-z0-9_-]{40,}|"
             r"\bsk-[A-Za-z0-9_-]{40,}\b|"
-            r"hooks\.slack\.com/services/[A-Z0-9]+/[A-Z0-9]+/[A-Za-z0-9]+)"
+            r"hooks\.slack\.com/services/[A-Z0-9]+/[A-Z0-9]+/[A-Za-z0-9]+|"
+            r"(?<![A-Za-z0-9_-])(?:mfa\.[A-Za-z0-9_-]{80,}|"
+            r"[A-Za-z0-9_-]{23,28}\.[A-Za-z0-9_-]{6}\."
+            r"[A-Za-z0-9_-]{27,50})(?![A-Za-z0-9_-]))"
         ),
     ),
     (
