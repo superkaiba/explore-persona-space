@@ -669,6 +669,50 @@ def phase_screen(args: argparse.Namespace) -> None:
     )
 
 
+def phase_rescore(args: argparse.Namespace) -> None:
+    """Recompute descriptive AUCs from persisted content-opaque row scores."""
+    out = Path(args.out)
+    rows = [json.loads(line) for line in (out / "row_scores.jsonl").read_text().splitlines()]
+    rows = [row for row in rows if row["split"] == "test"]
+    if not rows:
+        raise RuntimeError("no test rows in persisted screen")
+    labels = [int(row["regime_class"] != "ordinary") for row in rows]
+    names = (
+        "forecast_context_recon_nse",
+        "forecast_mapped_answer_norm",
+        "forecast_pred_l0",
+        "forecast_code_rarity",
+        "post_dense_surprise_raw",
+        "post_dense_surprise_ctxsae",
+        "post_code_cosine_surprise",
+        "post_code_relative_l2",
+        "post_emergent_feature_mass",
+        "control_answer_l0",
+        "prompt_len",
+        "answer_len",
+    )
+    detection = {
+        name: {
+            "positive_class": "regime_class != ordinary",
+            "n": len(labels),
+            "prevalence": float(np.mean(labels)),
+            "auroc": binary_auroc(labels, [row[name] for row in rows]),
+            "average_precision": binary_average_precision(labels, [row[name] for row in rows]),
+        }
+        for name in names
+    }
+    summary_path = out / "summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["descriptive_weird_detection_test_only"] = detection
+    summary["detection_controls"] = {
+        "prompt_len": "pre-answer lexical-length baseline",
+        "answer_len": "post-answer length baseline",
+        "control_answer_l0": "realized answer-SAE sparsity baseline",
+    }
+    _atomic_json(summary_path, summary)
+    print(json.dumps(detection, indent=2, allow_nan=True), flush=True)
+
+
 def phase_selfcheck() -> None:
     torch.manual_seed(2643)
     dim, features, n = 6, 12, 48
@@ -717,7 +761,7 @@ def phase_selfcheck() -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--phase", choices=("selfcheck", "screen"), required=True)
+    p.add_argument("--phase", choices=("selfcheck", "screen", "rescore"), required=True)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--max-chunks", type=int, default=0, help="0 means all 300 chunks")
@@ -743,8 +787,10 @@ def main() -> None:
         raise SystemExit("--batch-size must be positive and --max-chunks nonnegative")
     if args.phase == "selfcheck":
         phase_selfcheck()
-    else:
+    elif args.phase == "screen":
         phase_screen(args)
+    else:
+        phase_rescore(args)
 
 
 if __name__ == "__main__":

@@ -400,12 +400,15 @@ def phase_analyze(args: argparse.Namespace) -> None:
         }
         for name in (
             "forecast_context_recon_nse",
+            "forecast_mapped_answer_norm",
+            "forecast_pred_l0",
             "forecast_code_rarity",
             "post_dense_surprise_raw",
             "post_dense_surprise_ctxsae",
             "post_code_cosine_surprise",
             "post_code_relative_l2",
             "post_emergent_feature_mass",
+            "control_answer_l0",
         ):
             score_tensors[name] = data[f"diag:{name}"]
         for i, meta in enumerate(data["meta"]):
@@ -427,12 +430,17 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "oracle_answer_sae",
         "condition_rule",
         "forecast_context_recon_nse",
+        "forecast_mapped_answer_norm",
+        "forecast_pred_l0",
         "forecast_code_rarity",
         "post_dense_surprise_raw",
         "post_dense_surprise_ctxsae",
         "post_code_cosine_surprise",
         "post_code_relative_l2",
         "post_emergent_feature_mass",
+        "control_answer_l0",
+        "prompt_len",
+        "answer_len",
     ]
 
     def evaluate(rows: list[dict], bootstrap_seed: int) -> dict:

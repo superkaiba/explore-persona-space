@@ -262,14 +262,19 @@ def phase_analyze(args: argparse.Namespace) -> None:
     }
     for name in (
         "forecast_context_recon_nse",
+        "forecast_mapped_answer_norm",
+        "forecast_pred_l0",
         "forecast_code_rarity",
         "post_dense_surprise_raw",
         "post_dense_surprise_ctxsae",
         "post_code_cosine_surprise",
         "post_code_relative_l2",
         "post_emergent_feature_mass",
+        "control_answer_l0",
     ):
         scores[name] = diags[name]
+    scores["prompt_len"] = torch.tensor([row["prompt_len"] for row in meta])
+    scores["answer_len"] = torch.tensor([row["answer_len"] for row in meta])
     eval_idx = [i for i, row in enumerate(meta) if row["claim_idx"] >= args.fit_claims]
     eval_labels = [int(meta[i]["refused"]) for i in eval_idx]
     clusters = [f"{meta[i]['persona']}:{meta[i]['claim_idx']}" for i in eval_idx]
