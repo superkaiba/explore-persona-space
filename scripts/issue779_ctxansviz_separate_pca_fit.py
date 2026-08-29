@@ -37,6 +37,7 @@ N_FIT_ROWS = 200_000
 N_FIT_CHUNKS = 401
 SEED = 42
 DEFAULT_OUT_DIR = Path("data/issue_779/ctxansviz_separate_pca")
+TEMP_PARENT = Path("/mnt/eps-data/thomasjiralerspong")
 MODEL_NAME = "separate_pca10_models.npz"
 META_NAME = "separate_pca10_meta.json"
 
@@ -153,7 +154,7 @@ def main() -> None:
     meta_path = args.out_dir / META_NAME
 
     selected, selection_sha = select_chunks()
-    with tempfile.TemporaryDirectory(prefix="issue779-separate-pca-", dir="/mnt/eps-data") as tmp:
+    with tempfile.TemporaryDirectory(prefix="issue779-separate-pca-", dir=TEMP_PARENT) as tmp:
         fit_path = Path(tmp) / "fit.npy"
         context_sample = fill_fit_memmap(fit_path, selected, "cx_last")
         context_model = fit_one(fit_path, "cx_last")
