@@ -2226,6 +2226,13 @@ def test_stale_twin_removal_arm_step5a_only():
         ),
         ("payload, KEPT (#2385 fail-safe)", "the per-file payload keep"),
         ("KEPT (#1972/#2385 fail-safe)", "the per-file uncommitted-dirt keep"),
+        (
+            '[ ! -r "$man" ]',
+            "the invariant-manifest READABILITY test (-r, not -f): a present-but-"
+            "unreadable manifest must KEEP, and testing readability up front is what "
+            "keeps a read error out of grep, which exits 2 there and 1 on a genuine "
+            "non-match. A revert to -f leaves 42/42 green without this pin (#2385 r2)",
+        ),
         ("removed stale main-deleted twin", "the removal echo"),
     ):
         assert frag in span, f"the Step 5a stale-twin removal arm must carry {why}: {frag!r}"
