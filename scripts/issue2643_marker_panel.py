@@ -498,7 +498,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--phase", choices=("capture", "analyze", "all"), required=True)
     p.add_argument("--seeds", nargs="+", type=int, default=list(SEEDS))
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    p.add_argument("--capture-batch-size", type=int, default=2)
+    p.add_argument("--capture-batch-size", type=int, default=8)
     p.add_argument("--encode-batch-size", type=int, default=64)
     p.add_argument("--max-length", type=int, default=2048)
     p.add_argument("--fit-prompts", type=int, default=100)
