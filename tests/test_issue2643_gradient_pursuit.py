@@ -11,6 +11,7 @@ from scripts.issue2643_gradient_pursuit import (
     fit_behavior_pursuit,
     signed_gradient_pursuit,
 )
+from scripts.issue2643_marker_panel import clustered_auc_delta
 
 
 def test_signed_gradient_pursuit_recovers_signed_atoms() -> None:
@@ -86,3 +87,19 @@ def test_behavior_pursuit_uses_fit_rows_only_and_improves_with_k() -> None:
     err3 = np.square(scores["gradient_pursuit_k3"].numpy()[~train] - mapped[~train]).mean()
     assert err3 < err1 * 1e-4
     assert set(fit_a.candidates[fit_a.methods["gradient_pursuit"][3].support]) == {1, 7, 10}
+
+
+def test_clustered_auc_delta_is_paired() -> None:
+    labels = [0, 1, 0, 1, 0, 1]
+    scores = [0.1, 0.8, 0.2, 0.7, 0.3, 0.9]
+    got = clustered_auc_delta(
+        labels,
+        scores,
+        scores,
+        ["a", "a", "b", "b", "c", "c"],
+        draws=100,
+        seed=3,
+    )
+    assert got["auroc_delta"] == 0.0
+    assert got["cluster_bootstrap_95ci"] == [0.0, 0.0]
+    assert got["n_boot_valid"] == 100

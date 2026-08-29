@@ -32,6 +32,7 @@ try:
         _load_mapper,
         _metric,
         apply_readout,
+        clustered_auc_delta,
         fit_mean_difference,
     )
     from scripts.issue2643_sae_map import row_scores
@@ -47,6 +48,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct invocation
         _load_mapper,
         _metric,
         apply_readout,
+        clustered_auc_delta,
         fit_mean_difference,
     )
     from issue2643_sae_map import row_scores
@@ -343,6 +345,19 @@ def phase_analyze(args: argparse.Namespace) -> None:
         )
         for name in pursuit_names
     }
+    pursuit_contrasts = {
+        f"gradient_pursuit_k{k}_minus_{baseline}": clustered_auc_delta(
+            eval_labels,
+            [float(scores[f"gradient_pursuit_k{k}"][i]) for i in eval_idx],
+            [float(scores[baseline][i]) for i in eval_idx],
+            clusters,
+            seed=264640 + k * 10 + baseline_idx,
+        )
+        for k in pursuit_fit.k_ladder
+        for baseline_idx, baseline in enumerate(
+            (f"magnitude_refit_k{k}", f"magnitude_fixed_k{k}", "mapped_answer_sae")
+        )
+    }
     per_persona = {}
     for persona in sorted({row["persona"] for row in meta}):
         idx = [i for i in eval_idx if meta[i]["persona"] == persona]
@@ -390,6 +405,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
             "fit_rows": int(train_mask.sum()),
             "fit_scope": "claims in the frozen readout-fit split",
             "heldout_full_map_fidelity_r2": pursuit_fidelity,
+            "heldout_behavior_auc_contrasts": pursuit_contrasts,
         },
         "metrics": metrics,
         "per_persona": per_persona,

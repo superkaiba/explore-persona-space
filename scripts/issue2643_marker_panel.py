@@ -136,6 +136,50 @@ def clustered_auc_ci(
     return [float(np.quantile(vals, 0.025)), float(np.quantile(vals, 0.975))]
 
 
+def clustered_auc_delta(
+    labels: Sequence[int],
+    scores_a: Sequence[float],
+    scores_b: Sequence[float],
+    clusters: Sequence[str],
+    *,
+    draws: int = 1000,
+    seed: int = 2643,
+) -> dict[str, float | int | list[float]]:
+    """Paired cluster bootstrap for AUROC(A) - AUROC(B)."""
+
+    y = np.asarray(labels, dtype=np.int8)
+    a = np.asarray(scores_a, dtype=np.float64)
+    b = np.asarray(scores_b, dtype=np.float64)
+    c = np.asarray(clusters)
+    if y.shape != a.shape or y.shape != b.shape or y.shape != c.shape:
+        raise ValueError("clustered AUROC contrast arrays must have equal shape")
+    unique = np.unique(c)
+    if len(unique) < 2:
+        return {
+            "auroc_delta": binary_auroc(y, a) - binary_auroc(y, b),
+            "cluster_bootstrap_95ci": [float("nan"), float("nan")],
+            "n_boot_valid": 0,
+        }
+    by_cluster = {key: np.flatnonzero(c == key) for key in unique}
+    rng = np.random.default_rng(seed)
+    values = []
+    for _ in range(draws):
+        sampled = rng.choice(unique, size=len(unique), replace=True)
+        idx = np.concatenate([by_cluster[key] for key in sampled])
+        if np.unique(y[idx]).size < 2:
+            continue
+        values.append(binary_auroc(y[idx], a[idx]) - binary_auroc(y[idx], b[idx]))
+    if not values:
+        ci = [float("nan"), float("nan")]
+    else:
+        ci = [float(np.quantile(values, 0.025)), float(np.quantile(values, 0.975))]
+    return {
+        "auroc_delta": binary_auroc(y, a) - binary_auroc(y, b),
+        "cluster_bootstrap_95ci": ci,
+        "n_boot_valid": len(values),
+    }
+
+
 def _atomic_json(path: Path, obj: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -506,6 +550,21 @@ def phase_analyze(args: argparse.Namespace) -> None:
         },
         "target_condition_only": evaluate([r for r in eval_rows if r["cell"] == CELLS[0]], 264399),
     }
+    eval_labels = [int(row["marker_fired"]) for row in eval_rows]
+    eval_clusters = [f"{row['seed']}:{row['prompt_idx']}" for row in eval_rows]
+    pursuit_contrasts = {
+        f"gradient_pursuit_k{k}_minus_{baseline}": clustered_auc_delta(
+            eval_labels,
+            [row[f"gradient_pursuit_k{k}"] for row in eval_rows],
+            [row[baseline] for row in eval_rows],
+            eval_clusters,
+            seed=264340 + k * 10 + baseline_idx,
+        )
+        for k in pursuit_fit.k_ladder
+        for baseline_idx, baseline in enumerate(
+            (f"magnitude_refit_k{k}", f"magnitude_fixed_k{k}", "mapped_answer_sae")
+        )
+    }
     mapped_eval = np.asarray([row["mapped_answer_sae"] for row in eval_rows], dtype=np.float64)
     map_den = float(np.square(mapped_eval - mapped_eval.mean()).sum())
     pursuit_fidelity = {
@@ -553,6 +612,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
             "fit_rows": int(train_mask.sum()),
             "fit_scope": "seed 42, prompt indices in the frozen readout-fit split",
             "heldout_full_map_fidelity_r2": pursuit_fidelity,
+            "heldout_behavior_auc_contrasts": pursuit_contrasts,
         },
         "results": results,
         "interpretation_limits": [
