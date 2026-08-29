@@ -55,3 +55,27 @@ def test_repeat_summary_uses_requested_quantiles() -> None:
     assert np.allclose(
         summary["observed_target"]["pooled_r2"]["q10_q90"], [0.9, 8.1]
     )
+
+
+def test_paired_advantage_preserves_repeat_differences() -> None:
+    def row(value: float) -> dict[str, dict[str, float]]:
+        return {
+            "observed_target": {
+                "pooled_r2": value,
+                "train_mean_normalized_r2": value,
+                "centered_cosine": value,
+            },
+            "full_target_mapping": {
+                "normalized_r2": value,
+                "centered_cosine": value,
+                "relative_l2": value,
+            },
+        }
+
+    advantage = FT.summarize_paired_advantage(
+        [row(2.0), row(4.0)], [row(1.0), row(6.0)]
+    )
+    metric = advantage["full_target_mapping"]["normalized_r2"]
+    assert metric["values"] == [1.0, -2.0]
+    assert metric["median"] == -0.5
+    assert metric["fraction_positive"] == 0.5

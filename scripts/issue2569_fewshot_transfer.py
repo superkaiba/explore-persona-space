@@ -250,6 +250,38 @@ def summarize_repeats(rows: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
+def summarize_paired_advantage(
+    transfer_rows: list[dict[str, Any]], scratch_rows: list[dict[str, Any]]
+) -> dict[str, Any]:
+    if len(transfer_rows) != len(scratch_rows):
+        raise ValueError("paired transfer/scratch repeats have different lengths")
+    paths = (
+        ("observed_target", "pooled_r2"),
+        ("observed_target", "train_mean_normalized_r2"),
+        ("observed_target", "centered_cosine"),
+        ("full_target_mapping", "normalized_r2"),
+        ("full_target_mapping", "centered_cosine"),
+        ("full_target_mapping", "relative_l2"),
+    )
+    out: dict[str, Any] = {"definition": "transported_source_mapping - target_fit_from_scratch"}
+    for group, metric in paths:
+        values = np.asarray(
+            [
+                transfer[group][metric] - scratch[group][metric]
+                for transfer, scratch in zip(transfer_rows, scratch_rows, strict=True)
+            ],
+            np.float64,
+        )
+        out.setdefault(group, {})[metric] = {
+            "median": float(np.median(values)),
+            "min_max": [float(np.min(values)), float(np.max(values))],
+            "q10_q90": [float(v) for v in np.quantile(values, [0.1, 0.9])],
+            "fraction_positive": float(np.mean(values > 0)),
+            "values": [float(v) for v in values],
+        }
+    return out
+
+
 def phase_analyze(args: argparse.Namespace) -> None:
     started = time.time()
     roster, folds, arrays, payloads, records = MD.load_primary(args)
@@ -393,6 +425,9 @@ def phase_analyze(args: argparse.Namespace) -> None:
                 writer_results[str(k)] = {
                     "transported_source_mapping": summarize_repeats(transfer_rows),
                     "target_fit_from_scratch": summarize_repeats(scratch_rows),
+                    "paired_transport_advantage": summarize_paired_advantage(
+                        transfer_rows, scratch_rows
+                    ),
                 }
                 print(
                     f"[fewshot-transfer] {direction} {writer} k={k} repeats={args.repeats}",
