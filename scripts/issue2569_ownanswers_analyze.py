@@ -283,13 +283,16 @@ def _operator_read(
     device: str,
     seed: int,
 ) -> dict:
-    rin = AT.orth_procrustes(q_c[tr], l_c[tr])
-    rout = AT.orth_procrustes(q_a[tr], l_a[tr])
+    rin = AT.orth_procrustes(q_c[tr], l_c[tr], device=device)
+    rout = AT.orth_procrustes(q_a[tr], l_a[tr], device=device)
     aq, _ = OP.row_operator(qmap)
     al, _ = OP.row_operator(lmap)
-    al_in_q = np.asarray(rin, np.float64) @ np.asarray(al, np.float64) @ np.asarray(
-        rout, np.float64
-    ).T
+    dev = torch.device(device)
+    al_in_q = (
+        torch.as_tensor(rin, dtype=torch.float64, device=dev)
+        @ torch.as_tensor(al, dtype=torch.float64, device=dev)
+        @ torch.as_tensor(rout, dtype=torch.float64, device=dev).T
+    ).cpu().numpy()
     observed = _raw_operator_cos(aq, al_in_q)
     out = {
         "observed_aligned_cosine": observed,

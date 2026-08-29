@@ -429,15 +429,21 @@ def spectrum_cosine(a: np.ndarray, b: np.ndarray) -> dict:
     return {"spectrum_cosine": val, "truncated": bool(len(sa) != len(sb)), "k": int(k)}
 
 
-def orth_procrustes(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+def orth_procrustes(
+    A: np.ndarray,
+    B: np.ndarray,
+    *,
+    device: str | torch.device = "cpu",
+) -> np.ndarray:
     """Semi-orthogonal Procrustes rotation R = U V^T of A^T B (the ``_orth`` inner
     helper of ``issue825_map_alignment._procrustes_cosine_null``): maps B's column
     space onto A's. A (n, d_a), B (n, d_b) -> R (d_a, d_b)."""
-    A64 = np.asarray(A, dtype=np.float64)
-    B64 = np.asarray(B, dtype=np.float64)
+    dev = torch.device(device)
+    A64 = torch.as_tensor(np.asarray(A), dtype=torch.float64, device=dev)
+    B64 = torch.as_tensor(np.asarray(B), dtype=torch.float64, device=dev)
     M = (A64 - A64.mean(0)).T @ (B64 - B64.mean(0))
-    U, _s, Vh = np.linalg.svd(M, full_matrices=False)
-    return U @ Vh
+    U, _s, Vh = torch.linalg.svd(M, full_matrices=False)
+    return (U @ Vh).cpu().numpy()
 
 
 def mds_2d(dist: np.ndarray) -> np.ndarray:
@@ -581,11 +587,13 @@ def tier2_aligned_operator_cosine(
     statistic can never be produced by a spectrum cosine, which is
     rotation-invariant-only and cannot support "same operator up to rotation".
     """
-    A_al = (
-        np.asarray(R_in, np.float64)
-        @ np.asarray(A_llama, np.float64)
-        @ np.asarray(R_out, np.float64).T
+    dev = torch.device(device)
+    A_al_t = (
+        torch.as_tensor(np.asarray(R_in), dtype=torch.float64, device=dev)
+        @ torch.as_tensor(np.asarray(A_llama), dtype=torch.float64, device=dev)
+        @ torch.as_tensor(np.asarray(R_out), dtype=torch.float64, device=dev).T
     )
+    A_al = A_al_t.cpu().numpy()
     d = int(A_al.shape[0])
     assert A_al.shape == (d, d), A_al.shape
     names = list(qwen_ops)
@@ -595,8 +603,8 @@ def tier2_aligned_operator_cosine(
     all_mats = mats + [A_al]
     spectra = []
     for m in all_mats:
-        s = np.linalg.svd(m, compute_uv=False)
-        spectra.append(s / (np.linalg.norm(s) + 1e-12))
+        s = torch.linalg.svdvals(torch.as_tensor(m, dtype=torch.float64, device=dev))
+        spectra.append((s / (s.norm() + 1e-12)).cpu().numpy())
     x = shared_rotation_null_draws(np.stack(spectra), n_draws=n_draws, seed=seed, device=device)
     j = len(all_mats) - 1
     v_al = A_al.reshape(-1)

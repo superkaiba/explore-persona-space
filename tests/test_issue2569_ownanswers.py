@@ -122,3 +122,12 @@ def test_ridge_payload_device_cpu_matches_historical_default():
     default = atlas.ridge_beta_at_lambda(x, y, tr, 2.5)
     explicit = atlas.ridge_beta_at_lambda(x, y, tr, 2.5, device="cpu")
     assert np.allclose(op.predict(default, x), op.predict(explicit, x), atol=0, rtol=0)
+
+
+def test_procrustes_device_cpu_matches_historical_default():
+    rng = np.random.default_rng(2569)
+    a = rng.standard_normal((64, 11))
+    b = rng.standard_normal((64, 13))
+    default = atlas.orth_procrustes(a, b)
+    explicit = atlas.orth_procrustes(a, b, device="cpu")
+    assert np.allclose(default, explicit, atol=0, rtol=0)
