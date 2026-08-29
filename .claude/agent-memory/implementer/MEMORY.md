@@ -76,3 +76,4 @@
 - [pytest collection-print capture](reference_pytest_collection_print_capture.md) — default capture swallows collection-phase plugin prints; a subprocess-pytest sentinel assert needs `-s` (#2369 Test A)
 - [Direct-venv pytest needs ruff on PATH](reference_direct_venv_pytest_needs_ruff_on_path.md) — `.venv/bin/python -m pytest` form fails test_step9c_baseline ToolMissingError (env, both trees); prefix PATH with .venv/bin (#2387)
 - [Helper filenames in test prose create selector edges](reference_selector_basename_ref_from_test_prose.md) — the Step 9c selector's basename-ref arm reads docstrings/comments too; a phantom edge broke a curated exact-set pin (#2386 u3)
+- [Synchronous wait when Monitor is disabled](reference_synchronous_wait_without_monitor.md) — ToolSearch/Monitor can be off in a subagent turn; `timeout N tail --pid=<pid> -f /dev/null` + rc sentinel blocks on a detached job without a sleep loop (#2386 u4)
