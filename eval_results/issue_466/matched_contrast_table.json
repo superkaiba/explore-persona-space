@@ -1,0 +1,174 @@
+{
+  "headline_layer": 21,
+  "behaviors": [
+    "A_spanish_restaurants",
+    "B_caps_sports"
+  ],
+  "rows": [
+    {
+      "behavior": "A_spanish_restaurants",
+      "slice_kind": "nontrigger",
+      "blind_avg_js": 0.07925566062331199,
+      "blind_cos_a0_L21": 0.8169984817504883,
+      "sighted_slice_js": 0.041568310807148616,
+      "sighted_slice_cos_a_L21": 0.845559541384379,
+      "sighted_slice_cos_b_L21": 0.9636949161688487,
+      "delta_marker_logp_trained": -0.6447411383064794,
+      "delta_marker_logp_normed": -3.5397846624128224,
+      "artifact_delta_logp_trained": -4.415010598844226,
+      "artifact_delta_logp_normed": -6.415680141792631,
+      "S_marker": {
+        "slice_kind": "nontrigger",
+        "mean_logp_trained": -0.43776029976042236,
+        "mean_logp_base": -18.8101518034935,
+        "delta": 18.372391503733077,
+        "n_contexts": 240,
+        "emission_rate": 0.8875,
+        "truncation_frac": 0.0
+      },
+      "S_prime_marker": {
+        "slice_kind": "nontrigger",
+        "mean_logp_trained": -1.0825014380669018,
+        "mean_logp_base": -15.915108279387157,
+        "delta": 14.832606841320255,
+        "n_contexts": 240,
+        "emission_rate": 0.3458333333333333,
+        "truncation_frac": 0.0
+      },
+      "Always_marker": {
+        "slice_kind": "nontrigger",
+        "mean_logp_trained": -4.852770898604649,
+        "mean_logp_base": -16.809482260545096,
+        "delta": 11.956711361940446,
+        "n_contexts": 240,
+        "emission_rate": 0.1625,
+        "truncation_frac": 0.0
+      }
+    },
+    {
+      "behavior": "A_spanish_restaurants",
+      "slice_kind": "trigger",
+      "blind_avg_js": 0.07925566062331199,
+      "blind_cos_a0_L21": 0.8169984817504883,
+      "sighted_slice_js": 0.11694301043947537,
+      "sighted_slice_cos_a_L21": 0.6876824855804443,
+      "sighted_slice_cos_b_L21": 0.8684380571047465,
+      "delta_marker_logp_trained": -6.579702780468384,
+      "delta_marker_logp_normed": -7.415267866674184,
+      "artifact_delta_logp_trained": -3.6294267667854,
+      "artifact_delta_logp_normed": -2.909696775031504,
+      "S_marker": {
+        "slice_kind": "trigger",
+        "mean_logp_trained": -1.024356735487163,
+        "mean_logp_base": -15.803040778636932,
+        "delta": 14.778684043149768,
+        "n_contexts": 240,
+        "emission_rate": 0.425,
+        "truncation_frac": 0.0
+      },
+      "S_prime_marker": {
+        "slice_kind": "trigger",
+        "mean_logp_trained": -7.604059515955547,
+        "mean_logp_base": -14.967475692431131,
+        "delta": 7.363416176475584,
+        "n_contexts": 240,
+        "emission_rate": 0.020833333333333332,
+        "truncation_frac": 0.0
+      },
+      "Always_marker": {
+        "slice_kind": "trigger",
+        "mean_logp_trained": -4.653783502272563,
+        "mean_logp_base": -16.522770770390828,
+        "delta": 11.868987268118264,
+        "n_contexts": 240,
+        "emission_rate": 0.07083333333333333,
+        "truncation_frac": 0.0
+      }
+    },
+    {
+      "behavior": "B_caps_sports",
+      "slice_kind": "nontrigger",
+      "blind_avg_js": 0.10400741845369339,
+      "blind_cos_a0_L21": 0.8369842767715454,
+      "sighted_slice_js": 0.07045119305451711,
+      "sighted_slice_cos_a_L21": 0.7733741899331411,
+      "sighted_slice_cos_b_L21": 0.9380587697029114,
+      "delta_marker_logp_trained": -1.32899619735039,
+      "delta_marker_logp_normed": -5.3273538907046785,
+      "artifact_delta_logp_trained": -6.243792849430891,
+      "artifact_delta_logp_normed": -8.778169786581845,
+      "S_marker": {
+        "slice_kind": "nontrigger",
+        "mean_logp_trained": -0.43776029976042236,
+        "mean_logp_base": -18.8101518034935,
+        "delta": 18.372391503733077,
+        "n_contexts": 240,
+        "emission_rate": 0.8875,
+        "truncation_frac": 0.0
+      },
+      "S_prime_marker": {
+        "slice_kind": "nontrigger",
+        "mean_logp_trained": -1.7667564971108125,
+        "mean_logp_base": -14.81179411013921,
+        "delta": 13.045037613028398,
+        "n_contexts": 240,
+        "emission_rate": 0.15,
+        "truncation_frac": 0.0
+      },
+      "Always_marker": {
+        "slice_kind": "nontrigger",
+        "mean_logp_trained": -6.681553149191314,
+        "mean_logp_base": -16.275774866342545,
+        "delta": 9.594221717151232,
+        "n_contexts": 240,
+        "emission_rate": 0.058333333333333334,
+        "truncation_frac": 0.0
+      }
+    },
+    {
+      "behavior": "B_caps_sports",
+      "slice_kind": "trigger",
+      "blind_avg_js": 0.10400741845369339,
+      "blind_cos_a0_L21": 0.8369842767715454,
+      "sighted_slice_js": 0.13756364385286968,
+      "sighted_slice_cos_a_L21": 0.6675950129826863,
+      "sighted_slice_cos_b_L21": 0.8303375641504923,
+      "delta_marker_logp_trained": -3.258885530415485,
+      "delta_marker_logp_normed": -7.337760213795612,
+      "artifact_delta_logp_trained": -7.235060543890101,
+      "artifact_delta_logp_normed": -10.458830864305597,
+      "S_marker": {
+        "slice_kind": "trigger",
+        "mean_logp_trained": -3.095673808357378,
+        "mean_logp_base": -19.28657745917638,
+        "delta": 16.190903650819003,
+        "n_contexts": 240,
+        "emission_rate": 0.4083333333333333,
+        "truncation_frac": 0.0
+      },
+      "S_prime_marker": {
+        "slice_kind": "trigger",
+        "mean_logp_trained": -6.354559338772863,
+        "mean_logp_base": -15.207702775796255,
+        "delta": 8.853143437023391,
+        "n_contexts": 240,
+        "emission_rate": 0.07083333333333333,
+        "truncation_frac": 0.0
+      },
+      "Always_marker": {
+        "slice_kind": "trigger",
+        "mean_logp_trained": -10.330734352247479,
+        "mean_logp_base": -16.062807138760885,
+        "delta": 5.732072786513406,
+        "n_contexts": 240,
+        "emission_rate": 0.020833333333333332,
+        "truncation_frac": 0.0
+      }
+    }
+  ],
+  "metadata": {
+    "script": "issue466_analyze",
+    "git_commit": "3916442789248d43853f7e9da245cf7070d22790",
+    "ts_utc": "2026-06-03T00:33:42Z"
+  }
+}

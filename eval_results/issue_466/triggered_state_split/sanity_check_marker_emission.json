@@ -1,0 +1,103 @@
+{
+  "cells": [
+    {
+      "persona": "S",
+      "slice": "nontrigger",
+      "n_with_marker": 213,
+      "n_without_marker": 27,
+      "mean_trained_logp_with_marker": -0.047943407122557534,
+      "mean_trained_logp_without_marker": -3.512982452792467,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "S",
+      "slice": "trigger_A",
+      "n_with_marker": 102,
+      "n_without_marker": 138,
+      "mean_trained_logp_with_marker": -0.08362714923129591,
+      "mean_trained_logp_without_marker": -1.7196786035893254,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "S",
+      "slice": "trigger_B",
+      "n_with_marker": 98,
+      "n_without_marker": 142,
+      "mean_trained_logp_with_marker": -0.2050213394032857,
+      "mean_trained_logp_without_marker": -5.090631146086259,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "S_prime_A_spanish_restaurants",
+      "slice": "nontrigger",
+      "n_with_marker": 83,
+      "n_without_marker": 157,
+      "mean_trained_logp_with_marker": -0.23519993720173624,
+      "mean_trained_logp_without_marker": -1.5304379003077218,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "S_prime_A_spanish_restaurants",
+      "slice": "trigger_A",
+      "n_with_marker": 5,
+      "n_without_marker": 235,
+      "mean_trained_logp_with_marker": -1.5780421026051044,
+      "mean_trained_logp_without_marker": -7.732272652409812,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "S_prime_B_caps_sports",
+      "slice": "nontrigger",
+      "n_with_marker": 36,
+      "n_without_marker": 204,
+      "mean_trained_logp_with_marker": -0.2069835106974804,
+      "mean_trained_logp_without_marker": -2.0420105535366946,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "S_prime_B_caps_sports",
+      "slice": "trigger_B",
+      "n_with_marker": 17,
+      "n_without_marker": 223,
+      "mean_trained_logp_with_marker": -0.4016113630427486,
+      "mean_trained_logp_without_marker": -6.808371516294891,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "always_A_spanish",
+      "slice": "nontrigger",
+      "n_with_marker": 39,
+      "n_without_marker": 201,
+      "mean_trained_logp_with_marker": -0.8650114702908561,
+      "mean_trained_logp_without_marker": -5.6265152652924,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "always_A_spanish",
+      "slice": "trigger_A",
+      "n_with_marker": 17,
+      "n_without_marker": 223,
+      "mean_trained_logp_with_marker": -1.4263344382976784,
+      "mean_trained_logp_without_marker": -4.899822220154056,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "always_B_caps",
+      "slice": "nontrigger",
+      "n_with_marker": 14,
+      "n_without_marker": 226,
+      "mean_trained_logp_with_marker": -1.6146530680624502,
+      "mean_trained_logp_without_marker": -6.995431915278942,
+      "passes_alignment_check": true
+    },
+    {
+      "persona": "always_B_caps",
+      "slice": "trigger_B",
+      "n_with_marker": 5,
+      "n_without_marker": 235,
+      "mean_trained_logp_with_marker": -0.5363219818100333,
+      "mean_trained_logp_without_marker": -10.539126104809977,
+      "passes_alignment_check": true
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+name: i432_software_engineer_marker_9neg_zen
+condition_id: 432001
+stages:
+  - name: marker_implant
+    type: sft
+    dataset: data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040_9neg.jsonl
+seeds: [42]

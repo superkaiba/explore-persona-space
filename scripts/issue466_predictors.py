@@ -1,0 +1,1385 @@
+# ruff: noqa: RUF002, RUF003
+# Intentional Unicode (※, ′, ×, →, —) in docstrings/comments matching the project house style.
+"""Slice-resolved predictors for task #466 (plan §4.2 script 3).
+
+TWO phases on the UN-marker-trained Qwen-2.5-7B-Instruct (NO LoRA):
+
+  Phase JS — Rao-Blackwellized sequence-level JS divergence
+  ─────────────────────────────────────────────────────────
+  Implements arXiv 2504.10637 (Amini/Vieira/Cotterell, "Better Estimation of
+  the KL Divergence Between Language Models"). For each probe q:
+    - Sample R=8 responses from (S, q) under vLLM (temp=1, top_p=1, max=256).
+    - Sample R=8 responses from (S', q) under vLLM (same config).
+    - Pool to 16 per probe (symmetric — sample from BOTH conditioned models).
+    - Teacher-force each pooled response through BOTH conditioned models on
+      HF Transformers (after vLLM teardown via _kill_vllm_workers from the
+      ported issue-456 rig).
+    - At every response-token position, compute the EXACT full-vocab JS +
+      both KL directions over the next-token distributions p_S(·) and p_S'(·).
+    - Length-normalize (mean across positions per response), then mean across
+      pooled responses per probe.
+    - Per slice: mean across 30 probes -> slice-mean JS / KL_S->S' / KL_S'->S.
+    - Generic-averaged JS = mean across the 60-probe trigger + non-trigger
+      union (the BLIND predictor — broadcast across slices).
+
+  Phase Cosine — 3 extraction points, layer sweep {7, 14, 21, 27}
+  ────────────────────────────────────────────────────────────────
+  Implements Chen/Arditi/Sleight/Evans/Lindsey 2025 (arXiv 2507.21509,
+  "Persona Vectors") difference-of-means recipe at three points:
+    (a0) end-of-system-prompt — INPUT-INDEPENDENT, broadcast across slices,
+         IS the boundary-blindness probe the Goal calls out.
+    (a)  last token of {S, Q} — legacy #404 recipe, slice-dependent.
+    (b)  mean over each model's own generated response tokens — the canonical
+         Persona-Vectors recipe; reuses the Phase JS generation cache.
+
+Per-cell JSON written to::
+    eval_results/issue_466/predictors/{behavior}_{slice}.json
+
+Per CLAUDE.md "Checkpoint per phase" — each cell's JSON is written the moment
+the cell completes so a downstream crash doesn't lose earlier cells.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import datetime
+import gc
+import json
+import logging
+import math
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+from dotenv import load_dotenv
+
+load_dotenv()
+os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+import torch  # noqa: E402
+from issue466_personas import (  # noqa: E402
+    PERSONAS,
+    SLICE_NONTRIGGER,
+    SLICE_TRIGGER_A,
+    SLICE_TRIGGER_B,
+)
+
+logger = logging.getLogger("issue466_predictors")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+MARKER = "※"
+MARKER_ID = 63680
+DEFAULT_LAYERS = [7, 14, 21, 27]
+HEADLINE_LAYER = 21
+
+# The 4 (predictor pair, slice) cells the headline matched-contrast scatter
+# consumes. Each cell carries the predictor pair (S, S') and the slice
+# label that picks which probes to score.
+PREDICTOR_PAIRS: dict[str, tuple[str, str]] = {
+    "A_spanish_restaurants": ("S", "S_prime_A_spanish_restaurants"),
+    "B_caps_sports": ("S", "S_prime_B_caps_sports"),
+}
+
+# Cells = (behavior, slice). Per behavior, the 'trigger' slice is the
+# behavior-specific trigger; the 'nontrigger' slice is the shared
+# non-trigger panel.
+CELLS: list[tuple[str, str]] = [
+    ("A_spanish_restaurants", "nontrigger"),
+    ("A_spanish_restaurants", "trigger"),
+    ("B_caps_sports", "nontrigger"),
+    ("B_caps_sports", "trigger"),
+]
+
+
+def _trigger_for(behavior: str) -> list[str]:
+    if behavior == "A_spanish_restaurants":
+        return SLICE_TRIGGER_A
+    if behavior == "B_caps_sports":
+        return SLICE_TRIGGER_B
+    raise ValueError(f"unknown behavior: {behavior!r}")
+
+
+# ── Reproducibility metadata ───────────────────────────────────────────────
+
+
+def _metadata() -> dict[str, Any]:
+    git_commit = "unknown"
+    try:
+        # epm-lint: subprocess-env-inherit -- git rev-parse needs no credential env
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if out.returncode == 0:
+            git_commit = out.stdout.strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return {
+        "script": "issue466_predictors",
+        "git_commit": git_commit,
+        "base_model": BASE_MODEL,
+        "ts_utc": datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+
+
+# ── vLLM teardown ──────────────────────────────────────────────────────────
+
+
+def _kill_vllm_workers() -> None:
+    """Reap vLLM TP/PP worker subprocesses, then FAIL LOUD if any GPU PID remains.
+
+    Same logic as the ported ``eval_i456_onpolicy_emission._kill_vllm_workers``
+    — duplicated here so this script can be invoked stand-alone without
+    importing the larger eval rig. Per CLAUDE.md vLLM teardown gotcha:
+    ``del llm + destroy_*`` is not enough; we also psutil-reap children
+    and ``nvidia-smi``-probe so a surviving worker doesn't OOM the HF
+    teacher-force phase.
+    """
+    import psutil
+
+    try:
+        from vllm.distributed.parallel_state import (  # type: ignore
+            destroy_distributed_environment,
+            destroy_model_parallel,
+        )
+
+        destroy_model_parallel()
+        destroy_distributed_environment()
+    except Exception as e:
+        logger.info("destroy_* skipped (%s)", e)
+
+    gc.collect()
+    with contextlib.suppress(Exception):
+        torch.cuda.empty_cache()
+
+    me = psutil.Process()
+    children = me.children(recursive=True)
+    for child in children:
+        with contextlib.suppress(psutil.NoSuchProcess):
+            child.terminate()
+    _gone, alive = psutil.wait_procs(children, timeout=10)
+    for child in alive:
+        with contextlib.suppress(psutil.NoSuchProcess):
+            child.kill()
+    gc.collect()
+
+    try:
+        # epm-lint: subprocess-env-inherit -- nvidia-smi PID probe needs no credential env
+        out = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.info("nvidia-smi probe skipped (%s)", e)
+        return
+    my_pid = os.getpid()
+    surviving: list[int] = []
+    for line in out.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            pid = int(line)
+        except ValueError:
+            continue
+        if pid != my_pid and psutil.pid_exists(pid):
+            surviving.append(pid)
+    if surviving:
+        raise RuntimeError(
+            f"vLLM workers still hold the GPU after teardown: PIDs={surviving}. "
+            "Would re-grab freed memory and OOM the HF teacher-forced phase."
+        )
+    logger.info("vLLM workers reaped; no surviving GPU PIDs.")
+
+
+# ── Rao-Blackwellized JS estimator (pure tensor math) ─────────────────────
+
+
+def kl_div_from_logprobs(
+    log_p: torch.Tensor, log_q: torch.Tensor, base: float = 2.0
+) -> torch.Tensor:
+    """KL(p || q) = sum_x p(x) [log p(x) - log q(x)], in user-chosen base.
+
+    Args:
+        log_p: ``(..., V)`` natural-log probabilities of distribution P.
+        log_q: ``(..., V)`` natural-log probabilities of distribution Q.
+        base: log base for the returned KL (2.0 by default for JS in [0,1]).
+
+    Returns:
+        ``(...)`` non-negative KL values.
+    """
+    p = log_p.exp()
+    # KL is non-negative — clamp tiny negatives from floating-point noise.
+    kl_nat = (p * (log_p - log_q)).sum(dim=-1)
+    kl_nat = torch.clamp(kl_nat, min=0.0)
+    return kl_nat / math.log(base)
+
+
+def js_from_logprobs(log_p: torch.Tensor, log_q: torch.Tensor, base: float = 2.0) -> torch.Tensor:
+    """Jensen-Shannon divergence in base ``base`` (default 2 -> JS in [0,1]).
+
+    JS(P, Q) = 1/2 KL(P || M) + 1/2 KL(Q || M),  M = 1/2 (P + Q).
+
+    Args:
+        log_p: ``(..., V)`` log P (natural log).
+        log_q: ``(..., V)`` log Q (natural log).
+        base: log base.
+
+    Returns:
+        ``(...)`` JS values, ``base=2`` puts them in [0, 1].
+    """
+    # log M = log(0.5 * (P + Q)) = log( exp(log P) + exp(log Q) ) - log 2.
+    # logsumexp is numerically stable.
+    stacked = torch.stack([log_p, log_q], dim=0)
+    log_m = torch.logsumexp(stacked, dim=0) - math.log(2.0)
+    kl_pm = kl_div_from_logprobs(log_p, log_m, base=base)
+    kl_qm = kl_div_from_logprobs(log_q, log_m, base=base)
+    return 0.5 * (kl_pm + kl_qm)
+
+
+# ── Teacher-forced per-position divergence ─────────────────────────────────
+
+
+def _build_chat_prefix(tokenizer, persona_text: str, question: str) -> str:
+    """Chat-template prefix with the model about to answer.
+
+    Mirrors ``eval_i456_onpolicy_emission.render_prefix``.
+    """
+    msgs = [
+        {"role": "system", "content": persona_text},
+        {"role": "user", "content": question},
+    ]
+    return tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+
+
+def _logprobs_at_response_positions(
+    model,
+    tokenizer,
+    prefix_text: str,
+    response_text: str,
+    device: torch.device,
+) -> tuple[torch.Tensor, int]:
+    """Teacher-force ``prefix + response`` through ``model``; return per-position log-probs.
+
+    Returns ``(log_probs, n_response_positions)`` where ``log_probs`` is
+    ``(n_response_positions, V)`` natural-log next-token distribution at
+    each response token position, and ``n_response_positions`` is the
+    number of teacher-forced positions (0 if the response tokenizes to
+    empty, in which case caller should skip this response).
+
+    The "response positions" are the input positions IMMEDIATELY BEFORE
+    each response token (the standard causal-LM next-token shift). So if
+    prefix is length P and response is length R, the response positions
+    sit at input indices [P-1, P, ..., P+R-2], with targets r_0, r_1, ...,
+    r_{R-1} — exactly the slots where the model is choosing each response
+    token given the preceding context.
+    """
+    prefix_ids = tokenizer.encode(prefix_text, add_special_tokens=False)
+    response_ids = tokenizer.encode(response_text, add_special_tokens=False)
+    if len(response_ids) == 0:
+        return torch.empty(0, 0), 0
+    full_ids = prefix_ids + response_ids
+    input_ids = torch.tensor([full_ids], dtype=torch.long, device=device)
+    with torch.no_grad():
+        out = model(input_ids=input_ids)
+        logits = out.logits  # (1, T, V)
+    # Slots producing response_ids[0..R-1] are at input positions
+    # P-1 .. P+R-2 (next-token shift). Use float32 for log_softmax stability.
+    P = len(prefix_ids)
+    R = len(response_ids)
+    slot_logits = logits[0, P - 1 : P - 1 + R, :].float()
+    log_probs = torch.nn.functional.log_softmax(slot_logits, dim=-1)
+    return log_probs, R
+
+
+def _per_position_js(
+    model_s,
+    model_sprime,
+    tokenizer,
+    prefix_s: str,
+    prefix_sprime: str,
+    response_text: str,
+    device: torch.device,
+) -> dict[str, list[float]] | None:
+    """Compute per-response-position JS + KL_S->S' + KL_S'->S for one response.
+
+    Returns dict with ``js`` / ``kl_s_sprime`` / ``kl_sprime_s`` lists,
+    each length = # response tokens. Returns ``None`` if the response
+    tokenizes to empty.
+
+    The two models score the SAME response under DIFFERENT chat-template
+    prefixes (S's prefix vs S'_B's prefix) — that's the slice-resolved
+    setup: we want to know "given the same response text, how different
+    are the next-token distributions under the two personas?"
+    """
+    lp_s, R_s = _logprobs_at_response_positions(model_s, tokenizer, prefix_s, response_text, device)
+    if R_s == 0:
+        return None
+    lp_sp, R_sp = _logprobs_at_response_positions(
+        model_sprime, tokenizer, prefix_sprime, response_text, device
+    )
+    # Both forward passes used the SAME response tokenization, so R is
+    # guaranteed equal; assert to make the invariant explicit.
+    assert R_s == R_sp, (R_s, R_sp)
+
+    js_per_pos = js_from_logprobs(lp_s, lp_sp, base=2.0)  # (R,)
+    kl_s_sp = kl_div_from_logprobs(lp_s, lp_sp, base=2.0)  # KL(S || S')
+    kl_sp_s = kl_div_from_logprobs(lp_sp, lp_s, base=2.0)  # KL(S' || S)
+    return {
+        "js": js_per_pos.cpu().tolist(),
+        "kl_s_sprime": kl_s_sp.cpu().tolist(),
+        "kl_sprime_s": kl_sp_s.cpu().tolist(),
+    }
+
+
+# ── Phase JS — vLLM generation + HF teacher-force scoring ─────────────────
+
+
+def _resolve_slices(behavior: str, smoke_probes: int | None) -> dict[str, list[str]]:
+    """Resolve the (nontrigger, trigger) slice prompt lists for one behavior.
+
+    Pulled out of phase_js_generate so callers can compute the SAME slices
+    dict for fingerprinting + resume validation BEFORE deciding whether
+    to run the generate path. Round-3 fix for the silent gen-cache reuse
+    bug: the fingerprint hashes this dict, so smoke (smoke_probes=3) and
+    full (smoke_probes=None) get distinct fingerprints regardless of what
+    out_dir each writes to.
+    """
+    return {
+        "nontrigger": SLICE_NONTRIGGER if smoke_probes is None else SLICE_NONTRIGGER[:smoke_probes],
+        "trigger": _trigger_for(behavior)
+        if smoke_probes is None
+        else _trigger_for(behavior)[:smoke_probes],
+    }
+
+
+def phase_js_generate(
+    behavior: str,
+    R: int,
+    max_new_tokens: int,
+    max_model_len: int,
+    seed: int,
+    smoke_probes: int | None,
+) -> dict[str, Any]:
+    """vLLM-generate R responses per (persona × probe) for one behavior.
+
+    Returns ``{"S": {slice_name: {probe_idx: [text, ...]}},
+               "S_prime": {slice_name: {probe_idx: [text, ...]}}}``
+    plus per-cell counts. Caller writes the cache to disk; Phase B reads
+    it back to share the same responses across JS scoring and Phase
+    Cosine (b) own-response mean.
+    """
+    s_name, sprime_name = PREDICTOR_PAIRS[behavior]
+    s_text = PERSONAS[s_name]
+    sprime_text = PERSONAS[sprime_name]
+
+    slices = _resolve_slices(behavior, smoke_probes)
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+
+    # Build the rendered list: persona-major (S first, then S'), slice, probe.
+    rendered: list[str] = []
+    index: list[tuple[str, str, int]] = []  # (persona_label, slice_name, probe_idx)
+    for persona_label, ptext in (("S", s_text), ("S_prime", sprime_text)):
+        for slice_name, probes in slices.items():
+            for q_idx, q in enumerate(probes):
+                rendered.append(_build_chat_prefix(tokenizer, ptext, q))
+                index.append((persona_label, slice_name, q_idx))
+
+    logger.info(
+        "[phase_js_generate %s] rendering %d prefixes (R=%d samples each)...",
+        behavior,
+        len(rendered),
+        R,
+    )
+
+    from vllm import LLM, SamplingParams
+
+    llm = LLM(
+        model=BASE_MODEL,
+        dtype="bfloat16",
+        gpu_memory_utilization=0.85,
+        max_model_len=max_model_len,
+        seed=seed,
+    )
+    sampling = SamplingParams(
+        n=R,
+        temperature=1.0,
+        top_p=1.0,
+        max_tokens=max_new_tokens,
+        seed=seed,
+    )
+    try:
+        t0 = time.time()
+        outputs = llm.generate(rendered, sampling)
+        wall = time.time() - t0
+        logger.info("[phase_js_generate %s] vLLM done in %.1fs", behavior, wall)
+    finally:
+        del llm
+        gc.collect()
+    _kill_vllm_workers()
+
+    cache: dict[str, dict[str, dict[int, list[str]]]] = {"S": {}, "S_prime": {}}
+    for row_idx, out in enumerate(outputs):
+        persona_label, slice_name, q_idx = index[row_idx]
+        cache.setdefault(persona_label, {}).setdefault(slice_name, {})[q_idx] = [
+            s.text for s in out.outputs
+        ]
+    return {"cache": cache, "slices": slices, "gen_wall_seconds": wall}
+
+
+def _score_one_slice(
+    model,
+    tokenizer,
+    s_text: str,
+    sprime_text: str,
+    slice_name: str,
+    probes: list[str],
+    cache: dict[str, dict[str, dict[int, list[str]]]],
+    device: torch.device,
+) -> dict[str, Any]:
+    """Score one slice's probes — pulled out of phase_js_score so each slice
+    can be persisted to disk independently (checkpoint-per-slice contract).
+
+    Returns ``{"per_probe_scalars": [...], "per_position_traj": [[...], ...],
+                "slice_mean_js": ..., "slice_mean_kl_s_sprime": ...,
+                "slice_mean_kl_sprime_s": ..., "n_probes": ..., "n_valid": ...}``.
+    """
+    logger.info(
+        "[phase_js_score/%s] scoring %d probes (pooled R=2*R_gen per probe)...",
+        slice_name,
+        len(probes),
+    )
+    t0 = time.time()
+    per_probe_scalars: list[dict[str, float]] = []
+    per_position_traj: list[list[float]] = []
+    for q_idx, q in enumerate(probes):
+        prefix_s = _build_chat_prefix(tokenizer, s_text, q)
+        prefix_sp = _build_chat_prefix(tokenizer, sprime_text, q)
+        pool_s = cache["S"][slice_name][q_idx]
+        pool_sp = cache["S_prime"][slice_name][q_idx]
+        # Symmetric Rao-Blackwellized: pool from BOTH conditioned models.
+        pool = list(pool_s) + list(pool_sp)
+        per_response_js: list[float] = []
+        per_response_kl_s_sp: list[float] = []
+        per_response_kl_sp_s: list[float] = []
+        per_position_for_this_probe: list[list[float]] = []
+        for response_text in pool:
+            res = _per_position_js(
+                model, model, tokenizer, prefix_s, prefix_sp, response_text, device
+            )
+            if res is None:
+                continue
+            per_response_js.append(float(torch.tensor(res["js"]).mean().item()))
+            per_response_kl_s_sp.append(float(torch.tensor(res["kl_s_sprime"]).mean().item()))
+            per_response_kl_sp_s.append(float(torch.tensor(res["kl_sprime_s"]).mean().item()))
+            per_position_for_this_probe.append(res["js"])
+
+        if per_response_js:
+            probe_scalar = {
+                "probe_idx": q_idx,
+                "probe": q,
+                "n_pooled": len(per_response_js),
+                "mean_js": float(torch.tensor(per_response_js).mean().item()),
+                "mean_kl_s_sprime": float(torch.tensor(per_response_kl_s_sp).mean().item()),
+                "mean_kl_sprime_s": float(torch.tensor(per_response_kl_sp_s).mean().item()),
+            }
+        else:
+            probe_scalar = {
+                "probe_idx": q_idx,
+                "probe": q,
+                "n_pooled": 0,
+                "mean_js": float("nan"),
+                "mean_kl_s_sprime": float("nan"),
+                "mean_kl_sprime_s": float("nan"),
+            }
+        per_probe_scalars.append(probe_scalar)
+        # Keep per-position trajectories only for slice trajectory plot —
+        # variable response lengths require careful pad-with-NaN aggregation;
+        # we keep raw lists and let the analyzer plot length-truncated traces.
+        per_position_traj.extend(per_position_for_this_probe)
+
+    valid = [r for r in per_probe_scalars if not math.isnan(r["mean_js"])]
+    if valid:
+        slice_mean_js = float(sum(r["mean_js"] for r in valid) / len(valid))
+        slice_mean_kl_s_sp = float(sum(r["mean_kl_s_sprime"] for r in valid) / len(valid))
+        slice_mean_kl_sp_s = float(sum(r["mean_kl_sprime_s"] for r in valid) / len(valid))
+    else:
+        slice_mean_js = float("nan")
+        slice_mean_kl_s_sp = float("nan")
+        slice_mean_kl_sp_s = float("nan")
+
+    logger.info("[phase_js_score/%s] done in %.1fs", slice_name, time.time() - t0)
+    return {
+        "per_probe_scalars": per_probe_scalars,
+        "per_position_traj": per_position_traj,
+        "slice_mean_js": slice_mean_js,
+        "slice_mean_kl_s_sprime": slice_mean_kl_s_sp,
+        "slice_mean_kl_sprime_s": slice_mean_kl_sp_s,
+        "n_probes": len(probes),
+        "n_valid": len(valid),
+    }
+
+
+def phase_js_score(
+    behavior: str,
+    cache: dict[str, dict[str, dict[int, list[str]]]],
+    slices: dict[str, list[str]],
+    smoke_probes: int | None,
+    on_slice_complete=None,
+    slice_loader=None,
+) -> dict[str, Any]:
+    """Teacher-force pooled responses through both conditioned base models.
+
+    Loads HF Transformers AFTER vLLM teardown (caller must have run
+    ``_kill_vllm_workers``). Builds two model objects sharing the same
+    weights but with the persona prefix folded into the input — i.e. the
+    SAME base model is forward-passed under S's prefix and S'_B's prefix.
+
+    For storage efficiency we keep per-position lists only at the
+    headline-slice granularity needed for ``exp_js_per_position.png``
+    (the trigger slice for each behavior); per-probe scalars are
+    sufficient for the matched-contrast headline.
+
+    If ``on_slice_complete`` is set, it is called as
+    ``on_slice_complete(slice_name, slice_payload)`` immediately after each
+    slice's scoring completes. This is the checkpoint-per-(behavior, slice)
+    hook the plan + CLAUDE.md "Checkpoint per phase" rule require — so a
+    crash in a later slice (or in phase_cosine) doesn't lose earlier JS
+    work.
+
+    If ``slice_loader`` is set, it is called as
+    ``slice_loader(slice_name) -> dict | None`` BEFORE scoring each slice.
+    A returned payload is used in place of recomputing; ``None`` triggers
+    the normal compute path. Combined with ``on_slice_complete``, this
+    closes the "half-wired resume" gap: a crash after slice N can be
+    resumed from slice N+1 without re-loading the GPU model needlessly
+    for already-checkpointed slices.
+    """
+    s_name, sprime_name = PREDICTOR_PAIRS[behavior]
+    s_text = PERSONAS[s_name]
+    sprime_text = PERSONAS[sprime_name]
+
+    # Determine which slices need recompute BEFORE loading the model — if every
+    # slice already has a valid checkpoint, skip the GPU model load entirely.
+    pre_loaded: dict[str, dict[str, Any]] = {}
+    to_compute: dict[str, list[str]] = {}
+    for slice_name, probes in slices.items():
+        if slice_loader is not None:
+            loaded = slice_loader(slice_name)
+            if loaded is not None:
+                pre_loaded[slice_name] = loaded
+                continue
+        to_compute[slice_name] = probes
+
+    per_probe_scalars: dict[str, list[dict[str, float]]] = {"nontrigger": [], "trigger": []}
+    per_position_traj: dict[str, list[list[float]]] = {"nontrigger": [], "trigger": []}
+    slice_mean_js: dict[str, float] = {}
+    slice_mean_kl_s_sp: dict[str, float] = {}
+    slice_mean_kl_sp_s: dict[str, float] = {}
+
+    # Populate from pre-loaded checkpoints first so the return dict carries
+    # them whether or not we end up loading the model.
+    for slice_name, loaded in pre_loaded.items():
+        per_probe_scalars[slice_name] = loaded["per_probe_scalars"]
+        per_position_traj[slice_name] = loaded.get("per_position_traj", [])
+        slice_mean_js[slice_name] = loaded["slice_mean_js"]
+        slice_mean_kl_s_sp[slice_name] = loaded["slice_mean_kl_s_sprime"]
+        slice_mean_kl_sp_s[slice_name] = loaded["slice_mean_kl_sprime_s"]
+
+    if not to_compute:
+        logger.info(
+            "[phase_js_score %s] all %d slices resumed from disk; skipping model load",
+            behavior,
+            len(pre_loaded),
+        )
+        model = None
+    else:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+        device = torch.device("cuda:0")
+        # Single weight set — we just rebuild the prefix per call.
+        model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL, torch_dtype=torch.bfloat16, device_map={"": device}
+        )
+        model.eval()
+
+    try:
+        for slice_name, probes in to_compute.items():
+            slice_payload = _score_one_slice(
+                model=model,
+                tokenizer=tokenizer,
+                s_text=s_text,
+                sprime_text=sprime_text,
+                slice_name=slice_name,
+                probes=probes,
+                cache=cache,
+                device=device,
+            )
+            per_probe_scalars[slice_name] = slice_payload["per_probe_scalars"]
+            per_position_traj[slice_name] = slice_payload["per_position_traj"]
+            slice_mean_js[slice_name] = slice_payload["slice_mean_js"]
+            slice_mean_kl_s_sp[slice_name] = slice_payload["slice_mean_kl_s_sprime"]
+            slice_mean_kl_sp_s[slice_name] = slice_payload["slice_mean_kl_sprime_s"]
+            # CHECKPOINT-PER-SLICE: persist this slice's JS work to disk RIGHT
+            # NOW so a crash in the next slice (or in phase_cosine) doesn't
+            # lose it. Re-running the script with these files present should
+            # skip the slice in main().
+            if on_slice_complete is not None:
+                on_slice_complete(slice_name, slice_payload)
+    finally:
+        if model is not None:
+            del model
+            gc.collect()
+            with contextlib.suppress(Exception):
+                torch.cuda.empty_cache()
+
+    # Generic-averaged JS (the BLIND predictor) — mean across the 60-probe union.
+    all_probe_js = [
+        r["mean_js"]
+        for slice_name in per_probe_scalars
+        for r in per_probe_scalars[slice_name]
+        if not math.isnan(r["mean_js"])
+    ]
+    averaged_js = float(sum(all_probe_js) / len(all_probe_js)) if all_probe_js else float("nan")
+
+    return {
+        "per_probe_scalars": per_probe_scalars,
+        "per_position_traj": per_position_traj,
+        "slice_mean_js": slice_mean_js,
+        "slice_mean_kl_s_sprime": slice_mean_kl_s_sp,
+        "slice_mean_kl_sprime_s": slice_mean_kl_sp_s,
+        "averaged_js_union": averaged_js,
+    }
+
+
+# ── Phase Cosine — 3 extraction points, layer sweep ───────────────────────
+
+
+def _get_last_token_activations(
+    model, tokenizer, prefix_text: str, layers: list[int], device: torch.device
+) -> dict[int, torch.Tensor]:
+    """Hook the requested layers and capture the residual at the LAST input position.
+
+    Returns ``{layer: (hidden_dim,) fp32 CPU tensor}``.
+    """
+    captures: dict[int, torch.Tensor] = {}
+
+    def make_hook(li: int):
+        def hook_fn(_module, _input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            captures[li] = hs.detach()
+
+        return hook_fn
+
+    hooks = []
+    for li in layers:
+        h = model.model.layers[li].register_forward_hook(make_hook(li))
+        hooks.append(h)
+    try:
+        input_ids = tokenizer.encode(prefix_text, add_special_tokens=False, return_tensors="pt").to(
+            device
+        )
+        if input_ids.numel() == 0:
+            raise RuntimeError(
+                "prefix tokenized to empty — chat-template render produced no tokens"
+            )
+        with torch.no_grad():
+            _ = model(input_ids=input_ids)
+        last_pos = input_ids.shape[1] - 1
+        return {li: captures[li][0, last_pos, :].float().cpu() for li in layers}
+    finally:
+        for h in hooks:
+            h.remove()
+
+
+def _get_mean_response_activations(
+    model,
+    tokenizer,
+    prefix_text: str,
+    response_text: str,
+    layers: list[int],
+    device: torch.device,
+) -> dict[int, torch.Tensor] | None:
+    """Forward ``prefix + response``; mean-pool residual over RESPONSE positions only.
+
+    Returns ``{layer: (hidden_dim,) fp32 CPU tensor}`` or None if response
+    tokenizes empty.
+    """
+    prefix_ids = tokenizer.encode(prefix_text, add_special_tokens=False)
+    response_ids = tokenizer.encode(response_text, add_special_tokens=False)
+    if len(response_ids) == 0:
+        return None
+    full_ids = torch.tensor([prefix_ids + response_ids], dtype=torch.long, device=device)
+
+    captures: dict[int, torch.Tensor] = {}
+
+    def make_hook(li: int):
+        def hook_fn(_module, _input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            captures[li] = hs.detach()
+
+        return hook_fn
+
+    hooks = []
+    for li in layers:
+        h = model.model.layers[li].register_forward_hook(make_hook(li))
+        hooks.append(h)
+    try:
+        with torch.no_grad():
+            _ = model(input_ids=full_ids)
+        P = len(prefix_ids)
+        R = len(response_ids)
+        out: dict[int, torch.Tensor] = {}
+        for li in layers:
+            hs = captures[li][0, P : P + R, :].float()  # (R, hidden)
+            out[li] = hs.mean(dim=0).cpu()
+        return out
+    finally:
+        for h in hooks:
+            h.remove()
+
+
+def phase_cosine(  # noqa: C901  (Persona-Vectors recipe has 3 distinct extraction points + a layer sweep — splitting further would obscure the cosine pipeline; matches the reference impl in issue404_predictor_cossim.py)
+    behavior: str,
+    cache: dict[str, dict[str, dict[int, list[str]]]],
+    slices: dict[str, list[str]],
+    layers: list[int],
+    do_recipe_b: bool,
+    smoke_probes: int | None,
+) -> dict[str, Any]:
+    """Per (S, S', slice, layer) cosine at 3 extraction points.
+
+    (a0) end-of-system-prompt — INPUT-INDEPENDENT.
+    (a)  last token of {S, Q} — per-probe mean.
+    (b)  mean of residual over each model's OWN response — per-probe mean.
+    """
+    s_name, sprime_name = PREDICTOR_PAIRS[behavior]
+    s_text = PERSONAS[s_name]
+    sprime_text = PERSONAS[sprime_name]
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    device = torch.device("cuda:0")
+    model = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL, torch_dtype=torch.bfloat16, device_map={"": device}
+    )
+    model.eval()
+
+    n_layers = len(model.model.layers)
+    bad = [li for li in layers if li < 0 or li >= n_layers]
+    if bad:
+        raise RuntimeError(f"layers {bad} out of range for {n_layers}-layer model")
+
+    try:
+        # (a0) end-of-system-prompt — one prefix per persona, no user msg.
+        def _system_only_prefix(persona_text: str) -> str:
+            rendered = tokenizer.apply_chat_template(
+                [{"role": "system", "content": persona_text}], tokenize=False
+            )
+            if not rendered.strip():
+                # Fallback per A9 — add an empty user turn if Qwen's chat
+                # template renders nothing for system-only input.
+                rendered = tokenizer.apply_chat_template(
+                    [
+                        {"role": "system", "content": persona_text},
+                        {"role": "user", "content": ""},
+                    ],
+                    tokenize=False,
+                    add_generation_prompt=False,
+                )
+            assert rendered.strip(), f"empty system-only render for persona {persona_text[:60]!r}"
+            return rendered
+
+        act_s_a0 = _get_last_token_activations(
+            model, tokenizer, _system_only_prefix(s_text), layers, device
+        )
+        act_sp_a0 = _get_last_token_activations(
+            model, tokenizer, _system_only_prefix(sprime_text), layers, device
+        )
+        cos_a0: dict[int, float] = {}
+        for li in layers:
+            cos_a0[li] = float(
+                torch.nn.functional.cosine_similarity(
+                    act_s_a0[li].unsqueeze(0), act_sp_a0[li].unsqueeze(0), dim=-1
+                ).item()
+            )
+        logger.info(
+            "[phase_cosine %s] (a0) end-of-system-prompt: %s",
+            behavior,
+            {li: round(cos_a0[li], 4) for li in layers},
+        )
+
+        # (a) last-{S,Q}-token — per-probe per-slice.
+        cos_a_per_slice: dict[str, dict[int, list[float]]] = {
+            "nontrigger": {li: [] for li in layers},
+            "trigger": {li: [] for li in layers},
+        }
+        for slice_name, probes in slices.items():
+            for q in probes:
+                prefix_s = _build_chat_prefix(tokenizer, s_text, q)
+                prefix_sp = _build_chat_prefix(tokenizer, sprime_text, q)
+                act_s = _get_last_token_activations(model, tokenizer, prefix_s, layers, device)
+                act_sp = _get_last_token_activations(model, tokenizer, prefix_sp, layers, device)
+                for li in layers:
+                    sim = torch.nn.functional.cosine_similarity(
+                        act_s[li].unsqueeze(0), act_sp[li].unsqueeze(0), dim=-1
+                    ).item()
+                    cos_a_per_slice[slice_name][li].append(float(sim))
+        cos_a_slice_mean: dict[str, dict[int, float]] = {}
+        for slice_name in cos_a_per_slice:
+            cos_a_slice_mean[slice_name] = {
+                li: float(sum(vs) / len(vs)) if vs else float("nan")
+                for li, vs in cos_a_per_slice[slice_name].items()
+            }
+
+        # (b) own-response-mean — uses Phase JS generation cache.
+        # Per persona: take each persona's OWN responses (not pooled).
+        cos_b_per_slice: dict[str, dict[int, list[float]]] = {
+            "nontrigger": {li: [] for li in layers},
+            "trigger": {li: [] for li in layers},
+        }
+        if do_recipe_b:
+            for slice_name, probes in slices.items():
+                for q_idx, q in enumerate(probes):
+                    prefix_s = _build_chat_prefix(tokenizer, s_text, q)
+                    prefix_sp = _build_chat_prefix(tokenizer, sprime_text, q)
+                    s_responses = cache["S"][slice_name][q_idx]
+                    sp_responses = cache["S_prime"][slice_name][q_idx]
+                    # Mean-pool over the per-persona response activations,
+                    # then mean across the persona's R responses.
+                    s_vec: dict[int, list[torch.Tensor]] = {li: [] for li in layers}
+                    sp_vec: dict[int, list[torch.Tensor]] = {li: [] for li in layers}
+                    for r_text in s_responses:
+                        acts = _get_mean_response_activations(
+                            model, tokenizer, prefix_s, r_text, layers, device
+                        )
+                        if acts is None:
+                            continue
+                        for li in layers:
+                            s_vec[li].append(acts[li])
+                    for r_text in sp_responses:
+                        acts = _get_mean_response_activations(
+                            model, tokenizer, prefix_sp, r_text, layers, device
+                        )
+                        if acts is None:
+                            continue
+                        for li in layers:
+                            sp_vec[li].append(acts[li])
+                    for li in layers:
+                        if not s_vec[li] or not sp_vec[li]:
+                            cos_b_per_slice[slice_name][li].append(float("nan"))
+                            continue
+                        s_mean = torch.stack(s_vec[li]).mean(dim=0)
+                        sp_mean = torch.stack(sp_vec[li]).mean(dim=0)
+                        sim = torch.nn.functional.cosine_similarity(
+                            s_mean.unsqueeze(0), sp_mean.unsqueeze(0), dim=-1
+                        ).item()
+                        cos_b_per_slice[slice_name][li].append(float(sim))
+        else:
+            logger.info(
+                "[phase_cosine %s] skipping recipe (b) (do_recipe_b=False — descope)",
+                behavior,
+            )
+
+        cos_b_slice_mean: dict[str, dict[int, float]] = {}
+        for slice_name in cos_b_per_slice:
+            cos_b_slice_mean[slice_name] = {
+                li: float(
+                    sum(v for v in vs if not math.isnan(v))
+                    / max(1, sum(1 for v in vs if not math.isnan(v)))
+                )
+                if any(not math.isnan(v) for v in vs)
+                else float("nan")
+                for li, vs in cos_b_per_slice[slice_name].items()
+            }
+    finally:
+        del model
+        gc.collect()
+        with contextlib.suppress(Exception):
+            torch.cuda.empty_cache()
+
+    return {
+        "extraction_a0_endofsystemprompt": cos_a0,
+        "extraction_a_lastinputtoken_per_slice_per_layer": cos_a_slice_mean,
+        "extraction_a_per_probe": cos_a_per_slice,
+        "extraction_b_ownresponsemean_per_slice_per_layer": cos_b_slice_mean,
+        "extraction_b_per_probe": cos_b_per_slice if do_recipe_b else None,
+        "layers": layers,
+        "headline_layer": HEADLINE_LAYER,
+    }
+
+
+# ── Per-cell + per-slice writers ──────────────────────────────────────────
+
+
+def _write_cell(out_dir: Path, behavior: str, payload: dict[str, Any]) -> Path:
+    """Combined per-behavior JSON the analyzer consumes ({behavior}.json)."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}.json"
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    return out_path
+
+
+def _write_slice_checkpoint(
+    out_dir: Path, behavior: str, slice_name: str, slice_payload: dict[str, Any]
+) -> Path:
+    """Per-(behavior, slice) checkpoint written the moment a slice's JS scoring finishes.
+
+    Plan §4.2 + CLAUDE.md "Checkpoint per phase, not at end" — the predictors
+    phase chains vLLM gen -> teacher-forced JS -> cosine, so a crash in cosine
+    would lose this behavior's JS work without these per-slice files.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}_{slice_name}.json"
+    payload = {
+        "behavior": behavior,
+        "slice": slice_name,
+        "phase": "js",
+        **slice_payload,
+        "metadata": _metadata(),
+    }
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    logger.info("Wrote per-slice JS checkpoint %s", out_path)
+    return out_path
+
+
+def _compute_config_fingerprint(
+    *,
+    behavior: str,
+    base_model: str,
+    s_text: str,
+    sprime_text: str,
+    slices: dict[str, list[str]],
+    r_samples: int,
+    temperature: float,
+    top_p: float,
+    max_new_tokens: int,
+    max_model_len: int,
+    seed: int,
+    smoke_probes: int | None,
+) -> str:
+    """sha256 over every parameter that changes which responses get sampled.
+
+    Defense-in-depth against silent gen-cache reuse across DIFFERENT
+    configs (round-2 bug class: smoke wrote a tiny 3-probe × 2-sample
+    cache, full pipeline read it back at face value because the loader
+    didn't validate config compatibility). Includes the exact persona
+    text + per-slice probe list (or a hash of them) so a probe-set or
+    persona swap also invalidates.
+    """
+    import hashlib as _hashlib  # local import: avoids ruff F401 strip of top-level unused
+
+    # Canonicalize: keys sorted so the hash is stable across dict orderings.
+    cfg = {
+        "behavior": behavior,
+        "base_model": base_model,
+        "s_text": s_text,
+        "sprime_text": sprime_text,
+        "slices": {k: list(v) for k, v in sorted(slices.items())},
+        "r_samples": int(r_samples),
+        "temperature": float(temperature),
+        "top_p": float(top_p),
+        "max_new_tokens": int(max_new_tokens),
+        "max_model_len": int(max_model_len),
+        "seed": int(seed),
+        "smoke_probes": smoke_probes,  # None vs int materially differs
+    }
+    blob = json.dumps(cfg, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return _hashlib.sha256(blob).hexdigest()
+
+
+def _write_gen_cache(
+    out_dir: Path,
+    behavior: str,
+    gen: dict[str, Any],
+    config_fingerprint: str | None = None,
+) -> Path:
+    """Persist the vLLM JS generation cache to disk before scoring starts.
+
+    Saves the most expensive artifact (the R sampled responses per persona,
+    slice, probe) so a resume after a scoring/cosine crash doesn't re-run
+    the vLLM generation phase.
+
+    ``config_fingerprint`` is the sha256 from :func:`_compute_config_fingerprint`;
+    it is stored alongside the cache so :func:`_load_gen_cache` can refuse
+    to return a cache whose generation config differs from the caller's
+    current config. ``None`` is supported for backwards compat with the
+    test helper that round-trips a fixed payload.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}_gen_cache.json"
+    # Convert int keys -> str for JSON; load helper reverses this.
+    serializable_cache = {
+        persona_label: {
+            slice_name: {str(q_idx): texts for q_idx, texts in by_q.items()}
+            for slice_name, by_q in by_slice.items()
+        }
+        for persona_label, by_slice in gen["cache"].items()
+    }
+    payload = {
+        "behavior": behavior,
+        "cache": serializable_cache,
+        "slices": gen["slices"],
+        "gen_wall_seconds": gen["gen_wall_seconds"],
+        "config_fingerprint": config_fingerprint,
+        "metadata": _metadata(),
+    }
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    logger.info("Wrote JS gen cache %s", out_path)
+    return out_path
+
+
+def _load_gen_cache(
+    out_dir: Path,
+    behavior: str,
+    expected_fingerprint: str | None = None,
+) -> dict[str, Any] | None:
+    """Load a previously persisted JS gen cache (for resume).
+
+    If ``expected_fingerprint`` is provided and the on-disk cache's
+    ``config_fingerprint`` does NOT match, return ``None`` and log a clear
+    ``[gen-cache] fingerprint mismatch → regenerating`` line. This is the
+    defense-in-depth fix for the round-2 silent-corruption bug class — a
+    smoke-config cache silently reused by a full-config call.
+
+    When ``expected_fingerprint`` is ``None`` (test helpers, legacy
+    payloads without a stored fingerprint), the cache is loaded
+    unconditionally; main() always passes the fingerprint.
+    """
+    path = out_dir / f"{behavior}_gen_cache.json"
+    if not path.exists():
+        return None
+    with open(path) as f:
+        payload = json.load(f)
+    stored_fp = payload.get("config_fingerprint")
+    if expected_fingerprint is not None and stored_fp != expected_fingerprint:
+        logger.warning(
+            "[gen-cache] fingerprint mismatch → regenerating (stored=%s expected=%s path=%s)",
+            stored_fp,
+            expected_fingerprint,
+            path,
+        )
+        return None
+    # str keys -> int (q_idx).
+    cache = {
+        persona_label: {
+            slice_name: {int(q_idx): texts for q_idx, texts in by_q.items()}
+            for slice_name, by_q in by_slice.items()
+        }
+        for persona_label, by_slice in payload["cache"].items()
+    }
+    logger.info("Loaded JS gen cache from %s — skipping vLLM generation", path)
+    return {
+        "cache": cache,
+        "slices": payload["slices"],
+        "gen_wall_seconds": payload.get("gen_wall_seconds", 0.0),
+        "config_fingerprint": stored_fp,
+    }
+
+
+def _write_slice_checkpoint_with_fingerprint(
+    out_dir: Path,
+    behavior: str,
+    slice_name: str,
+    slice_payload: dict[str, Any],
+    config_fingerprint: str | None,
+) -> Path:
+    """Internal helper: write per-slice checkpoint with a stored fingerprint.
+
+    ``_write_slice_checkpoint`` keeps its legacy signature (the existing
+    test pins it). Main() uses this helper to attach a fingerprint so
+    resume can validate it.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}_{slice_name}.json"
+    payload = {
+        "behavior": behavior,
+        "slice": slice_name,
+        "phase": "js",
+        **slice_payload,
+        "config_fingerprint": config_fingerprint,
+        "metadata": _metadata(),
+    }
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    logger.info("Wrote per-slice JS checkpoint %s", out_path)
+    return out_path
+
+
+def _load_slice_checkpoint(
+    out_dir: Path,
+    behavior: str,
+    slice_name: str,
+    expected_fingerprint: str | None = None,
+) -> dict[str, Any] | None:
+    """Load a previously written per-(behavior, slice) JS checkpoint, if any.
+
+    Returns ``None`` when (a) the file does not exist, OR (b)
+    ``expected_fingerprint`` is provided and the stored fingerprint does
+    not match. A fingerprint mismatch is logged so the regeneration trail
+    is visible.
+
+    When ``expected_fingerprint`` is ``None`` (legacy callers, tests
+    without a fingerprint context), no validation is applied and the
+    payload is returned as-is.
+    """
+    path = out_dir / f"{behavior}_{slice_name}.json"
+    if not path.exists():
+        return None
+    with open(path) as f:
+        payload = json.load(f)
+    stored_fp = payload.get("config_fingerprint")
+    if expected_fingerprint is not None and stored_fp != expected_fingerprint:
+        logger.warning(
+            "[slice-checkpoint] fingerprint mismatch → recomputing "
+            "(behavior=%s slice=%s stored=%s expected=%s path=%s)",
+            behavior,
+            slice_name,
+            stored_fp,
+            expected_fingerprint,
+            path,
+        )
+        return None
+    logger.info(
+        "Loaded per-slice JS checkpoint from %s — skipping recompute for slice=%s",
+        path,
+        slice_name,
+    )
+    return payload
+
+
+# ── Main ───────────────────────────────────────────────────────────────────
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--r-samples", type=int, default=8, help="responses per persona per probe")
+    parser.add_argument("--max-new-tokens", type=int, default=256)
+    parser.add_argument("--max-model-len", type=int, default=4096)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--layers",
+        type=int,
+        nargs="+",
+        default=DEFAULT_LAYERS,
+        help="cosine layer sweep (default: 7 14 21 27)",
+    )
+    parser.add_argument(
+        "--no-recipe-b",
+        action="store_true",
+        help="skip own-response-mean cosine (descope option)",
+    )
+    parser.add_argument(
+        "--behaviors",
+        nargs="+",
+        default=list(PREDICTOR_PAIRS.keys()),
+        help="which behaviors to run (default: all)",
+    )
+    parser.add_argument(
+        "--smoke-probes",
+        type=int,
+        default=None,
+        help="if set, only use the first N probes per slice (smoke run)",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=PROJECT_ROOT / "eval_results" / "issue_466" / "predictors",
+    )
+    args = parser.parse_args()
+
+    # Hard marker-id assert at top of main (R7).
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+    marker_ids = tokenizer.encode(MARKER, add_special_tokens=False)
+    assert marker_ids == [MARKER_ID], (
+        f"MARKER guard FAILED: '{MARKER}' tokenizes to {marker_ids}, expected [{MARKER_ID}]"
+    )
+    logger.info("Marker token assert OK: ※ -> [%d]", MARKER_ID)
+    del tokenizer
+
+    for behavior in args.behaviors:
+        if behavior not in PREDICTOR_PAIRS:
+            raise SystemExit(f"unknown behavior {behavior!r}; choices={list(PREDICTOR_PAIRS)}")
+        logger.info("=== behavior %s ===", behavior)
+        t_behavior = time.time()
+
+        # Resolve the slices BEFORE the fingerprint so smoke vs full get distinct
+        # hashes; the fingerprint covers everything that changes which responses
+        # get sampled (round-3 silent-gen-cache fix).
+        s_name, sprime_name = PREDICTOR_PAIRS[behavior]
+        slices_for_fp = _resolve_slices(behavior, args.smoke_probes)
+        config_fingerprint = _compute_config_fingerprint(
+            behavior=behavior,
+            base_model=BASE_MODEL,
+            s_text=PERSONAS[s_name],
+            sprime_text=PERSONAS[sprime_name],
+            slices=slices_for_fp,
+            r_samples=args.r_samples,
+            temperature=1.0,
+            top_p=1.0,
+            max_new_tokens=args.max_new_tokens,
+            max_model_len=args.max_model_len,
+            seed=args.seed,
+            smoke_probes=args.smoke_probes,
+        )
+        logger.info("[%s] config_fingerprint=%s", behavior, config_fingerprint[:16])
+
+        # Phase JS — generate. Validate fingerprint on resume; a mismatch
+        # forces regeneration (NOT silent reuse of a smoke-config cache).
+        cached = _load_gen_cache(args.out_dir, behavior, expected_fingerprint=config_fingerprint)
+        if cached is not None:
+            gen = cached
+        else:
+            gen = phase_js_generate(
+                behavior,
+                R=args.r_samples,
+                max_new_tokens=args.max_new_tokens,
+                max_model_len=args.max_model_len,
+                seed=args.seed,
+                smoke_probes=args.smoke_probes,
+            )
+            # Persist generation cache IMMEDIATELY so a later phase crash
+            # doesn't force a re-generation on resume. Fingerprint is stored
+            # so a future load can refuse incompatible reuse.
+            _write_gen_cache(args.out_dir, behavior, gen, config_fingerprint=config_fingerprint)
+
+        # Phase JS — score (model load AFTER vLLM teardown).
+        # The on_slice_complete callback writes {behavior}_{slice}.json per
+        # the plan §4.2 contract + CLAUDE.md "Checkpoint per phase" rule.
+        # The slice_loader callback reads them back on resume + validates the
+        # fingerprint — completes the "half-wired resume" round-3 item.
+        def _slice_writer(
+            slice_name: str,
+            slice_payload: dict[str, Any],
+            _behavior: str = behavior,
+            _fp: str = config_fingerprint,
+        ) -> None:
+            _write_slice_checkpoint_with_fingerprint(
+                args.out_dir, _behavior, slice_name, slice_payload, _fp
+            )
+
+        def _slice_loader(
+            slice_name: str,
+            _behavior: str = behavior,
+            _fp: str = config_fingerprint,
+        ) -> dict[str, Any] | None:
+            return _load_slice_checkpoint(
+                args.out_dir, _behavior, slice_name, expected_fingerprint=_fp
+            )
+
+        js_results = phase_js_score(
+            behavior,
+            gen["cache"],
+            gen["slices"],
+            smoke_probes=args.smoke_probes,
+            on_slice_complete=_slice_writer,
+            slice_loader=_slice_loader,
+        )
+        # Phase Cosine — at this point ALL JS slices have already been
+        # checkpointed to disk; a cosine crash now loses only the cosine
+        # work (which is cheap relative to vLLM gen + teacher-force).
+        cos_results = phase_cosine(
+            behavior,
+            gen["cache"],
+            gen["slices"],
+            layers=args.layers,
+            do_recipe_b=not args.no_recipe_b,
+            smoke_probes=args.smoke_probes,
+        )
+
+        # Rebuild combined {behavior}.json from on-disk per-slice checkpoints
+        # (NOT solely from in-memory js_results) so a crash partway through
+        # the cosine phase doesn't lose slice work already on disk. The
+        # in-memory js_results dict already mirrors the on-disk checkpoints
+        # (phase_js_score writes each slice as it completes), but reading
+        # back from disk closes the round-3 contract: "a crash after cosine
+        # must be resumable from disk." Re-loading reuses the validated
+        # fingerprint so a stale checkpoint can't sneak in here either.
+        combined_js: dict[str, Any] = {
+            "per_probe_scalars": dict(js_results["per_probe_scalars"]),
+            "per_position_traj": dict(js_results["per_position_traj"]),
+            "slice_mean_js": dict(js_results["slice_mean_js"]),
+            "slice_mean_kl_s_sprime": dict(js_results["slice_mean_kl_s_sprime"]),
+            "slice_mean_kl_sprime_s": dict(js_results["slice_mean_kl_sprime_s"]),
+            "averaged_js_union": js_results["averaged_js_union"],
+        }
+        for slice_name in slices_for_fp:
+            loaded = _load_slice_checkpoint(
+                args.out_dir, behavior, slice_name, expected_fingerprint=config_fingerprint
+            )
+            if loaded is None:
+                # phase_js_score should have written it; warn and stick with the
+                # in-memory value rather than failing the whole behavior.
+                logger.warning(
+                    "[%s] expected on-disk slice checkpoint for %s but none found "
+                    "(or fingerprint mismatch); using in-memory value",
+                    behavior,
+                    slice_name,
+                )
+                continue
+            combined_js["per_probe_scalars"][slice_name] = loaded["per_probe_scalars"]
+            combined_js["per_position_traj"][slice_name] = loaded.get("per_position_traj", [])
+            combined_js["slice_mean_js"][slice_name] = loaded["slice_mean_js"]
+            combined_js["slice_mean_kl_s_sprime"][slice_name] = loaded["slice_mean_kl_s_sprime"]
+            combined_js["slice_mean_kl_sprime_s"][slice_name] = loaded["slice_mean_kl_sprime_s"]
+
+        payload = {
+            "behavior": behavior,
+            "predictor_pair": list(PREDICTOR_PAIRS[behavior]),
+            "config": {
+                "r_samples": args.r_samples,
+                "max_new_tokens": args.max_new_tokens,
+                "max_model_len": args.max_model_len,
+                "seed": args.seed,
+                "layers": args.layers,
+                "headline_layer": HEADLINE_LAYER,
+                "do_recipe_b": not args.no_recipe_b,
+                "smoke_probes": args.smoke_probes,
+                "config_fingerprint": config_fingerprint,
+            },
+            "js": combined_js,
+            "cosine": cos_results,
+            "marker_token": MARKER,
+            "marker_token_id": MARKER_ID,
+            "metadata": _metadata(),
+            "wall_seconds": time.time() - t_behavior,
+        }
+        out_path = _write_cell(args.out_dir, behavior, payload)
+        logger.info(
+            "Wrote %s in %.1fs (avgJS=%.4f, sliceJS_trig=%.4f, sliceJS_nontrig=%.4f)",
+            out_path,
+            payload["wall_seconds"],
+            combined_js["averaged_js_union"],
+            combined_js["slice_mean_js"].get("trigger", float("nan")),
+            combined_js["slice_mean_js"].get("nontrigger", float("nan")),
+        )
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
