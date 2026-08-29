@@ -48,6 +48,7 @@ def configure_style() -> None:
             "lines.markersize": 5,
             "savefig.dpi": 300,
             "svg.hashsalt": "issue2569-mapping-diff",
+            "svg.fonttype": "path",
         }
     )
 
@@ -279,6 +280,26 @@ def aggregate_transfer_cosine(transfer: dict[str, Any], k: int, method: str) -> 
     return float(np.median(values))
 
 
+def aggregate_observed(transfer: dict[str, Any], k: int, method: str, metric: str) -> float:
+    values = [
+        transfer["few_query"][direction][writer][str(k)][method]["observed_target"][
+            metric
+        ]["median"]
+        for direction, writer, _ in CELLS
+    ]
+    return float(np.median(values))
+
+
+def aggregate_full_target_observed(transfer: dict[str, Any], metric: str) -> float:
+    values = [
+        transfer["full_target_map_ceiling"][direction][writer]["observed_target"][
+            metric
+        ]
+        for direction, writer, _ in CELLS
+    ]
+    return float(np.median(values))
+
+
 def pooled_advantage(transfer: dict[str, Any], k: int) -> np.ndarray:
     values: list[float] = []
     for direction, writer, _ in CELLS:
@@ -305,9 +326,32 @@ def write_report(mapping: dict[str, Any], transfer: dict[str, Any], out_dir: Pat
     behavior = mapping["behavior_readout"]["heldout"]
     seed_behavior = mapping["behavior_readout"].get("seed137_frozen_readout")
     alignment = mapping["fixed_alignment"]
-    alignment_test = alignment["heldout_test"]
+    alignment_test = alignment.get("heldout_test")
+    if alignment_test is None:
+        alignment_test = {
+            key: alignment.get(key)
+            for key in (
+                "context_q_to_l_flat_cosine",
+                "answer_qwriter_q_to_l_flat_cosine",
+                "answer_lwriter_q_to_l_flat_cosine",
+            )
+        }
+    if any(value is None for value in alignment_test.values()):
+        raise ValueError("mapping JSON lacks usable alignment-quality metrics")
+    within_writer = mapping["alignment_free_within_encoder_writer_prediction"]
     advantage32 = pooled_advantage(transfer, 32)
     advantage64 = pooled_advantage(transfer, 64)
+    low_advantage = {k: pooled_advantage(transfer, k) for k in (2, 4, 8)}
+    pca_ceiling = [
+        transfer["pca_reconstruction_ceiling"][direction][writer][
+            "full_target_mapping"
+        ]["centered_cosine"]
+        for direction, writer, _ in CELLS
+    ]
+    semantic_value = behavior["semantic_divergence"]["mapping_mediated"]["r2"]
+    length_value = behavior["log_length_delta"]["mapping_mediated"]["r2"]
+    refusal_value = behavior["refusal_delta"]["mapping_mediated"]["r2"]
+    repetition_value = behavior["repetition_delta"]["mapping_mediated"]["r2"]
     semantic_seed = (
         f" and replicates at {fmt_score(seed_behavior['semantic_divergence']['r2'])} on seed 137"
         if seed_behavior
@@ -318,29 +362,41 @@ def write_report(mapping: dict[str, Any], transfer: dict[str, Any], out_dir: Pat
         if seed_behavior
         else ""
     )
+    behavior_conclusion = (
+        "The semantic-divergence result is positive in this run; refusal and repetition are not."
+        if semantic_value is not None
+        and semantic_value > 0
+        and (refusal_value is None or refusal_value <= 0.01)
+        and (repetition_value is None or repetition_value <= 0.01)
+        else "These readouts should be interpreted from their reported numeric values rather than as a categorical effect."
+    )
+    low_text = ", ".join(
+        f"k={k}: median Δ {np.median(values):.3f}, {int(np.sum(values < 0))}/{len(values)} negative"
+        for k, values in low_advantage.items()
+    )
     report = f"""# Mapping differences and few-query transfer across Qwen and Llama
 
 **Issue #2569 follow-up · Qwen2.5-7B-Instruct Q14 × Llama-3.1-8B-Instruct L16 · 10,000 LMSYS prompts**
 
 ## Bottom line
 
-A single fixed coordinate alignment does not make the two context→answer maps identical. After the shared Procrustes transform, encoder-dependent and answer-writer-dependent mapping changes remain and are nearly orthogonal in operator space (cosine {geometry['writer_vs_encoder']['operator_cosine']:.3f}). But the alignment is incomplete (held-out context/answer cosines only {alignment_test['context_q_to_l_flat_cosine']:.3f}, {alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}, and {alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}), so the encoder and diagonal contrasts cannot be interpreted as pure behavioral effects. The writer contrast is cleaner because it differences answer writers within each encoder, canceling a shared alignment residual.
+The fixed Procrustes alignment is incomplete (held-out context/answer cosines {alignment_test['context_q_to_l_flat_cosine']:.3f}, {alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}, and {alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}). Consequently, encoder, diagonal, and encoder×writer interaction contrasts can all contain coordinate-alignment residual. Only the writer contrast has an exact zero null when there is no writer effect, although imperfect alignment can still distort its nonzero magnitude. Alignment-free within-model writer contrasts remain prompt-specific in both Qwen and Llama (held-out flattened cosine {within_writer['qwen_native_qwriter_minus_lwriter']['flat_cosine']:.3f} and {within_writer['llama_native_qwriter_minus_lwriter']['flat_cosine']:.3f}).
 
-The geometry is nevertheless calibratable with paired anchors. A small directional advantage first emerges around 32 queries (median paired Δ cosine {np.median(advantage32):.3f}; {100 * np.mean(advantage32 > 0):.1f}% of 40 repeat-cells) and is consistent by 64 ({100 * np.mean(advantage64 > 0):.1f}% positive). At 256 queries, median centered cosine with the full target map is {aggregate_transfer_cosine(transfer, 256, 'transported_source_mapping'):.3f}, versus {aggregate_transfer_cosine(transfer, 256, 'target_fit_from_scratch'):.3f} from scratch. This supports a shared correspondence that paired examples can identify; it does not establish that marginal statistics alone can identify it.
+Mapping transfer is not useful at the very smallest budgets: at k=2, 4, and 8, every paired repeat favors fitting the target directly by centered cosine. A small directional advantage first emerges around 32 queries (median paired Δ cosine {np.median(advantage32):.3f}; {100 * np.mean(advantage32 > 0):.1f}% of 40 repeat-cells) and is consistent by 64 ({100 * np.mean(advantage64 > 0):.1f}% positive). At 256 queries, median centered cosine with the frozen full target map is {aggregate_transfer_cosine(transfer, 256, 'transported_source_mapping'):.3f}, versus {aggregate_transfer_cosine(transfer, 256, 'target_fit_from_scratch'):.3f} from scratch.
 
 ## 1. Factorial mapping diff
 
 ![Held-out factorial mapping contrasts](fig1_factorial_mapping_diff.png)
 
-**Figure 1.** Four native maps—encoder {{Qwen, Llama}} × answer writer {{Qwen, Llama}}—were transformed into one fixed Qwen basis using train-only semi-orthogonal Procrustes alignments. Black marks show the 95% row-permutation null. Encoder and diagonal contrasts retain positive held-out magnitude R² ({reads['encoder']['pooled_r2']:.3f} and {reads['diagonal']['pooled_r2']:.3f}), but these two contrasts retain coordinate-alignment residual. Writer and interaction contrasts cancel a shared alignment residual; they have informative direction (cosine {reads['writer']['flat_cosine']:.3f} and {reads['interaction']['flat_cosine']:.3f}) but miscalibrated magnitude (negative R²). Every observed cosine exceeds all 1,000 row-pairing permutations (p={reads['writer']['permutation_null']['flat_cosine']['p_ge']:.4f}).
+**Figure 1.** Four native maps—encoder {{Qwen, Llama}} × answer writer {{Qwen, Llama}}—were transformed into one fixed Qwen basis using train-only semi-orthogonal Procrustes alignments. Black marks show the 95% row-permutation null. Encoder, diagonal, and interaction terms can contain alignment residual; their R² values are {reads['encoder']['pooled_r2']:.3f}, {reads['diagonal']['pooled_r2']:.3f}, and {reads['interaction']['pooled_r2']:.3f}. The writer term has cosine {reads['writer']['flat_cosine']:.3f} and R² {reads['writer']['pooled_r2']:.3f}. Every observed cosine exceeds all 1,000 row-pairing permutations (p={reads['writer']['permutation_null']['flat_cosine']['p_ge']:.4f}), which establishes prompt specificity but does not remove alignment confounding.
 
-Numerically, the encoder-labeled representation contrast is largest and most split-half stable: exercised held-out RMS norm {geometry['encoder']['heldout_prediction_rms_norm']:.2f} and split-half cosine {split['encoder']['data_weighted_half1_vs_half2_cosine']:.3f}. The cleaner writer contrast has RMS {geometry['writer']['heldout_prediction_rms_norm']:.2f} and split-half cosine {split['writer']['data_weighted_half1_vs_half2_cosine']:.3f}; interaction is smaller and less stable ({geometry['interaction']['heldout_prediction_rms_norm']:.2f}, {split['interaction']['data_weighted_half1_vs_half2_cosine']:.3f}). The diagonal result replicates numerically on seed 137 (R² {mapping['seed137_reliability']['frozen_seed42_diagonal_map_on_seed137']['pooled_r2']:.3f}), but remains alignment-confounded.
+Numerically, the encoder-labeled representation contrast is largest and most split-half stable (RMS {geometry['encoder']['heldout_prediction_rms_norm']:.2f}; cosine {split['encoder']['data_weighted_half1_vs_half2_cosine']:.3f}). The writer contrast has RMS {geometry['writer']['heldout_prediction_rms_norm']:.2f} and split-half cosine {split['writer']['data_weighted_half1_vs_half2_cosine']:.3f}. Interaction is smaller and less stable ({geometry['interaction']['heldout_prediction_rms_norm']:.2f}, {split['interaction']['data_weighted_half1_vs_half2_cosine']:.3f}) and may be entirely alignment residual. The diagonal replicates numerically on seed 137 (R² {mapping['seed137_reliability']['frozen_seed42_diagonal_map_on_seed137']['pooled_r2']:.3f}) but remains alignment-confounded. After alignment, writer and encoder operators are nearly orthogonal (cosine {geometry['writer_vs_encoder']['operator_cosine']:.3f}); because encoder is confounded, this is descriptive rather than a behavioral claim.
 
 ## 2. Can one mapping be transferred with only residual summaries or a few queries?
 
 ![Few-query mapping transfer](fig2_fewshot_transfer.png)
 
-**Figure 2.** Panel A evaluates the direction of the original full-data target mapping on the untouched 1,500-row test set. Thin lines are the four direction/writer cells; thick lines are their medians. The 0-query diamond uses separate mean/top-64 PCA/variance summaries with components paired only by variance rank and marginal skewness. This particular heuristic fails (centered cosine {min(summary_cos):.3f}–{max(summary_cos):.3f}), despite retaining {100 * min(transfer['summary_explained_fraction'].values()):.1f}%–{100 * max(transfer['summary_explained_fraction'].values()):.1f}% of residual energy. Stronger unsupervised alignment algorithms were not tested. Panel B shows paired within-anchor-set cosine advantage over the equal-query scratch control (median and pooled 10th–90th percentiles across 4 × 10 runs).
+**Figure 2.** Panel A evaluates recovery of the frozen full-data target mapping on the untouched 1,500-row test set—not direct fit to observed answers. Thin lines are the four direction/writer cells; thick lines are their medians. The 0-query diamond uses separate mean/top-64 PCA/variance summaries with components paired only by variance rank and marginal skewness. This particular orientation heuristic fails (centered cosine {min(summary_cos):.3f}–{max(summary_cos):.3f}). Rank-64 compression alone is not the cause: reconstructing target answers in the same rank-64 basis retains full-map cosine {min(pca_ceiling):.3f}–{max(pca_ceiling):.3f}. Stronger unsupervised alignment algorithms were not tested. Panel B shows paired within-anchor-set cosine advantage over the equal-query scratch control (median and pooled 10th–90th percentiles across 4 × 10 runs).
 
 For k paired train queries, regularized context and answer bridges use only sample means and centered Gram matrices. No validation rows tune the bridge. The frozen source map is applied between those two bridges. The control fits target context→answer directly from the identical k anchors.
 
@@ -348,27 +404,27 @@ Table entries are **transported source map / target fit from scratch**, measured
 
 {transfer_table(transfer)}
 
-At 16 queries, transport is directionally indistinguishable from scratch. A small advantage appears at 32, and at 64 every one of the 40 paired repeat-cells favors transfer. Scale-sensitive normalized R² also favors transfer, but is secondary because the two-stage transport and one-stage scratch fits have different shrinkage; centered cosine is the primary geometric comparison.
+Below 16 queries, transport is systematically worse than scratch ({low_text}). At 16 it is directionally indistinguishable. A small advantage appears at 32; by 64, {int(np.sum(advantage64 > 0))}/{len(advantage64)} paired repeat-cells favor transfer. At 256, transported predictions have median centered cosine {aggregate_observed(transfer, 256, 'transported_source_mapping', 'centered_cosine'):.3f} with actual target answers, versus {aggregate_observed(transfer, 256, 'target_fit_from_scratch', 'centered_cosine'):.3f} for scratch; the original 8,000-row target maps reach {aggregate_full_target_observed(transfer, 'centered_cosine'):.3f}. Scale-sensitive R² is retained only as a secondary diagnostic because the two-stage transport and one-stage scratch fits shrink differently.
 
 ## 3. What behavioral differences are visible?
 
 ![Behavior readouts from the writer contrast](fig3_behavior_readout.png)
 
-**Figure 3.** A ridge readout trained on the observed writer activation contrast can recover several answer differences, but only some survive when the writer contrast is predicted from context through the mapping diff. Mapping-mediated semantic-divergence R² is {fmt_score(behavior['semantic_divergence']['mapping_mediated']['r2'])}{semantic_seed}. Length is weak ({fmt_score(behavior['log_length_delta']['mapping_mediated']['r2'])}{length_seed}); refusal and repetition are near or below zero. Thus the map difference carries a reproducible semantic-divergence signal in this run, but this pilot does not support strong claims about refusal or repetition differences.
+**Figure 3.** A ridge readout trained on the observed writer activation contrast can recover several answer differences, but only some survive when the writer contrast is predicted from context through the mapping diff. Mapping-mediated R² values are semantic divergence {fmt_score(semantic_value)}{semantic_seed}, log length {fmt_score(length_value)}{length_seed}, refusal {fmt_score(refusal_value)}, and repetition {fmt_score(repetition_value)}. {behavior_conclusion}
 
 ## Exact design
 
 - Frozen split: 8,000 train / 500 validation / 1,500 test prompts. The new analyses never fit on test rows.
 - Fixed common basis: context Procrustes on Qwen-writer train contexts; answer Procrustes pooled over both answer writers. All affine translations are retained. Held-out context/answer alignment cosines are {alignment_test['context_q_to_l_flat_cosine']:.3f}/{alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}/{alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}, so encoder and diagonal contrasts include residual alignment error.
-- Factorial contrasts: writer, encoder, encoder×writer interaction, and the natural diagonal Qwen-own − Llama-own difference.
+- Factorial contrasts: writer, encoder, encoder×writer interaction, and the natural diagonal Qwen-own − Llama-own difference. Encoder, interaction, and diagonal can contain alignment residual; within-encoder Qwen/Llama writer contrasts provide alignment-free checks.
 - Null: 1,000 held-out row-pairing permutations that destroy prompt correspondence.
 - Stability: two disjoint 4,000-row train refits at the original selected ridge lambdas; independent generation seed 137.
 - Few-query transfer: both Qwen→Llama and Llama→Qwen, both answer writers, k ∈ {{2,4,8,16,32,64,128,256}}, 10 random anchor sets per cell, fixed ridge fraction 0.01, no validation tuning.
-- Primary transfer score is centered cosine with the full target-map prediction. The scale-sensitive normalized R² is retained in the JSON as a secondary diagnostic, not the headline comparison.
+- Primary transfer score is cosine after subtracting the target model's train-answer mean from both the candidate and frozen target-map predictions. It measures recovery of the frozen target mapping, not direct fit to observed answers. The scale-sensitive normalized R² is retained in JSON as a secondary diagnostic.
 
 ## Interpretation and limits
 
-Variance-ranked, skewness-oriented PCA summaries do not recover the correspondence; this does **not** rule out stronger unsupervised methods such as distribution matching, iterative alignment, or relative-representation approaches. Paired calibration produces a genuine directional advantage beginning around 32 queries and a robust advantage by 64. The procedure uses paired activations from both models and is calibration, not zero-shot transfer. The encoder/diagonal factorial terms are alignment-confounded, whereas writer/interaction terms cancel a shared alignment residual. Finally, this is an exploratory post-hoc LMSYS-only pilot; other model families, tasks, layers, and genuinely new prompts remain necessary tests.
+Variance-ranked, skewness-oriented PCA summaries do not recover the correspondence; this does **not** rule out stronger unsupervised methods such as distribution matching, iterative alignment, or relative-representation approaches. Paired transport is worse than direct target fitting at k≤8, roughly tied at 16, begins to help around 32, and is consistently better by 64. The procedure uses paired activations from both models and is calibration, not zero-shot transfer. Encoder, interaction, and diagonal factorial terms are alignment-confounded; only the writer term has an exact zero null under no writer effect, and its magnitude can still be distorted. Finally, this is an exploratory post-hoc LMSYS-only pilot; other model families, tasks, layers, and genuinely new prompts remain necessary tests.
 
 ## Reproducibility
 

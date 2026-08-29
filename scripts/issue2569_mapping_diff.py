@@ -709,6 +709,21 @@ def predicted_cells(cells: dict[str, Affine], q_context: np.ndarray) -> dict[str
     return {name: cell.predict(q_context) for name, cell in cells.items()}
 
 
+def predict_affine_device(affine: Affine, x: np.ndarray, device: str) -> np.ndarray:
+    dev = torch.device(device)
+    with torch.inference_mode():
+        pred = (
+            torch.as_tensor(x, dtype=torch.float64, device=dev)
+            @ torch.as_tensor(affine.A, dtype=torch.float64, device=dev)
+            + torch.as_tensor(affine.b, dtype=torch.float64, device=dev)
+        )
+    out = pred.cpu().numpy()
+    del pred
+    if dev.type == "cuda":
+        torch.cuda.empty_cache()
+    return out
+
+
 def alignment_checks(
     arrays: dict[str, np.ndarray],
     alignment: FixedAlignment,
@@ -752,8 +767,9 @@ def alignment_checks(
         "train": metrics(tr),
         "heldout_test": metrics(te),
         "interpretation": (
-            "Encoder and diagonal contrasts retain residual alignment error; writer and interaction "
-            "contrasts difference writers within encoder and therefore cancel a shared alignment residual."
+            "Encoder, diagonal, and encoder-by-writer interaction contrasts can retain residual alignment error. "
+            "Only the writer contrast has an exactly zero null under no writer effect, though its magnitude can "
+            "still be distorted when nonzero writer effects are imperfectly aligned."
         ),
     }
 
@@ -835,8 +851,10 @@ def phase_analyze(args: argparse.Namespace) -> None:
         if not np.allclose(cells[name].predict(probe), explicit, rtol=1e-10, atol=1e-8):
             raise AssertionError(f"{name}: transformed affine prediction mismatch")
     contrasts = factorial_affines(cells)
-    pred = factorial_arrays(predicted_cells(cells, arrays["q_context"]))
-    obs = factorial_arrays(observed_cells(arrays, alignment))
+    pred_cells_common = predicted_cells(cells, arrays["q_context"])
+    obs_cells_common = observed_cells(arrays, alignment)
+    pred = factorial_arrays(pred_cells_common)
+    obs = factorial_arrays(obs_cells_common)
     print("[mapping-diff] formed factorial contrasts", flush=True)
 
     contrast_reads = {
@@ -849,6 +867,33 @@ def phase_analyze(args: argparse.Namespace) -> None:
             device=args.device,
         )
         for i, name in enumerate(CONTRAST_NAMES)
+    }
+    q_writer_pred = pred_cells_common["q_qwriter"][te] - pred_cells_common["q_lwriter"][te]
+    q_writer_obs = obs_cells_common["q_qwriter"][te] - obs_cells_common["q_lwriter"][te]
+    l_q_native = predict_affine_device(
+        payload_affine(payloads["l_qwriter"]), arrays["l_context"][te], args.device
+    )
+    l_l_native = predict_affine_device(
+        payload_affine(payloads["l_lwriter"]), arrays["l_context"][te], args.device
+    )
+    within_encoder_writer = {
+        "qwen_native_qwriter_minus_lwriter": matrix_metrics(
+            q_writer_pred,
+            q_writer_obs,
+            permutation_draws=args.permutation_draws,
+            bootstrap_draws=args.bootstrap_draws,
+            seed=args.seed + 20,
+            device=args.device,
+        ),
+        "llama_native_qwriter_minus_lwriter": matrix_metrics(
+            l_q_native - l_l_native,
+            np.asarray(arrays["l_qwriter"][te], np.float64)
+            - np.asarray(arrays["l_lwriter"][te], np.float64),
+            permutation_draws=args.permutation_draws,
+            bootstrap_draws=args.bootstrap_draws,
+            seed=args.seed + 21,
+            device=args.device,
+        ),
     }
     behavior_rows = read_jsonl(Path(args.semantic_rows))
     behavior = behavior_arrays(behavior_rows, roster)
@@ -948,6 +993,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "cell_native_test_r2": {name: float(records[name]["test_r2"]) for name in CELL_NAMES},
         "contrast_geometry": contrast_geometry(contrasts, arrays["q_context"], te),
         "heldout_contrast_prediction": contrast_reads,
+        "alignment_free_within_encoder_writer_prediction": within_encoder_writer,
         "split_half_stability": split_half,
         "writer_modes": modes,
         "behavior_readout": behavior_readout,
@@ -955,7 +1001,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "caveats": [
             "Exploratory post-hoc analysis on the existing LMSYS-only pilot.",
             "Writer contrast is an answer-policy/content contrast, not a causal mechanism label.",
-            "Encoder and diagonal contrasts include residual cross-model coordinate-alignment error; only writer and interaction contrasts cancel a shared alignment residual by construction.",
+            "Encoder, diagonal, and encoder-by-writer interaction contrasts include residual cross-model coordinate-alignment error. Only the writer contrast has an exact zero null under no writer effect, and even its nonzero magnitude can be distorted by imperfect alignment.",
             "Behavior readouts use objective length/refusal/repetition flags and semantic distance; they do not exhaust behavior.",
             "Fixed pooled Procrustes removes one shared coordinate mismatch but cannot prove complete identifiability across architectures.",
         ],
