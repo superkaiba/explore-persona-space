@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2640,
+  "highest_id": 2641,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12658,6 +12658,13 @@
       "path": "tasks/proposed/2640",
       "status": "proposed",
       "title": "verify_task_body: label-SHA-vs-URL-pin assert + anaphoric HF pin-reference path resolution (pin-citation integrity, #2588 r2/r3)"
+    },
+    "2641": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2641",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan._fence_mask is delimiter-blind, moving 37 plans' verdicts across 19 checks"
     },
     "265": {
       "has_clean_result": false,
