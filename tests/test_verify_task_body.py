@@ -238,9 +238,15 @@ def test_good_body_passes_all():
     # calibration lever (ii)); PASS-skips here (issue unknown) (#2353).
     # Check 61 `check_footer_code_artifacts_github_pinned` (WARN, v4-only)
     # rides CHECKS and PASS-skips here (legacy body) (#2340).
-    assert len(results) == 77
+    # Check 62 `check_figure_caption_grain_claims_vs_sidecar` (WARN,
+    # generation-agnostic) rides CHECKS and PASS-skips here (no grain claim
+    # in the fixture caption) (#2367).
+    assert len(results) == 78
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert "figure caption grain claims vs sidecar per-series counts (grain drift)" in {
+        r.name for r in results
+    }
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
         r.name for r in results
     }
@@ -7303,14 +7309,17 @@ def test_checks_list_size():
     check 28's opaque-code scan nothing to read), #2292 — and check 61
     `check_footer_code_artifacts_github_pinned` — the git-side sibling
     of check 44 (footer code shas / bare eval_results tokens need an
-    adjacent SHA-pinned github link), #2340 — ride CHECKS;
+    adjacent SHA-pinned github link), #2340 — and check 62
+    `check_figure_caption_grain_claims_vs_sidecar` — per-draw / per-row
+    point-GRAIN caption claims vs sidecar per-series point counts (WARN,
+    generation-agnostic), #2367 — ride CHECKS;
     check 56 `check_v4_ack_result_count` (#2264) and check 59
     `check_v4_result_section_per_unit_coverage` — the unconditional
     per-section per-unit coverage floor (WARN, forward-only issue >=
     2353; #2353) — are dispatched OUTSIDE CHECKS
     with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 60
+    assert len(verify_task_body.CHECKS) == 61
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
@@ -7320,6 +7329,7 @@ def test_checks_list_size():
     assert verify_task_body.check_footer_code_artifacts_github_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_caption_grain_claims_vs_sidecar in verify_task_body.CHECKS
     assert verify_task_body.check_figure_beat_claims_vs_sidecar_text in verify_task_body.CHECKS
     assert verify_task_body.check_v4_result_paragraph_sentences in verify_task_body.CHECKS
     assert verify_task_body.check_v4_quant_result_figure in verify_task_body.CHECKS
@@ -13957,12 +13967,12 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (60 as of
-    check 61, #2340; check 59 is dispatched OUTSIDE CHECKS, #2353;
+    position 7 and the CHECKS count matches the current registry (61 as of
+    check 62, #2367; check 59 is dispatched OUTSIDE CHECKS, #2353;
     belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 60
+    assert len(verify_task_body.CHECKS) == 61
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -19929,6 +19939,562 @@ def test_check45_subset_claim_larger_pool_rescue():
     claims3 = verify_task_body._caption_count_claims("all 3 contexts lie below zero")
     warns3, n3, _s3 = verify_task_body._count_claim_failures(claims3, pools_incident, "f.png")
     assert n3 == 1 and len(warns3) == 1 and "pos_ctx" in warns3[0]
+
+
+# ─── Check 62: caption grain claims vs sidecar per-series counts (#2367) ────
+
+_CHECK62_NAME = "figure caption grain claims vs sidecar per-series counts (grain drift)"
+
+# The REAL pre-fix #2333 declaration set (grep-verified against
+# `git show 08b7049257^:tasks/reviewing/2333/body.md` at plan time), no bold
+# markers — the real body's Design line has none. Post-guard pair harvest =
+# {10, 15, 36, 156, 172, 180}; the range endpoints (26, 33, the range-36
+# instances) are guard-rejected; K = {5}. The incident arithmetic the
+# fixtures reproduce: series n=388 ~ (15+180)x2=390 (dist 2 <= tol 8) with
+# NO draw product within tolerance (nearest 375=(10+15)x3x5 at dist 13); an
+# UN-guarded harvest admits 26 → the spurious veto 26x3x5=390 (the v1
+# defect the range-endpoint guard closes).
+_C62_INCIDENT_DECLARATIONS = """\
+- **Design:** 2 models × 2 pair sets (180 instruction-format directed pairs across 5 cells; 15 pirate matched-query pairs) × 12 intervention arms; bank built from 5 cells × 36 directed pairs.
+- **Grid decoding:** K=5 draws, temperature 1.0; × 5 draws = 23,400 grid rollouts per model.
+- **Survivors:** 172 surviving pairs (instruction-format), 156 surviving pairs (format-matched), 10 matched-query pairs.
+- **Per-cell coverage:** same-wave recovery ratios 0.63 to 0.79, n=26–36 pairs per cell; and n=33–36 pairs per cell."""
+
+_C62_INCIDENT_CAPTION = (
+    "> **Figure.** *Per-unit companion of the rescore.* Each point is one steered "
+    "prefill draw: continuation-only F against whole-response F, colored by prefill length."
+)
+
+
+def _grain_scatter_sidecar(series_counts: dict[str, int]) -> dict:
+    """Sidecar meta with `series`-keyed `_kind: scatter` dict rows — one row
+    per plotted point, ``series_counts[series]`` rows per series."""
+    pts = []
+    for series, n in series_counts.items():
+        for i in range(n):
+            pts.append({"series": series, "_kind": "scatter", "_group": 0, "x": float(i), "y": 0.5})
+    return {"created": "2026-08-27T00:00:00Z", "points": pts}
+
+
+def _grain_body(caption: str, methodology_extra: str = "", *, setup_line=None, alt=None) -> str:
+    """`_V4_GOOD_BODY` with the figure's caption replaced, ``methodology_extra``
+    (K + pair declarations) inserted before `## Results`, and optional
+    setup-line / alt-text swaps for the MF-2 surface tests."""
+    body = _V4_GOOD_BODY.replace(_C45_CAPTION_BASE, caption)
+    if methodology_extra:
+        body = body.replace("## Results", methodology_extra + "\n\n## Results", 1)
+    if setup_line is not None:
+        body = body.replace(
+            "Plotted: mean alignment (y, %) per condition (x: baseline, tulu-25), "
+            "n=3 seeds per bar, 95% Wald CI error bars.",
+            setup_line,
+        )
+    if alt is not None:
+        body = body.replace(
+            "Bar chart of mean alignment with 95% CI across three seeds; "
+            "baseline 70.4% vs tulu-25 87.9%.",
+            alt,
+        )
+    return body
+
+
+def _run_check62(tmp_path, monkeypatch, body_sha_placeholder: str, meta: dict):
+    """Build the sidecar fixture repo (in a fresh subdir — multi-scenario
+    tests call this repeatedly under one tmp_path), monkeypatch
+    `_resolve_repo_root`, swap the placeholder sha, and run check 62."""
+    sub = tmp_path / f"c62_{len(list(tmp_path.iterdir()))}"
+    sub.mkdir()
+    repo, sha = _make_repo_with_figure_meta(sub, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body_sha_placeholder.replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body)
+
+
+def test_check62_draw_claim_over_aggregated_series_warns(tmp_path, monkeypatch):
+    """Incident-fidelity durability pin (preservation invariant, #2333 r2):
+    per-draw caption over a 388-point series with the REAL pre-fix
+    declaration set (dash-spelled ranges) → WARN naming 388, 390, K=5, the
+    ~1950 per-draw expectation, and the opt-out literal. Fires THROUGH the
+    range-endpoint guard: un-guarded, the range endpoint 26 admits the
+    spurious veto 26x3x5=390 and suppresses this WARN."""
+    body = _grain_body(_C62_INCIDENT_CAPTION, _C62_INCIDENT_DECLARATIONS)
+    res = _run_check62(
+        tmp_path, monkeypatch, body, _grain_scatter_sidecar({"1-token prefill (n=388)": 388})
+    )
+    assert res.name == _CHECK62_NAME
+    assert res.passed is True and res.is_warn is True, res.render()
+    for token in ("388", "390", "K=5", "1950", "caption-grain: manual"):
+        assert token in res.detail, (token, res.detail)
+
+
+def test_check62_worded_range_incident_still_warns(tmp_path, monkeypatch):
+    """MF-1 incident variant, WORDED range spelling (preservation invariant):
+    "n=26 to 36 pairs per cell" must be guard-rejected exactly like the
+    dash form — a dash-only guard re-admits 26 and the 26x3x5=390 veto
+    suppresses the incident WARN."""
+    decls = _C62_INCIDENT_DECLARATIONS.replace(
+        "n=26–36 pairs per cell", "n=26 to 36 pairs per cell"
+    ).replace("n=33–36 pairs per cell", "n=33 to 36 pairs per cell")
+    body = _grain_body(_C62_INCIDENT_CAPTION, decls)
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed is True and res.is_warn is True, res.render()
+    assert "388" in res.detail and "390" in res.detail
+
+
+def test_check62_real_prefix_2333_body_fires():
+    """MF-5, the real-repo historical-body acceptance assertion: run the
+    IMPLEMENTED check on the verbatim pre-fix #2333 body (no
+    `_resolve_repo_root` monkeypatch — the figure URL's pinned sha resolves
+    the sidecar through the real git object store) and assert the incident
+    fires. Closes the plan-time-trace vs implemented-check gap."""
+    repo = verify_task_body._resolve_repo_root()
+    if repo is None:
+        pytest.skip("repo root unresolved (offline / detached environment)")
+    probe = subprocess.run(
+        ["git", "-C", str(repo), "cat-file", "-e", "08b7049257^"],
+        capture_output=True,
+        text=True,
+    )
+    if probe.returncode != 0:
+        pytest.skip("pre-fix #2333 commit 08b7049257^ not present in this clone")
+    body = subprocess.run(
+        ["git", "-C", str(repo), "show", "08b7049257^:tasks/reviewing/2333/body.md"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    res = verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body)
+    assert res.passed is True and res.is_warn is True, res.render()
+    assert "whole_vs_continuation_q35.png" in res.detail
+    assert "388" in res.detail and "390" in res.detail
+
+
+def test_check62_true_draw_grain_veto_passes(tmp_path, monkeypatch):
+    """The draw-product veto stays live (preservation invariant): n=200 hits
+    agg 50x4 AND draw 20x2x5 → veto wins, clean PASS. Second scenario
+    (legend self-echo): the caption's own "(n=200 across pairs)" enters the
+    harvest and guarantees the s=1 agg hit 200x1 — the draw product
+    20x2x5=200 still vetoes."""
+    decls = "- **Design:** 20 alpha pairs and 50 beta pairs; K=5 draws per cell."
+    body = _grain_body("> **Figure.** each point is one draw.", decls)
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 200}))
+    assert res.passed and not res.is_warn, res.render()
+    assert "consistent" in res.detail
+    body2 = _grain_body("> **Figure.** each point is one draw (n=200 across pairs).", decls)
+    res2 = _run_check62(tmp_path, monkeypatch, body2, _grain_scatter_sidecar({"s": 200}))
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check62_per_row_claim_warns(tmp_path, monkeypatch):
+    """MF-2(c) + MF-3(b) preservation invariant: the per-ROW arm fires on
+    the incident arithmetic — a recalibration that silently drops `row`
+    from the head-noun set fails here."""
+    body = _grain_body("> **Figure.** Each point is one row.", _C62_INCIDENT_DECLARATIONS)
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed is True and res.is_warn is True, res.render()
+    assert "388" in res.detail and "390" in res.detail and "per-row" in res.detail
+
+
+def test_check62_setup_line_claim_warns(tmp_path, monkeypatch):
+    """MF-2(a): the grain claim lives SOLELY in the beat-1 setup-line prose
+    above the image; the blockquote caption is neutral → still WARN (pins
+    that the beat-1 window is genuinely scanned, not caption-only)."""
+    body = _grain_body(
+        "> **Figure.** Continuation F vs whole-response F.",
+        _C62_INCIDENT_DECLARATIONS,
+        setup_line=(
+            "Per-unit companion; each point is one steered prefill draw: "
+            "continuation-only F against whole-response F."
+        ),
+    )
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed is True and res.is_warn is True, res.render()
+
+
+def test_check62_alt_text_claim_warns(tmp_path, monkeypatch):
+    """MF-2(b): the claim lives SOLELY in the image alt text; caption and
+    setup line neutral → still WARN (pins the alt-text surface)."""
+    body = _grain_body(
+        "> **Figure.** Continuation F vs whole-response F.",
+        _C62_INCIDENT_DECLARATIONS,
+        alt="scatter, one point per steered prefill draw",
+    )
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed is True and res.is_warn is True, res.render()
+
+
+def test_check62_optout_scoping(tmp_path, monkeypatch):
+    """Opt-out honored + MF-2(d) window scoping + the alt-text asymmetry:
+    (i) opt-out inside the caption → opted-out; (ii) opt-out in the beat-1
+    window (setup line, NOT the caption) → opted-out; (iii) opt-out ONLY
+    inside alt text → NOT honored → WARN (the documented asymmetry)."""
+    optout = "<!-- caption-grain: manual -->"
+    body_i = _grain_body(
+        f"> **Figure.** Each point is one steered prefill draw. {optout}",
+        _C62_INCIDENT_DECLARATIONS,
+    )
+    res_i = _run_check62(tmp_path, monkeypatch, body_i, _grain_scatter_sidecar({"s": 388}))
+    assert res_i.passed and not res_i.is_warn, res_i.render()
+    assert "opted out" in res_i.detail
+    body_ii = _grain_body(
+        "> **Figure.** Continuation F vs whole-response F.",
+        _C62_INCIDENT_DECLARATIONS,
+        setup_line=f"Each point is one steered prefill draw. {optout}",
+    )
+    res_ii = _run_check62(tmp_path, monkeypatch, body_ii, _grain_scatter_sidecar({"s": 388}))
+    assert res_ii.passed and not res_ii.is_warn, res_ii.render()
+    assert "opted out" in res_ii.detail
+    body_iii = _grain_body(
+        "> **Figure.** Each point is one steered prefill draw.",
+        _C62_INCIDENT_DECLARATIONS,
+        alt=f"scatter {optout}",
+    )
+    res_iii = _run_check62(tmp_path, monkeypatch, body_iii, _grain_scatter_sidecar({"s": 388}))
+    assert res_iii.passed is True and res_iii.is_warn is True, res_iii.render()
+
+
+def test_check62_pair_caption_no_claim_passes(tmp_path, monkeypatch):
+    """ "Each point is one pair (...)": 'pair' is not a registered head noun
+    → no claim → the no-registered-grain-claim PASS message."""
+    body = _grain_body(
+        "> **Figure.** Each point is one pair (n=172 instruction-format, n=10 matched-query).",
+        _C62_INCIDENT_DECLARATIONS,
+    )
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure caption with a registered grain claim" in res.detail
+
+
+def test_check62_fixed_2333_caption_no_claim_passes(tmp_path, monkeypatch):
+    """The VERBATIM fixed #2333 caption: the multiplication-sign bridge-break
+    rejects "one pair x donor-scheme prefill cell", and the parenthetical
+    "(K=5 draws averaged)" never false-fires the recognizer."""
+    body = _grain_body(
+        "> **Figure.** Each point is one pair × donor-scheme prefill cell "
+        "(K=5 draws averaged): continuation-only F against whole-response F.",
+        _C62_INCIDENT_DECLARATIONS,
+    )
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure caption with a registered grain claim" in res.detail
+
+
+def test_check62_greedy_one_draw_not_a_claim():
+    """#2162 shape: "one pair at greedy 1 draw" — the DIGIT token breaks the
+    modifier bridge at {0,3}."""
+    assert verify_task_body._caption_grain_claims("each point is one pair at greedy 1 draw") == []
+
+
+def test_check62_cell_x_estimator_row_not_a_claim():
+    """#602 shape: "one cell x estimator row" — the multiplication sign
+    breaks the modifier bridge."""
+    assert verify_task_body._caption_grain_claims("Each point is one cell × estimator row") == []
+
+
+def test_check62_possessive_row_not_a_claim():
+    """#1489 shape: possessive unit noun ("one probe row's paired margin
+    delta") is rejected by the trailing lookahead."""
+    window = "Each dot is one probe row's paired margin delta"
+    assert verify_task_body._caption_grain_claims(window) == []
+
+
+def test_check62_per_row_marker_domain_not_a_claim():
+    """#471 + #399 shapes incl. the hyphenated form: row+marker is the
+    marker-token domain term, excluded from the adjective form; 'marker'
+    stays live as a glyph noun for per-DRAW."""
+    window = 'Per-row marker count (`text.count("※")`) and the per-row marker-loss contribution'
+    assert verify_task_body._caption_grain_claims(window) == []
+    claims = verify_task_body._caption_grain_claims("per-draw marker density")
+    assert [c["unit"] for c in claims] == ["draw"]
+
+
+def test_check62_three_modifier_grain_claims_match():
+    """MF-4 positives: three-modifier paraphrases that escape at {0,2} must
+    register (fails on any regression narrowing _GRAIN_MOD back to {0,2})."""
+    for window, unit in (
+        ("Each point is one single steered prefill draw", "draw"),
+        ("Each point is one greedy steered prefill draw", "draw"),
+        ("Each point is one pooled per-cell mean row", "row"),
+    ):
+        claims = verify_task_body._caption_grain_claims(window)
+        assert [c["unit"] for c in claims] == [unit], (window, claims)
+
+
+def test_check62_sidecar_skip_paths(tmp_path, monkeypatch):
+    """Fail-soft sidecar ladder: (i) claim + sha resolves + NO .meta.json
+    committed → silent-skip PASS (check-24 convention); (ii) a truncated
+    sidecar → skip (counts over truncated rows are not figure truth)."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # figure committed, no sidecar
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _grain_body(_C62_INCIDENT_CAPTION, _C62_INCIDENT_DECLARATIONS).replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure caption with a registered grain claim" in res.detail
+    meta = _grain_scatter_sidecar({"s": 388})
+    meta["data_truncated"] = True
+    body2 = _grain_body(_C62_INCIDENT_CAPTION, _C62_INCIDENT_DECLARATIONS)
+    res2 = _run_check62(tmp_path, monkeypatch, body2, meta)
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check62_no_k_disarms(tmp_path, monkeypatch):
+    """K-form narrowness + resampling guard: judge draws ("N=5 draws"),
+    prose bootstrap draws, the hyphenated "10,000-draw" form (#1092), and a
+    guard-rejected "bootstrap resampled x 20 draws" all leave K empty →
+    disarm PASS with zero git reads."""
+    decls = (
+        "- **Judging:** N=5 draws per rubric.\n"
+        "- **Nulls:** bootstrap resampling with 2,000 draws; a 10,000-draw bootstrap band;\n"
+        "  the null band used bootstrap resampled × 20 draws per cell.\n"
+        "- **Pairs:** 180 instruction-format directed pairs and 15 pirate matched-query pairs."
+    )
+    body = _grain_body(_C62_INCIDENT_CAPTION, decls)
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed and not res.is_warn, res.render()
+    assert "grain arithmetic disarmed" in res.detail
+
+
+def test_check62_no_pair_counts_disarms(tmp_path, monkeypatch):
+    """Word-bounded pair adjacency: "n=200 rows" with only 'paired' nearby
+    (no `pairs`/`surviv` token) never arms the harvest → disarm PASS."""
+    decls = (
+        "- **Grid decoding:** K=5 draws, temperature 1.0.\n"
+        "- **Rows:** n=200 rows entered the paired margin analysis."
+    )
+    body = _grain_body(_C62_INCIDENT_CAPTION, decls)
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed and not res.is_warn, res.render()
+    assert "grain arithmetic disarmed" in res.detail
+
+
+def test_check62_range_only_pair_declarations_disarm(tmp_path, monkeypatch):
+    """Range-only bodies go SILENT, never WARN: pair counts declared ONLY as
+    ranges (both spellings) are all guard-rejected → disarm at ladder step 4."""
+    decls = (
+        "- **Grid decoding:** K=5 draws, temperature 1.0.\n"
+        "- **Coverage:** n=26–36 pairs per cell and n=40 to 44 pairs per cell."
+    )
+    body = _grain_body(_C62_INCIDENT_CAPTION, decls)
+    res = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 388}))
+    assert res.passed and not res.is_warn, res.render()
+    assert "grain arithmetic disarmed" in res.detail
+
+
+def test_check62_series_counts_helper():
+    """Direct unit test of `_sidecar_series_point_counts`: series keying,
+    `_group` fallback, ANONYMOUS-row coalescing under "" (pinned
+    deliberately), legacy `rows`, scatter-kind filtering, truncated → None,
+    rowless → None."""
+    f = verify_task_body._sidecar_series_point_counts
+    sc = _grain_scatter_sidecar({"a": 3, "b": 2})
+    assert f(sc) == {"a": 3, "b": 2}
+    grouped = {"points": [{"_group": 0, "y": 1.0}] * 4 + [{"_group": 1, "y": 2.0}] * 2}
+    assert f(grouped) == {"0": 4, "1": 2}
+    anon = {"points": [{"x": 1.0, "y": 2.0}] * 3}
+    assert f(anon) == {"": 3}
+    legacy = {"rows": [{"series": "x", "y": 0.1}] * 5}
+    assert f(legacy) == {"x": 5}
+    mixed = {
+        "points": [{"series": "s", "_kind": "scatter"}] * 3
+        + [{"series": "bars", "_kind": "bar"}] * 4
+    }
+    assert f(mixed) == {"s": 3}
+    assert f({"data_truncated": True, "points": [{"series": "a"}]}) is None
+    assert f({"truncated": True, "points": [{"series": "a"}]}) is None
+    assert f({"points": []}) is None
+    assert f({"n_series": 1}) is None
+
+
+def test_check62_declaration_harvest():
+    """Direct unit test of `_body_grain_declarations`: both K forms; the
+    resampling guard; the pair singles incl. the pair-adjacent n= form;
+    range-endpoint rejection in ALL SIX shapes (en dash, ASCII hyphen,
+    worded to, the verbatim #207 "N = 50 to 550 pairs", through, and the
+    hyphenated-compound / prepositional keeps); the dual behavior of 36
+    (range instance rejected, genuine token kept); 'paired' non-match;
+    and the first-24 document-order cap with its cap_hit flag."""
+    text = (
+        "2 pair sets (180 instruction-format directed pairs across 5 cells; "
+        "15 pirate matched-query pairs).\n"
+        "K=5 draws at temperature 1.0; the anchor read used × 8 draws.\n"
+        "bootstrap resampled × 20 draws for the null band.\n"
+        "Survivors: 172 surviving pairs and 156 surviving pairs; matched-query kept "
+        "n=10 pairs intact.\n"
+        "Bank: 5 cells × 36 directed pairs.\n"
+        "Ranges: n=26–36 pairs per cell; n=148-150 pairs after drops; "
+        "n=26 to 36 pairs per cell; N = 50 to 550 pairs; 26 through 36 pairs.\n"
+        "Compounds: a 2-token prefill left 36 pairs; compared to 36 pairs elsewhere; "
+        "scaled up to 36 pairs.\n"
+        "Aggregation and reporting follow the parent protocol unchanged throughout.\n"
+        "The paired margin analysis used n=999 rows."
+    )
+    pairs, ks, cap_hit = verify_task_body._body_grain_declarations(text)
+    assert ks == {5, 8}, ks  # both decode forms; the guarded x20 rejected
+    assert pairs == {180, 15, 172, 156, 10, 36}, pairs
+    for endpoint in (26, 33, 148, 150, 50, 550, 999, 2, 20):
+        assert endpoint not in pairs, endpoint
+    assert cap_hit is False
+    many = " ".join(f"{1000 + i} extra pairs." for i in range(30))
+    pairs2, _ks2, cap_hit2 = verify_task_body._body_grain_declarations(many)
+    assert len(pairs2) == 24 and cap_hit2 is True
+    assert 1023 in pairs2 and 1024 not in pairs2  # first 24 in document order
+
+
+def test_check62_boundary_conventions(tmp_path, monkeypatch):
+    """Numeric-boundary pins: the max(2, 2%) tolerance boundary at m=390
+    (n=398 fires, n=399 does not); the n>=5 series floor; the K bounds
+    (2 accepted, 1 and 65 rejected); s-set completeness (an s=4-only fire
+    fires; the s=5 analogue does not). Named omissions (deliberate, plan
+    § Test plan item 22): the first-24 cap's interaction with a late true
+    veto, and the exact +-60 pair-adjacency window width."""
+    decls = "- **Design:** 15 alpha pairs and 180 beta pairs; K=5 draws per cell."
+    body = _grain_body(_C62_INCIDENT_CAPTION, decls)
+    res_398 = _run_check62(tmp_path, monkeypatch, body, _grain_scatter_sidecar({"s": 398}))
+    assert res_398.passed is True and res_398.is_warn is True, res_398.render()
+    res_399 = _run_check62(
+        tmp_path,
+        monkeypatch,
+        _grain_body(_C62_INCIDENT_CAPTION, decls),
+        _grain_scatter_sidecar({"s": 399}),
+    )
+    assert res_399.passed and not res_399.is_warn, res_399.render()
+    floor_decls = "- **Design:** 4 alpha pairs; K=5 draws per cell."
+    res_floor = _run_check62(
+        tmp_path,
+        monkeypatch,
+        _grain_body(_C62_INCIDENT_CAPTION, floor_decls),
+        _grain_scatter_sidecar({"tiny": 4}),
+    )
+    assert res_floor.passed and not res_floor.is_warn, res_floor.render()
+    for k_text, expected in (("K=2 draws", {2}), ("K=1 draws", set()), ("K=65 draws", set())):
+        _p, ks, _c = verify_task_body._body_grain_declarations(f"10 alpha pairs; {k_text}.")
+        assert ks == expected, (k_text, ks)
+    s4_decls = "- **Design:** 97 surviving pairs; K=5 draws per cell."
+    res_s4 = _run_check62(
+        tmp_path,
+        monkeypatch,
+        _grain_body(_C62_INCIDENT_CAPTION, s4_decls),
+        _grain_scatter_sidecar({"s": 388}),  # 388 = 97x4; draw set {485,...} misses
+    )
+    assert res_s4.passed is True and res_s4.is_warn is True, res_s4.render()
+    res_s5 = _run_check62(
+        tmp_path,
+        monkeypatch,
+        _grain_body(_C62_INCIDENT_CAPTION, s4_decls),
+        _grain_scatter_sidecar({"s": 485}),  # the s=5 analogue: no agg hit → no fire
+    )
+    assert res_s5.passed and not res_s5.is_warn, res_s5.render()
+
+
+# The exact single result-figure line of `_V4_GOOD_BODY` (swapped out by the
+# two-images-on-one-line alt-binding tests below).
+_C62_IMG_LINE = (
+    "![Bar chart of mean alignment with 95% CI across three seeds; baseline 70.4% vs "
+    "tulu-25 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+    "0123456789abcdef/figures/issue_999/hero.png)"
+)
+
+
+def _run_check62_two_images(tmp_path, monkeypatch, alt1: str, alt2: str):
+    """Run check 62 on a body whose single result-figure line is replaced by
+    TWO same-line images (`hero.png`, `second.png` — the existing check-26
+    `_make_repo_with_two_figure_metas` fixture), EACH with a sidecar whose
+    388-point series matches the incident aggregated product; the caption and
+    beat-1 prose are claim-free, so only ALT text can arm either figure."""
+    sub = tmp_path / f"c62two_{len(list(tmp_path.iterdir()))}"
+    sub.mkdir()
+    repo, sha = _make_repo_with_two_figure_metas(
+        sub, _grain_scatter_sidecar({"s1": 388}), _grain_scatter_sidecar({"s2": 388})
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _grain_body(
+        "> **Figure.** *Neutral caption with no unit-grain idiom.*",
+        _C62_INCIDENT_DECLARATIONS,
+    )
+    assert _C62_IMG_LINE in body, "fixture drift: _V4_GOOD_BODY figure line changed"
+    base_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        "0123456789abcdef/figures/issue_999"
+    )
+    two_line = f"![{alt1}]({base_url}/hero.png) ![{alt2}]({base_url}/second.png)"
+    body = body.replace(_C62_IMG_LINE, two_line).replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body)
+
+
+def test_check62_two_images_one_line_bind_alt_per_image(tmp_path, monkeypatch):
+    """Two images on ONE line, each with its own countable sidecar (both
+    388-point series): a grain claim in ONE image's alt arms ONLY that image
+    — regression for #2367 r2 concern `check62-same-line-alt-binding` (the
+    whole-line alt search bound the FIRST image's alt to every image on the
+    line: claim-in-first warned on BOTH figures; claim-in-second armed
+    NEITHER). Covers both claim orderings."""
+    claim = "Each point is one steered prefill draw"
+    res_first = _run_check62_two_images(tmp_path, monkeypatch, claim, "")
+    assert res_first.passed is True and res_first.is_warn is True, res_first.render()
+    assert res_first.detail.startswith("1 caption grain-claim drift"), res_first.detail
+    assert "`hero.png`" in res_first.detail and "second.png" not in res_first.detail
+
+    res_second = _run_check62_two_images(tmp_path, monkeypatch, "Overview panel", claim)
+    assert res_second.passed is True and res_second.is_warn is True, res_second.render()
+    assert res_second.detail.startswith("1 caption grain-claim drift"), res_second.detail
+    assert "`second.png`" in res_second.detail and "`hero.png`" not in res_second.detail
+
+
+def _run_check62_raw_sidecar(tmp_path, monkeypatch, raw: bytes):
+    """Run the ARMED check 62 (incident caption + declarations) against a
+    sidecar committed with RAW bytes — the shared-reader fail-soft tests
+    (#2367 r2 concern `check62-sidecar-decode-failsoft`). Returns
+    ``(result, repo, sha)`` so callers can also probe the readers directly."""
+    sub = tmp_path / f"c62raw_{len(list(tmp_path.iterdir()))}"
+    sub.mkdir()
+    repo, _ = _make_repo_with_figure_meta(sub, {"points": []})
+    (repo / "figures" / "issue_999" / "hero.meta.json").write_bytes(raw)
+    subprocess.run(
+        ["git", "-C", str(repo), "commit", "-aqm", "raw sidecar"],
+        check=True,
+        capture_output=True,
+    )
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _grain_body(_C62_INCIDENT_CAPTION, _C62_INCIDENT_DECLARATIONS)
+    body = body.replace("0123456789abcdef", sha)
+    return verify_task_body.check_figure_caption_grain_claims_vs_sidecar(body), repo, sha
+
+
+def test_check62_undecodable_sidecar_bytes_skip_clean(tmp_path, monkeypatch):
+    """A committed sidecar with invalid UTF-8 bytes must not crash the
+    verifier: pre-fix, `subprocess.run(text=True)` raised UnicodeDecodeError
+    OUTSIDE the readers' `(OSError, SubprocessError)` envelope (#2367 r2
+    BLOCKER `check62-sidecar-decode-failsoft`). Post-fix the armed check
+    PASS-skips and all three shared readers degrade (tristate → malformed)."""
+    raw = b'{"points": [\xff\xfe\x9d]}'
+    res, repo, sha = _run_check62_raw_sidecar(tmp_path, monkeypatch, raw)
+    assert res.passed is True and res.is_warn is False, res.render()
+    fig = "figures/issue_999/hero.png"
+    assert verify_task_body._read_figure_meta_json(repo, sha, fig) is None
+    assert verify_task_body._read_figure_meta_json_tristate(repo, sha, fig) == ("malformed", None)
+    assert verify_task_body._read_figure_meta_text(repo, sha, fig) is None
+
+
+def test_check62_deeply_nested_sidecar_skips_clean(tmp_path, monkeypatch):
+    """A pathologically nested committed sidecar must not crash the verifier:
+    pre-fix, `json.loads` raised RecursionError past the `(ValueError,
+    JSONDecodeError)` catch (#2367 r2 BLOCKER `check62-sidecar-decode-failsoft`).
+    Post-fix the armed check PASS-skips and the shared readers degrade."""
+    raw = b"[" * 100_000 + b"]" * 100_000
+    res, repo, sha = _run_check62_raw_sidecar(tmp_path, monkeypatch, raw)
+    assert res.passed is True and res.is_warn is False, res.render()
+    fig = "figures/issue_999/hero.png"
+    assert verify_task_body._read_figure_meta_json(repo, sha, fig) is None
+    assert verify_task_body._read_figure_meta_json_tristate(repo, sha, fig) == ("malformed", None)
+    assert verify_task_body._read_figure_meta_text(repo, sha, fig) is None
 
 
 # ─── Check 46: brace-expanded backtick HF paths vs the adjacent /tree pin ───
