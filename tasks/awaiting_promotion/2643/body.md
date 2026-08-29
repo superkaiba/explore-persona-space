@@ -4,6 +4,7 @@ title: Can a context-SAE→answer-SAE map forecast or flag triggered, refusal, a
 kind: experiment
 tags:
 - followup-manual
+- keep-running
 created_at: '2026-08-29T20:38:16Z'
 has_clean_result: false
 parent_id: 2552
