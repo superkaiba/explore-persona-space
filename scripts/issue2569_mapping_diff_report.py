@@ -88,6 +88,7 @@ def save_figure(fig: mpl.figure.Figure, stem: Path) -> None:
 
 def plot_factorial(mapping: dict[str, Any], out_dir: Path) -> None:
     reads = mapping["heldout_contrast_prediction"]
+    native = mapping["alignment_free_within_encoder_writer_prediction"]
     x = np.arange(len(CONTRASTS))
     labels = [name.title() for name in CONTRASTS]
     fig, axes = plt.subplots(1, 2, figsize=(6.7, 2.55), constrained_layout=True)
@@ -95,6 +96,20 @@ def plot_factorial(mapping: dict[str, Any], out_dir: Path) -> None:
     r2 = [reads[name]["pooled_r2"] for name in CONTRASTS]
     null_r2 = [reads[name]["permutation_null"]["pooled_r2"] for name in CONTRASTS]
     axes[0].bar(x, r2, color=[ORANGE, BLUE, GREEN, GRAY], width=0.68)
+    for offset, key, label, color in (
+        (-0.12, "qwen_native_qwriter_minus_lwriter", "Qwen native writer", BLUE),
+        (0.12, "llama_native_qwriter_minus_lwriter", "Llama native writer", GREEN),
+    ):
+        axes[0].scatter(
+            offset,
+            native[key]["pooled_r2"],
+            s=28,
+            facecolor="white",
+            edgecolor=color,
+            linewidth=1.3,
+            label=label,
+            zorder=4,
+        )
     for i, null in enumerate(null_r2):
         lo, hi = null["null_p025_p975"]
         axes[0].vlines(i, lo, hi, color="black", linewidth=1.2)
@@ -104,11 +119,25 @@ def plot_factorial(mapping: dict[str, Any], out_dir: Path) -> None:
     axes[0].set_ylabel("Pooled $R^2$")
     axes[0].set_xticks(x, labels, rotation=18, ha="right")
     axes[0].set_ylim(-0.39, 0.27)
+    axes[0].legend(frameon=False, loc="upper left")
     finish_axes(axes[0])
 
     cosine = [reads[name]["flat_cosine"] for name in CONTRASTS]
     null_cos = [reads[name]["permutation_null"]["flat_cosine"] for name in CONTRASTS]
     axes[1].bar(x, cosine, color=[ORANGE, BLUE, GREEN, GRAY], width=0.68)
+    for offset, key, color in (
+        (-0.12, "qwen_native_qwriter_minus_lwriter", BLUE),
+        (0.12, "llama_native_qwriter_minus_lwriter", GREEN),
+    ):
+        axes[1].scatter(
+            offset,
+            native[key]["flat_cosine"],
+            s=28,
+            facecolor="white",
+            edgecolor=color,
+            linewidth=1.3,
+            zorder=4,
+        )
     for i, null in enumerate(null_cos):
         lo, hi = null["null_p025_p975"]
         axes[1].vlines(i, lo, hi, color="black", linewidth=1.2)
@@ -352,15 +381,11 @@ def write_report(mapping: dict[str, Any], transfer: dict[str, Any], out_dir: Pat
     length_value = behavior["log_length_delta"]["mapping_mediated"]["r2"]
     refusal_value = behavior["refusal_delta"]["mapping_mediated"]["r2"]
     repetition_value = behavior["repetition_delta"]["mapping_mediated"]["r2"]
-    semantic_seed = (
-        f" and replicates at {fmt_score(seed_behavior['semantic_divergence']['r2'])} on seed 137"
+    seed_sentence = (
+        f" On seed 137, semantic-divergence R² is {fmt_score(seed_behavior['semantic_divergence']['r2'])} "
+        f"and log-length R² is {fmt_score(seed_behavior['log_length_delta']['r2'])}."
         if seed_behavior
-        else " (no independent generation seed was supplied)"
-    )
-    length_seed = (
-        f"; seed 137 {fmt_score(seed_behavior['log_length_delta']['r2'])}"
-        if seed_behavior
-        else ""
+        else " No independent generation seed was supplied."
     )
     other_behavior_values = [
         value for value in (length_value, refusal_value, repetition_value) if value is not None
@@ -382,15 +407,15 @@ def write_report(mapping: dict[str, Any], transfer: dict[str, Any], out_dir: Pat
 
 ## Bottom line
 
-The fixed Procrustes alignment is incomplete (held-out context/answer cosines {alignment_test['context_q_to_l_flat_cosine']:.3f}, {alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}, and {alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}). Consequently, encoder, diagonal, and encoder×writer interaction contrasts can all contain coordinate-alignment residual. Only the writer contrast has an exact zero null when there is no writer effect, although imperfect alignment can still distort its nonzero magnitude. Alignment-free within-model writer contrasts remain prompt-specific in both Qwen and Llama (held-out flattened cosine {within_writer['qwen_native_qwriter_minus_lwriter']['flat_cosine']:.3f} and {within_writer['llama_native_qwriter_minus_lwriter']['flat_cosine']:.3f}).
+The fixed Procrustes alignment is incomplete (held-out context/answer cosines {alignment_test['context_q_to_l_flat_cosine']:.3f}, {alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}, and {alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}). Consequently, encoder, diagonal, and encoder×writer interaction contrasts can all contain coordinate-alignment residual. Writer and interaction both vanish under the stronger null of no writer effect in either encoder; only writer is exactly zero under its own null, because interaction's own null—equal writer effects across encoders—is not protected by imperfect alignment. Alignment-free within-model writer contrasts remain prompt-specific in Qwen (cosine {within_writer['qwen_native_qwriter_minus_lwriter']['flat_cosine']:.3f}, R² {within_writer['qwen_native_qwriter_minus_lwriter']['pooled_r2']:.3f}) and Llama (cosine {within_writer['llama_native_qwriter_minus_lwriter']['flat_cosine']:.3f}, R² {within_writer['llama_native_qwriter_minus_lwriter']['pooled_r2']:.3f}).
 
-Mapping transfer is not useful at the very smallest budgets: at k=2, 4, and 8, every paired repeat favors fitting the target directly by centered cosine. A small directional advantage first emerges around 32 queries (median paired Δ cosine {np.median(advantage32):.3f}; {100 * np.mean(advantage32 > 0):.1f}% of 40 repeat-cells) and is consistent by 64 ({100 * np.mean(advantage64 > 0):.1f}% positive). At 256 queries, median centered cosine with the frozen full target map is {aggregate_transfer_cosine(transfer, 256, 'transported_source_mapping'):.3f}, versus {aggregate_transfer_cosine(transfer, 256, 'target_fit_from_scratch'):.3f} from scratch.
+Mapping transfer is not useful at the very smallest budgets: at k=2, 4, and 8, every paired anchor draw favors fitting the target directly by centered cosine. A small directional advantage first emerges around 32 queries (median paired Δ cosine {np.median(advantage32):.3f}; {100 * np.mean(advantage32 > 0):.1f}% of 40 dependent cell-draw comparisons) and is consistent by 64 ({100 * np.mean(advantage64 > 0):.1f}% positive). At 256 queries, median centered cosine with the frozen full target map is {aggregate_transfer_cosine(transfer, 256, 'transported_source_mapping'):.3f}, versus {aggregate_transfer_cosine(transfer, 256, 'target_fit_from_scratch'):.3f} from scratch.
 
 ## 1. Factorial mapping diff
 
 ![Held-out factorial mapping contrasts](fig1_factorial_mapping_diff.png)
 
-**Figure 1.** Four native maps—encoder {{Qwen, Llama}} × answer writer {{Qwen, Llama}}—were transformed into one fixed Qwen basis using train-only semi-orthogonal Procrustes alignments. Black marks show the 95% row-permutation null. Encoder, diagonal, and interaction terms can contain alignment residual; their R² values are {reads['encoder']['pooled_r2']:.3f}, {reads['diagonal']['pooled_r2']:.3f}, and {reads['interaction']['pooled_r2']:.3f}. The writer term has cosine {reads['writer']['flat_cosine']:.3f} and R² {reads['writer']['pooled_r2']:.3f}. Every observed cosine exceeds all 1,000 row-pairing permutations (p={reads['writer']['permutation_null']['flat_cosine']['p_ge']:.4f}), which establishes prompt specificity but does not remove alignment confounding.
+**Figure 1.** Four native maps—encoder {{Qwen, Llama}} × answer writer {{Qwen, Llama}}—were transformed into one fixed Qwen basis using train-only semi-orthogonal Procrustes alignments. Open circles on the writer bar are the alignment-free native Qwen/Llama writer contrasts. Black marks show the 95% row-permutation null. Encoder, diagonal, and interaction terms can contain alignment residual; their R² values are {reads['encoder']['pooled_r2']:.3f}, {reads['diagonal']['pooled_r2']:.3f}, and {reads['interaction']['pooled_r2']:.3f}. The aligned writer term has cosine {reads['writer']['flat_cosine']:.3f} and R² {reads['writer']['pooled_r2']:.3f}. Every observed cosine exceeds all 1,000 row-pairing permutations (p={reads['writer']['permutation_null']['flat_cosine']['p_ge']:.4f}), which establishes prompt specificity but does not remove alignment confounding.
 
 Numerically, the encoder-labeled representation contrast is largest and most split-half stable (RMS {geometry['encoder']['heldout_prediction_rms_norm']:.2f}; cosine {split['encoder']['data_weighted_half1_vs_half2_cosine']:.3f}). The writer contrast has RMS {geometry['writer']['heldout_prediction_rms_norm']:.2f} and split-half cosine {split['writer']['data_weighted_half1_vs_half2_cosine']:.3f}. Interaction is smaller and less stable ({geometry['interaction']['heldout_prediction_rms_norm']:.2f}, {split['interaction']['data_weighted_half1_vs_half2_cosine']:.3f}) and may be entirely alignment residual. The diagonal replicates numerically on seed 137 (R² {mapping['seed137_reliability']['frozen_seed42_diagonal_map_on_seed137']['pooled_r2']:.3f}) but remains alignment-confounded. After alignment, writer and encoder operators are nearly orthogonal (cosine {geometry['writer_vs_encoder']['operator_cosine']:.3f}); because encoder is confounded, this is descriptive rather than a behavioral claim.
 
@@ -398,7 +423,7 @@ Numerically, the encoder-labeled representation contrast is largest and most spl
 
 ![Few-query mapping transfer](fig2_fewshot_transfer.png)
 
-**Figure 2.** Panel A evaluates recovery of the frozen full-data target mapping on the untouched 1,500-row test set—not direct fit to observed answers. Thin lines are the four direction/writer cells; thick lines are their medians. The 0-query diamond uses separate mean/top-64 PCA/variance summaries with components paired only by variance rank and marginal skewness. This particular orientation heuristic fails (centered cosine {min(summary_cos):.3f}–{max(summary_cos):.3f}). Rank-64 compression alone is not the cause: reconstructing target answers in the same rank-64 basis retains full-map cosine {min(pca_ceiling):.3f}–{max(pca_ceiling):.3f}. Stronger unsupervised alignment algorithms were not tested. Panel B shows paired within-anchor-set cosine advantage over the equal-query scratch control (median and pooled 10th–90th percentiles across 4 × 10 runs).
+**Figure 2.** Panel A evaluates recovery of the frozen full-data target mapping on the untouched 1,500-row test set—not direct fit to observed answers. Thin lines are the four direction/writer cells; thick lines are their medians. The 0-query diamond uses separate mean/top-64 PCA/variance summaries with components paired only by variance rank and marginal skewness. The complete summary pipeline fails (centered cosine {min(summary_cos):.3f}–{max(summary_cos):.3f}). Answer-side rank-64 compression alone is not the cause: reconstructing target answers in the same rank-64 basis retains full-map cosine {min(pca_ceiling):.3f}–{max(pca_ceiling):.3f}; context-side compression remains a possible contributor. Stronger unsupervised alignment algorithms were not tested. Panel B shows paired within-anchor-set cosine advantage over the equal-query scratch control (median and pooled 10th–90th percentiles across 4 cells × 10 draws; these are dependent descriptive comparisons, not 40 independent trials).
 
 For k paired train queries, regularized context and answer bridges use only sample means and centered Gram matrices. No validation rows tune the bridge. The frozen source map is applied between those two bridges. The control fits target context→answer directly from the identical k anchors.
 
@@ -406,13 +431,13 @@ Table entries are **transported source map / target fit from scratch**, measured
 
 {transfer_table(transfer)}
 
-Below 16 queries, transport is systematically worse than scratch ({low_text}). At 16 it is directionally indistinguishable. A small advantage appears at 32; by 64, {int(np.sum(advantage64 > 0))}/{len(advantage64)} paired repeat-cells favor transfer. At 256, transported predictions have median centered cosine {aggregate_observed(transfer, 256, 'transported_source_mapping', 'centered_cosine'):.3f} with actual target answers, versus {aggregate_observed(transfer, 256, 'target_fit_from_scratch', 'centered_cosine'):.3f} for scratch; the original 8,000-row target maps reach {aggregate_full_target_observed(transfer, 'centered_cosine'):.3f}. Scale-sensitive R² is retained only as a secondary diagnostic because the two-stage transport and one-stage scratch fits shrink differently.
+Below 16 queries, transport is systematically worse than scratch ({low_text}). At 16 the median difference is near zero. A small advantage appears at 32; by 64, {int(np.sum(advantage64 > 0))}/{len(advantage64)} dependent cell-draw comparisons favor transfer. At 256, transported predictions have median centered cosine {aggregate_observed(transfer, 256, 'transported_source_mapping', 'centered_cosine'):.3f} with actual target answers, versus {aggregate_observed(transfer, 256, 'target_fit_from_scratch', 'centered_cosine'):.3f} for scratch; the original 8,000-row target maps reach {aggregate_full_target_observed(transfer, 'centered_cosine'):.3f}. Scale-sensitive R² is retained only as a secondary diagnostic because the two-stage transport and one-stage scratch fits shrink differently. The crossover is conditional on the fixed, untuned ridge fraction 0.01; tuning could move it.
 
 ## 3. What behavioral differences are visible?
 
 ![Behavior readouts from the writer contrast](fig3_behavior_readout.png)
 
-**Figure 3.** A ridge readout trained on the observed writer activation contrast can recover several answer differences, but only some survive when the writer contrast is predicted from context through the mapping diff. Mapping-mediated R² values are semantic divergence {fmt_score(semantic_value)}{semantic_seed}, log length {fmt_score(length_value)}{length_seed}, refusal {fmt_score(refusal_value)}, and repetition {fmt_score(repetition_value)}. {behavior_conclusion}
+**Figure 3.** A ridge readout trained on the observed writer activation contrast can recover several answer differences, but only some survive when the writer contrast is predicted from context through the mapping diff. Seed-42 mapping-mediated R² values are semantic divergence {fmt_score(semantic_value)}, log length {fmt_score(length_value)}, refusal {fmt_score(refusal_value)}, and repetition {fmt_score(repetition_value)}.{seed_sentence} {behavior_conclusion}
 
 ## Exact design
 
@@ -426,7 +451,7 @@ Below 16 queries, transport is systematically worse than scratch ({low_text}). A
 
 ## Interpretation and limits
 
-Variance-ranked, skewness-oriented PCA summaries do not recover the correspondence; this does **not** rule out stronger unsupervised methods such as distribution matching, iterative alignment, or relative-representation approaches. Paired transport is worse than direct target fitting at k≤8, roughly tied at 16, begins to help around 32, and is consistently better by 64. The procedure uses paired activations from both models and is calibration, not zero-shot transfer. Encoder, interaction, and diagonal factorial terms are alignment-confounded; only the writer term has an exact zero null under no writer effect, and its magnitude can still be distorted. Finally, this is an exploratory post-hoc LMSYS-only pilot; other model families, tasks, layers, and genuinely new prompts remain necessary tests.
+Variance-ranked, skewness-oriented PCA summaries do not recover the correspondence; this does **not** rule out stronger unsupervised methods or isolate context compression from orientation failure. Paired transport is worse than direct target fitting at k≤8, near zero in median advantage at 16, begins to help around 32, and is consistently better by 64 under the fixed ridge setting. The procedure uses paired activations from both models and is calibration, not zero-shot transfer. Encoder, interaction, and diagonal factorial terms are alignment-confounded. Writer and interaction vanish under no writer effect in either encoder, but only writer is exactly zero under its own null; nonzero writer magnitude can still be distorted. Finally, this is an exploratory post-hoc LMSYS-only pilot; other model families, tasks, layers, and genuinely new prompts remain necessary tests.
 
 ## Reproducibility
 

@@ -768,8 +768,9 @@ def alignment_checks(
         "heldout_test": metrics(te),
         "interpretation": (
             "Encoder, diagonal, and encoder-by-writer interaction contrasts can retain residual alignment error. "
-            "Only the writer contrast has an exactly zero null under no writer effect, though its magnitude can "
-            "still be distorted when nonzero writer effects are imperfectly aligned."
+            "Writer and interaction both vanish under the stronger null of no writer effect in either encoder. "
+            "The writer contrast is exactly zero under its own null; the interaction's own null of equal writer "
+            "effects across encoders is not protected under imperfect alignment."
         ),
     }
 
@@ -1001,7 +1002,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "caveats": [
             "Exploratory post-hoc analysis on the existing LMSYS-only pilot.",
             "Writer contrast is an answer-policy/content contrast, not a causal mechanism label.",
-            "Encoder, diagonal, and encoder-by-writer interaction contrasts include residual cross-model coordinate-alignment error. Only the writer contrast has an exact zero null under no writer effect, and even its nonzero magnitude can be distorted by imperfect alignment.",
+            "Encoder, diagonal, and encoder-by-writer interaction contrasts include residual cross-model coordinate-alignment error. Writer and interaction vanish if both encoders have no writer effect, but the interaction's own equal-writer-effect null is not protected under imperfect alignment; nonzero writer magnitude can also be distorted.",
             "Behavior readouts use objective length/refusal/repetition flags and semantic distance; they do not exhaust behavior.",
             "Fixed pooled Procrustes removes one shared coordinate mismatch but cannot prove complete identifiability across architectures.",
         ],
