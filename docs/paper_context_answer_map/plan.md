@@ -25,6 +25,14 @@ Related Work subsection. Do not claim a full answer-distribution approximation: 
 target is an activation summary of one sampled answer or an explicitly
 rollout-averaged target.
 
+Approved Introduction decisions (Thomas, 2026-08-29): keep ``next-answer
+predictor'' but remove the deterministic-mapping framing; define a sampled answer
+and explain rollout averaging as variance reduction; describe the character result
+as correlational evidence consistent with PSM; fold operator structure into the
+linearity contribution; reserve ``metamodel'' for the closing interpretation rather
+than the title or opening; include one scoped `R²`/acc@1 headline; and reserve
+corpus-transfer and causal-control failures for Discussion and Limitations.
+
 ### Terminology proposal
 
 - `C`, `A`: context token sequence and one sampled answer.
@@ -85,13 +93,14 @@ rollout-averaged target.
   feature-map, and cross-model results are ready for planning; remaining child tasks
   are infrastructure follow-ups.
 
-### Decisions to make before prose drafting
+### Decisions remaining after the Introduction draft
 
 1. Keep all five Results sections, or fold operator structure into Results 1?
 2. Give the prediction-versus-mechanism boundary its own short Results subsection,
    or place it at the end of Results 5 plus Discussion?
-3. Keep "metamodel of answer activations" in the title/front matter, or reserve
-   "metamodel" for Related Work and Discussion?
+3. **Resolved for the Introduction:** remove "metamodel of answer activations" from
+   the title/opening; it may appear as a closing interpretation and in Related Work
+   or Discussion.
 4. Figure 1 right panel: layer profile or training-data scaling curve?
 
 ---
