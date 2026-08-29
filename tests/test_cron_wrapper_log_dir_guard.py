@@ -379,30 +379,33 @@ def _statements(text: str, needle: str) -> list[_LogicalLine]:
     ]
 
 
-def _if_block_body(lines: list[str], start: int) -> list[str]:
-    """Physical lines inside the ``if`` block opening at ``lines[start]``."""
-    depth = 0
-    body: list[str] = []
-    for idx in range(start, len(lines)):
-        stripped = lines[idx].strip()
-        if idx > start:
-            body.append(lines[idx])
-        if stripped == "if" or stripped.startswith("if "):
-            depth += 1
-        elif stripped == "fi" or stripped.startswith("fi "):
-            depth -= 1
-            if depth <= 0:
-                return body
-    return body
+def _depth_delta(stripped: str) -> int:
+    """Net ``if``/``fi`` nesting change contributed by one physical line.
+
+    Segment-aware, so a ONE-LINE ``if c; then x; fi`` nets zero. The pre-fix
+    scan looked only at the line's FIRST token: a one-line ``if`` incremented
+    depth while its same-line ``fi`` never decremented it, so the scan ran past
+    the enclosing block's own ``else`` and credited ELSE-arm statements to the
+    THEN arm (round-3 review nit ``if-then-branch-oneline-if-depth-gap``).
+    """
+    delta = 0
+    for segment in stripped.split(";"):
+        seg = segment.strip()
+        if seg == "if" or seg.startswith("if "):
+            delta += 1
+        elif seg == "fi" or seg.startswith("fi "):
+            delta -= 1
+    return delta
 
 
 def _if_then_branch(lines: list[str], start: int) -> list[str]:
     """Physical lines in the THEN branch of the ``if`` opening at ``lines[start]``.
 
-    Narrower than :func:`_if_block_body`: the scan stops at this block's OWN
-    ``else`` / ``elif`` as well as at its matching ``fi``, so a statement in the
-    ELSE arm can never be credited to the THEN arm. Nesting is tracked, so a
-    nested block's ``else`` does not end the scan.
+    The scan stops at this block's OWN ``else`` / ``elif`` as well as at its
+    matching ``fi``, so a statement in the ELSE arm can never be credited to the
+    THEN arm. Nesting is tracked through :func:`_depth_delta`, so neither a
+    nested block's ``else`` nor a one-line ``if ...; then ...; fi`` ends the
+    scan early or lets it run long.
     """
     depth = 0
     body: list[str] = []
@@ -412,12 +415,9 @@ def _if_then_branch(lines: list[str], start: int) -> list[str]:
             return body
         if idx > start:
             body.append(lines[idx])
-        if stripped == "if" or stripped.startswith("if "):
-            depth += 1
-        elif stripped == "fi" or stripped.startswith("fi "):
-            depth -= 1
-            if depth <= 0:
-                return body
+        depth += _depth_delta(stripped)
+        if idx > start and depth <= 0:
+            return body
     return body
 
 
@@ -915,6 +915,51 @@ def test_scanner_fails_on_a_fail_open_probe_with_a_decoy_setup_ok_below(tmp_path
 
     with pytest.raises(AssertionError, match="does not route ITS OWN failure"):
         _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+def test_scanner_fails_when_a_oneline_if_hides_setup_ok_in_the_else_arm(tmp_path: Path):
+    """The round-3 hole: a one-line ``if ...; then ...; fi`` inside the THEN arm
+    used to misbalance the depth counter, so the scan ran past the probe's OWN
+    ``else`` and credited an ELSE-arm ``SETUP_OK=0`` to the THEN arm.
+
+    The assignment here fires only when the probe SUCCEEDS, so an
+    exists-but-unwritable log file leaves ``SETUP_OK=1`` and the wrapper exits 0
+    silently — precisely the failure class this task sweeps. Every other link in
+    the chain is intact, so only the misattributed branch can explain the
+    failure. Pinned because the pre-fix scan PASSED this fixture.
+    """
+    body = _PATTERN_C_LINKS.replace(
+        'if ! : >> "$LOG_FILE" 2>/dev/null; then\n'
+        '    log_line "FATAL: not appendable"\n'
+        "    SETUP_OK=0\n"
+        "fi\n",
+        'if ! : >> "$LOG_FILE" 2>/dev/null; then\n'
+        "    if true; then :; fi\n"
+        "else\n"
+        "    SETUP_OK=0\n"
+        "fi\n",
+    )
+    assert "if true; then :; fi" in body, "fixture did not place the one-line if"
+    assert body != _PATTERN_C_LINKS, "fixture did not modify the baseline"
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+
+    with pytest.raises(AssertionError, match="does not route ITS OWN failure"):
+        _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+def test_oneline_if_in_the_then_arm_is_still_accepted(tmp_path: Path):
+    """Negative control for the fixture above: a one-line ``if`` is ordinary
+    shell, so the SAME construct with ``SETUP_OK=0`` genuinely in the THEN arm
+    must keep PASSing. Without this, the depth fix could 'pass' by rejecting
+    every one-line conditional.
+    """
+    body = _PATTERN_C_LINKS.replace(
+        '    log_line "FATAL: not appendable"\n',
+        '    log_line "FATAL: not appendable"\n    if true; then :; fi\n',
+    )
+    assert "if true; then :; fi" in body, "fixture did not place the one-line if"
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+    _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
 
 
 def test_scanner_fails_when_setup_ok_never_sets_a_nonzero_rc(tmp_path: Path):
