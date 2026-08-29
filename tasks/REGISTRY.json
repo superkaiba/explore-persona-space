@@ -10708,8 +10708,8 @@
     "2386": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2386",
-      "status": "running",
+      "path": "tasks/completed/2386",
+      "status": "completed",
       "title": "cron wrappers: unchecked mkdir -p LOG_DIR silently skips the pass (sibling sweep of #2196)"
     },
     "2387": {
