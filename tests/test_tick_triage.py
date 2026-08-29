@@ -34,7 +34,20 @@ if str(SCRIPTS) not in sys.path:
 
 import tick_triage  # noqa: E402
 
-NOW = time.time()
+# #2369: NOW is a PER-TEST clock anchor, refreshed by the autouse fixture
+# below. A module-level `time.time()` capture silently ages every "fresh"
+# fixture event in long gate sessions (20-40 min collection→execution
+# drift = 4-12 spurious failures; incidents #2158/#2168). The 0.0
+# placeholder fails loudly (~56-year ages) if the fixture is ever removed.
+NOW: float = 0.0
+
+
+@pytest.fixture(autouse=True)
+def _fresh_now():
+    """Refresh the clock anchor at TEST SETUP so fixture ages are measured
+    from test execution, not module import (#2369)."""
+    global NOW
+    NOW = time.time()
 
 
 def _iso(epoch: float) -> str:
