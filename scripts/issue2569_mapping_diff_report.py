@@ -71,13 +71,18 @@ def finish_axes(ax: mpl.axes.Axes) -> None:
 
 def save_figure(fig: mpl.figure.Figure, stem: Path) -> None:
     fig.savefig(stem.with_suffix(".png"), bbox_inches="tight", facecolor="white")
+    svg_path = stem.with_suffix(".svg")
     fig.savefig(
-        stem.with_suffix(".svg"),
+        svg_path,
         bbox_inches="tight",
         facecolor="white",
         metadata={"Date": None},
     )
     plt.close(fig)
+    # Matplotlib can emit path-data continuation lines with trailing spaces.
+    svg_path.write_text(
+        "\n".join(line.rstrip() for line in svg_path.read_text().splitlines()) + "\n"
+    )
 
 
 def plot_factorial(mapping: dict[str, Any], out_dir: Path) -> None:
@@ -220,9 +225,10 @@ def plot_behavior(mapping: dict[str, Any], out_dir: Path) -> None:
     seed = mapping["behavior_readout"].get("seed137_frozen_readout")
     keys = ("log_length_delta", "refusal_delta", "repetition_delta", "semantic_divergence")
     labels = ("Log length", "Refusal", "Repetition", "Semantic\ndivergence")
-    oracle = [heldout[key]["observed_activation_readout"]["r2"] for key in keys]
-    mediated = [heldout[key]["mapping_mediated"]["r2"] for key in keys]
-    replicated = [seed[key]["r2"] for key in keys] if seed else None
+    numeric = lambda value: np.nan if value is None else float(value)
+    oracle = [numeric(heldout[key]["observed_activation_readout"]["r2"]) for key in keys]
+    mediated = [numeric(heldout[key]["mapping_mediated"]["r2"]) for key in keys]
+    replicated = [numeric(seed[key]["r2"]) for key in keys] if seed else None
     x = np.arange(len(keys))
     width = 0.25
     fig, ax = plt.subplots(figsize=(5.5, 2.65), constrained_layout=True)
@@ -320,7 +326,7 @@ def write_report(mapping: dict[str, Any], transfer: dict[str, Any], out_dir: Pat
 
 A single fixed coordinate alignment does not make the two context→answer maps identical. After the shared Procrustes transform, encoder-dependent and answer-writer-dependent mapping changes remain and are nearly orthogonal in operator space (cosine {geometry['writer_vs_encoder']['operator_cosine']:.3f}). But the alignment is incomplete (held-out context/answer cosines only {alignment_test['context_q_to_l_flat_cosine']:.3f}, {alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}, and {alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}), so the encoder and diagonal contrasts cannot be interpreted as pure behavioral effects. The writer contrast is cleaner because it differences answer writers within each encoder, canceling a shared alignment residual.
 
-The geometry is nevertheless calibratable with paired anchors. A small directional advantage first emerges around 32 queries (median paired Δ cosine {np.median(advantage32):.3f}; {100 * np.mean(advantage32 > 0):.0f}% of 40 repeat-cells) and is consistent by 64 ({100 * np.mean(advantage64 > 0):.0f}% positive). At 256 queries, median centered cosine with the full target map is {aggregate_transfer_cosine(transfer, 256, 'transported_source_mapping'):.3f}, versus {aggregate_transfer_cosine(transfer, 256, 'target_fit_from_scratch'):.3f} from scratch. This supports a shared correspondence that paired examples can identify; it does not establish that marginal statistics alone can identify it.
+The geometry is nevertheless calibratable with paired anchors. A small directional advantage first emerges around 32 queries (median paired Δ cosine {np.median(advantage32):.3f}; {100 * np.mean(advantage32 > 0):.1f}% of 40 repeat-cells) and is consistent by 64 ({100 * np.mean(advantage64 > 0):.1f}% positive). At 256 queries, median centered cosine with the full target map is {aggregate_transfer_cosine(transfer, 256, 'transported_source_mapping'):.3f}, versus {aggregate_transfer_cosine(transfer, 256, 'target_fit_from_scratch'):.3f} from scratch. This supports a shared correspondence that paired examples can identify; it does not establish that marginal statistics alone can identify it.
 
 ## 1. Factorial mapping diff
 

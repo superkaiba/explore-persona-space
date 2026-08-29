@@ -18,9 +18,17 @@
     "kind": "single fixed train-fitted semi-orthogonal Procrustes; answer fit pooled over writers",
     "n_context_train": 8000,
     "n_answer_train_pooled": 16000,
-    "context_q_to_l_flat_cosine": 0.6965338229975248,
-    "answer_qwriter_q_to_l_flat_cosine": 0.7382414198646953,
-    "answer_lwriter_q_to_l_flat_cosine": 0.7283639852026015
+    "train": {
+      "context_q_to_l_flat_cosine": 0.6965338229975248,
+      "answer_qwriter_q_to_l_flat_cosine": 0.7382414198646953,
+      "answer_lwriter_q_to_l_flat_cosine": 0.7283639852026015
+    },
+    "heldout_test": {
+      "context_q_to_l_flat_cosine": 0.6566734087613132,
+      "answer_qwriter_q_to_l_flat_cosine": 0.7080166107501652,
+      "answer_lwriter_q_to_l_flat_cosine": 0.6983484284765675
+    },
+    "interpretation": "Encoder and diagonal contrasts retain residual alignment error; writer and interaction contrasts difference writers within encoder and therefore cancel a shared alignment residual."
   },
   "factorial_definitions": {
     "writer": "0.5 * [(Qenc,Qwriter - Qenc,Lwriter) + (Lenc,Qwriter - Lenc,Lwriter)]",
@@ -1101,7 +1109,7 @@
         "applicable": false,
         "reason": "d_in != d_out (cross-model spaces)"
       },
-      "elapsed_s": 0.52
+      "elapsed_s": 0.51
     },
     "heldout": {
       "log_length_delta": {
@@ -1335,8 +1343,9 @@
   "caveats": [
     "Exploratory post-hoc analysis on the existing LMSYS-only pilot.",
     "Writer contrast is an answer-policy/content contrast, not a causal mechanism label.",
+    "Encoder and diagonal contrasts include residual cross-model coordinate-alignment error; only writer and interaction contrasts cancel a shared alignment residual by construction.",
     "Behavior readouts use objective length/refusal/repetition flags and semantic distance; they do not exhaust behavior.",
     "Fixed pooled Procrustes removes one shared coordinate mismatch but cannot prove complete identifiability across architectures."
   ],
-  "elapsed_s": 99.02
+  "elapsed_s": 97.02
 }

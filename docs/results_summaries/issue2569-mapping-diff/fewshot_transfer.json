@@ -17,6 +17,7 @@
     "few_query": "Train-only k paired rows define regularized affine-span context and answer bridges around the frozen source mapping; evaluated on the untouched test rows.",
     "scratch_control": "Target context-to-answer map fit from exactly the same k paired rows.",
     "full_ceiling": "Original target native map fit with 8,000 train rows and lambda selected on validation.",
+    "primary_transfer_metric": "Centered cosine against the full target-map prediction; unlike normalized R2, this is invariant to the different shrinkage induced by the two-stage transport and one-stage scratch fits.",
     "hyperparameters": {
       "summary_rank": 64,
       "k_values": [
@@ -9791,10 +9792,11 @@
     "l_lwriter": 0.5187525561028845
   },
   "caveats": [
-    "The summary-only PC rank match is intentionally weak: covariance spectra do not identify semantic axes.",
+    "The summary-only test covers only variance-rank PC pairing with skewness-sign orientation; stronger unsupervised alignment methods are untested.",
     "Few-query transfer uses paired residual tuples from both models and therefore is calibration, not zero-shot transfer.",
+    "Normalized-R2 comparisons are scale-sensitive and the transport path has two shrinkage stages versus one for scratch; centered-cosine comparisons are the primary geometric result.",
     "All k-shot curves reuse an existing fixed dataset; query counts describe calibration rows, not new API calls.",
     "This is exploratory post-hoc analysis on the LMSYS-only pilot."
   ],
-  "elapsed_s": 315.76
+  "elapsed_s": 320.4
 }
