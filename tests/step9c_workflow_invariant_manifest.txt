@@ -53,6 +53,7 @@ tests/test_issue_skill_inline_gate_pin.py
 tests/test_issue_skill_inline_measurement_duties.py
 tests/test_issue_skill_inline_upload_verify_recipe.py
 tests/test_issue_skill_instrument_supersession_addenda_pin.py
+tests/test_issue_skill_lint_family_sync.py
 tests/test_issue_skill_lint_owndiff_attribution.py
 tests/test_issue_skill_marker_contract.py
 tests/test_issue_skill_merge_resnapshot_pin.py
