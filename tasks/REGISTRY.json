@@ -10701,8 +10701,8 @@
     "2385": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2385",
-      "status": "planning",
+      "path": "tasks/approved/2385",
+      "status": "approved",
       "title": "workflow-fix: Step 5a spec-sync add/modify-only leaves stale main-deleted family twins \u2014 TG scan leg collects them and crashes the Step 10d gate"
     },
     "2386": {
