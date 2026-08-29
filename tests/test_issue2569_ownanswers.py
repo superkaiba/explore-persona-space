@@ -11,6 +11,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
+import issue2569_atlas as atlas  # noqa: E402
+import issue2569_operator as op  # noqa: E402
 import issue2569_ownanswers_analyze as ana  # noqa: E402
 import issue2569_ownanswers_generate as gen  # noqa: E402
 import issue2569_xmodel_capture as cap  # noqa: E402
@@ -110,3 +112,13 @@ def test_repeatability_identity_case():
     assert np.isclose(rep["linear_cka"], 1.0)
     assert np.isclose(rep["identity_pooled_r2"], 1.0)
     assert np.isclose(rep["row_cosine"]["mean"], 1.0)
+
+
+def test_ridge_payload_device_cpu_matches_historical_default():
+    rng = np.random.default_rng(137)
+    x = rng.standard_normal((48, 9))
+    y = rng.standard_normal((48, 7))
+    tr = np.arange(36)
+    default = atlas.ridge_beta_at_lambda(x, y, tr, 2.5)
+    explicit = atlas.ridge_beta_at_lambda(x, y, tr, 2.5, device="cpu")
+    assert np.allclose(op.predict(default, x), op.predict(explicit, x), atol=0, rtol=0)

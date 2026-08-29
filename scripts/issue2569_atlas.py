@@ -202,7 +202,14 @@ def fit_val_widened(X, Y, tr, va, te, dev, *, fit_fn=None, grid=None, max_wideni
     )
 
 
-def ridge_beta_at_lambda(X: np.ndarray, Y: np.ndarray, tr: np.ndarray, lam: float) -> OP.MapPayload:
+def ridge_beta_at_lambda(
+    X: np.ndarray,
+    Y: np.ndarray,
+    tr: np.ndarray,
+    lam: float,
+    *,
+    device: str | torch.device = "cpu",
+) -> OP.MapPayload:
     """Closed-form standardized primal ridge at a FIXED lambda -> ``OP.MapPayload``.
 
     Replicates ``issue779_ffc_n50k_fits._ridge_primal_multi_lambda`` preprocessing
@@ -211,11 +218,12 @@ def ridge_beta_at_lambda(X: np.ndarray, Y: np.ndarray, tr: np.ndarray, lam: floa
     the core's predictions exactly (asserted in the selftest). The payload rides the
     vendored contract shape, so ``OP.predict`` / ``OP.row_operator`` are the ONLY
     prediction/operator paths (B1 — never a re-derived product)."""
-    Xtr = torch.as_tensor(np.asarray(X)[tr], dtype=torch.float64)
+    dev = torch.device(device)
+    Xtr = torch.as_tensor(np.asarray(X)[tr], dtype=torch.float64, device=dev)
     xmu = Xtr.mean(0)
     xsd = Xtr.std(0) + 1e-9
     Xn = (Xtr - xmu) / xsd
-    Yt = torch.as_tensor(np.asarray(Y)[tr], dtype=torch.float64)
+    Yt = torch.as_tensor(np.asarray(Y)[tr], dtype=torch.float64, device=dev)
     ymu = Yt.mean(0)
     Yc = Yt - ymu
     A = Xn.T @ Xn
@@ -225,10 +233,10 @@ def ridge_beta_at_lambda(X: np.ndarray, Y: np.ndarray, tr: np.ndarray, lam: floa
     return OP.MapPayload(
         layer=-1,
         path=Path("<fitted-in-memory>"),
-        W=W.numpy(),
-        xmu=xmu.numpy(),
-        xsd=xsd.numpy(),
-        ymu=ymu.numpy(),
+        W=W.cpu().numpy(),
+        xmu=xmu.cpu().numpy(),
+        xsd=xsd.cpu().numpy(),
+        ymu=ymu.cpu().numpy(),
         selected_lambda=float(lam),
         raw={},
     )
@@ -654,13 +662,25 @@ def _identity_bias_read(x_tr, y_tr, x_te, y_te) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _fit_map(name: str, X, Y, folds: dict, dev, *, grid=None, max_widenings=None) -> dict:
+def _fit_map(
+    name: str,
+    X,
+    Y,
+    folds: dict,
+    dev,
+    *,
+    grid=None,
+    max_widenings=None,
+    payload_device: str | torch.device = "cpu",
+) -> dict:
     """One val-lambda-selected widened ridge fit + beta payload at the selected
     lambda + held-out reads (R², kNN, identity+bias). Returns a unit record."""
     t0 = time.time()
     tr, va, te = folds["tr"], folds["va"], folds["te"]
     pred_te, meta = fit_val_widened(X, Y, tr, va, te, dev, grid=grid, max_widenings=max_widenings)
-    payload = ridge_beta_at_lambda(X, Y, tr, float(meta["selected_lambda"]))
+    payload = ridge_beta_at_lambda(
+        X, Y, tr, float(meta["selected_lambda"]), device=payload_device
+    )
     rec = {
         "name": name,
         "d_in": int(np.asarray(X).shape[1]),
@@ -679,15 +699,22 @@ def _fit_map(name: str, X, Y, folds: dict, dev, *, grid=None, max_widenings=None
     return {"record": rec, "payload": payload, "pred_te": pred_te}
 
 
-def _split_half_floor(X, Y, tr: np.ndarray, lam: float) -> dict:
+def _split_half_floor(
+    X,
+    Y,
+    tr: np.ndarray,
+    lam: float,
+    *,
+    device: str | torch.device = "cpu",
+) -> dict:
     """Split-half operator noise floor: refit at the SAME selected lambda on two
     disjoint train halves (by position parity — deterministic); floor = raw
     vec-cosine of the two row-action operators (within-operator self-similarity)."""
     h1, h2 = tr[0::2], tr[1::2]
     if len(h1) < 3 or len(h2) < 3:
         return {"floor": None, "reason": "too few train rows for split-half"}
-    p1 = ridge_beta_at_lambda(X, Y, h1, lam)
-    p2 = ridge_beta_at_lambda(X, Y, h2, lam)
+    p1 = ridge_beta_at_lambda(X, Y, h1, lam, device=device)
+    p2 = ridge_beta_at_lambda(X, Y, h2, lam, device=device)
     a1, _ = OP.row_operator(p1)
     a2, _ = OP.row_operator(p2)
     v1, v2 = a1.reshape(-1), a2.reshape(-1)

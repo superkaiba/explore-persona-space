@@ -252,10 +252,18 @@ def _fit(
     persist_dir: Path | None,
     split_floor: bool,
 ) -> dict:
-    res = AT._fit_map(name, x, y, folds, dev)
+    resume_path = persist_dir / "maps" / f"{name}.pt" if persist_dir is not None else None
+    if resume_path is not None and resume_path.is_file():
+        payload, record = _payload_with_record(resume_path)
+        pred_te = OP.predict(payload, x[folds["te"]])
+        print(f"[analyze] {name} resume-skip persisted primary map", flush=True)
+        return {"record": record, "payload": payload, "pred_te": pred_te}
+    res = AT._fit_map(name, x, y, folds, dev, payload_device=dev)
     if split_floor:
         lam = float(res["record"]["fit_meta"]["selected_lambda"])
-        res["record"]["split_half_floor"] = AT._split_half_floor(x, y, folds["tr"], lam)
+        res["record"]["split_half_floor"] = AT._split_half_floor(
+            x, y, folds["tr"], lam, device=dev
+        )
     if persist_dir is not None:
         _save_payload(persist_dir, name, res["payload"], res["record"])
     return res

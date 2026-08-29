@@ -45,6 +45,9 @@ run_writer() {
   local cap_prefix="issue2569_theory/own_generated_answers/reliability/captures/${model}_seed137"
   local -a gate_args=()
   if [ "$model" = qwen ]; then gate_args+=(--qwen-gate identity); fi
+  # The production Llama identity gate passed only with one packed row at a
+  # time; freeze that gate-clean packing for this reliability companion too.
+  if [ "$model" = llama ]; then gate_args+=(--max-batch-rows 1); fi
 
   phase "generate_${model}_seed137"
   run_logged "generate-${model}-s137" \
