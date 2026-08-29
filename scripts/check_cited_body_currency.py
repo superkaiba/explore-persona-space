@@ -40,13 +40,27 @@ Fail-soft contract (#2384 acceptance criterion 2), stated precisely:
   ``UNKNOWN reason=...`` and returns 0;
 - exit 3 is reachable ONLY from a positively-established stale citation.
 
+**Exit-code vocabulary (complete).** ``0`` = CLEAN or UNKNOWN (the
+fail-soft verdicts — the gate never blocks a persist on its own failure);
+``3`` = STALE (the one actionable verdict); ``2`` = argparse USAGE error
+(a malformed CLI invocation — argparse's own ``SystemExit(2)``, raised
+before any verdict is computed). ``2`` is a CALLER bug, NOT a verdict: it
+prints argparse's usage text and NO ``CITED-BODY-CURRENCY:`` line, so a
+caller keying on the verdict line can never mistake it for STALE. Callers
+that treat any non-zero exit as "bounce the persist" should key on ``3``
+specifically (the SKILL.md gate does).
+
 The helper never writes, never mutates task state, never touches the network.
 Worktree safety (#2384 §2.3): cited body paths resolve ONLY through
 ``explore_persona_space.task_workflow`` (never a hand-built
-``tasks/<status>/<M>/`` path), and the git probe runs against the MAIN
-checkout resolved as ``dirname(git rev-parse --path-format=absolute
---git-common-dir)`` probed from ``tasks_dir()``, so the helper is correct
-when invoked from a worktree cwd.
+``tasks/<status>/<M>/`` path), and the git probe runs against the working
+tree that ACTUALLY HOLDS that tasks tree — ``git rev-parse
+--show-toplevel`` anchored at ``tasks_dir()`` — so a resolver routing
+through the managed ``_task-main-pin`` worktree is probed in ITS OWN tree
+rather than against the primary checkout's root (#2384 round-2 C2; git
+returns empty history for an absolute path belonging to a different
+working tree, which would silently degrade every probe to UNKNOWN and
+disable the blocking leg).
 """
 
 from __future__ import annotations
@@ -73,29 +87,78 @@ _GIT_TIMEOUT_S = 10
 _MAX_DIFF_CHARS = 8000
 _DISPATCH_NOTE_RE = re.compile(r"^\s*planner-dispatch\b")
 
+# CommonMark fence: 3+ backticks OR 3+ tildes, indented at most 3 spaces (4+
+# spaces is an indented code block, NOT a fence). The delimiter CHARACTER and
+# RUN LENGTH are both load-bearing — see `_strip_code_blocks` (#2384 round-2
+# blocker 5).
+_FENCE_RE = re.compile(r"^ {0,3}(?P<delim>`{3,}|~{3,})(?P<info>.*)$")
+
+# A resolved draft-start reference below this is nonsense (2001-09-09; every
+# commit in this repo's history postdates it), and one more than a day in the
+# future cannot be a DRAFT START. Both directions silently invert the gate:
+# a far-past reference marks every cited body STALE, a far-future one certifies
+# every body CLEAN (#2384 round-2 blocker 7).
+_MIN_PLAUSIBLE_REF_UNIX = 1_000_000_000
+_FUTURE_SKEW_ALLOWANCE_S = 86_400
+
 
 def _strip_code_blocks(text: str) -> str:
-    """Drop fenced code blocks (``` / ~~~ toggling, delimiters included) and
-    indented-4 (or tab-indented) code lines — command examples and JSON
-    payloads carry ``#`` refs that are not citations (#2384 §2.2 filter 1)."""
+    """Drop fenced code blocks (delimiters included) and indented-4 (or
+    tab-indented) code lines — command examples and JSON payloads carry ``#``
+    refs that are not citations (#2384 §2.2 filter 1).
+
+    Fence handling follows CommonMark on the two axes a delimiter-BLIND
+    toggle gets wrong (#2384 round-2 blocker 5):
+
+    - **Delimiter identity + run length.** A fence is closed only by a run of
+      the SAME character at least as long as the opener, with no info string.
+      A blind toggle lets a ``~~~`` line close a ```` ``` ```` block (and vice
+      versa), and lets an inner ```` ``` ```` close a ```` ```` ```` block —
+      re-opening the fence on the NEXT delimiter and inverting in/out for the
+      whole rest of the document.
+    - **Indented-code precedence.** A fence opener may be indented at most 3
+      spaces; at 4+ spaces the line is indented CODE that happens to start
+      with backticks. A blind ``line.strip().startswith("```")`` toggles on it
+      and (again) inverts the rest of the document. `_FENCE_RE`'s ``{0,3}``
+      indent bound is what routes those lines to the indented-code branch.
+
+    Both failure modes are silent and DIRECTIONAL: an inverted fence state
+    strips real prose (citations vanish -> the gate under-checks) or admits
+    command examples (spurious ids -> noisy findings).
+    """
     out: list[str] = []
-    in_fence = False
+    fence: str | None = None  # the OPEN fence's delimiter run, or None
     for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_fence = not in_fence
+        m = _FENCE_RE.match(line)
+        if fence is not None:
+            if (
+                m is not None
+                and m.group("delim")[0] == fence[0]
+                and len(m.group("delim")) >= len(fence)
+                and not m.group("info").strip()
+            ):
+                fence = None
             continue
-        if in_fence or line.startswith(("    ", "\t")):
+        # A backtick fence's info string may not itself contain a backtick
+        # (CommonMark); a tilde fence's may.
+        if m is not None and not (m.group("delim")[0] == "`" and "`" in m.group("info")):
+            fence = m.group("delim")
+            continue
+        if line.startswith(("    ", "\t")):
             continue
         out.append(line)
     return "\n".join(out)
 
 
-def extract_cited_ids(plan_text: str, *, self_issue: int) -> list[int]:
-    r"""Cited task ids in draft order: fenced/indented blocks stripped,
-    word-char-preceded refs dropped (``(?<!\w)`` ONLY — see the regex
-    comment), the plan's own issue dropped (self-reference is never a
-    citation), deduped, capped at ``_MAX_CITED_IDS``."""
+def extract_cited_ids_with_total(plan_text: str, *, self_issue: int) -> tuple[list[int], int]:
+    r"""``(capped ids in draft order, TOTAL distinct ids before the cap)``.
+
+    Fenced/indented blocks stripped, word-char-preceded refs dropped
+    (``(?<!\w)`` ONLY — see the regex comment), the plan's own issue dropped
+    (self-reference is never a citation), deduped. The second element exists
+    so a caller can DISCLOSE cap truncation: a bare ``CLEAN checked=40`` over
+    a 55-citation plan reads as full coverage while 15 citations went
+    unprobed (#2384 round-2 blocker 9)."""
     prose = _strip_code_blocks(plan_text)
     seen: set[int] = set()
     out: list[int] = []
@@ -104,10 +167,16 @@ def extract_cited_ids(plan_text: str, *, self_issue: int) -> list[int]:
         if n == self_issue or n in seen:
             continue
         seen.add(n)
-        out.append(n)
-        if len(out) >= _MAX_CITED_IDS:
-            break
-    return out
+        if len(out) < _MAX_CITED_IDS:
+            out.append(n)
+    return out, len(seen)
+
+
+def extract_cited_ids(plan_text: str, *, self_issue: int) -> list[int]:
+    """Capped cited ids only — thin wrapper over
+    :func:`extract_cited_ids_with_total` for callers that do not report
+    truncation."""
+    return extract_cited_ids_with_total(plan_text, self_issue=self_issue)[0]
 
 
 def cited_body_path(issue: int) -> Path | None:
@@ -128,16 +197,25 @@ def cited_body_path(issue: int) -> Path | None:
 def _git(args: list[str], *, cwd: Path) -> str | None:
     """Run git under a 10 s timeout, returning stripped stdout; ``None`` on
     non-zero rc / timeout / missing binary or cwd — logged to stderr, never
-    silent, and never fatal (per-id fail-soft skip)."""
+    silent, and never fatal (per-id fail-soft skip).
+
+    ``errors="replace"`` is load-bearing: git echoes PATHS and COMMIT SUBJECTS
+    verbatim, and neither is guaranteed UTF-8 (a latin-1 filename, a subject
+    committed under a non-UTF-8 locale). Under the default strict decoding
+    those bytes raise ``UnicodeDecodeError`` from inside ``subprocess.run`` —
+    an exception class this helper does not catch, so the whole probe would
+    die on a body whose commit history merely mentions a non-UTF-8 name
+    (#2384 round-2 blocker 3)."""
     try:
         proc = subprocess.run(
             ["git", *args],
             cwd=str(cwd),
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=_GIT_TIMEOUT_S,
         )
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
         print(f"check_cited_body_currency: git {args[0]} failed: {exc}", file=sys.stderr)
         return None
     if proc.returncode != 0:
@@ -152,24 +230,68 @@ def _git(args: list[str], *, cwd: Path) -> str | None:
 
 
 def resolve_repo_root() -> Path:
-    """MAIN-checkout root: ``dirname(git rev-parse --path-format=absolute
-    --git-common-dir)``, probed FROM ``tasks_dir()`` so the result is the
-    main checkout even when invoked from a worktree cwd (#2384 §2.3).
+    """The WORKING-TREE root that actually holds ``tasks_dir()``:
+    ``git rev-parse --show-toplevel`` probed FROM ``tasks_dir()`` (#2384 §2.3).
+
+    ``--show-toplevel`` — NOT ``dirname(--git-common-dir)``. The two differ
+    exactly when ``task_workflow`` routes reads through a LINKED worktree:
+    `_ensure_managed_main_worktree` keeps a managed ``_task-main-pin``
+    checkout so an off-main session still reads main's task state, and
+    ``tasks_dir()`` then resolves INSIDE that worktree. ``--git-common-dir``
+    points at the PRIMARY checkout's ``.git``, so its parent is the primary
+    checkout — a DIFFERENT working tree from the one holding the paths.
+    Pairing the two makes every probe ``git -C <primary> log -- <pin path>``:
+    the path is outside that tree, git exits 0 with EMPTY output, every id
+    counts ``git_failed``, and the verdict degrades to a silent, permanent
+    ``UNKNOWN`` — i.e. the BLOCKING leg of this gate quietly stops blocking
+    (#2384 round-2 blocker 2). Anchoring at ``tasks_dir()`` and taking that
+    tree's own toplevel keeps root and paths in the same working tree by
+    construction, in a worktree cwd and under the pin alike.
+
     Raises ``RuntimeError`` on probe failure — routed to :func:`main`'s
     top-level fail-soft handler (``UNKNOWN``/exit 0, never a block)."""
     from explore_persona_space import task_workflow  # local import (worktree-safe resolver)
 
     anchor = task_workflow.tasks_dir()
-    out = _git(["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=anchor)
+    out = _git(["rev-parse", "--show-toplevel"], cwd=anchor)
     if not out:
         raise RuntimeError(f"git repo unresolvable from {anchor}")
-    return Path(out.splitlines()[-1]).parent
+    return Path(out.splitlines()[-1])
 
 
-def last_commit_unix(path: Path, *, repo_root: Path) -> int | None:
-    """``git -C <repo_root> log -1 --format=%ct -- <path>``; ``None`` on
-    empty output, non-zero rc, timeout, or a non-integer tail."""
-    out = _git(["log", "-1", "--format=%ct", "--", str(path)], cwd=repo_root)
+def repo_relative(path: Path, repo_root: Path) -> str | None:
+    """``path`` as a repo-root-relative POSIX string, or ``None`` when it
+    lies outside ``repo_root``.
+
+    Every git probe is path-limited, and git silently returns EMPTY (rc=0)
+    for a path outside the working tree — indistinguishable from "no commits
+    touched it". Converting up front turns that silent degradation into an
+    explicit, counted finding (#2384 round-2 blocker 2). Both sides are
+    ``resolve()``d so a symlinked tasks tree cannot produce a spurious
+    mismatch."""
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except (ValueError, OSError):
+        return None
+
+
+def last_commit_unix(rel_path: str, *, repo_root: Path) -> int | None:
+    """``git -C <repo_root> log -1 --format=%ct -- <rel_path>``; ``None`` on
+    empty output, non-zero rc, timeout, or a non-integer tail.
+
+    ``rel_path`` is repo-root-relative (see :func:`repo_relative`) — the
+    caller has already established containment, so an empty result here means
+    "no commits touched this path", never "wrong working tree".
+
+    Deliberately NOT rename-following: for a CITED BODY a status move is a
+    false POSITIVE (a body flagged stale that only moved folders), which
+    #2384 §6 elects to SURFACE with an advisory ``rename-only`` label rather
+    than filter — surfacing an extra citation costs a glance, missing a real
+    correction costs the plan. The prior-plan-version REFERENCE leg is the
+    opposite polarity (a status move there silently WIDENS nothing and
+    NARROWS the watch window) and does follow renames — see
+    ``verify_plan._c75_last_content_commit_unix``."""
+    out = _git(["log", "-1", "--format=%ct", "--", rel_path], cwd=repo_root)
     if not out:
         return None
     try:
@@ -226,12 +348,12 @@ def oldest_planner_dispatch_unix(folder: Path) -> int | None:
     return oldest
 
 
-def _path_history(path: Path, *, repo_root: Path) -> list[tuple[str, int, str]]:
-    """Full ``(sha, commit_unix, subject)`` history of ``path`` (newest
+def _path_history(rel_path: str, *, repo_root: Path) -> list[tuple[str, int, str]]:
+    """Full ``(sha, commit_unix, subject)`` history of ``rel_path`` (newest
     first) via one parsed ``git log`` — used instead of ``--since`` date
     parsing so window membership uses the same ``%ct`` read as
     :func:`last_commit_unix`. Best-effort: ``[]`` on any git failure."""
-    out = _git(["log", "--format=%H\t%ct\t%s", "--", str(path)], cwd=repo_root)
+    out = _git(["log", "--format=%H\t%ct\t%s", "--", rel_path], cwd=repo_root)
     if not out:
         return []
     rows: list[tuple[str, int, str]] = []
@@ -246,13 +368,47 @@ def _path_history(path: Path, *, repo_root: Path) -> list[tuple[str, int, str]]:
     return rows
 
 
-def _classify_diff(diff: str) -> str | None:
+def commit_path_status(sha: str, rel_path: str, *, repo_root: Path) -> str | None:
+    """The per-commit name-status letter for ``rel_path`` as the DESTINATION
+    in commit ``sha`` (``'M'``, ``'A'``, ``'R100'``, ...); ``None`` when the
+    path is not a destination in that commit (merge commits print nothing
+    without ``-m``, so they land here) or the probe fails."""
+    out = _git(["show", "--format=", "--name-status", "-M", sha], cwd=repo_root)
+    if not out:
+        return None
+    for line in out.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        if parts[-1] == rel_path:
+            return parts[0]
+    return None
+
+
+def classify_window(
+    window: list[tuple[str, int, str]], rel_path: str, diff: str, *, repo_root: Path
+) -> str | None:
     """Label the dominant false-positive channel (#2384 §6): a status move
-    (``git mv`` between status folders) shows as ``rename-only``; a user
-    promotion sweep (``classification`` flip) as ``frontmatter-only`` —
-    so the orchestrator's disposition is one glance. ``None`` = a content
-    diff (the real staleness signal). Advisory label only, never a verdict
-    input."""
+    (``git mv`` between status folders) is ``rename-only``; a user promotion
+    sweep (``classification`` flip) is ``frontmatter-only``. ``None`` = a
+    content diff (the real staleness signal). Advisory label only, never a
+    verdict input.
+
+    ``rename-only`` is decided from PER-COMMIT name-status with rename
+    detection (``git show --name-status -M``), never from the diff text
+    (#2384 round-2 blocker 8). A path-limited
+    ``git diff <oldest>^..HEAD -- <new path>`` cannot show a rename at all:
+    at ``<oldest>^`` the file did not exist under the new path, so the whole
+    body renders as ADDED lines — the old code's "zero changed lines +
+    'rename from'" predicate is unreachable, and the label #2384 §6 names as
+    the dominant false-positive mitigation never fired. Requiring EVERY
+    windowed commit to be an exact ``R100`` keeps the label honest: a
+    rename-WITH-edit (``R095``) is a real content change and stays unlabeled.
+    """
+    if window:
+        statuses = [commit_path_status(sha, rel_path, repo_root=repo_root) for sha, _, _ in window]
+        if all(s == "R100" for s in statuses):
+            return "rename-only"
     if not diff:
         return None
     changed = [
@@ -262,66 +418,87 @@ def _classify_diff(diff: str) -> str | None:
         or (ln.startswith("-") and not ln.startswith("---"))
     ]
     if not changed:
-        return "rename-only" if "rename from" in diff or "similarity index" in diff else None
+        return None
     fm_line = re.compile(r"^[+-](?:---\s*$|[A-Za-z_][A-Za-z0-9_-]*:)")
     if all(fm_line.match(ln) for ln in changed):
         return "frontmatter-only"
     return None
 
 
-def body_diff_since(path: Path, since_unix: int, *, repo_root: Path) -> str:
-    """Oneline log of the commits touching ``path`` after ``since_unix``
-    plus ``git diff <oldest-in-window>^..HEAD -- <path>``, truncated to
-    ``_MAX_DIFF_CHARS``. Best-effort — ``''`` on any failure (the verdict
-    never depends on this display)."""
-    rows = _path_history(path, repo_root=repo_root)
+def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple[str, str | None]:
+    """``(display text, advisory label)`` for the commits touching
+    ``rel_path`` after ``since_unix``: a oneline log plus
+    ``git diff <oldest-in-window>^..HEAD -- <rel_path>``, truncated to
+    ``_MAX_DIFF_CHARS``. Best-effort — ``('', None)`` on any failure (the
+    verdict never depends on this display).
+
+    Under a ``rename-only`` label the diff BODY is suppressed: it is the
+    whole file rendered as additions (see :func:`classify_window`), which is
+    pure noise for a status move."""
+    rows = _path_history(rel_path, repo_root=repo_root)
     window = [r for r in rows if r[1] > since_unix]
     if not window:
-        return ""
+        return "", None
     lines = [f"{sha[:10]} @{ct} {subject}" for sha, ct, subject in window]
     oldest_sha = window[-1][0]
-    diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", str(path)], cwd=repo_root)
+    diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", rel_path], cwd=repo_root) or ""
+    label = classify_window(window, rel_path, diff, repo_root=repo_root)
     text = "\n".join(lines)
-    if diff:
+    if diff and label != "rename-only":
         text += "\n" + diff
     if len(text) > _MAX_DIFF_CHARS:
         text = text[:_MAX_DIFF_CHARS] + f"\n... [truncated at {_MAX_DIFF_CHARS} chars]"
-    return text
+    return text, label
 
 
 def check(
     plan_text: str, *, self_issue: int, since_unix: int, repo_root: Path
-) -> tuple[str, list[dict]]:
-    """-> (``'CLEAN' | 'STALE' | 'UNKNOWN'``, findings). One finding dict
-    per cited id: ``status`` in {clean, stale, unresolved, git-failed}.
-    ``UNKNOWN`` fires only when cited ids exist but NONE could be probed
-    (so a confident ``CLEAN checked=0`` is never printed over a broken
-    probe); zero cited ids is a genuine ``CLEAN checked=0``."""
-    ids = extract_cited_ids(plan_text, self_issue=self_issue)
+) -> tuple[str, list[dict], int]:
+    """-> (``'CLEAN' | 'STALE' | 'UNKNOWN'``, findings, total_cited). One
+    finding dict per cited id: ``status`` in {clean, stale, unresolved,
+    git-failed}. ``UNKNOWN`` fires only when cited ids exist but NONE could
+    be probed (so a confident ``CLEAN checked=0`` is never printed over a
+    broken probe); zero cited ids is a genuine ``CLEAN checked=0``.
+
+    ``total_cited`` is the DISTINCT citation count BEFORE the
+    ``_MAX_CITED_IDS`` cap, so the caller can disclose truncation
+    (#2384 round-2 blocker 9)."""
+    ids, total_cited = extract_cited_ids_with_total(plan_text, self_issue=self_issue)
     findings: list[dict] = []
     for n in ids:
         body = cited_body_path(n)
         if body is None or not body.exists():
             findings.append({"id": n, "status": "unresolved"})
             continue
-        ct = last_commit_unix(body, repo_root=repo_root)
-        if ct is None:
+        rel = repo_relative(body, repo_root)
+        if rel is None:
+            print(
+                f"check_cited_body_currency: cited body #{n} at {body} is outside "
+                f"the git root {repo_root} — cannot probe",
+                file=sys.stderr,
+            )
             findings.append({"id": n, "status": "git-failed", "path": str(body)})
+            continue
+        ct = last_commit_unix(rel, repo_root=repo_root)
+        if ct is None:
+            findings.append({"id": n, "status": "git-failed", "path": str(body), "rel": rel})
             continue
         findings.append(
             {
                 "id": n,
                 "status": "stale" if ct > since_unix else "clean",
                 "path": str(body),
+                "rel": rel,
                 "last_commit_unix": ct,
             }
         )
     if not ids:
-        return "CLEAN", findings
+        return "CLEAN", findings, total_cited
     probed = [f for f in findings if f["status"] in ("stale", "clean")]
     if not probed:
-        return "UNKNOWN", findings
-    return ("STALE" if any(f["status"] == "stale" for f in probed) else "CLEAN"), findings
+        return "UNKNOWN", findings, total_cited
+    verdict = "STALE" if any(f["status"] == "stale" for f in probed) else "CLEAN"
+    return verdict, findings, total_cited
 
 
 def _counts(findings: list[dict]) -> dict[str, int]:
@@ -334,13 +511,26 @@ def _counts(findings: list[dict]) -> dict[str, int]:
 
 def _emit_stale_details(findings: list[dict], since_unix: int, repo_root: Path) -> None:
     """Per stale id, the diff-since block on STDERR (stdout stays a single
-    capturable verdict line), led by the #2384 §6 disposition label."""
+    capturable verdict line), led by the #2384 §6 disposition label.
+
+    DISPLAY ONLY. The caller has already established and printed the STALE
+    verdict, so a failure in here must never change it — each id's block is
+    individually guarded (#2384 round-2 blocker 12)."""
     for f in findings:
         if f["status"] != "stale":
             continue
-        path = Path(f["path"])
-        diff = body_diff_since(path, since_unix, repo_root=repo_root)
-        label = _classify_diff(diff)
+        rel = f.get("rel")
+        if not rel:
+            continue
+        try:
+            diff, label = body_diff_since(rel, since_unix, repo_root=repo_root)
+        except Exception as exc:  # display-only: never downgrade an established STALE
+            print(
+                f"check_cited_body_currency: diff render failed for #{f['id']}: "
+                f"{type(exc).__name__}: {exc}",
+                file=sys.stderr,
+            )
+            continue
         header = f"--- stale cited body #{f['id']}: {f['path']}"
         if label:
             header += f" [{label}]"
@@ -390,6 +580,21 @@ def _run(argv: list[str] | None) -> int:
         )
         return 0
 
+    # Plausibility of the FINAL resolved reference, whichever leg produced it
+    # (#2384 round-2 blocker 7). Both directions silently invert the gate, so
+    # neither may pass as a verdict: too far past marks every cited body
+    # STALE, too far future certifies every one CLEAN. UNKNOWN + exit 0 keeps
+    # the fail-soft contract (a bad reference is the gate's own defect, not
+    # grounds to block a persist).
+    now = int(datetime.now(tz=UTC).timestamp())
+    if since_unix < _MIN_PLAUSIBLE_REF_UNIX or since_unix > now + _FUTURE_SKEW_ALLOWANCE_S:
+        print(
+            f"CITED-BODY-CURRENCY: UNKNOWN reason=implausible draft-start reference "
+            f"{since_unix} (expected {_MIN_PLAUSIBLE_REF_UNIX} <= ref <= "
+            f"{now + _FUTURE_SKEW_ALLOWANCE_S})"
+        )
+        return 0
+
     if args.plan_file:
         plan_path = Path(args.plan_file)
     else:
@@ -399,14 +604,26 @@ def _run(argv: list[str] | None) -> int:
     plan_text = plan_path.read_text(encoding="utf-8")  # OSError -> fail-soft UNKNOWN
 
     repo_root = resolve_repo_root()
-    verdict, findings = check(
+    verdict, findings, total_cited = check(
         plan_text, self_issue=args.issue, since_unix=since_unix, repo_root=repo_root
     )
     c = _counts(findings)
+    # Cap truncation is DISCLOSED, never silent: a bare `CLEAN checked=40`
+    # over a 55-citation plan reads as full coverage (#2384 round-2 blocker 9).
+    dropped = max(0, total_cited - len(findings))
     if args.json:
         print(
             json.dumps(
-                {"verdict": verdict, "since_unix": since_unix, **c, "findings": findings},
+                {
+                    "verdict": verdict,
+                    "since_unix": since_unix,
+                    **c,
+                    "cited_total": total_cited,
+                    "cap": _MAX_CITED_IDS,
+                    "capped": bool(dropped),
+                    "not_examined": dropped,
+                    "findings": findings,
+                },
                 indent=2,
             )
         )
@@ -421,6 +638,8 @@ def _run(argv: list[str] | None) -> int:
             suffix += f" unresolved={c['unresolved']}"
         if c["git_failed"]:
             suffix += f" git_failed={c['git_failed']}"
+        if dropped:
+            suffix += f" capped={_MAX_CITED_IDS} not_examined={dropped}"
         if verdict == "STALE":
             stale_ids = ",".join(str(f["id"]) for f in findings if f["status"] == "stale")
             print(
@@ -436,11 +655,16 @@ def _run(argv: list[str] | None) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """0 = CLEAN or UNKNOWN (fail-soft), 3 = STALE (actionable).
+    """0 = CLEAN or UNKNOWN (fail-soft), 3 = STALE (actionable), 2 = argparse
+    USAGE error (a malformed CLI invocation; argparse's own ``SystemExit(2)``
+    propagates past the handler below, printing usage text and NO
+    ``CITED-BODY-CURRENCY:`` verdict line — a caller bug, never a verdict).
 
     The ``except Exception`` below is the ONE deliberate top-level fail-soft
     handler of #2384 acceptance criterion 2 — the gate must NEVER block a
     persist on its own crash; the reason is always printed, never swallowed.
+    ``SystemExit`` derives from ``BaseException``, so the exit-2 usage path is
+    untouched by it.
     """
     try:
         return _run(argv)

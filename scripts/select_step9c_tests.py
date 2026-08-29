@@ -485,8 +485,17 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_autonomous_session_watch.py",
     # NEW (#2384) — cited-body currency gate: helper semantics + the
     # adversarial-planner SKILL.md / 04-step-2.md gate-prose durability pins.
-    # Registration here is what makes the pin RUN on a SKILL.md-prose-only
-    # diff (WORKFLOW_SURFACE-only — no test mapping selects it otherwise).
+    # Registration is DEFENSE IN DEPTH, not the sole selector (#2384 round-2
+    # blocker 10 corrects the original claim that "no test mapping selects it
+    # otherwise"). Measured 2026-08-28: the #1851 skills-pin discovery arm
+    # ALSO selects this file on a SKILL.md-prose-only diff
+    # (`skills_pin_hits([".claude/skills/adversarial-planner/SKILL.md"])` ->
+    # 13 tests, this one included), because the file greps that SKILL.md by
+    # path. What registration adds is coverage of the OTHER trigger — a diff
+    # touching only the helper/c75 code paths, where the pin arm does not
+    # fire. Note the two arms cannot substitute for each other: WORKFLOW_INVARIANT
+    # members are EXCLUDED from the --map-files leg by design, so a map-mode
+    # run legitimately does NOT list this file.
     "tests/test_check_cited_body_currency.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
     "tests/test_daily_skill_commit_pathspec_pin.py",

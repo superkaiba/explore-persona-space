@@ -233,3 +233,357 @@ def test_warn_not_fail(fake_repo):
     assert res.passed is True
     assert res.skipped is False
     assert "scripts/check_cited_body_currency.py" in res.detail
+
+
+# ── ROUND-2 regressions (#2384 code-review v1 blockers 1, 3, 4, 5, 6, 9) ─────
+
+
+def test_oldest_of_several_breadcrumbs_wins_and_warns(fake_repo):
+    """Blocker 6 (Major) — the load-bearing gap. Every prior test used a
+    SINGLE breadcrumb, so `_c75_oldest_dispatch_unix`'s ``unix < oldest``
+    comparison was never exercised: a min->max flip passed the whole suite.
+
+    Fixture is the exact shape the check exists to catch:
+    ``t1 < body_commit < t2 < plan_mtime`` — two planner-dispatch rounds, and
+    a cited body corrected BETWEEN them. The reference must be t1 (drafting
+    began at the FIRST round), which puts the correction inside the window =>
+    WARN. Under ``max`` the reference is t2, the correction reads as
+    predating the draft, and the check certifies a stale citation CLEAN —
+    exactly the false-CLEAN #2384 exists to prevent."""
+    folder = _make_task(fake_repo, 8000)
+    plans = folder / "plans"
+    plans.mkdir()
+    _write_events(folder, [T_OLD, T_NEW])  # t1 = T_OLD, t2 = T_NEW
+    cited = _make_task(fake_repo, 9991, status="completed")
+    _commit(fake_repo, [cited / "body.md"], "correct #9991 body", T_MID)  # t1 < T_MID < t2
+
+    ref, why = vp._draft_start_reference(
+        folder, PLAN_MTIME, plan_path=plans / "v1.md", repo_root=fake_repo
+    )
+    assert ref == T_OLD, "reference must be the OLDEST breadcrumb, not the newest"
+    assert ref != T_NEW
+    assert "breadcrumb" in why
+
+    res = vp.check_cited_body_currency(
+        "Plan grounds on the #9991 result.",
+        self_issue=8000,
+        reference_unix=ref,
+        reason=why,
+        repo_root=fake_repo,
+    )
+    assert res.is_warn is True
+    assert "#9991" in res.detail
+
+
+def test_breadcrumbs_newer_than_plan_mtime_are_still_excluded(fake_repo):
+    """Blocker 6 companion: the oldest-wins rule must not swallow the
+    mtime ceiling — a breadcrumb from a LATER round (ts > plan mtime) belongs
+    to a future round and cannot be this draft's start."""
+    folder = _make_task(fake_repo, 8000)
+    plans = folder / "plans"
+    plans.mkdir()
+    later = int(PLAN_MTIME) + 10_000
+    _write_events(folder, [T_NEW, later])
+    ref, _ = vp._draft_start_reference(
+        folder, PLAN_MTIME, plan_path=plans / "v1.md", repo_root=fake_repo
+    )
+    assert ref == T_NEW
+
+
+def test_prior_version_reference_skips_status_move_commits(fake_repo):
+    """Blocker 1 (Critical). A persisted plan version is written ONCE and then
+    only MOVED — `task.py set-status` ``git mv``s the whole task folder — so
+    ``git log -1 -- <path>`` answers with the STATUS-MOVE commit, minutes to
+    days after the real persist. Used as the draft-start reference that
+    shifts the window FORWARD, hiding every cited-body correction between the
+    true persist and the move.
+
+    Fixture: v1 persisted at T_OLD, folder moved at T_NEW. The reference must
+    be T_OLD."""
+    folder = _make_task(fake_repo, 8000, status="running")
+    plans = folder / "plans"
+    plans.mkdir()
+    (plans / "v1.md").write_text("v1 body\n")
+    _commit(fake_repo, [plans / "v1.md"], "task #8000: plan v1", T_OLD)
+
+    dest = fake_repo / "tasks" / "completed" / "8000"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    _git(fake_repo, "mv", str(folder), str(dest))
+    stamp = f"{T_NEW} +0000"
+    _git(
+        fake_repo,
+        "commit",
+        "-q",
+        "-m",
+        "task #8000: running -> completed",
+        env_extra={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp},
+    )
+    moved_plans = dest / "plans"
+
+    # The naive probe answers with the status move; the content probe does not.
+    assert vp._c75_last_commit_unix(moved_plans / "v1.md", repo_root=fake_repo) == T_NEW
+    assert vp._c75_last_content_commit_unix(moved_plans / "v1.md", repo_root=fake_repo) == T_OLD
+
+    ref, why = vp._draft_start_reference(
+        dest, PLAN_MTIME, plan_path=moved_plans / "v2.md", repo_root=fake_repo
+    )
+    assert ref == T_OLD, "reference must be the persist commit, not the status move"
+    assert "v1.md" in why
+
+
+def test_status_move_reference_catches_a_correction_the_move_would_hide(fake_repo):
+    """Blocker 1, end-to-end: a cited body corrected BETWEEN the plan persist
+    and the status move. With the move as reference the correction reads
+    CLEAN; with the persist as reference it WARNs."""
+    folder = _make_task(fake_repo, 8000, status="running")
+    plans = folder / "plans"
+    plans.mkdir()
+    (plans / "v1.md").write_text("v1 body\n")
+    _commit(fake_repo, [plans / "v1.md"], "task #8000: plan v1", T_OLD)
+    cited = _make_task(fake_repo, 9991, status="completed")
+    _commit(fake_repo, [cited / "body.md"], "correct #9991 body", T_MID)
+
+    dest = fake_repo / "tasks" / "completed" / "8000"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    _git(fake_repo, "mv", str(folder), str(dest))
+    stamp = f"{T_NEW} +0000"
+    _git(
+        fake_repo,
+        "commit",
+        "-q",
+        "-m",
+        "task #8000: running -> completed",
+        env_extra={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp},
+    )
+
+    ref, why = vp._draft_start_reference(
+        dest, PLAN_MTIME, plan_path=dest / "plans" / "v2.md", repo_root=fake_repo
+    )
+    res = vp.check_cited_body_currency(
+        "Plan grounds on the #9991 result.",
+        self_issue=8000,
+        reference_unix=ref,
+        reason=why,
+        repo_root=fake_repo,
+    )
+    assert res.is_warn is True, f"ref={ref} why={why} detail={res.detail}"
+    assert "#9991" in res.detail
+
+
+def test_mtime_fallback_requires_positive_untracked_evidence(fake_repo, monkeypatch):
+    """Blocker 4 (Major). ``st_mtime`` is documented as unusable (a checkout
+    clobbers it) and permitted ONLY for a file that exists uncommitted.
+    Pre-fix the fallback fired on ANY ``None`` from the git probe, so a FAILED
+    probe on a TRACKED file silently substituted the clobbered mtime.
+
+    Here the file is tracked with a real commit, but every git probe is forced
+    to fail: the leg must go UNRESOLVED, not mtime."""
+    folder = _make_task(fake_repo, 8000)
+    plans = folder / "plans"
+    plans.mkdir()
+    (plans / "v1.md").write_text("v1 body\n")
+    _commit(fake_repo, [plans / "v1.md"], "persist plan v1", T_MID)
+    os.utime(plans / "v1.md", times=(T_NEW, T_NEW))
+
+    monkeypatch.setattr(vp, "_c75_git_out", lambda *_a, **_k: None)
+    unix, why = vp._c75_prior_version_unix(folder, plan_path=plans / "v2.md", repo_root=fake_repo)
+    assert unix is None, "a failed probe must never substitute st_mtime"
+    assert unix != T_NEW
+    assert "mtime not substituted" in why
+
+
+def test_mtime_fallback_fires_for_a_genuinely_untracked_prior_version(fake_repo):
+    """Blocker 4 companion: the documented case still works — an UNCOMMITTED
+    prior version falls back to st_mtime, on positive `git ls-files`
+    evidence."""
+    folder = _make_task(fake_repo, 8000)
+    plans = folder / "plans"
+    plans.mkdir()
+    (plans / "v1.md").write_text("v1 body\n")  # never committed
+    os.utime(plans / "v1.md", times=(T_MID, T_MID))
+
+    assert vp._c75_is_untracked(plans / "v1.md", repo_root=fake_repo) is True
+    unix, why = vp._c75_prior_version_unix(folder, plan_path=plans / "v2.md", repo_root=fake_repo)
+    assert unix == T_MID
+    assert "untracked" in why
+
+
+def test_tracked_file_is_not_reported_untracked(fake_repo):
+    """Blocker 4: the tracked/untracked discriminator itself."""
+    folder = _make_task(fake_repo, 8000)
+    plans = folder / "plans"
+    plans.mkdir()
+    (plans / "v1.md").write_text("v1 body\n")
+    _commit(fake_repo, [plans / "v1.md"], "persist plan v1", T_MID)
+    assert vp._c75_is_untracked(plans / "v1.md", repo_root=fake_repo) is False
+
+
+def test_undecodable_events_jsonl_does_not_raise(fake_repo):
+    """Blocker 3 (Critical). ``events.jsonl`` was read with a bare
+    ``read_text()``: one non-UTF-8 byte in a marker note raised
+    ``UnicodeDecodeError`` out of a WARN-only check and aborted
+    verify_plan.py. Well-formed rows must still parse around the bad byte."""
+    folder = _make_task(fake_repo, 8000)
+    rows = [
+        json.dumps(
+            {"ts": _iso(T_OLD), "kind": "epm:progress", "note": "planner-dispatch round=1"}
+        ).encode()
+    ]
+    (folder / "events.jsonl").write_bytes(
+        rows[0] + b"\n" + b'{"ts": "x", "kind": "epm:progress", "note": "\xff\xfe bad"}\n'
+    )
+    assert vp._c75_oldest_dispatch_unix(folder, ceiling_unix=PLAN_MTIME) == T_OLD
+
+
+def test_unreadable_events_jsonl_does_not_raise(fake_repo, monkeypatch):
+    """Blocker 3: an OSError on the read (permissions, IO fault) is absorbed
+    too — the leg goes unresolved, the verifier keeps running."""
+    folder = _make_task(fake_repo, 8000)
+    (folder / "events.jsonl").write_text("")
+
+    def _boom(*_a, **_k):
+        raise PermissionError("no read for you")
+
+    monkeypatch.setattr(Path, "read_text", _boom)
+    assert vp._c75_oldest_dispatch_unix(folder, ceiling_unix=PLAN_MTIME) is None
+
+
+def test_git_probe_decodes_leniently(fake_repo):
+    """Blocker 3: git echoes commit SUBJECTS verbatim and they are not
+    guaranteed UTF-8. Under strict decoding ``subprocess.run`` raises
+    ``UnicodeDecodeError`` — a ``ValueError``, which the pre-fix
+    ``(OSError, TimeoutExpired)`` tuple did not catch — from inside a
+    WARN-only check."""
+    folder = _make_task(fake_repo, 9991)
+    stamp = f"{T_MID} +0000"
+    _git(fake_repo, "add", "--", str(folder / "body.md"))
+    env = os.environ.copy()
+    env.update({"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp})
+    msg = fake_repo / "msg.txt"
+    msg.write_bytes(b"correct \xe9\xe8 body")
+    subprocess.run(
+        ["git", "-C", str(fake_repo), "commit", "-q", "-F", str(msg)],
+        check=True,
+        capture_output=True,
+        env=env,
+    )
+    msg.unlink()
+    assert vp._c75_last_commit_unix(folder / "body.md", repo_root=fake_repo) == T_MID
+
+
+def test_c75_degrades_to_skip_when_it_errors(fake_repo, monkeypatch, tmp_path, capsys):
+    """Blocker 3: the fail-soft boundary in main(). c75 is the only appended
+    check that shells out to git, reads a sibling task's events.jsonl, stats
+    the filesystem, and imports the task resolver — four external surfaces
+    whose faults are unrelated to the plan under review. An escape aborts
+    verify_plan.py for every caller on the fleet, so it must degrade to SKIP.
+    """
+    folder = _make_task(fake_repo, 8000)
+    plans = folder / "plans"
+    plans.mkdir()
+    (plans / "v1.md").write_text("# Plan\n\nGrounds on #9991.\n")
+    # Empty registry: find_task_path falls back to the on-disk status scan,
+    # which resolves tasks/running/8000 without hand-building an entry shape.
+    (fake_repo / "tasks" / "REGISTRY.json").write_text(json.dumps({"tasks": {}}))
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("c75 exploded")
+
+    monkeypatch.setattr(vp, "_draft_start_reference", _boom)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "8000"])
+    rc = vp.main()
+    out = capsys.readouterr().out
+    assert "[SKIP] plan cites a task body corrected after drafting began" in out, out
+    assert "degraded to SKIP: RuntimeError: c75 exploded" in out, out
+    # The verifier still produced a full report and a normal exit code — the
+    # whole point: a WARN-only check's fault must not abort the run.
+    assert "OVERALL:" in out, out
+    assert isinstance(rc, int)
+
+
+@pytest.mark.parametrize(
+    ("label", "plan_text", "expected"),
+    [
+        ("mixed_delimiters", "#111\n```\n#222\n~~~\n#333\n```\n#444", ["111", "444"]),
+        ("longer_opener", "#111\n````\n#222\n```\n#333\n````\n#444", ["111", "444"]),
+        ("indented_is_not_a_fence", "#111\n    ```\n#222", ["111", "222"]),
+        ("three_space_indent_is_a_fence", "#111\n   ```\n#222\n   ```\n#333", ["111", "333"]),
+        ("unclosed_fence", "#111\n```\n#222", ["111"]),
+    ],
+)
+def test_c75_fence_semantics_are_delimiter_aware(label, plan_text, expected):
+    """Blocker 5 (Major), c75 side. The shared ``_fence_mask`` toggles on any
+    line whose stripped form starts with three backticks or tildes, so a
+    mismatched delimiter, a shorter inner run, or a 4-space-indented code line
+    inverts in/out for the rest of the document."""
+    assert vp._c75_extract_cited_ids(plan_text, self_issue=1)[0] == expected, label
+
+
+def test_c75_dedups_leading_zero_variants():
+    """Blocker 5 fallout, caught by the cross-leg comparison below: c75
+    deduped on the raw STRING while every call site does ``int(tid)``, so
+    ``#039`` and ``#39`` were two ids pointing at ONE body — a doubled probe,
+    a burned cap slot, and a task nameable twice in one WARN."""
+    ids, total = vp._c75_extract_cited_ids("Grounds on #39 and #039 and #0039.", self_issue=1)
+    assert ids == ["39"]
+    assert total == 1
+
+
+def test_c75_and_helper_extract_identical_ids():
+    """#2384 §3.4's core contract: the WARN-only backstop and the blocking
+    pre-persist helper must read the SAME citation set, or the two legs
+    disagree about what was even checked. Pinned over adversarial fences,
+    the lineage-list idiom, URL adjacency, and leading zeros."""
+    spec = importlib.util.spec_from_file_location(
+        "check_cited_body_currency_pin", REPO_ROOT / "scripts" / "check_cited_body_currency.py"
+    )
+    ccb = importlib.util.module_from_spec(spec)
+    sys.modules["check_cited_body_currency_pin"] = ccb
+    spec.loader.exec_module(ccb)
+
+    samples = [
+        "Grounds on #884/#1045/#1134 and the #9991 result.",
+        "#111\n```\n#222\n~~~\n#333\n```\n#444",
+        "#111\n````\n#222\n```\n#333\n````\n#444",
+        "#111\n    ```\n#222",
+        "#111\n```\n#222",
+        "See https://example.com/issues#123 and #456.",
+        "Grounds on #39 and #039.",
+        "Self #8000 is never a citation; #9991 is.",
+        " ".join(f"#{9000 + i}" for i in range(60)),
+    ]
+    for text in samples:
+        a = vp._c75_extract_cited_ids(text, self_issue=8000)[0]
+        b = [str(x) for x in ccb.extract_cited_ids(text, self_issue=8000)]
+        assert a == b, text[:60]
+
+
+def test_c75_discloses_cap_truncation(fake_repo):
+    """Blocker 9 (Minor, raised by BOTH reviewers). A bare ``checked=N`` PASS
+    over a plan citing more than the cap reads as full coverage."""
+    cited = _make_task(fake_repo, 9991, status="completed")
+    _commit(fake_repo, [cited / "body.md"], "persist #9991 body", T_OLD)
+    total = vp._C75_MAX_IDS + 12
+    plan_text = "#9991 " + " ".join(f"#{7000 + i}" for i in range(total - 1))
+    res = vp.check_cited_body_currency(
+        plan_text,
+        self_issue=8000,
+        reference_unix=T_NEW,
+        reason="oldest planner-dispatch breadcrumb",
+        repo_root=fake_repo,
+    )
+    assert f"capped={vp._C75_MAX_IDS} not_examined=12" in res.detail
+
+
+def test_c75_no_cap_no_disclosure_noise(fake_repo):
+    """Blocker 9 companion: an uncapped run must not grow a `capped=` token."""
+    cited = _make_task(fake_repo, 9991, status="completed")
+    _commit(fake_repo, [cited / "body.md"], "persist #9991 body", T_OLD)
+    res = vp.check_cited_body_currency(
+        "Grounds on #9991.",
+        self_issue=8000,
+        reference_unix=T_NEW,
+        reason="oldest planner-dispatch breadcrumb",
+        repo_root=fake_repo,
+    )
+    assert "capped=" not in res.detail

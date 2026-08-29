@@ -199,7 +199,11 @@ def test_failsoft_on_internal_crash(fake_repo, monkeypatch, capsys):
     def _boom(*_a, **_k):
         raise RuntimeError("boom")
 
-    monkeypatch.setattr(ccb, "extract_cited_ids", _boom)
+    # Patch the extractor `check()` actually calls. Round 2 added the
+    # cap-disclosure variant and made it the callee; `extract_cited_ids` is now
+    # a thin wrapper, so patching THAT would no longer reach the code path and
+    # the fail-soft contract would go untested.
+    monkeypatch.setattr(ccb, "extract_cited_ids_with_total", _boom)
     rc, out, _ = _run(
         "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
     )
@@ -320,3 +324,300 @@ def test_skillmd_names_cited_body_gate():
     step2 = (REPO_ROOT / ".claude" / "skills" / "issue" / "steps" / "04-step-2.md").read_text()
     assert "**Cited-body currency gate:**" in step2
     assert "scripts/check_cited_body_currency.py" in step2
+
+
+# ── ROUND-2 regressions (#2384 code-review v1 blockers 2, 5, 7, 8, 9, 11, 12) ─
+
+
+def test_repo_root_pairs_with_the_worktree_holding_tasks_dir(tmp_path, monkeypatch, capsys):
+    """Blocker 2 (Critical). ``task_workflow`` may route reads through the
+    managed ``_task-main-pin`` LINKED worktree, so ``tasks_dir()`` resolves
+    inside it while ``dirname(--git-common-dir)`` names the PRIMARY checkout.
+
+    The pre-fix pairing ran ``git -C <primary> log -- <pin path>``: git exits
+    0 with EMPTY output for a path in another working tree, so every id
+    counted ``git_failed`` and the BLOCKING leg silently stopped blocking.
+    Asserts (a) the root is the linked worktree's own toplevel and (b) a
+    genuinely stale body is still caught through it (exit 3)."""
+    primary = tmp_path / "primary"
+    primary.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=primary, check=True)
+    _git(primary, "config", "user.email", "test@test.test")
+    _git(primary, "config", "user.name", "test")
+    _git(primary, "config", "commit.gpgsign", "false")
+    (primary / ".gitkeep").write_text("")
+    _commit(primary, [primary / ".gitkeep"], "init", T_INIT)
+
+    linked = tmp_path / "linked"
+    _git(primary, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+
+    folder = linked / "tasks" / "completed" / "9991"
+    folder.mkdir(parents=True)
+    (folder / "body.md").write_text("# Task 9991\n")
+    _commit(linked, [folder / "body.md"], "correct #9991 body", AFTER)
+
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    tw.invalidate_cache()
+    monkeypatch.setattr(tw, "tasks_dir", lambda: linked / "tasks")
+    monkeypatch.setattr(tw, "registry_path", lambda: linked / "tasks" / "REGISTRY.json")
+
+    # (a) the root is the tree that HOLDS tasks_dir(), not the primary checkout.
+    assert ccb.resolve_repo_root().resolve() == linked.resolve()
+    assert ccb.resolve_repo_root().resolve() != primary.resolve()
+
+    # (b) and the blocking leg still blocks through it.
+    plan = tmp_path / "draft.md"
+    plan.write_text("Grounds on the #9991 result.")
+    rc = ccb.main(["--issue", "8000", "--since-unix", str(REF), "--plan-file", str(plan)])
+    out = capsys.readouterr().out
+    assert rc == 3, out
+    assert "STALE ids=9991 checked=1" in out
+
+
+def test_repo_root_pairing_regression_would_have_failed_pre_fix(tmp_path, monkeypatch):
+    """Blocker 2, mutation proof: re-running the OLD
+    ``dirname(--git-common-dir)`` construction against the same linked
+    worktree yields the PRIMARY checkout — the wrong tree — so the fixture
+    above genuinely discriminates the fix from the defect."""
+    primary = tmp_path / "primary"
+    primary.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=primary, check=True)
+    _git(primary, "config", "user.email", "test@test.test")
+    _git(primary, "config", "user.name", "test")
+    _git(primary, "config", "commit.gpgsign", "false")
+    (primary / ".gitkeep").write_text("")
+    _commit(primary, [primary / ".gitkeep"], "init", T_INIT)
+    linked = tmp_path / "linked"
+    _git(primary, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    tasks = linked / "tasks"
+    tasks.mkdir()
+
+    old = Path(
+        ccb._git(
+            ["rev-parse", "--path-format=absolute", "--git-common-dir"], cwd=tasks
+        ).splitlines()[-1]
+    ).parent
+    new = Path(ccb._git(["rev-parse", "--show-toplevel"], cwd=tasks).splitlines()[-1])
+    assert old.resolve() == primary.resolve()
+    assert new.resolve() == linked.resolve()
+    assert old.resolve() != new.resolve()
+
+
+@pytest.mark.parametrize(
+    ("label", "plan_text", "expected"),
+    [
+        # A tilde run must not close a backtick fence.
+        ("mixed_delimiters", "#111\n```\n#222\n~~~\n#333\n```\n#444", [111, 444]),
+        # An inner ``` must not close a ```` block.
+        ("longer_opener", "#111\n````\n#222\n```\n#333\n````\n#444", [111, 444]),
+        # 4-space indent => indented CODE, not a fence: the block never opens,
+        # so #222 stays visible prose.
+        ("indented_is_not_a_fence", "#111\n    ```\n#222", [111, 222]),
+        # 3-space indent IS a valid fence opener.
+        ("three_space_indent_is_a_fence", "#111\n   ```\n#222\n   ```\n#333", [111, 333]),
+        # An unclosed fence swallows the rest of the document (CommonMark).
+        ("unclosed_fence", "#111\n```\n#222", [111]),
+        # A closing fence may not carry an info string.
+        ("close_needs_bare_delim", "#111\n```\n#222\n``` js\n#333\n```\n#444", [111, 444]),
+    ],
+)
+def test_fence_semantics_are_delimiter_aware(label, plan_text, expected):
+    """Blocker 5 (Major). The old toggle fired on any stripped line starting
+    with three backticks/tildes, so a mismatched delimiter, a shorter inner
+    run, or an INDENTED code line inverted in/out for the whole rest of the
+    document — silently dropping real citations or harvesting ids out of
+    command examples."""
+    assert ccb.extract_cited_ids(plan_text, self_issue=1) == expected, label
+
+
+@pytest.mark.parametrize("bad", ["-1", "0", "999999999", "99999999999"])
+def test_implausible_reference_is_unknown_never_a_verdict(fake_repo, capsys, bad):
+    """Blocker 7 (Major). A non-positive / far-past / far-future reference
+    silently INVERTS the gate — too far past marks every body stale, too far
+    future certifies every body clean. Both are UNKNOWN + exit 0, never a
+    verdict."""
+    folder = _make_task(fake_repo, 9991)
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 body", AFTER)
+    rc, out, _ = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", bad], capsys
+    )
+    assert rc == 0
+    assert "UNKNOWN reason=implausible draft-start reference" in out
+    assert "STALE" not in out and "CLEAN" not in out
+
+
+def test_plausible_reference_still_verdicts(fake_repo, capsys):
+    """Blocker 7 companion: the plausibility fence must not swallow the
+    ordinary case — a reference just inside the window still verdicts."""
+    folder = _make_task(fake_repo, 9991)
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 body", AFTER)
+    rc, out, _ = _run(
+        "Grounds on #9991.",
+        fake_repo,
+        ["--issue", "8000", "--since-unix", str(ccb._MIN_PLAUSIBLE_REF_UNIX)],
+        capsys,
+    )
+    assert rc == 3
+    assert "STALE ids=9991" in out
+
+
+def test_status_move_is_labelled_rename_only(fake_repo, capsys):
+    """Blocker 8 (Major). A ``git mv`` between status folders is #2384 §6's
+    DOMINANT false-positive channel, and the label is its whole mitigation.
+
+    Pre-fix the label was decided from the diff text, but a path-limited
+    ``git diff <oldest>^..HEAD -- <new path>`` cannot show a rename at all:
+    at ``<oldest>^`` nothing existed at that path, so the body rendered as
+    ADDED lines and the "zero changed lines" predicate was unreachable — the
+    label never fired, and the planner got a full-file diff of noise."""
+    folder = _make_task(fake_repo, 9991, status="running")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    dest = fake_repo / "tasks" / "completed" / "9991"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    # `git mv` stages both sides itself; re-adding the vanished source path
+    # would exit 128.
+    _git(fake_repo, "mv", str(folder), str(dest))
+    stamp = f"{AFTER} +0000"
+    _git(
+        fake_repo,
+        "commit",
+        "-q",
+        "-m",
+        "task #9991: running -> completed",
+        env_extra={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp},
+    )
+
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3, out
+    assert "stale cited body #9991" in err
+    assert "[rename-only]" in err
+    # The full-file "addition" diff is suppressed under the label.
+    assert "+# Task 9991" not in err
+
+
+def test_content_edit_is_not_labelled_rename_only(fake_repo, capsys):
+    """Blocker 8 companion / mutation guard: a real content correction must
+    NOT pick up the rename-only label (which would tell the planner to ignore
+    exactly the change the gate exists to surface)."""
+    folder = _make_task(fake_repo, 9991)
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text("---\nid: 9991\n---\n\n# Task 9991\n\nCorrected result.\n")
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 result", AFTER)
+
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3, out
+    assert "[rename-only]" not in err
+    assert "Corrected result." in err
+
+
+def test_cap_truncation_is_disclosed(fake_repo, capsys):
+    """Blocker 9 (Minor, raised by BOTH reviewers). A bare ``CLEAN checked=40``
+    over a 55-citation plan reads as full coverage while 15 citations went
+    unexamined."""
+    folder = _make_task(fake_repo, 9991)
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    total = ccb._MAX_CITED_IDS + 15
+    # #9991 leads so it lands INSIDE the cap and the run reaches a real
+    # verdict; the rest is unresolvable filler that only drives the count.
+    plan_text = "#9991 " + " ".join(f"#{9000 + i}" for i in range(total - 1))
+    rc, out, _ = _run(plan_text, fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys)
+    assert rc == 0
+    assert "CLEAN checked=1" in out
+    assert f"capped={ccb._MAX_CITED_IDS} not_examined=15" in out
+
+    ids, seen_total = ccb.extract_cited_ids_with_total(plan_text, self_issue=8000)
+    assert len(ids) == ccb._MAX_CITED_IDS
+    assert seen_total == total
+
+
+def test_no_cap_no_disclosure_noise(fake_repo, capsys):
+    """Blocker 9 companion: an uncapped run must not grow a `capped=` token."""
+    folder = _make_task(fake_repo, 9991)
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    rc, out, _ = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 0
+    assert "capped=" not in out and "not_examined=" not in out
+
+
+def test_cap_disclosure_in_json_report(fake_repo, capsys):
+    """Blocker 9: the machine-readable leg carries the same disclosure."""
+    plan_text = " ".join(f"#{9000 + i}" for i in range(ccb._MAX_CITED_IDS + 3))
+    rc, out, _ = _run(
+        plan_text, fake_repo, ["--issue", "8000", "--since-unix", str(REF), "--json"], capsys
+    )
+    assert rc == 0
+    payload = json.loads(out)
+    assert payload["capped"] is True
+    assert payload["not_examined"] == 3
+    assert payload["cited_total"] == ccb._MAX_CITED_IDS + 3
+
+
+def test_usage_error_exits_2_with_no_verdict_line(capsys):
+    """Blocker 11 (Minor). Exit 2 is argparse's USAGE error, outside the
+    documented CLEAN/UNKNOWN(0) / STALE(3) vocabulary. It must stay
+    distinguishable: no ``CITED-BODY-CURRENCY:`` line is printed, so a caller
+    keying on the verdict line can never read it as STALE."""
+    with pytest.raises(SystemExit) as exc:
+        ccb.main([])  # --issue is required
+    assert exc.value.code == 2
+    captured = capsys.readouterr()
+    assert "CITED-BODY-CURRENCY:" not in captured.out
+    assert "CITED-BODY-CURRENCY:" not in captured.err
+
+
+def test_detail_render_failure_cannot_downgrade_exit_3(fake_repo, monkeypatch, capsys):
+    """Blocker 12 (Minor). STALE is printed BEFORE the best-effort detail
+    render. Pre-fix a raise in the renderer reached the top-level fail-soft
+    handler, which printed a SECOND line (``UNKNOWN``) and returned 0 — so a
+    positively-established stale citation was reported as both stale and
+    unknown, and the process exited 0."""
+    folder = _make_task(fake_repo, 9991)
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 body", AFTER)
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("diff render exploded")
+
+    monkeypatch.setattr(ccb, "body_diff_since", _boom)
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3
+    assert "STALE ids=9991" in out
+    assert "UNKNOWN" not in out
+    assert "diff render failed for #9991" in err
+
+
+def test_git_output_decoding_is_lenient(fake_repo, capsys):
+    """Blocker 3 (Critical) helper-side. git echoes commit SUBJECTS verbatim
+    and they are not guaranteed UTF-8; under strict decoding
+    ``subprocess.run`` raises ``UnicodeDecodeError`` — a ``ValueError``, not
+    an ``OSError`` — from inside the probe. A latin-1 subject must not stop
+    the gate from reaching its verdict."""
+    folder = _make_task(fake_repo, 9991)
+    stamp = f"{AFTER} +0000"
+    _git(fake_repo, "add", "--", str(folder / "body.md"))
+    env = os.environ.copy()
+    env.update({"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp})
+    msg = fake_repo / "msg.txt"
+    msg.write_bytes(b"correct \xe9\xe8 body")  # latin-1, invalid UTF-8
+    subprocess.run(
+        ["git", "-C", str(fake_repo), "commit", "-q", "-F", str(msg)],
+        check=True,
+        capture_output=True,
+        env=env,
+    )
+    msg.unlink()
+
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3, out + err
+    assert "STALE ids=9991" in out
