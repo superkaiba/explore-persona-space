@@ -75,3 +75,4 @@
 - [verify_uploads parity + C901 pin](reference_verify_uploads_parity_and_c901.md) — old-revision parity copies must live under <repo>/scripts/ (REPO_ROOT from __file__); LIVE_WORKFLOW_HELPERS diffs run the C901≤15 policy pin — extract helpers, never noqa (#2578)
 - [pytest collection-print capture](reference_pytest_collection_print_capture.md) — default capture swallows collection-phase plugin prints; a subprocess-pytest sentinel assert needs `-s` (#2369 Test A)
 - [Direct-venv pytest needs ruff on PATH](reference_direct_venv_pytest_needs_ruff_on_path.md) — `.venv/bin/python -m pytest` form fails test_step9c_baseline ToolMissingError (env, both trees); prefix PATH with .venv/bin (#2387)
+- [Helper filenames in test prose create selector edges](reference_selector_basename_ref_from_test_prose.md) — the Step 9c selector's basename-ref arm reads docstrings/comments too; a phantom edge broke a curated exact-set pin (#2386 u3)
