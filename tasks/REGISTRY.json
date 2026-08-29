@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2641,
+  "highest_id": 2642,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12665,6 +12665,13 @@
       "path": "tasks/planning/2641",
       "status": "planning",
       "title": "workflow-fix: verify_plan._fence_mask is delimiter-blind, moving 37 plans' verdicts across 19 checks"
+    },
+    "2642": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2642",
+      "status": "proposed",
+      "title": "workflow-fix: codex twin composers can read the Claude sibling's agent-memory, defeating ensemble independence"
     },
     "265": {
       "has_clean_result": false,
