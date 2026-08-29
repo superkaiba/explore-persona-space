@@ -362,12 +362,14 @@ def write_report(mapping: dict[str, Any], transfer: dict[str, Any], out_dir: Pat
         if seed_behavior
         else ""
     )
+    other_behavior_values = [
+        value for value in (length_value, refusal_value, repetition_value) if value is not None
+    ]
     behavior_conclusion = (
-        "The semantic-divergence result is positive in this run; refusal and repetition are not."
+        "Semantic divergence is the only mapping-mediated readout above 0.05 R² in this run."
         if semantic_value is not None
-        and semantic_value > 0
-        and (refusal_value is None or refusal_value <= 0.01)
-        and (repetition_value is None or repetition_value <= 0.01)
+        and semantic_value > 0.05
+        and all(value <= 0.05 for value in other_behavior_values)
         else "These readouts should be interpreted from their reported numeric values rather than as a categorical effect."
     )
     low_text = ", ".join(
@@ -415,7 +417,7 @@ Below 16 queries, transport is systematically worse than scratch ({low_text}). A
 ## Exact design
 
 - Frozen split: 8,000 train / 500 validation / 1,500 test prompts. The new analyses never fit on test rows.
-- Fixed common basis: context Procrustes on Qwen-writer train contexts; answer Procrustes pooled over both answer writers. All affine translations are retained. Held-out context/answer alignment cosines are {alignment_test['context_q_to_l_flat_cosine']:.3f}/{alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}/{alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}, so encoder and diagonal contrasts include residual alignment error.
+- Fixed common basis: context Procrustes on Qwen-writer train contexts; answer Procrustes pooled over both answer writers. All affine translations are retained. Held-out context/answer alignment cosines are {alignment_test['context_q_to_l_flat_cosine']:.3f}/{alignment_test['answer_qwriter_q_to_l_flat_cosine']:.3f}/{alignment_test['answer_lwriter_q_to_l_flat_cosine']:.3f}, so encoder, interaction, and diagonal contrasts can include residual alignment error.
 - Factorial contrasts: writer, encoder, encoder×writer interaction, and the natural diagonal Qwen-own − Llama-own difference. Encoder, interaction, and diagonal can contain alignment residual; within-encoder Qwen/Llama writer contrasts provide alignment-free checks.
 - Null: 1,000 held-out row-pairing permutations that destroy prompt correspondence.
 - Stability: two disjoint 4,000-row train refits at the original selected ridge lambdas; independent generation seed 137.

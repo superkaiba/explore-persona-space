@@ -2,13 +2,13 @@
   "issue": 2569,
   "label": "mapping-diff-and-fewshot-transfer-report",
   "source_inputs": {
-    "mapping_diff_json_sha256": "d7b8eb885e402d30b914c69f2691f7ca32d4ab36909877d0ff5cd97f6d9c26a2",
+    "mapping_diff_json_sha256": "df590519a0f39db1811670cba517b9bdcc40b66a05feacef01dab48effb30972",
     "fewshot_transfer_json_sha256": "5274c8a60608323446681d845106bbdbb48332c596e1c2d77d61f40923f1b406"
   },
   "files": {
     "REPORT.md": {
-      "bytes": 7639,
-      "sha256": "3019defb77905e3568c975d0866489924fdd692add71cfb0cceef78717ea8c86"
+      "bytes": 8248,
+      "sha256": "96f1e76e8118ea96b684bb3f57ac08792b1b32ae642d8f45f2fec5568def8e60"
     },
     "fewshot_transfer.json": {
       "bytes": 320289,
@@ -43,8 +43,8 @@
       "sha256": "fcf361919fa10703d0bfa561d7affc06901a8f115de7b72b2dcc44b942c2c6f8"
     },
     "mapping_diff.json": {
-      "bytes": 39457,
-      "sha256": "d7b8eb885e402d30b914c69f2691f7ca32d4ab36909877d0ff5cd97f6d9c26a2"
+      "bytes": 42343,
+      "sha256": "df590519a0f39db1811670cba517b9bdcc40b66a05feacef01dab48effb30972"
     },
     "writer_modes.npz": {
       "bytes": 434791,
