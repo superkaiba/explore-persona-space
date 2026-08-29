@@ -22,6 +22,14 @@ exhausted, which today has none.
 
 ## Provenance
 
+- workflow_fix_target: .claude/rules/context-hygiene.md
+- fingerprint: 1577da44cef4
+- additional_targets: .claude/rules/codex-ensemble-review.md, .claude/skills/issue/SKILL.md, .claude/agents/reconciler.md
+- verified-at-filing: n/a — hand-filed from #2387 round 5 (observed live), not routed
+  through a `workflow-fix-candidate v1` block; the gap is the ABSENCE of a
+  model-quota rung in `context-hygiene.md`, confirmed by grep: the file's ladders
+  cover refusal (a)-(g) and autocompact-thrash Class 1/2 only.
+
 Surfaced live on #2387 round 5 (2026-08-29). The round-5 code review split
 PASS (Claude) vs FAIL (Codex), which routes to the binding `reconciler`. Four
 consecutive reconciler spawns died immediately on `You've reached your Fable 5
