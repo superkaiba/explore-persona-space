@@ -274,3 +274,77 @@ closing the twin's OWN r2 CONCERN):**
     phrasing into the neutrality block, or the twin re-reads its own Fix as
     three mandatory items and FAILs its own round-3 fix for the item it had
     itself marked secondary.
+
+**#2386 r2 (2026-08-29) — CONCERNS+CONCERNS revise round closing the twin's own
+three r1 findings (Pattern C probe + vehicle-keyed class invariant + exact
+stdout; 3 files, +744/−62):**
+
+30. **A PARTIAL amendment plan splits its disposition: base BY PATH, amendment
+    INLINED.** `--allow-amendment` v2 plans restate only what they change, so
+    the twin needs BOTH. Probe each version separately — v1's worktree copy was
+    byte-identical to canonical (35,704 B, `diff -q` clean ⇒ safe by path,
+    saving 35 KB of prompt), while v2 was **ABSENT from the worktree entirely**
+    (created after the branch cut ⇒ must be inlined; only 5 KB). The wholesale
+    absent-or-stale rule in the spec reads as one decision for "the plan"; on an
+    amendment it is one decision PER VERSION.
+31. **The frozen `plans/plan.md` symlink is actively dangerous on an amendment
+    round — say so in the prompt, don't just avoid it.** The worktree symlink
+    resolved to **v1** while canonical resolved to **v2**. A path read succeeds
+    and silently serves the superseded contract (the #546/#541 silent class).
+    Compose an explicit HARD WARNING naming the symlink, what it resolves to,
+    and that `v2.md` exists at NO worktree path — otherwise the twin
+    "helpfully" reads `plan.md` and grades against v1.
+32. **A brief may hand ABSOLUTE main-checkout plan paths; never pass them
+    through unexamined.** `/home/.../tasks/running/2386/plans/v2.md` does not
+    resolve from a worktree-rooted sandbox. Convert: worktree-relative for the
+    identity-verified base, inline for the rest.
+33. **Class-arithmetic collisions invite phantom findings — disambiguate two
+    same-sized sets explicitly.** Plan v2's "FIX SET 11" (ten r1 wrappers +
+    Pattern C) and the test's eleven `fatal-guard` members (ten r1 wrappers +
+    the #2196 reference) are BOTH 11 and are DIFFERENT sets. State both
+    memberships side by side, or the twin reads a contradiction between plan
+    and test.
+34. **A falsification demo's OLD half needs the OLD predicate's POPULATION —
+    inline the old scanner verbatim.** The r1 scanner's terminal assertion
+    ranged over a SEVEN-wrapper driven tuple, so running it against the
+    committed one-wrapper synthetic fixture trees FAILS for a population
+    artifact, not the defect — faking the OLD=FAIL half in the safe direction.
+    The implementer disclosed using a different (7+1) tree for the OLD/NEW
+    measurement than the committed fixtures use. Extract the old predicate to a
+    file and inline it so the twin can hand-apply both predicates instead of
+    trusting the marker's table; ask separately whether the committed fixtures
+    are non-vacuous under the NEW scanner (look for `assert`-guards that each
+    `.replace()` actually mutated the body, plus a passing control fixture).
+35. **A defect found by BOTH reviewers yields TWO ledger ids for ONE defect,
+    and the marker's audit table will list only its own.** #2386 carried
+    `codex-auto-upgrade-unwritable-gap` (mine) and
+    `codex-auto-upgrade-unwritable-residual` (the Claude reviewer's); the r2
+    marker audited three ids and omitted the fourth. Require a status line for
+    EVERY ledger id, name the omission as a composer observation, and quote the
+    orphan row's `evidence` field (it often prescribes the same fix, making the
+    discharge decidable) — while still never inlining the sibling's verdict
+    BODY. Ledger rows are shared inputs; the sibling's verdict is an output.
+36. **Author-neutrality, scope-drift variant: my own Fix text can be
+    OVER-SPECIFIC for a pattern the plan added afterwards.** The r1 Fix said
+    "inspect each probe as a logical statement requiring `|| fatal`", written
+    when every guarded wrapper was Pattern A/B. Plan v2 then made `|| fatal`
+    exactly WRONG for Pattern C (an early exit skips the alert arm), and the
+    round generalized to "routes into its class's failure path". Pre-empt it:
+    tell the twin to score whether the generalization is as STRONG, not whether
+    it matches the literal Fix wording.
+37. **The self-observation trap now recurs on TWO literals per compose.** Both
+    the head sentinel (`epm:results v2`) and the branch TIP SHA legitimately
+    appear in the inlined marker body AND in composer prose (F-facts, the diff
+    block). Split the prompt at the envelope and assert body-side and
+    prose-side counts SEPARATELY; a bare total hides either side going to zero.
+38. **Composer-run `--map-files` settles selector coverage cheaply — but it
+    takes a path-LIST file, not source paths.** `git diff --name-only <range> >
+    /tmp/files.txt` then `--map-files /tmp/files.txt`. It confirmed the #1579
+    `.sh` stem map reaches a NEW same-stem test file with no registry edit
+    (3 pairs), converting a marker claim into a settled fact.
+39. **On a concern-closure round, state the severity fence in BOTH
+    directions.** All three r1 findings were MINOR-class (1 CONCERN, 2 NITs):
+    a false closure CLAIM or a new defect scores at the ordinary bar and can
+    FAIL, while a genuinely-still-open item re-raises at its OWN severity and
+    does not by itself flip the verdict. Without both halves the twin either
+    manufactures a blocker or waves a false claim through.
