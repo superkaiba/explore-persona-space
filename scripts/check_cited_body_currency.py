@@ -72,6 +72,7 @@ import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import NamedTuple
 
 # Extraction shape mirrors verify_plan.py's `_C18_ISSUE_REF_RE` (`#\d{2,}`)
 # with the URL-adjacency guard added; module-level copy BY DESIGN — this is a
@@ -86,6 +87,13 @@ _MAX_CITED_IDS = 40  # a runaway plan must not fan out into 200 git calls
 _GIT_TIMEOUT_S = 10
 _MAX_DIFF_CHARS = 8000
 _DISPATCH_NOTE_RE = re.compile(r"^\s*planner-dispatch\b")
+# Prefixes each COMMIT header record in the batched `git show --name-status -z`
+# read (see `batch_name_status`). A status token is `[ACDMRTUX]\d*`, so `\x01`
+# cannot collide with one.
+_NAME_STATUS_SENTINEL = "\x01"
+# Status folders a task can traverse inside one plan-drafting window. Bounds the
+# rename chase in `_window_history`; realistic windows use 0-2 hops.
+_MAX_RENAME_CHASE_HOPS = 8
 
 # CommonMark fence: 3+ backticks OR 3+ tildes, indented at most 3 spaces (4+
 # spaces is an indented code block, NOT a fence). The delimiter CHARACTER and
@@ -348,17 +356,137 @@ def oldest_planner_dispatch_unix(folder: Path) -> int | None:
     return oldest
 
 
-def _path_history(rel_path: str, *, repo_root: Path) -> list[tuple[str, int, str]]:
-    """Full ``(sha, commit_unix, subject)`` history of ``rel_path`` (newest
-    first) via one parsed ``git log`` — used instead of ``--since`` date
-    parsing so window membership uses the same ``%ct`` read as
-    :func:`last_commit_unix`. Best-effort: ``[]`` on any git failure."""
-    out = _git(["log", "--format=%H\t%ct\t%s", "--", rel_path], cwd=repo_root)
+class _Commit(NamedTuple):
+    """One commit of a cited body's rename-CHASING window (:func:`_window_history`).
+
+    ``sha`` / ``commit_unix`` / ``subject`` come from ``git log``; ``status``
+    and ``prev_path`` from the batched ``--name-status`` read. ``status`` is
+    the name-status token for the file in that commit (``'M'``, ``'A'``,
+    ``'R100'``, ...), ``path`` is where the file lived AT that commit (a
+    rename's DESTINATION), and ``prev_path`` is a rename's SOURCE (``None``
+    for every non-rename status). ``status``/``prev_path`` are ``None`` when
+    the commit emitted no matching name-status entry — a merge commit, which
+    ``git show`` prints without a diff unless asked, or a failed probe."""
+
+    sha: str
+    commit_unix: int
+    subject: str
+    status: str | None
+    path: str | None
+    prev_path: str | None
+
+
+def parse_name_status_batch(out: str) -> dict[str, list[tuple[str, list[str]]]]:
+    """Parse the ``-z`` record stream of :func:`batch_name_status` into
+    ``{sha: [(status, [paths...]), ...]}``.
+
+    Wire format (verified against git 2.x): each revision emits
+    ``\\x01<sha>`` NUL, a NEWLINE, then its name-status records —
+    ``<status>`` NUL ``<path>`` NUL, or for renames/copies ``<status>`` NUL
+    ``<old>`` NUL ``<new>`` NUL. The NEWLINE that terminates the ``--format``
+    header is glued onto the NEXT record by the NUL split, so a leading
+    ``"\\n"`` is stripped from every record.
+
+    ``\\x01`` cannot collide with a status token (``[ACDMRTUX]\\d*``), and a
+    PATH record is only ever read while a status entry is still expecting
+    paths, so a pathological leading-``\\x01`` filename cannot be mis-read as
+    a revision header. Malformed headers are skipped WITH their records rather
+    than merged into the previous revision."""
+    out_map: dict[str, list[tuple[str, list[str]]]] = {}
+    cur: list[tuple[str, list[str]]] | None = None
+    pending = 0  # path records still expected for the current status entry
+    for rec in out.split("\0"):
+        body = rec[1:] if rec.startswith("\n") else rec
+        if not body:
+            continue
+        if pending == 0 and body.startswith(_NAME_STATUS_SENTINEL):
+            sha = body[1:].strip()
+            if not sha:
+                cur = None  # malformed header: drop it and its records
+                continue
+            cur = out_map.setdefault(sha, [])
+            continue
+        if cur is None:
+            continue  # a stray record with no revision to attach it to
+        if pending == 0:
+            # `-z` renames/copies emit SOURCE then DESTINATION; everything else
+            # emits one path. Counting them is what keeps a later status token
+            # from being mis-read as a path.
+            pending = 2 if body[:1] in ("R", "C") else 1
+            cur.append((body, []))
+            continue
+        cur[-1][1].append(body)
+        pending -= 1
+    return out_map
+
+
+def batch_name_status(
+    shas: list[str], *, repo_root: Path
+) -> dict[str, list[tuple[str, list[str]]]]:
+    """Whole-commit name-status for every sha, from ONE
+    ``git show --format=<sentinel>%H --name-status -M -z`` call.
+    ``{}`` on any git failure.
+
+    ``-z`` is load-bearing (#2384 round-3 item 5): without it git QUOTES a
+    non-ASCII path and C-escapes an embedded tab (``"tasks/na\\303\\257ve/ta\\tb.md"``),
+    so the round-2 parse — ``split("\\t")[-1] == rel_path`` — never matched the
+    raw path, the status came back ``None``, and the advisory label silently
+    went missing. ``-z`` emits raw NUL-delimited records instead.
+
+    The read is deliberately UNFILTERED (no pathspec). A path-limited diff
+    filters the rename SOURCE out before rename detection runs, so the same
+    status move reports as ``A`` with no source — measured — and both the
+    ``R100`` label and the chase's next path are lost. Batching keeps the
+    window's probe at ONE git call rather than one per commit."""
+    if not shas:
+        return {}
+    out = _git(
+        [
+            "show",
+            f"--format={_NAME_STATUS_SENTINEL}%H",
+            "--name-status",
+            "-M",
+            "-z",
+            *shas,
+        ],
+        cwd=repo_root,
+    )
+    if not out:
+        return {}
+    return parse_name_status_batch(out)
+
+
+def commit_path_entry(
+    entries: list[tuple[str, list[str]]], rel_path: str
+) -> tuple[str | None, str | None]:
+    """``(status, rename SOURCE)`` for the entry whose DESTINATION is
+    ``rel_path``, out of one commit's :func:`batch_name_status` entries.
+    ``(None, None)`` when the commit did not touch ``rel_path``; the source is
+    ``None`` for every non-rename status."""
+    for status, paths in entries:
+        if paths and paths[-1] == rel_path:
+            return status, (paths[0] if len(paths) > 1 else None)
+    return None, None
+
+
+def _log_segment(rel_path: str, start: str, *, repo_root: Path) -> list[tuple[str, int, str]]:
+    """``[(sha, commit_unix, subject), ...]`` newest-first for ``rel_path`` from
+    ``start``, via one path-limited ``git log``. ``[]`` on any git failure.
+
+    Deliberately WITHOUT ``--follow``: on this 127k-commit repo ``--follow``
+    measured 8.1-13.1 s against the module's own ``_GIT_TIMEOUT_S`` of 10, so
+    the gate would intermittently time out and show the operator no log, no
+    label and no diff at all. The plain read measures ~1.5 s; renames are
+    crossed by :func:`_window_history`'s explicit chase instead."""
+    out = _git(
+        ["log", "--format=%H%x09%ct%x09%s", start, "--", rel_path],
+        cwd=repo_root,
+    )
     if not out:
         return []
     rows: list[tuple[str, int, str]] = []
     for line in out.splitlines():
-        parts = line.split("\t", 2)
+        parts = line.split("\t", 2)  # maxsplit=2: a subject may hold tabs
         if len(parts) != 3:
             continue
         try:
@@ -368,47 +496,84 @@ def _path_history(rel_path: str, *, repo_root: Path) -> list[tuple[str, int, str
     return rows
 
 
-def commit_path_status(sha: str, rel_path: str, *, repo_root: Path) -> str | None:
-    """The per-commit name-status letter for ``rel_path`` as the DESTINATION
-    in commit ``sha`` (``'M'``, ``'A'``, ``'R100'``, ...); ``None`` when the
-    path is not a destination in that commit (merge commits print nothing
-    without ``-m``, so they land here) or the probe fails."""
-    out = _git(["show", "--format=", "--name-status", "-M", sha], cwd=repo_root)
-    if not out:
-        return None
-    for line in out.splitlines():
-        parts = line.split("\t")
-        if len(parts) < 2:
-            continue
-        if parts[-1] == rel_path:
-            return parts[0]
-    return None
+def _window_history(rel_path: str, since_unix: int, *, repo_root: Path) -> list[_Commit]:
+    """Commits touching ``rel_path`` after ``since_unix``, newest first,
+    CHASING renames backwards so a status move cannot truncate the window.
+
+    The chase is the #2384 round-3 blocker fix. Path-limited history TRUNCATES
+    at a rename: on the ordinary correct-then-``set-status`` sequence — persist
+    body, correct body at the OLD path, ``git mv`` the task folder —
+    ``git log -- <new path>`` returns ONLY the ``R100`` move. BOTH consumers
+    inherit that truncation: the window here becomes a single commit, so the
+    operator's log hides the correction, AND :func:`classify_window` sees an
+    all-``R100`` window, labels it ``rename-only``, and :func:`body_diff_since`
+    SUPPRESSES the corrected-body diff. Since
+    ``.claude/skills/adversarial-planner/SKILL.md`` makes that detail block the
+    whole input to the operator's disposition, the mislabel is worse than no
+    gate: the sanctioned "plan text unaffected" disposition gets recorded over
+    a plan quoting a stale cited body. So window and classification are read
+    off this ONE rename-crossing history.
+
+    Chase step: when the window consumes a whole log segment AND that segment's
+    oldest commit renamed the file, continue from the rename SOURCE at
+    ``<sha>^``. A segment holding any commit at-or-before ``since_unix`` bounds
+    the window, so no chase is needed. Bounded by ``_MAX_RENAME_CHASE_HOPS``;
+    each git call carries its own ``_GIT_TIMEOUT_S``, and a failure degrades to
+    the rows already gathered."""
+    rows: list[_Commit] = []
+    path, start = rel_path, "HEAD"
+    for _hop in range(_MAX_RENAME_CHASE_HOPS + 1):
+        seg = _log_segment(path, start, repo_root=repo_root)
+        window = [c for c in seg if c[1] > since_unix]
+        if not window:
+            break
+        entries = batch_name_status([c[0] for c in window], repo_root=repo_root)
+        for sha, unix, subject in window:
+            status, prev = commit_path_entry(entries.get(sha, []), path)
+            rows.append(_Commit(sha, unix, subject, status, path, prev))
+        if len(window) < len(seg):
+            break  # the segment bounds the window; older history is out of scope
+        if not rows[-1].prev_path:
+            break  # not a rename (or the probe failed): the chase ends here
+        path, start = rows[-1].prev_path, f"{rows[-1].sha}^"
+    return rows
 
 
-def classify_window(
-    window: list[tuple[str, int, str]], rel_path: str, diff: str, *, repo_root: Path
-) -> str | None:
+def window_pathspec(window: list[_Commit], rel_path: str) -> list[str]:
+    """Every path the followed file occupied inside ``window``, plus
+    ``rel_path``, order-preserving-deduped — the pathspec
+    :func:`body_diff_since` hands to ``git diff``.
+
+    A single-path ``git diff <oldest>^..HEAD -- <new path>`` renders a
+    post-rename body as pure ADDITIONS (at ``<oldest>^`` nothing existed under
+    the new path), so the operator never sees what the correction REPLACED.
+    Naming both endpoints puts the old path's removal in the same diff."""
+    out: list[str] = []
+    for p in [rel_path, *(x for c in window for x in (c.path, c.prev_path))]:
+        if p and p not in out:
+            out.append(p)
+    return out
+
+
+def classify_window(window: list[_Commit], diff: str) -> str | None:
     """Label the dominant false-positive channel (#2384 §6): a status move
     (``git mv`` between status folders) is ``rename-only``; a user promotion
     sweep (``classification`` flip) is ``frontmatter-only``. ``None`` = a
     content diff (the real staleness signal). Advisory label only, never a
     verdict input.
 
-    ``rename-only`` is decided from PER-COMMIT name-status with rename
-    detection (``git show --name-status -M``), never from the diff text
-    (#2384 round-2 blocker 8). A path-limited
-    ``git diff <oldest>^..HEAD -- <new path>`` cannot show a rename at all:
-    at ``<oldest>^`` the file did not exist under the new path, so the whole
-    body renders as ADDED lines — the old code's "zero changed lines +
-    'rename from'" predicate is unreachable, and the label #2384 §6 names as
-    the dominant false-positive mitigation never fired. Requiring EVERY
-    windowed commit to be an exact ``R100`` keeps the label honest: a
-    rename-WITH-edit (``R095``) is a real content change and stays unlabeled.
-    """
-    if window:
-        statuses = [commit_path_status(sha, rel_path, repo_root=repo_root) for sha, _, _ in window]
-        if all(s == "R100" for s in statuses):
-            return "rename-only"
+    ``rename-only`` is decided from the per-commit name-status of the
+    rename-CHASING window (:func:`_window_history`), never from the diff text
+    (#2384 round-2 blocker 8) and never from a rename-TRUNCATED history
+    (#2384 round-3 blocker — that history held only the ``R100`` move, so a
+    window mixing a real correction with a status move read as all-``R100``
+    and the correction was suppressed).
+    Requiring EVERY windowed commit to be an exact ``R100`` keeps the label
+    honest in both directions: a rename-WITH-edit (``R095``) and a content
+    commit (``M``) are real changes and stay unlabeled, while a task moved
+    through several status folders with no edits still earns the label."""
+    if window and all(c.status == "R100" for c in window):
+        return "rename-only"
     if not diff:
         return None
     changed = [
@@ -428,21 +593,26 @@ def classify_window(
 def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple[str, str | None]:
     """``(display text, advisory label)`` for the commits touching
     ``rel_path`` after ``since_unix``: a oneline log plus
-    ``git diff <oldest-in-window>^..HEAD -- <rel_path>``, truncated to
-    ``_MAX_DIFF_CHARS``. Best-effort — ``('', None)`` on any failure (the
-    verdict never depends on this display).
+    ``git diff <oldest-in-window>^..HEAD -- <every path the file occupied>``,
+    truncated to ``_MAX_DIFF_CHARS``. Best-effort — ``('', None)`` on any
+    failure (the verdict never depends on this display).
 
-    Under a ``rename-only`` label the diff BODY is suppressed: it is the
-    whole file rendered as additions (see :func:`classify_window`), which is
-    pure noise for a status move."""
-    rows = _path_history(rel_path, repo_root=repo_root)
-    window = [r for r in rows if r[1] > since_unix]
+    The window and the label are read off the SAME rename-crossing history
+    (:func:`_window_history`). Both halves are load-bearing (#2384 round-3
+    blocker): a rename-truncated history gives the operator a one-line log
+    that hides the correction AND an all-``R100`` classification that
+    suppresses its diff.
+
+    Under a ``rename-only`` label the diff BODY is suppressed: for a status
+    move it carries no content change, which is pure noise."""
+    window = _window_history(rel_path, since_unix, repo_root=repo_root)
     if not window:
         return "", None
-    lines = [f"{sha[:10]} @{ct} {subject}" for sha, ct, subject in window]
-    oldest_sha = window[-1][0]
-    diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", rel_path], cwd=repo_root) or ""
-    label = classify_window(window, rel_path, diff, repo_root=repo_root)
+    lines = [f"{c.sha[:10]} @{c.commit_unix} {c.subject}" for c in window]
+    oldest_sha = window[-1].sha
+    paths = window_pathspec(window, rel_path)
+    diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", *paths], cwd=repo_root) or ""
+    label = classify_window(window, diff)
     text = "\n".join(lines)
     if diff and label != "rename-only":
         text += "\n" + diff
@@ -608,9 +778,12 @@ def _run(argv: list[str] | None) -> int:
         plan_text, self_issue=args.issue, since_unix=since_unix, repo_root=repo_root
     )
     c = _counts(findings)
-    # Cap truncation is DISCLOSED, never silent: a bare `CLEAN checked=40`
-    # over a 55-citation plan reads as full coverage (#2384 round-2 blocker 9).
+    # Cap truncation is DISCLOSED on EVERY text branch, never silent: a bare
+    # `CLEAN checked=40` over a 55-citation plan reads as full coverage
+    # (#2384 round-2 blocker 9), and a bare UNKNOWN over a capped plan hides
+    # that the cap ALSO bit (#2384 round-3 item 3).
     dropped = max(0, total_cited - len(findings))
+    capped = f" capped={_MAX_CITED_IDS} not_examined={dropped}" if dropped else ""
     if args.json:
         print(
             json.dumps(
@@ -630,7 +803,8 @@ def _run(argv: list[str] | None) -> int:
     elif verdict == "UNKNOWN":
         print(
             "CITED-BODY-CURRENCY: UNKNOWN reason=no cited id probed successfully "
-            f"(cited={len(findings)} unresolved={c['unresolved']} git_failed={c['git_failed']})"
+            f"(cited={len(findings)} unresolved={c['unresolved']} "
+            f"git_failed={c['git_failed']}){capped}"
         )
     else:
         suffix = ""
@@ -638,8 +812,7 @@ def _run(argv: list[str] | None) -> int:
             suffix += f" unresolved={c['unresolved']}"
         if c["git_failed"]:
             suffix += f" git_failed={c['git_failed']}"
-        if dropped:
-            suffix += f" capped={_MAX_CITED_IDS} not_examined={dropped}"
+        suffix += capped
         if verdict == "STALE":
             stale_ids = ",".join(str(f["id"]) for f in findings if f["status"] == "stale")
             print(

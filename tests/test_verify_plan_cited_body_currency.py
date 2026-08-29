@@ -15,11 +15,14 @@ with deterministic GIT_AUTHOR_DATE/GIT_COMMITTER_DATE commits.
 
 from __future__ import annotations
 
+import ast
 import importlib.util
+import inspect
 import json
 import os
 import subprocess
 import sys
+import textwrap
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -36,6 +39,19 @@ def _load_verify_plan():
     sys.modules.setdefault("verify_plan", mod)
     spec.loader.exec_module(mod)
     return sys.modules["verify_plan"]
+
+
+def _load_ccb():
+    """The pre-persist helper, loaded by PATH so the WORKTREE copy is the one
+    compared against c75 (the same idiom `test_c75_and_helper_extract_identical_ids`
+    uses inline)."""
+    spec = importlib.util.spec_from_file_location(
+        "check_cited_body_currency_pin", REPO_ROOT / "scripts" / "check_cited_body_currency.py"
+    )
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["check_cited_body_currency_pin"] = mod
+    spec.loader.exec_module(mod)
+    return mod
 
 
 vp = _load_verify_plan()
@@ -587,3 +603,115 @@ def test_c75_no_cap_no_disclosure_noise(fake_repo):
         repo_root=fake_repo,
     )
     assert "capped=" not in res.detail
+
+
+# ── ROUND-3 items (#2384 reconciler: B7 reference plausibility, B9 residue,
+#    the fence-extractor drift pin) ────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("bad", "label"),
+    [
+        (-62135596800, "0001-01-01T00:00:00Z, the malformed-but-parseable ts"),
+        (0, "unix epoch"),
+        (vp._C75_MIN_PLAUSIBLE_REF_UNIX - 1, "one second under the floor"),
+        (4_102_444_800, "year 2100 — far future"),
+    ],
+)
+def test_c75_implausible_reference_skips(fake_repo, bad, label):
+    """Round-3 item 2. c75 had a CEILING on leg (1) only (a breadcrumb newer
+    than the plan mtime belongs to a later round) and NO floor on either leg,
+    so any non-None resolved reference went straight into the comparisons.
+
+    Both directions silently invert the check — far past marks every cited
+    body stale, far future certifies every one CLEAN — so neither may pass as
+    a verdict. The helper has carried this band since round 2
+    (`_MIN_PLAUSIBLE_REF_UNIX`); this is its c75 twin."""
+    cited = _make_task(fake_repo, 9991, status="completed")
+    _commit(fake_repo, [cited / "body.md"], "persist #9991 body", T_OLD)
+    res = vp.check_cited_body_currency(
+        "Grounds on #9991.",
+        self_issue=8000,
+        reference_unix=bad,
+        reason="oldest planner-dispatch breadcrumb",
+        repo_root=fake_repo,
+    )
+    assert res.skipped is True, label
+    assert res.is_warn is False
+    assert "implausible draft-start reference" in res.detail
+    assert str(bad) in res.detail
+
+
+def test_c75_plausible_reference_still_warns(fake_repo):
+    """Mutation guard for the band above: a reference INSIDE it must still
+    reach the comparison and WARN — a floor that swallowed every reference
+    would pass the four rejection cases while disabling the check."""
+    cited = _make_task(fake_repo, 9991, status="completed")
+    _commit(fake_repo, [cited / "body.md"], "correct #9991 body", T_MID)
+    res = vp.check_cited_body_currency(
+        "Grounds on #9991.",
+        self_issue=8000,
+        reference_unix=T_OLD,
+        reason="oldest planner-dispatch breadcrumb",
+        repo_root=fake_repo,
+    )
+    assert res.is_warn is True
+    assert res.skipped is False
+
+
+def test_c75_zero_probed_skip_discloses_cap(fake_repo):
+    """Round-3 item 3. The zero-probed SKIP returned BEFORE the `capped=`
+    string was built, so `40 cited id(s) but none probed` over a 49-citation
+    plan read as if 40 were the whole citation set."""
+    total = vp._C75_MAX_IDS + 9
+    plan_text = " ".join(f"#{7000 + i}" for i in range(total))  # none resolvable
+    res = vp.check_cited_body_currency(
+        plan_text,
+        self_issue=8000,
+        reference_unix=T_NEW,
+        reason="oldest planner-dispatch breadcrumb",
+        repo_root=fake_repo,
+    )
+    assert res.skipped is True
+    assert "none probed" in res.detail
+    assert f"capped={vp._C75_MAX_IDS} not_examined=9" in res.detail
+
+
+def _fn_body_ast(fn, *, rename: dict[str, str] | None = None) -> str:
+    """``ast.dump`` of ``fn``'s body with the docstring dropped and ``rename``
+    applied to Name loads — comment-blind and formatting-blind by
+    construction (``ast.dump`` omits line attributes by default)."""
+    tree = ast.parse(textwrap.dedent(inspect.getsource(fn)))
+    body = list(tree.body[0].body)
+    if (
+        body
+        and isinstance(body[0], ast.Expr)
+        and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
+        body = body[1:]  # the two copies document different rationales BY DESIGN
+    module = ast.Module(body=body, type_ignores=[])
+    for node in ast.walk(module):
+        if isinstance(node, ast.Name) and rename and node.id in rename:
+            node.id = rename[node.id]
+    return "\n".join(ast.dump(n) for n in body)
+
+
+def test_c75_and_helper_fence_extractors_are_code_identical():
+    """Round-3 item 6. `test_c75_and_helper_extract_identical_ids` pins the two
+    extractors by ID-SET agreement over 9 samples, which any drift those 9
+    samples happen not to distinguish walks straight through — and the whole
+    #2384 §3.4 contract is that the WARN-only backstop and the blocking helper
+    read the SAME citation set.
+
+    This asserts CODE identity instead: the fence regex byte-for-byte, and the
+    two function bodies as normalized ASTs (docstrings dropped, the regex
+    global renamed, comments and formatting invisible)."""
+    ccb = _load_ccb()
+    assert vp._C75_FENCE_RE.pattern == ccb._FENCE_RE.pattern
+    assert vp._C75_FENCE_RE.flags == ccb._FENCE_RE.flags
+    assert vp._C75_ISSUE_REF_RE.pattern == ccb._ISSUE_REF_RE.pattern
+    assert vp._C75_ISSUE_REF_RE.flags == ccb._ISSUE_REF_RE.flags
+    assert _fn_body_ast(
+        vp._c75_strip_code_blocks, rename={"_C75_FENCE_RE": "_FENCE_RE"}
+    ) == _fn_body_ast(ccb._strip_code_blocks)

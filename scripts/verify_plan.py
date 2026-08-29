@@ -4651,6 +4651,18 @@ _C75_DISPATCH_RE = re.compile(r"^\s*planner-dispatch\b")
 # citations; plan #2384 §2.2 filter 4; the helper's
 # test_slash_separated_refs_extracted pins the same class).
 _C75_ISSUE_REF_RE = re.compile(r"(?<!\w)#(\d{2,})")
+# Plausibility band for the RESOLVED draft-start reference, the twin of the
+# helper's `_MIN_PLAUSIBLE_REF_UNIX` / `_FUTURE_SKEW_ALLOWANCE_S` (#2384
+# round-2 blocker 7, mirrored into c75 at round 3). c75 owns a CEILING on
+# leg (1) only (a breadcrumb newer than the plan mtime belongs to a later
+# round) and had NO floor on either leg, so a malformed-but-parseable
+# `ts` — `0001-01-01T00:00:00Z` parses to -62135596800, which satisfies
+# `unix <= ceiling` — reached the comparisons and marked every cited body
+# stale. The far-FUTURE direction is unguarded on leg (2), whose `st_mtime`
+# fallback carries no ceiling at all, and certifies every body CLEAN.
+# Neither may pass as a verdict; c75 SKIPs, its standing never-guess outcome.
+_C75_MIN_PLAUSIBLE_REF_UNIX = 1_000_000_000  # 2001-09-09; predates every commit here
+_C75_FUTURE_SKEW_ALLOWANCE_S = 86_400
 # CommonMark fence: 3+ backticks OR 3+ tildes, indented at most 3 spaces.
 # Byte-identical to the helper's `_FENCE_RE` BY DESIGN — the two legs must read
 # the same citation set, so they must strip the same code (#2384 §3.4).
@@ -5026,15 +5038,27 @@ def check_cited_body_currency(
     reference (#2384 staleness race; incident #2378 quoted #825's stale
     result 4 minutes after the correction landed). WARN-only backstop of
     ``scripts/check_cited_body_currency.py`` — never guesses: an unresolved
-    reference, zero citations, an unresolvable repo root, and zero PROBED
-    ids all SKIP."""
+    reference, an IMPLAUSIBLE reference, zero citations, an unresolvable repo
+    root, and zero PROBED ids all SKIP."""
     cid, name = "c75_cited_body_currency", "plan cites a task body corrected after drafting began"
     if reference_unix is None:
         return _skip(cid, name, f"draft-start reference unresolved ({reason})")
+    # Plausibility of the FINAL resolved reference, whichever leg produced it
+    # (the helper's `_MIN_PLAUSIBLE_REF_UNIX` twin — see the constants above).
+    now = int(datetime.now(tz=UTC).timestamp())
+    ceiling = now + _C75_FUTURE_SKEW_ALLOWANCE_S
+    if reference_unix < _C75_MIN_PLAUSIBLE_REF_UNIX or reference_unix > ceiling:
+        return _skip(
+            cid,
+            name,
+            f"implausible draft-start reference {reference_unix} from {reason} "
+            f"(expected {_C75_MIN_PLAUSIBLE_REF_UNIX} <= ref <= {ceiling})",
+        )
     ids, total_cited = _c75_extract_cited_ids(plan, self_issue=self_issue)
     if not ids:
         return _skip(cid, name, "no cross-task #<id> citations in plan prose")
     not_examined = max(0, total_cited - len(ids))
+    capped = f" capped={_C75_MAX_IDS} not_examined={not_examined}" if not_examined else ""
     if repo_root is None:
         return _skip(cid, name, "repo root unresolvable for git probes")
     stale: list[str] = []
@@ -5054,14 +5078,16 @@ def check_cited_body_currency(
         if unix > reference_unix:
             stale.append(tid)
     if probed == 0:
+        # The cap disclosure rides this branch too (#2384 round-3 item 3):
+        # "40 cited id(s) but none probed" over a 55-citation plan otherwise
+        # reads as if 40 were the whole citation set.
         return _skip(
             cid,
             name,
             f"{len(ids)} cited id(s) but none probed "
-            f"(unresolved={unresolved} git_failed={git_failed})",
+            f"(unresolved={unresolved} git_failed={git_failed}){capped}",
         )
     since = datetime.fromtimestamp(reference_unix, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-    capped = f" capped={_C75_MAX_IDS} not_examined={not_examined}" if not_examined else ""
     if stale:
         return _warn(
             cid,

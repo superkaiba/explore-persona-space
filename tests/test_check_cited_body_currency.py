@@ -49,13 +49,15 @@ REF = 1_700_100_000
 AFTER = 1_700_200_000
 
 
-def _git(repo: Path, *args: str, env_extra: dict[str, str] | None = None) -> None:
+def _git(repo: Path, *args: str, env_extra: dict[str, str] | None = None) -> str:
+    """Run git in ``repo``, raising on failure; returns stdout (most callers
+    ignore it, the rename-chase tests read shas from it)."""
     env = os.environ.copy()
     if env_extra:
         env.update(env_extra)
-    subprocess.run(
+    return subprocess.run(
         ["git", "-C", str(repo), *args], check=True, capture_output=True, text=True, env=env
-    )
+    ).stdout
 
 
 def _commit(repo: Path, paths: list[Path], msg: str, unix: int) -> None:
@@ -516,6 +518,145 @@ def test_content_edit_is_not_labelled_rename_only(fake_repo, capsys):
     assert "Corrected result." in err
 
 
+def _status_move(repo: Path, src: Path, dest: Path, unix: int, msg: str) -> None:
+    """``git mv src dest`` committed at ``unix``. ``git mv`` stages both sides
+    itself, so the vanished source path must not be re-added (exit 128)."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    _git(repo, "mv", str(src), str(dest))
+    stamp = f"{unix} +0000"
+    _git(
+        repo,
+        "commit",
+        "-q",
+        "-m",
+        msg,
+        env_extra={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp},
+    )
+
+
+# ── ROUND-3 blocker: rename-following history ───────────────────────────────
+
+
+def test_correction_then_status_move_reaches_the_operator(fake_repo, capsys):
+    """Round-3 BLOCKER, on the reconciler's three-commit fixture: persist the
+    body, CORRECT it at the OLD path, then ``git mv`` the task folder.
+
+    That is the ordinary correct-then-``set-status`` sequence. Pre-fix, the
+    path-limited ``git log`` TRUNCATED at the rename and
+    returned only the ``R100`` move, so (a) the window log hid the correction
+    and (b) ``classify_window`` saw an all-``R100`` window, labelled it
+    ``rename-only``, and SUPPRESSED the diff. Since
+    ``.claude/skills/adversarial-planner/SKILL.md`` makes that detail block the
+    entire input to the operator's disposition, the operator saw a status-move
+    label and an empty diff, recorded the sanctioned "plan text unaffected"
+    disposition, and persisted a plan quoting a stale cited body — incident
+    #2378 reproduced, now carrying a record asserting it was checked.
+
+    Asserting the LABEL alone is insufficient: the suppression is the harm, so
+    the corrected TEXT must be shown to reach the rendered detail."""
+    folder = _make_task(fake_repo, 9991, status="interpreting")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text(
+        "---\nid: 9991\n---\n\n# Task 9991\n\nCORRECTED: the sign is NEGATIVE.\n"
+    )
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 result", AFTER)
+    _status_move(
+        fake_repo,
+        folder,
+        fake_repo / "tasks" / "completed" / "9991",
+        AFTER,
+        "task #9991: interpreting -> completed",
+    )
+
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3, out
+    # (a) the label must NOT claim this window is a bare status move ...
+    assert "[rename-only]" not in err
+    # (b) ... so the corrected body reaches the operator's detail block ...
+    assert "CORRECTED: the sign is NEGATIVE." in err
+    # (c) ... and the window log carries the correction commit, not just the
+    # move (the reconciler's "observed but not raised": a fix that follows
+    # renames only in classify_window still shows an incomplete log).
+    assert "correct #9991 result" in err
+    assert "interpreting -> completed" in err
+
+
+def test_multi_status_move_window_is_still_rename_only(fake_repo, capsys):
+    """Mutation guard on the blocker fix. The cheap way to stop the mislabel
+    is to let the pre-rename commits report NO status (the pre-fix per-commit
+    probe keyed on the CURRENT path returned ``None`` for them), which breaks
+    ``all(... == "R100")`` — but that also kills the label for a task moved
+    through SEVERAL status folders with no edits, i.e. exactly the dominant
+    false-positive channel #2384 §6 built the label to mitigate.
+
+    Following renames in the shared history gives each move its own ``R100``,
+    so a pure multi-move window keeps the label."""
+    folder = _make_task(fake_repo, 9991, status="running")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    mid = fake_repo / "tasks" / "reviewing" / "9991"
+    _status_move(fake_repo, folder, mid, AFTER, "task #9991: running -> reviewing")
+    _status_move(
+        fake_repo,
+        mid,
+        fake_repo / "tasks" / "completed" / "9991",
+        AFTER,
+        "task #9991: reviewing -> completed",
+    )
+
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3, out
+    assert "[rename-only]" in err
+    assert "+# Task 9991" not in err  # the body diff stays suppressed
+    # Both moves are in the window — the log is complete even when suppressed.
+    assert "running -> reviewing" in err
+    assert "reviewing -> completed" in err
+
+
+@pytest.mark.parametrize(
+    ("leaf", "why"),
+    [
+        ("naïve-9991", "non-ASCII: git QUOTES it without -z"),
+        ("ta\tb-9991", "embedded tab: the old split('\\t') parse lost the path"),
+    ],
+)
+def test_history_parses_quoting_hostile_paths(fake_repo, leaf, why):
+    """Round-3 item 5. The round-2 probe read
+    ``git show --format= --name-status -M <sha>`` WITHOUT ``-z`` and compared
+    ``split('\\t')[-1]`` against the path — so a QUOTED (non-ASCII) or
+    tab-bearing path never matched, the status came back ``None``, and the
+    ``rename-only`` label silently went missing. ``-z`` disables quoting and
+    NUL-delimits the records, so both shapes parse exactly."""
+    src = fake_repo / "tasks" / "running" / leaf
+    src.mkdir(parents=True)
+    (src / "body.md").write_text("original\n")
+    _commit(fake_repo, [src / "body.md"], "persist body", BEFORE)
+    dest = fake_repo / "tasks" / "completed" / leaf
+    _status_move(fake_repo, src, dest, AFTER, "status move")
+
+    old_rel = f"tasks/running/{leaf}/body.md"
+    new_rel = f"tasks/completed/{leaf}/body.md"
+
+    # The parse itself: the raw path must survive the NUL-delimited read.
+    move_sha = _git(fake_repo, "rev-parse", "HEAD").strip()
+    entries = ccb.batch_name_status([move_sha], repo_root=fake_repo)
+    assert ccb.commit_path_entry(entries[move_sha], new_rel) == ("R100", old_rel), why
+
+    # ... and reach the window through the ordinary consumer. The persist
+    # commit predates REF, so the chase into the old path finds nothing in
+    # window and correctly stops: one R100 row carrying both endpoints.
+    rows = ccb._window_history(new_rel, REF, repo_root=fake_repo)
+    assert [r.status for r in rows] == ["R100"], why
+    assert rows[0].path == new_rel and rows[0].prev_path == old_rel, why
+
+    # The harm the parse defect caused, end to end: the advisory label.
+    _, label = ccb.body_diff_since(new_rel, REF, repo_root=fake_repo)
+    assert label == "rename-only", why
+
+
 def test_cap_truncation_is_disclosed(fake_repo, capsys):
     """Blocker 9 (Minor, raised by BOTH reviewers). A bare ``CLEAN checked=40``
     over a 55-citation plan reads as full coverage while 15 citations went
@@ -545,6 +686,19 @@ def test_no_cap_no_disclosure_noise(fake_repo, capsys):
     )
     assert rc == 0
     assert "capped=" not in out and "not_examined=" not in out
+
+
+def test_unknown_verdict_discloses_cap_truncation(fake_repo, capsys):
+    """Round-3 item 3. The UNKNOWN text branch printed the cited/unresolved/
+    git_failed counts but not the cap, so a capped plan whose in-cap ids all
+    failed to probe reported `cited=40` as though 40 were the whole citation
+    set. Same reasoning as blocker 9's CLEAN/STALE disclosure."""
+    total = ccb._MAX_CITED_IDS + 7
+    plan_text = " ".join(f"#{9000 + i}" for i in range(total))  # none resolvable
+    rc, out, _ = _run(plan_text, fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys)
+    assert rc == 0
+    assert "UNKNOWN reason=no cited id probed successfully" in out
+    assert f"capped={ccb._MAX_CITED_IDS} not_examined=7" in out
 
 
 def test_cap_disclosure_in_json_report(fake_repo, capsys):

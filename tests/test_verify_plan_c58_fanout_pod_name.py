@@ -117,12 +117,15 @@ def test_c58_registered_in_checks_and_docstring_catalog():
     # makes a forgotten enum update loud)
     # 75 since #2384 (cited-body currency). Adding it pushed the enum past the
     # line-length limit, so the tail now wraps: the closing paren sits at the
-    # head of the continuation line. Match the two fragments rather than one
-    # literal — a re-wrap must not read as a missing registration. (#2384
-    # round 1 wrapped this line and left the single-literal form red; the
-    # regression is fixed here, in round 2.)
-    assert "57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74," in verify_plan.__doc__
-    assert "75)" in verify_plan.__doc__
+    # head of the continuation line. ONE anchored regex rather than two
+    # independent `in` checks — `\s*` tolerates the wrap (a re-wrap must not
+    # read as a missing registration, the #2384 round-1 regression) while
+    # still enforcing ADJACENCY, so text inserted between `74,` and `75)`
+    # cannot pass (#2384 round-3 item 4; two `in` checks could not see it).
+    assert re.search(
+        r"57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74,\s*75\)",
+        verify_plan.__doc__,
+    )
 
 
 # ─── Test 1 — fires on the #2054 v16 shape ─────────────────────────────────
