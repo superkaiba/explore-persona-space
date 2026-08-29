@@ -11,26 +11,30 @@ contains the full plot inventory.
 
 Present the construction in two steps:
 
-1. summarize the context and sampled answer with fixed-dimensional activation
-   vectors (`v_C` = final-context-token residual state; `v_A` = mean answer-token
-   residual state);
-2. fit and evaluate an affine predictor `v_A_hat = M_l v_C + b_l`.
+1. use the final-context-token residual state `v_C` as the context-side input and
+   summarize a sampled answer with its mean answer-token residual state `v_A`;
+2. fit and compare a family of predictors from `v_C` to `v_A`, including
+   identity-plus-bias, affine ridge regression `v_A_hat = M_l v_C + b_l`, and
+   nonlinear MLPs.
 
-Prior work motivates the summaries and establishes that particular upcoming
-behaviors are linearly decodable from context activations. It does not establish the
-whole-answer-summary map. Future Lens is the closest direct precursor because it
-learns linear maps to a few future-token states. Remove speculative decoding and
-distillation from the Introduction; speculative decoding loses its standalone
-Related Work subsection. Do not claim a full answer-distribution approximation: the
-target is an activation summary of one sampled answer or an explicitly
-rollout-averaged target.
+Prior work establishes that particular upcoming behaviors are linearly decodable
+from context activations, usually with one labeled readout per property. This does
+not make `v_C` a demonstrated summary of the context. Separate work motivates
+`v_A` as an answer summary. Neither line of work establishes a single,
+property-label-free predictor of the general answer representation. Keep Future
+Lens as a direct precursor in Related Work, not as part of the Introduction's gap.
+Remove speculative decoding and distillation from the Introduction; speculative
+decoding loses its standalone Related Work subsection. Do not claim a full
+answer-distribution approximation: the target is an activation summary of one
+sampled answer or an explicitly rollout-averaged target.
 
 Approved Introduction decisions (Thomas, 2026-08-29): keep ``next-answer
 predictor'' but remove the deterministic-mapping framing; define a sampled answer
 and explain rollout averaging as variance reduction; describe the character result
 as correlational evidence consistent with PSM; fold operator structure into the
 linearity contribution; reserve ``metamodel'' for the closing interpretation rather
-than the title or opening; include one scoped `R²`/acc@1 headline; and reserve
+than the title or opening; fold one scoped `R²`/acc@1 headline into the first
+findings item; and reserve
 corpus-transfer and causal-control failures for Discussion and Limitations.
 
 ### Terminology proposal
