@@ -12677,8 +12677,8 @@
       "goal": "Fit a held-out context-SAE\u2192answer-SAE map from the paired #2552 dictionaries and test whether mapped answer-feature forecasts or map-residual anomaly scores detect known triggered, spurious, refusal, and unusual behaviors beyond text, metadata, raw-context, and reconstruction-rarity baselines.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2643",
-      "status": "running",
+      "path": "tasks/awaiting_promotion/2643",
+      "status": "awaiting_promotion",
       "title": "Can a context-SAE\u2192answer-SAE map forecast or flag triggered, refusal, and unusual behavior in Qwen2.5-7B model organisms?"
     },
     "265": {
