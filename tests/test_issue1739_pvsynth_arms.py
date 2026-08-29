@@ -646,3 +646,71 @@ def test_polarity_preds_sidecar_carries_the_label(rig):
     assert len(rows) == n_arms * rig["n_ev"]
     assert {r["arm"] for r in rows} <= set(arms.ARM_REGISTRY)
     assert all(r["eval_rung"] == "pvsynth" for r in rows)
+
+
+# ---------------------------------------------------------------------------
+# arms 15/16 eval-side feature threading (grid-fill round)
+# ---------------------------------------------------------------------------
+
+
+def _features_npz(path: Path, ids: list[str], rng: np.random.Generator) -> Path:
+    """A tiny issue1739_features.py-shaped npz: {context_ids, emb, features}."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("wb") as fh:
+        np.savez(
+            fh,
+            context_ids=np.asarray(ids),
+            emb=rng.normal(size=(len(ids), 5)).astype(np.float32),
+            features=rng.normal(size=(len(ids), 3)).astype(np.float32),
+        )
+    return path
+
+
+def test_text_arms_score_rung_with_injected_features(rig, tmp_path):
+    """CLI e2e with the four npz flags: arms 15/16 gain pvsynth transfer rows
+    (no skip, polarity rows included) and the npz shas ride the summary meta."""
+    rngf = np.random.default_rng(7)
+    train_npz = _features_npz(
+        tmp_path / "feat" / "train.npz", [f"tr{i:03d}" for i in range(24)], rngf
+    )
+    eval_npz = _features_npz(
+        tmp_path / "feat" / "eval.npz", [f"pv{i:03d}" for i in range(10)], rngf
+    )
+    argv = [
+        *rig["argv"],
+        "--arms",
+        *ROSTER,
+        "arm15_text_only",
+        "arm16_surface_feat",
+        "--text-emb",
+        str(train_npz),
+        "--text-features",
+        str(train_npz),
+        "--eval-text-emb",
+        str(eval_npz),
+        "--eval-text-features",
+        str(eval_npz),
+    ]
+    assert _run(argv) == 0
+    payload = json.loads((rig["out_root"] / "evil" / "all_arms_spearman.json").read_text())
+    text_rows = [r for r in payload["transfer_rows"] if r["arm"].startswith(("arm15", "arm16"))]
+    assert {r["arm"] for r in text_rows} == {"arm15_text_only", "arm16_surface_feat"}
+    assert all(r["eval_rung"] == "pvsynth" for r in text_rows)
+    assert not [
+        s for s in payload["transfer_skips"] if str(s.get("arm", "")).startswith(("arm15", "arm16"))
+    ]
+    sha_meta = payload["meta"]["text_npz_sha256"]
+    assert set(sha_meta) == {"emb", "features", "eval_emb", "eval_features"}
+    # Polarity companion rows exist for the text arms too (same reviewed path).
+    pol_arms = {r["arm"] for r in payload["transfer_polarity_rows"]}
+    assert {"arm15_text_only", "arm16_surface_feat"} <= pol_arms
+
+
+def test_text_flag_pairing_is_argparse_enforced(rig, tmp_path):
+    npz = tmp_path / "x.npz"
+    with pytest.raises(SystemExit) as exc:
+        pva.parse_args([*rig["argv"], "--text-emb", str(npz)])
+    assert exc.value.code == 2
+    with pytest.raises(SystemExit) as exc:
+        pva.parse_args([*rig["argv"], "--eval-text-features", str(npz)])
+    assert exc.value.code == 2

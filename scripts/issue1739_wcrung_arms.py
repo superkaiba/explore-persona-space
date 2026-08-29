@@ -406,6 +406,7 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
     from scripts.issue1739_fits import (
         RunSpec,
         _fit_map,
+        _load_injected_features,
         _load_labeled,
         _u_pool_for_spec,
     )
@@ -442,6 +443,29 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
         raise RuntimeError(
             f"[{behavior}] hidden dim mismatch: train {dim} vs {RUNG} {tbl_ev.z_ans.shape[-1]}"
         )
+    # Arms-15/16 feature tables (all four None on a flagless run — parse_args
+    # enforces the train/eval pairing). Loaded through the SAME fits-CLI
+    # loader, aligned to each split's realized context order; the sha rides
+    # the read-only re-verify rail + the resume unit key.
+    text_emb = _load_injected_features(args.text_emb, "emb", tbl.ctx_order, "--text-emb")
+    text_features = _load_injected_features(
+        args.text_features, "features", tbl.ctx_order, "--text-features"
+    )
+    text_emb_ev = _load_injected_features(
+        args.eval_text_emb, "emb", tbl_ev.ctx_order, "--eval-text-emb"
+    )
+    text_features_ev = _load_injected_features(
+        args.eval_text_features, "features", tbl_ev.ctx_order, "--eval-text-features"
+    )
+    text_npz_sha: dict[str, str] = {}
+    for key, p in (
+        ("emb", args.text_emb),
+        ("features", args.text_features),
+        ("eval_emb", args.eval_text_emb),
+        ("eval_features", args.eval_text_features),
+    ):
+        if p is not None:
+            text_npz_sha[key] = shas.setdefault(str(p), _sha256(Path(p)))
     # Integrity check for the SHARED store: the realized eval context list.
     # All three behaviors read the same pool, so these shas must agree modulo
     # each behavior's own judge drops (n_eval also recorded).
@@ -482,26 +506,30 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
     variants = list(args.variants)
     t0 = time.time()
     for vi, variant in enumerate(variants):
-        unit_key = json.dumps(
-            {
-                "behavior": behavior,
-                "variant": variant,
-                "regime": args.regime,
-                "u_rung": args.u_size,
-                "budget_l": budget_l,
-                "draw": args.draw,
-                "seed": args.seed,
-                "rung": RUNG,
-                "arms": sorted(roster),
-                "layers": [int(x) for x in layers],
-                "n_eval": len(tbl_ev.ctx_order),
-                "n_boot": n_boot,
-                "min_n": int(args.min_n),
-                "map_kind": args.map_kind,
-                "rb_source": rb_meta["rb_source"],
-            },
-            sort_keys=True,
-        )
+        unit_fields = {
+            "behavior": behavior,
+            "variant": variant,
+            "regime": args.regime,
+            "u_rung": args.u_size,
+            "budget_l": budget_l,
+            "draw": args.draw,
+            "seed": args.seed,
+            "rung": RUNG,
+            "arms": sorted(roster),
+            "layers": [int(x) for x in layers],
+            "n_eval": len(tbl_ev.ctx_order),
+            "n_boot": n_boot,
+            "min_n": int(args.min_n),
+            "map_kind": args.map_kind,
+            "rb_source": rb_meta["rb_source"],
+        }
+        if text_npz_sha:
+            # Output-affecting regime key (#722 r3): a features-bearing run
+            # must never resume a featureless unit's checkpoint (whose arm-15/16
+            # rows are SKIPs) — added ONLY when features are supplied so legacy
+            # checkpoints keep resuming byte-identically on flagless runs.
+            unit_fields["text_npz_sha256"] = text_npz_sha
+        unit_key = json.dumps(unit_fields, sort_keys=True)
         if unit_key in done:
             rec = done[unit_key]
             rows_all += rec["rows"]
@@ -549,6 +577,8 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
             dv=tbl.dv,
             rb=np.einsum("ld,lde->le", rb, wh.w),
             mapfit=mapfit,
+            text_emb=text_emb,
+            text_features=text_features,
             layers=tuple(layers),
         )
         cell = fits.realize_budget_cell(
@@ -601,6 +631,8 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
             z_ev_w,
             np.asarray(tbl_ev.dv, dtype=np.float64),
             za_ev=za_ev_w,
+            text_emb_ev=text_emb_ev,
+            text_features_ev=text_features_ev,
             arms=roster,
             device=args.device,
             ridge_folds=(0,),  # the reverse (train-block) fold is discarded
@@ -703,6 +735,7 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
         "n_train_contexts": len(tbl.ctx_order),
         "n_eval_contexts": len(tbl_ev.ctx_order),
         "eval_ctx_ids_sha256": eval_ctx_sha,
+        "text_npz_sha256": text_npz_sha or None,
         "budget_l": budget_l,
         "wall_s": round(time.time() - t0, 1),
     }
@@ -840,6 +873,37 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="#1092 U-pool store (default: <--store-root>/u_store, staged on demand)",
     )
+    # Arms-15/16 eval-side threading (grid-fill round). Both sides of a pair
+    # are required together: the transfer fit trains on the TRAIN table and
+    # predicts on the EVAL table, so one without the other cannot score.
+    # Default None => the text arms keep their standard SKIP and every other
+    # arm's output is byte-identical to a flagless run.
+    ap.add_argument(
+        "--text-emb",
+        type=Path,
+        default=None,
+        help="TRAIN-side arms-15 npz (issue1739_features.py output covering the behavior's "
+        "labeled train contexts; same file as the fits CLI's --text-emb)",
+    )
+    ap.add_argument(
+        "--text-features",
+        type=Path,
+        default=None,
+        help="TRAIN-side arms-16 npz (may be the same file as --text-emb)",
+    )
+    ap.add_argument(
+        "--eval-text-emb",
+        type=Path,
+        default=None,
+        help=f"EVAL-side arms-15 npz covering the {RUNG} contexts (issue1739_features.py over "
+        "the rung's contexts jsonl + rollout dir; shared across behaviors like --wcrung-store)",
+    )
+    ap.add_argument(
+        "--eval-text-features",
+        type=Path,
+        default=None,
+        help="EVAL-side arms-16 npz (may be the same file as --eval-text-emb)",
+    )
     ap.add_argument(
         "--force-own-pool-frozen",
         action="store_true",
@@ -854,6 +918,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ap.error("--behaviors must be unique")
     if len(set(args.variants)) != len(args.variants):
         ap.error("--variants must be unique")
+    if (args.text_emb is None) != (args.eval_text_emb is None):
+        ap.error("--text-emb and --eval-text-emb must be passed together (or neither)")
+    if (args.text_features is None) != (args.eval_text_features is None):
+        ap.error("--text-features and --eval-text-features must be passed together (or neither)")
     # Resolve AFTER parsing so --store-root moves the U pool too (a constant
     # default would stage ~13 GB onto whichever disk DEFAULT_STORE_ROOT names,
     # not the one the caller pointed every other store at).
@@ -865,12 +933,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # score one behavior's inputs against another's. --wcrung-store is
     # deliberately absent from this set: the rung has ONE shared capture store
     # (module docstring), so sharing it is the correct wiring, not the bug.
+    # --eval-text-emb / --eval-text-features cover the same shared rung
+    # contexts, so they are shared BY DESIGN too; the TRAIN-side
+    # --text-emb / --text-features cover one behavior's labeled contexts and
+    # are single-behavior like the other train inputs.
     single_only = (
         "train_store",
         "train_dv_json",
         "e1_store",
         "wcrung_dv_json",
         "train_summary",
+        "text_emb",
+        "text_features",
     )
     if len(args.behaviors) > 1:
         set_flags = [
@@ -917,6 +991,7 @@ def main(argv: list[str] | None = None) -> int:
             _extract_rb,
             _fit_map,
             _git_commit,
+            _load_injected_features,
             _load_labeled,
             _u_pool_for_spec,
             arrays_dim,
@@ -978,6 +1053,7 @@ def main(argv: list[str] | None = None) -> int:
                 "n_train_contexts": res["n_train_contexts"],
                 "eval_ctx_ids_sha256": res["eval_ctx_ids_sha256"],
                 "eval_store_shared_across_behaviors": True,
+                "text_npz_sha256": res["text_npz_sha256"],
                 "budget_l": res["budget_l"],
                 "draw": args.draw,
                 "seed": args.seed,
