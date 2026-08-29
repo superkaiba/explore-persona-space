@@ -12684,8 +12684,8 @@
     "2644": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2644",
-      "status": "proposed",
+      "path": "tasks/planning/2644",
+      "status": "planning",
       "title": "workflow-fix: no recovery ladder when the subagent MODEL POOL is exhausted; reconciler site has no valid fallback"
     },
     "265": {
