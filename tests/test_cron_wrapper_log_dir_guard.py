@@ -396,8 +396,67 @@ def _if_block_body(lines: list[str], start: int) -> list[str]:
     return body
 
 
+def _if_then_branch(lines: list[str], start: int) -> list[str]:
+    """Physical lines in the THEN branch of the ``if`` opening at ``lines[start]``.
+
+    Narrower than :func:`_if_block_body`: the scan stops at this block's OWN
+    ``else`` / ``elif`` as well as at its matching ``fi``, so a statement in the
+    ELSE arm can never be credited to the THEN arm. Nesting is tracked, so a
+    nested block's ``else`` does not end the scan.
+    """
+    depth = 0
+    body: list[str] = []
+    for idx in range(start, len(lines)):
+        stripped = lines[idx].strip()
+        if depth == 1 and (stripped == "else" or stripped.startswith("elif ")):
+            return body
+        if idx > start:
+            body.append(lines[idx])
+        if stripped == "if" or stripped.startswith("if "):
+            depth += 1
+        elif stripped == "fi" or stripped.startswith("fi "):
+            depth -= 1
+            if depth <= 0:
+                return body
+    return body
+
+
 _FATAL_DEF = re.compile(r"^\s*fatal\s*\(\)\s*\{")
 _SET_E = re.compile(r"^\s*set\s+-[a-z]*e")
+# `if ! <cmd> ...; then` — the opener whose block body is the CONSEQUENCE of
+# <cmd> FAILING. Matched against a whitespace-normalized logical statement.
+_NEGATED_IF_OPENER = re.compile(r"^if\s+!\s+\S")
+_RC_NONZERO_ASSIGN = re.compile(r"^\s*rc=[1-9][0-9]*\s*$")
+# A GROUP log vehicle: `} >> "$LOG"`, `) > "$LOG"`, `done >> "$LOG"`, `} 2>&1`.
+# A failed redirect here skips the whole group — the #2196 failure mode.
+_GROUP_VEHICLE = re.compile(r"^\s*(?:\}|\)|done)\s*[0-9]*>")
+
+
+def _routes_own_failure_into_setup_ok(lines: list[str], stmt: _LogicalLine) -> bool:
+    """True when ``stmt`` routes ITS OWN failure into ``SETUP_OK=0``.
+
+    Two accepted spellings, both of which make the assignment the consequence of
+    THIS statement failing:
+
+    * ``<stmt> || SETUP_OK=0`` — the short-circuit form (Pattern C's analogue of
+      Patterns A/B's ``|| fatal``), read off the statement's own text.
+    * ``if ! <stmt> ...; then`` — a NEGATED ``if`` whose OWN THEN branch carries
+      the assignment.
+
+    Scanning forward to the next ``fi`` (the pre-revise shape) is deliberately
+    NOT accepted. That scan credits any ``SETUP_OK=0`` in the region below, so a
+    statement defused to fail open — ``probe || true`` — passes by borrowing the
+    assignment of an unrelated guarded check placed after it. The assignment
+    must belong to the branch THIS statement opens (round-2 review nit
+    ``pattern-c-probe-check-fail-open``).
+    """
+    if re.search(r"\|\|\s*SETUP_OK=0(?:\s|;|$)", stmt.text):
+        return True
+    normalized = " ".join(stmt.text.split())
+    if not (_NEGATED_IF_OPENER.match(normalized) and normalized.endswith("then")):
+        return False
+    return any(ln.strip() == "SETUP_OK=0" for ln in _if_then_branch(lines, stmt.start))
+
 
 # --- The class invariant's explicit classification ---------------------------
 #
@@ -412,14 +471,20 @@ _SET_E = re.compile(r"^\s*set\s+-[a-z]*e")
 #                     The ten #2386 fix-set wrappers + the #2196 reference.
 #   "setup-ok-guard"  Pattern C (plan v2): NO fatal() by design - an early
 #                     exit 1 would skip the alert arm - so the probe routes
-#                     through SETUP_OK=0 into the wrapper's own alert path.
+#                     through SETUP_OK=0 into the wrapper's own alert path,
+#                     and the WHOLE chain is checked link by link:
+#                     probe -> SETUP_OK=0 -> rc != 0 -> alert_failure.
 #   "exempt-set-e"    `set -e` already makes both legs fail loud.
-#   "exempt-no-mkdir" per-command append vehicle, no mkdir site, pass not
-#                     skipped by a failed append.
+#   "exempt-per-command-append"
+#                     no mkdir -p site to guard AND no brace-group log vehicle:
+#                     each line is appended by its own `echo ... >> "$LOG"`, so
+#                     a failed append loses one line instead of skipping the
+#                     pass. BOTH halves are re-checked - the second was
+#                     previously assumed rather than asserted.
 _FATAL_GUARD = "fatal-guard"
 _SETUP_OK_GUARD = "setup-ok-guard"
 _EXEMPT_SET_E = "exempt-set-e"
-_EXEMPT_NO_MKDIR = "exempt-no-mkdir"
+_EXEMPT_PER_COMMAND_APPEND = "exempt-per-command-append"
 
 _WRAPPER_CLASSIFICATION: dict[str, str] = {
     # Patterns A/B - the ten wrappers #2386 fixed, plus the #2196 reference.
@@ -438,8 +503,8 @@ _WRAPPER_CLASSIFICATION: dict[str, str] = {
     "cron_codex_auto_upgrade.sh": _SETUP_OK_GUARD,
     # Recorded NOT-APPLICABLE, each with its reason re-checked below.
     "cron_export_literature.sh": _EXEMPT_SET_E,
-    "cron_watch_issue_1739.sh": _EXEMPT_NO_MKDIR,
-    "cron_watch_issue_2091.sh": _EXEMPT_NO_MKDIR,
+    "cron_watch_issue_1739.sh": _EXEMPT_PER_COMMAND_APPEND,
+    "cron_watch_issue_2091.sh": _EXEMPT_PER_COMMAND_APPEND,
 }
 
 
@@ -485,29 +550,45 @@ def _check_setup_ok_guard(path: Path, text: str) -> None:
         "returns success for an existing dir whatever its mode"
     )
     for probe in probes:
-        body = _if_block_body(lines, probe.start)
-        assert any(ln.strip() == "SETUP_OK=0" for ln in body), (
-            f"{path.name}: the appendability probe does not route into SETUP_OK=0 - "
-            f"a failed probe would be swallowed: {probe.text.strip()[:100]!r}"
+        assert _routes_own_failure_into_setup_ok(lines, probe), (
+            f"{path.name}: the appendability probe does not route ITS OWN failure "
+            f"into SETUP_OK=0 - a failed probe would be swallowed: "
+            f"{probe.text.strip()[:100]!r}"
         )
 
     mkdir_stmts = _statements(text, "mkdir -p")
     assert mkdir_stmts, f"{path.name}: classified {_SETUP_OK_GUARD!r} but has no mkdir -p"
     for stmt in mkdir_stmts:
-        body = _if_block_body(lines, stmt.start)
-        assert any(ln.strip() == "SETUP_OK=0" for ln in body), (
-            f"{path.name}: unchecked mkdir -p: {stmt.text.strip()[:100]!r}"
+        assert _routes_own_failure_into_setup_ok(lines, stmt), (
+            f"{path.name}: unchecked mkdir -p - it does not route ITS OWN failure "
+            f"into SETUP_OK=0: {stmt.text.strip()[:100]!r}"
         )
 
-    # SETUP_OK=0 is only a guard if it still reaches the alert arm.
-    assert any('if [ "$SETUP_OK" -ne 1 ]; then' in ln for ln in lines), (
-        f"{path.name}: SETUP_OK is set but never tested"
+    # SETUP_OK=0 is only a guard if it still reaches the alert arm, so the rest
+    # of the chain is checked LINK BY LINK rather than as three independent
+    # line-presence probes: the SETUP_OK test must set a non-zero rc in its OWN
+    # then-branch, and the rc test must call alert_failure in ITS OWN then-branch.
+    # Presence anywhere in the file proves nothing about connectivity - the
+    # statements could sit in unrelated blocks, or in the else arms that run on
+    # the HEALTHY path.
+    setup_tests = _statements(text, 'if [ "$SETUP_OK" -ne 1 ]; then')
+    assert setup_tests, f"{path.name}: SETUP_OK is set but never tested"
+    assert any(
+        any(_RC_NONZERO_ASSIGN.match(ln) for ln in _if_then_branch(lines, t.start))
+        for t in setup_tests
+    ), (
+        f"{path.name}: the SETUP_OK test assigns no non-zero rc in its own "
+        "then-branch, so SETUP_OK=0 never reaches the rc test"
     )
-    assert any('if [ "${rc:-0}" -ne 0 ]; then' in ln for ln in lines), (
-        f"{path.name}: rc is never tested, so SETUP_OK cannot reach the alert arm"
-    )
-    assert any(ln.strip().startswith("alert_failure ") for ln in lines), (
-        f"{path.name}: no alert_failure call - the failure would be silent"
+
+    rc_tests = _statements(text, 'if [ "${rc:-0}" -ne 0 ]; then')
+    assert rc_tests, f"{path.name}: rc is never tested, so SETUP_OK cannot reach the alert arm"
+    assert any(
+        any(ln.strip().startswith("alert_failure ") for ln in _if_then_branch(lines, t.start))
+        for t in rc_tests
+    ), (
+        f"{path.name}: the rc test does not call alert_failure in its own "
+        "then-branch - the failure would be silent"
     )
 
 
@@ -518,12 +599,36 @@ def _check_exempt_set_e(path: Path, text: str) -> None:
     )
 
 
-def _check_exempt_no_mkdir(path: Path, text: str) -> None:
+def _check_exempt_per_command_append(path: Path, text: str) -> None:
+    """Re-check BOTH halves of this class's recorded not-applicable reason.
+
+    (a) No ``mkdir -p`` site, so there is no uncreatable-dir leg to guard.
+    (b) No brace-group / loop log VEHICLE - every line is appended by its own
+    ``echo ... >> "$LOG"``, so a failed append loses one line instead of
+    skipping the whole pass. (b) is what makes the exclusion sound, and it was
+    ASSUMED rather than asserted: without this check either wrapper could grow
+    a ``} >> "$LOG"`` vehicle and keep its exemption silently, which is the same
+    false-premise-exclusion shape this task exists to close (round-2 review nit
+    ``cron-guard-scan-residual-vehicle-blind-spots``).
+
+    The vehicle test is deliberately conservative: it fires on ANY group / loop
+    closer carrying a redirect, not only one onto the log file. A wrapper in
+    this class has no such construct today, and one appearing is reason to
+    re-derive the exemption rather than to widen the pattern.
+    """
     mkdir_stmts = _statements(text, "mkdir -p")
     assert not mkdir_stmts, (
-        f"{path.name}: classified {_EXEMPT_NO_MKDIR!r} but now has a mkdir -p site; "
-        f"its recorded not-applicable reason no longer holds: "
+        f"{path.name}: classified {_EXEMPT_PER_COMMAND_APPEND!r} but now has a "
+        f"mkdir -p site; its recorded not-applicable reason no longer holds: "
         f"{[s.text.strip()[:80] for s in mkdir_stmts]}"
+    )
+
+    vehicles = [ln for ln in text.splitlines() if _GROUP_VEHICLE.match(ln)]
+    assert not vehicles, (
+        f"{path.name}: classified {_EXEMPT_PER_COMMAND_APPEND!r} but now closes a "
+        f"group/loop with a redirect; a failed redirect there skips everything "
+        f"inside, which is exactly the failure this class was exempted from: "
+        f"{[v.strip()[:80] for v in vehicles]}"
     )
 
 
@@ -531,7 +636,7 @@ _CHECKERS = {
     _FATAL_GUARD: _check_fatal_guard,
     _SETUP_OK_GUARD: _check_setup_ok_guard,
     _EXEMPT_SET_E: _check_exempt_set_e,
-    _EXEMPT_NO_MKDIR: _check_exempt_no_mkdir,
+    _EXEMPT_PER_COMMAND_APPEND: _check_exempt_per_command_append,
 }
 
 
@@ -566,21 +671,29 @@ def test_every_cron_wrapper_matches_its_declared_guard_shape():
     """Class invariant over ``scripts/cron_*.sh``, keyed on the VEHICLE's shape
     rather than on the fix's marker.
 
-    Three properties the pre-revise version lacked, each of which let a real gap
-    through (round-1 review, both reviewers):
+    Four properties earlier versions lacked, each of which let a real gap
+    through (round-1 and round-2 review, both reviewers):
 
     1. EXHAUSTIVE. Every wrapper the live glob returns is classified, and the
        classification set must equal the glob set. The old scan short-circuited
        on ``fatal() {`` at column zero, so any wrapper without that exact
        spelling was silently skipped and its final ``missing`` check covered
        only the seven driven wrappers.
-    2. The probe is checked as a LOGICAL STATEMENT that routes into the
-       wrapper's failure path (``|| fatal`` for Patterns A/B, the ``SETUP_OK=0``
-       arm for Pattern C). The old assertion accepted any physical line starting
-       with the probe text, so ``probe || true`` would have passed.
-    3. Exemptions are FALSIFIABLE - each recorded not-applicable reason
-       (``set -e``, no mkdir site) is re-checked, so a wrapper that loses its
-       reason fails instead of staying quietly exempt.
+    2. The probe is checked as a LOGICAL STATEMENT that routes ITS OWN failure
+       into the wrapper's failure path (``|| fatal`` for Patterns A/B, the
+       ``SETUP_OK=0`` arm for Pattern C). The pre-revise assertion accepted any
+       physical line starting with the probe text, so ``probe || true`` passed;
+       the round-2 version then credited any ``SETUP_OK=0`` below the probe, so
+       ``probe || true`` still passed whenever an unrelated guarded check sat
+       underneath it. The assignment must belong to the branch the probe opens.
+    3. Pattern C's chain is checked LINK BY LINK - probe -> ``SETUP_OK=0`` ->
+       non-zero ``rc`` in the SETUP_OK test's own then-branch -> ``alert_failure``
+       in the rc test's own then-branch. Three independent line-presence probes
+       cannot tell a connected chain from three statements in unrelated blocks.
+    4. Exemptions are FALSIFIABLE - EVERY half of each recorded not-applicable
+       reason is re-checked (``set -e``; no mkdir site AND no brace-group log
+       vehicle), so a wrapper that loses any half fails instead of staying
+       quietly exempt.
     """
     _scan_wrappers(_REPO_ROOT, _WRAPPER_CLASSIFICATION)
 
@@ -733,8 +846,148 @@ exit 0
 """
     root = _fixture_tree(tmp_path, {"cron_x.sh": body})
 
-    with pytest.raises(AssertionError, match="does not route into SETUP_OK=0"):
+    with pytest.raises(AssertionError, match="does not route ITS OWN failure"):
         _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+# The Pattern C chain, link by link. Each fixture below defuses exactly ONE
+# link and leaves every other link intact, so the failure is attributable.
+# `_PATTERN_C_LINKS` is the healthy baseline; the control test asserts it PASSes.
+_PATTERN_C_LINKS = """#!/bin/bash
+set -uo pipefail
+SETUP_OK=1
+if ! mkdir_err=$(mkdir -p "$LOG_DIR" 2>&1); then
+    log_line "FATAL: $mkdir_err"
+    SETUP_OK=0
+fi
+FIRST_RUN_OF_DAY=0
+[ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+if ! : >> "$LOG_FILE" 2>/dev/null; then
+    log_line "FATAL: not appendable"
+    SETUP_OK=0
+fi
+if [ "$SETUP_OK" -ne 1 ]; then
+    rc=1
+else
+    {
+        echo hi
+    } >> "$LOG_FILE" 2>&1
+    rc=$?
+fi
+if [ "${rc:-0}" -ne 0 ]; then
+    alert_failure "$rc"
+fi
+exit 0
+"""
+
+
+def test_pattern_c_control_passes_on_a_well_formed_chain(tmp_path: Path):
+    """Control for the Pattern C fixtures: every link intact PASSes, so each
+    failure below is attributable to the one link that fixture defuses."""
+    root = _fixture_tree(tmp_path, {"cron_x.sh": _PATTERN_C_LINKS})
+    _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+def test_scanner_fails_on_a_fail_open_probe_with_a_decoy_setup_ok_below(tmp_path: Path):
+    """The round-2 hole: ``probe || true`` plus an UNRELATED ``SETUP_OK=0``
+    below it.
+
+    The round-2 check scanned forward from the probe to the next ``fi``, so the
+    probe borrowed the assignment of the guarded check underneath and passed
+    while swallowing its own failure — an exists-but-unwritable log file would
+    again exit 0 silently. Everything else in the chain is intact here, so only
+    the fail-open probe can explain the failure.
+    """
+    body = _PATTERN_C_LINKS.replace(
+        'if ! : >> "$LOG_FILE" 2>/dev/null; then\n'
+        '    log_line "FATAL: not appendable"\n'
+        "    SETUP_OK=0\n"
+        "fi\n",
+        ': >> "$LOG_FILE" 2>/dev/null || true\n'
+        "if ! command -v uv >/dev/null 2>&1; then\n"
+        '    log_line "FATAL: uv missing"\n'
+        "    SETUP_OK=0\n"
+        "fi\n",
+    )
+    assert "|| true" in body, "fixture did not actually defuse the probe"
+    assert "command -v uv" in body, "fixture did not actually place the decoy"
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+
+    with pytest.raises(AssertionError, match="does not route ITS OWN failure"):
+        _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+def test_scanner_fails_when_setup_ok_never_sets_a_nonzero_rc(tmp_path: Path):
+    """Link 2: ``SETUP_OK=0`` is set and tested, but the test's then-branch never
+    assigns a non-zero ``rc``, so the failure never reaches the alert arm.
+
+    The ``rc=1`` moves into the ELSE arm — the HEALTHY path — which keeps the
+    literal in the file and defeats a presence-anywhere check.
+    """
+    body = _PATTERN_C_LINKS.replace(
+        'if [ "$SETUP_OK" -ne 1 ]; then\n    rc=1\nelse\n',
+        'if [ "$SETUP_OK" -ne 1 ]; then\n    log_line "setup failed"\nelse\n    rc=1\n',
+    )
+    assert 'log_line "setup failed"' in body, "fixture did not actually break the link"
+    assert "rc=1" in body, "fixture must keep the literal so presence alone cannot pass"
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+
+    with pytest.raises(AssertionError, match="assigns no non-zero rc in its own"):
+        _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+def test_scanner_fails_when_the_rc_test_does_not_alert(tmp_path: Path):
+    """Link 3: ``rc`` is tested but ``alert_failure`` is called on the OTHER arm,
+    so a non-zero rc is silent while the literal still appears in the file."""
+    body = _PATTERN_C_LINKS.replace(
+        'if [ "${rc:-0}" -ne 0 ]; then\n    alert_failure "$rc"\nfi\n',
+        'if [ "${rc:-0}" -ne 0 ]; then\n    log_line "rc=$rc"\nelse\n    alert_failure "$rc"\nfi\n',
+    )
+    assert "alert_failure" in body, "fixture must keep the literal so presence alone cannot pass"
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+
+    with pytest.raises(AssertionError, match="does not call alert_failure in its own"):
+        _scan_wrappers(root, {"cron_x.sh": _SETUP_OK_GUARD})
+
+
+def test_scanner_fails_when_a_per_command_append_wrapper_gains_a_group_vehicle(
+    tmp_path: Path,
+):
+    """The exclusion's second half, asserted rather than assumed.
+
+    ``cron_watch_issue_1739.sh`` / ``cron_watch_issue_2091.sh`` are exempt
+    because they append PER COMMAND, so a failed append loses one line instead
+    of skipping the pass. Give such a wrapper a brace-group log vehicle and the
+    premise is false — the invariant must fire rather than keep excluding it.
+    """
+    body = (
+        "#!/bin/bash\n"
+        "set -uo pipefail\n"
+        "LOG=/tmp/watch.log\n"
+        'echo "one line" >> "$LOG"\n'
+        "{\n"
+        "    echo hi\n"
+        '} >> "$LOG" 2>&1\n'
+        "exit 0\n"
+    )
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+
+    with pytest.raises(AssertionError, match="closes a group/loop with a redirect"):
+        _scan_wrappers(root, {"cron_x.sh": _EXEMPT_PER_COMMAND_APPEND})
+
+
+def test_per_command_append_control_passes_without_a_group_vehicle(tmp_path: Path):
+    """Control for the fixture above: identical minus the brace group."""
+    body = (
+        "#!/bin/bash\n"
+        "set -uo pipefail\n"
+        "LOG=/tmp/watch.log\n"
+        'echo "one line" >> "$LOG"\n'
+        'echo "another" >> "$LOG"\n'
+        "exit 0\n"
+    )
+    root = _fixture_tree(tmp_path, {"cron_x.sh": body})
+    _scan_wrappers(root, {"cron_x.sh": _EXEMPT_PER_COMMAND_APPEND})
 
 
 def test_scanner_fails_when_an_exemption_reason_stops_holding(tmp_path: Path):
