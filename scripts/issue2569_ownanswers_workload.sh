@@ -54,6 +54,11 @@ capture_writer() {
   local -a gate_args=()
   if [ "$model" = qwen ]; then
     gate_args+=(--qwen-gate identity)
+  else
+    # Llama's padded bf16 path exceeded the fixed 0.02 identity tolerance at
+    # wider packing (worst=0.02197).  Batch-1 is exact against the independent
+    # oracle and passed the production-shape timing gate (1.35h projected).
+    gate_args+=(--max-batch-rows 1)
   fi
 
   phase "identity_gate_${model}"
