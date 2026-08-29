@@ -1,0 +1,13 @@
+{
+  "figure": "inline_map_evolution_summary",
+  "sources": [
+    "eval_results/issue_2544/fits/diag_curve.json",
+    "eval_results/issue_2544/fits/cross_cells.json",
+    "eval_results/issue_2544/transfer/retention_matrix.json"
+  ],
+  "n_shared_intersection": 10858,
+  "error_bars": "95% bootstrap confidence intervals",
+  "panel_a": "Diagonal map strength and reduced-cross decomposition at frozen layer 31.",
+  "panel_b": "Late-ladder orthogonal-Procrustes transfer to final base, normalized by the final-base diagonal R2.",
+  "note": "Earlier stage-1 retention values are below panel B's displayed range; the panel starts at 600B tokens."
+}
