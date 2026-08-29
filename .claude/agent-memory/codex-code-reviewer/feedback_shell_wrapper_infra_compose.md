@@ -348,3 +348,72 @@ stdout; 3 files, +744/−62):**
     FAIL, while a genuinely-still-open item re-raises at its OWN severity and
     does not by itself flip the verdict. Without both halves the twin either
     manufactures a blocker or waves a false claim through.
+
+**#2387 r4 (2026-08-29) — INDEPENDENCE-CONSTRAINED compose, after the r3
+composer probe was ruled to have destroyed corroboration value:**
+
+40. **A brief can REVOKE the composer-probe pattern — and item 25 above is
+    exactly what gets revoked.** #2387's r3 composer ran the
+    necessity/direction probes and wrote the conclusions into the prompt;
+    Codex reported them back, and the orchestrator recorded in the audit
+    trail that the twin's report of that axis was "COMPOSER-SEEDED, not
+    independent corroboration." The r4 brief then made non-seeding binding.
+    Item 25 is a HIGH-VALUE default, not a law: when a brief constrains
+    independence, split the composer's work explicitly — run the probes that
+    make the prompt ACCURATE (does a cited line exist, does a path resolve,
+    is a symbol file-local, what does the `set` line say) and NOT the probes
+    that ANSWER the round's questions. Say so in the prompt: "No fact below
+    resolves any question in <claims section> — those remain entirely yours."
+41. **The replacement framing is a CLAIMS section, not a findings section.**
+    Restate each round change as "the round claims X; test it", keep a
+    separate "what round 4 was ASKED to change" contract section (prescriptions
+    stripped of the diagnostic reasoning that produced them), and put the
+    analytical questions in a "priority review targets — where to LOOK, not
+    what to conclude" list. Three sections, three different epistemic statuses.
+42. **Do NOT inline the round-boundary `epm:progress` bounce note when the
+    brief bars sibling-reviewer material.** On a 5c-ter bounce that note is
+    normally the contract envelope (item 12), but it typically carries the
+    OTHER reviewer's shape, the composer's seeded conclusion, and prescriptive
+    diagnoses. Extract only the numbered prescriptions in neutral wording; the
+    twin's OWN prior verdict (tags stripped, `CONCERN::` rows blockquoted)
+    remains inlinable — it is the twin's output, not the sibling's.
+43. **State the seeding PROVENANCE against the twin's own prior verdict.**
+    Inlining an r<n-1> verdict whose key line was composer-seeded re-feeds the
+    seed. Add an explicit caveat: "your round-3 report of that axis was
+    composer-seeded, not independent — re-derive it from the code; this
+    envelope is the acceptance contract for the ledger ids, not evidence about
+    the code." Provenance is a fact, not a conclusion, so it costs nothing.
+44. **`.claude/agent-memory/**` in the worktree is a live independence LEAK
+    channel — fence it by name.** Spec-freshness sync commits pull BOTH
+    reviewers' and the composer's own memory files onto the branch; #2387's
+    branch tip carried this very file (with the r3 conclusions) plus the
+    Claude reviewer's `feedback_naive_substitution_probe_for_unpinned_defence.md`.
+    Compose a READ fence, not just a review fence: "do not open, grep or cite
+    anything under `.claude/agent-memory/`", with the reason stated.
+45. **Bare ensemble OUTCOME grades survive a no-sibling-material brief;
+    findings do not.** "Claude `epm:code-review v2` = PASS. Both PASS-class ⇒
+    final PASS, no reconciler" is load-bearing procedure (it tells the twin why
+    no reconciler record exists and why prior rounds are settled) and carries
+    zero analytical content. Keep those; drop every raiser attribution from the
+    closure-ledger table so a sibling-raised id arrives as a bare id + severity.
+46. **Reviewer-death RESPAWN at the same version: say so in Round facts.**
+    Both r4 agents died to the account session limit before any durable write;
+    the counter does not increment. State "this is a RE-SPAWN, sentinel is
+    still v<n>, nothing about the bar changes — review as if first attempt",
+    or the twin reads the missing v<n> markers as a shape defect.
+47. **Verdict-header enum lines must not pre-load their own answer.** On a
+    round whose questions are all binary, every annotated line ships as a
+    symmetric pair (`SOUND | UNSOUND`, `DISCRIMINATING | HOLLOW`,
+    `COMPLETE | INCOMPLETE`) and the r<n-1> template's worked "Be specific"
+    example — which in #2387 quoted the actual r3 defect — gets replaced with
+    a shape-only example. A leftover example is a seeded conclusion in the one
+    place nobody re-reads.
+48. **Assert-side, three traps hit live this compose:** (a) the marker body
+    carried `<!-- epm:results v4 -->` TWICE (head sentinel + the implementer's
+    own "(a) item 4" self-observation) while composer prose carried it twice
+    more (contract item + fact F10) — split the assert four ways, never a
+    bare total; (b) the inlined r<n-1> verdict legitimately carries the PRIOR
+    round's `sha-range` line, so scope the staleness assert to the
+    composer-written side (`p.count(x) - in_prior == 0`), not the whole
+    prompt; (c) count the `{{worktree}}` placeholders in the template rather
+    than assuming the prior round's number.

@@ -100,3 +100,12 @@ gets an explicit never-re-demand line, else the twin re-raises its own
 half-fix; (e) a contract-INTERNAL tension (ruling item 4 named a call
 site its own item 1 deletes) is handed as a DECLARED reconciliation to
 adjudicate JUSTIFIED/UNJUSTIFIED — the composer never resolves it.
+
+**MIXED upheld+downgraded punch list (#823 r3):** when the brief carries a
+punch list whose items came from DIFFERENT dispositions, the severity
+fences above apply PER ITEM, never per round — an upheld item's
+NOT-ADDRESSED is a substantive FAIL while a downgraded item's is a
+CONCERN-level re-raise, in the SAME verdict. Items the brief explicitly
+BARS from re-litigation get a status-line-only re-raise (state the status,
+raise nothing), so the twin neither drops them silently nor re-opens a
+settled disposition.
