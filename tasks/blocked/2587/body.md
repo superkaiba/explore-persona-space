@@ -4,6 +4,7 @@ title: The minimal-pair discrimination profile of the context-to-answer map carr
 kind: experiment
 tags:
 - followup-auto
+- keep-running
 created_at: '2026-08-25T19:44:34Z'
 has_clean_result: true
 parent_id: 2564
