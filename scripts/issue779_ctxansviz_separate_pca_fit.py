@@ -59,7 +59,10 @@ def select_chunks() -> tuple[list, str]:
             revision=CAPTURE_REVISION,
         )
     )
-    items = sorted(item for item in items if item.path.endswith(".pt"))
+    items = sorted(
+        (item for item in items if item.path.endswith(".pt")),
+        key=lambda item: item.path,
+    )
     if len(items) != 1_920:
         raise RuntimeError(f"capture universe contains {len(items)} chunks, expected 1,920")
     indices = np.round(np.linspace(0, len(items) - 1, N_FIT_CHUNKS)).astype(int)
