@@ -1,0 +1,38 @@
+{
+  "checks": {
+    "flashinfer_absent": {
+      "passed": true
+    },
+    "hook_probe": {
+      "passed": true
+    },
+    "realized_pins": {
+      "passed": true,
+      "pinned": {
+        "torch": "2.13.0",
+        "transformers": "5.15.1",
+        "vllm": "0.27.1"
+      },
+      "realized": {
+        "torch": "2.13.0",
+        "transformers": "5.15.1",
+        "vllm": "0.27.1"
+      }
+    },
+    "template_pin": {
+      "passed": true
+    },
+    "tiny_ffr_cell": {
+      "gen_done_manifests": [
+        "/workspace/eps2587_ffr/f1_battery/manifests/anchors_stance.done.json"
+      ],
+      "passed": true
+    }
+  },
+  "issue": 2587,
+  "phase": "F1",
+  "round": "ffr-9b-fire-gated",
+  "schema": "issue2587_ffr_compat_smoke_report_v1",
+  "status": "PASS",
+  "ts_utc": "2026-08-29T06:56:07Z"
+}
