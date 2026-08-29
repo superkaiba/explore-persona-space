@@ -1,5 +1,114 @@
 # Paper plan — Context → Answer Mapping (v1, 2026-08-18)
 
+## FIRST-DRAFT SPINE (2026-08-29) — proposed after Dan's introduction feedback
+
+This is the current drafting proposal for the uncapped long version. Target venue is
+ICLR 2027; the ICLR 2026 style remains a placeholder until the 2027 template is
+available. `~/overleaf-6a59c927/plan.tex` is the one-glance, hand-edited surface and
+contains the full plot inventory.
+
+### Introduction logic
+
+Present the construction in two steps:
+
+1. use the final-context-token residual state `v_C` as the context-side input and
+   summarize a sampled answer with its mean answer-token residual state `v_A`;
+2. fit and compare a family of predictors from `v_C` to `v_A`, including
+   identity-plus-bias, affine ridge regression `v_A_hat = M_l v_C + b_l`, and
+   nonlinear MLPs.
+
+Prior work establishes that particular upcoming behaviors are linearly decodable
+from context activations, usually with one labeled readout per property. This does
+not make `v_C` a demonstrated summary of the context. Separate work motivates
+`v_A` as an answer summary. Neither line of work establishes a single,
+property-label-free predictor of the general answer representation. Keep Future
+Lens as a direct precursor in Related Work, not as part of the Introduction's gap.
+Remove speculative decoding and distillation from the Introduction; speculative
+decoding loses its standalone Related Work subsection. Do not claim a full
+answer-distribution approximation: the target is an activation summary of one
+sampled answer or an explicitly rollout-averaged target.
+
+Approved Introduction decisions (Thomas, 2026-08-29): keep ``next-answer
+predictor'' but remove the deterministic-mapping framing; define a sampled answer
+and explain rollout averaging as variance reduction; describe the character result
+as correlational evidence consistent with PSM; fold operator structure into the
+linearity contribution; reserve ``metamodel'' for the closing interpretation rather
+than the title or opening; fold one scoped `R²`/acc@1 headline into the first
+findings item; and reserve
+corpus-transfer and causal-control failures for Discussion and Limitations.
+
+### Terminology proposal
+
+- `C`, `A`: context token sequence and one sampled answer.
+- `v_C`, `v_A(A)`: context vector and answer vector.
+- `M_l`: the fitted context-to-answer map. Use "affine" in the formal definition
+  and "linear" as the paper shorthand.
+- `p_theta(A | C)`: the model's actual conditional response distribution. Do not
+  call this "the map".
+- `g(v)`: a property readout. State that context and answer vectors both linearly
+  encode a property, then measure how well `M_l` transports its answer-side read.
+- "transfer" applies a fixed map in a new setting; "refit" learns a new one;
+  "reparameterization" learns a change of coordinates.
+- The fitted map is predictive. It is not identified with the transformer Jacobian,
+  local computation, or a causal steering mechanism.
+
+### Proposed Results order for the uncapped version
+
+1. **Establishing the context-to-answer map.** Layer profile, data scaling, ridge
+   versus MLP, identity-plus-bias and boundary-token controls, summary ablations,
+   post-training evolution, and the CoT `R²`/retrieval dissociation.
+2. **What information the map transports.** Behavior directions, standard and
+   turn-averaged SAE granularity, controlled language/subject/object/verb minimal
+   pairs, and retrieval-failure analysis.
+3. **Structure of the learned operator.** Call this structural or operator analysis,
+   not theory. Main candidates from #2569: closed-form ridge learning curve, high-rank
+   non-normal spectrum, feature firing-versus-magnitude split, and cross-model
+   operator comparison. Keep the gate null, fixed point, full atlas, update spectra,
+   SAE wiring, and kernel-pair battery in the long appendix unless a paper claim
+   needs them.
+4. **Transfer across assistant and story-character framings.** Refit quality, direct
+   transfer, transfer after reparameterization, pooled versus specialized maps, and
+   base-to-post-training changes. Scope the AI-likeness result to `R²`: #2479 lands
+   rho 0.70 over 16 characters while retrieval disagrees. Present PSM as a
+   correlational interpretation and carry the no-persona-framing caveat.
+5. **Uses and boundaries.** Pre-generation behavior/correctness prediction,
+   low-label in-domain gains from unjudged map data, fine-tuning-induced change, and
+   adverse re-elicitation/corpus-transfer results. State the mechanistic boundary in
+   the main text: the fitted map does not predict patch-induced response shifts, map
+   inversion need not steer, and Jacobians recover none of its predictive power.
+
+### Current evidence changes that supersede the 2026-08-22 status block below
+
+- #2476 landed: turn-averaged-SAE coarse-over-specific result is alive-floor
+  sensitive; do not present it as an unconditional replication.
+- #2479 landed: AI-likeness predicts assistant-operator `R²` recovery, but retrieval
+  fails the intended hierarchy.
+- #2546 produced a clean result: pre-reasoning context states retain final-answer
+  `R²`, while specific-answer retrieval improves sharply at the end-of-thought
+  boundary. Do not infer that CoT is "necessary" or "performative" from this.
+- #2388 landed: context vectors predict correctness on all four tested surfaces; the
+  map helps only at small label budgets on math/code, and the 963k map erases the
+  gain.
+- #2474 landed: base geometry predicts re-elicitation, but adds at most a marginal
+  increment over surface-text similarity.
+- #2254 landed: map inverse/transpose directions fail as context-vector steering
+  directions under the tested controls.
+- #2569 landed its main scientific battery: learning-curve, operator-spectrum,
+  feature-map, and cross-model results are ready for planning; remaining child tasks
+  are infrastructure follow-ups.
+
+### Decisions remaining after the Introduction draft
+
+1. Keep all five Results sections, or fold operator structure into Results 1?
+2. Give the prediction-versus-mechanism boundary its own short Results subsection,
+   or place it at the end of Results 5 plus Discussion?
+3. **Resolved for the Introduction:** remove "metamodel of answer activations" from
+   the title/opening; it may appear as a closing interpretation and in Related Work
+   or Discussion.
+4. Figure 1 right panel: layer profile or training-data scaling curve?
+
+---
+
 ## RESTRUCTURE (Thomas outline, 2026-08-22) — supersedes the C1–C5 Results spine
 
 New working surface: **`outline.tex`** in the Overleaf clone (replaces `draft.tex`;
@@ -355,7 +464,8 @@ against actual issue #s / clean-results / figures in the EPS repo).
    pre-generation behavior prediction.
 5. Figure 1: option (b) — schematic (chat/story, context vector → linear map →
    predicted answer vector → behaviors) + headline C1 curve.
-6. Venue: ICLR 2026 (style files already in repo).
+6. Venue: ICLR 2027 (ICLR 2026 style files remain the placeholder until the 2027
+   template is released).
 7. Simulated-user transfer: IN-FLIGHT — being tested; include if it works.
 
 Still open (methods-level, non-blocking): C3 — is partialling-out the right way to

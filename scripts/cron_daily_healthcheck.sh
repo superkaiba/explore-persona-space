@@ -32,6 +32,9 @@
 # Alert-once: a date-stamped sentinel logs/daily_healthcheck/sent-<yesterday>.flag
 # suppresses re-alerting the same missing day (belt-and-suspenders against a
 # manual re-run or a future hourly cadence).
+# Fails loud (stderr FATAL + a best-effort push + exit 1) when the log/sentinel
+# dirs cannot be created or the daily log file is not appendable (task #2386;
+# ports the #2196 pattern).
 
 set -uo pipefail
 
@@ -61,7 +64,25 @@ BF_ATTEMPT="$SENTINEL_DIR/backfill-attempt-$YESTERDAY.flag"
 BF_LOG="$SENTINEL_DIR/backfill-$YESTERDAY.log"
 BF_LOCK="$SENTINEL_DIR/backfill.lock"
 
-mkdir -p "$LOG_DIR" "$SENTINEL_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2386, ports the
+# #2196 pattern): an unchecked failure here silently skips the whole pass
+# below (the brace-group redirect fails and the group never runs) while the
+# wrapper still exits 0. stderr lands in the crontab redirect file; cron mail
+# is structurally dead on this VM (no MTA), so the live channel is the same
+# best-effort push the healthcheck's own alert arms use. NO per-date sentinel
+# here: SENTINEL_DIR defaults to the very LOG_DIR that is unwritable, and the
+# daily cadence already bounds this to one push per failing day.
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    if [ -x "$TELEGRAM_PUSH" ]; then
+        "$TELEGRAM_PUSH" "ALERT: daily_healthcheck: $1" \
+            || echo "$(date -Iseconds) daily_healthcheck: telegram_push.sh FAILED for FATAL alert (continuing to exit 1)" >&2
+    fi
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" "$SENTINEL_DIR" \
+    || fatal "cannot create log/sentinel dir (LOG_DIR=$LOG_DIR SENTINEL_DIR=$SENTINEL_DIR); daily healthcheck NOT run"
 
 # Shared missing-or-husk predicate (#2113): returns 0 when the daily file at
 # $1 is MISSING or a HUSK (its '## Applied workflow improvements' section
@@ -75,6 +96,12 @@ is_missing_or_husk() {
 
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt (#2196 ordering: after
+# the FIRST_RUN_OF_DAY read — the probe creates $LOG_FILE when absent).
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not appendable ($LOG_FILE); daily healthcheck NOT run"
 
 {
     echo "=== $(date -Iseconds) daily_healthcheck start (yesterday=$YESTERDAY) ==="

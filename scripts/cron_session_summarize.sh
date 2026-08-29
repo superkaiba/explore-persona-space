@@ -7,6 +7,9 @@
 #
 # Output: logs/session_summarize/YYYY-MM-DD.log (one file per day).
 # Mirrors cron_autonomous_session_watch.sh / cron_worktree_audit.sh.
+# Fails loud (stderr FATAL + exit 1) when the log dir cannot be created or the
+# daily log file is not appendable (task #2386; ports the #2196 pattern).
+# TEST-ONLY env seam: EPS_SESSION_SUMMARIZE_LOG_DIR (log dir).
 
 set -uo pipefail
 
@@ -25,10 +28,28 @@ PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
 . "$PROJECT_DIR/scripts/eps_tmux_env.sh"
 
 DATE=$(date +%Y-%m-%d)
-LOG_DIR="$PROJECT_DIR/logs/session_summarize"
+LOG_DIR="${EPS_SESSION_SUMMARIZE_LOG_DIR:-$PROJECT_DIR/logs/session_summarize}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 
-mkdir -p "$LOG_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2386, ports the
+# #2196 pattern): an unchecked failure here silently skips the whole pass
+# below (the brace-group redirect fails and the group never runs) while the
+# wrapper still exits 0. stderr lands in the crontab redirect file where one
+# exists; cron mail is structurally dead on this VM (no MTA).
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" \
+    || fatal "cannot create log dir (LOG_DIR=$LOG_DIR); session summarize pass NOT run"
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt. This wrapper has no
+# FIRST_RUN_OF_DAY read to sit after (no daily pointer line), so the probe goes
+# directly after the guarded mkdir; it creates $LOG_FILE when absent.
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not appendable ($LOG_FILE); session summarize pass NOT run"
 
 {
     echo "=== $(date -Iseconds) session_summarize start ==="

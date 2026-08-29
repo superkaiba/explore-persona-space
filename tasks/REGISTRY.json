@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2640,
+  "highest_id": 2643,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10708,8 +10708,8 @@
     "2386": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2386",
-      "status": "running",
+      "path": "tasks/completed/2386",
+      "status": "completed",
       "title": "cron wrappers: unchecked mkdir -p LOG_DIR silently skips the pass (sibling sweep of #2196)"
     },
     "2387": {
@@ -12658,6 +12658,28 @@
       "path": "tasks/proposed/2640",
       "status": "proposed",
       "title": "verify_task_body: label-SHA-vs-URL-pin assert + anaphoric HF pin-reference path resolution (pin-citation integrity, #2588 r2/r3)"
+    },
+    "2641": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/2641",
+      "status": "approved",
+      "title": "workflow-fix: verify_plan._fence_mask is delimiter-blind, moving 37 plans' verdicts across 19 checks"
+    },
+    "2642": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2642",
+      "status": "proposed",
+      "title": "workflow-fix: codex twin composers can read the Claude sibling's agent-memory, defeating ensemble independence"
+    },
+    "2643": {
+      "goal": "Fit a held-out context-SAE\u2192answer-SAE map from the paired #2552 dictionaries and test whether mapped answer-feature forecasts or map-residual anomaly scores detect known triggered, spurious, refusal, and unusual behaviors beyond text, metadata, raw-context, and reconstruction-rarity baselines.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2643",
+      "status": "running",
+      "title": "Can a context-SAE\u2192answer-SAE map forecast or flag triggered, refusal, and unusual behavior in Qwen2.5-7B model organisms?"
     },
     "265": {
       "has_clean_result": false,
