@@ -30,6 +30,12 @@ import torch
 
 try:
     from scripts.issue2476_turnavg_sae import MatryoshkaBatchTopKSAE
+    from scripts.issue2643_gradient_pursuit import (
+        apply_behavior_pursuit,
+        behavior_pursuit_summary,
+        factorized_local_coefficients,
+        fit_behavior_pursuit,
+    )
     from scripts.issue2643_sae_map import (
         DATA_REVISION,
         DEFAULT_RIDGE_LOCAL,
@@ -43,6 +49,12 @@ try:
     )
 except ModuleNotFoundError:  # pragma: no cover - direct script invocation
     from issue2476_turnavg_sae import MatryoshkaBatchTopKSAE
+    from issue2643_gradient_pursuit import (
+        apply_behavior_pursuit,
+        behavior_pursuit_summary,
+        factorized_local_coefficients,
+        fit_behavior_pursuit,
+    )
     from issue2643_sae_map import (
         DATA_REVISION,
         DEFAULT_RIDGE_LOCAL,
@@ -385,6 +397,16 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "direct_context_sae": fit_mean_difference(train["z_context"], labels42, train_mask),
         "direct_context_dense": fit_mean_difference(train["x_context"], labels42, train_mask),
     }
+    pursuit_fit = fit_behavior_pursuit(
+        train["z_context"],
+        apply_readout(train["z_answer_pred"], readouts["mapped_answer_sae"]),
+        train_mask,
+        factorized_local_coefficients(mapper, readouts["mapped_answer_sae"]["weight"]),
+        candidates=args.pursuit_candidates,
+        k_ladder=args.pursuit_k_ladder,
+        ridge_relative=args.pursuit_ridge_relative,
+    )
+    pursuit_names = sorted(apply_behavior_pursuit(pursuit_fit, train["z_context"]))
 
     row_records = []
     for seed, data in encoded.items():
@@ -398,6 +420,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
                 data["x_context"], readouts["direct_context_dense"]
             ),
         }
+        score_tensors.update(apply_behavior_pursuit(pursuit_fit, data["z_context"]))
         for name in (
             "forecast_context_recon_nse",
             "forecast_mapped_answer_norm",
@@ -442,6 +465,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "prompt_len",
         "answer_len",
     ]
+    score_names.extend(pursuit_names)
 
     def evaluate(rows: list[dict], bootstrap_seed: int) -> dict:
         labels = [int(row["marker_fired"]) for row in rows]
@@ -458,6 +482,18 @@ def phase_analyze(args: argparse.Namespace) -> None:
             for seed in args.seeds
         },
         "target_condition_only": evaluate([r for r in eval_rows if r["cell"] == CELLS[0]], 264399),
+    }
+    mapped_eval = np.asarray([row["mapped_answer_sae"] for row in eval_rows], dtype=np.float64)
+    map_den = float(np.square(mapped_eval - mapped_eval.mean()).sum())
+    pursuit_fidelity = {
+        name: float(
+            1.0
+            - np.square(
+                np.asarray([row[name] for row in eval_rows], dtype=np.float64) - mapped_eval
+            ).sum()
+            / max(map_den, 1e-24)
+        )
+        for name in pursuit_names
     }
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -489,6 +525,12 @@ def phase_analyze(args: argparse.Namespace) -> None:
                 "known trigger-condition rule",
             ],
         },
+        "gradient_pursuit": {
+            **behavior_pursuit_summary(pursuit_fit),
+            "fit_rows": int(train_mask.sum()),
+            "fit_scope": "seed 42, prompt indices in the frozen readout-fit split",
+            "heldout_full_map_fidelity_r2": pursuit_fidelity,
+        },
         "results": results,
         "interpretation_limits": [
             "All-cell marker detection is partly detection of the known trigger/persona condition.",
@@ -511,6 +553,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-length", type=int, default=2048)
     p.add_argument("--fit-prompts", type=int, default=100)
     p.add_argument("--rarity-min-count", type=int, default=32)
+    p.add_argument("--pursuit-candidates", type=int, default=128)
+    p.add_argument("--pursuit-k-ladder", nargs="+", type=int, default=[1, 2, 4, 8, 16])
+    p.add_argument("--pursuit-ridge-relative", type=float, default=1e-3)
     p.add_argument("--data-revision", default=DATA_REVISION)
     p.add_argument("--work-dir", default="/workspace/issue2643/work")
     p.add_argument("--capture-dir", default="/workspace/issue2643/marker_capture")

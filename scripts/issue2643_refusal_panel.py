@@ -20,6 +20,12 @@ import numpy as np
 import torch
 
 try:
+    from scripts.issue2643_gradient_pursuit import (
+        apply_behavior_pursuit,
+        behavior_pursuit_summary,
+        factorized_local_coefficients,
+        fit_behavior_pursuit,
+    )
     from scripts.issue2643_marker_panel import (
         _atomic_json,
         _load_mapper,
@@ -29,6 +35,12 @@ try:
     )
     from scripts.issue2643_sae_map import row_scores
 except ModuleNotFoundError:  # pragma: no cover - direct invocation
+    from issue2643_gradient_pursuit import (
+        apply_behavior_pursuit,
+        behavior_pursuit_summary,
+        factorized_local_coefficients,
+        fit_behavior_pursuit,
+    )
     from issue2643_marker_panel import (
         _atomic_json,
         _load_mapper,
@@ -254,12 +266,22 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "context_sae": fit_mean_difference(tensors["zc"], labels, train_mask),
         "context_dense": fit_mean_difference(tensors["x"], labels, train_mask),
     }
+    pursuit_fit = fit_behavior_pursuit(
+        tensors["zc"],
+        apply_readout(tensors["zp"], readouts["answer"]),
+        train_mask,
+        factorized_local_coefficients(mapper, readouts["answer"]["weight"]),
+        candidates=args.pursuit_candidates,
+        k_ladder=args.pursuit_k_ladder,
+        ridge_relative=args.pursuit_ridge_relative,
+    )
     scores = {
         "mapped_answer_sae": apply_readout(tensors["zp"], readouts["answer"]),
         "oracle_answer_sae": apply_readout(tensors["za"], readouts["answer"]),
         "direct_context_sae": apply_readout(tensors["zc"], readouts["context_sae"]),
         "direct_context_dense": apply_readout(tensors["x"], readouts["context_dense"]),
     }
+    scores.update(apply_behavior_pursuit(pursuit_fit, tensors["zc"]))
     for name in (
         "forecast_context_recon_nse",
         "forecast_mapped_answer_norm",
@@ -281,6 +303,22 @@ def phase_analyze(args: argparse.Namespace) -> None:
     metrics = {
         name: _metric(eval_labels, [float(value[i]) for i in eval_idx], clusters, 264600 + j)
         for j, (name, value) in enumerate(scores.items())
+    }
+    pursuit_names = sorted(name for name in scores if "_k" in name)
+    mapped_eval = np.asarray(
+        [float(scores["mapped_answer_sae"][i]) for i in eval_idx], dtype=np.float64
+    )
+    map_den = float(np.square(mapped_eval - mapped_eval.mean()).sum())
+    pursuit_fidelity = {
+        name: float(
+            1.0
+            - np.square(
+                np.asarray([float(scores[name][i]) for i in eval_idx], dtype=np.float64)
+                - mapped_eval
+            ).sum()
+            / max(map_den, 1e-24)
+        )
+        for name in pursuit_names
     }
     per_persona = {}
     for persona in sorted({row["persona"] for row in meta}):
@@ -323,6 +361,12 @@ def phase_analyze(args: argparse.Namespace) -> None:
             "evaluation_claims": [args.fit_claims, 49],
             "direction": "refusal-positive minus refusal-negative mean in answer-SAE space",
         },
+        "gradient_pursuit": {
+            **behavior_pursuit_summary(pursuit_fit),
+            "fit_rows": int(train_mask.sum()),
+            "fit_scope": "claims in the frozen readout-fit split",
+            "heldout_full_map_fidelity_r2": pursuit_fidelity,
+        },
         "metrics": metrics,
         "per_persona": per_persona,
         "interpretation_limits": [
@@ -345,6 +389,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-length", type=int, default=1024)
     p.add_argument("--fit-claims", type=int, default=25)
     p.add_argument("--rarity-min-count", type=int, default=32)
+    p.add_argument("--pursuit-candidates", type=int, default=128)
+    p.add_argument("--pursuit-k-ladder", nargs="+", type=int, default=[1, 2, 4, 8, 16])
+    p.add_argument("--pursuit-ridge-relative", type=float, default=1e-3)
     p.add_argument("--work-dir", default="/workspace/issue2643/work")
     p.add_argument("--capture-dir", default="/workspace/issue2643/refusal_capture")
     p.add_argument("--calibration", default="/workspace/issue2643/full/feature_calibration.pt")
