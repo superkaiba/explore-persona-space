@@ -101,3 +101,121 @@ cron wrappers + behavioral/scanner tests + selector registration):**
     duty to verify the structural claim FROM THE SELECTOR SOURCE (true +
     disclosed + equivalent substitute = plan imprecision; false claim or a
     weaker substitute = substantive).
+
+**#2387 r2 (2026-08-29) — SCANNER-HARDENING closure round (the round-2 diff
+tightens the r1 structural pin itself; one test file, no wrapper touched):**
+
+12. **PASS+CONCERNS 5c-ter bounce = the twin's OWN concerns, no reconciler.**
+    Both r1 verdicts were PASS-class (Claude PASS, Codex CONCERNS), so no
+    reconciler was owed; the ledger rows are the twin's own `CONCERN::`
+    output and Step 5c-ter blocked advance until addressed. Inline the
+    orchestrator's `[round-boundary decision]` `epm:progress` note VERBATIM as
+    the BOUNCE CONTRACT envelope — it carries the per-concern prescribed
+    changes AND (load-bearing) the explicit "do not change control flow to
+    close it" instruction. Author-neutrality binds both directions. Related:
+    [[concern-discharge-round-severity-fence]] (#2552 r5 own-CONCERNS shape).
+13. **THIRD fence type: a concern closed by REPORT CORRECTION ONLY, where the
+    plan BARS the code fix.** The two CONCERNs took different fences in one
+    ledger: the code-fix item got the upheld-bounce bar (NOT-ADDRESSED =
+    substantive FAIL, PARTIALLY-ADDRESSED carve-out), while the
+    report-correction item's deliverable is *the text being TRUE* — so compose
+    (a) an explicit OUT-OF-BOUNDS line ("demanding a control-flow change
+    cannot ground a finding"; the plan's must-ask list bars it), (b) a
+    materially-FALSE-attribution route at the ordinary bar (misreporting), and
+    (c) an honest-but-imprecise route at CONCERN via a same-id row. Without
+    (a) the twin predictably re-raises the behavior it already ruled
+    plan-sanctioned at r1.
+14. **The highest-value composer table is the DUAL-PREDICATE mutant matrix —
+    and its FP half is the part the round never self-checks.** Hand-apply BOTH
+    the r1 and r2 predicates to CONSTRUCTED lines (no file mutated, nothing
+    executed; a text-matching pin is fully statically decidable). That
+    reproduced the marker's 3-mutant claim AND surfaced four shapes the marker
+    never probed: an inline env-default (`"${PUSH_TIMEOUT:-20}s"`), a changed
+    grace (`--kill-after=10s`), an unquoted duration, and a line-continuation
+    split — each now REJECTED by the hardened pin. Hand them severity-unresolved
+    with the question named ("correct pinning, acceptable friction, or
+    over-tight?"); an over-tight pin on a `WORKFLOW_INVARIANT` member
+    fleet-blocks every Step 9c run, so the FP direction weighs equal to the FN
+    one. **Also check the loosening axis:** the r2 regex used `\s+` where the
+    r1 test used a literal-space substring, so it is MORE permissive on
+    whitespace than both r1 and the twin's own prescribed literal Fix — a
+    hardening round is least likely to self-check the one axis it relaxed.
+15. **Verify the report CORRECTION's citations yourself, hand over the
+    judgment.** For a `(d)` retraction, read every cited `file:line` (all six
+    arms verified exact here) and any magnitude claim (a read-only `crontab -l`
+    settled "0 live watch crons" + the three live entries' exact times).
+    Attest those as SETTLED, then hand the twin only what reading cannot
+    settle: is the correction COMPLETE, does any r1 sentence still stand
+    wrong, is "permanent" right given the re-arm path, and is a report-only
+    close ADEQUATE (route that answer to BOTH the body and the ledger line —
+    the orchestrator machine-acts on the ledger line).
+16. **Composer self-observation trap, head-sentinel variant (#2326 r4 again):**
+    writing "the body carries a versioned head sentinel `<!-- epm:results v2
+    -->`" puts that literal in YOUR prose. Assert marker-side ==1 AND
+    template-side ==1 AND total ==2 — never a bare total, which hides either
+    side going to zero. Same split for a pinned SHA range: the inlined prior
+    verdict legitimately carries the PRIOR round's `sha-range` line, so scope
+    the staleness assert to the template.
+17. **`grep -c` on a compose-time probe counts LINES;** the round-new-symbol
+    sweep is cleanest stated as three path grains (full / basename / bare
+    token) agreeing on one hit set, with generic-token grains
+    (`n_sites`, 17 files) named do-not-promote up front.
+
+**#2386 r1 (2026-08-29) — SIBLING-SWEEP variant (the round ports the #2196
+fail-loud log-dir guard to the ten sibling wrappers; 10 `cron_*.sh` + 1
+selector row + 4 test files, +934/−25):**
+
+18. **The class-boundary settle has a CLOSED ARITHMETIC form here — use it.**
+    `git ls-tree -r --name-only origin/main -- scripts/ | grep -cE 'cron_.*\.sh$'`
+    = 15, and FIX SET (10, all `M`) + NOT-APPLICABLE (5, untouched) = 15 with
+    no residue. Stating the partition as exhaustive closes the
+    false-incompleteness channel outright, far more cheaply than #2387's
+    caller-by-caller classification. Still hand over the boundary question
+    itself (a non-`cron_`-prefixed `.sh` with the same shape) — the ~170-file
+    `mkdir -p` grep over `scripts/*.sh` is almost all per-issue dispatch
+    scripts, so name that as the reason it is not in scope rather than
+    leaving the twin to re-derive it.
+19. **Verifying the NOT-APPLICABLE calls is the highest-value composer work,
+    and one of them will usually have a pre-existing wart.** Check all five
+    against the FILE, hand over evidence not conclusions. #2386's
+    `cron_codex_auto_upgrade.sh` carries a residual comment claiming a
+    checked `mkdir -p` "catches" exists-but-unwritable — which it does not
+    (that is leg 2's entire premise). The file is UNTOUCHED by the round, so
+    compose it as Step 0.9 `pre-existing-on-trunk` with an explicitly
+    NARROWED reviewable question ("does the inaccuracy undermine the
+    NOT-APPLICABLE call?") routed to CONCERN-at-most. Without the narrowing
+    the twin predictably builds a round blocker on a comment from another
+    task's commit.
+20. **The both-legs probe MUST be multiline-aware.** The guard ships as
+    `mkdir -p "$LOG_DIR" \` + `    || fatal "..."` on the next physical line,
+    so a single-line `grep -c '|| fatal'` on the mkdir line returns 0 for all
+    ten and reads as a total miss. Use `grep -A1 '^mkdir -p ' | grep -c '|| fatal'`.
+    Same trap for the probe leg (`: >> "$LOG_FILE" 2>/dev/null \`).
+21. **Attest the VACUOUS ordering case explicitly.** The probe must follow any
+    first-run-of-day read (it CREATES the file and would flip the flag), but
+    one wrapper (`cron_session_summarize`) has no such read at all, so the
+    constraint is vacuous there and the file says so in a comment. State it,
+    or the twin hunts for a missing `FIRST_RUN_OF_DAY` and reports its absence
+    as the defect. Give the full per-wrapper table (fatal@ / mkdir@ / probe@ /
+    FRoD@) and say plainly that line order is not control flow — the
+    verify-against-real-control-flow duty is what the table sets up, not what
+    it discharges.
+22. **Test-harness literal coupling: check the driven set's PATTERN before
+    flagging a substring mismatch.** `_MKDIR_FATAL = "cannot create log dir"`
+    is NOT a substring of the Pattern B wrappers' `cannot create log/sentinel
+    dir` — but the seven subprocess-driven wrappers are ALL Pattern A, and the
+    two Pattern B ones have their own test files, so there is no present
+    defect. Attest that partition; hand the latent-fragility judgment over.
+23. **Pre-split (#1810) multi-unit builds need their own prompt block.** Units
+    1-3 posted NO implementation marker by design and only unit 4's single
+    `epm:results` covers the round. Say so explicitly, name the `unit N:`
+    commit-subject prefixes, and state that earlier-unit marker absence is not
+    a `marker-shape` defect — otherwise the twin reads 10 commits against 1
+    marker as under-reporting.
+24. **Composer-run gate-scope pre-read pays for itself.** #2386's
+    `**Gate-scope check (#1288):**` field was complete (n_tests + base,
+    locally-run list, dedup 14-file hit list, TWO `sweep_scope:` tokens,
+    deferred count 137, NOT-RUN discharge with `recommended_timeout_s`), so
+    the presence half discharges at compose time — state that and keep only
+    the diff-consistency half, which is substantive and needs the twin's OWN
+    `tests/` enumeration.

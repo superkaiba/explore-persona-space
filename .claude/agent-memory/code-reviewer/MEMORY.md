@@ -14,3 +14,7 @@
 - [Annotated machine-parsed marker line](feedback_annotated_machine_parsed_marker_line.md) — RUN check-smoke-arch-registry each round: a trailing parenthetical on `arm-registry:` REFUSEs the checker even with byte-correct substance (#2546 r5).
 - [Grep pattern `${...}` false zero](feedback_grep_pattern_dollar_brace_false_zero.md) — a literal-count grep containing `${`/`$(` can return a silent 0 via shell expansion; never report absence from it (#2387).
 - [Structural pin: first-match-per-line](feedback_structural_pin_first_match_per_line.md) — review text-scan pins for `search`-vs-`finditer` and unanchored prefix checks; run the stronger sweep yourself (#2387).
+- [WORKFLOW_INVARIANT excluded from --map-files](feedback_workflow_invariant_excluded_from_mapfiles.md) — a zero-row `--map-files` result for an invariant-registered test is BY DESIGN, never a broken registration (#2387).
+- [Mutant matrix needs a negative control](feedback_mutant_matrix_needs_negative_control.md) — re-run a reported mutant matrix AND add a benign-reformat probe; positive mutants alone can't separate correct tightening from over-tightening (#2387).
+- [N/A classification: run both legs](feedback_na_classification_both_legs.md) — on a class sweep, EXECUTE every failure leg against each NOT-APPLICABLE target; "already guarded by its own design" hides partial guards (#2386).
+- [`--map-files` takes a file, not varargs](mapfiles_takes_file_not_varargs.md) — the varargs form errors and reduces to a false zero-hit pin sweep; inspect raw output before reducing (Step 4.6).
