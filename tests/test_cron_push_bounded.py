@@ -26,9 +26,10 @@ Three durability pins:
   watch scripts is the one failure mode a text scan cannot see, and neither
   watch script is executed by any test.
 
-Why the site check is exact on all six axes (#2387; axes four and five are
-round-3 hardening of the exact-count pin the first three introduced, and the
-sixth is round-4 completion of the word-start set axis four rests on):
+Why the site check is exact on all seven axes (#2387; axes four and five are
+round-3 hardening of the exact-count pin the first three introduced, the sixth
+is round-4 completion of the word-start set axis four rests on, and the seventh
+is round-5 correction of an over-strip the sixth introduced):
 
 - EXACT PREFIX, not substring-anywhere-before. A membership test such as
   ``"timeout --kill-after=" in line[:match.start()]`` accepts materially
@@ -74,6 +75,19 @@ sixth is round-4 completion of the word-start set axis four rests on):
   discards, counts a DISABLED push toward the pinned inventory, and the count
   assertion passes over an alert that no longer runs. That is precisely the
   silent failure axis four exists to prevent, so the set is now bash's.
+- SUBSTITUTION-AWARE ``)``, because axis six's ``)`` is not absolute. The ``)``
+  that CLOSES a command substitution, an arithmetic expansion, or a process
+  substitution belongs to its word, so a ``#`` right after it is NOT a comment:
+  measured against bash 5.1.16, ``echo $(echo hi)#tag`` prints ``hi#tag``, and
+  ``echo $(date +%s)#stamp && "$PUSH" "..."`` RUNS the push — identically for
+  ``$((1+2))#``, ``<(echo hi)#``, ``>(echo hi)#`` and the assignment form
+  ``U=$(...)#frag``. Round 4 treated every ``)`` as a word end and so DROPPED
+  such a line; for a NEWLY ADDED push that leaves the count sitting exactly at
+  the pin and the test passes silently (direction rule below).
+  ``_strip_bash_comment`` now tracks open parens and exempts only a ``)`` that
+  closes a substitution — a subshell's ``)``, a ``case`` arm's ``)``, and the
+  ``))`` of an arithmetic COMMAND (``((i=1))#``, a bare ``((``, not ``$((``)
+  all still end a word.
 
 Behavioral twins (sleeping-stub tests, one per call-site composition shape)
 live in tests/test_cron_step9c_ledger_refresh.py (if-condition),
@@ -87,31 +101,51 @@ message argument is not a double-quoted string immediately after the push
 variable (e.g. an unquoted message) escapes the regex. Extend both when adding
 either.
 
-Comment stripping is LINE-SCOPED: quote state restarts at each physical line,
-so a string or heredoc body spanning several lines is not tracked. The two
-directions are NOT symmetric, and the dangerous one is the under-strip:
+DIRECTION RULE for any scanner-vs-bash divergence. Round 4 recorded that an
+over-strip is "loud on the count assertion, never a silent pass"; that is
+FALSE, and it was measured false before this round. Which way a divergence
+moves depends on whether the affected site is ALREADY in the pinned inventory:
 
-- UNDER-STRIP, and SILENT. A multi-line string can leave the scanner's
-  per-line quote state inverted relative to bash, so a ``#`` bash treats as a
-  comment looks quoted to the scanner. The comment survives, a DISABLED push
-  is counted as live, the pinned count is still met, and the test passes over
-  a dead alert. This is the same silent shape an incomplete
-  ``_COMMENT_WORD_START`` produced (axis six) — the residual worth reviewing.
-- OVER-STRIP or OVER-COUNT, and LOUD. Dropping a live site, or counting an
-  inert one (a push written inside a heredoc body), moves the total off the
-  pinned inventory and fails the count assertion.
+- OVER-STRIP of a site already IN the inventory — LOUD. The wrapper's count
+  drops below its pin and the count assertion fails.
+- OVER-STRIP of a NEWLY ADDED site — SILENT. The count stays sitting exactly
+  AT the pin, so the test passes while bash runs an unbounded push. This
+  defeats the PRIMARY invariant ("every push execution is timeout-bounded"),
+  not merely deletion detection, and is the worse of the two directions.
+- UNDER-STRIP (the scanner keeps text bash discards) — SILENT. A DISABLED
+  push is counted as live, the pinned count is still met, and the test passes
+  over a dead alert. This is the shape axes four and six exist to prevent.
 
-Neither shape exists in the six wrappers today (the one heredoc,
-``cron_watch_issue_1739.sh`` line 119, carries a bare variable), and no
-wrapper writes ``$(...)#`` — the one shape where treating ``)`` as a word end
-over-strips, because a command substitution's closing paren belongs to its
-word (``echo $(echo hi)#tag`` prints ``hi#tag``). That residual is loud.
+Two residual over-strips survive axis seven. Each is loud on an existing site
+and silent on a newly added one, per the rule above:
+
+- LINE-SCOPED state. Quote AND paren state restart at each physical line, and
+  a trailing ``\\`` continuation is not joined, so a string, heredoc body, or
+  command substitution spanning several lines is not tracked. Measured: for
+  ``X=$(echo a`` / ``echo b)#tag && "$PUSH" "..."`` bash runs the push, while
+  the scanner reads line 2's ``)`` against an empty paren stack and drops the
+  site.
+- A ``)`` closing an ARRAY ASSIGNMENT (``x=(a b)#tag``) or an EXTGLOB pattern
+  (``@(a|b)#tag``, under ``shopt -s extglob``) also belongs to its word in
+  bash; the scanner treats both as word ends. Distinguishing them from a
+  subshell needs assignment/pattern parsing, not the ``$``/``<``/``>`` prefix
+  axis seven keys on.
+
+None of those shapes is in the six wrappers (measured 2026-08-29): zero
+``)#`` sequences, zero ``NAME=(``, zero ``[@+?!*](``, no ``shopt -s extglob``,
+one heredoc (``cron_watch_issue_1739.sh`` line 119, a bare variable). Two
+wrappers do open a multi-line command substitution
+(``cron_watch_issue_2091.sh`` lines 30-31, ``cron_watch_issue_1739.sh`` lines
+58-59); both close it with no ``#`` anywhere on the closing line. Repo-wide,
+the only two ``)#`` sequences in any ``*.sh`` sit inside single-quoted ``sed``
+programs, which quote tracking already skips.
 """
 
 from __future__ import annotations
 
 import re
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -154,13 +188,19 @@ _BOUND_PREFIX_RE = re.compile(r'timeout[ \t]+--kill-after=5s[ \t]+"\$\{PUSH_TIME
 # not a subset of it (module docstring, sixth axis). A `#` inside quotes
 # (`"EPS #${ISSUE} ... retired."`) or mid-word (`$#`) is not a comment.
 #
-# Verified against bash 5.1.16: `(true)# ...` and `ready)# ...` both comment
-# out the rest of the line, and so do `>#` / `<#` (the redirect target is eaten
-# by the comment, so such a line is a syntax error `test_every_wrapper_parses`
-# catches independently). Known over-strip: a command substitution's closing
-# paren belongs to its word, so `echo $(echo hi)#tag` prints `hi#tag` while the
-# scanner reads a comment and drops that line's sites — loud on the count
-# assertion, never a silent pass, and no wrapper writes the shape.
+# Measured against bash 5.1.16: `true #`, `true<TAB>#`, `true;#`, `true &#`,
+# `true|#`, `(#`, `(true)#`, `case x in x)#`, `true >#` and `true <#` all
+# comment out the rest of the line, while `echo abc#echo LEAK` does NOT — a
+# mid-word `#` stays literal. (`|#`, `(#`, `>#` and `<#` additionally make the
+# line a syntax error, because the comment eats the operand;
+# `test_every_wrapper_parses` catches that independently.) NARROWING this set
+# is the SILENT direction — it under-strips, so a commented-out push keeps
+# counting toward the pinned inventory — and a set-literal edit is otherwise
+# uncaught, so `test_every_bash_metacharacter_ends_a_word_before_a_hash` pins
+# both the set's identity and one behavioral case per character.
+#
+# The `)` entry is CONDITIONAL, not absolute: `_strip_bash_comment` exempts a
+# `)` that closes a substitution (module docstring, seventh axis).
 _COMMENT_WORD_START = " \t;&|()<>"
 
 
@@ -180,12 +220,28 @@ def _strip_bash_comment(line: str) -> str:
     are pinned —
     ``test_quote_tracking_is_load_bearing_when_a_hash_precedes_the_site`` and
     ``test_quote_blind_stripping_is_indistinguishable_on_the_live_line``.
+
+    Paren-aware because ``)`` is in ``_COMMENT_WORD_START`` but is only
+    CONDITIONALLY a word end (module docstring, seventh axis). ``open_parens``
+    records, per open paren, whether it opened a SUBSTITUTION — ``$(``, ``$((``
+    (which opens two), ``<(`` or ``>(`` — or a plain subshell/grouping paren.
+    The matching ``)`` pops it: a substitution's ``)`` does not end the word, so
+    a ``#`` immediately after it is mid-word and NOT a comment, while a plain
+    ``)`` (subshell, ``case`` arm, bare ``((`` arithmetic command, or an
+    unmatched ``)`` against an empty stack) ends the word as before.
+    ``prev_bare`` is the previous UNQUOTED, UNESCAPED character, so a ``$``
+    that was quoted or backslash-escaped never turns a following ``(`` into a
+    substitution.
     """
     in_single = False
     in_double = False
+    open_parens: list[bool] = []
+    last_substitution_close = -1
+    prev_bare = ""
     i = 0
     while i < len(line):
         ch = line[i]
+        bare = ""
         if in_single:
             if ch == "'":
                 in_single = False
@@ -200,22 +256,46 @@ def _strip_bash_comment(line: str) -> str:
             in_single = True
         elif ch == '"':
             in_double = True
-        elif ch == "#" and (i == 0 or line[i - 1] in _COMMENT_WORD_START):
+        elif ch == "(":
+            if prev_bare == "$" and line[i + 1 : i + 2] == "(":
+                open_parens.extend((True, True))  # `$((` arithmetic expansion
+                i += 1
+            else:
+                open_parens.append(prev_bare in ("$", "<", ">"))
+            bare = "("
+        elif ch == ")":
+            closed_substitution = open_parens.pop() if open_parens else False
+            if closed_substitution:
+                last_substitution_close = i
+            bare = ")"
+        elif ch == "#" and (
+            i == 0 or (line[i - 1] in _COMMENT_WORD_START and i - 1 != last_substitution_close)
+        ):
             return line[:i]
+        else:
+            bare = ch
+        prev_bare = bare
         i += 1
     return line
 
 
-def scan_execution_sites(text: str) -> list[tuple[int, str, re.Match[str]]]:
+def scan_execution_sites(
+    text: str, strip: Callable[[str], str] = _strip_bash_comment
+) -> list[tuple[int, str, re.Match[str]]]:
     """Return ``(lineno, executable_line, match)`` per push EXECUTION site.
 
     Comments are stripped before matching. A commented-out push line keeps
     both its regex match and its ``timeout`` prefix, so an unstripped scan
     would count a disabled alert toward the exact per-wrapper inventory.
+
+    ``strip`` is the comment stripper, injected ONLY so the quote-tracking
+    mutants below can run this exact loop with a weaker stripper. A separate
+    re-implementation of the loop would let the two drift, and the mutants
+    that compare them would then pass for the wrong reason.
     """
     sites: list[tuple[int, str, re.Match[str]]] = []
     for lineno, raw in enumerate(text.splitlines(), start=1):
-        line = _strip_bash_comment(raw)
+        line = strip(raw)
         sites.extend((lineno, line, m) for m in _EXEC_SITE.finditer(line))
     return sites
 
@@ -272,27 +352,39 @@ def test_every_wrapper_parses():
 # --- Scanner mutants (synthetic text; the real tree is never mutated) --------
 #
 # The scanner above is the ONLY coverage vehicle for the two watch scripts, so
-# the mutants below pin what it must reject. `_LIVE` reproduces the live
-# `cron_watch_issue_2091.sh` retirement push: the `[ -x "$PUSH" ]` guard the
-# execution-site regex must not count, and the `#` inside the trailing message.
-# That `#` is INERT for the scanner — it falls after the match end, as on all
-# ten live sites — so `_LIVE` is the unmutated control, not the quote-tracking
-# control. `_LIVE_HASH_BEFORE_SITE` is the shape where quote tracking decides.
+# the mutants below pin what it must reject. `_LIVE` is the live retirement
+# push of `cron_watch_issue_2091.sh`, BYTE-FAITHFUL to its source line: the
+# `[ -x "$PUSH" ]` guard the execution-site regex must not count, and the `#`
+# inside the trailing message. That `#` is INERT for the scanner — it falls
+# after the match end, as on all ten live sites — so `_LIVE` is the unmutated
+# control, not the quote-tracking control. `_LIVE_HASH_BEFORE_SITE` is the
+# shape where quote tracking decides.
+#
+# Both fixtures are pinned against the live file by
+# `test_live_fixtures_are_byte_faithful_to_their_source_lines`, which locates
+# the lines by CONTENT (line numbers drift). Round 4 described them as built
+# from those lines while silently substituting an ASCII hyphen for the source's
+# em dash and a literal `done` for `${status}`; a control whose warrant is
+# "this is the real line" has to be the real line, not a paraphrase of it.
+# The em dash is written as an escape for the same reason `_NBSP` is: an
+# ASCII-looking non-ASCII byte in source is unreviewable.
+_LIVE_SOURCE = "scripts/cron_watch_issue_2091.sh"
+
 _LIVE = (
     '    [ -x "$PUSH" ] && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" '
-    '"EPS #${ISSUE} reached done - monitor retired." >/dev/null 2>&1'
+    '"EPS #${ISSUE} reached ${status} \u2014 monitor retired." >/dev/null 2>&1'
 )
 
 # The load-bearing shape for quote tracking: a `#` inside a quoted argument
 # BEFORE the push variable. Composed from two ADJACENT live lines of
-# `cron_watch_issue_2091.sh` — the log line at 51 and the retirement push at
-# 52 — fused with `&&` onto one physical line, which is the wrappers' own
-# logging idiom. A naive first-hash strip truncates at `$(ts) #${ISSUE}` and
-# the execution site disappears entirely.
+# `_LIVE_SOURCE` — the terminal log line and the retirement push it precedes —
+# fused with `&&` onto one physical line, which is the wrappers' own logging
+# idiom. A naive first-hash strip truncates at `$(ts) #${ISSUE}` and the
+# execution site disappears entirely.
 _LIVE_HASH_BEFORE_SITE = (
-    '    echo "$(ts) #${ISSUE} TERMINAL (${status}) - removing this cron" >> "$LOG" '
+    '    echo "$(ts) #${ISSUE} TERMINAL (${status}) \u2014 removing this cron" >> "$LOG" '
     '&& [ -x "$PUSH" ] && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" '
-    '"EPS #${ISSUE} reached done - monitor retired." >/dev/null 2>&1'
+    '"EPS #${ISSUE} reached ${status} \u2014 monitor retired." >/dev/null 2>&1'
 )
 
 # Written as an escape, never as a literal: an invisible U+00A0 in source
@@ -311,15 +403,6 @@ def _bound_flags(text: str) -> list[bool]:
 def _naive_first_hash_strip(line: str) -> str:
     """The quote-BLIND stripper: what this scanner is without quote state."""
     return line.split("#", 1)[0]
-
-
-def _scan_with(strip, text: str) -> list[tuple[int, str, re.Match[str]]]:
-    """`scan_execution_sites` with the comment stripper `strip` swapped in."""
-    sites: list[tuple[int, str, re.Match[str]]] = []
-    for lineno, raw in enumerate(text.splitlines(), start=1):
-        line = strip(raw)
-        sites.extend((lineno, line, m) for m in _EXEC_SITE.finditer(line))
-    return sites
 
 
 def test_live_push_line_scans_as_one_bounded_site():
@@ -394,7 +477,8 @@ def test_quote_tracking_is_load_bearing_when_a_hash_precedes_the_site():
     drop a live push from the pinned inventory.
     """
     assert _bound_flags(_LIVE_HASH_BEFORE_SITE) == [True]
-    assert _scan_with(_naive_first_hash_strip, _LIVE_HASH_BEFORE_SITE) == []
+    blind = scan_execution_sites(_LIVE_HASH_BEFORE_SITE, strip=_naive_first_hash_strip)
+    assert blind == []
 
 
 def test_quote_blind_stripping_is_indistinguishable_on_the_live_line():
@@ -407,7 +491,7 @@ def test_quote_blind_stripping_is_indistinguishable_on_the_live_line():
     shape diverges. Keeps the mechanism honest about what it is for.
     """
     aware = scan_execution_sites(_LIVE)
-    blind = _scan_with(_naive_first_hash_strip, _LIVE)
+    blind = scan_execution_sites(_LIVE, strip=_naive_first_hash_strip)
     assert [(n, m.span()) for n, _, m in blind] == [(n, m.span()) for n, _, m in aware]
 
 
@@ -440,3 +524,121 @@ def test_push_after_a_redirect_operator_contributes_no_site():
     """
     assert scan_execution_sites("true >#" + _LIVE.strip()) == []
     assert scan_execution_sites("true <#" + _LIVE.strip()) == []
+
+
+def test_every_bash_metacharacter_ends_a_word_before_a_hash():
+    """Set completeness, pinned two ways, because NARROWING is the silent side.
+
+    `_COMMENT_WORD_START` is bash's metacharacter set (newline is the `i == 0`
+    case). Dropping a member under-strips: a commented-out push keeps counting
+    toward the pinned inventory and the test passes over a dead alert. The
+    per-character loop below is the behavioral half — measured against bash
+    5.1.16, every one of these prefixes comments out the rest of the line — and
+    the set-equality assert is the structural half, so a member added and later
+    removed cannot slip through a stale enumeration.
+    """
+    metacharacters = {
+        " ": "space",
+        "\t": "tab",
+        ";": "semicolon",
+        "&": "ampersand",
+        "|": "pipe",
+        "(": "open paren",
+        ")": "close paren",
+        "<": "redirect in",
+        ">": "redirect out",
+    }
+    assert set(_COMMENT_WORD_START) == set(metacharacters), (
+        "_COMMENT_WORD_START must be exactly bash's metacharacter set; this "
+        "enumeration is the behavioral pin and has to move with it"
+    )
+    for char, label in metacharacters.items():
+        text = "true" + char + "#" + _LIVE.strip()
+        assert scan_execution_sites(text) == [], f"{label} did not end the word"
+
+
+def test_added_push_after_a_substitution_close_is_counted_and_reads_unbounded():
+    """Axis seven, in the direction that was silent: a NEWLY ADDED push.
+
+    A substitution's closing `)` belongs to its word, so bash runs each push
+    below (measured, bash 5.1.16: `echo $(echo hi)#tag` prints `hi#tag` and the
+    `&&` arm executes). Round 4 read every one of these lines as a comment and
+    dropped it, which left the wrapper's count sitting exactly at its pin — the
+    count assertion passed while an unbounded push ran. The assertions are that
+    the count RISES to 2 and that the added site reads UNBOUNDED.
+    """
+    for label, added in (
+        ("command substitution", 'echo $(date +%s)#stamp && "$PUSH" "EPS #1 new alert"'),
+        ("arithmetic expansion", 'echo $((1+2))#stamp && "$PUSH" "EPS #1 new alert"'),
+        ("process substitution", 'echo <(echo hi)#stamp && "$PUSH" "EPS #1 new alert"'),
+        ("assignment form", 'U=$(date +%s)#frag; "$PUSH" "EPS #1 new alert"'),
+    ):
+        text = _LIVE + "\n    " + added
+        assert len(scan_execution_sites(text)) == 2, label
+        assert _bound_flags(text) == [True, False], label
+
+
+def test_a_comment_after_a_substitution_close_still_drops_the_site():
+    """The exemption covers the `)` itself, not the rest of the line.
+
+    `echo $(true) # "$PUSH" "msg"` runs NO push (measured, bash 5.1.16: it
+    prints one empty line and nothing else) — the `#` starts a word after the
+    SPACE, not after the `)`, so the exemption must not reach it.
+    """
+    assert scan_execution_sites("echo $(true) # " + _LIVE.strip()) == []
+
+
+def test_an_arithmetic_command_close_is_not_a_substitution_close():
+    """A bare `((` is an arithmetic COMMAND; only `$((` opens an expansion.
+
+    Measured, bash 5.1.16: `((i=1))#echo LEAK` prints nothing and exits 0, so
+    the `))` are ordinary word ends and the `#` opens a comment. This is the
+    discriminator between axis seven's exemption and a paren pair that merely
+    looks like it.
+    """
+    assert scan_execution_sites("((i=1))#" + _LIVE.strip()) == []
+
+
+def test_nested_parens_inside_a_substitution_do_not_leak_the_exemption():
+    """A subshell or arithmetic group NESTED in a substitution stays matched.
+
+    Measured, bash 5.1.16: `echo $( (true) )#tag && push` and
+    `echo $(( (1+2) * 3 ))#tag && push` both run the push. The inner `)` pops
+    its own plain paren, so the OUTER `)` is still the substitution's and the
+    line survives the strip.
+    """
+    for label, text in (
+        ("subshell in cmdsub", 'echo $( (true) )#tag && "$PUSH" "EPS #1 alert"'),
+        ("group in arithmetic", 'echo $(( (1+2) * 3 ))#tag && "$PUSH" "EPS #1 alert"'),
+    ):
+        assert _bound_flags(text) == [False], label
+
+
+def _source_line(anchor: str) -> str:
+    """Return the one line of `_LIVE_SOURCE` containing `anchor` (exactly one)."""
+    lines = [ln for ln in (_REPO_ROOT / _LIVE_SOURCE).read_text().splitlines() if anchor in ln]
+    assert len(lines) == 1, (
+        f"{_LIVE_SOURCE}: {len(lines)} lines contain {anchor!r}, expected exactly 1 — "
+        "the fixture anchor drifted; re-anchor it before trusting the fixtures"
+    )
+    return lines[0]
+
+
+def test_live_fixtures_are_byte_faithful_to_their_source_lines():
+    """`_LIVE` / `_LIVE_HASH_BEFORE_SITE` ARE the live lines, not paraphrases.
+
+    Their whole warrant is "this is what the wrapper really writes", so the
+    claim is pinned rather than re-checked by hand each round. Round 4 asserted
+    that provenance in prose while the fixtures carried an ASCII hyphen for the
+    source's em dash and a literal `done` for `${status}`.
+
+    Lines are located by CONTENT, not number, so an unrelated edit to the
+    wrapper cannot silently re-point the anchors.
+    """
+    log_line = _source_line("TERMINAL (${status})")
+    push_line = _source_line("monitor retired.")
+    assert push_line == _LIVE, "_LIVE drifted from the live retirement-push line"
+    assert log_line + " && " + push_line.lstrip() == _LIVE_HASH_BEFORE_SITE, (
+        "_LIVE_HASH_BEFORE_SITE is the log line and the push line fused with "
+        "` && `; one of the two source lines changed"
+    )
