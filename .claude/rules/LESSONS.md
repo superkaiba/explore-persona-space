@@ -58,7 +58,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - research-pm-section-reference.md — the PM renders a STATUS part or runs the infra auto-dispatch items (pointer-loaded).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
 - selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI; difference-vector legs sharing one SAMPLED baseline vs noise-free nulls; a numeric gate on a null statistic.
-- smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import.
+- smoke-blind-spots.md — a plan declares a pre-launch smoke run, a smoke-conditional branch substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import, or a test monkeypatches a curated production constant.
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest, judge-monitor reads, or ANY orchestrator turn on a guard-surface round.
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
 - upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/2.10/2.11/3/4/6 recipe (pointer-loaded).

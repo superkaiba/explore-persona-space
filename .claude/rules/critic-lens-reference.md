@@ -770,6 +770,30 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     (grep-level; naming-completeness stays reviewer-owned), and
     `--check-smoke-blind-spot-review-lens` pins the enforcement surfaces.
 
+20. **Production-constant test-fixture pinning (any plan whose test list replaces a curated
+    module-level production constant — verify the plan's test/TDD list).** When the plan's test
+    list replaces a curated module-level production constant in every test touching it
+    (`monkeypatch.setattr` — incl. the dotted-string form — `mock.patch.object`,
+    `patch("<dotted>.<CONST>", ...)`, or a fixture assignment), some listed test must pin the
+    REAL constant's required contents: a static completeness/subset test (an unmapped entry
+    fails; an empty constant fails; required members pinned — the #2360 remedy). A listed test
+    that pins call ORDERING via a source substring, or asserts only on the FIXTURE value, is
+    NOT contents evidence. REVISE when no listed test pins the shipped constant's contents AND
+    an acceptance criterion or plan requirement depends on them — the REVISE names the CONSTANT
+    and the acceptance criterion that depends on it (#2360 plan v2: tests 1–4 replaced the first
+    curated constant with a fixture list, test 5 replaced the second, and the only real-constant
+    test pinned call ordering via a source substring — both shipped lists could be EMPTY with
+    every committed test green; 1 of 6 ensemble reviewers flagged it). Not a REVISE when a
+    listed test separately pins the real constant's required members (that IS the correct
+    pattern — monkeypatching for hermetic function tests is fine alongside it), or when no
+    acceptance criterion or plan requirement depends on the constant's contents. Plan-time
+    sibling of `code-reviewer.md` Step 3.85 (diff time); mechanism 4 of
+    `.claude/rules/smoke-blind-spots.md`. mechanizable: partial —
+    `workflow_lint.py --check-monkeypatched-constant-pinning` (WARN-only AST scan over
+    `tests/`) seeds the diff-time arm and
+    `--check-production-constant-pinning-lens` pins the enforcement surfaces;
+    acceptance-criterion dependence stays reviewer-owned.
+
 ### Statistics & Measurement lens
 
 1. **Metric mismatch.** Does the headline metric actually measure what the hypothesis predicts? If

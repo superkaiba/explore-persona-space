@@ -1,9 +1,12 @@
 # Smoke blind spots — enumerate what a smoke PASS does NOT certify
 
-**Load this rule whenever a plan declares a pre-launch smoke run, or a diff
-adds/edits a `smoke`-conditional branch.** A smoke run validates only the
-code it EXECUTES. Three mechanisms silently narrow smoke coverage so the
-PASS certifies less than it appears to:
+**Load this rule whenever a plan declares a pre-launch smoke run, a diff
+adds/edits a `smoke`-conditional branch, or a test suite replaces a curated
+production constant.** A smoke run validates only the code it EXECUTES, and
+a test suite validates only the data it RUNS AGAINST. Three mechanisms
+silently narrow smoke coverage so the PASS certifies less than it appears
+to — and a fourth (test-side) makes a green TEST SUITE certify less than it
+appears to:
 
 1. **Substituted implementation** — a `smoke` branch swaps the production
    implementation for a toy (hash-vector embedding, stub model, fake judge),
@@ -16,6 +19,19 @@ PASS certifies less than it appears to:
    the production branch), so the smoke "PASSes" gates it never evaluated.
 3. **Production-only code path** — a phase, device route, or upload reached
    only on the production branch.
+4. **Substituted production constant (test-side)** — a TEST fixture replaces
+   a curated module-level production constant
+   (`monkeypatch.setattr(<mod>, "<CONST>", fixture_list)` — incl. the
+   dotted-string form `monkeypatch.setattr("<mod>.<CONST>", ...)` —
+   `mock.patch.object(<mod>, "<CONST>", ...)`, `patch("<mod>.<CONST>", ...)`,
+   or a direct fixture assignment) in EVERY test touching it, so the suite
+   validates the FUNCTION against fixture data and never certifies the
+   shipped constant's CONTENTS — the shipped list can omit the incident
+   entry, or be entirely empty, while all tests stay green. This mechanism
+   has its OWN trigger grammar — TEST files, a `monkeypatch`/`patch` target
+   naming an ALL_CAPS attribute of a non-test module — NOT the production
+   `smoke`-conditional branches of mechanisms 1–3: the enumeration idea
+   transfers; the trigger does not (#2360).
 
 ## Driving incident (#1336, plan v15 round 4)
 
@@ -35,6 +51,16 @@ smoke was STRUCTURALLY INCAPABLE of catching — not too small, DIFFERENT CODE:
   production gates it had not evaluated, and production died at
   `assert_split`.
 
+## Driving incident, mechanism 4 (#2360, plan v2)
+
+Plan #2360 v2 proposed a preflight check driven by two module-level curated
+constants and a 15-test suite: tests 1–4 replaced the first constant with a
+fixture list, test 5 replaced the second, and the only test touching the
+real constants pinned call ORDERING via a source substring — both shipped
+constants could omit the incident entry, or be entirely empty, with every
+committed test green. 1 of 6 ensemble reviewers flagged it (the Codex
+statistics twin); the fix was the static completeness/subset test below.
+
 ## The duty: SMOKE BLIND-SPOT ENUMERATION
 
 The plan section that declares the smoke run states, in one short block
@@ -43,13 +69,27 @@ NOT certify — one line per item:
 
 - every production gate/assertion the smoke DOWNGRADES or skips;
 - every implementation the smoke SUBSTITUTES;
-- every third-party import reached ONLY on the production branch.
+- every third-party import reached ONLY on the production branch;
+- every curated production constant the TEST SUITE substitutes
+  (mechanism 4), plus the test that pins the REAL constant's required
+  contents — or the literal
+  `none — no test substitutes a production constant`.
 
 An EMPTY enumeration is written as the literal
 `none — smoke executes every production gate` — never left blank. Any
 smoke-conditional substitution/downgrade branch in the code FALSIFIES the
 empty form. The implementer mirrors the block per phase under `## Smoke run`
 when the realized code adds a branch the plan did not anticipate.
+
+The named remedy for mechanism 4 is a static completeness/subset test over
+the SHIPPED constant — the instrument #2360 resolved with: an unmapped entry
+fails; an empty constant fails; required members pinned. A test that pins
+call ORDERING via a source substring, or asserts only on the FIXTURE value,
+is NOT contents evidence. And the enumeration duty is
+smoke-declaration-gated: for a plan declaring NO smoke run (the #2360 class
+itself), the BINDING arms for mechanism 4 are Methodology lens item 20
+(plan time) and code-reviewer Step 3.85 (diff time) — named here so the
+founding incident's own shape is not left to a vacuous duty.
 
 ## Distinct siblings (do not re-dedupe onto them)
 
@@ -76,8 +116,16 @@ instrument exactly where parity (prohibition) is legitimately waived.
   unenumerated smoke-conditional substitution / gate-downgrade in a diff;
   full trigger grammar: `code-reviewer-section-reference.md` § Step 0.71
   detail.
+- `code-reviewer.md` Step 3.85 + the codex twin's copy-list stub — FAIL
+  tagged `production-constant-unpinned` (SUBSTANTIVE, never stripped) on a
+  fixture-substituted production constant an acceptance criterion depends
+  on with nothing pinning its real contents (mechanism 4, diff time).
 - `critic.md` Methodology lens item 19 (`critic-lens-reference.md`) — REVISE
   a plan declaring a smoke run with no enumeration and no empty-form literal.
+- `critic.md` Methodology lens item 20 (`critic-lens-reference.md`) — REVISE
+  a plan whose test list replaces a curated production constant in every
+  test touching it with no listed real-contents pinning test, naming the
+  constant + the dependent acceptance criterion (mechanism 4, plan time).
 - Mechanical: `workflow_lint.py --check-smoke-blind-spot-review-lens`
   (region-anchored surface pin, bundled into the no-flags default run) and
   `--check-smoke-blind-spots` (best-effort WARN-only AST scan of scripts vs
@@ -99,11 +147,21 @@ instrument exactly where parity (prohibition) is legitimately waived.
   unresolvable from uv.lock/pyproject.toml — branch-agnostic, so the
   "third-party import reached ONLY on the production branch" blind-spot item
   is machine-caught repo-wide.
+- Mechanical (mechanism 4, #2364): `workflow_lint.py
+  --check-production-constant-pinning-lens` (per-surface token pin across
+  the mechanism-4 enforcement surfaces, bundled into the no-flags default
+  run) and `--check-monkeypatched-constant-pinning` (best-effort WARN-only
+  AST scan over `tests/` for the four patch forms with no repo-wide
+  real-contents pinning reference; false negatives disclosed in its
+  docstring — the reviewer lens is the binding gate).
 
 ## Files of record
 
 Task bodies #2165 (this rule), #1336 (both incident shapes;
 `scripts/issue1336_pooled_split.py` on the `issue-1336-fullcorpora` branch);
+#2360 (the mechanism-4 driving incident) + #2364 (mechanism 4 — test-side
+substituted production constant;
+`tests/test_workflow_lint_monkeypatched_constant_pinning.py`);
 siblings #1611, #1727, #1355, #822;
 `tests/test_workflow_lint_smoke_blind_spots.py` (fixtures reproducing both
 shapes, reshaped AND structurally faithful).
