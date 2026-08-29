@@ -5,7 +5,6 @@ title: Firing activity dominates per-feature map predictability of turn-averaged
 kind: experiment
 tags:
 - trigger-dense
-- keep-running
 created_at: '2026-08-24T20:18:15Z'
 has_clean_result: true
 parent_id: 2476
