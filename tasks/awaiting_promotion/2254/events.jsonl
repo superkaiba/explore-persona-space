@@ -516,3 +516,4 @@
 {"ts": "2026-08-29T18:48:10Z", "kind": "epm:run-launched", "version": 9, "by": "unknown", "note": "pod=pod-2254-q35 purpose=qwen3.5-9b-context-probe-replication phase=smoke pid=3506"}
 {"ts": "2026-08-29T18:48:57Z", "kind": "epm:run-launched", "version": 10, "by": "unknown", "note": "pod=pod-2254-q35 purpose=qwen3.5-9b-context-probe-replication phase=capture pid=3999"}
 {"ts": "2026-08-29T18:50:13Z", "kind": "epm:run-launched", "version": 11, "by": "unknown", "note": "pod=pod-2254-q35 purpose=qwen3.5-9b-context-probe-replication phase=generate pids=4335,4336,4338,4340 shards=0/4,1/4,2/4,3/4"}
+{"ts": "2026-08-29T20:27:58Z", "kind": "epm:progress", "version": 161, "by": "unknown", "note": "pod=pod-2254-q35 phase=generation-complete cells=93 completions=9300 shards=4/4 status=PASS artifacts_synced=local"}
