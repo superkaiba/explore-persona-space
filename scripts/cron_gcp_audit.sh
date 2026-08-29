@@ -16,6 +16,9 @@
 #   CLI rc=0 (clean) / rc=2 (delete-failed, routine) -> cron exit 0 (no email)
 #   CLI rc=3 (list-failed: gcloud auth/config broken, janitor DISARMED)
 #                                                     -> cron exit 3 (DELIVER email)
+#   Wrapper-infrastructure failure (log dir uncreatable / daily log file not
+#   appendable) -> stderr FATAL + exit 1, DISTINCT from the rc=3 contract
+#   above (task #2386; ports the #2196 pattern).
 
 set -uo pipefail
 
@@ -32,7 +35,19 @@ DATE=$(date +%Y-%m-%d)                       # pinned ONCE — no midnight-edge 
 LOG_DIR="${EPS_GCP_JANITOR_LOG_DIR:-$PROJECT_DIR/logs/gcp_audit}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 
-mkdir -p "$LOG_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2386, ports the
+# #2196 pattern): an unchecked failure here silently skips the whole pass
+# below (the brace-group redirect fails and the group never runs) while the
+# wrapper still exits 0. stderr lands in the crontab redirect file where one
+# exists; cron mail is structurally dead on this VM (no MTA). exit 1 here is
+# deliberately distinct from the exit-3 disarmed-janitor contract above.
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" \
+    || fatal "cannot create log dir (LOG_DIR=$LOG_DIR); gcp audit NOT run"
 
 # One pointer line per day into the crontab redirect file: everything below
 # runs inside a block redirected to $LOG_FILE, so without this the redirect
@@ -40,6 +55,12 @@ mkdir -p "$LOG_DIR"
 # cron_pod_audit.sh + cron_autonomous_session_watch.sh, task #580 item-3).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt (#2196 ordering: after
+# the FIRST_RUN_OF_DAY read — the probe creates $LOG_FILE when absent).
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not appendable ($LOG_FILE); gcp audit NOT run"
 
 rc=0
 {
