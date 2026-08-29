@@ -453,6 +453,10 @@ def phase_analyze(args: argparse.Namespace) -> None:
             ),
             "scratch_control": "Target context-to-answer map fit from exactly the same k paired rows.",
             "full_ceiling": "Original target native map fit with 8,000 train rows and lambda selected on validation.",
+            "primary_transfer_metric": (
+                "Centered cosine against the full target-map prediction; unlike normalized R2, this is "
+                "invariant to the different shrinkage induced by the two-stage transport and one-stage scratch fits."
+            ),
             "hyperparameters": {
                 "summary_rank": int(args.summary_rank),
                 "k_values": [int(k) for k in args.k_values],
@@ -472,8 +476,9 @@ def phase_analyze(args: argparse.Namespace) -> None:
             name: float(records[name]["test_r2"]) for name in MD.CELL_NAMES
         },
         "caveats": [
-            "The summary-only PC rank match is intentionally weak: covariance spectra do not identify semantic axes.",
+            "The summary-only test covers only variance-rank PC pairing with skewness-sign orientation; stronger unsupervised alignment methods are untested.",
             "Few-query transfer uses paired residual tuples from both models and therefore is calibration, not zero-shot transfer.",
+            "Normalized-R2 comparisons are scale-sensitive and the transport path has two shrinkage stages versus one for scratch; centered-cosine comparisons are the primary geometric result.",
             "All k-shot curves reuse an existing fixed dataset; query counts describe calibration rows, not new API calls.",
             "This is exploratory post-hoc analysis on the LMSYS-only pilot.",
         ],

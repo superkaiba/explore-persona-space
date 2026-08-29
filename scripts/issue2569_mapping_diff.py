@@ -710,26 +710,51 @@ def predicted_cells(cells: dict[str, Affine], q_context: np.ndarray) -> dict[str
 
 
 def alignment_checks(
-    arrays: dict[str, np.ndarray], alignment: FixedAlignment, tr: np.ndarray
+    arrays: dict[str, np.ndarray],
+    alignment: FixedAlignment,
+    tr: np.ndarray,
+    te: np.ndarray,
 ) -> dict[str, Any]:
-    context_pred = alignment.q_context_to_l(arrays["q_context"][tr])
-    answer_q_pred = (
-        (np.asarray(arrays["q_qwriter"][tr], np.float64) - alignment.q_answer_mean)
-        @ alignment.R_answer
-        + alignment.l_answer_mean
-    )
-    answer_l_pred = (
-        (np.asarray(arrays["q_lwriter"][tr], np.float64) - alignment.q_answer_mean)
-        @ alignment.R_answer
-        + alignment.l_answer_mean
-    )
+    def metrics(indices: np.ndarray) -> dict[str, float]:
+        context_pred = alignment.q_context_to_l(arrays["q_context"][indices])
+        answer_q_pred = (
+            (
+                np.asarray(arrays["q_qwriter"][indices], np.float64)
+                - alignment.q_answer_mean
+            )
+            @ alignment.R_answer
+            + alignment.l_answer_mean
+        )
+        answer_l_pred = (
+            (
+                np.asarray(arrays["q_lwriter"][indices], np.float64)
+                - alignment.q_answer_mean
+            )
+            @ alignment.R_answer
+            + alignment.l_answer_mean
+        )
+        return {
+            "context_q_to_l_flat_cosine": flat_cosine(
+                context_pred, arrays["l_context"][indices]
+            ),
+            "answer_qwriter_q_to_l_flat_cosine": flat_cosine(
+                answer_q_pred, arrays["l_qwriter"][indices]
+            ),
+            "answer_lwriter_q_to_l_flat_cosine": flat_cosine(
+                answer_l_pred, arrays["l_lwriter"][indices]
+            ),
+        }
+
     return {
         "kind": "single fixed train-fitted semi-orthogonal Procrustes; answer fit pooled over writers",
         "n_context_train": int(len(tr)),
         "n_answer_train_pooled": int(2 * len(tr)),
-        "context_q_to_l_flat_cosine": flat_cosine(context_pred, arrays["l_context"][tr]),
-        "answer_qwriter_q_to_l_flat_cosine": flat_cosine(answer_q_pred, arrays["l_qwriter"][tr]),
-        "answer_lwriter_q_to_l_flat_cosine": flat_cosine(answer_l_pred, arrays["l_lwriter"][tr]),
+        "train": metrics(tr),
+        "heldout_test": metrics(te),
+        "interpretation": (
+            "Encoder and diagonal contrasts retain residual alignment error; writer and interaction "
+            "contrasts difference writers within encoder and therefore cancel a shared alignment residual."
+        ),
     }
 
 
@@ -913,7 +938,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "n": {name: int(len(folds[key])) for name, key in (("train", "tr"), ("validation", "va"), ("test", "te"))},
         "roster_sha256": sha_int64(roster),
         "test_roster_sha256": sha_int64(roster[te]),
-        "fixed_alignment": alignment_checks(arrays, alignment, tr),
+        "fixed_alignment": alignment_checks(arrays, alignment, tr, te),
         "factorial_definitions": {
             "writer": "0.5 * [(Qenc,Qwriter - Qenc,Lwriter) + (Lenc,Qwriter - Lenc,Lwriter)]",
             "encoder": "0.5 * [(Qenc,Qwriter + Qenc,Lwriter) - (Lenc,Qwriter + Lenc,Lwriter)]",
@@ -930,6 +955,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
         "caveats": [
             "Exploratory post-hoc analysis on the existing LMSYS-only pilot.",
             "Writer contrast is an answer-policy/content contrast, not a causal mechanism label.",
+            "Encoder and diagonal contrasts include residual cross-model coordinate-alignment error; only writer and interaction contrasts cancel a shared alignment residual by construction.",
             "Behavior readouts use objective length/refusal/repetition flags and semantic distance; they do not exhaust behavior.",
             "Fixed pooled Procrustes removes one shared coordinate mismatch but cannot prove complete identifiability across architectures.",
         ],
