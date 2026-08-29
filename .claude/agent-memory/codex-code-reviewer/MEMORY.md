@@ -3,6 +3,7 @@
 <!-- This file is the MEMORY.md index for the codex-code-reviewer agent. -->
 
 - [Codex-side sharded round compose](feedback_codex_side_sharded_round_compose.md) — "Codex shard k of N" briefs: path-scoped diff reads, contract gates ON with shared-marker imperfections fenced to concerns, split token still stripped, binary VERDICT: enum (#2569 r1)
+- [post-reconciler own-discards closure round](feedback_post_reconciler_own_discards_closure_round.md) — binding FAIL upheld 1 of the twin's 4 legs: fence its OWN discards with the measurement + new-evidence escape, promote the implementer's self-disclosed unverified check to a primary hollow-gate question, probe the plan symlink for staleness (#2385 r2)
 - [strength-targeted re-review compose](feedback_strength_targeted_rereview_compose.md) — brief names a class Codex beat Claude on: lead with the assignment + ordered attack targets + per-target answer lines; fence in-range bookkeeping; recount SHA asserts post-write (#2569 rr3)
 - [closure-verification round compose](feedback_closure_verification_round_compose.md) — FAIL+FAIL union fix rounds: inline the ADJUDICATION as contract, Closure-ledger enum, recover unpersisted r1 CONCERN rows, verify the deferral task exists (#2384 r2)
 - [revision-round compose recipe](feedback_revision_round_compose_recipe.md) — round 2+: reuse prior /tmp template with assert-guarded deltas; round-scope diff body; addressed-concern rows get an explicit verification-duty block (thru r15 fresh-cycle interp-REVISE corrective shape)
