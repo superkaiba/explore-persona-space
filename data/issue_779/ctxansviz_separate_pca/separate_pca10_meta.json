@@ -1,0 +1,31 @@
+{
+  "answer_evr10": 0.48064708709716797,
+  "capture_prefix": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture",
+  "capture_revision": "cbc55efdd7f5581677047e487aa61172f6e7944d",
+  "context_evr10": 0.4550502896308899,
+  "fit_ci": {
+    "ci_max": 959542,
+    "ci_min": 0,
+    "ci_sha256": "cb6ba9f36e6808dc6c544b6d67d433dbf5906e4f86b72069a24792ffc9850ed4"
+  },
+  "fit_rows_identical_across_bases": true,
+  "git_argv0_path": "scripts/issue779_ctxansviz_separate_pca_fit.py",
+  "git_argv0_state": "tracked",
+  "git_commit": "37d2216e4f81309e2c98a00838edd8cf7163d615",
+  "git_dirty": false,
+  "hidden_dim": 3584,
+  "issue": 779,
+  "layer": 19,
+  "model_sha256": "a849cd05fb33d2cb14a2df089d99a44cee15f2a66986d8430572a3cb6c8169bf",
+  "n_components": 10,
+  "n_fit_rows_per_basis": 200000,
+  "phase": "separate-pca-fit",
+  "selection": {
+    "first_chunk": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture/shard00_chunk0000.pt",
+    "last_chunk": "issue779_monitoring/fitter-fair-comparison-n1m/final_token_capture/shard31_chunk0059.pt",
+    "n_capture_chunks_available": 1920,
+    "n_chunks_selected": 401,
+    "rule": "round(linspace(0, 1919, 401)); consume rows in chunk order until 200000 unique ci values",
+    "selected_chunk_manifest_sha256": "28ce11c798df4285314c200fde679f18077024b57f9e7365032772b6fa413576"
+  }
+}
