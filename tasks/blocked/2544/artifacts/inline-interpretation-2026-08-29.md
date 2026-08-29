@@ -14,6 +14,10 @@ The cleanest answer to “when does the mapping form?” is therefore three-part
 - The balance between representation geometry and answer distribution changes sharply in the first 88–252B tokens.
 - The *final map itself*, judged by cross-checkpoint predictive transfer after coordinate alignment, does not settle until midtraining.
 
+![Two-panel summary of mapping strength decomposition and transfer to the final base operator](https://raw.githubusercontent.com/superkaiba/explore-persona-space/660da623b83e48099882f4cfc993ee3eb40dc835/figures/issue_2544/inline_map_evolution_summary.png)
+
+Error bars are 95% bootstrap confidence intervals. Panel A shows how falling representation-side predictability and rising answer-distribution predictability cancel in the diagonal. Panel B shows the late-ladder Procrustes-aligned transfer read; earlier checkpoints are below the displayed range.
+
 ## Registered hypothesis adjudication
 
 ### H1: no registered formation, with a threshold-sensitive categorical label
