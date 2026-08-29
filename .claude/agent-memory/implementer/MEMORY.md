@@ -74,3 +74,4 @@
 - [Scratch sparse worktree config scope](reference_scratch_sparse_worktree_config.md) — `git -C <wt> config` w/o --worktree writes SHARED .git/config (sparseCheckout pollution, #2537); baseline-tree recipe + --show-origin repair
 - [verify_uploads parity + C901 pin](reference_verify_uploads_parity_and_c901.md) — old-revision parity copies must live under <repo>/scripts/ (REPO_ROOT from __file__); LIVE_WORKFLOW_HELPERS diffs run the C901≤15 policy pin — extract helpers, never noqa (#2578)
 - [pytest collection-print capture](reference_pytest_collection_print_capture.md) — default capture swallows collection-phase plugin prints; a subprocess-pytest sentinel assert needs `-s` (#2369 Test A)
+- [Direct-venv pytest needs ruff on PATH](reference_direct_venv_pytest_needs_ruff_on_path.md) — `.venv/bin/python -m pytest` form fails test_step9c_baseline ToolMissingError (env, both trees); prefix PATH with .venv/bin (#2387)
