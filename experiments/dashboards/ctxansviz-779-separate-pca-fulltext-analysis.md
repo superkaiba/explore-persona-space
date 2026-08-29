@@ -1,11 +1,11 @@
 # Issue #779 separate context/answer PCA: full-text exploratory analysis
 
-Generated: 2026-08-29 19:18 UTC
+Generated: 2026-08-29 20:47 UTC
 
 ## Title and metadata
 
 - Separate PCA model SHA-256: `a849cd05fb33d2cb14a2df089d99a44cee15f2a66986d8430572a3cb6c8169bf`
-- Fit producer: `37d2216e4f81309e2c98a00838edd8cf7163d615`; renderer: `2ef5102c`
+- Fit producer: `37d2216e4f81309e2c98a00838edd8cf7163d615`; renderer: `b4ede144`
 - Fit: 200,000 identical row IDs per basis at layer 19
 - Context PCA-10 EVR: 45.51%; answer PCA-10 EVR: 48.06%
 - Display rows: 5,437 public-safe paired observations
@@ -14,7 +14,7 @@ Generated: 2026-08-29 19:18 UTC
 
 The context and answer PCA models were fit independently on the same deterministic 200,000-row capture sample. Both component matrices are orthonormal, all display projections are finite, the fit row IDs are unique and identical across roles, and the model SHA matches its clean tracked-code manifest.
 
-Full raw text was recovered for all 5,500 display pairs before publication filtering. This replaced 856 capped context excerpts and 2,292 capped answer excerpts. The public payload contains complete text only for the 384 unique rows selected as specimens; no WildChat string contains the producer truncation marker. LMSYS text remains withheld.
+Full raw text was recovered for all 5,500 display pairs before publication filtering. This replaced 856 capped context excerpts and 2,292 capped answer excerpts. Each of the 20 native axes is represented at 11 ordered positions from observed minimum to observed maximum, with 3 alternatives per position. Every specimen card shows its complete paired context and answer. The public payload contains complete text only for the 578 unique rows selected as specimens; no WildChat string contains the producer truncation marker. LMSYS text remains withheld.
 
 Full-text safety gates removed 63 rows. Retained WildChat maximum lengths are 20,590 context characters and 6,582 answer characters.
 
