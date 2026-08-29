@@ -136,7 +136,7 @@ def _arc_logprob_core(
             )
             user_content = f"{q['question']}\n\n{choices_text}\n\nThe correct answer is ("
             messages = []
-            if persona_prompt:
+            if persona_prompt is not None:
                 messages.append({"role": "system", "content": persona_prompt})
             messages.append({"role": "user", "content": user_content})
             try:
