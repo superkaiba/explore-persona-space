@@ -14,6 +14,7 @@ import argparse
 import gc
 import hashlib
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +54,7 @@ except ModuleNotFoundError:  # pragma: no cover - direct invocation
 
 ISSUE = 2643
 MODEL_REPO = "superkaiba1/explore-persona-space"
+MODEL_REVISION = "c76b5432fb1b134482babb9e60f8a6d92fc264ee"
 ADAPTER_PREFIX = "adapters/issue_642/v9/loraRefOP_villain_seed42/step132"
 CELL = "loraRefOP_step132"
 GEN_DIR = Path("eval_results/issue_642/refusal/generations") / CELL
@@ -105,14 +107,34 @@ def _load_rows(rollout_indices: set[int]) -> list[dict]:
 
 
 def _download_adapter(root: Path) -> Path:
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import HfApi, hf_hub_download
 
-    snapshot_download(
-        MODEL_REPO,
-        repo_type="model",
-        allow_patterns=[f"{ADAPTER_PREFIX}/*"],
-        local_dir=root,
-    )
+    files = [
+        entry.path
+        for entry in HfApi().list_repo_tree(
+            MODEL_REPO,
+            repo_type="model",
+            revision=MODEL_REVISION,
+            path_in_repo=ADAPTER_PREFIX,
+            recursive=True,
+            expand=False,
+        )
+        if getattr(entry, "path", "").startswith(f"{ADAPTER_PREFIX}/")
+    ]
+    if not files:
+        raise RuntimeError(f"no adapter files under {ADAPTER_PREFIX} at {MODEL_REVISION}")
+
+    def download(filename: str) -> None:
+        hf_hub_download(
+            MODEL_REPO,
+            filename=filename,
+            repo_type="model",
+            revision=MODEL_REVISION,
+            local_dir=root,
+        )
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(download, files))
     adapter = root / ADAPTER_PREFIX
     if not (adapter / "adapter_model.safetensors").exists():
         raise RuntimeError(f"adapter snapshot incomplete: {adapter}")
@@ -202,6 +224,7 @@ def phase_capture(args: argparse.Namespace) -> None:
             "task": 642,
             "cell": CELL,
             "adapter_repo": MODEL_REPO,
+            "adapter_revision": MODEL_REVISION,
             "adapter_prefix": ADAPTER_PREFIX,
             "layer": 19,
             "rollout_indices": sorted(rollout_indices),
@@ -351,6 +374,7 @@ def phase_analyze(args: argparse.Namespace) -> None:
             "task": 642,
             "cell": CELL,
             "behavior": "over-refusal on benign requests",
+            "adapter_revision": doc["adapter_revision"],
             "n_personas": 30,
             "n_rows": len(meta),
             "rollout_indices": doc["rollout_indices"],
