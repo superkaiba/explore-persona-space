@@ -4,6 +4,11 @@ import numpy as np
 import pytest
 import torch
 
+from scripts.issue2643_marker_panel import (
+    apply_readout,
+    clustered_auc_ci,
+    fit_mean_difference,
+)
 from scripts.issue2643_sae_map import (
     apply_dense_ridge,
     binary_auroc,
@@ -71,3 +76,20 @@ def test_metrics_perfect_and_reversed() -> None:
     assert binary_auroc(labels, [1.0, 0.9, 0.1, 0.0]) == pytest.approx(0.0)
     x = np.arange(12, dtype=np.float64).reshape(4, 3)
     assert pooled_r2(x, x) == pytest.approx(1.0)
+
+
+def test_mean_difference_readout_separates_heldout_points() -> None:
+    x = torch.tensor([[-2.0, 0.0], [-1.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
+    labels = torch.tensor([0, 0, 1, 1], dtype=torch.bool)
+    readout = fit_mean_difference(x, labels, torch.ones(4, dtype=torch.bool))
+    scores = apply_readout(x, readout)
+    assert scores[labels].min() > scores[~labels].max()
+
+
+def test_clustered_auc_ci_respects_prompt_clusters() -> None:
+    labels = [0, 0, 1, 1, 0, 0, 1, 1]
+    scores = [0.0, 0.1, 0.9, 1.0, 0.0, 0.1, 0.9, 1.0]
+    clusters = ["a", "a", "b", "b", "c", "c", "d", "d"]
+    lo, hi = clustered_auc_ci(labels, scores, clusters, draws=200, seed=1)
+    assert lo == pytest.approx(1.0)
+    assert hi == pytest.approx(1.0)

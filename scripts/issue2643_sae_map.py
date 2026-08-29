@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Issue #2643: factorized context-SAE -> answer-SAE map and anomaly screen.
 
-The production map is deliberately factorized instead of materializing a
-65,536 x 65,536 matrix::
+The production map is deliberately factorized instead of materializing the
+full answer-feature-by-context-feature matrix (32,768 x 32,768 for the
+exact-replication SAEs)::
 
     z_context --D_context--> x_context_hat --ridge--> x_answer_hat
               --E_answer + threshold--> z_answer_hat --scale--> z_answer_cal
