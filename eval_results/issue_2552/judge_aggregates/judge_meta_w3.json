@@ -1,0 +1,74 @@
+{
+  "wave": "w3",
+  "regime_key": {
+    "wave": "w3",
+    "eval_ids_sha256": "2f0650ed3338dc005a1f9e88640e70e6d3409d0453e639e8512001c4c82282b6",
+    "rep_panel_sha256": "66d7049febf4b776b20822dcf42ef19d5c2da113263abef118e90ebf105c64bd",
+    "judge_model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "system_sha256": "18ea9464daee9dae58658c64c251f082c62026135504ab23097608eb8483fe31",
+    "seed": 2552,
+    "threshold_base": 0,
+    "turn_text_cap": 4000,
+    "w4_candidate_cap": 1500
+  },
+  "judge_model": "claude-sonnet-4-6",
+  "max_tokens": 1024,
+  "temperature": "API default (not threaded; judge_dispatch contract)",
+  "transport": "batch (threshold_base=0)",
+  "n_items": 7781,
+  "n_draws": 1,
+  "arms": {
+    "rep_ta": {
+      "n_items": 2974,
+      "n_missing_results": 0,
+      "n_valid": 2974,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "frac_items_complete": 1.0,
+      "floor": 0.95,
+      "below_floor": false
+    },
+    "mat_k100": {
+      "n_items": 2149,
+      "n_missing_results": 0,
+      "n_valid": 2149,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "frac_items_complete": 1.0,
+      "floor": 0.95,
+      "below_floor": false
+    },
+    "mat_k200": {
+      "n_items": 2658,
+      "n_missing_results": 0,
+      "n_valid": 2658,
+      "n_parse_fail": 0,
+      "n_truncation": 0,
+      "n_api_refusal": 0,
+      "n_transport": 0,
+      "frac_items_complete": 1.0,
+      "floor": 0.95,
+      "below_floor": false
+    }
+  },
+  "below_floor_arms": [],
+  "below_floor_waiver": false,
+  "below_floor_waiver_kind": null,
+  "batch_sync_split": {
+    "n_valid_from_sync_reissue": 2,
+    "n_censored_reissued": 2
+  },
+  "n_eval_realized": 2000,
+  "descoped": false,
+  "wall_s": 475.9,
+  "git_commit": "b38f7a0276c1c1cf5a730eb58966a42204d40101",
+  "git_dirty": false,
+  "phase": "judge-w3",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_judge_waves.py"
+}

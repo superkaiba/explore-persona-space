@@ -1,0 +1,474 @@
+{
+  "instruments": {
+    "w3": {
+      "n_sampled": 200,
+      "n_both_valid": 200,
+      "n_cal_dropped": 0,
+      "drop_rate_cal": 0.0,
+      "raw_agreement": 0.515,
+      "agreement_wilson_ci95": [
+        0.44610849139209363,
+        0.5833261488078374
+      ],
+      "kappa": 0.4636883863655213,
+      "cells": {
+        "category=Content": {
+          "n_sampled": 64,
+          "n_both_valid": 64,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.46875,
+          "agreement_wilson_ci95": [
+            0.3517598733941811,
+            0.5892791303955381
+          ],
+          "kappa": 0.32963647566235366
+        },
+        "category=Form": {
+          "n_sampled": 86,
+          "n_both_valid": 86,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.627906976744186,
+          "agreement_wilson_ci95": [
+            0.5223383155741672,
+            0.7225374942573242
+          ],
+          "kappa": 0.497626871120847
+        },
+        "category=Function": {
+          "n_sampled": 21,
+          "n_both_valid": 21,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.2857142857142857,
+          "agreement_wilson_ci95": [
+            0.1381386287176154,
+            0.4995638088483033
+          ],
+          "kappa": 0.11764705882352941
+        },
+        "category=Meta": {
+          "n_sampled": 14,
+          "n_both_valid": 14,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.5,
+          "agreement_wilson_ci95": [
+            0.2679920230881164,
+            0.7320079769118836
+          ],
+          "kappa": 0.22222222222222224
+        },
+        "category=Voice": {
+          "n_sampled": 15,
+          "n_both_valid": 15,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.4,
+          "agreement_wilson_ci95": [
+            0.19824496026274246,
+            0.6425317004565552
+          ],
+          "kappa": 0.3041237113402062
+        },
+        "family=mat_k100": {
+          "n_sampled": 60,
+          "n_both_valid": 60,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.5333333333333333,
+          "agreement_wilson_ci95": [
+            0.40893426933426563,
+            0.6537209404634525
+          ],
+          "kappa": 0.4754917265064002
+        },
+        "family=mat_k100|category=Content": {
+          "n_sampled": 22,
+          "n_both_valid": 22,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.5454545454545454,
+          "agreement_wilson_ci95": [
+            0.34659795182499575,
+            0.7307970593927182
+          ],
+          "kappa": 0.41644562334217494
+        },
+        "family=mat_k100|category=Form": {
+          "n_sampled": 24,
+          "n_both_valid": 24,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.625,
+          "agreement_wilson_ci95": [
+            0.4270996229526447,
+            0.7884063254095233
+          ],
+          "kappa": 0.424
+        },
+        "family=mat_k100|category=Function": {
+          "n_sampled": 6,
+          "n_both_valid": 6,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.0,
+          "agreement_wilson_ci95": [
+            0.0,
+            0.39033429165637346
+          ],
+          "kappa": -0.058823529411764705
+        },
+        "family=mat_k100|category=Meta": {
+          "n_sampled": 4,
+          "n_both_valid": 4,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.25,
+          "agreement_wilson_ci95": [
+            0.04558726029536886,
+            0.6993581599030918
+          ],
+          "kappa": 0.14285714285714285
+        },
+        "family=mat_k100|category=Voice": {
+          "n_sampled": 4,
+          "n_both_valid": 4,
+          "drop_rate_cal": 0.0,
+          "agreement": 1.0,
+          "agreement_wilson_ci95": [
+            0.5101091596030786,
+            0.9999999999999999
+          ],
+          "kappa": 1.0
+        },
+        "family=mat_k200": {
+          "n_sampled": 65,
+          "n_both_valid": 65,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.4307692307692308,
+          "agreement_wilson_ci95": [
+            0.31759457334132213,
+            0.5516702541876995
+          ],
+          "kappa": 0.3651003167898627
+        },
+        "family=mat_k200|category=Content": {
+          "n_sampled": 18,
+          "n_both_valid": 18,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.3888888888888889,
+          "agreement_wilson_ci95": [
+            0.2030524646285427,
+            0.6138095855788537
+          ],
+          "kappa": 0.24427480916030536
+        },
+        "family=mat_k200|category=Form": {
+          "n_sampled": 30,
+          "n_both_valid": 30,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.6666666666666666,
+          "agreement_wilson_ci95": [
+            0.4878005150467802,
+            0.8076950200327357
+          ],
+          "kappa": 0.5384615384615384
+        },
+        "family=mat_k200|category=Function": {
+          "n_sampled": 7,
+          "n_both_valid": 7,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.0,
+          "agreement_wilson_ci95": [
+            -2.7755575615628914e-17,
+            0.35433043867586833
+          ],
+          "kappa": -0.19512195121951217
+        },
+        "family=mat_k200|category=Meta": {
+          "n_sampled": 5,
+          "n_both_valid": 5,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.2,
+          "agreement_wilson_ci95": [
+            0.03622410822563066,
+            0.6244653729700049
+          ],
+          "kappa": 0.09090909090909093
+        },
+        "family=mat_k200|category=Voice": {
+          "n_sampled": 5,
+          "n_both_valid": 5,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.0,
+          "agreement_wilson_ci95": [
+            0.0,
+            0.43448246865939283
+          ],
+          "kappa": -0.08695652173913046
+        },
+        "family=rep_ta": {
+          "n_sampled": 75,
+          "n_both_valid": 75,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.5733333333333334,
+          "agreement_wilson_ci95": [
+            0.4605279224186411,
+            0.6789925805766377
+          ],
+          "kappa": 0.5326192794547225
+        },
+        "family=rep_ta|category=Content": {
+          "n_sampled": 24,
+          "n_both_valid": 24,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.4583333333333333,
+          "agreement_wilson_ci95": [
+            0.27891333613001446,
+            0.6492513477492627
+          ],
+          "kappa": 0.30820399113082037
+        },
+        "family=rep_ta|category=Form": {
+          "n_sampled": 32,
+          "n_both_valid": 32,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.59375,
+          "agreement_wilson_ci95": [
+            0.42260024747333746,
+            0.7448036525707851
+          ],
+          "kappa": 0.49019607843137253
+        },
+        "family=rep_ta|category=Function": {
+          "n_sampled": 8,
+          "n_both_valid": 8,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.75,
+          "agreement_wilson_ci95": [
+            0.40927542792725174,
+            0.9285207879020445
+          ],
+          "kappa": 0.6363636363636364
+        },
+        "family=rep_ta|category=Meta": {
+          "n_sampled": 5,
+          "n_both_valid": 5,
+          "drop_rate_cal": 0.0,
+          "agreement": 1.0,
+          "agreement_wilson_ci95": [
+            0.5655175313406071,
+            1.0
+          ],
+          "kappa": NaN
+        },
+        "family=rep_ta|category=Voice": {
+          "n_sampled": 6,
+          "n_both_valid": 6,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.3333333333333333,
+          "agreement_wilson_ci95": [
+            0.09677141021353453,
+            0.7000066870052566
+          ],
+          "kappa": 0.2258064516129032
+        }
+      },
+      "cal_judge_model": "claude-sonnet-4-5-20250929"
+    },
+    "w4": {
+      "n_sampled": 200,
+      "n_both_valid": 193,
+      "n_cal_dropped": 7,
+      "drop_rate_cal": 0.035,
+      "raw_agreement": 0.5803108808290155,
+      "agreement_wilson_ci95": [
+        0.5097837387363323,
+        0.6477034094294122
+      ],
+      "kappa": 0.5277039274924471,
+      "cells": {
+        "config=mat_k100": {
+          "n_sampled": 39,
+          "n_both_valid": 37,
+          "drop_rate_cal": 0.05128205128205132,
+          "agreement": 0.6486486486486487,
+          "agreement_wilson_ci95": [
+            0.4875902299651824,
+            0.7817439295214081
+          ],
+          "kappa": 0.5991666666666667
+        },
+        "config=mat_k200": {
+          "n_sampled": 39,
+          "n_both_valid": 38,
+          "drop_rate_cal": 0.02564102564102566,
+          "agreement": 0.42105263157894735,
+          "agreement_wilson_ci95": [
+            0.27852501060597445,
+            0.5780765477426011
+          ],
+          "kappa": 0.3181076672104404
+        },
+        "config=pt_max": {
+          "n_sampled": 34,
+          "n_both_valid": 34,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.6764705882352942,
+          "agreement_wilson_ci95": [
+            0.5084289446060363,
+            0.8086835651849452
+          ],
+          "kappa": 0.6156217882836588
+        },
+        "config=pt_sum": {
+          "n_sampled": 44,
+          "n_both_valid": 44,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.6136363636363636,
+          "agreement_wilson_ci95": [
+            0.4662357527839017,
+            0.7427879733698503
+          ],
+          "kappa": 0.5630841121495328
+        },
+        "config=rep_ta": {
+          "n_sampled": 44,
+          "n_both_valid": 40,
+          "drop_rate_cal": 0.09090909090909094,
+          "agreement": 0.55,
+          "agreement_wilson_ci95": [
+            0.39829091686504514,
+            0.6929469228891086
+          ],
+          "kappa": 0.49509116409537174
+        }
+      },
+      "cal_judge_model": "claude-sonnet-4-5-20250929"
+    },
+    "w5": {
+      "n_sampled": 200,
+      "n_both_valid": 199,
+      "n_cal_dropped": 1,
+      "drop_rate_cal": 0.005,
+      "raw_agreement": 0.6532663316582915,
+      "agreement_wilson_ci95": [
+        0.5848037387108732,
+        0.7159237374985027
+      ],
+      "kappa": 0.2959544685433012,
+      "cells": {
+        "pair=mat_k100-vs-mat_k200": {
+          "n_sampled": 26,
+          "n_both_valid": 26,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.6153846153846154,
+          "agreement_wilson_ci95": [
+            0.42534849943440245,
+            0.775714056651308
+          ],
+          "kappa": 0.25287356321839083
+        },
+        "pair=mat_k100-vs-pt_max": {
+          "n_sampled": 20,
+          "n_both_valid": 20,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.75,
+          "agreement_wilson_ci95": [
+            0.5312991206074114,
+            0.8881382993000237
+          ],
+          "kappa": 0.44444444444444453
+        },
+        "pair=mat_k100-vs-pt_sum": {
+          "n_sampled": 24,
+          "n_both_valid": 24,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.7083333333333334,
+          "agreement_wilson_ci95": [
+            0.5083230617667995,
+            0.8508535188368138
+          ],
+          "kappa": 0.46153846153846156
+        },
+        "pair=mat_k200-vs-pt_max": {
+          "n_sampled": 19,
+          "n_both_valid": 19,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.7368421052631579,
+          "agreement_wilson_ci95": [
+            0.5120844892295056,
+            0.8819358772791221
+          ],
+          "kappa": 0.4692737430167597
+        },
+        "pair=mat_k200-vs-pt_sum": {
+          "n_sampled": 23,
+          "n_both_valid": 23,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.5652173913043478,
+          "agreement_wilson_ci95": [
+            0.3681137494517215,
+            0.7436536478893558
+          ],
+          "kappa": 0.2123287671232876
+        },
+        "pair=pt_max-vs-pt_sum": {
+          "n_sampled": 25,
+          "n_both_valid": 25,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.64,
+          "agreement_wilson_ci95": [
+            0.44518497600865714,
+            0.7975211932184335
+          ],
+          "kappa": 0.24749163879598654
+        },
+        "pair=rep_ta-vs-mat_k100": {
+          "n_sampled": 9,
+          "n_both_valid": 9,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.4444444444444444,
+          "agreement_wilson_ci95": [
+            0.18877851977054566,
+            0.7333487081991259
+          ],
+          "kappa": 0.1176470588235294
+        },
+        "pair=rep_ta-vs-mat_k200": {
+          "n_sampled": 23,
+          "n_both_valid": 23,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.6521739130434783,
+          "agreement_wilson_ci95": [
+            0.4489033522338618,
+            0.8118872415619854
+          ],
+          "kappa": 0.2923076923076924
+        },
+        "pair=rep_ta-vs-pt_max": {
+          "n_sampled": 12,
+          "n_both_valid": 12,
+          "drop_rate_cal": 0.0,
+          "agreement": 0.6666666666666666,
+          "agreement_wilson_ci95": [
+            0.3906220869404939,
+            0.86187990987514
+          ],
+          "kappa": 0.33333333333333326
+        },
+        "pair=rep_ta-vs-pt_sum": {
+          "n_sampled": 19,
+          "n_both_valid": 18,
+          "drop_rate_cal": 0.052631578947368474,
+          "agreement": 0.6666666666666666,
+          "agreement_wilson_ci95": [
+            0.4374946712512044,
+            0.8372122534377007
+          ],
+          "kappa": 0.3647058823529411
+        }
+      },
+      "cal_judge_model": "claude-sonnet-4-5-20250929"
+    }
+  },
+  "n_per_instrument": 200,
+  "note": "per-cell n is thin (plan Alt-N): descriptive per-instrument agreement",
+  "git_commit": "b38f7a0276c1c1cf5a730eb58966a42204d40101",
+  "git_dirty": false,
+  "phase": "judge-w7",
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2552_judge_waves.py"
+}

@@ -1,0 +1,250 @@
+{
+  "commit": "6b2ece5f+dirty",
+  "render_id": "7a6aee749b25405a",
+  "git_commit": "6b2ece5f32ee6fc61062515e86d576b02dc82229",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/covariate_scatters_mat_k100.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k100.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k100.png",
+    "figures/issue_2552/covariate_scatters_mat_k200.meta.json",
+    "figures/issue_2552/covariate_scatters_mat_k200.pdf",
+    "figures/issue_2552/covariate_scatters_mat_k200.png",
+    "figures/issue_2552/covariate_scatters_rep_ta.meta.json",
+    "figures/issue_2552/covariate_scatters_rep_ta.pdf",
+    "figures/issue_2552/covariate_scatters_rep_ta.png",
+    "figures/issue_2552/instrument_position_effects.meta.json",
+    "figures/issue_2552/instrument_position_effects.pdf",
+    "figures/issue_2552/instrument_position_effects.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
+    "scripts/issue2552_ladder.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-26T01:22:59Z",
+  "figsize": [
+    12.600000000000001,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "activity\n(step 0)",
+      "overall R\u00b2 (base) / increment": 0.21375162241274004,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "mean activation when active\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.2275035564890625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "schema category\n(df=4)",
+      "overall R\u00b2 (base) / increment": 0.05065358680230686,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "activation variance\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.039218207807727855,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "twin match cosine\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.015827147072524108,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer-PCA best rank\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.010492299923769101,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "trait-direction alignment\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.004798538870545709,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "activity\n(step 0)",
+      "overall R\u00b2 (base) / increment": 0.31997471733929617,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "mean activation when active\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.24343362308982644,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "nested-training tier\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.07173066477579268,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "schema category\n(df=4)",
+      "overall R\u00b2 (base) / increment": 0.02737566079813448,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "answer-PCA best rank\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.012518837291619242,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "activation variance\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.008201290311869265,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "twin match cosine\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.006422880537803923,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "activity\n(step 0)",
+      "overall R\u00b2 (base) / increment": 0.3379131420775132,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mean activation when active\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.23128430398362712,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "nested-training tier\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.080767579966912,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "activation variance\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.021956636403526318,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "schema category\n(df=4)",
+      "overall R\u00b2 (base) / increment": 0.019421303189227797,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "answer-PCA best rank\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.012025463601101996,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "twin match cosine\n(df=1)",
+      "overall R\u00b2 (base) / increment": 0.0029866829339733063,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 21,
+  "text": {
+    "suptitle": "Forward-selection partial ladder \u2014 bars vs within-quintile null p95",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "rep_ta (replication turn-avg), n=2974",
+        "ylabel": "overall R\u00b2 (base) / increment",
+        "xticklabels": [
+          "activity\n(step 0)",
+          "mean activation when active\n(df=1)",
+          "schema category\n(df=4)",
+          "activation variance\n(df=1)",
+          "twin match cosine\n(df=1)",
+          "answer-PCA best rank\n(df=1)",
+          "trait-direction alignment\n(df=1)"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ]
+      },
+      {
+        "title_left": "mat_k100 (matryoshka k=100), n=2149",
+        "ylabel": "overall R\u00b2 (base) / increment",
+        "xticklabels": [
+          "activity\n(step 0)",
+          "mean activation when active\n(df=1)",
+          "nested-training tier\n(df=1)",
+          "schema category\n(df=4)",
+          "answer-PCA best rank\n(df=1)",
+          "activation variance\n(df=1)",
+          "twin match cosine\n(df=1)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "mat_k200 (matryoshka k=200), n=2658",
+        "ylabel": "overall R\u00b2 (base) / increment",
+        "xticklabels": [
+          "activity\n(step 0)",
+          "mean activation when active\n(df=1)",
+          "nested-training tier\n(df=1)",
+          "activation variance\n(df=1)",
+          "schema category\n(df=4)",
+          "answer-PCA best rank\n(df=1)",
+          "twin match cosine\n(df=1)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

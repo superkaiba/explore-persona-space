@@ -1,0 +1,77 @@
+{
+  "commit": "33529ec2+dirty",
+  "render_id": "f80751bbccf54cd7",
+  "git_commit": "33529ec2cd09f041b559fb06b6e70f4ce1f5ae14",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2552/category_activity_heatmap.meta.json",
+    "figures/issue_2552/category_activity_heatmap.pdf",
+    "figures/issue_2552/category_activity_heatmap.png",
+    "figures/issue_2552/category_drop_rates.meta.json",
+    "figures/issue_2552/category_drop_rates.pdf",
+    "figures/issue_2552/category_drop_rates.png",
+    "figures/issue_2552/category_ranking.meta.json",
+    "figures/issue_2552/category_ranking.pdf",
+    "figures/issue_2552/category_ranking.png",
+    "figures/issue_2552/category_status_groups.meta.json",
+    "figures/issue_2552/category_status_groups.pdf",
+    "figures/issue_2552/category_status_groups.png",
+    "figures/issue_2552/ladder_hero.meta.json",
+    "figures/issue_2552/ladder_hero.pdf",
+    "figures/issue_2552/ladder_hero.png",
+    "figures/issue_2552/ladder_sensitivity_forced_last.meta.json",
+    "figures/issue_2552/ladder_sensitivity_forced_last.pdf",
+    "figures/issue_2552/ladder_sensitivity_forced_last.png",
+    "figures/issue_2552/ladder_splithalf.meta.json",
+    "figures/issue_2552/ladder_splithalf.pdf",
+    "figures/issue_2552/ladder_splithalf.png",
+    "figures/issue_2552/matching_accuracy.meta.json",
+    "figures/issue_2552/matching_accuracy.pdf",
+    "figures/issue_2552/matching_accuracy.png",
+    "scripts/issue2552_ladder.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2552_ladder.py",
+  "created": "2026-08-26T00:21:13Z",
+  "figsize": [
+    4.6,
+    3.8
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Pairwise coverage win rate, top-100 judged lists (row beats column)",
+        "xticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ],
+        "yticklabels": [
+          "rep_ta\n(replication TA, 32k)",
+          "mat_k100\n(#2476 matryoshka, 65k)",
+          "mat_k200\n(#2476 matryoshka, 65k)",
+          "pt_max\n(andyrdt trainer_2, 131k)",
+          "pt_sum\n(andyrdt trainer_2, 131k)"
+        ]
+      },
+      {
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
