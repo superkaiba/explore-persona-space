@@ -455,3 +455,64 @@ def test_context_train_does_not_claim_answer_nmse_target(tmp_path):
     cfg = json.loads((out / "cfg.json").read_text())
     assert cfg["vector_kind"] == "context"
     assert cfg["training_object"] == "pre-assistant generation-prompt last-token context state"
+
+
+# ── exact quantitative-eval adapters ─────────────────────────────────────────────
+
+
+def test_exactrep_eval_pool_derivation_is_disjoint_and_deterministic():
+    import issue2552_exactrep_eval_inputs as EV
+
+    splits = {
+        "holdout": np.arange(2_500, dtype=np.int64),
+        "val": np.arange(2_500, 2_600, dtype=np.int64),
+        "train": np.arange(2_600, 5_600, dtype=np.int64),
+    }
+    a = EV.derive_eval_pools(splits, seed=2552, eval_n=2_000)
+    b = EV.derive_eval_pools(splits, seed=2552, eval_n=2_000)
+    assert all(np.array_equal(a[k], b[k]) for k in a)
+    assert len(a["eval"]) == 2_000 and len(a["pt_mine"]) == 500
+    assert len(a["ta_mine"]) == len(splits["train"])
+    assert np.intersect1d(a["eval"], a["pt_mine"]).size == 0
+    assert np.intersect1d(a["eval"], a["ta_mine"]).size == 0
+
+
+def test_exactrep_eval_selected_span_and_list_index(tmp_path):
+    import issue2552_exactrep_eval_inputs as EV
+
+    tok = FakeTok()
+    msgs = [
+        {"role": "user", "content": "Q1"},
+        {"role": "assistant", "content": "answer one"},
+        {"role": "user", "content": "Q2"},
+        {"role": "assistant", "content": "answer two"},
+    ]
+    rec = PREP.process_conversation(_row(msgs), tok, 10_000, _counters())
+    selected = {(str(rec["conversation_id"]), 3): 17}
+    ids, rows = EV._prepare_selected(rec, tok, selected)
+    assert len(rows) == 1 and rows[0][0] == 17
+    s, e = rows[0][1]
+    rendered = "".join(PREP.render_segments(msgs, tok))
+    assert rendered[s:e] == "answer two"  # FakeTok is one-char/one-token
+    assert len(ids) == len(rendered)
+
+    lists = tmp_path / "lists"
+    EV._write_list_config(lists, "rep_ta", [{"row_id": 17, "judged_top100": []}], {"x": 1})
+    EV._write_list_config(lists, "pt_max", [{"row_id": 17, "judged_top100": []}], {"x": 2})
+    index = json.loads((lists / "feature_lists_2000turns.json").read_text())
+    assert set(index["configs"]) == {"rep_ta", "pt_max"}
+    assert index["configs"]["rep_ta"]["n_turns"] == 1
+
+
+def test_exactrep_judge_adapter_pins_parent_and_three_config_protocol(tmp_path):
+    import issue2552_exactrep_judge as J
+
+    parent = J.load_parent(J.DEFAULT_PARENT_WORKTREE)
+    assert parent.CONFIGS == ("rep_ta", "pt_max", "pt_sum")
+    assert parent.TA_FAMILIES == ("rep_ta",)
+    assert tuple("ABC") == parent.W6_LABELS
+    assert parent.parse_w6({"ranking": ["A", "C", "B"]}) == ["A", "C", "B"]
+    assert parent.parse_w6({"ranking": ["A", "B", "C", "D", "E"]}) is None
+    args = argparse.Namespace(out_root=tmp_path, smoke=False)
+    paths = parent._paths(args)
+    assert paths.agg == tmp_path / "judge_aggregates"
