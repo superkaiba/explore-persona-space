@@ -10074,7 +10074,7 @@ def _load_thread_caps_guard(root: Path) -> tuple[object | None, str | None]:
             f"{_THREAD_CAPS_GUARD_REL}: check-torch-before-dotenv: importing the #847 guard "
             f"module failed ({type(exc).__name__}: {exc})."
         )
-    except Exception as exc:  # noqa: BLE001 - any import failure is a stale-lint signal
+    except Exception as exc:  # any import failure at all is a stale-lint signal
         return None, (
             f"{_THREAD_CAPS_GUARD_REL}: check-torch-before-dotenv: importing the #847 guard "
             f"module failed ({type(exc).__name__}: {exc})."
