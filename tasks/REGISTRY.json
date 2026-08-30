@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2646,
+  "highest_id": 2647,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12701,6 +12701,13 @@
       "path": "tasks/running/2646",
       "status": "running",
       "title": "persist_verdict_concerns: fail loud when CONCERN:: rows ingest to zero (silent no-op drops a reviewer's concerns)"
+    },
+    "2647": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2647",
+      "status": "proposed",
+      "title": "Add a runtime backstop that reports a stale Step 9c known-red ledger"
     },
     "265": {
       "has_clean_result": false,
