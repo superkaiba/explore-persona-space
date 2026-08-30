@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2647,
+  "highest_id": 2648,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12708,6 +12708,13 @@
       "path": "tasks/proposed/2647",
       "status": "proposed",
       "title": "Add a runtime backstop that reports a stale Step 9c known-red ledger"
+    },
+    "2648": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2648",
+      "status": "proposed",
+      "title": "Clear the torch-before-dotenv red on main that reds every Step 9c gate"
     },
     "265": {
       "has_clean_result": false,
