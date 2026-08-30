@@ -594,3 +594,84 @@ start `- <id>:` so the final line-start `CONCERN:: ` count stays exactly 1
 (the grammar row); the stripped-tags/blockquoted-rows rclose form keeps tag
 arithmetic at own-head==1/close==1/prior==0 with reconcile tags kept (==1,
 different kind).
+
+**#2384 r1 (2026-08-29) sharpenings — DUAL-LEG gate variant (one commit ships a
+NEW standalone pre-persist helper in `scripts/` that only PROSE dispatches it,
+PLUS a WARN-only check inside `verify_plan.py`):**
+
+(a) **Marker-kind probe must try BOTH prefixes, and the kind flips Step 4.6
+OFF.** `kind: infra` does NOT imply `epm:results` — #2384's implementer posted
+`epm:experiment-implementation` (the `--prefix epm:results` fetch returned
+`(no events)`; the second probe found it). That kind choice is load-bearing for
+the rubric: Step 4.6 binds ONLY on `epm:results` reports, so a missing
+`**Gate-scope check (#1288):**` line is NOT a finding at all. Attest the kind +
+"Step 4.6 does not bind; never emit a `marker-shape` blocker naming
+`Gate-scope check`" — otherwise the twin manufactures a mechanical blocker the
+Step 5c-bis strip is keyed to remove, burning a round. Step 0.5 still binds,
+and the changed-path pin-read duty (F8-style) survives as a Step 4 duty.
+
+(b) **A marker with NO `### (a)`-`### (d)` H3s at all: state the observable,
+refuse the adjudication.** #2384's body used bolded run-in headings
+(`**What shipped ...:**` / `**Verification so far:**`). That is materially more
+severe than the #2367-r2 pre-triage cases (bare head sentinel, missing `(e)`),
+so do NOT pre-route it to CONCERNS — write the neutral observable, hand Step
+0.5's absence-vs-cosmetics discipline over verbatim, and require the twin to
+say which it chose. ALSO flag it to the orchestrator in the RETURN: a
+non-conforming marker means the strip cannot apply, so the round bounces on
+report shape rather than code, and the orchestrator may prefer a re-post
+before dispatch.
+
+(c) **Prose-dispatched helper ⇒ hollow-gate mapping is "documented
+procedure"** (generalizes #2365(c) to a scripts/ entrypoint with zero code
+callers): does the SKILL.md / step-file block carry the EXACT runnable command,
+does it resolve from the cwd that step runs in, and is the state-capture
+instruction (`DRAFT_START="$(date +%s)"`) placed where the step it names
+actually fires — with the never-refresh clause intact? Pair it with the
+code-dispatched half (is the new check registered AND reached on both CLI
+modes, cross-checked against the count-pin bump).
+
+(d) **A registration-ONLY `select_step9c_tests.py` edit narrows
+[[selector-self-edit-compose]] sharply.** +5/-0 adding one `WORKFLOW_INVARIANT`
+tuple entry + a comment, with the matching manifest `+1`: no selection logic,
+so the fail-closed / partially-materialized-checkout / mode-isolation
+hypotheses are N/A. State that, and keep exactly two duties — manifest↔tuple
+LOCKSTEP (name the live pin) and the registration's own STATED-PURPOSE claim
+quoted from the new comment ("this is what makes the pin RUN on a prose-only
+diff"), verified from the selector's code, not the comment.
+
+(e) **Grandfather-raise counterfactual has a THIRD case beyond MANDATED
+(#2364(b)) and OVERCLAIMED (#2610 r2): headroom-arm-driven.** #2384 measured
+82,210 B under an old cap of 82,700 — the size>cap arm would NOT have tripped
+(so not mandated), but old-cap headroom was 490 B, under the 2,000 B
+`guard_skill_doc_headroom.sh` warn floor, and the commit comment claims exactly
+that without asserting a mandate. Attest the full arithmetic as SETTLED
+(measured `wc -c`, corridor-max, both headrooms, `SKILL_DOC_WARN_BYTES` /
+`SKILL_DOC_FAIL_BYTES` / `SKILL_DOC_GRANDFATHER_MAX_HEADROOM_BYTES` with line
+numbers) and hand the LEGITIMACY question over: is a headroom-warn-driven raise
+compliant with the regrowth-ratchet policy? Route compliant-but-overstated as
+Minor report-accuracy, arm-violating as substantive.
+
+(f) **Pre-settle a plan `must-ask` fence that LOOKS breached but is not.** The
+brief called the helper "blocking" while plan §7 makes "making the helper leg
+blocking rather than surface-and-disposition" a must-ask — but §3.1 itself
+specifies `3 = STALE (actionable)`. Compose the settled framing ("exit 3 IS the
+plan-sanctioned shape; the reviewable question is whether the SHIPPED semantics
+match it") so the twin audits exit-path reachability instead of inventing a
+deviation. Same move for any brief-vs-plan vocabulary mismatch.
+
+(g) **Fail-soft rounds get a `BaseException`-boundary question, named.** A
+"never blocks on its own crash" criterion implemented as one top-level
+`except Exception` does NOT catch `SystemExit` (argparse raises `SystemExit(2)`
+on a malformed CLI). Hand it as a DECIDE-don't-assume item (exit 2 ≠ the
+actionable exit 3, so it may well be correct) rather than as a finding.
+
+Also validated again on this round: TAG-first wf-fix detection (tags `wf-fix`
+AND `workflow-fix:` title prefix — floor BINDS); plan-verify version nuance
+(PASS recorded at v4, plan amended to v9 through four critic REVISE rounds —
+attest both, at-most-CONCERNS routing); roster ARMING form with FOUR roster
+paths touched at once (the new helper added at :48 plus three pre-existing
+members); #1805 duty armed by a true `A` in `--name-status` and
+composer-discharged by a no-Hub-calls grep; three-grain `grep -F` recount with
+the removed literal probed at `origin/main` too (0 both sides ⇒ no orphaned
+pin); truthful identical-worktree-plan envelope inlined anyway; ledger-empty
+attest; three-direction stakes with crash-safety as the worst leg.

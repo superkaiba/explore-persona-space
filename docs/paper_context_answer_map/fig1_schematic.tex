@@ -1,5 +1,6 @@
-% Figure 1 (left panel) — concept schematic, DRAFT for review
-% One (mostly) linear map W from the context vector to the predicted answer vector.
+% Figure 1 (left panel) — concept schematic
+% One affine context-to-answer map M_l from the context vector to the predicted
+% answer vector.
 % Rev 2 (2026-08-19, Thomas review): story row removed — single schematic row;
 % tokens explicitly annotated as residual-stream vectors.
 % Compile standalone: pdflatex fig1_schematic.tex
@@ -28,7 +29,7 @@
 \node[vans, right=26mm of c3] (a1) {\scriptsize $\hat v_A$};
 \node[lbl, below=0.5mm of a1] {\scriptsize predicted answer vector};
 \node[lbl, below=4.5mm of a1] {\scriptsize (mean over answer tokens)};
-\draw[maparrow] (c3) -- node[above, lbl, purple!70!black] {\scriptsize $W$ (linear)} (a1);
+\draw[maparrow] (c3) -- node[above, lbl, purple!70!black] {\scriptsize $M_\ell$ (affine)} (a1);
 % ---------- readouts ----------
 \node[tok, right=9mm of a1, align=left] (b1) {\scriptsize sycophancy? evil?\\[-2pt]\scriptsize hallucination?};
 \draw[readout] (a1) -- node[above, lbl] {\scriptsize readouts} (b1);

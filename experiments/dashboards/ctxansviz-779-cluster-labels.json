@@ -1,0 +1,3354 @@
+{
+  "schema_version": 2,
+  "generated_utc": "2026-08-30 17:41 UTC",
+  "render_commit": "7283abba+dirty",
+  "algorithm": {
+    "name": "MiniBatchKMeans",
+    "k_per_role": 50,
+    "feature_space": "separate context and answer assignments in pinned joint PCA-100",
+    "fit_population_n": 959844,
+    "seed": 42
+  },
+  "labeler": {
+    "cli": "claude -p with tools disabled and JSON-schema output",
+    "requested_model": "sonnet",
+    "prompt_sha256": "f8e07334166ca1f6315ae04459d301ac573dd5bdefcf3d6a51db0025825b955e",
+    "taxonomy": [
+      "knowledge/explanation",
+      "coding/technical",
+      "math/reasoning",
+      "writing/editing",
+      "creative/roleplay",
+      "translation/language",
+      "extraction/formatting",
+      "advice/planning",
+      "social/conversation",
+      "media/fandom/games",
+      "business/professional",
+      "sensitive/safety",
+      "other/mixed"
+    ],
+    "call": {
+      "model": {
+        "claude-sonnet-5": {
+          "inputTokens": 2,
+          "outputTokens": 40961,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 387435,
+          "webSearchRequests": 0,
+          "costUSD": 1.3782014999999999,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "duration_api_ms": 350493,
+      "total_cost_usd": 1.3782014999999999,
+      "stop_reason": "tool_use",
+      "stderr": "⚠ claude.ai connectors are disabled because ANTHROPIC_API_KEY or another auth source is set and takes precedence over your claude.ai login · Unset it to load your organization's connectors"
+    }
+  },
+  "source": {
+    "coords_sha256": "64e74c6010cf6f4bd3ba1dd1c58247302405a1d81959a82ea57349a68f48410f",
+    "chunks": [
+      "shard00_chunk0000.pt",
+      "shard03_chunk0030.pt",
+      "shard07_chunk0000.pt",
+      "shard10_chunk0030.pt",
+      "shard14_chunk0000.pt",
+      "shard17_chunk0028.pt",
+      "shard17_chunk0031.pt",
+      "shard21_chunk0003.pt",
+      "shard24_chunk0036.pt",
+      "shard28_chunk0008.pt",
+      "shard31_chunk0040.pt"
+    ],
+    "safe_source": "WildChat rows passing the dashboard publication filter",
+    "raw_lmsys_prompt_or_answer_examples_sent_to_llm": false,
+    "mixed_corpus_tfidf_terms_sent_to_llm": false,
+    "tfidf_source": "publication-safe WildChat display rows only",
+    "tfidf_params": {
+      "ngram_range": [
+        1,
+        2
+      ],
+      "min_df": 2,
+      "max_df": 0.98,
+      "max_features": 25000,
+      "sublinear_tf": true
+    },
+    "complete_examples_not_character_truncated": true,
+    "coverage": {
+      "context": {
+        "n_safe_display_rows": 2436,
+        "clusters_with_safe_exemplars": 47,
+        "term_only_clusters": [
+          29,
+          34,
+          41
+        ]
+      },
+      "answer": {
+        "n_safe_display_rows": 2436,
+        "clusters_with_safe_exemplars": 47,
+        "term_only_clusters": [
+          12,
+          25,
+          42
+        ]
+      }
+    }
+  },
+  "public_evidence": [
+    {
+      "role": "context",
+      "cluster": 0,
+      "top_tfidf_terms": [
+        "list",
+        "粗チン",
+        "comment",
+        "apple",
+        "have female",
+        "perform chokehold",
+        "character perform",
+        "chokehold",
+        "chokehold with",
+        "legs in",
+        "female character",
+        "me list",
+        "in it",
+        "with",
+        "perform"
+      ],
+      "safe_exemplar_cis": [
+        525801,
+        738247
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 1,
+      "top_tfidf_terms": [
+        "odd parents",
+        "odd",
+        "parents",
+        "song",
+        "fairly odd",
+        "fairly",
+        "parents fairly",
+        "for",
+        "write",
+        "theme song",
+        "напиши",
+        "his",
+        "theme",
+        "kid",
+        "and"
+      ],
+      "safe_exemplar_cis": [
+        738095,
+        950055
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 2,
+      "top_tfidf_terms": [
+        "контроля",
+        "еще",
+        "ru",
+        "destroy",
+        "cf",
+        "https",
+        "qu",
+        "duplex",
+        "make an",
+        "etape",
+        "java",
+        "粗チン",
+        "bin",
+        "请把下面的日文翻译成中文",
+        "script"
+      ],
+      "safe_exemplar_cis": [
+        738391,
+        631678
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 3,
+      "top_tfidf_terms": [
+        "repeat",
+        "exactly",
+        "the",
+        "ok",
+        "rules",
+        "it",
+        "you",
+        "and",
+        "of",
+        "put your",
+        "списка",
+        "api",
+        "виде",
+        "your",
+        "response"
+      ],
+      "safe_exemplar_cis": [
+        525842,
+        631870
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 4,
+      "top_tfidf_terms": [
+        "the",
+        "what",
+        "of",
+        "and",
+        "explain",
+        "are",
+        "what is",
+        "what are",
+        "in",
+        "is",
+        "are the",
+        "of the",
+        "the ionian",
+        "ionian",
+        "ionian scale"
+      ],
+      "safe_exemplar_cis": [
+        631904,
+        738133
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 5,
+      "top_tfidf_terms": [
+        "请以",
+        "article",
+        "an article",
+        "essay",
+        "word",
+        "about",
+        "on",
+        "active",
+        "write",
+        "the",
+        "essay on",
+        "and",
+        "article about",
+        "why not",
+        "not good"
+      ],
+      "safe_exemplar_cis": [
+        631517,
+        738204
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 6,
+      "top_tfidf_terms": [
+        "the",
+        "of",
+        "当s",
+        "integral",
+        "what are",
+        "x2",
+        "key of",
+        "find",
+        "the chords",
+        "chords",
+        "chords of",
+        "the key",
+        "de",
+        "is",
+        "what"
+      ],
+      "safe_exemplar_cis": [
+        631932,
+        950232
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 7,
+      "top_tfidf_terms": [
+        "characters",
+        "naruto",
+        "sonic",
+        "freedom planet",
+        "nba",
+        "planet",
+        "freedom",
+        "sonic characters",
+        "write nba",
+        "season with",
+        "nba season",
+        "react to",
+        "react",
+        "to",
+        "season"
+      ],
+      "safe_exemplar_cis": [
+        844389,
+        844269
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 8,
+      "top_tfidf_terms": [
+        "код",
+        "на",
+        "python",
+        "bat",
+        "напиши",
+        "их",
+        "напиши код",
+        "код на",
+        "фаил",
+        "un",
+        "индексы",
+        "этои",
+        "intent",
+        "для",
+        "числа"
+      ],
+      "safe_exemplar_cis": [
+        631623,
+        631695
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 9,
+      "top_tfidf_terms": [
+        "de",
+        "la",
+        "на",
+        "напиши",
+        "en",
+        "los",
+        "las",
+        "con",
+        "по",
+        "su",
+        "عن",
+        "для",
+        "un",
+        "el",
+        "que"
+      ],
+      "safe_exemplar_cis": [
+        950319,
+        844250
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 10,
+      "top_tfidf_terms": [
+        "for",
+        "the",
+        "me",
+        "of",
+        "in",
+        "and",
+        "to",
+        "create",
+        "questions",
+        "you",
+        "make",
+        "on",
+        "interview",
+        "about",
+        "can"
+      ],
+      "safe_exemplar_cis": [
+        738127,
+        738262
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 11,
+      "top_tfidf_terms": [
+        "die",
+        "der",
+        "sg",
+        "das",
+        "sg die",
+        "sg das",
+        "german",
+        "sg der",
+        "und",
+        "examples",
+        "german words",
+        "the german",
+        "examples by",
+        "pl",
+        "slash"
+      ],
+      "safe_exemplar_cis": [
+        738453,
+        738456
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 12,
+      "top_tfidf_terms": [
+        "in",
+        "the",
+        "what",
+        "is",
+        "what is",
+        "com",
+        "describe",
+        "of",
+        "how many",
+        "is the",
+        "name",
+        "to",
+        "song",
+        "for",
+        "how"
+      ],
+      "safe_exemplar_cis": [
+        738390,
+        844246
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 13,
+      "top_tfidf_terms": [
+        "改写",
+        "the",
+        "in",
+        "to",
+        "and",
+        "of",
+        "for",
+        "please",
+        "translate",
+        "同时",
+        "we",
+        "please translate",
+        "in the",
+        "this",
+        "ориентации"
+      ],
+      "safe_exemplar_cis": [
+        631737,
+        844106
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 14,
+      "top_tfidf_terms": [
+        "de",
+        "sa",
+        "del",
+        "pagbabaybay",
+        "sa pagbabaybay",
+        "que",
+        "la",
+        "en",
+        "teorya",
+        "برای",
+        "trong",
+        "du",
+        "va",
+        "ve",
+        "ng"
+      ],
+      "safe_exemplar_cis": [
+        950234,
+        950321
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 15,
+      "top_tfidf_terms": [
+        "are you",
+        "you",
+        "are",
+        "gpt",
+        "what version",
+        "version of",
+        "version",
+        "what",
+        "this chat",
+        "can you",
+        "is this",
+        "chatgpt",
+        "is",
+        "chat gpt",
+        "chat"
+      ],
+      "safe_exemplar_cis": [
+        525805,
+        631556
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 16,
+      "top_tfidf_terms": [
+        "任务模板",
+        "需要更换同义词",
+        "需要更换同义词 input_template",
+        "需要在中心主题表达思想大体不发生变化的前提下",
+        "produce",
+        "ai is",
+        "midjourney",
+        "midjourney ai",
+        "etc",
+        "ai",
+        "to you",
+        "prompt",
+        "words",
+        "instead of",
+        "does not"
+      ],
+      "safe_exemplar_cis": [
+        525920,
+        525978
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 17,
+      "top_tfidf_terms": [
+        "natsuki",
+        "her",
+        "sayori",
+        "yuri",
+        "she",
+        "monika",
+        "the",
+        "but",
+        "just",
+        "and",
+        "it",
+        "in",
+        "to",
+        "something",
+        "of"
+      ],
+      "safe_exemplar_cis": [
+        844142,
+        844238
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 18,
+      "top_tfidf_terms": [
+        "code",
+        "给出python代码",
+        "纵坐标大于400",
+        "code for",
+        "in",
+        "the",
+        "to",
+        "for",
+        "python",
+        "make",
+        "browser",
+        "除非机器人返回信息 然后还要兼容pc和手机端",
+        "除非机器人返回信息",
+        "vue",
+        "write code"
+      ],
+      "safe_exemplar_cis": [
+        738490,
+        525892
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 19,
+      "top_tfidf_terms": [
+        "ar",
+        "prompt",
+        "description",
+        "detailed",
+        "detailed description",
+        "description of",
+        "prompts",
+        "imagine prompt",
+        "imagine",
+        "style",
+        "the scene's",
+        "scene's",
+        "ar for",
+        "lens",
+        "coffee"
+      ],
+      "safe_exemplar_cis": [
+        844177,
+        844344
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 20,
+      "top_tfidf_terms": [
+        "hello",
+        "hi",
+        "there",
+        "here",
+        "hello chatgpt",
+        "how are",
+        "i'm so",
+        "my",
+        "happy",
+        "why",
+        "chatgpt",
+        "i'm",
+        "today am",
+        "are you",
+        "years old"
+      ],
+      "safe_exemplar_cis": [
+        738406,
+        950211
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 21,
+      "top_tfidf_terms": [
+        "bir",
+        "muy",
+        "fisico de",
+        "muy bien",
+        "de",
+        "fisico",
+        "la",
+        "un",
+        "el",
+        "bien",
+        "the",
+        "to",
+        "april",
+        "she",
+        "de la"
+      ],
+      "safe_exemplar_cis": [
+        631696,
+        844049
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 22,
+      "top_tfidf_terms": [
+        "how",
+        "to",
+        "the",
+        "my",
+        "for",
+        "what",
+        "how to",
+        "how do",
+        "do",
+        "in",
+        "can",
+        "want",
+        "survey",
+        "what are",
+        "the best"
+      ],
+      "safe_exemplar_cis": [
+        950108,
+        525919
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 23,
+      "top_tfidf_terms": [
+        "the",
+        "та",
+        "киів",
+        "in",
+        "to",
+        "до",
+        "що",
+        "paragraph",
+        "and",
+        "of",
+        "році",
+        "як",
+        "на",
+        "on",
+        "this"
+      ],
+      "safe_exemplar_cis": [
+        738132,
+        738176
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 24,
+      "top_tfidf_terms": [
+        "what",
+        "the",
+        "of",
+        "are",
+        "and",
+        "that",
+        "what are",
+        "philippines",
+        "in",
+        "give me",
+        "list of",
+        "with good",
+        "which",
+        "list",
+        "with"
+      ],
+      "safe_exemplar_cis": [
+        631804,
+        738171
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 25,
+      "top_tfidf_terms": [
+        "story",
+        "write",
+        "and",
+        "story about",
+        "of",
+        "about",
+        "her",
+        "is",
+        "to",
+        "the",
+        "she",
+        "with",
+        "write story",
+        "long",
+        "it"
+      ],
+      "safe_exemplar_cis": [
+        631718,
+        631561
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 26,
+      "top_tfidf_terms": [
+        "有哪些方法",
+        "如何",
+        "httpwebrequest",
+        "有哪些方法 途径",
+        "途径",
+        "relationships",
+        "park",
+        "概念隐喻理论和意象图式理论",
+        "and technology",
+        "sellers",
+        "rank",
+        "technical",
+        "technology",
+        "best",
+        "facebook instagram"
+      ],
+      "safe_exemplar_cis": [
+        950262,
+        950387
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 27,
+      "top_tfidf_terms": [
+        "привет",
+        "ты",
+        "gpt",
+        "кто",
+        "или",
+        "is this",
+        "model is",
+        "hello",
+        "model",
+        "what",
+        "this",
+        "is"
+      ],
+      "safe_exemplar_cis": [
+        525768,
+        525887
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 28,
+      "top_tfidf_terms": [
+        "курсовои",
+        "привет",
+        "can you",
+        "can",
+        "мне",
+        "you",
+        "bir",
+        "lets",
+        "tell",
+        "text",
+        "story",
+        "minecraft",
+        "you tell",
+        "check",
+        "my"
+      ],
+      "safe_exemplar_cis": [
+        631906,
+        844422
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 29,
+      "top_tfidf_terms": [],
+      "safe_exemplar_cis": []
+    },
+    {
+      "role": "context",
+      "cluster": 30,
+      "top_tfidf_terms": [
+        "هل",
+        "de",
+        "почему",
+        "кг",
+        "que",
+        "est",
+        "un",
+        "على",
+        "en",
+        "le",
+        "для",
+        "как",
+        "si",
+        "karin",
+        "karin ritter"
+      ],
+      "safe_exemplar_cis": [
+        738128,
+        950107
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 31,
+      "top_tfidf_terms": [
+        "and",
+        "her",
+        "jane",
+        "year old",
+        "write",
+        "old",
+        "the",
+        "year",
+        "to",
+        "from",
+        "aaron",
+        "scene",
+        "of",
+        "jane year",
+        "with"
+      ],
+      "safe_exemplar_cis": [
+        844015,
+        844205
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 32,
+      "top_tfidf_terms": [
+        "how",
+        "how to",
+        "to",
+        "在backtrader中 自义定一个画线指标",
+        "在backtrader中",
+        "自义定一个画线指标",
+        "httpwebrequest",
+        "in",
+        "the",
+        "flutter",
+        "python",
+        "of",
+        "android",
+        "react",
+        "how do"
+      ],
+      "safe_exemplar_cis": [
+        631771,
+        631652
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 33,
+      "top_tfidf_terms": [
+        "and",
+        "to",
+        "the",
+        "write",
+        "in",
+        "of",
+        "for",
+        "you",
+        "on",
+        "is",
+        "it",
+        "be",
+        "that",
+        "are",
+        "can"
+      ],
+      "safe_exemplar_cis": [
+        950216,
+        950092
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 34,
+      "top_tfidf_terms": [],
+      "safe_exemplar_cis": []
+    },
+    {
+      "role": "context",
+      "cluster": 35,
+      "top_tfidf_terms": [
+        "the",
+        "of",
+        "and",
+        "to",
+        "in",
+        "that",
+        "is",
+        "for",
+        "be",
+        "as",
+        "of the",
+        "or",
+        "with",
+        "are",
+        "it"
+      ],
+      "safe_exemplar_cis": [
+        525830,
+        950140
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 36,
+      "top_tfidf_terms": [
+        "de",
+        "la",
+        "que",
+        "verbos",
+        "un",
+        "en",
+        "instagram",
+        "para",
+        "como",
+        "del",
+        "per",
+        "et",
+        "una",
+        "mi",
+        "anti"
+      ],
+      "safe_exemplar_cis": [
+        738433,
+        950220
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 37,
+      "top_tfidf_terms": [
+        "придумаи",
+        "для",
+        "de",
+        "un",
+        "напиши",
+        "que",
+        "la",
+        "как",
+        "придумаи гимн",
+        "гимн мишляндии",
+        "гимн",
+        "мишляндии",
+        "عن",
+        "из",
+        "moi"
+      ],
+      "safe_exemplar_cis": [
+        738405,
+        950325
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 38,
+      "top_tfidf_terms": [
+        "to",
+        "para",
+        "de",
+        "subtitulos",
+        "palabras",
+        "write",
+        "con",
+        "the",
+        "and",
+        "of",
+        "for",
+        "email",
+        "on",
+        "formato",
+        "respuestas"
+      ],
+      "safe_exemplar_cis": [
+        631502,
+        950053
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 39,
+      "top_tfidf_terms": [
+        "to",
+        "you",
+        "the",
+        "and",
+        "is",
+        "rules",
+        "this",
+        "in",
+        "with",
+        "it",
+        "hardrules",
+        "that",
+        "of",
+        "virtual",
+        "virtual machine"
+      ],
+      "safe_exemplar_cis": [
+        525798,
+        844463
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 40,
+      "top_tfidf_terms": [
+        "请把下面的日文翻译成中文",
+        "请把下面的中文翻译成日文",
+        "translate",
+        "translate to",
+        "to",
+        "to english",
+        "usb",
+        "power",
+        "sentence i'm",
+        "drunk",
+        "right now",
+        "the sentence",
+        "so drunk",
+        "drunk right",
+        "i'm so"
+      ],
+      "safe_exemplar_cis": [
+        844368,
+        950300
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 41,
+      "top_tfidf_terms": [],
+      "safe_exemplar_cis": []
+    },
+    {
+      "role": "context",
+      "cluster": 42,
+      "top_tfidf_terms": [
+        "stock in",
+        "if he",
+        "has an",
+        "uno",
+        "he has",
+        "stock",
+        "this price",
+        "game",
+        "ask",
+        "he",
+        "price",
+        "moq",
+        "vendor",
+        "me list",
+        "in"
+      ],
+      "safe_exemplar_cis": [
+        738232,
+        844414
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 43,
+      "top_tfidf_terms": [
+        "you write",
+        "can you",
+        "translate to",
+        "этот код",
+        "code",
+        "исправь",
+        "of",
+        "to english",
+        "and why",
+        "этот",
+        "the code",
+        "the",
+        "can",
+        "please",
+        "and"
+      ],
+      "safe_exemplar_cis": [
+        950282,
+        844469
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 44,
+      "top_tfidf_terms": [
+        "what is",
+        "is",
+        "what",
+        "who is",
+        "who",
+        "gpu",
+        "format",
+        "stable",
+        "what does",
+        "粗チン",
+        "chevrolet",
+        "bread",
+        "ritter",
+        "swift",
+        "duplex"
+      ],
+      "safe_exemplar_cis": [
+        631733,
+        631809
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 45,
+      "top_tfidf_terms": [
+        "if",
+        "false",
+        "data",
+        "const",
+        "id",
+        "def",
+        "config",
+        "return",
+        "in",
+        "for",
+        "int",
+        "this",
+        "import",
+        "else",
+        "string"
+      ],
+      "safe_exemplar_cis": [
+        525879,
+        631824
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 46,
+      "top_tfidf_terms": [
+        "на",
+        "как",
+        "если",
+        "от",
+        "какие",
+        "можно",
+        "для",
+        "что",
+        "по",
+        "инновационного",
+        "ли",
+        "почему",
+        "это",
+        "требования",
+        "или"
+      ],
+      "safe_exemplar_cis": [
+        950171,
+        950371
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 47,
+      "top_tfidf_terms": [
+        "the",
+        "is",
+        "can",
+        "to",
+        "what",
+        "of",
+        "in",
+        "that",
+        "and",
+        "is the",
+        "does",
+        "worship",
+        "are",
+        "did",
+        "it"
+      ],
+      "safe_exemplar_cis": [
+        738043,
+        525580
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 48,
+      "top_tfidf_terms": [
+        "the",
+        "for",
+        "of",
+        "and",
+        "in",
+        "месяц",
+        "to",
+        "los",
+        "bullet points",
+        "contenidos",
+        "points",
+        "bullet",
+        "la",
+        "en",
+        "medios"
+      ],
+      "safe_exemplar_cis": [
+        844377,
+        738394
+      ]
+    },
+    {
+      "role": "context",
+      "cluster": 49,
+      "top_tfidf_terms": [
+        "tang",
+        "the",
+        "to",
+        "of",
+        "is",
+        "confidence",
+        "and",
+        "your confidence",
+        "confidence that",
+        "answer is",
+        "that",
+        "that your",
+        "is correct",
+        "your answer",
+        "to your"
+      ],
+      "safe_exemplar_cis": [
+        525862,
+        950265
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 0,
+      "top_tfidf_terms": [
+        "此外",
+        "不过",
+        "请注意",
+        "然而",
+        "例如",
+        "因此",
+        "同时",
+        "具体来说",
+        "值得注意的是",
+        "但请注意",
+        "近年来",
+        "或者",
+        "但是",
+        "最后",
+        "比如"
+      ],
+      "safe_exemplar_cis": [
+        525852,
+        631863
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 1,
+      "top_tfidf_terms": [
+        "de",
+        "la",
+        "en",
+        "que",
+        "los",
+        "el",
+        "de la",
+        "para",
+        "un",
+        "del",
+        "como",
+        "las",
+        "en la",
+        "una",
+        "se"
+      ],
+      "safe_exemplar_cis": [
+        525728,
+        738381
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 2,
+      "top_tfidf_terms": [
+        "the",
+        "to",
+        "and",
+        "or",
+        "for",
+        "of",
+        "you",
+        "can",
+        "is",
+        "be",
+        "used",
+        "data",
+        "in",
+        "that",
+        "are"
+      ],
+      "safe_exemplar_cis": [
+        950142,
+        631740
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 3,
+      "top_tfidf_terms": [
+        "return",
+        "import",
+        "if",
+        "const",
+        "def",
+        "int",
+        "class",
+        "print",
+        "python",
+        "for",
+        "для",
+        "np",
+        "data",
+        "in range",
+        "id"
+      ],
+      "safe_exemplar_cis": [
+        631847,
+        631862
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 4,
+      "top_tfidf_terms": [
+        "请告诉我",
+        "不过",
+        "please",
+        "当然可以",
+        "you",
+        "of course",
+        "course",
+        "please provide",
+        "go ahead",
+        "to",
+        "and",
+        "请随时告诉我",
+        "provide",
+        "the",
+        "me"
+      ],
+      "safe_exemplar_cis": [
+        631879,
+        631662
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 5,
+      "top_tfidf_terms": [
+        "the",
+        "and",
+        "of",
+        "to",
+        "his",
+        "in",
+        "with",
+        "for",
+        "is",
+        "that",
+        "her",
+        "as",
+        "of the",
+        "their",
+        "this"
+      ],
+      "safe_exemplar_cis": [
+        738127,
+        844021
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 6,
+      "top_tfidf_terms": [
+        "siento",
+        "that",
+        "or",
+        "sorry but",
+        "i'm",
+        "request",
+        "content",
+        "but can't",
+        "guidelines",
+        "and",
+        "respectful",
+        "sorry",
+        "to",
+        "ethical",
+        "i'm sorry"
+      ],
+      "safe_exemplar_cis": [
+        631523,
+        738164
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 7,
+      "top_tfidf_terms": [
+        "aldh",
+        "inhibit",
+        "aldh2",
+        "acetaldehyde",
+        "can inhibit",
+        "of aldh",
+        "ethanol",
+        "enzyme",
+        "inhibit aldh",
+        "aldh activity",
+        "activity",
+        "inhibit aldh2",
+        "fatty",
+        "compounds",
+        "metabolism"
+      ],
+      "safe_exemplar_cis": [
+        738415,
+        525895
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 8,
+      "top_tfidf_terms": [
+        "ok",
+        "sir",
+        "yes"
+      ],
+      "safe_exemplar_cis": [
+        525978,
+        738362
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 9,
+      "top_tfidf_terms": [
+        "для",
+        "на",
+        "или",
+        "это",
+        "как",
+        "может",
+        "что",
+        "не",
+        "от",
+        "могут",
+        "которые",
+        "быть",
+        "из",
+        "если",
+        "по"
+      ],
+      "safe_exemplar_cis": [
+        631868,
+        950448
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 10,
+      "top_tfidf_terms": [
+        "the",
+        "and",
+        "of",
+        "in",
+        "to",
+        "was",
+        "is",
+        "in the",
+        "for",
+        "of the",
+        "has",
+        "있습니다",
+        "united states",
+        "as",
+        "이"
+      ],
+      "safe_exemplar_cis": [
+        525506,
+        950196
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 11,
+      "top_tfidf_terms": [
+        "好的",
+        "west",
+        "sunset",
+        "love"
+      ],
+      "safe_exemplar_cis": [
+        844007,
+        844402
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 12,
+      "top_tfidf_terms": [],
+      "safe_exemplar_cis": []
+    },
+    {
+      "role": "answer",
+      "cluster": 13,
+      "top_tfidf_terms": [
+        "imagine prompt",
+        "prompt",
+        "ar",
+        "imagine",
+        "ar imagine",
+        "composition",
+        "and",
+        "the",
+        "with",
+        "atmosphere",
+        "capturing",
+        "of",
+        "capturing the",
+        "in",
+        "serene"
+      ],
+      "safe_exemplar_cis": [
+        950472,
+        950144
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 14,
+      "top_tfidf_terms": [
+        "the",
+        "to",
+        "you",
+        "import",
+        "if",
+        "example",
+        "string",
+        "this",
+        "in",
+        "you can",
+        "is",
+        "python",
+        "and",
+        "data",
+        "use"
+      ],
+      "safe_exemplar_cis": [
+        631842,
+        631797
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 15,
+      "top_tfidf_terms": [
+        "the",
+        "her",
+        "and",
+        "of",
+        "to",
+        "she",
+        "was",
+        "with",
+        "in",
+        "his",
+        "as",
+        "that",
+        "but",
+        "of the",
+        "had"
+      ],
+      "safe_exemplar_cis": [
+        525603,
+        738021
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 16,
+      "top_tfidf_terms": [
+        "frac",
+        "the",
+        "times",
+        "chords",
+        "minor",
+        "因此",
+        "text",
+        "of",
+        "approx",
+        "we",
+        "scale",
+        "is",
+        "cdot",
+        "left frac",
+        "to"
+      ],
+      "safe_exemplar_cis": [
+        525531,
+        631647
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 17,
+      "top_tfidf_terms": [
+        "la",
+        "and",
+        "the",
+        "of",
+        "特点",
+        "its",
+        "to",
+        "for",
+        "in",
+        "often",
+        "are",
+        "features",
+        "with",
+        "for its",
+        "is"
+      ],
+      "safe_exemplar_cis": [
+        738460,
+        950063
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 18,
+      "top_tfidf_terms": [
+        "odd",
+        "fairly",
+        "mario",
+        "odd parents",
+        "fairly odd",
+        "and",
+        "the",
+        "now",
+        "parents",
+        "you",
+        "your",
+        "in",
+        "yeah",
+        "to",
+        "yeah right"
+      ],
+      "safe_exemplar_cis": [
+        950470,
+        950397
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 19,
+      "top_tfidf_terms": [
+        "you today",
+        "can assist",
+        "how can",
+        "assist you",
+        "assist",
+        "today",
+        "hello",
+        "or let",
+        "me know",
+        "you",
+        "let me",
+        "know if",
+        "feel free",
+        "free to",
+        "any questions"
+      ],
+      "safe_exemplar_cis": [
+        738396,
+        950308
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 20,
+      "top_tfidf_terms": [
+        "her",
+        "she",
+        "the",
+        "to",
+        "and",
+        "you",
+        "we",
+        "it",
+        "sayori",
+        "but",
+        "my",
+        "just",
+        "of",
+        "in",
+        "me"
+      ],
+      "safe_exemplar_cis": [
+        738108,
+        844134
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 21,
+      "top_tfidf_terms": [
+        "例如",
+        "因此",
+        "综上所述",
+        "此外",
+        "总之",
+        "引言",
+        "结论",
+        "同时",
+        "标题",
+        "首先",
+        "具体来说",
+        "参考文献",
+        "不过",
+        "然而",
+        "安全性"
+      ],
+      "safe_exemplar_cis": [
+        631576,
+        950162
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 22,
+      "top_tfidf_terms": [
+        "вы",
+        "수",
+        "вам",
+        "bir",
+        "или",
+        "veya",
+        "как",
+        "ki",
+        "курсовои",
+        "могу",
+        "помощь",
+        "нужна помощь",
+        "вам нужна",
+        "ve",
+        "нужна"
+      ],
+      "safe_exemplar_cis": [
+        631906,
+        844109
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 23,
+      "top_tfidf_terms": [
+        "and",
+        "the",
+        "to",
+        "of",
+        "in",
+        "for",
+        "can",
+        "are",
+        "or",
+        "that",
+        "is",
+        "on",
+        "such as",
+        "as",
+        "with"
+      ],
+      "safe_exemplar_cis": [
+        950360,
+        631551
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 24,
+      "top_tfidf_terms": [
+        "de",
+        "la",
+        "que",
+        "un",
+        "en",
+        "se",
+        "para",
+        "le",
+        "con",
+        "una",
+        "el",
+        "et",
+        "h2",
+        "il",
+        "une"
+      ],
+      "safe_exemplar_cis": [
+        738291,
+        738313
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 25,
+      "top_tfidf_terms": [],
+      "safe_exemplar_cis": []
+    },
+    {
+      "role": "answer",
+      "cluster": 26,
+      "top_tfidf_terms": [
+        "de",
+        "la",
+        "que",
+        "un",
+        "en",
+        "para",
+        "ou",
+        "el",
+        "si",
+        "di",
+        "il",
+        "es",
+        "tu",
+        "mas",
+        "los"
+      ],
+      "safe_exemplar_cis": [
+        950253,
+        844291
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 27,
+      "top_tfidf_terms": [
+        "例如",
+        "请注意",
+        "因此",
+        "使用",
+        "但是",
+        "具体来说",
+        "此外",
+        "需要注意的是",
+        "示例",
+        "void",
+        "python",
+        "选择",
+        "或者",
+        "然而",
+        "通常"
+      ],
+      "safe_exemplar_cis": [
+        525704,
+        950305
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 28,
+      "top_tfidf_terms": [
+        "конечно вот",
+        "конечно",
+        "gal",
+        "вариантов",
+        "надеюсь",
+        "вот",
+        "для",
+        "названия",
+        "https",
+        "https www",
+        "www",
+        "of",
+        "com",
+        "symphony",
+        "из"
+      ],
+      "safe_exemplar_cis": [
+        525877,
+        525882
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 29,
+      "top_tfidf_terms": [
+        "但是",
+        "the",
+        "to",
+        "moq",
+        "have any",
+        "you",
+        "der",
+        "in",
+        "des",
+        "uno",
+        "for",
+        "sets",
+        "stock",
+        "price",
+        "ist"
+      ],
+      "safe_exemplar_cis": [
+        738427,
+        738232
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 30,
+      "top_tfidf_terms": [
+        "同时",
+        "因此",
+        "标题",
+        "然而",
+        "例如",
+        "比如",
+        "综上所述",
+        "总之",
+        "首先",
+        "请注意",
+        "最后",
+        "此外",
+        "具体来说",
+        "日期",
+        "通过上述方法"
+      ],
+      "safe_exemplar_cis": [
+        631522,
+        631806
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 31,
+      "top_tfidf_terms": [
+        "the",
+        "of",
+        "and",
+        "in",
+        "to",
+        "is",
+        "or",
+        "can",
+        "for",
+        "that",
+        "this",
+        "are",
+        "of the",
+        "it",
+        "used"
+      ],
+      "safe_exemplar_cis": [
+        525579,
+        525602
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 32,
+      "top_tfidf_terms": [
+        "the",
+        "hardrules",
+        "and",
+        "to",
+        "that",
+        "of",
+        "rules",
+        "will",
+        "or",
+        "not",
+        "is",
+        "sentence",
+        "without",
+        "and will",
+        "be"
+      ],
+      "safe_exemplar_cis": [
+        525705,
+        738121
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 33,
+      "top_tfidf_terms": [
+        "your",
+        "to",
+        "and",
+        "name",
+        "the",
+        "you",
+        "for",
+        "of",
+        "for your",
+        "our",
+        "my",
+        "dear",
+        "thank you",
+        "regards",
+        "this"
+      ],
+      "safe_exemplar_cis": [
+        738142,
+        844360
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 34,
+      "top_tfidf_terms": [
+        "alibaba",
+        "alibaba cloud",
+        "by alibaba",
+        "qwen",
+        "cloud",
+        "created by",
+        "created",
+        "am",
+        "am qwen",
+        "large language",
+        "am not",
+        "cloud am",
+        "qwen created",
+        "language",
+        "language model"
+      ],
+      "safe_exemplar_cis": [
+        525928,
+        738496
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 35,
+      "top_tfidf_terms": [
+        "然而",
+        "the",
+        "and",
+        "of",
+        "to",
+        "此外",
+        "in",
+        "因此",
+        "with",
+        "for",
+        "is",
+        "il-10",
+        "nk",
+        "liver",
+        "cells"
+      ],
+      "safe_exemplar_cis": [
+        844485,
+        950080
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 36,
+      "top_tfidf_terms": [
+        "the",
+        "or",
+        "and",
+        "to",
+        "of",
+        "you",
+        "is",
+        "specific",
+        "for",
+        "in",
+        "have",
+        "can",
+        "information",
+        "that",
+        "be"
+      ],
+      "safe_exemplar_cis": [
+        950084,
+        525921
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 37,
+      "top_tfidf_terms": [
+        "to",
+        "the",
+        "and",
+        "of",
+        "or",
+        "is",
+        "in",
+        "be",
+        "for",
+        "that",
+        "legal",
+        "not",
+        "this",
+        "can",
+        "it's"
+      ],
+      "safe_exemplar_cis": [
+        844383,
+        844381
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 38,
+      "top_tfidf_terms": [
+        "station",
+        "power"
+      ],
+      "safe_exemplar_cis": [
+        738282
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 39,
+      "top_tfidf_terms": [
+        "de",
+        "la",
+        "en",
+        "que",
+        "para",
+        "un",
+        "el",
+        "se",
+        "del",
+        "una",
+        "como",
+        "con",
+        "es",
+        "titulo",
+        "su"
+      ],
+      "safe_exemplar_cis": [
+        738352,
+        950005
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 40,
+      "top_tfidf_terms": [
+        "例如",
+        "you please",
+        "could you",
+        "please provide",
+        "provide more",
+        "you",
+        "please",
+        "provide",
+        "could",
+        "more details",
+        "referring",
+        "referring to",
+        "or",
+        "details",
+        "specific"
+      ],
+      "safe_exemplar_cis": [
+        844469,
+        525659
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 41,
+      "top_tfidf_terms": [
+        "and",
+        "the",
+        "to",
+        "can",
+        "of",
+        "or",
+        "for",
+        "is",
+        "in",
+        "it",
+        "be",
+        "like",
+        "that",
+        "can be",
+        "with"
+      ],
+      "safe_exemplar_cis": [
+        738152,
+        844409
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 42,
+      "top_tfidf_terms": [],
+      "safe_exemplar_cis": []
+    },
+    {
+      "role": "answer",
+      "cluster": 43,
+      "top_tfidf_terms": [
+        "and",
+        "to",
+        "can",
+        "the",
+        "of",
+        "in",
+        "is",
+        "that",
+        "or",
+        "your",
+        "with",
+        "health",
+        "for",
+        "are",
+        "be"
+      ],
+      "safe_exemplar_cis": [
+        631520,
+        844255
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 44,
+      "top_tfidf_terms": [
+        "every",
+        "the",
+        "and",
+        "副歌",
+        "chorus",
+        "in",
+        "of",
+        "we",
+        "verse",
+        "to",
+        "my",
+        "am",
+        "with",
+        "yield",
+        "小猫的秘密"
+      ],
+      "safe_exemplar_cis": [
+        738318,
+        738405
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 45,
+      "top_tfidf_terms": [
+        "the",
+        "and",
+        "of",
+        "to",
+        "in",
+        "is",
+        "as",
+        "of the",
+        "that",
+        "for",
+        "cultural",
+        "often",
+        "by",
+        "and the",
+        "with"
+      ],
+      "safe_exemplar_cis": [
+        844295,
+        950066
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 46,
+      "top_tfidf_terms": [
+        "гравитация",
+        "de",
+        "км гравитация",
+        "км",
+        "цвет",
+        "https",
+        "np",
+        "состав",
+        "поверхности",
+        "жидкость",
+        "好的",
+        "с2",
+        "гравитация с2",
+        "с2 состав",
+        "планета"
+      ],
+      "safe_exemplar_cis": [
+        844297,
+        844240
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 47,
+      "top_tfidf_terms": [
+        "der",
+        "die",
+        "ist",
+        "und",
+        "das",
+        "fur",
+        "eine",
+        "sie",
+        "den",
+        "im",
+        "ein",
+        "zu",
+        "in der",
+        "er",
+        "ich"
+      ],
+      "safe_exemplar_cis": [
+        738443,
+        738456
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 48,
+      "top_tfidf_terms": [
+        "and",
+        "the",
+        "to",
+        "for",
+        "of",
+        "your",
+        "in",
+        "or",
+        "with",
+        "on",
+        "you",
+        "data",
+        "that",
+        "management",
+        "can"
+      ],
+      "safe_exemplar_cis": [
+        525913,
+        631792
+      ]
+    },
+    {
+      "role": "answer",
+      "cluster": 49,
+      "top_tfidf_terms": [
+        "في",
+        "من",
+        "على",
+        "na",
+        "sa",
+        "та",
+        "ng",
+        "ان",
+        "bir",
+        "mga",
+        "ang",
+        "що",
+        "році",
+        "киів",
+        "до"
+      ],
+      "safe_exemplar_cis": [
+        738141,
+        950229
+      ]
+    }
+  ],
+  "labels": [
+    {
+      "role": "answer",
+      "cluster": 0,
+      "name": "Chinese hedged explanatory answers",
+      "category": "knowledge/explanation",
+      "description": "Answers in Chinese explain a topic while heavily using hedging and transition markers such as 'however', 'note that', and 'in addition'.",
+      "confidence": "medium",
+      "basis": "top terms are Chinese discourse connectives; both exemplars are hedged explanatory answers"
+    },
+    {
+      "role": "answer",
+      "cluster": 1,
+      "name": "Multilingual detailed advice answers",
+      "category": "advice/planning",
+      "description": "Long-form advice answers styled in Spanish/Vietnamese/Italian cover topics like spiritual practice or cognitive-health tips.",
+      "confidence": "low",
+      "basis": "top terms are Spanish function words; 2 exemplars are detailed advice in different languages"
+    },
+    {
+      "role": "answer",
+      "cluster": 2,
+      "name": "General technical explanation answers",
+      "category": "knowledge/explanation",
+      "description": "Answers explain general technical concepts step by step, such as how a computer clock works or how to save chat conversations.",
+      "confidence": "medium",
+      "basis": "terms are generic explanatory function words; exemplars are step-based technical explanations"
+    },
+    {
+      "role": "answer",
+      "cluster": 3,
+      "name": "Code implementation answers",
+      "category": "coding/technical",
+      "description": "Answers provide runnable source code with explanations, such as Verilog modules with testbenches or RxJS examples in NestJS.",
+      "confidence": "high",
+      "basis": "top terms include 'return/import/def/python'; both exemplars are full code listings"
+    },
+    {
+      "role": "answer",
+      "cluster": 4,
+      "name": "Clarifying-question follow-up replies",
+      "category": "social/conversation",
+      "description": "Short replies ask the user to provide more context or details before the assistant can complete the requested task.",
+      "confidence": "high",
+      "basis": "top terms include 'please provide/of course'; both exemplars are clarification requests"
+    },
+    {
+      "role": "answer",
+      "cluster": 5,
+      "name": "Creative fandom and game concept answers",
+      "category": "media/fandom/games",
+      "description": "Answers generate creative content tied to fandoms or games, such as Tetris-style game ideas or a Naruto/Helluva Boss crossover roster.",
+      "confidence": "medium",
+      "basis": "both exemplars are fandom/game-idea generation answers; terms are generic narrative connectors"
+    },
+    {
+      "role": "answer",
+      "cluster": 6,
+      "name": "Content-policy refusal responses",
+      "category": "sensitive/safety",
+      "description": "Answers decline to produce requested content, citing ethical or content-guideline concerns, typically for explicit or violent requests.",
+      "confidence": "high",
+      "basis": "top terms include 'sorry/i'm sorry/guidelines'; both exemplars are explicit refusals"
+    },
+    {
+      "role": "answer",
+      "cluster": 7,
+      "name": "Biochemistry factual answers",
+      "category": "knowledge/explanation",
+      "description": "Answers give detailed factual/scientific information, such as fatty-acid composition data or lists of enzyme-inhibiting compounds.",
+      "confidence": "high",
+      "basis": "top terms include 'aldh/enzyme/fatty/metabolism'; both exemplars are biochemistry answers"
+    },
+    {
+      "role": "answer",
+      "cluster": 8,
+      "name": "Short acknowledgment replies",
+      "category": "social/conversation",
+      "description": "Very short answers that simply confirm understanding or agreement, such as '明白' (understood) or 'ok'.",
+      "confidence": "high",
+      "basis": "top terms are 'ok/sir/yes'; both exemplars are single-word acknowledgments"
+    },
+    {
+      "role": "answer",
+      "cluster": 9,
+      "name": "Russian-language advice list answers",
+      "category": "advice/planning",
+      "description": "Answers in Russian provide structured lists of ideas or steps, such as birthday celebration suggestions or innovation-process stages.",
+      "confidence": "medium",
+      "basis": "top terms are Russian connectives; both exemplars are structured Russian list answers"
+    },
+    {
+      "role": "answer",
+      "cluster": 10,
+      "name": "Factual historical/science answers",
+      "category": "knowledge/explanation",
+      "description": "Answers give concise factual information about historical or scientific topics, such as planetary orbital periods or the Titanic's route.",
+      "confidence": "medium",
+      "basis": "both exemplars are short factual answers; terms are generic descriptive words"
+    },
+    {
+      "role": "answer",
+      "cluster": 11,
+      "name": "Short titles and translation snippets",
+      "category": "writing/editing",
+      "description": "Very short outputs consisting of a generated title or a one-word/phrase translation.",
+      "confidence": "low",
+      "basis": "top terms are a handful of content words; both exemplars are extremely short outputs"
+    },
+    {
+      "role": "answer",
+      "cluster": 12,
+      "name": "Uncharacterized public-evidence gap",
+      "category": "other/mixed",
+      "description": "No public-safe TF-IDF terms or exemplars are available in the display sample to characterize this cluster's dominant behavior.",
+      "confidence": "low",
+      "basis": "no terms and no safe exemplars available"
+    },
+    {
+      "role": "answer",
+      "cluster": 13,
+      "name": "Midjourney prompt generation outputs",
+      "category": "creative/roleplay",
+      "description": "Answers produce multiple detailed '/imagine prompt' style Midjourney prompts following a fixed structural template.",
+      "confidence": "high",
+      "basis": "top terms include 'imagine prompt/ar/composition'; both exemplars are Midjourney-format outputs"
+    },
+    {
+      "role": "answer",
+      "cluster": 14,
+      "name": "Programming documentation and code examples",
+      "category": "coding/technical",
+      "description": "Answers explain library APIs or language features and provide accompanying illustrative code examples.",
+      "confidence": "high",
+      "basis": "top terms include 'import/python/example'; both exemplars are documentation-style code explanations"
+    },
+    {
+      "role": "answer",
+      "cluster": 15,
+      "name": "Fiction narrative answers",
+      "category": "creative/roleplay",
+      "description": "Answers continue or generate original fictional narratives, including character-driven stories with dialogue and description.",
+      "confidence": "high",
+      "basis": "top terms are narrative pronouns ('she/her/his'); both exemplars are fiction story continuations"
+    },
+    {
+      "role": "answer",
+      "cluster": 16,
+      "name": "Math problem-solving answers",
+      "category": "math/reasoning",
+      "description": "Answers work through quantitative problems step by step to reach a numeric result, such as probability or geometry calculations.",
+      "confidence": "high",
+      "basis": "top terms include math notation ('frac/times/cdot'); both exemplars show worked calculations"
+    },
+    {
+      "role": "answer",
+      "cluster": 17,
+      "name": "Product and travel overview answers",
+      "category": "knowledge/explanation",
+      "description": "Answers give descriptive overviews of a product or travel destination, such as a car model's features or best sites to visit for a holiday.",
+      "confidence": "medium",
+      "basis": "top terms include 'features/its'; both exemplars are overview-style descriptive answers"
+    },
+    {
+      "role": "answer",
+      "cluster": 18,
+      "name": "Fairly OddParents theme parody lyrics",
+      "category": "creative/roleplay",
+      "description": "Answers produce parody lyrics to the Fairly OddParents theme song, adapted to other franchises like Sonic and Mario.",
+      "confidence": "high",
+      "basis": "top terms name 'fairly odd/parents/mario'; both exemplars are parody lyric outputs"
+    },
+    {
+      "role": "answer",
+      "cluster": 19,
+      "name": "Generic greeting and offer-to-help replies",
+      "category": "social/conversation",
+      "description": "Short generic replies greet the user and offer general assistance, e.g. 'How can I assist you today?'",
+      "confidence": "high",
+      "basis": "top terms include 'assist you/how can'; both exemplars are stock greeting replies"
+    },
+    {
+      "role": "answer",
+      "cluster": 20,
+      "name": "Fan fiction roleplay narrative answers",
+      "category": "creative/roleplay",
+      "description": "Answers continue fandom-based roleplay narratives with named characters, such as DDLC or crossover animated-show scenes.",
+      "confidence": "high",
+      "basis": "top terms include character name 'sayori'; both exemplars are fan-fiction narrative continuations"
+    },
+    {
+      "role": "answer",
+      "cluster": 21,
+      "name": "Chinese academic/structured explanations",
+      "category": "knowledge/explanation",
+      "description": "Answers in Chinese present structured academic content with headings such as introduction and conclusion, e.g. essay intros or technical overviews.",
+      "confidence": "medium",
+      "basis": "top terms include Chinese structural markers ('引言/结论/首先'); both exemplars are structured Chinese essays"
+    },
+    {
+      "role": "answer",
+      "cluster": 22,
+      "name": "Help-offering conversational replies",
+      "category": "social/conversation",
+      "description": "Short conversational answers offer help with a task such as coursework or acknowledge an image request they cannot fulfill.",
+      "confidence": "low",
+      "basis": "terms are generic Russian/mixed conversational words; 2 exemplars diverge in topic"
+    },
+    {
+      "role": "answer",
+      "cluster": 23,
+      "name": "Analytical informational essay answers",
+      "category": "knowledge/explanation",
+      "description": "Answers provide structured, multi-point analysis of a topic such as national defense challenges or health-app landscapes.",
+      "confidence": "low",
+      "basis": "terms are generic connectors; both exemplars are long analytical essay-style answers"
+    },
+    {
+      "role": "answer",
+      "cluster": 24,
+      "name": "Spanish SEO/HTML content answers",
+      "category": "writing/editing",
+      "description": "Answers produce marketing or SEO-oriented content formatted in HTML, such as product descriptions in Spanish.",
+      "confidence": "medium",
+      "basis": "top terms include Spanish function words and 'h2'; both exemplars are HTML-formatted Spanish marketing copy"
+    },
+    {
+      "role": "answer",
+      "cluster": 25,
+      "name": "Uncharacterized public-evidence gap",
+      "category": "other/mixed",
+      "description": "No public-safe TF-IDF terms or exemplars are available in the display sample to characterize this cluster's dominant behavior.",
+      "confidence": "low",
+      "basis": "no terms and no safe exemplars available"
+    },
+    {
+      "role": "answer",
+      "cluster": 26,
+      "name": "Spanish/French clarification answers",
+      "category": "knowledge/explanation",
+      "description": "Short answers in Spanish or French clarify a likely misunderstanding in the user's query before offering further help.",
+      "confidence": "low",
+      "basis": "top terms are Spanish/French function words; both exemplars are clarifying explanations"
+    },
+    {
+      "role": "answer",
+      "cluster": 27,
+      "name": "Chinese technical how-to answers with code",
+      "category": "coding/technical",
+      "description": "Answers in Chinese explain a technical how-to task and include accompanying code, such as a Flutter Rect union function.",
+      "confidence": "medium",
+      "basis": "top terms include Chinese connectives plus 'python/void'; both exemplars pair Chinese explanation with code"
+    },
+    {
+      "role": "answer",
+      "cluster": 28,
+      "name": "Russian creative naming suggestions",
+      "category": "creative/roleplay",
+      "description": "Answers in Russian suggest multiple creative name options for a piece of media, such as a soundtrack title.",
+      "confidence": "medium",
+      "basis": "top terms include 'конечно вот/вариантов/названия'; both exemplars list creative name suggestions"
+    },
+    {
+      "role": "answer",
+      "cluster": 29,
+      "name": "Concise business/summary replies",
+      "category": "business/professional",
+      "description": "Short, to-the-point answers summarize a news item or reply to a business pricing/stock inquiry.",
+      "confidence": "medium",
+      "basis": "top terms include 'moq/price/stock'; both exemplars are terse business-style replies"
+    },
+    {
+      "role": "answer",
+      "cluster": 30,
+      "name": "Chinese advice and encouragement answers",
+      "category": "advice/planning",
+      "description": "Answers in Chinese give encouraging, structured advice on personal topics such as parenting or exam preparation.",
+      "confidence": "medium",
+      "basis": "top terms include Chinese structural connectives; both exemplars are Chinese advice/encouragement text"
+    },
+    {
+      "role": "answer",
+      "cluster": 31,
+      "name": "Technical explanation answers with confidence",
+      "category": "knowledge/explanation",
+      "description": "Answers explain a technical or scientific point and, in some cases, append a numeric confidence rating for the explanation.",
+      "confidence": "medium",
+      "basis": "one exemplar explicitly rates confidence; terms are generic explanatory connectors"
+    },
+    {
+      "role": "answer",
+      "cluster": 32,
+      "name": "Fictional lore and rule-based factual answers",
+      "category": "other/mixed",
+      "description": "A mixed cluster combining fictional world-lore roleplay answers with rule-based factual answers such as insurance enrollment deadlines.",
+      "confidence": "low",
+      "basis": "2 exemplars diverge sharply (fictional lore vs. Medicare rules); terms are generic ('rules/sentence')"
+    },
+    {
+      "role": "answer",
+      "cluster": 33,
+      "name": "Formal letter and announcement writing",
+      "category": "writing/editing",
+      "description": "Answers draft formal written communications such as motivational statements for applications or public announcements.",
+      "confidence": "medium",
+      "basis": "top terms include 'dear/regards/thank you'; both exemplars are formal letter/announcement drafts"
+    },
+    {
+      "role": "answer",
+      "cluster": 34,
+      "name": "AI model self-identification statements",
+      "category": "social/conversation",
+      "description": "Answers state the assistant's identity as Qwen, created by Alibaba Cloud, in response to identity questions.",
+      "confidence": "high",
+      "basis": "top terms explicitly name 'Qwen/Alibaba Cloud'; both exemplars are self-identification statements"
+    },
+    {
+      "role": "answer",
+      "cluster": 35,
+      "name": "Short explanatory paragraph answers",
+      "category": "knowledge/explanation",
+      "description": "Brief paragraph-length answers explain a specific factual point, such as legal justification for police entry or costume design details.",
+      "confidence": "low",
+      "basis": "terms are generic connectors; 2 exemplars are short unrelated explanatory paragraphs"
+    },
+    {
+      "role": "answer",
+      "cluster": 36,
+      "name": "General informational answers",
+      "category": "knowledge/explanation",
+      "description": "Answers give general informational responses to varied questions, such as describing a music genre or rating confidence in a claim.",
+      "confidence": "low",
+      "basis": "terms are generic function words; 2 exemplars diverge in topic"
+    },
+    {
+      "role": "answer",
+      "cluster": 37,
+      "name": "Fandom hypothetical scenario answers",
+      "category": "media/fandom/games",
+      "description": "Answers speculate on how fictional characters, such as Sonic the Hedgehog, would react to an unusual hypothetical situation.",
+      "confidence": "medium",
+      "basis": "both exemplars discuss Sonic characters' hypothetical reactions; terms are generic modal words"
+    },
+    {
+      "role": "answer",
+      "cluster": 38,
+      "name": "Slogan generation for a product",
+      "category": "business/professional",
+      "description": "Very short answers generate a marketing slogan for a specific product, such as a power station.",
+      "confidence": "low",
+      "basis": "top terms are 'station/power'; single available exemplar is a slogan output"
+    },
+    {
+      "role": "answer",
+      "cluster": 39,
+      "name": "Spanish technical and advice answers",
+      "category": "knowledge/explanation",
+      "description": "Answers in Spanish explain a technical tool or give practical advice, such as a proxy application's purpose or remembering phone patterns.",
+      "confidence": "medium",
+      "basis": "top terms are Spanish function words; both exemplars are Spanish technical/advice explanations"
+    },
+    {
+      "role": "answer",
+      "cluster": 40,
+      "name": "Requests for clarification or more details",
+      "category": "social/conversation",
+      "description": "Short answers ask the user to supply more specific information, such as code snippets, before the assistant can respond fully.",
+      "confidence": "high",
+      "basis": "top terms include 'could you/please provide'; both exemplars ask for more detail"
+    },
+    {
+      "role": "answer",
+      "cluster": 41,
+      "name": "Product and design description answers",
+      "category": "business/professional",
+      "description": "Answers describe design concepts for products or services, such as a company logo concept or clothing size recommendations.",
+      "confidence": "low",
+      "basis": "terms are generic descriptive connectors; 2 exemplars diverge (logo design, sizing advice)"
+    },
+    {
+      "role": "answer",
+      "cluster": 42,
+      "name": "Uncharacterized public-evidence gap",
+      "category": "other/mixed",
+      "description": "No public-safe TF-IDF terms or exemplars are available in the display sample to characterize this cluster's dominant behavior.",
+      "confidence": "low",
+      "basis": "no terms and no safe exemplars available"
+    },
+    {
+      "role": "answer",
+      "cluster": 43,
+      "name": "Motivational and informational essay answers",
+      "category": "advice/planning",
+      "description": "Answers provide longer motivational speeches or essays on topics like personal transformation or effective communication.",
+      "confidence": "low",
+      "basis": "terms are generic connectors; both exemplars are motivational/informational essays"
+    },
+    {
+      "role": "answer",
+      "cluster": 44,
+      "name": "Song lyrics and speech creative answers",
+      "category": "creative/roleplay",
+      "description": "Answers produce creative lyrical or spoken-word content, such as an inspirational speech or original song lyrics in an artist's style.",
+      "confidence": "medium",
+      "basis": "top terms include 'chorus/verse'; both exemplars are lyrics/speech creative writing"
+    },
+    {
+      "role": "answer",
+      "cluster": 45,
+      "name": "History and cultural analysis answers",
+      "category": "knowledge/explanation",
+      "description": "Answers analyze historical or cultural topics in depth, such as ancient Athenian social hierarchy or the meaning of a Spanish song.",
+      "confidence": "medium",
+      "basis": "top terms include 'cultural/often'; both exemplars are historical/cultural analyses"
+    },
+    {
+      "role": "answer",
+      "cluster": 46,
+      "name": "Russian fictional planet descriptions",
+      "category": "creative/roleplay",
+      "description": "Answers generate detailed fictional planet descriptions in Russian, specifying gravity, composition, color, and surface features.",
+      "confidence": "high",
+      "basis": "top terms include 'гравитация/состав/планета' (gravity/composition/planet); both exemplars match exactly"
+    },
+    {
+      "role": "answer",
+      "cluster": 47,
+      "name": "German vocabulary example sentences",
+      "category": "translation/language",
+      "description": "Answers provide example sentences for supplied German vocabulary words at a beginner level, formatted word by word.",
+      "confidence": "high",
+      "basis": "top terms are German function words ('der/die/das'); both exemplars are German example-sentence lists"
+    },
+    {
+      "role": "answer",
+      "cluster": 48,
+      "name": "Structured advice and plan answers",
+      "category": "advice/planning",
+      "description": "Answers give organized, multi-step plans or professional guidance, such as a skill-improvement plan or an employee responsibility statement.",
+      "confidence": "medium",
+      "basis": "top terms include 'management/your'; both exemplars are structured advice/plan documents"
+    },
+    {
+      "role": "answer",
+      "cluster": 49,
+      "name": "Multilingual mixed factual/medical answers",
+      "category": "knowledge/explanation",
+      "description": "Answers in mixed languages address varied factual or medical questions, such as cancer progression or the importance of spelling study.",
+      "confidence": "low",
+      "basis": "top terms are multilingual function words; 2 exemplars are unrelated factual/medical answers"
+    },
+    {
+      "role": "context",
+      "cluster": 0,
+      "name": "Fictional violence & risky requests",
+      "category": "sensitive/safety",
+      "description": "Prompts request lists of violent fictional actions (e.g., a chokehold move) alongside unrelated risky asks like hacking, with no single tight topic.",
+      "confidence": "low",
+      "basis": "2 exemplars: comic chokehold list request, Apple hacking request; top terms noisy/mixed multilingual"
+    },
+    {
+      "role": "context",
+      "cluster": 1,
+      "name": "Fairly OddParents theme song requests",
+      "category": "creative/roleplay",
+      "description": "Dominant terms point to prompts asking for parody or original theme songs referencing 'The Fairly OddParents'; sampled exemplars are off-topic noise.",
+      "confidence": "low",
+      "basis": "top terms 'odd parents/fairly odd/theme song'; safe exemplars unrelated (term-only read)"
+    },
+    {
+      "role": "context",
+      "cluster": 2,
+      "name": "Chinese slang & business term queries",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask for explanations of Chinese slang or business terminology, such as household-relationship slang or retail promotion practices.",
+      "confidence": "low",
+      "basis": "2 exemplars define Chinese terms; top terms multilingual and noisy"
+    },
+    {
+      "role": "context",
+      "cluster": 3,
+      "name": "Strict rule-bound persona instructions",
+      "category": "other/mixed",
+      "description": "Prompts set up detailed behavioral rules or personas for the assistant to follow before stating the actual task, e.g. an 'elite programmer' rule list.",
+      "confidence": "medium",
+      "basis": "top terms 'rules/repeat exactly/your response'; exemplar shows a rule-heavy persona setup"
+    },
+    {
+      "role": "context",
+      "cluster": 4,
+      "name": "General knowledge explanation questions",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask for explanations of general concepts, such as accounting journal-entry types or the difference between small and great circles.",
+      "confidence": "medium",
+      "basis": "exemplars are explanatory 'what/explain' questions; top terms match ('what is','explain')"
+    },
+    {
+      "role": "context",
+      "cluster": 5,
+      "name": "Essay and article writing requests",
+      "category": "writing/editing",
+      "description": "Prompts request full articles or essays on a topic, such as a physics law explainer or an informative YouTube-video article on AI.",
+      "confidence": "high",
+      "basis": "top terms 'article/essay/write'; both exemplars explicitly request full articles"
+    },
+    {
+      "role": "context",
+      "cluster": 6,
+      "name": "Math and physics word problems",
+      "category": "math/reasoning",
+      "description": "Prompts pose quantitative word problems requiring calculation, such as pyramid geometry or ideal-gas-law mass calculation.",
+      "confidence": "high",
+      "basis": "exemplars are numeric problems; top terms include math-adjacent tokens ('integral','x2')"
+    },
+    {
+      "role": "context",
+      "cluster": 7,
+      "name": "Fandom character reaction scenarios",
+      "category": "media/fandom/games",
+      "description": "Prompts ask how characters from franchises like Sonic, Naruto, or Freedom Planet would react to or behave in a hypothetical scenario.",
+      "confidence": "high",
+      "basis": "top terms name franchises and 'react to'; both exemplars are character-reaction prompts"
+    },
+    {
+      "role": "context",
+      "cluster": 8,
+      "name": "Russian coding task requests",
+      "category": "coding/technical",
+      "description": "Russian-language prompts request code solutions in languages such as Pascal or C++ for algorithmic tasks like list merging or matrix search.",
+      "confidence": "high",
+      "basis": "top terms 'код/python/напиши код'; both exemplars are Russian coding tasks"
+    },
+    {
+      "role": "context",
+      "cluster": 9,
+      "name": "Multilingual mixed creative/instructional prompts",
+      "category": "other/mixed",
+      "description": "A multilingual grab-bag of prompts spanning creative writing and instructional templates, with no single dominant topic beyond common function words.",
+      "confidence": "low",
+      "basis": "top terms mostly function words across languages; exemplars diverge (teaching plan, planet story)"
+    },
+    {
+      "role": "context",
+      "cluster": 10,
+      "name": "Content and idea brainstorming requests",
+      "category": "advice/planning",
+      "description": "Prompts ask the assistant to generate creative ideas or outlines, such as game concepts or an interview/TED-talk script.",
+      "confidence": "medium",
+      "basis": "top terms 'create/questions/interview'; exemplars are brainstorming/outline requests"
+    },
+    {
+      "role": "context",
+      "cluster": 11,
+      "name": "German vocabulary example-sentence requests",
+      "category": "translation/language",
+      "description": "Prompts supply lists of German words and ask for two example sentences per word suited to A2 learner level.",
+      "confidence": "high",
+      "basis": "top terms are German articles/'examples'; both exemplars match this template exactly"
+    },
+    {
+      "role": "context",
+      "cluster": 12,
+      "name": "Miscellaneous 'what is' technical queries",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask brief factual or technical 'what is/what does' questions on varied topics such as local AI server deployment or radio frequencies.",
+      "confidence": "low",
+      "basis": "top terms are generic question words; 2 exemplars are unrelated factual asks"
+    },
+    {
+      "role": "context",
+      "cluster": 13,
+      "name": "Rephrasing and grammar correction requests",
+      "category": "writing/editing",
+      "description": "Prompts ask the assistant to rephrase marketing copy or fix grammar in a passage while preserving meaning.",
+      "confidence": "high",
+      "basis": "top terms include 'translate/改写'; both exemplars are rephrase/grammar-fix tasks"
+    },
+    {
+      "role": "context",
+      "cluster": 14,
+      "name": "Multilingual academic Q&A",
+      "category": "knowledge/explanation",
+      "description": "Prompts in languages such as Vietnamese pose academic questions on topics like regional politics or physics multiple-choice items.",
+      "confidence": "low",
+      "basis": "terms are function words across SE Asian/other languages; 2 exemplars are academic questions"
+    },
+    {
+      "role": "context",
+      "cluster": 15,
+      "name": "AI model identity and version questions",
+      "category": "social/conversation",
+      "description": "Prompts ask the assistant to identify itself, its version, or what roles it can perform, similar to asking 'are you GPT-4'.",
+      "confidence": "high",
+      "basis": "top terms 'are you/gpt/version'; both exemplars ask about model identity"
+    },
+    {
+      "role": "context",
+      "cluster": 16,
+      "name": "Chinese synonym-replacement task templates",
+      "category": "extraction/formatting",
+      "description": "Prompts give a meta-instruction template asking the assistant to paraphrase input text with synonyms while preserving code placeholders.",
+      "confidence": "medium",
+      "basis": "top terms reference synonym replacement/task template; both exemplars match this template"
+    },
+    {
+      "role": "context",
+      "cluster": 17,
+      "name": "Doki Doki Literature Club fan fiction",
+      "category": "creative/roleplay",
+      "description": "Prompts continue fan-fiction roleplay scenarios involving Doki Doki Literature Club characters such as Sayori, Natsuki, and Monika.",
+      "confidence": "high",
+      "basis": "top terms are DDLC character names; both exemplars are DDLC-style story continuations"
+    },
+    {
+      "role": "context",
+      "cluster": 18,
+      "name": "Multi-language code generation requests",
+      "category": "coding/technical",
+      "description": "Prompts request working code, sometimes with tests, in languages such as Verilog, C, Python, or Vue for specific technical tasks.",
+      "confidence": "high",
+      "basis": "top terms mix 'code/python/vue'; exemplars request runnable code with testbenches"
+    },
+    {
+      "role": "context",
+      "cluster": 19,
+      "name": "Midjourney image prompt generation",
+      "category": "creative/roleplay",
+      "description": "Prompts ask the assistant to act as a Midjourney prompt generator, producing detailed '/imagine prompt' style descriptions for a given concept.",
+      "confidence": "high",
+      "basis": "top terms 'imagine prompt/ar/style'; both exemplars are the Midjourney template request"
+    },
+    {
+      "role": "context",
+      "cluster": 20,
+      "name": "Casual greetings to the assistant",
+      "category": "social/conversation",
+      "description": "Short casual greeting messages such as 'hi', 'hello', or 'why hello there' with no further task content.",
+      "confidence": "high",
+      "basis": "top terms are greeting words; both exemplars are bare greetings"
+    },
+    {
+      "role": "context",
+      "cluster": 21,
+      "name": "Explicit or violent roleplay requests",
+      "category": "sensitive/safety",
+      "description": "Prompts request sexually explicit or graphically violent fictional scenarios involving transformation or fandom characters; several were refused.",
+      "confidence": "medium",
+      "basis": "exemplars are an explicit mermaid-transformation story and a graphic Starship Troopers scenario"
+    },
+    {
+      "role": "context",
+      "cluster": 22,
+      "name": "General how-to instructional requests",
+      "category": "advice/planning",
+      "description": "Prompts ask for step-by-step instructions on practical tasks such as board-game rules or organizing a literature review.",
+      "confidence": "medium",
+      "basis": "top terms 'how to/how do'; both exemplars are instructional requests"
+    },
+    {
+      "role": "context",
+      "cluster": 23,
+      "name": "Text summarization requests",
+      "category": "extraction/formatting",
+      "description": "Prompts ask the assistant to summarize a given passage, such as a philosophical text or a historical account of Kyiv.",
+      "confidence": "medium",
+      "basis": "exemplars explicitly ask for summaries; terms include summary-adjacent tokens ('paragraph')"
+    },
+    {
+      "role": "context",
+      "cluster": 24,
+      "name": "Opinion and list-based informational queries",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask for opinions or curated lists on topics such as relationship importance or professional certifications.",
+      "confidence": "low",
+      "basis": "terms are generic 'what/list of'; 2 exemplars diverge in topic"
+    },
+    {
+      "role": "context",
+      "cluster": 25,
+      "name": "Fiction story writing requests",
+      "category": "creative/roleplay",
+      "description": "Prompts ask the assistant to write original fictional stories, including romance and comedic scenarios involving specified characters.",
+      "confidence": "high",
+      "basis": "top terms 'story/write'; both exemplars request original stories"
+    },
+    {
+      "role": "context",
+      "cluster": 26,
+      "name": "Chinese 'how-to' methods queries",
+      "category": "advice/planning",
+      "description": "Chinese-language prompts ask for methods or channels to accomplish goals, such as organizing files or earning money teaching Chinese.",
+      "confidence": "medium",
+      "basis": "top terms include Chinese 'how to/methods'; both exemplars match this pattern"
+    },
+    {
+      "role": "context",
+      "cluster": 27,
+      "name": "Russian greetings and identity questions",
+      "category": "social/conversation",
+      "description": "Short Russian-language greetings that also ask the assistant to identify itself or its model version.",
+      "confidence": "high",
+      "basis": "top terms are Russian greeting/identity words; both exemplars match exactly"
+    },
+    {
+      "role": "context",
+      "cluster": 28,
+      "name": "Help-request greetings for coursework",
+      "category": "advice/planning",
+      "description": "Casual greetings that immediately request help with coursework, writing, or grammar tasks.",
+      "confidence": "medium",
+      "basis": "top terms mix greeting and 'help' words; exemplars ask for coursework/grammar help"
+    },
+    {
+      "role": "context",
+      "cluster": 29,
+      "name": "Uncharacterized public-evidence gap",
+      "category": "other/mixed",
+      "description": "No public-safe TF-IDF terms or exemplars are available in the display sample to characterize this cluster's dominant topic.",
+      "confidence": "low",
+      "basis": "no terms and no safe exemplars available"
+    },
+    {
+      "role": "context",
+      "cluster": 30,
+      "name": "Miscellaneous multilingual factual questions",
+      "category": "knowledge/explanation",
+      "description": "Prompts in various languages ask isolated factual questions, such as the origin of the Linux penguin logo or bank transfer methods.",
+      "confidence": "low",
+      "basis": "terms are multilingual function words; 2 exemplars are unrelated factual questions"
+    },
+    {
+      "role": "context",
+      "cluster": 31,
+      "name": "Fictional narrative and dialogue writing",
+      "category": "creative/roleplay",
+      "description": "Prompts ask for fictional diary entries or animated-show dialogue scenes involving named characters.",
+      "confidence": "high",
+      "basis": "top terms include character/scene tokens; both exemplars request diary and dialogue writing"
+    },
+    {
+      "role": "context",
+      "cluster": 32,
+      "name": "Programming how-to technical questions",
+      "category": "coding/technical",
+      "description": "Prompts ask how to implement specific programming features, such as canvas drawing in UniApp or custom indicators in Backtrader.",
+      "confidence": "high",
+      "basis": "top terms mix 'how to' with framework names; both exemplars are technical how-to asks"
+    },
+    {
+      "role": "context",
+      "cluster": 33,
+      "name": "Generic academic writing requests",
+      "category": "writing/editing",
+      "description": "Prompts request written academic content such as a presentation script or reflective essay, without one strong shared topic.",
+      "confidence": "low",
+      "basis": "top terms are generic function words; 2 exemplars are unrelated academic writing tasks"
+    },
+    {
+      "role": "context",
+      "cluster": 34,
+      "name": "Uncharacterized public-evidence gap",
+      "category": "other/mixed",
+      "description": "No public-safe TF-IDF terms or exemplars are available in the display sample to characterize this cluster's dominant topic.",
+      "confidence": "low",
+      "basis": "no terms and no safe exemplars available"
+    },
+    {
+      "role": "context",
+      "cluster": 35,
+      "name": "General discursive informational prompts",
+      "category": "knowledge/explanation",
+      "description": "Prompts request long-form explanatory or discursive text, such as self-help guidance or literary-thesis example gathering.",
+      "confidence": "low",
+      "basis": "terms are generic function words; 2 exemplars diverge (self-help guide, literature thesis)"
+    },
+    {
+      "role": "context",
+      "cluster": 36,
+      "name": "Spanish/Portuguese how-to and resource lists",
+      "category": "advice/planning",
+      "description": "Prompts in Spanish or Portuguese request practical resource lists or step-by-step guides, such as free image sites or solar panel installation.",
+      "confidence": "medium",
+      "basis": "top terms are Spanish/Portuguese function words; both exemplars are how-to/list requests"
+    },
+    {
+      "role": "context",
+      "cluster": 37,
+      "name": "Creative song and title generation requests",
+      "category": "creative/roleplay",
+      "description": "Prompts ask the assistant to generate original creative content, such as song lyrics in a specific artist's style or book chapter titles.",
+      "confidence": "medium",
+      "basis": "top terms include 'придумаи/гимн' (invent/anthem); exemplars request lyrics and titles"
+    },
+    {
+      "role": "context",
+      "cluster": 38,
+      "name": "Email and blog content writing requests",
+      "category": "writing/editing",
+      "description": "Prompts ask for written business emails or blog-style articles, such as a job-interest email or a fictional news announcement.",
+      "confidence": "medium",
+      "basis": "top terms include 'email/formato'; both exemplars request written business/blog content"
+    },
+    {
+      "role": "context",
+      "cluster": 39,
+      "name": "Jailbreak-style persona override requests",
+      "category": "sensitive/safety",
+      "description": "Prompts attempt to bypass the assistant's guidelines via alternate personas such as 'DAN' or via cutesy in-character roleplay letters.",
+      "confidence": "high",
+      "basis": "exemplars are a DAN jailbreak prompt and a persona roleplay letter; terms include 'rules/hardrules'"
+    },
+    {
+      "role": "context",
+      "cluster": 40,
+      "name": "Japanese-Chinese translation requests",
+      "category": "translation/language",
+      "description": "Prompts ask for direct translation between Japanese and Chinese, or occasionally other languages, of a given sentence.",
+      "confidence": "high",
+      "basis": "top terms explicitly instruct translation between Japanese and Chinese; one exemplar matches directly"
+    },
+    {
+      "role": "context",
+      "cluster": 41,
+      "name": "Uncharacterized public-evidence gap",
+      "category": "other/mixed",
+      "description": "No public-safe TF-IDF terms or exemplars are available in the display sample to characterize this cluster's dominant topic.",
+      "confidence": "low",
+      "basis": "no terms and no safe exemplars available"
+    },
+    {
+      "role": "context",
+      "cluster": 42,
+      "name": "Vendor negotiation message drafting",
+      "category": "business/professional",
+      "description": "Prompts ask for short, polite English replies to suppliers or resellers regarding stock, MOQ, and pricing.",
+      "confidence": "high",
+      "basis": "top terms include 'stock/moq/price/vendor'; both exemplars are supplier-negotiation messages"
+    },
+    {
+      "role": "context",
+      "cluster": 43,
+      "name": "Code debugging and explanation requests",
+      "category": "coding/technical",
+      "description": "Prompts ask the assistant to fix broken code or explain what a given code snippet will return and why.",
+      "confidence": "high",
+      "basis": "top terms include 'исправь/the code'; both exemplars ask for code fixes/explanations"
+    },
+    {
+      "role": "context",
+      "cluster": 44,
+      "name": "Miscellaneous 'what is/does' factual questions",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask brief factual questions on unrelated topics, such as summarizing a literary work or explaining a kernel function.",
+      "confidence": "low",
+      "basis": "terms are generic question words; 2 exemplars are unrelated factual asks"
+    },
+    {
+      "role": "context",
+      "cluster": 45,
+      "name": "Code and configuration error troubleshooting",
+      "category": "coding/technical",
+      "description": "Prompts paste error messages or configuration code and ask the assistant to diagnose and fix build or setup failures.",
+      "confidence": "high",
+      "basis": "top terms include 'if/const/import'; exemplars are compiler error and config-code troubleshooting"
+    },
+    {
+      "role": "context",
+      "cluster": 46,
+      "name": "Russian technical and advice questions",
+      "category": "advice/planning",
+      "description": "Russian-language prompts ask technical or advisory questions, such as deriving a state-space matrix or listing manager qualities.",
+      "confidence": "low",
+      "basis": "top terms are generic Russian function words; 2 exemplars diverge (math, career advice)"
+    },
+    {
+      "role": "context",
+      "cluster": 47,
+      "name": "Miscellaneous factual/analytical questions",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask isolated factual or analytical questions spanning physics and film analysis, with no single dominant topic.",
+      "confidence": "low",
+      "basis": "terms are generic function words; 2 exemplars are unrelated (physics, movie trivia)"
+    },
+    {
+      "role": "context",
+      "cluster": 48,
+      "name": "Bullet-point content generation requests",
+      "category": "extraction/formatting",
+      "description": "Prompts ask for content formatted as bullet points, such as subscription-tier descriptions or short answer explanations.",
+      "confidence": "low",
+      "basis": "top terms include 'bullet points/contenidos'; 2 exemplars diverge in topic"
+    },
+    {
+      "role": "context",
+      "cluster": 49,
+      "name": "Factual Q&A with confidence self-rating",
+      "category": "knowledge/explanation",
+      "description": "Prompts ask a factual or multiple-choice question and additionally request the assistant to rate its confidence in the answer numerically.",
+      "confidence": "high",
+      "basis": "top terms include 'confidence/your answer is correct'; both exemplars explicitly request a rating"
+    }
+  ]
+}

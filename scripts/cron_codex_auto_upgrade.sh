@@ -126,6 +126,21 @@ done
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
 
+# mkdir -p returns success for an EXISTING dir regardless of writability, so
+# the checked mkdir above cannot see an exists-but-unwritable log dir: the
+# brace group's `>> "$LOG_FILE"` redirect then fails, the group never runs,
+# rc is never assigned, and ${rc:-0} below converts the failure into a silent
+# exit 0 (task #2386, Pattern C). Probe the actual append open the group will
+# attempt and route the failure through SETUP_OK into the SAME alert arm as
+# every other setup failure — deliberately NOT a fatal()-style early exit,
+# which would skip the alert arm entirely. Ordering mirrors #2196: the probe
+# CREATES $LOG_FILE when absent, so it must run AFTER the FIRST_RUN_OF_DAY
+# read or the daily pointer line is lost.
+if ! : >> "$LOG_FILE" 2>/dev/null; then
+    log_line "$(date -Iseconds) FATAL: daily log file not appendable ($LOG_FILE) — skipping upgrader"
+    SETUP_OK=0
+fi
+
 if [ "$SETUP_OK" -ne 1 ]; then
     rc=1
 else
@@ -158,15 +173,20 @@ fi
 # runtime, which manifests as "requires a newer version of Codex" at dispatch
 # and NOT as anything `codex --version` would show). Surface it loud.
 #
-# ${rc:-0} — the ONE remaining path that leaves rc unset is a brace-group
-# redirect that fails AFTER the dirs were created successfully: $LOG_FILE
-# exists-but-unwritable, ENOSPC, or a TOCTOU between the mkdir check and the
-# redirect. The redirect fails, so the group never runs and never assigns rc,
-# and a bare "$rc" would then trip `set -u`. An UNCREATABLE log/sentinel dir
-# is no longer in this set — the checked mkdir above catches it and binds
-# rc=1 through SETUP_OK, so it alerts like any other failure. This residual
-# is documented-accepted: closing it would mean redesigning the alert arm to
-# not depend on the log it reports into.
+# ${rc:-0} — a brace-group redirect that fails leaves rc unset (the group
+# never runs, so it never assigns rc) and a bare "$rc" would then trip
+# `set -u`. TWO of the three ways that happened are now guarded upstream and
+# alert like any other setup failure: an UNCREATABLE log/sentinel dir binds
+# SETUP_OK=0 through the checked mkdir, and an EXISTS-BUT-UNWRITABLE (or
+# otherwise non-appendable) $LOG_FILE binds SETUP_OK=0 through the
+# appendability probe (#2386). Note the checked mkdir alone does NOT cover
+# the unwritable case — mkdir -p succeeds on an existing dir whatever its
+# mode, which is exactly why the probe exists.
+#
+# The remaining residual is a genuine RACE, not a missing check: the dir is
+# removed, remounted read-only, or the filesystem fills (ENOSPC) in the
+# window between the probe and the brace-group redirect. ${rc:-0} is kept as
+# defense-in-depth for that window (same reasoning as the #2196 wrappers).
 if [ "${rc:-0}" -ne 0 ]; then
     alert_failure "$rc"
 fi

@@ -35,6 +35,25 @@ T1-T7 pin the plan's acceptance-criterion-5 behaviors:
 - T7 ``test_stub_receives_refresh_json_args`` — the wrapper invokes the
   refresh with the exact ``refresh --json`` argv (pins the CLI shape against
   step9c_baseline.py drift).
+
+T8-T10 pin the #2386 fail-loud log-dir guard (Pattern B — ``fatal()`` also
+fires a best-effort ``TELEGRAM_PUSH``). Before #2386 an uncreatable or
+unwritable log dir made the brace-group redirect fail, so the refresh never
+ran AND the rc!=0 alert arm — which redirects into the same ``$LOG_FILE`` —
+was double-silent, while the wrapper still exited 0. ``make_harness`` gains a
+``log_dir_setup`` kwarg (``"ok"`` / ``"uncreatable"`` = the log-dir path under
+a regular FILE so ``mkdir -p`` fails ENOTDIR / ``"unwritable"`` = an existing
+dir at 0o555 so ``mkdir -p`` passes and the appendability probe fails; root
+bypasses mode bits, hence the skipif). Only LOG_DIR varies — SENTINEL_DIR
+stays writable, so the failure is unambiguously attributable to the log dir.
+
+- T8 ``test_uncreatable_log_dir_fails_loud_and_pushes`` — rc != 0, stderr
+  FATAL naming the dir, exactly one ALERT push, refresh NEVER invoked.
+- T9 ``test_unwritable_log_dir_fails_loud_and_pushes`` (root-skipif) — same
+  via the probe arm, distinguished by the "not appendable" message.
+- T10 ``test_missing_push_script_still_exits_non_zero`` — the push leg is
+  BEST-EFFORT: a missing telegram_push.sh must not swallow the failure, the
+  wrapper still exits non-zero with the FATAL on stderr.
 """
 
 from __future__ import annotations
@@ -49,6 +68,14 @@ import pytest
 
 _WRAPPER = Path(__file__).resolve().parent.parent / "scripts" / "cron_step9c_ledger_refresh.sh"
 
+# #2386 fatal-message fragments. The mkdir arm and the probe arm are
+# distinguished by these, NOT by the dated log filename (which would race a
+# midnight rollover). Spelled locally rather than imported: each cron test
+# file weaves the guard into its own harness idiom.
+_MKDIR_FATAL = "cannot create log/sentinel dir"
+_PROBE_FATAL = "not appendable"
+_ALERT_PREFIX = "ALERT: step9c_ledger_refresh:"
+
 
 @pytest.fixture
 def make_harness(tmp_path: Path):
@@ -58,6 +85,12 @@ def make_harness(tmp_path: Path):
     log dir, the real .claude/cache/, the real telegram_push.sh, or the real
     ledger. The stub refresh records its argv to ``stub_calls.log`` and exits
     ``stub_rc``.
+
+    ``log_dir_setup`` (#2386) selects the LOG_DIR failure mode — ``"ok"``
+    (created, the default every T1-T7 call uses), ``"uncreatable"`` (under a
+    regular FILE → ``mkdir -p`` fails ENOTDIR) or ``"unwritable"`` (existing,
+    0o555 → ``mkdir -p`` passes, the appendability probe fails). Every call
+    gets its own ``h<N>`` root, so no arm can pollute a sibling's assertions.
     """
     counter = itertools.count()
 
@@ -65,14 +98,29 @@ def make_harness(tmp_path: Path):
         stub_rc: int = 2,
         push_exit: int = 0,
         push_missing: bool = False,
+        log_dir_setup: str = "ok",
     ) -> dict:
         root = tmp_path / f"h{next(counter)}"
-        log_dir = root / "logs"
         sentinel_dir = root / "sentinels"
         cache_dir = root / "cache"
-        log_dir.mkdir(parents=True)
+        # Created FIRST so `root` exists for the uncreatable blocker below;
+        # SENTINEL_DIR stays writable in every mode, so a mkdir/probe failure
+        # is attributable to LOG_DIR alone.
         sentinel_dir.mkdir(parents=True)
         cache_dir.mkdir(parents=True)
+        if log_dir_setup == "ok":
+            log_dir = root / "logs"
+            log_dir.mkdir(parents=True)
+        elif log_dir_setup == "uncreatable":
+            blocker = root / "blocker"
+            blocker.write_text("regular file blocking mkdir -p (ENOTDIR)\n")
+            log_dir = blocker / "logs"
+        elif log_dir_setup == "unwritable":
+            log_dir = root / "logs"
+            log_dir.mkdir(parents=True)
+            log_dir.chmod(0o555)
+        else:  # pragma: no cover — harness misuse is a test defect
+            raise ValueError(f"unknown log_dir_setup: {log_dir_setup!r}")
         sidecar = cache_dir / "step9c-refresh-cron-events.jsonl"
 
         push_log = root / "push_calls.log"
@@ -246,3 +294,60 @@ def test_stub_receives_refresh_json_args(make_harness):
     assert h["run"]().returncode == 0
     calls = [ln for ln in h["stub_calls"].read_text().splitlines() if ln.strip()]
     assert calls == ["refresh --json"]
+
+
+# ── T8-T10: the #2386 fail-loud log-dir guard (Pattern B, fatal + push) ──────
+
+
+def test_uncreatable_log_dir_fails_loud_and_pushes(make_harness):
+    """T8: an uncreatable $LOG_DIR (path under a regular file, ENOTDIR) exits
+    non-zero with a stderr FATAL naming the dir, fires exactly one ALERT push,
+    and NEVER invokes the refresh — never the pre-#2386 silent skip in which
+    both the refresh and its own rc!=0 alert arm vanished into the unwritable
+    log while the wrapper reported success."""
+    h = make_harness(stub_rc=0, log_dir_setup="uncreatable")
+    result = h["run"]()
+
+    assert result.returncode != 0, f"expected non-zero exit, stderr={result.stderr!r}"
+    assert "FATAL" in result.stderr
+    assert _MKDIR_FATAL in result.stderr
+    assert str(h["log_dir"]) in result.stderr
+    # The push leg fired: this wrapper's fatal() has a live alert channel.
+    assert _push_count(h["push_log"]) == 1
+    assert _ALERT_PREFIX in h["push_log"].read_text()
+    assert not h["stub_calls"].exists(), "the refresh RAN despite an uncreatable log dir"
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses directory mode bits")
+def test_unwritable_log_dir_fails_loud_and_pushes(make_harness):
+    """T9: a $LOG_DIR that EXISTS but is unwritable (chmod 0o555) passes
+    ``mkdir -p`` and fails the appendability probe — non-zero exit, the
+    probe-specific FATAL, one ALERT push, refresh never invoked."""
+    h = make_harness(stub_rc=0, log_dir_setup="unwritable")
+    result = h["run"]()
+
+    assert result.returncode != 0, f"expected non-zero exit, stderr={result.stderr!r}"
+    assert "FATAL" in result.stderr
+    # The probe arm, not the mkdir arm — mkdir -p succeeds on an existing dir.
+    assert _PROBE_FATAL in result.stderr
+    assert _MKDIR_FATAL not in result.stderr
+    assert str(h["log_dir"]) in result.stderr
+    assert _push_count(h["push_log"]) == 1
+    assert _ALERT_PREFIX in h["push_log"].read_text()
+    assert not h["stub_calls"].exists(), "the refresh RAN despite an unwritable log dir"
+
+
+def test_missing_push_script_still_exits_non_zero(make_harness):
+    """T10: the fatal() push leg is BEST-EFFORT — a missing/non-executable
+    telegram_push.sh must not swallow the infrastructure failure. No push is
+    recorded, the FATAL still reaches stderr, and the wrapper still exits
+    non-zero (contrast T5, where a missing push script during the ordinary
+    rc!=0 alert arm deliberately leaves exit 0)."""
+    h = make_harness(stub_rc=0, push_missing=True, log_dir_setup="uncreatable")
+    result = h["run"]()
+
+    assert result.returncode != 0, f"expected non-zero exit, stderr={result.stderr!r}"
+    assert "FATAL" in result.stderr
+    assert _MKDIR_FATAL in result.stderr
+    assert _push_count(h["push_log"]) == 0
+    assert not h["stub_calls"].exists(), "the refresh RAN despite an uncreatable log dir"

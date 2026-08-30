@@ -3074,3 +3074,78 @@ implementation of a claimed one is ordinary). (e) Reconcile-record line
 cites are PRE-ROUND frames — recompute the post-round anchors at compose
 time (grep `def _margin_fp` etc.) and hand Codex both, with "a shifted line
 number is never a finding".
+
+**NIT-only cleanup round after PASS+CONCERNS, all ids claim-addressed (#2386
+r3, 2026-08-29):** the round shape with NO blocker anywhere in its history —
+r2 ended Claude-PASS / Codex-CONCERNS (zero Critical, zero Major), no
+reconciler owed, and r3 exists only to close three NITs. Five deltas:
+
+(a) **The all-addressed disposition rule needs a THIRD arm — the tail entry's
+blanket "already-persisted ids NEVER re-emitted as `CONCERN:: ` rows" is right
+for VERIFIED-ADDRESSED and for still-OPEN rows, but WRONG for a closure claim
+the twin finds FALSE.** Verified against the tooling this round:
+`list_concerns` treats a concern as open iff its LATEST event is `raised` or
+`verified-open` (`task_workflow.py:8946`), and
+`persist_verdict_concerns.py`'s `duplicate-id` check is INTRA-VERDICT only
+(`:153` — no two rows in one verdict share an id), never cross-ledger. So
+re-emitting a row for an id currently marked `addressed` appends a fresh
+`raised` event and RE-OPENS it — that is the intended state transition and the
+ONLY channel a reviewer has to say "this closure claim is false". Compose the
+rule with three arms: VERIFIED-ADDRESSED → status line only, no row;
+FALSELY-CLAIMED-ADDRESSED → re-emit the SAME id at the severity judged correct
+(say explicitly "do not suppress this out of politeness, but hold it to
+evidence"); PARTIALLY-ADDRESSED → status line naming the residue, row only if
+the residue is substantive. Without the second arm an all-addressed ledger is
+unfalsifiable by construction.
+
+(b) **Severity fence for a NIT-only round, both directions.** With no blocker
+in history the twin has no anchor for calibration, so state it: a demonstrably
+FALSE closure claim or a NEW defect the round introduced scores at the ordinary
+bar and can FAIL; an item genuinely still open re-raises at its OWN severity
+(NIT) and does NOT by itself flip the verdict. Name both failure modes —
+manufacturing a blocker to justify the round, and waving a false closure
+through because the underlying item was "only" a NIT.
+
+(c) **Cross-reviewer Fix-generalization neutrality.** The existing
+author-neutrality entries cover the twin's OWN prior findings. When the round
+also closes a NIT raised by the CLAUDE reviewer whose Fix line proposed a
+NARROWER mechanism than what shipped (here: "require
+`probe.text.startswith('if !')` before the body scan" vs a shipped helper
+accepting two spellings and applied to a sibling call site too), add the same
+strength-not-literal-match instruction for that Fix as well, or the twin scores
+the generalization as a deviation. Also carry the other reviewer's own
+calibration language when it exists — this Claude verdict said the residual
+"does not warrant a round 3" — as CONTEXT for the severity fence, explicitly
+NOT as a licence to wave the fix through unread.
+
+(d) **A composer measurement that SHARPENS the marker's claim, handed over as
+fact with the judgment withheld.** Re-running the round's own conservative
+pattern over the live population confirmed the marker exactly (0 hits on the
+two exempt members) AND surfaced the stronger fact the marker's own notes only
+half-state: 13 of 15 wrappers already match it, so the exempt class is clean by
+MEMBERSHIP, not because the pattern is narrow. Put the measurement table in the
+facts section, say plainly "that is a fact, not yet a finding", and route the
+trade-off (does the conservatism make the class unjoinable / set up a future
+false positive?) to a numbered priority the twin must give a verdict on rather
+than defer. Same discipline as surfacing numeric discrepancies: measure, do not
+adjudicate.
+
+(e) **A falsification harness in `/tmp` is UNREACHABLE by design — pre-empt the
+BLOCKED read rather than letting the twin discover it.** The marker's central
+claim (4/4 mutants OLD-PASS/NEW-FAIL) rests on `/tmp/eps-<N>-scratch-demo/`,
+outside the worktree-rooted sandbox. Confirm the files exist at compose time,
+then state in its own fact: the harness is unreachable, this is NOT
+`data-access-blocked`, and the claim is adjudicable anyway because the OLD
+predicate is inlined verbatim, the NEW one is in the diff, and the mutant
+shapes are re-expressed as committed fixtures the twin CAN read. Add the
+exclusion to the `data-access-blocked` tag gloss in the verdict template too
+("...other than the recoverable no-merge-base error or the by-design `/tmp`
+harness unreachability of F11"). Pair it with the population-trap re-test duty:
+when the twin's OWN prior round named a population artifact in the harness
+design, make re-testing that exact trap the first sub-item of the priority.
+
+Compose script for this shape: `/tmp/codex-2386-r3-compose.py` (placeholder
+substitution rather than f-strings — the prompt inlines regex and shell text
+dense with literal braces, where brace-doubling is the likelier error than a
+missed placeholder; the `@@TOKEN@@` form keeps a count-assert per substitution
+and lets the `'{{' not in prompt` assert stay meaningful).

@@ -2,14 +2,17 @@
 """Issue #2552 exactrep follow-up — sharded, resumable per-assistant-turn capture (GPU).
 
 Teacher-forces every prep-kept LMSYS conversation (see issue2552_exactrep_prep.py)
-through Qwen2.5-7B-Instruct ONCE (full preceding context) and stores, per assistant
-turn, the TOKEN MEAN of the layer-19 residual over the turn's CONTENT tokens — the
-arXiv 2606.28548 span convention. This closes #2552 deviation d2: the banked #779
-convention was whole-answer mean INCLUDING the end-of-turn tail with a re-tokenized
-prompt-length boundary; here spans come from ONE full-text tokenization's offset
-mapping (never re-tokenized concatenations — the #1092 BPE-seam rule), content tokens
-only (no <|im_start|>assistant\\n header, no <|im_end|>\\n tail; a boundary-straddling
-BPE token counts into the span).
+through Qwen2.5-7B-Instruct and stores two PAIRED layer-19 objects per assistant turn:
+the TOKEN MEAN over the turn's CONTENT tokens (the arXiv 2606.28548 convention), and
+the pre-assistant last-prompt-token context state for a user-requested matched
+context-only SAE.
+
+Answer spans come from ONE full-text tokenization's offset mapping (never a
+re-tokenized concatenation — the #1092 BPE-seam rule), content tokens only (no
+<|im_start|>assistant\\n header and no <|im_end|>\\n tail). The exact generation
+prompt is tokenized independently for the context state. When its ids are a prefix of
+the full conversation the already-computed causal state is reused; rare BPE-seam
+mismatches are re-forwarded in a batched correction path.
 
 Reuse map: extract_layer_activations (analysis/extraction — hooks + logits_to_keep
 OOM guard; layer L == hidden_states[L+1], the banked-store convention),
@@ -18,7 +21,8 @@ assert), prep's render_segments (template-shape invariant).
 
 Sharding + checkpointing: conversations are grouped into fixed-size chunks in corpus
 order; chunk gci is processed by shard `gci % num_shards == shard`. Each chunk writes
-  chunk_{gci:06d}.npy        (n_rows, hidden) fp16 span means
+  chunk_{gci:06d}.npy        (n_rows, hidden) fp16 assistant-content means
+  context_{gci:06d}.npy      (n_rows, hidden) fp16 last-prompt-token states
   chunk_{gci:06d}.rows.jsonl per-row identity (conversation_id, msg_idx, n_span_tokens)
   chunk_{gci:06d}.done.json  sentinel (written LAST; fingerprint-gated resume skip)
 A resumed run skips chunks whose sentinel matches the run fingerprint (generating
@@ -182,6 +186,7 @@ def run_fingerprint(args, corpus_fp: dict) -> dict:
         "model_id": PREP.MODEL_ID,
         "layer": int(args.layer),
         "span_convention": "assistant-content-token-mean-v1",
+        "context_convention": "generation-prompt-last-token-v1",
         "chunk_convs": int(args.chunk_convs),
         "corpus_fingerprint": corpus_fp,
         "tiny_model": bool(args.tiny_model),
@@ -196,10 +201,16 @@ def chunk_paths(out_dir: Path, gci: int) -> tuple[Path, Path, Path]:
     )
 
 
+def context_chunk_path(out_dir: Path, gci: int) -> Path:
+    """Paired context-vector chunk for answer chunk ``gci``."""
+    return out_dir / f"context_{gci:06d}.npy"
+
+
 def chunk_completed(out_dir: Path, gci: int, fp: dict) -> bool:
     """Resume predicate: sentinel LAST-written, fingerprint-matched, files present."""
     npy, rows, done = chunk_paths(out_dir, gci)
-    if not (npy.exists() and rows.exists() and done.exists()):
+    ctx = context_chunk_path(out_dir, gci)
+    if not (npy.exists() and ctx.exists() and rows.exists() and done.exists()):
         return False
     doc = json.loads(done.read_text())
     return doc.get("fingerprint") == fp
@@ -243,7 +254,7 @@ def load_capture_model(args):
 
 
 def conv_rows_for_capture(rec: dict, tok, layer_unused: int, counters: dict):
-    """Tokenize ONE conversation (full text, single tokenization) → (ids, spans, meta).
+    """Tokenize one conversation → answer spans and exact context-position specs.
 
     Returns None when every span is zero-width (counted, never zero-faked)."""
     msgs = rec["msgs"]
@@ -260,12 +271,23 @@ def conv_rows_for_capture(rec: dict, tok, layer_unused: int, counters: dict):
     roles = [m["role"] for m in msgs]
     ranges = content_char_ranges(segs, n_prefix, roles, rec["asst_msg_idx"])
     spans = token_spans_from_offsets(enc["offset_mapping"], ranges)
-    kept_spans, kept_meta = [], []
+    kept_spans, kept_context_specs, kept_meta = [], [], []
     for mi, span in zip(rec["asst_msg_idx"], spans, strict=True):
         if span is None:
             counters["zero_width_spans"] += 1
             continue
+        prompt_text = tok.apply_chat_template(msgs[:mi], tokenize=False, add_generation_prompt=True)
+        prompt_ids = tok(prompt_text, add_special_tokens=False)["input_ids"]
+        assert prompt_ids, (rec["conversation_id"], mi)
+        if len(prompt_ids) <= len(ids) and ids[: len(prompt_ids)] == prompt_ids:
+            # Exact causal reuse: the full forward has an identical token prefix.
+            context_spec = {"position": len(prompt_ids) - 1, "prompt_ids": None}
+        else:
+            # The BPE seam changed the final prompt token; re-forward this exact prompt.
+            counters["context_seam_reforwards"] += 1
+            context_spec = {"position": None, "prompt_ids": prompt_ids}
         kept_spans.append(span)
+        kept_context_specs.append(context_spec)
         kept_meta.append(
             {
                 "conversation_id": rec["conversation_id"],
@@ -276,24 +298,27 @@ def conv_rows_for_capture(rec: dict, tok, layer_unused: int, counters: dict):
     if not kept_spans:
         counters["convs_all_spans_zero_width"] += 1
         return None
-    return ids, kept_spans, kept_meta
+    return ids, kept_spans, kept_context_specs, kept_meta
 
 
 @torch.no_grad()
 def capture_chunk(recs: list[dict], tok, model, args, counters: dict):
-    """Batched teacher-forced capture of one chunk → (means fp16 np, row meta list)."""
+    """Capture paired answer means/context states for one chunk."""
     prepared = []
     for rec in recs:
         out = conv_rows_for_capture(rec, tok, args.layer, counters)
         if out is not None:
             prepared.append(out)
     if not prepared:
-        return np.zeros((0, model.config.hidden_size), np.float16), []
-    lengths = [len(ids) for ids, _, _ in prepared]
+        z = np.zeros((0, model.config.hidden_size), np.float16)
+        return z, z.copy(), []
+    lengths = [len(ids) for ids, _, _, _ in prepared]
     device = next(model.parameters()).device
     pad_id = tok.pad_token_id
     assert pad_id is not None
     all_means: dict[int, torch.Tensor] = {}
+    all_contexts: dict[tuple[int, int], torch.Tensor] = {}
+    correction_prompts: list[tuple[tuple[int, int], list[int]]] = []
     for batch in batches_by_budget(lengths, args.batch_max_rows, args.batch_max_tokens):
         max_len = max(lengths[i] for i in batch)
         ids_t = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
@@ -309,25 +334,67 @@ def capture_chunk(recs: list[dict], tok, model, args, counters: dict):
         assert hs.shape[:2] == ids_t.shape, (hs.shape, ids_t.shape)
         means = span_means(hs, [prepared[i][1] for i in batch])  # (n_spans_batch, H) fp32
         cursor = 0
-        for i in batch:
+        for bi, i in enumerate(batch):
             n_sp = len(prepared[i][1])
             all_means[i] = means[cursor : cursor + n_sp].to(torch.float16).cpu()
+            for j, spec in enumerate(prepared[i][2]):
+                pos = spec["position"]
+                if pos is None:
+                    correction_prompts.append(((i, j), spec["prompt_ids"]))
+                else:
+                    all_contexts[(i, j)] = hs[bi, pos].to(torch.float16).cpu()
             cursor += n_sp
         del captured, hs, means
+
+    # Exact prompt-only correction for prefixes changed by a BPE seam.
+    if correction_prompts:
+        correction_lengths = [len(ids) for _key, ids in correction_prompts]
+        for batch in batches_by_budget(
+            correction_lengths, args.batch_max_rows, args.batch_max_tokens
+        ):
+            max_len = max(correction_lengths[i] for i in batch)
+            ids_t = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
+            mask_t = torch.zeros((len(batch), max_len), dtype=torch.long)
+            for bi, i in enumerate(batch):
+                prompt_ids = correction_prompts[i][1]
+                ids_t[bi, : len(prompt_ids)] = torch.as_tensor(prompt_ids, dtype=torch.long)
+                mask_t[bi, : len(prompt_ids)] = 1
+            captured = extract_layer_activations(
+                model, ids_t.to(device), [args.layer], attention_mask=mask_t.to(device)
+            )
+            hs = captured[args.layer]
+            for bi, i in enumerate(batch):
+                key, prompt_ids = correction_prompts[i]
+                all_contexts[key] = hs[bi, len(prompt_ids) - 1].to(torch.float16).cpu()
+            del captured, hs
+
     rows_meta: list[dict] = []
-    mats = []
-    for i, (_ids, _spans, meta) in enumerate(prepared):
-        mats.append(all_means[i])
+    mean_mats, context_mats = [], []
+    for i, (_ids, spans, _context_specs, meta) in enumerate(prepared):
+        mean_mats.append(all_means[i])
+        context_mats.append(torch.stack([all_contexts[(i, j)] for j in range(len(spans))]))
         rows_meta.extend(meta)
-    y = torch.cat(mats).numpy().astype(np.float16)
+    y = torch.cat(mean_mats).numpy().astype(np.float16)
+    x = torch.cat(context_mats).numpy().astype(np.float16)
     assert y.shape == (len(rows_meta), model.config.hidden_size), y.shape
-    return y, rows_meta
+    assert x.shape == y.shape, (x.shape, y.shape)
+    return y, x, rows_meta
 
 
-def _write_chunk(out_dir: Path, gci: int, y: np.ndarray, rows_meta: list[dict], doc: dict):
+def _write_chunk(
+    out_dir: Path,
+    gci: int,
+    y: np.ndarray,
+    x: np.ndarray,
+    rows_meta: list[dict],
+    doc: dict,
+):
     npy, rows, done = chunk_paths(out_dir, gci)
     with atomic_replace(npy) as tmp_npy, tmp_npy.open("wb") as fh:
         np.save(fh, y)  # OPEN HANDLE: np.save appends .npy to path names, never to handles
+    ctx = context_chunk_path(out_dir, gci)
+    with atomic_replace(ctx) as tmp_ctx, tmp_ctx.open("wb") as fh:
+        np.save(fh, x)
     write_jsonl_atomic(rows, rows_meta)
     PREP._write_json_atomic(done, doc)  # sentinel LAST
 
@@ -356,11 +423,15 @@ def iter_corpus_chunks(corpus_dir: Path, chunk_convs: int):
 def verify_batched(tok, model, recs: list[dict], args) -> None:
     """Batched-vs-serial equivalence gate: cosine >= 0.999 per row (B>=2 so padding
     fires). Run on the CPU tiny model (fp32 — no bf16 jitter headroom question)."""
-    counters = {"zero_width_spans": 0, "convs_all_spans_zero_width": 0}
-    y_batched, meta_b = capture_chunk(recs, tok, model, args, counters)
+    counters = {
+        "zero_width_spans": 0,
+        "convs_all_spans_zero_width": 0,
+        "context_seam_reforwards": 0,
+    }
+    y_batched, x_batched, meta_b = capture_chunk(recs, tok, model, args, counters)
     serial_args = argparse.Namespace(**vars(args))
     serial_args.batch_max_rows = 1
-    y_serial, meta_s = capture_chunk(recs, tok, model, serial_args, counters)
+    y_serial, x_serial, meta_s = capture_chunk(recs, tok, model, serial_args, counters)
     assert meta_b == meta_s, "batched/serial row identity drift"
     assert y_batched.shape == y_serial.shape and y_batched.shape[0] >= 2, y_batched.shape
     a = torch.as_tensor(y_batched, dtype=torch.float32)
@@ -370,6 +441,17 @@ def verify_batched(tok, model, recs: list[dict], args) -> None:
     print(f"[verify-batched] rows={len(cos)} worst_cos={worst:.6f}", flush=True)
     if worst < 0.999:
         raise RuntimeError(f"batched-vs-serial equivalence FAILED: worst cosine {worst:.6f}")
+    ctx_cos = torch.nn.functional.cosine_similarity(
+        torch.as_tensor(x_batched, dtype=torch.float32),
+        torch.as_tensor(x_serial, dtype=torch.float32),
+        dim=1,
+    )
+    ctx_worst = float(ctx_cos.min())
+    print(f"[verify-batched] context_worst_cos={ctx_worst:.6f}", flush=True)
+    if ctx_worst < 0.999:
+        raise RuntimeError(
+            f"context batched-vs-serial equivalence FAILED: worst cosine {ctx_worst:.6f}"
+        )
 
 
 def run_capture(args) -> int:
@@ -397,9 +479,13 @@ def run_capture(args) -> int:
             done_n += 1
             continue
         chunk = [json.loads(ln) for ln in lines]
-        counters = {"zero_width_spans": 0, "convs_all_spans_zero_width": 0}
+        counters = {
+            "zero_width_spans": 0,
+            "convs_all_spans_zero_width": 0,
+            "context_seam_reforwards": 0,
+        }
         c0 = time.time()
-        y, rows_meta = capture_chunk(chunk, tok, model, args, counters)
+        y, x, rows_meta = capture_chunk(chunk, tok, model, args, counters)
         wall = time.time() - c0
         doc = {
             "fingerprint": fp,
@@ -410,7 +496,7 @@ def run_capture(args) -> int:
             "wall_s": round(wall, 2),
             "metadata": as_metadata_dict(git_provenance(), phase="exactrep-capture"),
         }
-        _write_chunk(out_dir, gci, y, rows_meta, doc)
+        _write_chunk(out_dir, gci, y, x, rows_meta, doc)
         ran_n += 1
         print(
             f"[capture] chunk {gci}/{n_chunks_total} shard={args.shard} rows={y.shape[0]} "

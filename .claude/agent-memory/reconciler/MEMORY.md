@@ -38,6 +38,7 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Guard-dominance claims + plan-adjudicated carve-outs](feedback_guard_dominance_claims_and_plan_adjudicated_carveouts.md) — execute the "unreachable behind guard X" claim; split Codex probe bundles per leg (#2385 r1)
 - [Kwarg-threading: --smoke fakes + sidecar reachability](feedback_kwarg_threading_inscript_smoke_fakes_and_sidecar_reachability.md) — RUN the script's own --smoke (#1901 r2)
 - [AST-scanner name-binding FP + kill-clause paraphrase](feedback_ast_scanner_name_binding_and_kill_clause_trigger_domain.md) — quote STOP clauses verbatim (#2537 r1)
 - [Concern closure graded against the LEDGER row](feedback_concern_closure_graded_against_ledger_row_not_fix_sentence.md) — closed on the paraphrased half (#2263 r3)

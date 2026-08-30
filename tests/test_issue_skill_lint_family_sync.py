@@ -1848,6 +1848,15 @@ _FORK_STUBS_2303 = (
     "tests/test_select_step9c_tests.py",
     "tests/step9c_workflow_invariant_manifest.txt",
     "tests/test_workflow_lint_x.py",
+    # A SECOND member of the :(glob)tests/test_workflow_lint*.py token, added
+    # for the #2385 fire repro and inert for every other test here. The fire
+    # test DELETES test_workflow_lint_x.py on main; without a surviving
+    # sibling the glob would resolve to NOTHING at origin/main, the atomic
+    # `checkout origin/main -- $SAFE_SPECS` would error on the unmatched
+    # pathspec, and the #2385 rc guard would skip the removal arm entirely —
+    # exercising a checkout FAILURE instead of the #2377 topology (a stale
+    # twin surviving a SUCCESSFUL family sync).
+    "tests/test_workflow_lint_keep.py",
     "tests/test_guard_x.py",
     "tests/issue_skill_source.py",
     "tests/test_issue_skill_x.py",
@@ -2075,8 +2084,9 @@ def test_member_existence_arm_in_both_sync_copies():
     checkout and syncs NOTHING, wedging every family until manual reconcile
     — so an absent literal member marks ITS family dirty
     (vintage-consistent skip; other families keep syncing). Glob tokens are
-    excluded (cat-file -e takes no glob); deletion PROPAGATION (removing
-    the stale worktree twin) stays #2385."""
+    excluded (cat-file -e takes no glob); deletion PROPAGATION for
+    glob/directory-member twins is the #2385 arm (Step 5a copy only);
+    literal-member twins stay a manual reconcile."""
     text = _text()
     for span_name, span, dirty_marking in (
         ("Step 5a", _step5a_span(text), "DIRTY_FAMILIES[$fam]=1"),
@@ -2117,8 +2127,12 @@ def test_family_sync_deleted_member_contained():
     ABSENT-at-origin/main containment line for the deleted member, skip the
     WHOLE agents family (the main-side agents edit does NOT arrive —
     vintage-consistent, never a half-refresh), still sync the clean lint
-    family, and leave the deleted member's stale worktree twin on disk
-    (deletion propagation is #2385). Pre-containment, the atomic checkout
+    family, and leave the deleted member's stale worktree twin on disk (the
+    #2385 removal arm skips dirty families, and the containment above parks
+    this one dirty — a LITERAL-member twin stays a manual reconcile;
+    glob/directory-member twins are the arm's own case, pinned by
+    test_family_sync_stale_glob_twin_removed_repro_2377). Pre-containment,
+    the atomic checkout
     would have errored on the absent pathspec and synced NOTHING for every
     family — the whole-sync wedge this arm exists to contain."""
     text = _text()
@@ -2160,10 +2174,384 @@ def test_family_sync_deleted_member_contained():
         assert "MAIN_SIDE_FIX = True" in (wt / "scripts" / "workflow_lint.py").read_text(), (
             "the lint family must keep syncing while the agents family is contained"
         )
-        # Stale-twin removal is #2385 — the sync never deletes.
+        # The #2385 removal arm skips dirty families — the literal-member
+        # containment parks this family dirty, so the twin survives for
+        # manual reconcile.
         assert (wt / deleted).exists(), (
-            "the deleted member's stale worktree twin must survive (deletion "
-            "propagation is #2385; the sync never deletes)"
+            "the deleted member's stale worktree twin must survive (the "
+            "#2385 removal arm skips dirty families — the literal-member "
+            "containment parks this family dirty, so the twin survives for "
+            "manual reconcile)"
+        )
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- (18c/#2385) stale-twin removal arm: textual pin + fire/keep repros -----
+
+
+def test_stale_twin_removal_arm_step5a_only():
+    """#2385: the Step 5a family-atomic block carries the stale-twin removal
+    arm, and the Step 10d POST-gate inline copy deliberately does NOT.
+
+    `checkout <ref> -- <pathspec>` can only add/modify, so a glob-matched or
+    directory-member file main deleted survives every sync and any
+    glob-selected scan collects the stale twin against the freshly-synced
+    module (#2377: ImportError at collection, verdict crash, ~67 min of gate
+    wall). The arm removes it pre-gate.
+
+    The Step-5a-only placement is load-bearing, not incidental: a deletion
+    committed in the POST-gate copy lands inside the cert-sha..HEAD delta as
+    a `D` row, and the #1807 verdict re-bind fails CLOSED on any `D` — a
+    forced gate re-run on every mid-gate main-side deletion. The negative
+    asserts anchor on EXECUTABLE fragments only, so the 10d copy's prose
+    asymmetry comment cannot trip them (the `test_sibling_issue_file_arm_
+    step5a_only` convention); the positive prose assert pins the composing
+    instruction that keeps a future editor from mirroring the arm in.
+    """
+    text = _text()
+    span = _step5a_span(text)
+    for frag, why in (
+        ("# Stale-twin removal (#2385)", "the arm's comment lead / span anchor"),
+        (
+            'if git -C "$WT" checkout origin/main -- $SAFE_SPECS; then',
+            "the rc guard — the arm runs ONLY on a succeeded atomic checkout, "
+            "so a failed sync never deletes anything",
+        ),
+        (
+            "diff --name-only --diff-filter=A origin/main -- $SAFE_SPECS",
+            "the candidate enumeration: tracked files under the SAFE (non-dirty) "
+            "pathspecs ABSENT at origin/main (untracked files never appear in "
+            "git diff, so fresh mid-round files are structurally unreachable)",
+        ),
+        ("payload, KEPT (#2385 fail-safe)", "the per-file payload keep"),
+        ("KEPT (#1972/#2385 fail-safe)", "the per-file uncommitted-dirt keep"),
+        (
+            '[ ! -r "$man" ]',
+            "the invariant-manifest READABILITY test (-r, not -f): a present-but-"
+            "unreadable manifest must KEEP, and testing readability up front is what "
+            "keeps a read error out of grep, which exits 2 there and 1 on a genuine "
+            "non-match. A revert to -f leaves 42/42 green without this pin (#2385 r2)",
+        ),
+        ("removed stale main-deleted twin", "the removal echo"),
+    ):
+        assert frag in span, f"the Step 5a stale-twin removal arm must carry {why}: {frag!r}"
+
+    auto = _automerge_span(text)
+    assert "--diff-filter=A" not in auto, (
+        "the Step 10d POST-gate inline copy must NOT carry the #2385 removal "
+        "arm's candidate enumeration — a deletion committed post-gate lands "
+        "in the cert-sha..HEAD delta as a D row and the #1807 verdict re-bind "
+        "fails CLOSED on any D (a forced gate re-run for zero gate benefit)"
+    )
+    assert "removed stale main-deleted twin" not in auto, (
+        "the Step 10d POST-gate inline copy must NOT carry the #2385 removal "
+        "echo (the arm is Step-5a-only — pre-gate — so its deletions sit "
+        "below the certified sha)"
+    )
+    assert "DROP the Step 5a block's #2385 stale-twin removal arm" in text, (
+        "Step 10d's inline-copy composing instructions must ORDER the editor "
+        "to drop the removal arm (an imperative, in the same shape as the "
+        "`WT=` drop) — a merely descriptive note of the asymmetry does not "
+        "bind whoever next composes the inline copy from § Step 5a"
+    )
+
+
+def test_family_sync_stale_glob_twin_removed_repro_2377():
+    """#2385 fire repro (#2377's topology) through the SHIPPED family arm
+    under real git: origin/main advances by modifying scripts/workflow_lint.py
+    (+ the main-NEW caps file) and DELETING a GLOB-matched lint-family member.
+
+    A glob-matched deletion fires NO #2260 containment (the containment case
+    skips `:(glob)` tokens), so the lint family stays clean and syncs — and
+    pre-#2385 the stale twin survived that successful sync, to be collected
+    by the Step 10d TG stem-glob scan against the freshly-synced linter.
+
+    The glob must still RESOLVE at origin/main for this to be #2377's shape:
+    `tests/test_workflow_lint_keep.py` is the surviving sibling member. Without
+    it the pathspec would match nothing at the ref, the atomic checkout would
+    error, and the rc guard would skip the arm — a checkout FAILURE, not a
+    stale twin surviving a SUCCESSFUL sync.
+    """
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    twin = "tests/test_workflow_lint_x.py"
+    survivor = "tests/test_workflow_lint_keep.py"
+    tmp = Path(tempfile.mkdtemp(prefix="eps2385fire-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env, delete_member=twin)
+
+        # Fixture pin: the Step-9c invariant manifest stub must NOT list the
+        # twin, or the arm's WORKFLOW_INVARIANT probe would KEEP it and this
+        # fire test would silently become a keep test.
+        manifest = (wt / "tests" / "step9c_workflow_invariant_manifest.txt").read_text()
+        assert twin not in manifest, (
+            "fixture precondition: the manifest stub must not list the twin "
+            "(else the #2385 WORKFLOW_INVARIANT keep probe fires and this "
+            "fire test passes for the wrong reason)"
+        )
+
+        # A fresh mid-round UNTRACKED file matching the same family glob: the
+        # arm must be structurally unable to reach it (git diff lists tracked
+        # paths only), and it must not park the family dirty either (#1972's
+        # untracked arm only fires for paths that exist at origin/main).
+        scratch = wt / "tests" / "test_workflow_lint_scratch.py"
+        scratch.write_text("fresh mid-round untracked file\n")
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert f"removed stale main-deleted twin {twin}" in proc.stdout, (
+            f"the arm must announce the removal of the stale twin:\n{proc.stdout}"
+        )
+        assert not (wt / twin).exists(), (
+            "the stale main-deleted twin must be REMOVED from the worktree — "
+            "surviving it is the #2377 crash shape (a glob-selected scan "
+            "collects it against the freshly-synced module)"
+        )
+        # Narrowness: only the main-deleted member goes, never every glob match.
+        assert (wt / survivor).exists(), (
+            "the surviving glob-matched sibling must be untouched — the arm "
+            "removes only members ABSENT at origin/main"
+        )
+        # The untracked scratch file is unreachable by the arm.
+        assert scratch.exists(), (
+            "a fresh mid-round UNTRACKED file must survive — `git diff` never "
+            "lists untracked paths, so the arm cannot reach it (#1972 intent)"
+        )
+        untracked = _run_git(wt, "status", "--porcelain", "--", str(scratch), env=env)
+        assert untracked.startswith("??"), (
+            f"the scratch file must still be untracked (never staged): {untracked!r}"
+        )
+        # The deletion rides the EXISTING anchor-subject sync commit, together
+        # with the modification — one commit, so the bs-scan exclusion, Guard 3
+        # and the Step 10d re-bind's view of pre-gate history keep working.
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj == _SYNC_SUBJECT_2303, f"sync-anchor subject missing: {subj!r}"
+        committed = _run_git(wt, "show", "--name-status", "--format=", "HEAD", env=env)
+        assert f"D\t{twin}" in committed, (
+            f"the deletion must ride the sync commit as a D row:\n{committed}"
+        )
+        assert "M\tscripts/workflow_lint.py" in committed, (
+            f"the linter modification must ride the SAME sync commit:\n{committed}"
+        )
+        # The sync itself still worked, in this family and in a sibling one.
+        assert "MAIN_SIDE_FIX = True" in (wt / "scripts" / "workflow_lint.py").read_text(), (
+            "the lint family must still sync (the removal is post-checkout)"
+        )
+        assert "main-side agents edit" in (wt / ".claude" / "agents" / "x.md").read_text(), (
+            "a glob-matched deletion fires no #2260 containment, so OTHER "
+            "families must keep syncing normally"
+        )
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_family_sync_fails_closed_on_empty_merge_base():
+    """#2385 r2 blocker: the Step 5a merge-base capture must FAIL CLOSED.
+
+    r1 made that pre-existing line load-bearing — the stale-twin removal arm
+    is the first code in this sync that can DELETE a file, and BOTH of its
+    payload-protection probes read `"$MB"..HEAD` (pass 1's family-grain
+    bs_commits and the arm's per-file bs_del), so ONE bad capture blinds both.
+
+    `git merge-base` can exit non-zero leaving MB EMPTY — unrelated histories,
+    or a `--depth 1` shallow graft (the repo root and the issue worktrees both
+    report is-shallow-repository true) — while the family
+    `checkout origin/main -- $SAFE_SPECS` on the following lines still exits
+    0. With MB empty, `"$MB"..HEAD` is the single token `..HEAD`, which
+    rev-parse expands to `HEAD ^HEAD`: an empty range, rc 0, no error. Both
+    probes then read "no branch-side commits", so a CLEAN, COMMITTED,
+    branch-AUTHORED file that origin/main lacks is classified a stale twin,
+    reaches `git rm`, and is committed under the sync-anchor subject — which
+    pass 1's own subject-shape exclusion then filters out of every later scan.
+    Silent and self-concealing.
+
+    Driven through the SHIPPED block under a PATH-shimmed `git` whose
+    merge-base subcommand fails while every other subcommand passes through to
+    the real binary (the shallow-graft trigger reproduced at its narrowest).
+    """
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    twin = "tests/test_workflow_lint_x.py"
+    payload = "tests/test_workflow_lint_payload.py"
+    tmp = Path(tempfile.mkdtemp(prefix="eps2385mb-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env, delete_member=twin)
+
+        # A CLEAN, COMMITTED, branch-AUTHORED lint-family file that
+        # origin/main has never carried: the payload class the two "$MB"-fed
+        # probes exist to protect. Under a healthy MB it is protected twice
+        # (its branch-side commit parks the lint family dirty in pass 1, and
+        # its own bs_del re-check keeps it); an empty MB voids both at once.
+        (wt / payload).write_text("branch-authored payload pin\n")
+        _run_git(wt, "add", "--", payload, env=env)
+        _run_git(wt, "commit", "-m", "branch work: add payload pin", env=env)
+        head_before = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+
+        # PATH shim: `git merge-base ...` fails; everything else is the real
+        # binary. Scoped to the arm subprocess only — the fixture above and
+        # the assertions below use the real git.
+        real_git = shutil.which("git")
+        assert real_git, "git must be on PATH to run this repro"
+        shim_dir = tmp / "gitshim"
+        shim_dir.mkdir()
+        shim = shim_dir / "git"
+        shim.write_text(
+            "#!/bin/bash\n"
+            'for a in "$@"; do\n'
+            '  if [ "$a" = merge-base ]; then\n'
+            "    echo 'fatal: refusing to work with unrelated histories' >&2\n"
+            "    exit 128\n"
+            "  fi\n"
+            "done\n"
+            f'exec {real_git} "$@"\n'
+        )
+        shim.chmod(0o755)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        env_arm["PATH"] = f"{shim_dir}:{env['PATH']}"
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+        # (1) Fails CLOSED and says why — an operator must be able to tell
+        # from the output alone that nothing synced and nothing was removed.
+        assert proc.returncode != 0, (
+            "an empty/errored merge-base must ABORT the sync stanza — "
+            f"exit 0 means it ran on a blinded MB:\n{proc.stdout}\n{proc.stderr}"
+        )
+        assert "no merge-base between HEAD and origin/main" in proc.stderr, (
+            f"the abort must announce the empty merge-base on stderr:\n{proc.stderr}"
+        )
+
+        # (2) The branch-authored payload SURVIVES on disk. This is the whole
+        # point: pre-fix both "$MB"-fed probes read an empty range and the
+        # removal arm git-rm'd it.
+        assert (wt / payload).exists(), (
+            "a CLEAN, COMMITTED, branch-AUTHORED file absent at origin/main "
+            "must survive an empty merge-base — deleting it is the #2385 r2 "
+            f"blocker (both payload probes share $MB):\n{proc.stdout}"
+        )
+        assert (wt / twin).exists(), (
+            "nothing at all may be removed once the capture fails closed — "
+            f"the arm must never be reached:\n{proc.stdout}"
+        )
+
+        # (3) No removal echo, and no deletion committed.
+        assert "removed stale main-deleted twin" not in proc.stdout, (
+            f"the removal arm must not run on a blinded MB:\n{proc.stdout}"
+        )
+        head_after = _run_git(wt, "rev-parse", "HEAD", env=env).strip()
+        assert head_after == head_before, (
+            "the abort must precede the sync commit — no new commit may land"
+        )
+        subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
+        assert subj != _SYNC_SUBJECT_2303, (
+            f"no sync-anchor commit may land on a blinded MB: {subj!r}"
+        )
+        committed = _run_git(wt, "show", "--name-status", "--format=", "HEAD", env=env)
+        assert "\nD\t" not in f"\n{committed}", (
+            f"no D row may be committed on a blinded MB:\n{committed}"
+        )
+        # (4) The sync itself did not run either (fail-closed, not partial):
+        # the main-NEW caps file never arrives.
+        assert not (wt / ".claude" / "config" / "agent_spec_size_caps.txt").exists(), (
+            "the abort must precede the checkout — a partial sync under a "
+            "blinded MB is exactly what fixing AT the capture prevents"
+        )
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_family_sync_stale_twin_dirty_family_kept():
+    """#2385 keep repro: a DIRTY family neither syncs nor deletes.
+
+    Same main-side glob-matched deletion as the fire repro, but the branch
+    has its own committed lint-family work (a non-sync subject). Pass 1 marks
+    the family dirty, pass 2 drops it from SAFE_SPECS, and the arm enumerates
+    candidates under SAFE_SPECS only — so the payload is safe by construction
+    at family grain, not merely by the arm's per-file re-checks.
+
+    This is the load-bearing keep: a wrong removal is unrecoverable in-round,
+    while a kept stale twin costs at worst one gate red.
+    """
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    twin = "tests/test_workflow_lint_x.py"
+    payload = "tests/test_workflow_lint_branchnew.py"
+    tmp = Path(tempfile.mkdtemp(prefix="eps2385keep-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env, delete_member=twin)
+
+        # Branch-side feature work in the SAME family as the deleted member.
+        (wt / payload).write_text("branch-side lint test\n")
+        _run_git(wt, "add", "--", payload, env=env)
+        _run_git(wt, "commit", "-m", "issue-9999: my own lint test", env=env)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert "carries branch-side feature edits — marking family 'lint' dirty" in proc.stdout, (
+            f"the lint family must be marked dirty by the branch-side commit:\n{proc.stdout}"
+        )
+        assert (wt / twin).exists(), (
+            "a DIRTY family deletes nothing — the stale twin must survive "
+            "(the arm enumerates candidates under SAFE_SPECS only)"
+        )
+        assert (wt / payload).read_text() == "branch-side lint test\n", (
+            "branch-side payload in a dirty family must be untouched"
+        )
+        assert "MAIN_SIDE_FIX = True" not in (wt / "scripts" / "workflow_lint.py").read_text(), (
+            "a dirty family syncs NOTHING — vintage-consistent, never a half-refresh"
+        )
+        subjects = _run_git(wt, "log", "--format=%s", "--", twin, env=env)
+        assert _SYNC_SUBJECT_2303 not in subjects, (
+            f"no sync-anchor commit may touch the twin in a dirty family:\n{subjects}"
+        )
+        # Containment, not a whole-sync wedge: the clean family still syncs.
+        assert "main-side agents edit" in (wt / ".claude" / "agents" / "x.md").read_text(), (
+            "the clean agents family must still sync while the lint family is dirty"
         )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -2779,8 +3167,11 @@ def test_agents_prose_pin_tests_family_coupled():
         "matching exempt dict with a per-file rationale (genuine-residual "
         "entries also name their relocation plan — #2454); (d) a file "
         "present on disk but ABSENT at origin/main (annotated below) is a "
-        "stale main-deleted twin the sync never deletes => remove the local "
-        "twin (deletion propagation is #2385). Undispositioned:\n  " + "\n  ".join(problems)
+        "stale main-deleted twin => a glob/directory-member twin is removed "
+        "automatically by the Step 5a #2385 removal arm on the next "
+        "spec-freshness sync; a LITERAL SPECS member parks its family dirty "
+        "(#2260 containment) and stays a manual reconcile — remove the local "
+        "twin by hand. Undispositioned:\n  " + "\n  ".join(problems)
     )
 
 

@@ -68,6 +68,25 @@ class FakeTok:
         return out
 
 
+class SeamMergingFakeTok(FakeTok):
+    """Char tokenizer except that a double newline is one cross-boundary token."""
+
+    @staticmethod
+    def _enc(t: str):
+        ids, offs = [], []
+        i = 0
+        while i < len(t):
+            if t.startswith("\n\n", i):
+                ids.append(150_001)
+                offs.append((i, i + 2))
+                i += 2
+            else:
+                ids.append(1 + (ord(t[i]) % 150_000))
+                offs.append((i, i + 1))
+                i += 1
+        return ids, offs
+
+
 def _row(conv, language="English", redacted=False, cid="conv-1"):
     return {
         "conversation_id": cid,
@@ -219,6 +238,7 @@ def test_chunk_resume_predicate(tmp_path):
     npy, rows, done = CAP.chunk_paths(tmp_path, 3)
     assert CAP.chunk_completed(tmp_path, 3, fp) is False
     np.save(npy, np.zeros((2, 4), np.float16))
+    np.save(CAP.context_chunk_path(tmp_path, 3), np.zeros((2, 4), np.float16))
     rows.write_text('{"row": 0}\n{"row": 1}\n')
     assert CAP.chunk_completed(tmp_path, 3, fp) is False  # sentinel is written LAST
     done.write_text(json.dumps({"fingerprint": fp}))
@@ -283,13 +303,14 @@ def test_capture_chunk_batched_equals_serial_tiny_real_model():
     args = argparse.Namespace(
         layer=1, batch_max_rows=8, batch_max_tokens=4096, tiny_model=True, device="cpu"
     )
-    y_b, meta_b = CAP.capture_chunk(recs, tok, model, args, c)
+    y_b, x_b, meta_b = CAP.capture_chunk(recs, tok, model, args, c)
     assert y_b.dtype == np.float16 and y_b.shape == (4, 32)  # 4 assistant turns total
+    assert x_b.dtype == np.float16 and x_b.shape == y_b.shape
     assert [m["conversation_id"] for m in meta_b] == ["c0", "c1", "c1", "c2"]
     assert all(m["n_span_tokens"] > 0 for m in meta_b)
     # padding fires (mixed lengths, B>=2); serial batch-1 path must agree (CPU fp32)
     args_serial = argparse.Namespace(**{**vars(args), "batch_max_rows": 1})
-    y_s, meta_s = CAP.capture_chunk(recs, tok, model, args_serial, _counters())
+    y_s, x_s, meta_s = CAP.capture_chunk(recs, tok, model, args_serial, _counters())
     assert meta_b == meta_s
     cos = torch.nn.functional.cosine_similarity(
         torch.as_tensor(y_b, dtype=torch.float32),
@@ -297,6 +318,39 @@ def test_capture_chunk_batched_equals_serial_tiny_real_model():
         dim=1,
     )
     assert float(cos.min()) >= 0.999, float(cos.min())
+    ctx_cos = torch.nn.functional.cosine_similarity(
+        torch.as_tensor(x_b, dtype=torch.float32),
+        torch.as_tensor(x_s, dtype=torch.float32),
+        dim=1,
+    )
+    assert float(ctx_cos.min()) >= 0.999, float(ctx_cos.min())
+
+
+def test_context_capture_reforwards_exact_prompt_on_bpe_seam():
+    tok = SeamMergingFakeTok()
+    model = _tiny_qwen()
+    msgs = [
+        {"role": "user", "content": "question"},
+        {"role": "assistant", "content": "\nanswer starts after a merged newline"},
+    ]
+    rec = PREP.process_conversation(_row(msgs), tok, 10_000, _counters())
+    assert rec is not None
+    args = argparse.Namespace(
+        layer=1, batch_max_rows=8, batch_max_tokens=4096, tiny_model=True, device="cpu"
+    )
+    counters = {
+        "zero_width_spans": 0,
+        "convs_all_spans_zero_width": 0,
+        "context_seam_reforwards": 0,
+    }
+    _y, x, meta = CAP.capture_chunk([rec], tok, model, args, counters)
+    assert len(meta) == 1 and counters["context_seam_reforwards"] == 1
+
+    prompt = tok.apply_chat_template(msgs[:1], tokenize=False, add_generation_prompt=True)
+    prompt_ids = torch.as_tensor([tok(prompt, add_special_tokens=False)["input_ids"]])
+    direct = CAP.extract_layer_activations(model, prompt_ids, [args.layer])[args.layer]
+    expected = direct[0, -1].to(torch.float16).numpy()
+    assert np.array_equal(x[0], expected)
 
 
 # ── train driver: split floors + assemble/train on synthetic chunks ────────────────
@@ -325,6 +379,7 @@ def test_assemble_and_train_tiny_end_to_end(tmp_path):
         y = rng.normal(size=(n, 16)).astype(np.float16)
         npy, rows, done = CAP.chunk_paths(store, gci)
         np.save(npy, y)
+        np.save(CAP.context_chunk_path(store, gci), y + np.float16(1.0))
         with rows.open("w") as f:
             for j in range(n):
                 f.write(json.dumps({"conversation_id": f"c{gci}-{j}", "msg_idx": 1}) + "\n")
@@ -338,6 +393,7 @@ def test_assemble_and_train_tiny_end_to_end(tmp_path):
         dict_size=64,
         steps_cap=2,
         production=False,
+        vector_kind="answer",
     )
     TRN.phase_assemble(args)
     mm = np.load(out / "Y19.fp16.npy", mmap_mode="r")
@@ -348,6 +404,133 @@ def test_assemble_and_train_tiny_end_to_end(tmp_path):
     log = json.loads((out / "train_log.json").read_text())
     assert log["epochs"] and 0 < log["epochs"][0]["steps"] <= 2
     assert "holdout_nmse" in log and log["paper_nmse"] == 0.097
+    cfg = json.loads((out / "cfg.json").read_text())
+    assert cfg["vector_kind"] == "answer"
+    assert cfg["training_object"] == "assistant-content token mean"
     assert (out / "sae_weights.safetensors").exists() and (out / "cfg.json").exists()
     # resume predicate: a second assemble call is a no-op skip (same chunk set)
     TRN.phase_assemble(args)
+
+    # The paired context object assembles separately with identical row order.
+    out_ctx = tmp_path / "sae_ctx"
+    args_ctx = argparse.Namespace(**{**vars(args), "out_dir": out_ctx, "vector_kind": "context"})
+    TRN.phase_assemble(args_ctx)
+    ctx_mm = np.load(out_ctx / "Y19.fp16.npy", mmap_mode="r")
+    assert ctx_mm.shape == (total, 16)
+    assert np.allclose(ctx_mm[:5], mm[:5] + np.float16(1.0))
+    assert (out_ctx / "row_index.jsonl").read_bytes() == (out / "row_index.jsonl").read_bytes()
+
+
+def test_context_train_does_not_claim_answer_nmse_target(tmp_path):
+    import issue2552_exactrep_train as TRN
+
+    store = tmp_path / "store"
+    store.mkdir()
+    rng = np.random.default_rng(1)
+    n = 100
+    np.save(CAP.chunk_paths(store, 0)[0], rng.normal(size=(n, 16)).astype(np.float16))
+    np.save(CAP.context_chunk_path(store, 0), rng.normal(size=(n, 16)).astype(np.float16))
+    _npy, rows, done = CAP.chunk_paths(store, 0)
+    with rows.open("w") as f:
+        for j in range(n):
+            f.write(json.dumps({"conversation_id": f"c{j}", "msg_idx": 1}) + "\n")
+    done.write_text(json.dumps({"fingerprint": {"k": "v"}, "n_rows": n}))
+
+    out = tmp_path / "sae_ctx"
+    args = argparse.Namespace(
+        store_dirs=[str(store)],
+        out_dir=out,
+        device="cpu",
+        dict_size=64,
+        steps_cap=2,
+        production=False,
+        vector_kind="context",
+    )
+    TRN.phase_assemble(args)
+    TRN.phase_train(args)
+    log = json.loads((out / "train_log.json").read_text())
+    assert log["paper_nmse"] is None
+    assert log["nmse_advisory_band"] is None
+    assert log["nmse_in_band"] is None
+    cfg = json.loads((out / "cfg.json").read_text())
+    assert cfg["vector_kind"] == "context"
+    assert cfg["training_object"] == "pre-assistant generation-prompt last-token context state"
+
+
+# ── exact quantitative-eval adapters ─────────────────────────────────────────────
+
+
+def test_exactrep_eval_pool_derivation_is_disjoint_and_deterministic():
+    import issue2552_exactrep_eval_inputs as EV
+
+    splits = {
+        "holdout": np.arange(2_500, dtype=np.int64),
+        "val": np.arange(2_500, 2_600, dtype=np.int64),
+        "train": np.arange(2_600, 5_600, dtype=np.int64),
+    }
+    a = EV.derive_eval_pools(splits, seed=2552, eval_n=2_000)
+    b = EV.derive_eval_pools(splits, seed=2552, eval_n=2_000)
+    assert all(np.array_equal(a[k], b[k]) for k in a)
+    assert len(a["eval"]) == 2_000 and len(a["pt_mine"]) == 500
+    assert len(a["ta_mine"]) == len(splits["train"])
+    assert np.intersect1d(a["eval"], a["pt_mine"]).size == 0
+    assert np.intersect1d(a["eval"], a["ta_mine"]).size == 0
+
+
+def test_exactrep_eval_selected_span_and_list_index(tmp_path):
+    import issue2552_exactrep_eval_inputs as EV
+
+    tok = FakeTok()
+    msgs = [
+        {"role": "user", "content": "Q1"},
+        {"role": "assistant", "content": "answer one"},
+        {"role": "user", "content": "Q2"},
+        {"role": "assistant", "content": "answer two"},
+    ]
+    rec = PREP.process_conversation(_row(msgs), tok, 10_000, _counters())
+    selected = {(str(rec["conversation_id"]), 3): 17}
+    ids, rows = EV._prepare_selected(rec, tok, selected)
+    assert len(rows) == 1 and rows[0][0] == 17
+    s, e = rows[0][1]
+    rendered = "".join(PREP.render_segments(msgs, tok))
+    assert rendered[s:e] == "answer two"  # FakeTok is one-char/one-token
+    assert len(ids) == len(rendered)
+
+    lists = tmp_path / "lists"
+    EV._write_list_config(lists, "rep_ta", [{"row_id": 17, "judged_top100": []}], {"x": 1})
+    EV._write_list_config(lists, "pt_max", [{"row_id": 17, "judged_top100": []}], {"x": 2})
+    index = json.loads((lists / "feature_lists_2000turns.json").read_text())
+    assert set(index["configs"]) == {"rep_ta", "pt_max"}
+    assert index["configs"]["rep_ta"]["n_turns"] == 1
+
+
+def test_exactrep_public_emission_selects_after_full_encode():
+    import issue2552_exactrep_eval_inputs as EV
+
+    class FakePublicSAE:
+        def __init__(self):
+            self.calls = 0
+
+        def encode(self, kept):
+            self.calls += 1
+            assert kept.shape == (2, 3)
+            return torch.arange(16, dtype=torch.float32).reshape(2, 8)
+
+    pt = FakePublicSAE()
+    got = EV._encode_selected_public(pt, torch.ones(2, 3), torch.tensor([6, 1]))
+    assert pt.calls == 1
+    assert torch.equal(got, torch.tensor([[6.0, 1.0], [14.0, 9.0]]))
+
+
+def test_exactrep_judge_adapter_pins_parent_and_three_config_protocol(tmp_path):
+    import issue2552_exactrep_judge as J
+
+    parent = J.load_parent(J.DEFAULT_PARENT_WORKTREE)
+    assert parent.CONFIGS == ("rep_ta", "pt_max", "pt_sum")
+    assert parent.TA_FAMILIES == ("rep_ta",)
+    assert tuple("ABC") == parent.W6_LABELS
+    assert parent.parse_w6({"ranking": ["A", "C", "B"]}) == ["A", "C", "B"]
+    assert parent.parse_w6({"ranking": ["A", "B", "C", "D", "E"]}) is None
+    args = argparse.Namespace(out_root=tmp_path, smoke=False)
+    paths = parent._paths(args)
+    assert paths.agg == tmp_path / "judge_aggregates"

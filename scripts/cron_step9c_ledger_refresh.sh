@@ -27,6 +27,9 @@
 # notification channel (cron email is structurally dead on this VM: no MTA,
 # and the crontab line redirects 2>&1). rc=0 passes stay silent and the
 # unconditional `exit 0` below is retained.
+# Fails loud (stderr FATAL + a best-effort push + exit 1) when the log/sentinel
+# dirs cannot be created or the daily log file is not appendable (task #2386;
+# ports the #2196 pattern).
 # Env knobs:
 #   EPS_STEP9C_REFRESH_LOG_DIR (default $PROJECT_DIR/logs/step9c_ledger_refresh)
 #   EPS_STEP9C_REFRESH_SENTINEL_DIR (default: the log dir)
@@ -56,7 +59,26 @@ TELEGRAM_PUSH="${EPS_TELEGRAM_PUSH_SCRIPT:-$HOME/my-goat/scripts/telegram_push.s
 SIDECAR="${EPS_STEP9C_REFRESH_SIDECAR:-$PROJECT_DIR/.claude/cache/step9c-refresh-cron-events.jsonl}"
 SENTINEL="$SENTINEL_DIR/failed-$DATE.flag"
 
-mkdir -p "$LOG_DIR" "$SENTINEL_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2386, ports the
+# #2196 pattern): an unchecked failure here silently skips the whole pass
+# below (the brace-group redirect fails and the group never runs) while the
+# wrapper still exits 0 — and the rc!=0 alert arm redirects into $LOG_FILE
+# too, so that failure is double-silent. stderr lands in the crontab redirect
+# file; cron mail is structurally dead on this VM (no MTA), so the live
+# channel is the same best-effort push the alert arm uses. NO per-date
+# sentinel here: SENTINEL_DIR defaults to the very LOG_DIR that is unwritable,
+# and the daily cadence already bounds this to one push per failing day.
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    if [ -x "$TELEGRAM_PUSH" ]; then
+        "$TELEGRAM_PUSH" "ALERT: step9c_ledger_refresh: $1" \
+            || echo "$(date -Iseconds) step9c_ledger_refresh: telegram_push.sh FAILED for FATAL alert (continuing to exit 1)" >&2
+    fi
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" "$SENTINEL_DIR" \
+    || fatal "cannot create log/sentinel dir (LOG_DIR=$LOG_DIR SENTINEL_DIR=$SENTINEL_DIR); step9c ledger refresh NOT run"
 
 # One pointer line per day into the crontab redirect file: everything below
 # runs inside a block redirected to $LOG_FILE, so without this the redirect
@@ -64,6 +86,12 @@ mkdir -p "$LOG_DIR" "$SENTINEL_DIR"
 # item-3 diagnosis; mirrors cron_lesson_consolidate.sh).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt (#2196 ordering: after
+# the FIRST_RUN_OF_DAY read — the probe creates $LOG_FILE when absent).
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not appendable ($LOG_FILE); step9c ledger refresh NOT run"
 
 {
     echo "=== $(date -Iseconds) step9c_ledger_refresh start ==="
@@ -94,11 +122,14 @@ FIRST_RUN_OF_DAY=0
 # fall back to the ~31-40 min in-session lazy refresh otherwise. `rc` is live
 # here because the block above is a brace group, not a subshell.
 #
-# ${rc:-0} — the ONE path that leaves rc unset is an unwritable $LOG_FILE (an
-# uncreatable LOG_DIR, ENOSPC): the brace group's redirect fails, so the group
-# never runs and never assigns rc. A bare "$rc" would then trip `set -u`
-# ("rc: unbound variable", exit 1) where the template wrapper exited 0.
-# Defaulting to 0 keeps that path silent-exit-0, matching
+# ${rc:-0} — rc is unset only when the brace group above never ran, i.e. its
+# redirect failed. That path is now GUARDED UPSTREAM by fatal() + the
+# appendability probe (task #2386), which exit 1 loudly before reaching here,
+# so the silent-exit-0 fallthrough this default once covered is gone.
+# ${rc:-0} is RETAINED as defense-in-depth against the residual race the probe
+# cannot close: the dir being removed, or the disk filling (ENOSPC), between
+# the probe and the group. A bare "$rc" would trip `set -u` ("rc: unbound
+# variable") there; defaulting to 0 keeps that narrow window exit-0, matching
 # cron_lesson_consolidate.sh.
 if [ "${rc:-0}" -ne 0 ]; then
     {

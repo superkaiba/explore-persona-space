@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2640,
+  "highest_id": 2652,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10701,15 +10701,15 @@
     "2385": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2385",
-      "status": "planning",
+      "path": "tasks/completed/2385",
+      "status": "completed",
       "title": "workflow-fix: Step 5a spec-sync add/modify-only leaves stale main-deleted family twins \u2014 TG scan leg collects them and crashes the Step 10d gate"
     },
     "2386": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2386",
-      "status": "running",
+      "path": "tasks/completed/2386",
+      "status": "completed",
       "title": "cron wrappers: unchecked mkdir -p LOG_DIR silently skips the pass (sibling sweep of #2196)"
     },
     "2387": {
@@ -12659,12 +12659,97 @@
       "status": "proposed",
       "title": "verify_task_body: label-SHA-vs-URL-pin assert + anaphoric HF pin-reference path resolution (pin-citation integrity, #2588 r2/r3)"
     },
+    "2641": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/blocked/2641",
+      "status": "blocked",
+      "title": "workflow-fix: verify_plan._fence_mask is delimiter-blind, moving 37 plans' verdicts across 19 checks"
+    },
+    "2642": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2642",
+      "status": "proposed",
+      "title": "workflow-fix: codex twin composers can read the Claude sibling's agent-memory, defeating ensemble independence"
+    },
+    "2643": {
+      "goal": "Fit a held-out context-SAE\u2192answer-SAE map from the paired #2552 dictionaries and test whether mapped answer-feature forecasts or map-residual anomaly scores detect known triggered, spurious, refusal, and unusual behaviors beyond text, metadata, raw-context, and reconstruction-rarity baselines.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/2643",
+      "status": "awaiting_promotion",
+      "title": "Can a context-SAE\u2192answer-SAE map forecast or flag triggered, refusal, and unusual behavior in Qwen2.5-7B model organisms?"
+    },
+    "2644": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/blocked/2644",
+      "status": "blocked",
+      "title": "workflow-fix: no recovery ladder when the subagent MODEL POOL is exhausted; reconciler site has no valid fallback"
+    },
+    "2645": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2645",
+      "status": "running",
+      "title": "cron_step9c_ledger_refresh.sh is committed non-executable \u2014 #2114's nightly refresh has failed Permission denied for 18 nights"
+    },
+    "2646": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/blocked/2646",
+      "status": "blocked",
+      "title": "persist_verdict_concerns: fail loud when CONCERN:: rows ingest to zero (silent no-op drops a reviewer's concerns)"
+    },
+    "2647": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2647",
+      "status": "proposed",
+      "title": "Add a runtime backstop that reports a stale Step 9c known-red ledger"
+    },
+    "2648": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2648",
+      "status": "proposed",
+      "title": "Clear the torch-before-dotenv red on main that reds every Step 9c gate"
+    },
+    "2649": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2649",
+      "status": "running",
+      "title": "main-red: HF-routing/hub-retry lint + torch-before-dotenv scan fail on pristine origin/main, redding Step 9c fleet-wide"
+    },
     "265": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/265",
       "status": "on_hold",
       "title": "Get more realistic behaviors to transfer more cleanly"
+    },
+    "2650": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2650",
+      "status": "running",
+      "title": "fix #847 torch-before-dotenv violations making test_no_new_torch_before_dotenv_vm_entrypoints red on main (fleet-wide Step 9c inheritance)"
+    },
+    "2651": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2651",
+      "status": "proposed",
+      "title": "workflow-fix: --check-hub-verify-retry FAIL message invites a lazy-wrap that retries nothing (retry_transient around list_repo_tree)"
+    },
+    "2652": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2652",
+      "status": "proposed",
+      "title": "Re-size the Step 9c ledger-refresh timeout \u2014 it runs at 99% of its own fence"
     },
     "266": {
       "has_clean_result": false,
