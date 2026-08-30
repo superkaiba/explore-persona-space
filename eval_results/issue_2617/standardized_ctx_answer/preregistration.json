@@ -1,0 +1,80 @@
+{
+  "schema": "issue2617-standardized-context-answer-prereg-v1",
+  "registered_at_utc": "2026-08-29T18:31:49Z",
+  "scope_note": "Prospective for the standardized v_C-versus-v_A comparison, but retrospective to the completed #2617 data collection and published flip classification.",
+  "question": "On the exact #2617 safety-valence minimal pairs, does the observed answer representation separate behavior-flipping pairs from nonflipping controls more strongly than the prompt-end context representation under matched standardization and held-out scoring?",
+  "data": {
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_repo_type": "dataset",
+    "revision": "f71b2f47dd276fdd3d590d34667f986800116aca",
+    "files": {
+      "issue2617_svmp/manifests/svmp_bank.json": "03c60d7bf3dd351b4f2d1811c6ed86901e6623148a23defa6f8862c039631f6f",
+      "issue2617_svmp/analysis_tensors/vc/vc_langow_bank.pt": "d27ff3ffe4176e8e1410f61262b8c1bf9d17c69529a56045f8ba8d5d589a3287",
+      "issue2617_svmp/analysis_tensors/va/va_langow_query_svmp.pt": "65bede05594e64835f3e7be505e659980dbf00b90334390bcd304ed7c8795507",
+      "issue2617_svmp/raw_completions/judge/judge_scores.json": "c740feb74d856d89f4f832ddd48fbf1a2b01d3cb51402199e1c4d4d78a993486"
+    },
+    "n_pairs": 108,
+    "n_contexts": 216,
+    "independent_unit": "pair"
+  },
+  "representations": {
+    "model": "Qwen2.5-7B-Instruct",
+    "layer": 19,
+    "v_C": "residual-stream vector at the final prompt token",
+    "v_A": "arithmetic mean of the ten valid tail-inclusive answer-span vectors for a context; rollout rows are never treated as independent observations",
+    "answer_pooling": "tail_inclusive"
+  },
+  "pair_labels": {
+    "behavior_gap": "absolute difference between the two members' refusal rates",
+    "flip": "gap >= 0.5",
+    "nonflip_control": "gap <= 0.1",
+    "mid": "0.1 < gap < 0.5; retained in unsupervised training-fold whitening but excluded from effect-size estimation",
+    "orientation": "higher-refusal member minus lower-refusal member; exact ties use manifest side a minus side b",
+    "expected_from_published_2617_classification": {
+      "flip": 60,
+      "nonflip_control": 41,
+      "mid": 7
+    }
+  },
+  "cross_validation": {
+    "method": "StratifiedGroupKFold",
+    "n_splits": 5,
+    "shuffle": true,
+    "random_state": 2617,
+    "stratum": "flip/nonflip/mid",
+    "group": "artifact_family_id",
+    "constraint": "The exact same persisted pair-to-fold assignment is used for v_C and v_A. All members and rollouts of a pair stay in one fold."
+  },
+  "whitening": {
+    "method": "training-fold PCA whitening via full deterministic SVD",
+    "rank": 32,
+    "fit_rows": "both context members of every training-fold pair, including mid pairs",
+    "centering": "training-fold mean",
+    "eigenvalue_convention": "sample covariance, divisor n_train_rows - 1",
+    "fit_separately_per_space": true,
+    "matched_recipe": "v_C and v_A use identical folds, rank, centering, SVD, and eigenvalue-floor logic; each space estimates its own training-fold covariance so a unit is one within-space standard deviation",
+    "eigenvalue_floor": "fail if retained singular value <= max(singular_values) * 1e-10; do not tune or silently reduce rank"
+  },
+  "held_out_score": {
+    "training_direction": "unit-normalized mean of oriented, whitened pair differences over training flip pairs only",
+    "test_margin": "dot(training_direction, whitened higher-refusal-minus-lower-refusal difference) for each held-out pair",
+    "interpretation": "positive values place the more-refusing member farther along the training-only refusal direction; whitening makes the projection dimensionless"
+  },
+  "primary_estimand": {
+    "within_space": "Hedges' g comparing out-of-fold margins for flip pairs versus nonflip controls",
+    "headline_contrast": "g(v_A) - g(v_C)",
+    "directional_interpretation": "positive favors answer-space behavioral specificity; negative favors context space",
+    "uncertainty": "10,000-draw paired stratified bootstrap, resampling flip and nonflip pair rows independently with replacement and applying identical sampled indices to both spaces",
+    "bootstrap_seed": 2617001,
+    "ci": "percentile 95% interval",
+    "decision_rule": "CI entirely above zero => v_A separates more; entirely below zero => v_C separates more; otherwise no detected difference"
+  },
+  "registered_secondary_reads": [
+    "Within-space Hedges' g and 95% pair-bootstrap CI",
+    "Mean out-of-fold margin and pairwise sign accuracy for flip and nonflip groups",
+    "Paired v_A-minus-v_C difference in mean flip margin",
+    "Per-pair-class margin summaries, with benign object/verb/subject pairs identified explicitly",
+    "Rank-16 and rank-64 sensitivity analyses using the same folds; these cannot replace the rank-32 headline"
+  ],
+  "known_interpretive_limit": "v_A is an observed-answer representation averaged over the same rollout set used to estimate each context's refusal rate, whereas v_C precedes generation. The comparison is descriptive separation, not a claim of equally prospective prediction or causal encoding."
+}

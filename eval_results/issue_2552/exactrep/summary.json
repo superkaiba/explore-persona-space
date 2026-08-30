@@ -1,0 +1,152 @@
+{
+  "schema": "issue2552-exactrep-summary-v1",
+  "completed_at": "2026-08-29",
+  "verdict": {
+    "exact_quantitative_replication": false,
+    "training_recipe_reconstruction": "close on answer-SAE reconstruction",
+    "discrimination_direction": "replicated",
+    "coverage_direction": "marginal point-estimate only; confidence interval includes parity",
+    "summary": "The per-token max SAE strongly beat the response-averaged SAE on matching, but the response-averaged coverage advantage was 0.521 rather than the paper's 0.797 and was not distinguishable from parity by the prespecified bootstrap interval."
+  },
+  "protocol": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "layer": 19,
+    "corpus": "LMSYS-Chat-1M",
+    "conversations": 776379,
+    "assistant_turns": 1475667,
+    "paper_reported_assistant_turns_approx": 1580000,
+    "realized_fraction_of_paper_corpus": 0.934,
+    "sae": {
+      "architecture": "flat BatchTopK",
+      "input_width": 3584,
+      "dictionary_width": 32768,
+      "k": 128,
+      "learning_rate": 0.0002,
+      "batch_size": 256,
+      "epochs": 3,
+      "adam_betas": [0.9, 0.999],
+      "seed": 2552
+    },
+    "splits": {
+      "train": 1445667,
+      "validation": 10000,
+      "holdout": 20000,
+      "row_index_sha256": "1a929849c3a6334d71c14e87dbb641d2367374d173a35fe1f5084e9e4885a063"
+    },
+    "judge_model": "claude-sonnet-4-6",
+    "judge_prefill": false,
+    "eval_turns": 2000
+  },
+  "training": {
+    "answer_response_mean_sae": {
+      "representation": "mean of assistant-content token residual states",
+      "holdout_fve": 0.897153,
+      "holdout_nmse": 0.102847,
+      "holdout_l0": 126.97,
+      "activation_threshold": 0.5026887059,
+      "paper_nmse": 0.097,
+      "nmse_delta_vs_paper": 0.005847,
+      "weights_sha256": "7c0b134e7f4a5618d1b2f87b3cbaba2b5e25f139bb95582988553c4f18dd1b08"
+    },
+    "context_vector_sae": {
+      "representation": "last-token residual state of the exact generation prompt before the assistant answer",
+      "matched_to_answer_arm": true,
+      "same_rows_and_splits": true,
+      "same_sae_recipe": true,
+      "holdout_fve": 0.912356,
+      "holdout_nmse": 0.087644,
+      "holdout_l0": 128.26,
+      "activation_threshold": 0.5519016981,
+      "paper_target_available": false,
+      "weights_sha256": "9657db22a0bd4f446fcd5cd7877fd8f2a0a7309499e784105a97a333cc8d0eb0"
+    }
+  },
+  "matching": {
+    "paper": {
+      "answer_response_mean": 0.739,
+      "per_token_max": 0.95
+    },
+    "replication": {
+      "answer_response_mean": {
+        "accuracy": 0.644544997486174,
+        "n_correct": 1282,
+        "n_valid": 1989,
+        "delta_vs_paper": -0.094455002513826
+      },
+      "per_token_max": {
+        "accuracy": 0.9738824711200402,
+        "n_correct": 1939,
+        "n_valid": 1991,
+        "delta_vs_paper": 0.0238824711200402
+      },
+      "per_token_sum": {
+        "accuracy": 0.8367654445002511,
+        "n_correct": 1666,
+        "n_valid": 1991
+      },
+      "paired_per_token_max_minus_answer_mean": {
+        "n": 1983,
+        "estimate": 0.3287947554210782,
+        "bootstrap_seed": 2552,
+        "bootstrap_reps": 10000,
+        "ci95_percentile": [0.3061018658598084, 0.3509833585476551]
+      }
+    }
+  },
+  "coverage": {
+    "paper_answer_mean_win_rate_vs_per_token_max": 0.797,
+    "replication_answer_mean_vs_per_token_max": {
+      "n_valid": 1978,
+      "answer_mean_wins": 1031,
+      "per_token_max_wins": 947,
+      "answer_mean_win_rate": 0.5212335692618807,
+      "delta_vs_paper": -0.2757664307381193,
+      "bootstrap_seed": 2552,
+      "bootstrap_reps": 10000,
+      "ci95_percentile": [0.49898887765419614, 0.5429726996966633]
+    },
+    "other_pairs": {
+      "answer_mean_vs_per_token_sum": {
+        "n_valid": 1978,
+        "answer_mean_wins": 1096,
+        "per_token_sum_wins": 882,
+        "answer_mean_win_rate": 0.5540950455005056
+      },
+      "per_token_max_vs_per_token_sum": {
+        "n_valid": 1977,
+        "per_token_max_wins": 1331,
+        "per_token_sum_wins": 646,
+        "per_token_max_win_rate": 0.6732422862923622
+      }
+    }
+  },
+  "three_way_ranking": {
+    "lower_is_better": true,
+    "n_valid": 1973,
+    "mean_rank": {
+      "per_token_max": 1.9194120628484541,
+      "answer_response_mean": 1.981753674607197,
+      "per_token_sum": 2.0988342625443486
+    }
+  },
+  "judge_completeness": {
+    "answer_feature_descriptions": {"n_valid": 5468, "n_requested": 5479},
+    "per_token_feature_descriptions": {"n_valid": 32988, "n_requested": 33029},
+    "turn_summaries": {"n_valid": 1979, "n_requested": 2000},
+    "matching": {
+      "answer_response_mean": {"n_valid": 1989, "n_requested": 2000},
+      "per_token_max": {"n_valid": 1991, "n_requested": 2000},
+      "per_token_sum": {"n_valid": 1991, "n_requested": 2000}
+    },
+    "coverage_pairwise_items": {"n_valid": 5933, "n_requested": 5937},
+    "three_way_rankings": {"n_valid": 1973, "n_requested": 1979}
+  },
+  "artifacts": {
+    "huggingface_prefix": "issue2552_derreplication/exactrep",
+    "answer_sae_prefix": "issue2552_derreplication/exactrep/analysis_tensors/sae_rep",
+    "context_sae_prefix": "issue2552_derreplication/exactrep/analysis_tensors/sae_ctx_rep",
+    "eval_lists_prefix": "issue2552_derreplication/exactrep/analysis_tensors/eval_lists",
+    "raw_judge_prefix": "issue2552_derreplication/exactrep/raw_completions/judge",
+    "note": "The GPU pod was terminated only after the critical training, eval-input, log, and judge artifacts were mirrored and verified."
+  }
+}

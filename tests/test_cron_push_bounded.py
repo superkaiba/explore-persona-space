@@ -209,16 +209,25 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 # each mapped to its EXACT expected number of push execution sites.
 WRAPPERS: dict[str, int] = {
     "scripts/cron_codex_auto_upgrade.sh": 1,
-    "scripts/cron_daily_healthcheck.sh": 2,
+    "scripts/cron_daily_healthcheck.sh": 3,
     "scripts/cron_lesson_consolidate.sh": 2,
-    "scripts/cron_step9c_ledger_refresh.sh": 1,
+    "scripts/cron_step9c_ledger_refresh.sh": 2,
     "scripts/cron_watch_issue_1739.sh": 2,
     "scripts/cron_watch_issue_2091.sh": 2,
 }
 
-# The task's own inventory: 10 execution sites across the 6 wrappers above.
+# The task's own inventory: 12 execution sites across the 6 wrappers above.
 # Pinned separately so a per-wrapper count edit has to reckon with the total.
-TOTAL_EXPECTED_SITES = 10
+#
+# 10 -> 12 when #2386's `fatal()` helper landed on main mid-round, adding one
+# unbounded push each to cron_daily_healthcheck.sh and
+# cron_step9c_ledger_refresh.sh. Both halves of the guard fired in sequence per
+# wrapper — the prefix assert first (each new site was unbounded), then this
+# count pin (each site was new) — which is the intended behavior and the reason
+# the count is pinned per wrapper rather than inferred. cron_codex_auto_upgrade
+# also gained a #2386 fail-loud probe, but its arm reuses the already-bounded
+# push, so its count is unchanged at 1.
+TOTAL_EXPECTED_SITES = 12
 
 # Push variable in EXECUTION position: the quoted variable followed by a
 # quoted message argument. `[ -x "$PUSH" ]` guards do not match (a `]`, not a

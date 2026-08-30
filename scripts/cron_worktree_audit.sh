@@ -26,6 +26,8 @@
 # EPM_WORKTREE_VENV_REAP=0 disables.
 #
 # Output lives at logs/worktree_audit/YYYY-MM-DD.log (one file per day).
+# Fails loud (stderr FATAL + exit 1) when the log dir cannot be created or the
+# daily log file is not appendable (task #2386; ports the #2196 pattern).
 
 set -uo pipefail
 
@@ -42,7 +44,18 @@ DATE=$(date +%Y-%m-%d)
 LOG_DIR="${EPM_WORKTREE_AUDIT_LOG_DIR:-$PROJECT_DIR/logs/worktree_audit}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 
-mkdir -p "$LOG_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2386, ports the
+# #2196 pattern): an unchecked failure here silently skips the whole pass
+# below (the brace-group redirect fails and the group never runs) while the
+# wrapper still exits 0. stderr lands in the crontab redirect file where one
+# exists; cron mail is structurally dead on this VM (no MTA).
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" \
+    || fatal "cannot create log dir (LOG_DIR=$LOG_DIR); worktree audit NOT run"
 
 # One pointer line per day into the crontab redirect file: everything below
 # runs inside a block redirected to $LOG_FILE, so without this the redirect
@@ -50,6 +63,12 @@ mkdir -p "$LOG_DIR"
 # item-3 diagnosis, 2026-06-12; mirrors cron_autonomous_session_watch.sh).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt (#2196 ordering: after
+# the FIRST_RUN_OF_DAY read — the probe creates $LOG_FILE when absent).
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not appendable ($LOG_FILE); worktree audit NOT run"
 
 {
     echo "=== $(date -Iseconds) worktree_audit start ==="

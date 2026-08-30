@@ -24,7 +24,19 @@ exists on this VM and must never be exec'd by a test), then assert:
   THERE now); a later run that finds an attempted date still missing/husk
   pushes a one-time "auto-backfill FAILED" alert and never relaunches; the
   sweep skips ``$YESTERDAY``'s own in-flight attempt; a held ``backfill.lock``
-  makes the detached flock-wrapped launch a no-op (single-flight).
+  makes the detached flock-wrapped launch a no-op (single-flight);
+- #2386 fail-loud log-dir guard (Pattern B — ``fatal()`` also fires a
+  best-effort ``TELEGRAM_PUSH``): an uncreatable or unwritable log dir exits
+  non-zero with a stderr FATAL naming the path instead of silently skipping
+  the whole healthcheck (the brace-group redirect fails, the group never runs)
+  and exiting 0. ``run()`` gains a ``log_dir_setup`` kwarg — ``"ok"`` (the
+  unchanged default: LOG_DIR is the sentinel dir, exactly as every other test
+  here uses it), ``"uncreatable"`` (a path under a regular FILE so ``mkdir -p``
+  fails ENOTDIR) and ``"unwritable"`` (an existing dir at 0o555 so ``mkdir -p``
+  passes and the appendability probe fails; root bypasses mode bits, hence the
+  skipif). Only LOG_DIR varies — SENTINEL_DIR stays writable, so the failure is
+  attributable to the log dir alone, and the guard's own "no sentinel written"
+  claim is meaningful rather than a side effect of an unwritable sentinel dir.
 
 Detached-launch assertions poll for the fake bin's marker with a <=5s deadline;
 "no launch" assertions hold a shorter poll-then-assert-absent window.
@@ -43,6 +55,14 @@ _WRAPPER = Path(__file__).resolve().parent.parent / "scripts" / "cron_daily_heal
 
 _POLL_DEADLINE_S = 5.0  # detached-launch artifacts must appear within this
 _ABSENT_WINDOW_S = 1.5  # window over which a no-launch artifact must stay absent
+
+# #2386 fatal-message fragments. The mkdir arm and the probe arm are
+# distinguished by these, NOT by the dated log filename (which would race a
+# midnight rollover). Spelled locally rather than imported: each cron test
+# file weaves the guard into its own harness idiom.
+_MKDIR_FATAL = "cannot create log/sentinel dir"
+_PROBE_FATAL = "not appendable"
+_ALERT_PREFIX = "ALERT: daily_healthcheck:"
 
 
 def _skeleton(d: str) -> str:
@@ -97,8 +117,35 @@ def harness(tmp_path: Path):
     )
     fake_claude.chmod(0o755)
 
+    resolved_log_dirs: dict[str, Path] = {"ok": log_dir}
+
+    def log_dir_for(log_dir_setup: str) -> Path:
+        """Resolve (creating on first use) the LOG_DIR for one setup mode.
+
+        ``"ok"`` returns the sentinel dir unchanged — the pre-#2386 default, so
+        every existing test's environment is byte-identical. The two failure
+        modes get their OWN paths outside the project tree, so a fatal arm can
+        never leave residue where a sibling test looks.
+        """
+        if log_dir_setup in resolved_log_dirs:
+            return resolved_log_dirs[log_dir_setup]
+        if log_dir_setup == "uncreatable":
+            blocker = tmp_path / "blocker"
+            blocker.write_text("regular file blocking mkdir -p (ENOTDIR)\n")
+            resolved_log_dirs[log_dir_setup] = blocker / "logs"
+        elif log_dir_setup == "unwritable":
+            unwritable = tmp_path / "unwritable_logs"
+            unwritable.mkdir()
+            unwritable.chmod(0o555)
+            resolved_log_dirs[log_dir_setup] = unwritable
+        else:  # pragma: no cover — harness misuse is a test defect
+            raise ValueError(f"unknown log_dir_setup: {log_dir_setup!r}")
+        return resolved_log_dirs[log_dir_setup]
+
     def run(
-        yesterday: str = "2026-06-27", extra_env: dict[str, str] | None = None
+        yesterday: str = "2026-06-27",
+        extra_env: dict[str, str] | None = None,
+        log_dir_setup: str = "ok",
     ) -> subprocess.CompletedProcess:
         env = {
             **os.environ,
@@ -106,7 +153,7 @@ def harness(tmp_path: Path):
             "EPS_HEALTHCHECK_YESTERDAY": yesterday,
             "EPS_HEALTHCHECK_DAILY_DIR": str(daily_dir),
             "EPS_HEALTHCHECK_SENTINEL_DIR": str(sentinel_dir),
-            "EPS_HEALTHCHECK_LOG_DIR": str(log_dir),
+            "EPS_HEALTHCHECK_LOG_DIR": str(log_dir_for(log_dir_setup)),
             "EPS_TELEGRAM_PUSH_SCRIPT": str(fake_push),
             "EPS_HEALTHCHECK_CLAUDE_BIN": str(fake_claude),
         }
@@ -124,6 +171,8 @@ def harness(tmp_path: Path):
         "claude_calls": claude_calls,
         "claude_marker": claude_marker,
         "run": run,
+        "log_dir_for": log_dir_for,
+        "tmp_path": tmp_path,
     }
 
 
@@ -477,3 +526,74 @@ def test_lock_held_skips_launch(harness):
     finally:
         holder.terminate()
         holder.wait(timeout=10)
+
+
+# ── #2386: the fail-loud log-dir guard (Pattern B, fatal + push) ─────────────
+
+
+def test_uncreatable_log_dir_fails_loud_and_pushes(harness):
+    """An uncreatable $LOG_DIR (path under a regular file, ENOTDIR) exits
+    non-zero with a stderr FATAL naming the dir, fires exactly one ALERT push,
+    and never reaches ANY healthcheck work — no claude launch, no sentinel.
+    Before #2386 the brace-group redirect failed, the entire healthcheck
+    (missing/husk detection, auto-backfill, alerting) was skipped, and the
+    wrapper still exited 0."""
+    yesterday = "2026-06-27"
+    log_dir = harness["log_dir_for"]("uncreatable")
+    result = harness["run"](yesterday, log_dir_setup="uncreatable")
+
+    assert result.returncode != 0, f"expected non-zero exit, stderr={result.stderr!r}"
+    assert "FATAL" in result.stderr
+    assert _MKDIR_FATAL in result.stderr
+    assert str(log_dir) in result.stderr
+    # The push leg fired: this wrapper's fatal() has a live alert channel.
+    assert _push_count(harness["push_log"]) == 1
+    assert _ALERT_PREFIX in harness["push_log"].read_text()
+    # No healthcheck work happened at all.
+    assert _claude_calls(harness["claude_calls"]) == []
+    _assert_stays_absent(harness["claude_marker"])
+    assert not (harness["sentinel_dir"] / f"sent-{yesterday}.flag").exists()
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses directory mode bits")
+def test_unwritable_log_dir_fails_loud_and_pushes(harness):
+    """A $LOG_DIR that EXISTS but is unwritable (chmod 0o555) passes
+    ``mkdir -p`` and fails the appendability probe — non-zero exit, the
+    probe-specific FATAL, one ALERT push, no claude launch, no sentinel."""
+    yesterday = "2026-06-27"
+    log_dir = harness["log_dir_for"]("unwritable")
+    result = harness["run"](yesterday, log_dir_setup="unwritable")
+
+    assert result.returncode != 0, f"expected non-zero exit, stderr={result.stderr!r}"
+    assert "FATAL" in result.stderr
+    # The probe arm, not the mkdir arm — mkdir -p succeeds on an existing dir.
+    assert _PROBE_FATAL in result.stderr
+    assert _MKDIR_FATAL not in result.stderr
+    assert str(log_dir) in result.stderr
+    assert _push_count(harness["push_log"]) == 1
+    assert _ALERT_PREFIX in harness["push_log"].read_text()
+    assert _claude_calls(harness["claude_calls"]) == []
+    _assert_stays_absent(harness["claude_marker"])
+    assert not (harness["sentinel_dir"] / f"sent-{yesterday}.flag").exists()
+
+
+def test_missing_push_script_still_exits_non_zero(harness):
+    """The fatal() push leg is BEST-EFFORT — a missing/non-executable
+    telegram_push.sh must not swallow the infrastructure failure. No push is
+    recorded, the FATAL still reaches stderr, and the wrapper still exits
+    non-zero."""
+    yesterday = "2026-06-27"
+    missing_push = harness["tmp_path"] / "no_such_push.sh"
+    assert not missing_push.exists()
+    result = harness["run"](
+        yesterday,
+        extra_env={"EPS_TELEGRAM_PUSH_SCRIPT": str(missing_push)},
+        log_dir_setup="uncreatable",
+    )
+
+    assert result.returncode != 0, f"expected non-zero exit, stderr={result.stderr!r}"
+    assert "FATAL" in result.stderr
+    assert _MKDIR_FATAL in result.stderr
+    assert _push_count(harness["push_log"]) == 0
+    assert _claude_calls(harness["claude_calls"]) == []
+    _assert_stays_absent(harness["claude_marker"])

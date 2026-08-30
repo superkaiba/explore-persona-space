@@ -86,6 +86,8 @@
 # UTC-dated read used to hit a nonexistent path). TEST-ONLY env seams:
 # EPM_WATCH_LOG_DIR (log dir), EPM_WATCH_DATE_LOCAL_OVERRIDE /
 # EPM_WATCH_DATE_UTC_OVERRIDE (date pins), EPM_WATCH_BIN (driver stub).
+# Fails loud (stderr FATAL + exit 1) when the log dir cannot be created or the
+# daily log file is not appendable (task #2386; ports the #2196 pattern).
 
 set -uo pipefail
 
@@ -112,7 +114,18 @@ LOG_DIR="${EPM_WATCH_LOG_DIR:-$PROJECT_DIR/logs/autonomous_session_watch}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 UTC_LOG_FILE="$LOG_DIR/$DATE_UTC.log"
 
-mkdir -p "$LOG_DIR"
+# Fail-loud helper for wrapper-infrastructure failures (task #2386, ports the
+# #2196 pattern): an unchecked failure here silently skips the whole pass
+# below (the brace-group redirect fails and the group never runs) while the
+# wrapper still exits 0. stderr lands in the crontab redirect file where one
+# exists; cron mail is structurally dead on this VM (no MTA).
+fatal() {
+    echo "$(date -Iseconds) FATAL: $1" >&2
+    exit 1
+}
+
+mkdir -p "$LOG_DIR" \
+    || fatal "cannot create log dir (LOG_DIR=$LOG_DIR); session watcher NOT run"
 
 # #2141: on the first run of a new local day, the local name may still be
 # YESTERDAY's UTC alias (a symlink into yesterday's file) — remove a symlink
@@ -127,6 +140,15 @@ fi
 # item-3 diagnosis, 2026-06-12).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# mkdir -p succeeds on an existing dir regardless of writability, so probe the
+# actual append open the brace group below will attempt (#2196 ordering: after
+# the FIRST_RUN_OF_DAY read — the probe creates $LOG_FILE when absent). It also
+# sits AFTER the #2141 symlink removal above (so it never writes through a
+# stale alias) and BEFORE the UTC-alias block below, which keys on the
+# DIFFERENT $UTC_LOG_FILE name and is unaffected by $LOG_FILE existing.
+: >> "$LOG_FILE" 2>/dev/null \
+    || fatal "daily log file not appendable ($LOG_FILE); session watcher NOT run"
 
 # #2141: this VM is UTC-7 — for 7h/day the UTC date is one ahead of the
 # local date and a UTC-dated read used to hit a NONEXISTENT path. Provide
