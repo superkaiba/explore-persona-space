@@ -275,6 +275,50 @@ closing the twin's OWN r2 CONCERN):**
     three mandatory items and FAILs its own round-3 fix for the item it had
     itself marked secondary.
 
+**#2387 r5 (2026-08-29) — UPHELD-OWN-BLOCKER closure round after a binding
+reconciler FAIL (Claude PASS / Codex FAIL / reconciler FAIL upholding the
+twin's blocker AND correcting its plan-adherence call):**
+
+49. **Inline the reconciler record verbatim as the BINDING contract envelope
+    (tags stripped) — it is neither twin's output, so no sibling-material
+    fence applies to it.** Its "What round 5 owes" section IS the round
+    contract; restate its numbered prescriptions in a contract section, and
+    frame the ledger ids' acceptance criteria from the raised rows' `summary`
+    fields (the `evidence` fields were None on this task — check before
+    promising evidence text).
+50. **When the binding record upheld the twin's blocker but DISPOSED of a
+    second leg of its verdict, carry BOTH: author-neutrality in the credit
+    direction ("you were right — don't demand more than the stated contract,
+    don't wave the fix through") PLUS an explicit do-not-re-run for the
+    corrected leg** (#2387: plan-adherence PARTIAL ruled wrong — plan v2
+    silent on comment stripping; the ± rows were the Major restated). Also
+    patch the inlined prior-verdict preamble AND the verdict template's
+    Plan-adherence header line to score adherence per the adjudication
+    (literal items undisturbed), or the twin re-derives its own refuted
+    PARTIAL from its own inlined verdict.
+51. **Split the reconciler's reproduction table settled-vs-claim BY COLUMN:**
+    the r3/r4 columns are adjudicated facts about those blobs; the round-5
+    column is a CLAIM the twin re-derives. Saying "re-derive the whole table"
+    wastes the round; saying "the table is settled" seeds the closure.
+52. **A NOT-ADDRESSED verdict on the round's own BLOCKER is a substantive
+    FAIL (the fix IS the round); the sibling CONCERN still re-raises at its
+    own severity** — state both in the severity fence, and note a
+    PARTIALLY-ADDRESSED blocker is judged on the mandatory half (the
+    reproduced channel) vs optional hardening.
+53. **Duplicate `addressed` ledger rows for one id (implementer bookkeeping
+    posted twice) ride ONE fence** — state the duplication as a fact so the
+    twin does not read it as a shape defect; pin the ledger snapshot to the
+    marker ts as usual (the addressed rows postdated the marker by a minute).
+54. **Reviewer-death respawn note (item 46) has a sibling: mid-branch sync
+    commits between the round parent and the prior deliverable.** Verify the
+    scanned file is byte-identical at parent vs prior-deliverable SHA
+    (`diff <(git show A:f) <(git show B:f)`) and state it as a fact ("red
+    against parent == red against round-4 scanner") — otherwise the twin
+    burns probes reconciling two names for one blob, or worse trusts the
+    wrong parent. Also name which sync commits carry sibling-issue
+    scripts/tests (the parent here carried five #2552 files) so the
+    round-scope fence covers them explicitly.
+
 **#2386 r2 (2026-08-29) — CONCERNS+CONCERNS revise round closing the twin's own
 three r1 findings (Pattern C probe + vehicle-keyed class invariant + exact
 stdout; 3 files, +744/−62):**
