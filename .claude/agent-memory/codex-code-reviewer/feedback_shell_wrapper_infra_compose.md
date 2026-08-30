@@ -575,3 +575,45 @@ file, +440/−858):**
     (weight theirs). Also: the v8 body carried NO versioned HTML head
     sentinel (v7 had one) — flag in the RETURN only when marker-shape is
     barred; never hand it as a shape finding.
+
+**#2387 r9 (2026-08-30) — POST-RECONCILER-FAIL closure round (Claude PASS /
+Codex FAIL / reconciler BINDING FAIL upholding the twin's blocker on
+measurement; the round closes the twin's OWN upheld blocker + three
+persisted siblings):**
+
+66. **The reconciler's /tmp measurement harness is an ADJUDICATION RECORD —
+    sanction re-runs only via a COPY.** `/tmp/recon2387/adjudicate.py`
+    rewrites its own fixture `.sh` + `.execlog` files in its hardcoded WORK
+    dir on every run; a twin re-running it in place would overwrite the
+    round-8 evidence. Compose: dir read-only in place; copy adjudicate.py,
+    repoint ONLY `WORK` (+ `MOD_PATH` for the pre-fix arm), run post-canary.
+    Feasibility fact to hand: the scanner module imports pytest at module
+    level and system python3 lacks pytest → `uv run python` or a
+    pytest-stubbed /tmp module copy (state both routes or the twin marks the
+    ordered re-run BLOCKED).
+67. **Brief-encoded calibration rules go into the severity fence VERBATIM,
+    paired:** (a) honest open-channel disclosure is never penalized — the
+    binding record itself ruled the class narrowed-not-eliminated and
+    sanctioned disclose-or-close; what the twin judges is disclosure
+    ACCURACY + trust-argument STRENGTH; (b) a dangerous-direction failure in
+    the new load-bearing mechanism (lookalike classified as real heredoc ⇒
+    live commands silently excluded) is a BLOCKER regardless of other
+    improvement. Without (a) the twin penalizes the honesty the record
+    ordered; without (b) it nets the improvement against the residual.
+68. **A trust argument ("open members are reachable only by deliberate decoy
+    text") composes as an innocent-refactor CONSTRUCTION duty** — hand
+    candidate shapes (dry-run echo of the push command, usage strings,
+    command arrays, herestrings, eval-staged variables), not conclusions;
+    success = the stated argument is weakened = a finding weighted by edit
+    realism.
+69. **All-`raised` ledger with zero `addressed` rows because the implementer
+    skipped `address-concern` = bookkeeping lag, said in one Round fact:**
+    score closure on the CODE, never on event state, and no finding about
+    the missing rows (the #2385 item-6 shape recurring; brief confirmed it).
+70. **A deliberately REMOVED loudness (harness control flipped RED→GREEN by
+    design) gets its own target:** confirm it is the ONLY loudness removed
+    and no live-code path was silenced with it — the flip is otherwise read
+    either as a regression (false blocker) or waved through unexamined.
+    Frame perturbation-probe error directions with polarity explicit
+    (shrunken skip region = loud/safe; grown skip region = silent/dangerous)
+    so "attack both directions" has a defined severity map.
