@@ -495,3 +495,36 @@ of origin/main; independence-constrained re-spawn after a session-limit death):*
     `write mode: true (scratch measurement sanctioned)` so the dispatch arms
     the measured path; retain the `STATIC (env unavailable)` never-fabricate
     fallback in the prompt.
+
+**#2387 r7 (2026-08-30) — POSTURE-CLOSURE round (fail-loud mandate after
+three member-enumeration rounds; clean single-commit round after the r6
+merge tip, so no decomposed reads):**
+
+58. **Re-read the twin's OWN prior Fix line before passing through the
+    marker's paraphrase of it.** The r7 marker framed its mechanism as a
+    "deviation from Codex's smaller refuse-on-`$(`-in-brace suggestion" —
+    but the twin's r6 Fix line actually prescribed MODELING as primary
+    ("model nested command/arithmetic substitutions while inside `${...}`")
+    with the refusal only as an interim "safe smaller fix". The round
+    implemented the twin's PRIMARY arm. Quote the optionality verbatim in
+    the author-neutrality block and instruct strength-scoring ("close the
+    class at least as strongly as either arm you named"), or the twin
+    inherits the implementer's inverted framing of its own prescription.
+59. **When the brief orders EXECUTING fixtures under bash (beyond item 57's
+    `bash -n`), bound the carve-out by CONSTRUCTION, not by target list:**
+    fixtures are twin-composed under /tmp from harmless commands only
+    (`:`/`true`/`echo`/`printf`/assignments) with a token-writing push
+    stand-in; real wrapper text stays parse-only; read every fixture back
+    before running. State the per-fixture comparison protocol explicitly
+    (bash-runs-push vs scanner raise / count / silent-zero) so "measure" has
+    one defined meaning, and hand the ROUND-PARENT scanner via
+    `git show <parent>:<file>` — a fail-pre/pass-post claim is only
+    measurable with both scanners loaded side by side.
+60. **A class-closure round's contract can mix ledger and NON-ledger items**
+    (the round-boundary note recorded the concerns forwarder silently
+    no-opping on the sibling's row format, so two of four bounced members
+    had no ledger row). Give each non-ledger member a contract-item id +
+    the same three-way status line, with row-emission under that id on
+    PARTIALLY/NOT-ADDRESSED — otherwise closure of the unforwarded members
+    is invisible to the orchestrator's machine-read of the ledger. Blocker
+    severity travels with the CLASS item, not with ledger presence.
