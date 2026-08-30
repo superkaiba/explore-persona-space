@@ -12733,8 +12733,8 @@
     "2650": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2650",
-      "status": "approved",
+      "path": "tasks/running/2650",
+      "status": "running",
       "title": "fix #847 torch-before-dotenv violations making test_no_new_torch_before_dotenv_vm_entrypoints red on main (fleet-wide Step 9c inheritance)"
     },
     "2651": {
