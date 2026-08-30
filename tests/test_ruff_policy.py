@@ -45,6 +45,7 @@ LIVE_WORKFLOW_HELPERS = [
     "scripts/audit_clean_results_body_discipline.py",
     "scripts/autonomous_session_watch.py",
     "scripts/backend_poll.py",
+    "scripts/check_cited_body_currency.py",
     "scripts/check_no_secret_shaped_strings.py",
     "scripts/codex_task.py",
     "scripts/daily_drive_filings.py",

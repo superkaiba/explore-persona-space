@@ -224,14 +224,18 @@ Check catalog (id — classification — kind scope)
   c74 gates-section binding to  WARN-only, conditional    all kinds
       an optionality-marked
       phase
+  c75 plan cites a task body    WARN-only, conditional    all kinds
+      corrected after drafting  (--issue mode only;
+      began                     SKIP in --plan-file
+                                mode)
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74)
-also SKIP when their content trigger does not fire.
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74,
+75) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -256,6 +260,13 @@ reconciles a §9 backend pin-CLAIM against the task's ``body.md``
 frontmatter ``backend:`` key, so ``main()`` appends it in ``--issue`` mode
 (frontmatter read from the resolved task folder) and renders it SKIP in
 ``--plan-file`` mode (no task context; #2276, incident #2225 v5/v9).
+Check 75 also runs outside ``verify_plan_text()`` — the c23/c62 pattern:
+it resolves a draft-start reference timestamp from the task folder
+(oldest ``planner-dispatch`` breadcrumb and/or the prior plan version's
+git commit time, MIN of whichever resolve) and WARNs when any cited
+``#<id>`` task's ``body.md`` was committed AFTER that reference, so
+``main()`` appends it in ``--issue`` mode only and renders it SKIP in
+``--plan-file`` mode (no task context; #2384, incident #2378/#825).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -4621,6 +4632,519 @@ def check_goal_currency(
             "redraft bounce (adversarial-planner SKILL.md § Goal-currency gate).",
         )
     return _pass(cid, name, f"coverage: current {cov_cur:.2f}, max superseded {cov_stale:.2f}")
+
+
+# ─── Check 75 — cited-body currency (conditional; --issue mode only) ────────
+
+# #2384 (incident #2378/#825): a plan cited a parent task's result that was
+# corrected in the parent's body.md BETWEEN fact-check and persist — a
+# staleness race c23 cannot see (it covers THIS task's Goal, not CITED
+# tasks' bodies). WARN-only backstop of the blocking pre-persist helper
+# scripts/check_cited_body_currency.py (adversarial-planner SKILL.md
+# § Cited-body currency gate); shares its extraction filters so both legs
+# read the same citation set.
+_C75_MAX_IDS = 40
+_C75_GIT_TIMEOUT_S = 10
+_C75_DISPATCH_RE = re.compile(r"^\s*planner-dispatch\b")
+# URL-adjacency drop class is `\w` ONLY — widening to [/\w.-] drops the
+# non-first members of #884/#1045/#1134-style lineage lists (~10% of real
+# citations; plan #2384 §2.2 filter 4; the helper's
+# test_slash_separated_refs_extracted pins the same class).
+_C75_ISSUE_REF_RE = re.compile(r"(?<!\w)#(\d{2,})")
+# Plausibility band for the RESOLVED draft-start reference, the twin of the
+# helper's `_MIN_PLAUSIBLE_REF_UNIX` / `_FUTURE_SKEW_ALLOWANCE_S` (#2384
+# round-2 blocker 7, mirrored into c75 at round 3). c75 owns a CEILING on
+# leg (1) only (a breadcrumb newer than the plan mtime belongs to a later
+# round) and had NO floor on either leg, so a malformed-but-parseable
+# `ts` — `0001-01-01T00:00:00Z` parses to -62135596800, which satisfies
+# `unix <= ceiling` — reached the comparisons and marked every cited body
+# stale. The far-FUTURE direction is unguarded on leg (2), whose `st_mtime`
+# fallback carries no ceiling at all, and certifies every body CLEAN.
+# Neither may pass as a verdict; c75 SKIPs, its standing never-guess outcome.
+_C75_MIN_PLAUSIBLE_REF_UNIX = 1_000_000_000  # 2001-09-09; predates every commit here
+_C75_FUTURE_SKEW_ALLOWANCE_S = 86_400
+# CommonMark fence: 3+ backticks OR 3+ tildes, indented at most 3 spaces.
+# Byte-identical to the helper's `_FENCE_RE` BY DESIGN — the two legs must read
+# the same citation set, so they must strip the same code (#2384 §3.4).
+_C75_FENCE_RE = re.compile(r"^ {0,3}(?P<delim>`{3,}|~{3,})(?P<info>.*)$")
+
+
+def _c75_strip_code_blocks(text: str) -> str:
+    """c75-LOCAL prose extractor: drop fenced blocks (delimiter-aware) and
+    indented-4/tab code lines. Mirrors
+    ``check_cited_body_currency._strip_code_blocks`` exactly.
+
+    Why not the shared :func:`strip_fences` (#2384 round-2 blocker 5): its
+    ``_fence_mask`` toggles on ANY line whose stripped form starts with three
+    backticks or tildes, so (a) a ``~~~`` closes a ```` ``` ```` block, (b) an
+    inner ```` ``` ```` closes a ```` ```` ```` block, and (c) a 4-space-indented
+    ```` ``` ```` — indented CODE under CommonMark, not a fence — toggles too.
+    Each inverts in/out for the REST of the document, so cited ids either
+    vanish (c75 under-checks) or are harvested out of command examples.
+
+    Fixing ``_fence_mask`` itself is deliberately NOT done here: it is shared
+    by ~74 checks, and the change was MEASURED over all 4,759 persisted plan
+    versions — 153 change their mask and 37 move a VERDICT across 19 checks,
+    including PASS<->FAIL flips on ``c1_source_grounding`` and
+    ``c2_measurement_validity`` (both directions, each needing its own
+    adjudication). That is a fleet-wide plan-verifier semantics change and
+    belongs to its own reviewed task, not to a cited-body-currency round; it
+    is filed as a workflow-fix candidate with the measurement attached. This
+    local copy closes the defect where #2384 owns it — and buys the stronger
+    property the plan actually asks for: the two legs now extract IDENTICAL
+    id sets (pinned by
+    ``tests/test_verify_plan_cited_body_currency.py::test_c75_and_helper_extract_identical_ids``).
+    """
+    out: list[str] = []
+    fence: str | None = None
+    for line in text.splitlines():
+        m = _C75_FENCE_RE.match(line)
+        if fence is not None:
+            if (
+                m is not None
+                and m.group("delim")[0] == fence[0]
+                and len(m.group("delim")) >= len(fence)
+                and not m.group("info").strip()
+            ):
+                fence = None
+            continue
+        if m is not None and not (m.group("delim")[0] == "`" and "`" in m.group("info")):
+            fence = m.group("delim")
+            continue
+        if line.startswith(("    ", "\t")):
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
+def _c75_git_out(args: list[str], *, cwd: Path) -> str | None:
+    """Run a git command for check 75; None on any failure (nonzero exit,
+    timeout, missing binary, undecodable output) — c75 is WARN-only and never
+    crashes the run.
+
+    ``errors="replace"`` plus the broadened except-tuple are load-bearing
+    (#2384 round-2 blocker 3): git echoes PATHS and COMMIT SUBJECTS verbatim
+    and neither is guaranteed UTF-8, so under strict decoding a
+    ``UnicodeDecodeError`` (a ``ValueError`` subclass, NOT an ``OSError``)
+    escapes from inside ``subprocess.run``. Escaping here would abort
+    `verify_plan.py` for EVERY plan on the fleet — a WARN-only check taking
+    down the whole verifier. ``ValueError`` also covers the embedded-NUL
+    ``ValueError`` from a pathological argv.
+
+    A successful run with empty stdout returns ``""``, distinct from ``None``;
+    callers that need the distinction (`_c75_is_untracked`) rely on it."""
+    try:
+        proc = subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=_C75_GIT_TIMEOUT_S,
+        )
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip()
+
+
+def _c75_repo_root_for(folder: Path) -> Path | None:
+    """Resolve the repo working-tree root containing ``folder`` (None on failure)."""
+    out = _c75_git_out(["rev-parse", "--show-toplevel"], cwd=folder)
+    return Path(out) if out else None
+
+
+def _c75_last_commit_unix(path: Path, *, repo_root: Path) -> int | None:
+    """Unix time of the last commit touching ``path`` (None if never committed
+    or the git probe failed).
+
+    Deliberately NOT rename-following — this is the CITED-BODY probe, where a
+    status move produces a false POSITIVE (a WARN naming a body that only
+    changed folders). #2384 §6 elects to SURFACE those with an advisory label
+    rather than filter them: an extra WARN costs a glance, a missed
+    correction costs the plan. The REFERENCE leg has the opposite polarity
+    and uses :func:`_c75_last_content_commit_unix`."""
+    out = _c75_git_out(["log", "-1", "--format=%ct", "--", str(path)], cwd=repo_root)
+    if not out:
+        return None
+    try:
+        return int(out.splitlines()[0].strip())
+    except ValueError:
+        return None
+
+
+def _c75_last_content_commit_unix(path: Path, *, repo_root: Path) -> int | None:
+    """Unix time of the last commit that ADDED or MODIFIED ``path``'s content,
+    following renames; None if no such commit or the probe failed.
+
+    ``--follow --diff-filter=AM`` — and BOTH flags are required (#2384 round-2
+    blocker 1). A persisted plan version is written once and then only MOVED
+    (``task.py set-status`` ``git mv``s the whole task folder), so the naive
+    ``git log -1 -- <path>`` answers with the STATUS-MOVE commit, minutes to
+    days after the real persist. Used as a draft-start reference that shifts
+    the window FORWARD, hiding every cited-body correction between the true
+    persist and the move — the exact false-CLEAN c75 exists to catch.
+
+    Measured on a real task folder (``tasks/completed/1962/plans/v1.md``,
+    2026-08-28; the probe is pasted verbatim in the round-2 report):
+
+    - ``git log -1 --format=...`` -> ``80bc2e47ee4 ... reviewing -> completed``
+    - ``--follow`` alone -> the SAME status-move commit
+    - ``--diff-filter=AM`` alone -> the SAME status-move commit
+    - ``-M --diff-filter=AM`` -> the SAME status-move commit
+    - ``--follow --diff-filter=AM`` -> ``0caf6e75780 ... plan v1`` (the persist)
+
+    Why the singles fail: without ``--follow``, path-limited history stops at
+    the rename and reports the move as an ADD of the new path (status ``A``,
+    which ``AM`` admits). ``--follow`` alone walks through the rename but
+    still reports the move commit first (status ``R``). Only together does
+    the walk cross the rename AND skip the rename-classified commit.
+
+    Directional-safety note: a rename-WITH-modification is status ``R``, so
+    this probe skips past it to an earlier ``A``/``M``. That yields an EARLIER
+    reference, i.e. a WIDER watch window — the conservative direction (more
+    citations examined, never fewer). Plan versions are write-once, so in
+    practice the last ``A``/``M`` IS the persist."""
+    out = _c75_git_out(
+        ["log", "-1", "--format=%ct", "--follow", "--diff-filter=AM", "--", str(path)],
+        cwd=repo_root,
+    )
+    if not out:
+        return None
+    try:
+        return int(out.splitlines()[0].strip())
+    except ValueError:
+        return None
+
+
+def _c75_is_untracked(path: Path, *, repo_root: Path) -> bool | None:
+    """``True`` when git POSITIVELY reports ``path`` as untracked, ``False``
+    when tracked, ``None`` when the probe itself failed.
+
+    ``git ls-files -- <path>`` exits 0 either way, so an EMPTY listing is
+    positive evidence of untracked-ness while ``None`` from
+    :func:`_c75_git_out` means the probe failed. That distinction is the
+    point (#2384 round-2 blocker 4): treating a failed probe as "untracked"
+    would silently substitute ``st_mtime`` — the value this check documents
+    as unusable because a checkout clobbers it."""
+    out = _c75_git_out(["ls-files", "--", str(path)], cwd=repo_root)
+    if out is None:
+        return None
+    return out == ""
+
+
+def _c75_iso_to_unix(ts: str) -> int | None:
+    """Parse an events.jsonl ``ts`` (ISO-8601, Z-suffixed) to unix seconds."""
+    try:
+        return int(datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return None
+
+
+def _c75_oldest_dispatch_unix(folder: Path, *, ceiling_unix: float) -> int | None:
+    """OLDEST ``planner-dispatch``-leading ``epm:progress`` breadcrumb ts in
+    the task's events.jsonl that is <= ``ceiling_unix`` (the plan file mtime —
+    a breadcrumb newer than the persisted plan belongs to a later round).
+    Malformed rows are skipped (WARN-only check); None when no row matches."""
+    events = folder / "events.jsonl"
+    if not events.exists():
+        return None
+    # Hardened read (#2384 round-2 blocker 3): a bare `read_text()` raises
+    # UnicodeDecodeError on any non-UTF-8 byte in a marker note and OSError on
+    # a permission/IO fault, either of which would abort verify_plan.py
+    # fleet-wide from a WARN-only check. `errors="replace"` keeps every
+    # well-formed row parseable; a row mangled by replacement simply fails
+    # json.loads below and is skipped like any other malformed row.
+    try:
+        raw_events = events.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    oldest: int | None = None
+    # Split on "\n", never splitlines(): marker notes can embed U+2028-class
+    # separators splitlines() would treat as row boundaries (the #950 class).
+    for line in raw_events.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict) or row.get("kind") != "epm:progress":
+            continue
+        note = row.get("note")
+        if not isinstance(note, str) or not _C75_DISPATCH_RE.match(note):
+            continue
+        ts = row.get("ts")
+        unix = _c75_iso_to_unix(ts) if isinstance(ts, str) else None
+        if unix is None or unix > ceiling_unix:
+            continue
+        if oldest is None or unix < oldest:
+            oldest = unix
+    return oldest
+
+
+def _c75_prior_version_unix(
+    folder: Path, *, plan_path: Path, repo_root: Path | None
+) -> tuple[int | None, str]:
+    """Leg (2): timestamp of the PRIOR persisted plan version ``v{K-1}.md``.
+
+    The authoritative read is the last commit that ADDED or MODIFIED the file
+    (:func:`_c75_last_content_commit_unix`, rename-following) — NOT the last
+    commit touching the path, which on a moved task folder is the STATUS-MOVE
+    commit and shifts the reference forward past real corrections (#2384
+    round-2 blocker 1).
+
+    ``st_mtime`` is the fallback ONLY on POSITIVE evidence that the file is
+    untracked, i.e. git answered and reported no index entry (#2384 round-2
+    blocker 4). Any INDETERMINATE outcome — the ls-files probe failed, or the
+    file is tracked but has no A/M commit — leaves the leg UNRESOLVED rather
+    than substituting a value a checkout clobbers. An unresolved leg is
+    honest: the caller still has leg (1), and if neither resolves c75 SKIPs.
+    """
+    m = re.fullmatch(r"v(\d+)\.md", plan_path.name)
+    if not m:
+        return None, "plan filename carries no version"
+    k = int(m.group(1))
+    if k <= 1:
+        return None, "no prior plan version (v1)"
+    prior = folder / "plans" / f"v{k - 1}.md"
+    if repo_root is not None:
+        unix = _c75_last_content_commit_unix(prior, repo_root=repo_root)
+        if unix is not None:
+            return unix, f"git commit time of {prior.name}"
+    if not prior.exists():
+        return None, f"{prior.name} absent"
+    if repo_root is None:
+        return None, f"{prior.name} present but repo root unresolvable (mtime not substituted)"
+    untracked = _c75_is_untracked(prior, repo_root=repo_root)
+    if untracked is None:
+        return None, f"{prior.name} present but tracked-state probe failed (mtime not substituted)"
+    if not untracked:
+        return (
+            None,
+            f"{prior.name} tracked but carries no add/modify commit (mtime not substituted)",
+        )
+    try:
+        return (
+            int(prior.stat().st_mtime),
+            f"st_mtime of {prior.name} (untracked; git time preferred)",
+        )
+    except OSError:
+        return None, f"{prior.name} unreadable"
+
+
+def _draft_start_reference(
+    folder: Path, plan_mtime_unix: float, *, plan_path: Path, repo_root: Path | None
+) -> tuple[int | None, str]:
+    """Resolve the draft-start reference timestamp for check 75 (#2384).
+
+    Returns ``(reference_unix, reason)``. The reference is the MIN over the
+    legs that RESOLVE — leg (2) is a FLOOR alongside leg (1), never an
+    ``else`` branch (plan #2384 §2.1; the min()-vs-else defect is pinned by
+    ``test_mixed_breadcrumb_window_still_warns``):
+
+    1. the OLDEST ``planner-dispatch``-leading ``epm:progress`` breadcrumb in
+       ``events.jsonl`` with ts <= the plan file's mtime;
+    2. the git commit time of the PRIOR persisted plan version ``v{K-1}.md``
+       (``git log -1 --format=%ct``; ``st_mtime`` fallback only when the file
+       exists but carries no commit — a checkout clobbers mtimes).
+
+    Neither resolves => ``(None, reason)`` and the caller SKIPs — the check
+    never guesses a reference.
+
+    Deferred-commit residual (plan #2384 §2.1 end): when v{K-1}'s persist
+    commit was gitleaks-DEFERRED and later swept by an unrelated commit,
+    leg (2) reads the SWEEP time — later than the true persist ts — so on a
+    task with NO planner-dispatch breadcrumb at all, a cited-body correction
+    landing inside that deferral window reads CLEAN. Triple conjunction
+    (deferred persist commit AND zero breadcrumbs AND a correction inside
+    the deferral window), bounded by fleet sweep latency (typically
+    minutes), and backstop-leg only — the blocking helper's DRAFT_START
+    shell-variable leg is unaffected.
+    """
+    legs: list[tuple[int, str]] = []
+    dispatch = _c75_oldest_dispatch_unix(folder, ceiling_unix=plan_mtime_unix)
+    if dispatch is not None:
+        legs.append((dispatch, "oldest planner-dispatch breadcrumb"))
+    prior_unix, prior_why = _c75_prior_version_unix(
+        folder, plan_path=plan_path, repo_root=repo_root
+    )
+    if prior_unix is not None:
+        legs.append((prior_unix, prior_why))
+    if not legs:
+        return None, (
+            f"neither leg resolved: no planner-dispatch breadcrumb <= plan mtime; {prior_why}"
+        )
+    unix, why = min(legs, key=lambda t: t[0])
+    return unix, why
+
+
+def _c75_extract_cited_ids(plan: str, *, self_issue: int) -> tuple[list[str], int]:
+    """``(capped ids, TOTAL distinct ids before the cap)``. Cross-task
+    ``#<id>`` citations in plan PROSE: fenced + 4-space/tab indented code
+    dropped, word-adjacent refs (``issues#123``) dropped by the ``(?<!\\w)``
+    guard, self-citations dropped, order-preserving dedup, capped at
+    ``_C75_MAX_IDS``.
+
+    The total is returned so the caller can DISCLOSE truncation: a bare
+    ``checked=40`` PASS over a 55-citation plan reads as full coverage while
+    15 citations went unexamined (#2384 round-2 blocker 9)."""
+    prose = _c75_strip_code_blocks(plan)
+    seen: list[str] = []
+    total = 0
+    distinct: set[str] = set()
+    for mm in _C75_ISSUE_REF_RE.finditer(prose):
+        # Canonicalize through int() before dedup. The raw match is a STRING,
+        # so `#039` and `#39` deduped as two different ids while every call
+        # site downstream does `int(tid)` — c75 probed the SAME body twice,
+        # burned a cap slot, and could name one task twice in a WARN. It also
+        # made c75's id set differ from the helper's (which parses to int),
+        # violating the shared-citation-set contract this check is built on
+        # (#2384 §3.4). Measured: 10 of 4,759 persisted plan versions.
+        tid = str(int(mm.group(1)))
+        if tid == str(self_issue) or tid in distinct:
+            continue
+        distinct.add(tid)
+        total += 1
+        if len(seen) < _C75_MAX_IDS:
+            seen.append(tid)
+    return seen, total
+
+
+def _c75_cited_body_path(issue: int) -> Path | None:
+    """Resolve a cited task's body.md via the worktree-safe canonical resolver
+    (None when the task or its body.md does not resolve)."""
+    from explore_persona_space import task_workflow as tw
+
+    try:
+        folder = tw.find_task_path(issue)
+    except FileNotFoundError:
+        return None
+    body = folder / "body.md"
+    return body if body.exists() else None
+
+
+def check_cited_body_currency(
+    plan: str,
+    *,
+    self_issue: int,
+    reference_unix: int | None,
+    reason: str,
+    repo_root: Path | None,
+) -> CheckResult:
+    """WARN when any cited task's body.md was committed AFTER the draft-start
+    reference (#2384 staleness race; incident #2378 quoted #825's stale
+    result 4 minutes after the correction landed). WARN-only backstop of
+    ``scripts/check_cited_body_currency.py`` — never guesses: an unresolved
+    reference, an IMPLAUSIBLE reference, zero citations, an unresolvable repo
+    root, and zero PROBED ids all SKIP."""
+    cid, name = "c75_cited_body_currency", "plan cites a task body corrected after drafting began"
+    if reference_unix is None:
+        return _skip(cid, name, f"draft-start reference unresolved ({reason})")
+    # Plausibility of the FINAL resolved reference, whichever leg produced it
+    # (the helper's `_MIN_PLAUSIBLE_REF_UNIX` twin — see the constants above).
+    now = int(datetime.now(tz=UTC).timestamp())
+    ceiling = now + _C75_FUTURE_SKEW_ALLOWANCE_S
+    if reference_unix < _C75_MIN_PLAUSIBLE_REF_UNIX or reference_unix > ceiling:
+        return _skip(
+            cid,
+            name,
+            f"implausible draft-start reference {reference_unix} from {reason} "
+            f"(expected {_C75_MIN_PLAUSIBLE_REF_UNIX} <= ref <= {ceiling})",
+        )
+    ids, total_cited = _c75_extract_cited_ids(plan, self_issue=self_issue)
+    if not ids:
+        return _skip(cid, name, "no cross-task #<id> citations in plan prose")
+    not_examined = max(0, total_cited - len(ids))
+    capped = f" capped={_C75_MAX_IDS} not_examined={not_examined}" if not_examined else ""
+    if repo_root is None:
+        return _skip(cid, name, "repo root unresolvable for git probes")
+    stale: list[str] = []
+    unresolved = 0
+    git_failed = 0
+    probed = 0
+    for tid in ids:
+        body = _c75_cited_body_path(int(tid))
+        if body is None:
+            unresolved += 1
+            continue
+        unix = _c75_last_commit_unix(body, repo_root=repo_root)
+        if unix is None:
+            git_failed += 1
+            continue
+        probed += 1
+        if unix > reference_unix:
+            stale.append(tid)
+    if probed == 0:
+        # The cap disclosure rides this branch too (#2384 round-3 item 3):
+        # "40 cited id(s) but none probed" over a 55-citation plan otherwise
+        # reads as if 40 were the whole citation set.
+        return _skip(
+            cid,
+            name,
+            f"{len(ids)} cited id(s) but none probed "
+            f"(unresolved={unresolved} git_failed={git_failed}){capped}",
+        )
+    since = datetime.fromtimestamp(reference_unix, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if stale:
+        return _warn(
+            cid,
+            name,
+            "cited body.md corrected after drafting began: "
+            + ", ".join(f"#{t}" for t in stale)
+            + f" (reference {since} = {reason}; checked={probed}{capped}) — re-ground each stale "
+            "citation against the CURRENT body before persisting (blocking pre-persist "
+            "helper: scripts/check_cited_body_currency.py; adversarial-planner SKILL.md "
+            "§ Cited-body currency gate; #2384/#2378)",
+        )
+    detail = f"checked={probed} since={since} ({reason})"
+    if unresolved or git_failed:
+        detail += f" unresolved={unresolved} git_failed={git_failed}"
+    detail += capped
+    return _pass(cid, name, detail)
+
+
+def _c75_result_for_issue(raw: str, *, plan_path: Path, issue: int) -> CheckResult:
+    """Resolve the draft-start reference and run c75 for ``--issue`` mode,
+    degrading to SKIP on ANY internal error (#2384 round-2 blocker 3).
+
+    c75 is the only check appended outside ``verify_plan_text`` that shells
+    out to git, reads a SIBLING task's events.jsonl, stats the filesystem,
+    and imports ``task_workflow`` to resolve OTHER tasks' folders — four
+    external surfaces whose faults (undecodable bytes, a permission error, a
+    resolver raise, registry drift) have nothing to do with the plan under
+    review. Letting one escape aborts ``verify_plan.py`` for every caller on
+    the fleet, which is an absurd blast radius for a WARN-only backstop; the
+    BLOCKING arm is the pre-persist helper, and it carries its own fail-soft
+    handler.
+
+    Extracted from ``main()`` rather than inlined: the try/except pushed
+    ``main``'s cyclomatic complexity to 16 and tripped the C901 bound that
+    ``tests/test_ruff_policy.py`` pins for live workflow helpers under the
+    full ruleset (bare ``ruff check`` hides it behind per-file-ignores —
+    the #1672/#1699 shape)."""
+    try:
+        folder = plan_path.parent.parent
+        c75_root = _c75_repo_root_for(folder)
+        ref_unix, ref_reason = _draft_start_reference(
+            folder, plan_path.stat().st_mtime, plan_path=plan_path, repo_root=c75_root
+        )
+        return check_cited_body_currency(
+            raw,
+            self_issue=issue,
+            reference_unix=ref_unix,
+            reason=ref_reason,
+            repo_root=c75_root,
+        )
+    except Exception as exc:  # WARN-only check must never abort the verifier
+        return _skip(
+            "c75_cited_body_currency",
+            "plan cites a task body corrected after drafting began",
+            f"check errored, degraded to SKIP: {type(exc).__name__}: "
+            f"{str(exc).replace(chr(10), '; ')[:200]}",
+        )
 
 
 # ─── Check 24 — resume-skip provenance validation (conditional) ─────────────
@@ -15611,6 +16135,20 @@ def main() -> int:
                 "c62_backend_pin_claim",
                 "§9 backend pin-claim matches body.md frontmatter",
                 "no task context (--plan-file mode; frontmatter reconciliation requires --issue)",
+            )
+        )
+    # Check 75 (cited-body currency, #2384) also needs task context
+    # (events.jsonl breadcrumbs + prior plan versions + cited sibling task
+    # folders), so it runs OUTSIDE verify_plan_text(): appended here in
+    # --issue mode, rendered SKIP in --plan-file mode (the c23/c62 pattern).
+    if issue is not None:
+        results.append(_c75_result_for_issue(raw, plan_path=plan_path, issue=issue))
+    else:
+        results.append(
+            _skip(
+                "c75_cited_body_currency",
+                "plan cites a task body corrected after drafting began",
+                "no task context (--plan-file mode; draft-start reference requires --issue)",
             )
         )
     # Check 40 (header version label vs persisted filename) also runs outside
