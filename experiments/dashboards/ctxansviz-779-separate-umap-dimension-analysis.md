@@ -2,7 +2,7 @@
 
 Dashboard: https://eps.superkaiba.com/ctxansviz-779-separate-umap-dimensions.html
 
-Generated: 2026-08-30 17:42 UTC
+Generated: 2026-08-30 18:02 UTC
 
 ## What was run
 
@@ -72,6 +72,6 @@ PaCMAP or TriMap is the best next 2-D robustness check because it changes the ba
 
 ## Provenance and limits
 
-UMAP artifact SHA-256: `20945accdce42e886689ad044756f63a6c8f3c3709a355f12323a33378622578`; producer `077a39635cd21ac2bac11dda756b1cce19ce956e`. Dimensionality producer: `79d9142bf5c88ae2ccd3ff7270e9d98a1faaaa5d`. Renderer: `836d5fd1+dirty`.
+UMAP artifact SHA-256: `20945accdce42e886689ad044756f63a6c8f3c3709a355f12323a33378622578`; producer `077a39635cd21ac2bac11dda756b1cce19ce956e`. Dimensionality producer: `79d9142bf5c88ae2ccd3ff7270e9d98a1faaaa5d`. Renderer: `80cc1d1a`.
 
 The dashboard exposes 2,436 public-safe WildChat display pairs from fixed chunks, with complete retained prompt and answer text. It excludes 3,000 LMSYS rows from the public hover layer entirely instead of showing placeholder-only points; their vectors remain in aggregate fits and metrics. It is designed for qualitative inspection, not population-frequency estimation.
