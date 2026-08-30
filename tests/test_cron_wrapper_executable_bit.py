@@ -31,8 +31,10 @@ Four arms:
 4. ``test_crontab_referenced_repo_scripts_are_executable_in_index`` (SOFT) —
    when ``crontab -l`` is readable, every repo script path in COMMAND POSITION
    on a non-comment crontab line must be 100755 in the index. Skipped (never
-   red) on machines with no crontab (pods, CI, fresh clones). This catches a
-   future crontab-referenced wrapper that does NOT match ``cron_*.sh``.
+   red) on machines with no crontab — nonzero exit, missing binary
+   (``FileNotFoundError``), or a hung invocation (``TimeoutExpired``); pods,
+   CI images, fresh clones. This catches a future crontab-referenced wrapper
+   that does NOT match ``cron_*.sh``.
 
 Command-position extraction (arm 4 + its own unit test): only DIRECTLY-exec'd
 command tokens count. Redirect targets (the live crontab redirects into
@@ -308,16 +310,47 @@ def _main_checkout_root() -> Path:
     return Path(proc.stdout.strip()).parent
 
 
+# Wall fence for the soft arm's one live-system read: `crontab -l` prints a
+# small table and exits; a wedged invocation must skip, never stall the gate.
+_CRONTAB_TIMEOUT_S = 10
+
+
+def _read_crontab() -> subprocess.CompletedProcess[str]:
+    """Run ``crontab -l`` (captured, text, short timeout) and return the proc.
+
+    Module-level seam so the absence/timeout unit tests below can replace it.
+    Raises ``FileNotFoundError`` (an ``OSError``) when the binary is absent
+    (pods, minimal CI images) and ``subprocess.TimeoutExpired`` on a hang —
+    the caller maps BOTH to ``pytest.skip``: this file is a GLOB_SCAN_TESTS
+    member selected by any ``scripts/cron_*.sh`` diff, so on a crontab-less
+    image the soft arm must skip cleanly, never crash the Step 9c gate.
+    """
+    return subprocess.run(
+        ["crontab", "-l"],
+        capture_output=True,
+        text=True,
+        timeout=_CRONTAB_TIMEOUT_S,
+    )
+
+
 def test_crontab_referenced_repo_scripts_are_executable_in_index() -> None:
     """SOFT arm: crontab-referenced, directly-exec'd repo scripts are 100755.
 
-    Skips (never red) when no crontab is readable, or when the crontab
-    references no directly-exec'd repo scripts. Crontab paths point at the
-    MAIN checkout (resolved via the git common dir, worktree-safe); modes are
-    read from THIS tree's index — the state under test. Referenced paths not
-    in the index are skipped (no committed mode exists to pin).
+    Skips (never red) when no crontab is readable — nonzero exit (no crontab
+    for this user), a missing ``crontab`` binary, or a hung invocation — or
+    when the crontab references no directly-exec'd repo scripts. Crontab
+    paths point at the MAIN checkout (resolved via the git common dir,
+    worktree-safe); modes are read from THIS tree's index — the state under
+    test. Referenced paths not in the index are skipped (no committed mode
+    exists to pin).
     """
-    proc = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+    try:
+        proc = _read_crontab()
+    except OSError as exc:
+        # Covers FileNotFoundError: no crontab binary on this image.
+        pytest.skip(f"crontab binary not runnable on this machine: {exc}")
+    except subprocess.TimeoutExpired:
+        pytest.skip(f"`crontab -l` timed out after {_CRONTAB_TIMEOUT_S}s (wedged invocation)")
     if proc.returncode != 0:
         pytest.skip("no readable crontab on this machine (pods, CI, fresh clones)")
     prefix = f"{_main_checkout_root()}/"
@@ -336,3 +369,39 @@ def test_crontab_referenced_repo_scripts_are_executable_in_index() -> None:
         f"100755 in the index (every fire dies `Permission denied`): {offenders}. "
         "Fix: chmod +x <file> && git update-index --chmod=+x <file>."
     )
+
+
+# --- soft-arm skip-path unit tests (absence + hang are EXERCISED, not just handled) ---
+
+
+def test_soft_arm_skips_cleanly_when_crontab_binary_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A missing ``crontab`` binary yields the documented clean skip, not a crash.
+
+    ``returncode != 0`` covers only the no-crontab-for-this-user case; an
+    absent BINARY raises ``FileNotFoundError`` from ``subprocess.run``. Before
+    this pin the soft arm crashed on that path, and — as a GLOB_SCAN_TESTS
+    member selected by any ``scripts/cron_*.sh`` diff — would have redded the
+    Step 9c gate with a traceback on any crontab-less image.
+    """
+
+    def _raise_absent() -> subprocess.CompletedProcess[str]:
+        raise FileNotFoundError(2, "No such file or directory: 'crontab'")
+
+    monkeypatch.setitem(globals(), "_read_crontab", _raise_absent)
+    with pytest.raises(pytest.skip.Exception, match="not runnable"):
+        test_crontab_referenced_repo_scripts_are_executable_in_index()
+
+
+def test_soft_arm_skips_cleanly_when_crontab_invocation_hangs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A wedged ``crontab -l`` (TimeoutExpired) yields the clean skip, not a stall."""
+
+    def _raise_timeout() -> subprocess.CompletedProcess[str]:
+        raise subprocess.TimeoutExpired(cmd=["crontab", "-l"], timeout=_CRONTAB_TIMEOUT_S)
+
+    monkeypatch.setitem(globals(), "_read_crontab", _raise_timeout)
+    with pytest.raises(pytest.skip.Exception, match="timed out"):
+        test_crontab_referenced_repo_scripts_are_executable_in_index()
