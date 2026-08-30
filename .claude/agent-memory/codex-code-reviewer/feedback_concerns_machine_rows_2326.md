@@ -41,3 +41,19 @@ wording (1 on #2514 r1, where `CONCERN:: none` sat mid-line in backticked
 prose; 4 on the #2333-era template), so a pinned count false-FAILs a valid
 compose. Related: [[revision-round compose recipe]],
 [[bypath-brief-frozen-events-resolution]].
+
+**DELIMITED-block form (#2646; first ordered on #2387 r11, 2026-08-30):**
+`persist_verdict_concerns.py` can silently no-op at rc=0 ("persisted 0/0")
+when rows fail its recognition — #2646 (filed, blocked) is the fail-loud
+fix. Until it lands, a brief may order "the delimited concerns block form";
+no repo-canonical delimiter grammar exists, so the COMPOSER defines it in
+the template: keep the `## Concerns to persist` heading (the forwarder's
+`--require-block` keys on heading+rows), wrap the rows in two exact
+delimiter lines `CONCERNS-BLOCK-BEGIN` / `CONCERNS-BLOCK-END` (plain text,
+never an HTML comment — the tag-extraction grep must not see extra `<!--`
+lines), instruct rows ONLY between them + `CONCERN:: none` as the sole-row
+empty form, assert each delimiter ==1 in the composed prompt, and REPORT
+the delimiter tokens to the orchestrator in the return so extraction keys
+on them. A brief's "or write ledger rows directly via task.py" alternative
+NEVER applies to the read-only twin — override it in the
+Codex-adaptations-of-the-brief block.
