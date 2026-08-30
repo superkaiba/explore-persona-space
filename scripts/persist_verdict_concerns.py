@@ -6,7 +6,9 @@ their verdict templates emit LINE-START-anchored machine rows instead::
 
     CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary>
 
-(the exact literal row ``CONCERN:: none`` when there is nothing to persist).
+(the sentinel row ``CONCERN:: none`` when there is nothing to persist).
+The space after ``::`` is OPTIONAL in EVERY row form, the ``none`` sentinel
+included — see the Contract below for the full accepted grammar.
 The orchestrator runs this forwarder against the EXTRACTED marker block
 (``$MB`` from SKILL.md's "File-only Codex verdict posting" recipe) so the
 concerns reach the per-task ledger without any findings prose entering
