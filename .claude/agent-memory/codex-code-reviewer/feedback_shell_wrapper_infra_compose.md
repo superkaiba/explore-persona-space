@@ -528,3 +528,50 @@ merge tip, so no decomposed reads):**
     PARTIALLY/NOT-ADDRESSED — otherwise closure of the unforwarded members
     is invisible to the orchestrator's machine-read of the ledger. Blocker
     severity travels with the CLASS item, not with ledger presence.
+
+**#2387 r8 (2026-08-30) — ENGINE-REPLACEMENT closure round (the round swaps
+the hand-rolled tokenizer for `bash --pretty-print` delegation; one test
+file, +440/−858):**
+
+61. **When the fix REPLACES the engine, the compose pivots from member-hunting
+    to delegation risks — and the twin needs told so explicitly.** Frame:
+    "the failure mode has CHANGED; aim at the NEW risks, not the old member
+    list", plus the both-ways honesty line the brief ordered ("five prior
+    bounces are not grounds for manufacturing a sixth"). Priority targets
+    become: (1) non-execution of the delegated parser, verified INDEPENDENTLY with
+    side-effect canary fixtures; (2) rendering-vs-regex semantics split into
+    FALSE-UNBOUNDED (noisy/safe) vs FALSE-BOUNDED (silent/dangerous); (3) the
+    disclosed data-vs-code residual (heredoc bodies counted-inert); (4) the
+    new environmental dependency (parser absent/divergent ⇒ loud or silent?);
+    (5) fail-pre/pass-post re-measurement (the claim has a track record);
+    (6) census re-derivation through the NEW engine.
+62. **Canary-first ordering is a SAFETY constraint, not just a review target.**
+    The committed suite (census test included) feeds REAL WRAPPER TEXT through
+    the new parse mode — if the non-execution claim were false, the sanctioned
+    `pytest` run itself would fire live alerts and mutate the real crontab.
+    Order the carve-out: twin-composed token-writing canary fixtures FIRST;
+    only after they pass may pytest / real-wrapper scans run; any execution ⇒
+    stop and report as the top blocker. (The r7 carve-out had no such ordering
+    because the old engine was pure Python.)
+63. **Environmental-dependency probes = stub parsers on a /tmp COPY.** For
+    "what if bash lacks the flag / renders divergently", sanction: copy the
+    module, repoint its parser argv at composed stubs (usage-to-stderr rc=2;
+    flag-swallowing empty-render rc=0; rc=0 garbage) — never shadow `bash` on
+    PATH, never touch the real file. The question per stub: loud failure or
+    silent pass (a silent pass reintroduces the round's own defect class by a
+    new route).
+64. **Prior-closed ids under a replaced engine get a fresh-id rule.** All old
+    members' fixtures ride the new engine, so state: closed ids stay closed;
+    an old-class member misbehaving under the NEW engine is a NEW finding
+    under a fresh kebab-id, never a re-open — otherwise the twin re-opens its
+    own settled ledger on engine-behavior deltas (e.g. backticks: r7 refused,
+    r8 models — a labeled behavior-upgrade flip).
+65. **Marker-vs-git numstat discrepancies: probe the diff-algorithm hypothesis
+    before handing over.** The v8 marker claimed +818/−1236 vs git's
+    +440/−858 — equal +378 offsets both sides SUGGESTED an algorithm
+    difference, but myers/minimal/patience/histogram all gave ~440/858, so
+    the hypothesis was refuted at compose time and the discrepancy went to
+    the twin as an unresolved identity fact on the report-accuracy axis
+    (weight theirs). Also: the v8 body carried NO versioned HTML head
+    sentinel (v7 had one) — flag in the RETURN only when marker-shape is
+    barred; never hand it as a shape finding.
