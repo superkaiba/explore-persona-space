@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2644,
+  "highest_id": 2645,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12687,6 +12687,13 @@
       "path": "tasks/blocked/2644",
       "status": "blocked",
       "title": "workflow-fix: no recovery ladder when the subagent MODEL POOL is exhausted; reconciler site has no valid fallback"
+    },
+    "2645": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2645",
+      "status": "proposed",
+      "title": "cron_step9c_ledger_refresh.sh is committed non-executable \u2014 #2114's nightly refresh has failed Permission denied for 18 nights"
     },
     "265": {
       "has_clean_result": false,
