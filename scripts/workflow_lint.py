@@ -666,6 +666,23 @@ Behaviours:
   handler names ``ImportError`` / ``ModuleNotFoundError`` (the sanctioned
   deliberately-optional degrade), and a
   ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` waiver (reason ≥ 10 chars).
+* ``--check-torch-before-dotenv`` (also bundled into the no-flags default
+  run): FAIL any VM entrypoint that imports a ``HEAVY_IMPORT_ROOTS`` root at
+  module top before ``load_dotenv()``, so the shared-VM BLAS/torch thread
+  caps (#847) bind in-process. This is the lint-time twin of
+  ``tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints``
+  and does NOT redefine the rule: it imports that guard module by path and
+  calls the guard's own ``_scan_targets`` / ``_first_heavy_import_line`` /
+  ``_first_load_dotenv_line`` / ``GRANDFATHERED_TORCH_BEFORE_DOTENV``, so
+  the two surfaces are one definition and cannot drift. Rationale (#2650):
+  the pytest guard fires only when some LATER session runs its Step 9c
+  gate, by which point the violator is on ``main`` and reds the gate for
+  every session that did not cause it (the #1388 shape;
+  ``tasks/REGISTRY.json`` holds ten fix tasks of this class). No waiver of
+  its own — grandfathering runs through the guard's shrink-only allowlist,
+  which its currency tests pin. SKIPs with a stderr note (never FAILs) when
+  ``pytest`` is unavailable; FAILs loudly if the guard module is missing or
+  has renamed the symbols this check calls.
   PASS ≠ installed-by-default — the FAIL boundary is DECLARED
   resolvability: a dist declared only under a non-default extra/group
   WARNs (stderr) naming the declaration, and a dangling ``issue*``-stem
@@ -1076,6 +1093,7 @@ import argparse
 import ast
 import dataclasses
 import functools
+import importlib.util
 import io
 import json
 import os
@@ -9996,6 +10014,137 @@ def check_prod_import_lockfile(
     _scan_prod_import_roots(tuple(roots_to_scan), root, state)
     _emit_prod_import_warns(state)
     return state.fail_rows
+
+
+# `--check-torch-before-dotenv` (#2650): the #847 heavy-import-before-load_dotenv
+# rule, enforced at LINT time instead of only at the pytest gate. The rule itself
+# is NOT redefined here — it is loaded from the pytest guard by path so there is
+# exactly one definition and this check cannot drift from it.
+_THREAD_CAPS_GUARD_REL = "tests/test_shared_vm_thread_caps.py"
+_THREAD_CAPS_GUARD_SYMBOLS = (
+    "_scan_targets",
+    "_first_heavy_import_line",
+    "_first_load_dotenv_line",
+    "GRANDFATHERED_TORCH_BEFORE_DOTENV",
+)
+
+
+def _load_thread_caps_guard(root: Path) -> tuple[object | None, str | None]:
+    """Import the #847 guard test module BY PATH and return ``(module, fail_row)``.
+
+    Single-source-of-truth mechanism (#2650): the pytest guard
+    ``tests/test_shared_vm_thread_caps.py`` owns the scan-target class rules,
+    the heavy-import predicate, and the grandfather allowlist. Re-implementing
+    any of them here would drift, and a drifted lint is worse than no lint — so
+    the lint loads the guard and calls the guard's own helpers.
+
+    Two failure dispositions, deliberately different:
+
+    * The guard file is MISSING, unparseable, or has lost one of the symbols
+      this check calls ⇒ FAIL row. That state means the rule moved and this
+      check has gone stale; failing loudly is the point.
+    * ``pytest`` (the guard module's own import) is unavailable ⇒ SKIP with a
+      stderr note, never a FAIL. ``workflow_lint.py`` is expected to run under
+      ``uv run`` where pytest is a declared dev dependency, but a stripped
+      environment must not red the whole no-flags run over a dev-only import.
+    """
+    guard_path = root / _THREAD_CAPS_GUARD_REL
+    if not guard_path.is_file():
+        return None, (
+            f"{_THREAD_CAPS_GUARD_REL}: check-torch-before-dotenv: the #847 guard module is "
+            "MISSING — this lint loads the rule from it (single source of truth) and cannot "
+            "run. If the guard moved, update _THREAD_CAPS_GUARD_REL in workflow_lint.py."
+        )
+    try:
+        spec = importlib.util.spec_from_file_location("_eps_thread_caps_guard", guard_path)
+        if spec is None or spec.loader is None:  # pragma: no cover - defensive
+            raise ImportError("spec_from_file_location returned no loader")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except ModuleNotFoundError as exc:
+        if (exc.name or "").split(".")[0] == "pytest":
+            print(
+                "workflow_lint: note: --check-torch-before-dotenv skipped — pytest is "
+                "unavailable, so the #847 guard module cannot be imported (the pytest gate "
+                "remains the enforcement surface).",
+                file=sys.stderr,
+            )
+            return None, None
+        return None, (
+            f"{_THREAD_CAPS_GUARD_REL}: check-torch-before-dotenv: importing the #847 guard "
+            f"module failed ({type(exc).__name__}: {exc})."
+        )
+    except Exception as exc:  # noqa: BLE001 - any import failure is a stale-lint signal
+        return None, (
+            f"{_THREAD_CAPS_GUARD_REL}: check-torch-before-dotenv: importing the #847 guard "
+            f"module failed ({type(exc).__name__}: {exc})."
+        )
+    missing = [name for name in _THREAD_CAPS_GUARD_SYMBOLS if not hasattr(module, name)]
+    if missing:
+        return None, (
+            f"{_THREAD_CAPS_GUARD_REL}: check-torch-before-dotenv: the #847 guard module no "
+            f"longer defines {', '.join(missing)} — this lint calls those symbols so it has "
+            "gone stale. Re-point it at the renamed symbols."
+        )
+    return module, None
+
+
+def check_torch_before_dotenv(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL any VM entrypoint importing a heavy root before ``load_dotenv()`` (#847).
+
+    This is the LINT-time twin of
+    ``tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints``,
+    and it enforces the identical rule because it *calls that module's own*
+    predicate and allowlist (see :func:`_load_thread_caps_guard`).
+
+    Why a second surface (#2650): the pytest guard fires at whichever LATER
+    session runs its Step 9c gate, so a violator authored and committed at the
+    shared repo root lands on ``main`` first and reds every session's gate with
+    a failure none of them caused — the #1388 fleet-red shape. ``tasks/REGISTRY.json``
+    records nine prior fix tasks of exactly this class before #2650 made it ten.
+    The no-flags ``workflow_lint.py`` run is what the Step 9a-ter inline payload
+    lint gate already executes on an inline round's payload, which is the channel
+    those violators actually landed through.
+
+    Waivers: none of its own. The allowlist is the guard's
+    ``GRANDFATHERED_TORCH_BEFORE_DOTENV``, whose entries are pinned by that
+    module's shrink-only currency tests — so silencing this lint requires the
+    same review the pytest guard demands, by construction.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    guard, fail_row = _load_thread_caps_guard(root)
+    if guard is None:
+        return [fail_row] if fail_row else []
+
+    allowlist = guard.GRANDFATHERED_TORCH_BEFORE_DOTENV
+    errors: list[str] = []
+    for path in _files_scope_filter(guard._scan_targets(root)):
+        try:
+            src = path.read_text()
+            tree = ast.parse(src)
+        except (OSError, SyntaxError) as exc:
+            errors.append(
+                f"{path.relative_to(root).as_posix()}: check-torch-before-dotenv: could not "
+                f"read/parse ({type(exc).__name__}: {exc})."
+            )
+            continue
+        heavy = guard._first_heavy_import_line(tree)
+        if heavy is None:
+            continue
+        rel = path.relative_to(root).as_posix()
+        if rel in allowlist:
+            continue
+        dotenv = guard._first_load_dotenv_line(src)
+        if dotenv is not None and heavy >= dotenv:
+            continue
+        errors.append(
+            f"{rel}:{heavy}: check-torch-before-dotenv: module-top heavy import precedes "
+            f"load_dotenv( (first at line {dotenv}) — call "
+            "explore_persona_space.orchestrate.env.load_dotenv() BEFORE importing any "
+            "HEAVY_IMPORT_ROOTS root so the shared-VM thread caps (#847) bind in-process. "
+            "Canonical shape: scripts/issue778_null_battery.py."
+        )
+    return errors
 
 
 def _batch_judge_client_waiver_present(lines: list[str], call_lineno: int) -> bool:
@@ -20262,6 +20411,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_upload_return_discard": lambda wf: check_upload_return_discard(),
     "check_dotenv_before_hf_import": lambda wf: check_dotenv_before_hf_import(),
     "check_prod_import_lockfile": lambda wf: check_prod_import_lockfile(),
+    "check_torch_before_dotenv": lambda wf: check_torch_before_dotenv(),
     "check_batch_judge_client": lambda wf: check_batch_judge_client(),
     "check_hub_verify_retry": lambda wf: check_hub_verify_retry(),
     "check_no_workflow_improver_spawn": lambda wf: check_no_workflow_improver_spawn(),
@@ -20391,6 +20541,12 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     # allowlist-staleness division of labor).
     "check_prod_import_lockfile": CheckScope(
         "path-local", ("scripts/", "src/", "uv.lock", "pyproject.toml")
+    ),
+    # #2650: a NEW violator arrives as a scripts/ or src/ file; a change to the
+    # guard's own allowlist or class rules arrives as an edit to the guard
+    # module this check loads its rule from, so that path is in scope too.
+    "check_torch_before_dotenv": CheckScope(
+        "path-local", ("scripts/", "src/", "tests/test_shared_vm_thread_caps.py")
     ),
     "check_batch_judge_client": CheckScope("path-local", ("scripts/", "src/")),
     "check_hub_verify_retry": CheckScope("path-local", ("scripts/",)),
@@ -21015,6 +21171,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "'# PROD_IMPORT_LINT_EXEMPT: <reason>' waiver. Dangling issue*-stem "
         "first-party roots and extras-only dists WARN on stderr instead of "
         "failing. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-torch-before-dotenv",
+        action="store_true",
+        help="FAIL any VM entrypoint importing a HEAVY_IMPORT_ROOTS root at module "
+        "top before load_dotenv() (#847), so the shared-VM BLAS/torch thread caps "
+        "bind in-process. Lint-time twin of "
+        "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints: "
+        "it LOADS that guard module by path and calls its own scan-target rules, "
+        "heavy-import predicate and GRANDFATHERED_TORCH_BEFORE_DOTENV allowlist, so "
+        "the two surfaces cannot drift. Exists because the pytest guard fires only "
+        "at a later session's Step 9c gate, by which time the violator is already "
+        "on main and reds the whole fleet (#2650; ten tasks of that class). No "
+        "waiver of its own — grandfathering goes through the guard's shrink-only "
+        "allowlist. Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-batch-judge-client",
@@ -22015,6 +22186,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_return_discard
         or args.check_dotenv_before_hf_import
         or args.check_prod_import_lockfile
+        or args.check_torch_before_dotenv
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
         or args.check_no_workflow_improver_spawn
@@ -22167,6 +22339,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_dotenv_before_hf_import())
     if args.check_prod_import_lockfile or no_flags:
         errors.extend(check_prod_import_lockfile())
+    if args.check_torch_before_dotenv or no_flags:
+        errors.extend(check_torch_before_dotenv())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
     if args.check_hub_verify_retry or no_flags:
