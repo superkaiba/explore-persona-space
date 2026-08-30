@@ -213,6 +213,11 @@ def _top_list(vec: torch.Tensor) -> list[list[float | int]]:
     return [[int(i), float(v)] for i, v in zip(ids, vals, strict=True)]
 
 
+def _encode_selected_public(pt, kept: torch.Tensor, feat_ids: torch.Tensor) -> torch.Tensor:
+    """Select features only after the public SAE's exact full-width encode."""
+    return pt.encode(kept)[:, feat_ids]
+
+
 def _write_list_config(lists_dir: Path, cfg: str, turns: list[dict], meta: dict) -> None:
     lists_dir.mkdir(parents=True, exist_ok=True)
     name = f"lists_{cfg}.jsonl"
@@ -450,9 +455,11 @@ def phase_pt(args) -> None:
     def emit_callback(row, kept, kept_abs, ids, span):
         wants = wanted_by_row[row]
         feat_ids = torch.as_tensor([w[0] for w in wants], dtype=torch.long, device=args.device)
-        x = kept.to(device=args.device, dtype=torch.float32)
-        acts = torch.relu((x - pt.b_dec) @ pt.w_enc[feat_ids].T + pt.b_enc[feat_ids])
-        acts *= acts > pt.threshold
+        # Preserve the public comparator's exact full-width GEMM and thresholding
+        # path.  A selected-column GEMM is algebraically equivalent but can round
+        # threshold-seam activations differently on CUDA; the reviewed parent
+        # instrument also calls ``encode`` before selecting the needed features.
+        acts = _encode_selected_public(pt, kept.to(args.device), feat_ids)
         abs_to_kept = {int(a): i for i, a in enumerate(kept_abs.cpu().tolist())}
         for wi, (feat, rank, value, peak_abs) in enumerate(wants):
             lo = max(span[0], peak_abs - WINDOW_RADIUS)
