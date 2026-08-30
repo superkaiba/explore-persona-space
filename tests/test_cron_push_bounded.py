@@ -47,7 +47,9 @@ Why the site check is exact on five axes (rounds 1-5 of #2387; unchanged):
   alert and ``bash -n`` stays green; counting it would report a full
   inventory for a wrapper whose alert is silently disabled. Comments are
   removed by BASH'S OWN PARSER (the engine below), never by a re-implemented
-  comment grammar.
+  comment grammar. Heredoc BODY text is excluded the same bash-owned way
+  since round 9 (THE ENGINE below): bash renders it verbatim but never
+  executes it, and counting it let inert body text satisfy the exact pin.
 - SHELL-VALID WHITESPACE (``[ \\t]``), not ``\\s``. Python's ``\\s`` accepts
   U+00A0 and its Unicode siblings, which bash does NOT treat as token
   separators: a no-break space between ``"${PUSH_TIMEOUT}s"`` and the push
@@ -89,9 +91,44 @@ Under the delegated engine the round-7 blockers resolve by construction:
   that a parse-only rendering never executes, so bash exits non-zero and the
   scan REFUSES loudly.
 
+ROUND 9 — heredoc bodies leave the scan; the engine child env is pinned.
+
+- HEREDOC BODY EXCLUSION. Bash renders body text verbatim and round 8
+  counted it, so inert push-shaped body text satisfied the EXACT pin: it
+  could hold the count at pin while a real site was deleted, or while a
+  live call escaped the site regex through the disclosed unquoted-message
+  boundary (bash EXECUTED that unbounded push under a green suite), and a
+  push refactored VERBATIM into a generated-child-script heredoc kept the
+  suite green while no push executed at all — the reconcile-v8 S1/S2/S3
+  measurements. The exclusion is bash-verified, not hand-lexed: every
+  ``<<`` occurrence in the rendering is probed by re-parsing the WHOLE
+  rendering with that one delimiter token replaced by a fresh random
+  token — a REAL here-document then reads to end-of-file and bash itself
+  says so (its EOF warning / a parse error), while a lookalike inside
+  quotes or arithmetic parses clean — so a quoted ``<<EOF`` in a string
+  can never open a false skip region over live commands. A confirmed
+  operator's body + terminator lines are skipped (terminator = first
+  following rendered line equal to the raw delimiter — exact for both
+  forms, measured: ``<<-`` bodies render tab-stripped with a bare
+  terminator, and a body line equal to the delimiter is impossible: it
+  would have terminated the document when bash read it); operator-line
+  text and post-terminator text still scan. REFUSED loudly, never
+  guessed: an unterminated here-document (bash's EOF warning on the full
+  render — pretty-print SYNTHESIZES the missing terminator and exits 0,
+  so round 8 silently scanned the swallowed tail as command text),
+  multiple here-documents on one rendered line, and a terminator the
+  scan cannot locate.
+- ENGINE CHILD ENV pinned to ``{PATH, LC_ALL=C}`` — nothing is inherited.
+  Measured on the round-8 engine: a ``BASH_ENV`` script EXECUTED inside
+  the parse-only child, and ``BASHOPTS=extglob`` flipped the extglob
+  refusal into a clean parse (``ENV`` / ``SHELLOPTS`` are the same two
+  classes); ``LC_ALL=C`` also pins the warning text the heredoc probes
+  match. Pinned by the two env-canary tests.
+
 FAIL-LOUD CONTRACT: anything bash cannot parse makes ``--pretty-print`` exit
 non-zero and ``scan_execution_sites`` raise ValueError carrying the origin
-plus bash's own diagnosis (which names the SOURCE line). A refusal can
+plus bash's own diagnosis (which names the SOURCE line); round 9 adds the
+three heredoc refusals above on the same contract. A refusal can
 neither silently pass an unbounded push nor silently drop a live one. The
 rounds-4-7 refusal roster (backticks, ``case`` in a substitution, ``=~``
 regex words, process substitutions in ``${...}``) is GONE as a refusal
@@ -106,19 +143,31 @@ text bash executes — are closed structurally: there is no strip step left
 to diverge; every executed command appears in bash's own rendering of the
 parse tree. What remains is at the MATCH level, disclosed below.
 
-Known residuals after round 8, each classified by the direction rule:
+Known residuals after round 9, each classified by the direction rule:
 
-- QUOTED / HEREDOC-BODY push-shaped TEXT is counted. The site regex is
-  textual over the rendering, and bash renders string content and heredoc
-  bodies verbatim, so ``echo '"$PUSH" "m"'`` or a push-shaped heredoc body
-  line satisfies ``_EXEC_SITE`` without executing. ADDING such text moves
-  the count ABOVE the pin — loud (pinned:
-  ``test_heredoc_body_push_counts_as_an_inert_site``). QUOTING-OUT an
-  inventory site keeps the count AT the pin — the one remaining silent
-  channel at the lexical level, unchanged since round 1 (no prior round
-  quote-tracked the match scan either; rounds 4-7 tracked quotes only for
-  comment stripping), pinned as a disclosure by
-  ``test_quoted_push_shaped_text_counts_the_disclosed_silent_residual``.
+- POSITIONAL BLINDNESS of the site regex — the OPEN silent channel, stated
+  plainly: the scan asks whether text MATCHES, not whether bash would
+  EXECUTE it. Push-shaped text in any non-execution position — a quoted
+  string (``echo '"$PUSH" "m"'``), an argument word of another command
+  (``echo "$PUSH" "m"``), an array literal, a herestring word — satisfies
+  ``_EXEC_SITE`` without executing. ADDING such text moves the count ABOVE
+  the pin (loud); REPLACING an inventory site with such a husk keeps the
+  count AT the pin — SILENT, unchanged since round 1, and measured end to
+  end as reconcile-v8 S4 (a bounded-looking single-quoted husk plus an
+  unquoted-message live call stayed green while the unbounded push
+  executed). Round 9 closed the two members of this class that had
+  INNOCENT spellings — comments (parser-dropped) and heredoc bodies (the
+  child-script refactor, S3) — and deliberately leaves the rest open: the
+  remaining members exist only as deliberately WRITTEN push-shaped decoy
+  text serving no wrapper purpose, closing them needs command-position
+  parsing (the hand-lexer class rounds 4-7 disproved), and against an
+  author writing decoys into the scanned file a text pin is no defense
+  anyway (that author can edit the pin itself) — diff review is. What the
+  pin does guarantee: every count-affecting edit is DELIBERATE. Pinned as
+  disclosures by
+  ``test_quoted_push_shaped_text_counts_the_disclosed_silent_residual``,
+  ``test_husk_channel_argument_position_and_bounded_looking_spellings``,
+  and ``test_direction_rule_quadrants``.
 - LINE NUMBERS are rendering-relative. Bash reflows the program (comments
   dropped, continuations joined, case arms indented), so count/prefix
   failures report the rendered line TEXT; parse refusals carry bash's own
@@ -133,12 +182,14 @@ Known residuals after round 8, each classified by the direction rule:
   ``$'a\\'b'`` renders ``'a'\\''b'``) — content-preserving, scan-neutral.
 
 None of the residual or refused shapes is in the six wrappers (census
-re-derived round 8 through the delegated engine, 2026-08-30, bash 5.1.16):
-all six render with zero refusals to exactly the pinned counts
-1/3/2/2/2/2 = 12, every site bounded. Zero ``NAME=(`` arrays, no
-``shopt -s extglob``, zero heredoc bodies or quoted strings containing
-push-shaped text (the one heredoc, ``cron_watch_issue_1739.sh``, holds a
-bare variable). The two multi-line command substitutions
+re-derived round 9 through the round-9 engine — heredoc exclusion plus the
+scrubbed child env — 2026-08-30, bash 5.1.16): all six render with zero
+refusals to exactly the pinned counts 1/3/2/2/2/2 = 12, every site bounded,
+unchanged from the round-8 census (the one heredoc,
+``cron_watch_issue_1739.sh``'s ``done <<EOF`` loop feed, holds a bare
+variable, so excluding its body moves no count). Zero ``NAME=(`` arrays, no
+``shopt -s extglob``, zero quoted strings containing push-shaped text. The
+two multi-line command substitutions
 (``cron_watch_issue_2091.sh``, ``cron_watch_issue_1739.sh``) and the
 double-quoted brace-nested substitution (``cron_daily_healthcheck.sh``)
 all parse and render clean.
@@ -148,7 +199,10 @@ the execution-site regex. A NEW cron wrapper calling the push helper must be
 ADDED to the mapping or it escapes every pin here; likewise a call shape
 whose message argument is not a double-quoted string immediately after the
 push variable (an unquoted message, a renamed variable) escapes the regex.
-Extend both when adding either.
+Extend both when adding either. The unquoted-message escape is one leg of
+the reconcile-v8 S2 compound: with heredoc padding closed it fails LOUD on
+the count (the pad no longer vouches for it), but the husk-REPLACEMENT
+compound (S4) stays silent — see the positional-blindness residual above.
 
 Behavioral twins (sleeping-stub tests, one per call-site composition shape)
 live in tests/test_cron_step9c_ledger_refresh.py (if-condition),
@@ -160,6 +214,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import uuid
 from pathlib import Path
 
 import pytest
@@ -211,19 +266,37 @@ _BOUND_PREFIX_TEXT = 'timeout --kill-after=5s "${PUSH_TIMEOUT}s" '
 # push.
 _BOUND_PREFIX_RE = re.compile(r'timeout[ \t]+--kill-after=5s[ \t]+"\$\{PUSH_TIMEOUT\}s"[ \t]+$')
 
+# Environment for EVERY engine child (rendering, heredoc probes, `bash -n`):
+# PATH to find bash, LC_ALL=C to pin the warning text `_HEREDOC_EOF_WARNING`
+# matches. Everything else is deliberately absent — measured on the round-8
+# engine: a `BASH_ENV` script EXECUTED inside the parse-only child, and
+# `BASHOPTS=extglob` flipped the extglob refusal into a clean parse (`ENV` /
+# `SHELLOPTS` are the same two classes). Pinned by the env-canary tests.
+_ENGINE_ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C"}
 
-def _bash_rendering(text: str, origin: str = "<text>") -> str:
-    """Return bash's own executable rendering of ``text`` (module docstring,
-    THE ENGINE): the program printed from the real parse tree by
-    ``bash --pretty-print``, comments discarded by the parser, ``\\``
-    continuations joined, nothing executed.
+# Bash's own report that a here-document reads to end-of-file. On the FULL
+# render it means an unterminated heredoc — refused, because pretty-print
+# SYNTHESIZES the missing terminator and exits 0 (measured), which round 8
+# read as a clean parse while the wrapper's whole tail had become body text.
+# On a perturbation probe it is the POSITIVE signal that the probed `<<` is
+# a real heredoc operator (see `_is_real_heredoc`).
+_HEREDOC_EOF_WARNING = re.compile(r"here-document at line \d+ delimited by end-of-file \(wanted `")
 
-    Raises ValueError — the fail-loud contract — when bash cannot parse the
-    text, with ``origin`` plus bash's stderr (which names the SOURCE line of
-    the offending construct). A non-zero exit is the ONLY refusal channel;
-    there is no construct list to fall out of sync with bash's grammar.
-    """
-    proc = subprocess.run(
+# Candidate heredoc operator in a rendered line: `<<` or `<<-` (never the
+# `<<<` herestring), then the delimiter token as bash prints it — quoted,
+# backslash-escaped, or a bare word ended by whitespace / operator chars.
+# Over-matching is safe by construction: every candidate is verified by
+# `_is_real_heredoc`, so a lookalike costs one probe, never a wrong skip.
+_HEREDOC_CANDIDATE = re.compile(
+    r"(?<!<)<<(?!<)(-?)[ \t]*('[^']*'|\"[^\"]*\"|\\?[^\s<>&|;()\"'\\]+)"
+)
+
+
+def _run_engine(text: str) -> subprocess.CompletedProcess[str]:
+    """One parse-only engine child over ``text``: ``bash --pretty-print``
+    under the scrubbed ``_ENGINE_ENV``. Callers read returncode / stdout /
+    stderr; nothing is ever executed (``test_rendering_never_executes``)."""
+    return subprocess.run(
         ["bash", "--pretty-print", "/dev/stdin"],
         input=text,
         capture_output=True,
@@ -231,14 +304,65 @@ def _bash_rendering(text: str, origin: str = "<text>") -> str:
         encoding="utf-8",
         check=False,
         timeout=30,
+        env=_ENGINE_ENV,
     )
+
+
+def _bash_rendering(text: str, origin: str = "<text>") -> str:
+    """Return bash's own executable rendering of ``text`` (module docstring,
+    THE ENGINE): the program printed from the real parse tree by
+    ``bash --pretty-print``, comments discarded by the parser, ``\\``
+    continuations joined, nothing executed.
+
+    Raises ValueError — the fail-loud contract — on either of bash's own
+    diagnoses: a non-zero exit (bash cannot parse the text; stderr names the
+    SOURCE line), or the here-document end-of-file warning (an unterminated
+    heredoc swallows every line after its operator as body text while
+    pretty-print synthesizes the terminator and exits 0, so without the
+    stderr check the dead tail would scan as command text). There is no
+    construct list to fall out of sync with bash's grammar.
+    """
+    proc = _run_engine(text)
     if proc.returncode != 0:
         raise ValueError(
             f"{origin}: bash cannot parse this text (--pretty-print exited "
             f"{proc.returncode}); the scan refuses rather than guessing at "
             f"constructs outside bash's grammar. bash says: {proc.stderr.strip()}"
         )
+    if _HEREDOC_EOF_WARNING.search(proc.stderr):
+        raise ValueError(
+            f"{origin}: a here-document reads to end-of-file, so every line "
+            f"after its operator is body text bash will never execute; the "
+            f"scan refuses rather than counting a wrapper whose tail is "
+            f"inert. bash says: {proc.stderr.strip()}"
+        )
     return proc.stdout
+
+
+def _raw_delimiter(token: str) -> str:
+    """The terminator-line text for a rendered heredoc delimiter token:
+    surrounding quotes / a leading backslash affect only body expansion,
+    never the terminator, which is always the raw word."""
+    if len(token) >= 2 and token[0] == token[-1] and token[0] in "'\"":
+        return token[1:-1]
+    return token.removeprefix("\\")
+
+
+def _is_real_heredoc(lines: list[str], idx: int, cand: re.Match[str]) -> bool:
+    """Bash's own verdict on whether a ``<<`` candidate is a heredoc
+    OPERATOR (vs inert lookalike text inside quotes / arithmetic): re-parse
+    the WHOLE rendering with the candidate's delimiter token replaced by a
+    fresh random token. A real operator's document then reads to
+    end-of-file — bash warns, or errors — while an inert lookalike parses
+    clean; the per-probe random token also defeats a pre-planted terminator
+    line. This is the round-8 delegation law applied to heredoc structure:
+    the only tokenizer guaranteed to agree with bash about what ``<<``
+    means is bash."""
+    probe = f"__EPS_HD_PROBE_{uuid.uuid4().hex}__"
+    line = lines[idx]
+    mutated = line[: cand.start(2)] + probe + line[cand.end(2) :]
+    proc = _run_engine("\n".join([*lines[:idx], mutated, *lines[idx + 1 :]]) + "\n")
+    return proc.returncode != 0 or _HEREDOC_EOF_WARNING.search(proc.stderr) is not None
 
 
 def scan_execution_sites(
@@ -246,22 +370,55 @@ def scan_execution_sites(
     origin: str = "<text>",
 ) -> list[tuple[int, str, re.Match[str]]]:
     """Return ``(rendered_lineno, rendered_line, match)`` per push EXECUTION
-    site of ``text``, scanning bash's own rendering of the program.
+    site of ``text``, scanning the COMMAND TEXT of bash's own rendering.
 
-    Comments never reach the scan (bash's parser drops them), so a
-    commented-out push cannot count toward the pinned inventory; text bash
-    would execute always reaches it, so a live push cannot be silently
-    dropped by a lexer divergence — the round-4-through-7 failure class.
-    Line numbers are rendering-relative (module docstring, residuals).
+    Two exclusions, both owned by bash's parser rather than a re-implemented
+    grammar: comments never reach the scan (the parser drops them), and
+    here-document BODY + terminator lines are skipped (round 9 — every
+    ``<<`` occurrence is verified operator-vs-lookalike by
+    ``_is_real_heredoc``, then the confirmed document's body is excluded, so
+    inert body text can neither pad the pinned count nor mask a deleted or
+    unbounded site). Text bash would execute always reaches the scan, so a
+    live push cannot be silently dropped by a lexer divergence — the
+    round-4-through-7 failure class. Line numbers are rendering-relative
+    (module docstring, residuals).
 
-    Raises ValueError on text bash cannot parse (see ``_bash_rendering``).
+    Raises ValueError on text bash cannot parse or an unterminated heredoc
+    (``_bash_rendering``), on multiple here-documents on one rendered line,
+    and on a heredoc terminator the scan cannot locate.
     """
     rendered = _bash_rendering(text, origin)
-    return [
-        (lineno, line, m)
-        for lineno, line in enumerate(rendered.splitlines(), start=1)
-        for m in _EXEC_SITE.finditer(line)
-    ]
+    lines = rendered.splitlines()
+    sites: list[tuple[int, str, re.Match[str]]] = []
+    skip_until = -1  # index of the open here-document's terminator line
+    for idx, line in enumerate(lines):
+        if idx <= skip_until:
+            continue  # heredoc body / terminator: bash never executes it
+        if "<<" in line:
+            reals = [
+                c for c in _HEREDOC_CANDIDATE.finditer(line) if _is_real_heredoc(lines, idx, c)
+            ]
+            if len(reals) > 1:
+                raise ValueError(
+                    f"{origin}: multiple here-documents on one rendered line "
+                    f"({line.strip()!r}) — body extents are ambiguous; the scan "
+                    f"refuses rather than guessing which lines bash treats as data"
+                )
+            if reals:
+                raw = _raw_delimiter(reals[0].group(2))
+                for j in range(idx + 1, len(lines)):
+                    if lines[j] == raw:
+                        skip_until = j
+                        break
+                else:
+                    raise ValueError(
+                        f"{origin}: cannot locate the terminator {raw!r} of the "
+                        f"here-document opened on rendered line {idx + 1}; the "
+                        f"scan refuses rather than guessing the body's extent"
+                    )
+        for m in _EXEC_SITE.finditer(line):
+            sites.append((idx + 1, line, m))
+    return sites
 
 
 def test_every_push_call_site_is_timeout_bounded():
@@ -309,6 +466,7 @@ def test_every_wrapper_parses():
             text=True,
             check=False,
             timeout=30,
+            env=_ENGINE_ENV,
         )
         assert proc.returncode == 0, f"{rel}: bash -n failed:\n{proc.stderr}"
 
@@ -320,12 +478,46 @@ def test_rendering_never_executes(tmp_path):
     """The engine is parse-only. Load-bearing, not a nicety: the two watch
     scripts' terminal arms rewrite the real user crontab, and this scan is
     their only coverage vehicle precisely BECAUSE no test may execute them.
-    A canary write proves `--pretty-print` builds the parse tree without
-    running a single command."""
+    Canary writes prove `--pretty-print` builds the parse tree without
+    running a single command — including the strongest execution path, a
+    command substitution (whose canary would fire at PARSE time if the
+    engine expanded words), and a heredoc-body expansion (which also
+    exercises the round-9 body-exclusion probes on live canary text)."""
     canary = tmp_path / "canary.txt"
-    sites = scan_execution_sites(f'echo executed > "{canary}"\ndate >> "{canary}"\n')
+    text = (
+        f'echo executed > "{canary}"\n'
+        f'date >> "{canary}"\n'
+        f'x=$(touch "{canary}")\n'
+        f'cat <<EOF\n$(touch "{canary}")\nEOF\n'
+    )
+    sites = scan_execution_sites(text)
     assert sites == []
     assert not canary.exists(), "--pretty-print EXECUTED the text it was asked to parse"
+
+
+def test_bash_env_cannot_reach_the_engine_child(tmp_path, monkeypatch):
+    """``bash --pretty-print`` SOURCES ``$BASH_ENV`` before parsing —
+    measured on the round-8 engine, where this exact canary EXECUTED — so
+    every engine child runs under ``_ENGINE_ENV``, which inherits nothing.
+    ``ENV`` is the same class (the POSIX-mode spelling)."""
+    canary = tmp_path / "bash_env_canary"
+    hook = tmp_path / "bash_env_hook.sh"
+    hook.write_text(f'touch "{canary}"\n')
+    monkeypatch.setenv("BASH_ENV", str(hook))
+    monkeypatch.setenv("ENV", str(hook))
+    assert scan_execution_sites("true\n") == []
+    assert not canary.exists(), "the engine child sourced $BASH_ENV"
+
+
+def test_bashopts_cannot_flip_a_refusal_verdict(monkeypatch):
+    """``BASHOPTS=extglob`` in the child env enables extglob at parse time —
+    measured on the round-8 engine, where it flipped the extglob-assignment
+    REFUSAL into a clean parse, silently changing a pinned verdict
+    (``SHELLOPTS`` is the same class). The scrubbed env keeps the refusal."""
+    monkeypatch.setenv("BASHOPTS", "extglob")
+    monkeypatch.setenv("SHELLOPTS", "braceexpand")
+    with pytest.raises(ValueError, match="cannot parse"):
+        scan_execution_sites('x=@(a|b)#tag && "$PUSH" "EXTGLOB_ASSIGNMENT_RAN"')
 
 
 def test_unparseable_text_refuses_naming_origin_and_bash_line():
@@ -746,43 +938,174 @@ def test_backslash_continuation_is_joined_before_scanning():
     assert _bound_flags(bounded) == [True]
 
 
+# --- Round-9 regressions: heredoc-inert-site-count-masking --------------------
+#
+# Round 8 counted heredoc BODY text (bash renders it verbatim; the site regex
+# is textual), and the round-8 reconciliation measured that as a
+# pin-PRESERVING masking class, not the loud over-count round 8 disclosed
+# (epm:review-reconcile v8, fixtures S1-S3): inert body text held the count AT
+# the exact pin while a real site was deleted (S1), while a live unbounded
+# call rode the regex's disclosed unquoted-message boundary — bash EXECUTED
+# the unbounded push under a green suite (S2, the blocker criterion verbatim)
+# — and a push REFACTORED verbatim into a generated-child-script heredoc kept
+# the suite green while NO push executed at all (S3: one realistic edit, not a
+# compound). Every regression below was run against the round-8 tip
+# (288017f6d7f) before the fix and FAILED there, with these measured
+# behaviors: S3 counted the body line as 1 site [True]; S1 scanned 2 == pin;
+# S2 scanned 1/[True] == pin while a stubbed push logged the execution; the
+# unterminated document scanned its swallowed tail with no refusal; the
+# BASH_ENV canary EXECUTED; BASHOPTS=extglob flipped the extglob refusal.
+# Per-test pre/post results: round-9 implementation marker.
+
+
+def _bounded_push(msg: str) -> str:
+    """One correctly bounded push line, the reconcile-v8 fixture shape."""
+    return f'timeout --kill-after=5s "${{PUSH_TIMEOUT}}s" "$PUSH" "{msg}"\n'
+
+
+def test_push_moved_into_a_heredoc_body_is_not_a_site():
+    """reconcile-v8 S3, the single-edit spelling: a real bounded push line
+    moved VERBATIM into a heredoc body (the generate-a-child-script
+    refactor) contributes NOTHING — bash never executes body text, and
+    counting it kept the pin green while the alert stopped executing
+    entirely. Pre-fix (r8 tip): 1 site, [True] — GREEN at pin 1, no push
+    runs."""
+    text = "cat > /dev/null <<EOF\n" + _bounded_push("real_site_A") + "EOF\n"
+    assert scan_execution_sites(text) == []
+
+
+def test_heredoc_pad_cannot_mask_a_deleted_site():
+    """reconcile-v8 S1: one real bounded site plus a bounded-looking heredoc
+    body line scans as ONE site, so at pin 2 (a real site deleted, the pad
+    holding the count) the count assert fails LOUD. Pre-fix (r8 tip): 2
+    sites, [True, True] — GREEN at pin 2 while bash executed only one
+    push."""
+    text = _bounded_push("real_site_A") + "cat <<EOF\n" + _bounded_push("PSEUDO") + "EOF\n"
+    assert len(scan_execution_sites(text)) == 1
+    assert _bound_flags(text) == [True]
+
+
+def test_heredoc_pad_plus_regex_escaping_call_goes_loud():
+    """reconcile-v8 S2 — the blocker criterion verbatim: a bounded-looking
+    heredoc body plus a live push whose UNQUOTED message escapes the site
+    regex (the disclosed COVERAGE BOUNDARY) scans as ZERO sites, so a pin-1
+    count fails LOUD instead of the pad vouching for the live unbounded
+    push. Pre-fix (r8 tip): 1 site, [True] — GREEN while bash executed the
+    unbounded push."""
+    text = "cat <<EOF\n" + _bounded_push("PSEUDO") + "EOF\n" + '"$PUSH" UNBOUNDED_UNQUOTED\n'
+    assert scan_execution_sites(text) == []
+
+
+def test_unterminated_heredoc_refuses():
+    """A here-document delimited by end-of-file converts the wrapper's whole
+    tail into body text; pretty-print SYNTHESIZES the terminator and exits
+    0 (measured), so round 8 silently scanned the swallowed tail as command
+    text (1 site from this fixture, no refusal). Round 9 refuses on bash's
+    own warning."""
+    with pytest.raises(ValueError, match="end-of-file"):
+        scan_execution_sites('cat <<EOF\n"$PUSH" "swallowed"\n')
+
+
+def test_multiple_heredocs_on_one_line_refuse():
+    """Two documents on one command have sequential bodies — ambiguous
+    extents for a line scan; refused loudly per the reconcile-v8 fix
+    contract, never guessed."""
+    with pytest.raises(ValueError, match="multiple here-documents"):
+        scan_execution_sites('cat <<A <<B\n"$PUSH" "in body A"\nA\nbodyB\nB\n')
+
+
+def test_command_text_around_a_heredoc_still_scans():
+    """The exclusion must not over-skip: operator-line code (rendered AFTER
+    the body by pretty-print — measured), post-terminator code, and code
+    after a heredoc-in-command-substitution all keep their sites."""
+    opline = 'cat <<EOF && "$PUSH" "OPLINE"\nbody\nEOF\n'
+    assert _bound_flags(opline) == [False]
+    after = 'cat > /dev/null <<EOF\n"$PUSH" "IN_BODY"\nEOF\n' + _LIVE + "\n"
+    assert _bound_flags(after) == [True]
+    cmdsub = 'x=$(cat <<EOF\n"$PUSH" "CS_BODY"\nEOF\n)\n"$PUSH" "CS_AFTER"\n'
+    assert _bound_flags(cmdsub) == [False]
+
+
+def test_heredoc_body_exclusion_covers_dash_quoted_and_fake_terminator_forms():
+    """The body-as-data class is form-independent (the reconcile-v8 sweep):
+    ``<<-`` bodies render tab-stripped with a bare terminator, quoted
+    delimiters render with a raw terminator line, the wrappers' own
+    ``done <<EOF`` feed shape, and a tab-prefixed lookalike terminator
+    inside a NON-dash body stays body per bash — all excluded."""
+    dash = 'cat <<-EOF\n\t"$PUSH" "TAB_BODY"\n\tEOF\n'
+    assert scan_execution_sites(dash) == []
+    quoted = 'cat <<\'EOF\'\n"$PUSH" "QD_BODY"\nEOF\n'
+    assert scan_execution_sites(quoted) == []
+    done_feed = 'while read -r x; do\n  echo "$x"\ndone <<EOF\n"$PUSH" "FEED_BODY"\nEOF\n'
+    assert scan_execution_sites(done_feed) == []
+    fake_term = 'cat <<EOF\n\tEOF\n"$PUSH" "STILL_BODY"\nEOF\n'
+    assert scan_execution_sites(fake_term) == []
+
+
+def test_heredoc_lookalikes_are_not_operators():
+    """The operator-vs-lookalike verdict is bash's, not a quote tracker's: a
+    ``<<EOF`` inside a double-quoted string must NOT open a skip region (a
+    fake operator hiding the next live site would be the inverse masking —
+    an over-SKIP), and an arithmetic left shift is not a heredoc. The bare
+    ``EOF`` line in the first fixture is an ordinary (never-run) command,
+    present so a wrong operator verdict would have a terminator to skip
+    to."""
+    fake = 'echo "see <<EOF for details"\n' + _LIVE + "\nEOF\n"
+    assert _bound_flags(fake) == [True]
+    assert _bound_flags('echo $((1<<2)) && "$PUSH" "SHIFT_RAN"\n') == [False]
+
+
 # --- Direction-rule disclosures (scope controls, not regression evidence) ----
 
 
-def test_heredoc_body_push_counts_as_an_inert_site():
-    """DISCLOSED residual, loud direction (passes on the round-7 scanner too):
-    bash never executes heredoc body text, but the rendering carries it
-    verbatim and the site regex is textual, so a push-shaped body line is an
-    over-COUNT of an inert site. ADDING one moves the count ABOVE the pin —
-    loud, a human looks — never a silent pass of an unbounded push."""
-    text = 'cat <<EOF\n"$PUSH" "HEREDOC_BODY_MUST_NOT_RUN"\nEOF\n'
-    sites = scan_execution_sites(text)
-    assert len(sites) == 1
-
-
 def test_quoted_push_shaped_text_counts_the_disclosed_silent_residual():
-    """DISCLOSED residual, the ONE remaining silent channel at the lexical
-    level (module docstring): push-shaped text inside a quoted string
-    satisfies the textual site regex without executing, so REPLACING an
-    inventory site with its quoted-out husk keeps the count AT the pin.
-    Unchanged since round 1 — no prior scanner quote-tracked the match scan
-    either — and pinned here so an engine change that closes or widens it
-    is a deliberate edit, not drift."""
+    """DISCLOSED-OPEN residual (module docstring, positional blindness):
+    push-shaped text inside a quoted string satisfies the textual site
+    regex without executing, so REPLACING an inventory site with its
+    quoted-out husk keeps the count AT the pin — silent. Unchanged since
+    round 1; round 9 closed the heredoc-body member of this class and
+    deliberately leaves this one open (command-position parsing is the
+    rounds-4-7 hand-lexer class, and a deliberately written decoy is diff
+    review's to catch, not a text pin's). Pinned so an engine change that
+    closes or widens the channel is a deliberate edit, not drift."""
     sites = scan_execution_sites('echo \'"$PUSH" "quoted, never executed"\'')
     assert len(sites) == 1
 
 
-def test_direction_rule_loud_quadrants():
-    """The direction rule's two loud quadrants, demonstrated through the
-    engine against `_LIVE`'s one-site pin: disabling the inventory site
-    (comment-out) drops the count BELOW the pin; adding inert push-shaped
-    text (heredoc body) raises it ABOVE the pin. Silent is exactly
-    count-AT-pin, which after round 8 requires the quoted-out husk above —
-    there is no strip step left to produce it."""
+def test_husk_channel_argument_position_and_bounded_looking_spellings():
+    """The husk channel is NOT quote-specific (the round-8 wording
+    under-scoped it): push-shaped words in ARGUMENT position of another
+    command count too, unquoted — ``echo "$PUSH" "m"`` is a semi-plausible
+    logging edit that keeps the count when it REPLACES a live site — and
+    the bounded-looking single-quoted husk even carries flag True, so the
+    reconcile-v8 S4 compound (husk + a regex-escaping live call) sits
+    exactly AT a one-site pin: measured GREEN while bash executed the
+    unbounded push. Both spellings pinned as OPEN disclosures."""
+    assert _bound_flags('echo "$PUSH" "logged, never pushed"') == [False]
+    s4 = (
+        'echo \'timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "m"\' > /dev/null\n'
+        '"$PUSH" UNBOUNDED_UNQUOTED\n'
+    )
+    assert _bound_flags(s4) == [True]
+
+
+def test_direction_rule_quadrants():
+    """The direction rule against ``_LIVE``'s one-site pin, after round 9:
+    disabling the inventory site (comment-out) drops the count BELOW the
+    pin — loud; ADDING inert push-shaped text raises it ABOVE the pin —
+    loud, now via the husk, since a heredoc body no longer counts at all
+    (adding one is a NON-EVENT, third assert, rather than round 8's noisy
+    over-count); REPLACING the site with a husk keeps the count AT the
+    pin — the silent quadrant, disclosed OPEN in the module docstring,
+    never denied."""
     pin = 1
     assert len(scan_execution_sites("# " + _LIVE.strip())) == pin - 1
-    text = _LIVE + '\ncat <<EOF\n"$PUSH" "inert body"\nEOF\n'
-    assert len(scan_execution_sites(text)) == pin + 1
+    husk_add = _LIVE + '\necho \'"$PUSH" "inert husk"\'\n'
+    assert len(scan_execution_sites(husk_add)) == pin + 1
+    pad_add = _LIVE + '\ncat <<EOF\n"$PUSH" "inert body"\nEOF\n'
+    assert len(scan_execution_sites(pad_add)) == pin
+    husk_replace = 'echo \'"$PUSH" "husk, never executed"\''
+    assert len(scan_execution_sites(husk_replace)) == pin
 
 
 # --- Live-fixture byte fidelity ----------------------------------------------
