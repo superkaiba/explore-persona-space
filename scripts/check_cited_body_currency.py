@@ -605,29 +605,42 @@ def window_pathspec(window: list[_Commit], rel_path: str) -> list[str]:
     return out
 
 
-def classify_window(window: list[_Commit], diff: str, *, conclusive: bool = True) -> str | None:
+def classify_window(window: list[_Commit], diff: str, *, conclusive: bool) -> str | None:
     """Label the dominant false-positive channel (#2384 §6): a status move
     (``git mv`` between status folders) is ``rename-only``; a user promotion
     sweep (``classification`` flip) is ``frontmatter-only``. ``None`` = a
     content diff (the real staleness signal). Advisory label only, never a
     verdict input.
 
+    NO label of ANY kind is emitted unless the window's chase ended
+    CONCLUSIVELY (#2384 rounds 4-5). An inconclusive end — hop-cap
+    exhaustion, a failed segment probe, an unresolved per-commit status —
+    means the window AND the diff drawn from it are TRUNCATED, so they prove
+    nothing about what the full window holds. That gates BOTH branches: an
+    all-``R100`` partial window must not read ``rename-only`` (round 4 — the
+    label would additionally suppress the diff), and a truncated diff whose
+    only visible changed lines are frontmatter must not read
+    ``frontmatter-only`` (round 5 — the omitted portion can hold the very
+    content correction the gate exists to surface, while the label steers
+    the operator toward the "plan text unaffected" disposition). The early
+    return also makes :func:`_chase_note`'s "advisory label withheld"
+    disclosure unconditionally truthful. ``conclusive`` deliberately has NO
+    default: a permissive default on a safety flag would re-open the hazard
+    at any future call site.
+
     ``rename-only`` is decided from the per-commit name-status of the
     rename-CHASING window (:func:`_window_history`), never from the diff text
     (#2384 round-2 blocker 8), never from a rename-TRUNCATED history
     (#2384 round-3 blocker — that history held only the ``R100`` move, so a
     window mixing a real correction with a status move read as all-``R100``
-    and the correction was suppressed), and ONLY when the window's chase
-    ended CONCLUSIVELY (#2384 round-4 blocker): an all-``R100`` window whose
-    chase was cut short — hop-cap exhaustion, a failed segment probe, a
-    spoofed prior-incarnation bound — proves only that the TRUNCATED window
-    holds no edits, so ``conclusive=False`` withholds the label (and with it
-    the diff suppression) rather than certify a partial window.
+    and the correction was suppressed).
     Requiring EVERY windowed commit to be an exact ``R100`` keeps the label
     honest in both directions: a rename-WITH-edit (``R095``) and a content
     commit (``M``) are real changes and stay unlabeled, while a task moved
     through several status folders with no edits still earns the label."""
-    if conclusive and window and all(c.status == "R100" for c in window):
+    if not conclusive:
+        return None
+    if window and all(c.status == "R100" for c in window):
         return "rename-only"
     if not diff:
         return None
@@ -659,10 +672,10 @@ def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple
     suppresses its diff.
 
     Under a ``rename-only`` label the diff BODY is suppressed: for a status
-    move it carries no content change, which is pure noise. The label (and so
-    the suppression) is emitted ONLY on a CONCLUSIVE chase end (#2384 round-4
-    blocker); an inconclusive end leaves the label ``None`` and the diff
-    visible — conservative."""
+    move it carries no content change, which is pure noise. EVERY label —
+    ``frontmatter-only`` included — is emitted ONLY on a CONCLUSIVE chase end
+    (#2384 rounds 4-5); an inconclusive end leaves the label ``None`` and the
+    diff visible — conservative."""
     window, conclusive = _window_history(rel_path, since_unix, repo_root=repo_root)
     if not window:
         return "", None

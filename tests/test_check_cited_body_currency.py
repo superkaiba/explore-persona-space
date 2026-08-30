@@ -748,8 +748,13 @@ def test_hop_cap_exhaustion_is_inconclusive_never_rename_only(fake_repo, capsys)
 
     rel = f"tasks/s{n_moves}/9991/body.md"
     text, label = ccb.body_diff_since(rel, REF, repo_root=fake_repo)
-    assert label != "rename-only"
-    assert text  # the gathered window log + diff stay visible
+    # Round-5 tightening (`inconclusive-fixtures-do-not-pin-label-or-diff`):
+    # `label != "rename-only"` + truthy `text` let a mutant emitting a
+    # DIFFERENT label string ("chase-truncated") while suppressing the diff
+    # pass the whole file — an inconclusive end must yield NO label at all,
+    # and the gathered diff must actually reach the operator-facing text.
+    assert label is None
+    assert "diff --git" in text  # the gathered window's diff stays visible, unsuppressed
     assert "inconclusive" in capsys.readouterr().err  # the truncation is disclosed
 
 
@@ -788,8 +793,93 @@ def test_midchase_log_failure_is_inconclusive_never_rename_only(fake_repo, monke
     monkeypatch.setattr(ccb, "_git", flaky_git)
     text, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
     assert seen["log_segments"] >= 2  # the chase's source hop was actually reached
-    assert label != "rename-only"
-    assert text  # the one-row window log + rename diff stay visible
+    # Round-5 tightening (`inconclusive-fixtures-do-not-pin-label-or-diff`):
+    # same rationale as the hop-cap pin — no label of any kind over a
+    # failed-probe window, and the rename diff must reach the shown text.
+    assert label is None
+    assert "diff --git" in text  # the one-row window log + rename diff stay visible
+    assert "inconclusive" in capsys.readouterr().err  # the failure is disclosed
+
+
+_FM_BODY = (
+    "---\nid: 9991\nclassification: pending\n---\n\n# Task 9991\n\n"
+    + "\n".join(f"padding line {i}" for i in range(8))
+    + "\n\nRESULT: the sign is POSITIVE.\n"
+)
+
+
+def test_hop_cap_exhaustion_withholds_frontmatter_label(fake_repo, capsys):
+    """Round-5 fix (ledger `inconclusive-frontmatter-label-overrides-conservative-end`,
+    variant: hop-cap exhaustion). A buried in-window content correction, more
+    status moves than the chase may cross, then a frontmatter-only edit at
+    the final path. Round 4 gated only ``rename-only`` on conclusiveness, so
+    the truncated diff — whose only VISIBLE changed lines are the
+    ``classification`` flip — still earned ``frontmatter-only`` over a window
+    whose omitted portion held the correction, while ``_chase_note``
+    simultaneously printed "advisory label withheld". Inconclusive ⇒ NO
+    label of any kind; the gathered diff stays visible."""
+    n_moves = ccb._MAX_RENAME_CHASE_HOPS + 2
+    paths = [fake_repo / "tasks" / f"s{i}" / "9991" for i in range(n_moves + 1)]
+    paths[0].mkdir(parents=True)
+    (paths[0] / "body.md").write_text(_FM_BODY)
+    _commit(fake_repo, [paths[0] / "body.md"], "persist body", BEFORE)
+    (paths[0] / "body.md").write_text(
+        _FM_BODY.replace("RESULT: the sign is POSITIVE.", "CORRECTED: the sign is NEGATIVE.")
+    )
+    _commit(fake_repo, [paths[0] / "body.md"], "correct body", AFTER)
+    for i in range(n_moves):
+        _status_move(
+            fake_repo, paths[i], paths[i + 1], AFTER + 10 * (i + 1), f"move s{i} -> s{i + 1}"
+        )
+    final = paths[n_moves] / "body.md"
+    final.write_text(final.read_text().replace("classification: pending", "classification: useful"))
+    _commit(fake_repo, [final], "user promotion sweep", AFTER + 10 * (n_moves + 5))
+
+    rel = f"tasks/s{n_moves}/9991/body.md"
+    text, label = ccb.body_diff_since(rel, REF, repo_root=fake_repo)
+    assert label is None  # NOT "frontmatter-only": a truncated diff certifies nothing
+    assert "diff --git" in text  # the gathered diff reaches the operator-facing text
+    assert "CORRECTED: the sign is NEGATIVE." not in text  # the harm: correction IS omitted
+    assert "inconclusive" in capsys.readouterr().err  # the truncation is disclosed
+
+
+def test_midchase_log_failure_withholds_frontmatter_label(fake_repo, monkeypatch, capsys):
+    """Round-5 fix (same ledger row, variant: mid-chase git failure). Persist,
+    content-correct at the OLD path, ``git mv``, then a frontmatter-only edit
+    at the NEW path; the chase's source hop is forced to fail. The one-hop
+    diff shows only the rename + the ``classification`` flip (the correction
+    sits below the failed hop), so round 4 still read ``frontmatter-only``
+    over the truncated window. Inconclusive ⇒ NO label; diff stays visible."""
+    folder = fake_repo / "tasks" / "interpreting" / "9991"
+    folder.mkdir(parents=True)
+    (folder / "body.md").write_text(_FM_BODY)
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text(
+        _FM_BODY.replace("RESULT: the sign is POSITIVE.", "CORRECTED: the sign is NEGATIVE.")
+    )
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 result", AFTER)
+    dest = fake_repo / "tasks" / "completed" / "9991"
+    _status_move(fake_repo, folder, dest, AFTER + 100, "task #9991: interpreting -> completed")
+    final = dest / "body.md"
+    final.write_text(final.read_text().replace("classification: pending", "classification: useful"))
+    _commit(fake_repo, [final], "user promotion sweep", AFTER + 200)
+
+    real_git = ccb._git
+    seen = {"log_segments": 0}
+
+    def flaky_git(args, *, cwd):
+        if args[0] == "log" and args[1] == "--format=%H%x09%ct%x09%s":
+            seen["log_segments"] += 1
+            if seen["log_segments"] == 2:
+                return None  # what _git returns on rc!=0 / timeout
+        return real_git(args, cwd=cwd)
+
+    monkeypatch.setattr(ccb, "_git", flaky_git)
+    text, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
+    assert seen["log_segments"] >= 2  # the chase's source hop was actually reached
+    assert label is None  # NOT "frontmatter-only" over a failed-probe window
+    assert "diff --git" in text  # the rename + frontmatter diff stays visible
+    assert "CORRECTED: the sign is NEGATIVE." not in text  # the harm: correction IS omitted
     assert "inconclusive" in capsys.readouterr().err  # the failure is disclosed
 
 
