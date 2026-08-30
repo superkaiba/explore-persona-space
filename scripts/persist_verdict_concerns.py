@@ -14,11 +14,23 @@ orchestrator context. See SKILL.md's "Codex concerns persistence at verdict
 collection" subsection for the two invocations (validate pre-post, persist
 post-post) and the resume-recovery re-run.
 
+Scope: CODEX TWIN verdict markers ONLY. The Claude reviewers are not
+sandboxed — they persist concerns directly via ``task.py raise-concern``,
+never through this forwarder (#2646; the #2387 r6 misapplication ran a
+Claude marker through it).
+
 Contract:
 
-* Parses ONLY lines matching ``^CONCERN:: `` anywhere in ``--file``; field
-  order fixed (token 1 = severity, token 2 = concern id, remainder =
-  summary; whitespace-split on the first two tokens only).
+* Collects EVERY line matching ``^CONCERN::`` anywhere in ``--file``
+  (exhaustive over line-start rows; a mid-sentence token never collects)
+  and classifies each payload TOTALLY (#2646): CANONICAL — leading space,
+  whitespace fields, severity first (the emitted template above); VARIANT —
+  no leading space, ``|``-delimited, id first
+  (``CONCERN::<kebab-id> | <SEV> | <summary>``, split with ``maxsplit=2``
+  so pipes inside the free-text summary survive verbatim); the
+  ``CONCERN:: none`` sentinel; ANY other line-start row is a MALFORMED
+  ``unparsable-concern-row`` (exit 1) — never a silent drop (#2387 r6:
+  variant rows matched nothing and ingested to zero at rc=0).
 * Validates ALL rows structurally before persisting ANY (all-or-nothing):
   severity in ``task_workflow.CONCERN_SEVERITIES``, id matching
   ``task_workflow._CONCERN_ID_RE``, non-empty summary, no duplicate ids,
@@ -55,11 +67,14 @@ Contract:
   to the complete row set). Never a batch transaction in the frozen
   library layer (Non-goals).
 * Output discipline: stdout carries ONLY counts, concern ids (kebab
-  tokens), and content-free reason codes (``bad-severity | bad-id |
+  tokens), content-free reason codes (``bad-severity | bad-id |
   empty-summary | too-few-fields | duplicate-id | none-with-rows |
-  too-many-rows | heading-without-rows | missing-concerns-block``).
-  Summaries NEVER print; an operational failure prints only the exception
-  CLASS name (a message could embed summary text).
+  too-many-rows | unparsable-concern-row | heading-without-rows |
+  missing-concerns-block``), the ``--file`` path, and — on an
+  ``unparsable-concern-row`` — the two literal expected-format strings
+  (the #2646 hint line). Summaries NEVER print; an operational failure
+  prints only the exception CLASS name (a message could embed summary
+  text).
 * Exit codes: 0 ok (persisted, idempotent no-op, or clean ``none``) - 1
   malformed rows - 3 missing/contradictory concerns block under
   ``--require-block`` - 4 operational persistence failure mid-loop
@@ -83,7 +98,12 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space import task_workflow  # noqa: E402
 
-_ROW_RE = re.compile(r"^CONCERN:: (.*)$", re.MULTILINE)
+# Exhaustive collector (#2646): EVERY line-start `CONCERN::` row is collected
+# and then classified TOTALLY by _classify_row — canonical / variant / `none`
+# sentinel / MALFORMED `unparsable-concern-row` — so no line-start row can
+# silently miss the ledger (the pre-#2646 `^CONCERN:: ` collector let the
+# #2387 r6 variant rows ingest to zero at rc=0).
+_ANY_ROW_RE = re.compile(r"^CONCERN::(.*)$", re.MULTILINE)
 _HEADING_RE = re.compile(r"(?mi)^(?:#{1,6}\s*|\*\*)?concerns to persist\b")
 _SUMMARY_CAP = 200
 # Availability cap (#2326 `unbounded-concern-row-fanout`): realistic twin
@@ -112,13 +132,60 @@ def _truncate_summary(summary: str, cap: int = _SUMMARY_CAP) -> tuple[str, str |
     return kept, summary
 
 
+def _classify_row(raw: str, idx: int, problems: list[str]) -> tuple[str, str, str] | None:
+    """Classify ONE collected line-start payload; total by construction (#2646).
+
+    CANONICAL (leading space, whitespace fields, severity first) and VARIANT
+    (no leading space, ``|``-delimited, id first) both normalize to the same
+    ``(severity, cid, summary)`` triple; a payload matching NEITHER grammar
+    appends the content-free ``unparsable-concern-row`` problem and returns
+    ``None``. Field-level defects on a RECOGNIZED grammar keep their specific
+    reason codes (too-few-fields / bad-severity / bad-id / empty-summary),
+    appended to ``problems`` in place.
+    """
+    if raw.startswith(" "):
+        # CANONICAL candidate — the historical `CONCERN:: ` grammar
+        # (pre-#2646 behavior preserved verbatim, per-field codes included).
+        parts = raw.split(None, 2)
+        if len(parts) < 3:
+            problems.append(f"row {idx}: too-few-fields")
+            return None
+        severity, cid, summary = parts
+        if severity not in task_workflow.CONCERN_SEVERITIES:
+            problems.append(f"row {idx}: bad-severity")
+    else:
+        # VARIANT candidate — the unspaced pipe grammar
+        # `CONCERN::<kebab-id> | <SEV> | <summary>` (#2387 r6). maxsplit=2 is
+        # load-bearing: the remainder joins into the summary so ` | ` inside
+        # free text survives verbatim (never a spurious MALFORMED). The
+        # closed uppercase severity set is the discriminator — a kebab id
+        # cannot collide with it.
+        parts = raw.split("|", 2)
+        if len(parts) < 3 or parts[1].strip() not in task_workflow.CONCERN_SEVERITIES:
+            problems.append(f"row {idx}: unparsable-concern-row")
+            return None
+        severity, cid, summary = parts[1].strip(), parts[0].strip(), parts[2]
+    if not task_workflow._CONCERN_ID_RE.match(cid):
+        problems.append(f"row {idx}: bad-id")
+    if not summary.strip():
+        # Canonical branch: defensive dead code — ``split(None, 2)`` sheds a
+        # whitespace-only third field, so that shape lands in
+        # ``too-few-fields`` above (kept per #2326 round 1). Variant branch:
+        # LIVE — `CONCERN::id | SEV |` pipes into an empty third field.
+        problems.append(f"row {idx}: empty-summary")
+    return severity, cid, summary.strip()
+
+
 def _validate_rows(
     raw_rows: list[str],
 ) -> tuple[list[tuple[str, str, str]], list[str]]:
-    """Validate every ``CONCERN:: `` payload; return (parsed rows, problems).
+    """Classify + validate every line-start ``CONCERN::`` payload (total).
 
-    ``problems`` entries are content-free reason codes keyed by row ordinal;
-    summaries and malformed tokens never enter them.
+    Collection is exhaustive (``_ANY_ROW_RE``) and classification is total
+    (``_classify_row``): every row parses as canonical / variant / the
+    ``none`` sentinel, or lands a ``problems`` entry — never a silent drop
+    (#2646). ``problems`` entries are content-free reason codes keyed by row
+    ordinal; summaries and malformed tokens never enter them.
     """
     if len(raw_rows) > _MAX_ROWS:
         # Reject before ANY per-row work: exit 1 via the problems path, so
@@ -134,26 +201,29 @@ def _validate_rows(
     for idx, raw in enumerate(raw_rows, start=1):
         if raw.strip() == "none":
             continue
-        parts = raw.split(None, 2)
-        if len(parts) < 3:
-            problems.append(f"row {idx}: too-few-fields")
+        triple = _classify_row(raw, idx, problems)
+        if triple is None:
             continue
-        severity, cid, summary = parts
-        if severity not in task_workflow.CONCERN_SEVERITIES:
-            problems.append(f"row {idx}: bad-severity")
-        if not task_workflow._CONCERN_ID_RE.match(cid):
-            problems.append(f"row {idx}: bad-id")
-        if not summary.strip():
-            # Defensive dead code: ``split(None, 2)`` sheds a whitespace-only
-            # third field, so that shape lands in ``too-few-fields`` above and
-            # this branch is unreachable today. Kept as a guard against a
-            # future tokenizer change (both #2326 round-1 reviewers agree).
-            problems.append(f"row {idx}: empty-summary")
+        severity, cid, summary = triple
         if cid in seen:
             problems.append(f"row {idx}: duplicate-id")
         seen.add(cid)
-        parsed.append((severity, cid, summary.strip()))
+        parsed.append((severity, cid, summary))
     return parsed, problems
+
+
+def _print_problems(problems: list[str], file_arg: str) -> None:
+    """Print the content-free ``MALFORMED:`` lines, plus the #2646 hint line
+    naming the marker path + both expected row formats whenever any
+    ``unparsable-concern-row`` is present (acceptance A1)."""
+    for problem in problems:
+        print(f"MALFORMED: {problem}")
+    if any("unparsable-concern-row" in p for p in problems):
+        print(
+            f"MALFORMED: unparsable line-start CONCERN:: row(s) in {file_arg}; "
+            "expected 'CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-id> <summary>' "
+            "or 'CONCERN::<kebab-id> | <BLOCKER|CONCERN|NIT> | <summary>'"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -161,8 +231,11 @@ def main(argv: list[str] | None = None) -> int:
         description=(
             "Blind-forward machine-readable CONCERN:: rows from an extracted "
             "Codex verdict marker block to the per-task concerns ledger "
-            "(#2326). Prints only counts + kebab ids + content-free reason "
-            "codes; never findings prose."
+            "(#2326). Codex twin verdict markers ONLY — Claude reviewers are "
+            "not sandboxed and persist concerns directly via task.py "
+            "raise-concern, never through this forwarder (#2646). Prints "
+            "only counts + kebab ids + content-free reason codes; never "
+            "findings prose."
         )
     )
     parser.add_argument("task_id", type=int, help="task number (tasks/<status>/<N>/)")
@@ -197,13 +270,12 @@ def main(argv: list[str] | None = None) -> int:
         # examined — the invocation is the bug, so take the usage exit (2).
         parser.error(f"--file unreadable: {exc}")
 
-    raw_rows = _ROW_RE.findall(text)
+    raw_rows = _ANY_ROW_RE.findall(text)
     heading_present = bool(_HEADING_RE.search(text))
     parsed, problems = _validate_rows(raw_rows)
 
     if problems:
-        for problem in problems:
-            print(f"MALFORMED: {problem}")
+        _print_problems(problems, args.file)
         return 1
 
     if not parsed:

@@ -53,6 +53,22 @@ verified-open r2):
     (ledger-first append), the row sits appended-but-uncommitted, and the
     healthy replay converges the LEDGER but never restores the missing
     mirror (the idempotency early-return keys on concerns.jsonl).
+
+#2646 additions (exhaustive collection + total classification; the #2387 r6
+silent zero-ingest fix):
+
+12. A line-start ``CONCERN::`` row matching NEITHER grammar — alone, beside
+    valid rows, or beside the ``none`` sentinel — exits 1 with the
+    content-free ``unparsable-concern-row`` code plus the hint line naming
+    the marker path + both expected formats; NOTHING persists
+    (all-or-nothing), on the persist AND ``--validate-only`` paths.
+13. The #2387 r6 VARIANT pipe grammar (``CONCERN::<id> | <SEV> | <text>``,
+    unspaced, id first) parses and persists — incl. summaries containing
+    ` | ` (``maxsplit=2``) and canonical/variant mixes in one block; a
+    canonical row whose summary contains a pipe stays on the canonical
+    branch.
+14. Mid-sentence ``CONCERN::`` tokens (spaced or unspaced) never collect —
+    the scan stays line-start anchored (false-positive guard).
 """
 
 from __future__ import annotations
@@ -610,4 +626,171 @@ def test_validate_only_writes_nothing_on_pass_and_fail(concerns_task, tmp_path, 
         capsys,
     )
     assert rc == 3
+    assert _ledger_rows(tw, tid) == []
+
+
+# ─── 12-14. #2646: exhaustive collection + total classification ────────────
+
+# The two REAL #2387 r6 variant rows (events.jsonl ground truth, summaries
+# trimmed): unspaced, ` | `-delimited, id BEFORE severity — the shape the
+# pre-#2646 `^CONCERN:: ` collector silently ingested to zero.
+_REAL_VARIANT_ROWS = (
+    "<!-- epm:code-review-codex v6 -->\n"
+    "**Verdict:** FAIL\n"
+    "## Concerns to persist\n"
+    "\n"
+    "CONCERN::backtick-comment-overstrip | BLOCKER | Backtick cmdsub interior"
+    " comment handling over-strips\n"
+    "CONCERN::ansi-c-quote-desync-overstrip | CONCERN | $'...' escaped-quote"
+    " desyncs single-quote state\n"
+    "<!-- /epm:code-review-codex -->\n"
+)
+
+
+def test_unparsable_line_start_row_alone_exits_nonzero(concerns_task, tmp_path, capsys):
+    """A1/A3: a marker whose ONLY line-start CONCERN:: row matches neither
+    grammar exits non-zero on BOTH the persist and ``--validate-only``
+    paths, printing the content-free reason code + the marker path + both
+    expected row formats — never the pre-#2646 silent rc=0 (#2387 r6).
+
+    Fails pre-fix: the `^CONCERN:: ` collector never matched the unspaced
+    row, so the forwarder exited 0 with the ledger untouched."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text("## Concerns to persist\nCONCERN::not a machine row at all\n")
+    base = [str(tid), "--file", str(mb), "--by", "codex-code-reviewer", "--round", "1"]
+    for extra in ([], ["--validate-only"]):
+        rc, out = _run(base + extra, capsys)
+        assert rc == 1
+        assert "unparsable-concern-row" in out
+        assert str(mb) in out, "the failure must name the marker path (A1)"
+        assert "CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-id> <summary>" in out
+        assert "CONCERN::<kebab-id> | <BLOCKER|CONCERN|NIT> | <summary>" in out
+        assert _ledger_rows(tw, tid) == []
+
+
+def test_unparsable_row_mixed_with_valid_rows_exits_nonzero(concerns_task, tmp_path, capsys):
+    """MF2: one VALID canonical row + one unparsable line-start row ->
+    rc != 0 and NOTHING persisted — the existing all-or-nothing validation
+    means an unparsable row can never ride along silently beside valid
+    siblings (the whole-marker zero-ingest conjunction would have let it)."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text(
+        "## Concerns to persist\n"
+        "CONCERN:: BLOCKER valid-sibling-id a fine canonical summary\n"
+        "CONCERN::garbled row matching neither grammar\n"
+    )
+    rc, out = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 1
+    assert "unparsable-concern-row" in out
+    assert _ledger_rows(tw, tid) == [], "all-or-nothing: nothing persists beside an unparsable row"
+
+
+def test_unparsable_row_alongside_none_sentinel_exits_nonzero(concerns_task, tmp_path, capsys):
+    """MF2 sub-case: ``CONCERN:: none`` + an unparsable row -> rc != 0 —
+    the sole-`none` rc=0 early return is reached only when the collected
+    set is EXACTLY one ``none`` row."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text("CONCERN:: none\nCONCERN::garbled row matching neither grammar\n")
+    rc, out = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 1
+    assert "unparsable-concern-row" in out
+    assert "persisted 0/0" not in out
+    assert _ledger_rows(tw, tid) == []
+
+
+def test_variant_pipe_row_form_parses_and_persists(concerns_task, tmp_path, capsys):
+    """A2: the two REAL #2387 r6 variant rows (id first, pipe-delimited,
+    unspaced) forward to the ledger — incl. under ``--require-block``, so a
+    variant-only block no longer reads as `missing-concerns-block` (R3)."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text(_REAL_VARIANT_ROWS)
+    rc, out = _run(
+        [
+            str(tid),
+            "--file",
+            str(mb),
+            "--by",
+            "codex-code-reviewer",
+            "--round",
+            "6",
+            "--require-block",
+        ],
+        capsys,
+    )
+    assert rc == 0
+    assert "persisted 2/2 concern(s):" in out
+    rows = {r["concern_id"]: r for r in _ledger_rows(tw, tid)}
+    assert set(rows) == {"backtick-comment-overstrip", "ansi-c-quote-desync-overstrip"}
+    assert rows["backtick-comment-overstrip"]["severity"] == "BLOCKER"
+    assert rows["ansi-c-quote-desync-overstrip"]["severity"] == "CONCERN"
+
+
+def test_variant_summary_containing_pipes_survives(concerns_task, tmp_path, capsys):
+    """MF1: ``maxsplit=2`` — a variant summary containing ` | ` keeps its
+    pipes verbatim (never a spurious MALFORMED, never a truncated summary;
+    an exactly-3-field split requirement would have rejected this row)."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text("CONCERN::pipe-id | BLOCKER | measured drop in `a | b` pipelines\n")
+    rc, _ = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 0
+    (row,) = _ledger_rows(tw, tid)
+    assert row["concern_id"] == "pipe-id"
+    assert row["severity"] == "BLOCKER"
+    assert "`a | b` pipelines" in row["summary"]
+
+
+def test_canonical_and_variant_rows_mixed_in_one_block(concerns_task, tmp_path, capsys):
+    """A2: both emitted shapes in ONE marker block normalize to the same
+    (severity, id, summary) triple and persist together."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text(
+        "## Concerns to persist\n"
+        "CONCERN:: BLOCKER canonical-shape-id first canonical summary\n"
+        "CONCERN::variant-shape-id | NIT | second variant summary\n"
+    )
+    rc, out = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 0
+    assert "persisted 2/2 concern(s):" in out
+    rows = {r["concern_id"]: r for r in _ledger_rows(tw, tid)}
+    assert rows["canonical-shape-id"]["severity"] == "BLOCKER"
+    assert rows["canonical-shape-id"]["summary"] == "first canonical summary"
+    assert rows["variant-shape-id"]["severity"] == "NIT"
+    assert rows["variant-shape-id"]["summary"] == "second variant summary"
+
+
+def test_canonical_summary_containing_pipe_stays_canonical(concerns_task, tmp_path, capsys):
+    """A2/A4 (R2): the space-vs-non-space fork fires FIRST — a canonical row
+    whose free-text summary contains ` | ` parses severity-first, never
+    mis-routed to the variant (id-first) branch."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text("CONCERN:: CONCERN canon-pipe-id summary quoting `a | b` inline\n")
+    rc, _ = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 0
+    (row,) = _ledger_rows(tw, tid)
+    assert row["concern_id"] == "canon-pipe-id"
+    assert row["severity"] == "CONCERN"
+    assert "`a | b` inline" in row["summary"]
+
+
+def test_mid_sentence_concern_token_does_not_trip(concerns_task, tmp_path, capsys):
+    """A4 false-positive guard: ``CONCERN::`` tokens NOT at line start —
+    spaced or unspaced, incl. a verbatim quote of the variant grammar —
+    never collect; a rows-free marker stays rc=0."""
+    _, tw, tid = concerns_task
+    mb = tmp_path / "mb.md"
+    mb.write_text(
+        "**Verdict:** PASS\n"
+        "Prose citing the grammar `CONCERN::<id> | <SEV> | <text>` mid-line, and\n"
+        "prose mentioning CONCERN:: BLOCKER mid-sentence too, must not parse.\n"
+    )
+    rc, out = _run([str(tid), "--file", str(mb), "--by", "x", "--round", "1"], capsys)
+    assert rc == 0
+    assert "unparsable-concern-row" not in out
     assert _ledger_rows(tw, tid) == []
