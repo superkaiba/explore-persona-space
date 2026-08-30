@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2645,
+  "highest_id": 2646,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12694,6 +12694,13 @@
       "path": "tasks/planning/2645",
       "status": "planning",
       "title": "cron_step9c_ledger_refresh.sh is committed non-executable \u2014 #2114's nightly refresh has failed Permission denied for 18 nights"
+    },
+    "2646": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2646",
+      "status": "proposed",
+      "title": "persist_verdict_concerns: fail loud when CONCERN:: rows ingest to zero (silent no-op drops a reviewer's concerns)"
     },
     "265": {
       "has_clean_result": false,
