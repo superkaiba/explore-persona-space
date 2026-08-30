@@ -26,10 +26,11 @@ Three durability pins:
   watch scripts is the one failure mode a text scan cannot see, and neither
   watch script is executed by any test.
 
-Why the site check is exact on all seven axes (#2387; axes four and five are
+Why the site check is exact on all eight axes (#2387; axes four and five are
 round-3 hardening of the exact-count pin the first three introduced, the sixth
-is round-4 completion of the word-start set axis four rests on, and the seventh
-is round-5 correction of an over-strip the sixth introduced):
+is round-4 completion of the word-start set axis four rests on, the seventh is
+round-5 correction of an over-strip the sixth introduced, and the eighth is
+round-6 repair of the seventh's paren stack after a measured frame-pop defect):
 
 - EXACT PREFIX, not substring-anywhere-before. A membership test such as
   ``"timeout --kill-after=" in line[:match.start()]`` accepts materially
@@ -88,6 +89,27 @@ is round-5 correction of an over-strip the sixth introduced):
   closes a substitution — a subshell's ``)``, a ``case`` arm's ``)``, and the
   ``))`` of an arithmetic COMMAND (``((i=1))#``, a bare ``((``, not ``$((``)
   all still end a word.
+- ESCAPE-AWARE WORD STARTS, LITERAL ``${...}`` INTERIORS, AND LOUD REFUSAL
+  where classification needs a grammar this scanner does not have. Round 5's
+  paren stack mispopped on an unmatched inner ``)``: measured on bash 5.1.16,
+  ``STAMP=$(case x in y) date +%s;; esac)#tag && <bounded push>`` RUNS the
+  push — the case-pattern ``)`` has no matching ``(``, so it stole the
+  substitution's frame, the REAL close popped an empty stack, and the round-5
+  scanner stripped the live push at ``#`` (0 sites: the silent new-site
+  over-strip quadrant). Two measured siblings: ``echo a\\;#x && <push>`` (the
+  raw-index word-start check read the escaped ``;`` as a metacharacter) and
+  ``[[ "x#tag" =~ (x)#tag ]] && <push>`` (a regex group's ``)`` read as a
+  word end) — bash runs all three pushes; the round-5 scanner dropped all
+  three. Round 6: (a) the comment check keys on the tracked previous BARE
+  character (escape- and quote-aware; a substitution-closing ``)`` records as
+  word content), never the raw ``line[i - 1]`` byte; (b) an unquoted
+  ``${...}`` is scanned to its matching ``}`` with ``( ) #`` literal, so a
+  parameter pattern's ``)`` (``${x%)}``) cannot pop a frame; (c) an unquoted
+  ``case`` word while any paren frame is open, and an unquoted
+  whitespace-preceded ``=~`` operator, RAISE ValueError instead of guessing —
+  case patterns and ``[[ ]]`` regex words need their own grammars, and a loud
+  refusal on a scanner-illegible line can neither silently pass an unbounded
+  push nor silently drop a live one.
 
 Behavioral twins (sleeping-stub tests, one per call-site composition shape)
 live in tests/test_cron_step9c_ledger_refresh.py (if-condition),
@@ -101,44 +123,74 @@ message argument is not a double-quoted string immediately after the push
 variable (e.g. an unquoted message) escapes the regex. Extend both when adding
 either.
 
-DIRECTION RULE for any scanner-vs-bash divergence. Round 4 recorded that an
-over-strip is "loud on the count assertion, never a silent pass"; that is
-FALSE, and it was measured false before this round. Which way a divergence
-moves depends on whether the affected site is ALREADY in the pinned inventory:
+DIRECTION RULE for any scanner-vs-bash divergence — derived by MEASUREMENT
+through the injectable ``strip`` seam (2026-08-29; pinned by
+``test_direction_rule_quadrants_match_the_documented_rule``) after two
+consecutive rounds shipped a wrong direction claim by reasoning it out: round
+4 wrote "an over-strip is loud, never a silent pass" and round 5 wrote
+"UNDER-STRIP ... SILENT" unconditionally; both were measured false. The
+measured rule: a divergence is SILENT exactly when it leaves the wrapper's
+site count sitting AT its pin, LOUD exactly when it moves the count off the
+pin. Both directions split on whether the affected site is already in the
+pinned inventory:
 
-- OVER-STRIP of a site already IN the inventory — LOUD. The wrapper's count
-  drops below its pin and the count assertion fails.
-- OVER-STRIP of a NEWLY ADDED site — SILENT. The count stays sitting exactly
-  AT the pin, so the test passes while bash runs an unbounded push. This
-  defeats the PRIMARY invariant ("every push execution is timeout-bounded"),
-  not merely deletion detection, and is the worse of the two directions.
-- UNDER-STRIP (the scanner keeps text bash discards) — SILENT. A DISABLED
-  push is counted as live, the pinned count is still met, and the test passes
-  over a dead alert. This is the shape axes four and six exist to prevent.
+- OVER-STRIP (scanner drops text bash executes) of a site IN the inventory —
+  LOUD. The count falls below the pin and the count assertion fails.
+- OVER-STRIP of a NEWLY ADDED site — SILENT. The count sits exactly AT the
+  pin while bash runs an unbounded push. This defeats the PRIMARY invariant
+  ("every push execution is timeout-bounded") and is the quadrant rounds 4
+  and 5 each reopened; round 6 closes the measured channels and REFUSES
+  loudly (axis eight) where it cannot classify.
+- UNDER-STRIP (scanner keeps text bash discards) of a site IN the inventory —
+  SILENT. A DISABLED push still counts, the pin is still met, and the test
+  passes over a dead alert. This is the shape axes four and six prevent.
+- UNDER-STRIP of a NEWLY ADDED INERT site — LOUD. A kept commented-out push
+  raises the count above the pin. Round 5's unconditional "UNDER-STRIP —
+  SILENT" is false in exactly this quadrant.
 
-Two residual over-strips survive axis seven. Each is loud on an existing site
-and silent on a newly added one, per the rule above:
+Known residual divergences after round 6, each classified by the rule above.
+This is the KNOWN set, not a completeness proof — rounds 3-5 each found a new
+channel in an enumeration that read as complete:
 
-- LINE-SCOPED state. Quote AND paren state restart at each physical line, and
-  a trailing ``\\`` continuation is not joined, so a string, heredoc body, or
-  command substitution spanning several lines is not tracked. Measured: for
-  ``X=$(echo a`` / ``echo b)#tag && "$PUSH" "..."`` bash runs the push, while
-  the scanner reads line 2's ``)`` against an empty paren stack and drops the
-  site.
+- LINE-SCOPED state. Quote, paren, and brace state restart at each physical
+  line; ``\\`` continuations and heredocs are not joined or tracked. The
+  CLOSING line of a multi-line command substitution (``X=$(echo a`` /
+  ``echo b)#tag && "$PUSH" "..."``) is an OVER-strip: the scanner pops an
+  empty stack at line 2's ``)`` and drops a site bash runs (measured). A
+  heredoc BODY is the OPPOSITE direction: bash never executes body text, but
+  the scanner scans it as code, so a push-shaped body line is an over-COUNT
+  of an inert site (UNDER-strip direction, loud on addition; round 5 misfiled
+  heredocs under over-strips). A nested command substitution inside an
+  unquoted ``${...}`` is likewise scanned as literal brace interior.
 - A ``)`` closing an ARRAY ASSIGNMENT (``x=(a b)#tag``) or an EXTGLOB pattern
   (``@(a|b)#tag``, under ``shopt -s extglob``) also belongs to its word in
-  bash; the scanner treats both as word ends. Distinguishing them from a
-  subshell needs assignment/pattern parsing, not the ``$``/``<``/``>`` prefix
-  axis seven keys on.
+  bash; the scanner treats both as word ends — an OVER-strip, silent on a
+  newly added site. Distinguishing them from a subshell needs
+  assignment/pattern parsing, not the ``$``/``<``/``>`` prefix axis seven
+  keys on.
+- ``[[ ]]`` grammar beyond the ``=~`` refusal is unmodeled, and measured NOT
+  to be a silent channel: ``[[ -n x ]]#e`` and ``[[ (x = y)#z ]]`` are both
+  bash SYNTAX ERRORS (``bash -n`` exits 2, bash 5.1.16), so a divergent read
+  there is caught by ``test_every_wrapper_parses``, never passed silently.
+- The round-6 refusals are deliberately BROADER than the ambiguity they
+  fence: an unquoted ``case`` in ARGUMENT position inside a one-line
+  substitution (``$(grep case f)``) and any unquoted whitespace-preceded
+  ``=~`` refuse lines bash handles fine. A false refusal raises ValueError:
+  loud by construction, never a wrong count.
 
-None of those shapes is in the six wrappers (measured 2026-08-29): zero
-``)#`` sequences, zero ``NAME=(``, zero ``[@+?!*](``, no ``shopt -s extglob``,
-one heredoc (``cron_watch_issue_1739.sh`` line 119, a bare variable). Two
-wrappers do open a multi-line command substitution
-(``cron_watch_issue_2091.sh`` lines 30-31, ``cron_watch_issue_1739.sh`` lines
-58-59); both close it with no ``#`` anywhere on the closing line. Repo-wide,
-the only two ``)#`` sequences in any ``*.sh`` sit inside single-quoted ``sed``
-programs, which quote tracking already skips.
+None of the residual or refused shapes is in the six wrappers (measured
+2026-08-29 on this branch): zero ``)#`` sequences, zero ``NAME=(``, zero
+``[@+?!*](``, no ``shopt -s extglob``, no ``[[`` or ``=~`` in live shell code
+(the one ``[[:space:]]`` grep hit sits inside a single-quoted awk program),
+and the only one-line ``case`` (``cron_watch_issue_1739.sh`` line 111) opens
+at top level with no paren frame — outside the refusal. One heredoc
+(``cron_watch_issue_1739.sh`` line 119, a bare variable). Two wrappers open a
+multi-line command substitution (``cron_watch_issue_2091.sh`` lines 30-31,
+``cron_watch_issue_1739.sh`` lines 58-59); both close it with no ``#``
+anywhere on the closing line. Repo-wide, the only two ``)#`` sequences in any
+``*.sh`` sit inside single-quoted ``sed`` programs, which quote tracking
+already skips. The round-6 scanner scans all six wrappers to their pinned
+counts with zero refusals (measured by direct helper evaluation).
 """
 
 from __future__ import annotations
@@ -147,6 +199,8 @@ import re
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+
+import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -204,6 +258,67 @@ _BOUND_PREFIX_RE = re.compile(r'timeout[ \t]+--kill-after=5s[ \t]+"\$\{PUSH_TIME
 _COMMENT_WORD_START = " \t;&|()<>"
 
 
+def _brace_step(ch: str, prev_bare: str, brace_depth: int) -> int:
+    """Return the new ``${...}`` nesting depth for the char at hand.
+
+    Inside `${...}` bash scans to the matching `}`: `(`, `)` and `#` are
+    literal word/pattern characters there, touching neither the paren stack
+    nor comment detection (module docstring, eighth axis).
+    """
+    if ch == "{" and prev_bare == "$":
+        return brace_depth + 1
+    if ch == "}":
+        return brace_depth - 1
+    return brace_depth
+
+
+def _open_paren(line: str, i: int, prev_bare: str, open_parens: list[bool]) -> int:
+    """Push the frame(s) for the ``(`` at ``i``; return extra chars consumed.
+
+    A `$((` arithmetic expansion opens two substitution frames and consumes
+    the second `(` (return 1); otherwise one frame is pushed — a substitution
+    iff the previous bare character was `$`, `<` or `>` (return 0).
+    """
+    if prev_bare == "$" and line[i + 1 : i + 2] == "(":
+        open_parens.extend((True, True))
+        return 1
+    open_parens.append(prev_bare in ("$", "<", ">"))
+    return 0
+
+
+def _unclassifiable_at(line: str, i: int, prev_bare: str, open_parens: list[bool]) -> str | None:
+    """Return the refusal message when position ``i`` opens a construct the
+    scanner cannot classify (module docstring, eighth axis), else None.
+
+    Two triggers, both deliberately broader than the ambiguity they fence
+    (module docstring, residual list): an unquoted word ``case`` while any
+    paren frame is open, and an unquoted ``=~`` preceded by whitespace (no
+    trailing space required — ``=~(x)#tag`` parses and runs, measured
+    against bash 5.1.16).
+    """
+    ch = line[i]
+    if (
+        ch == "c"
+        and open_parens
+        and line[i : i + 4] == "case"
+        and prev_bare != ""
+        and prev_bare in _COMMENT_WORD_START
+        and (i + 4 >= len(line) or line[i + 4] in _COMMENT_WORD_START)
+    ):
+        return (
+            "cannot classify `)` after a `case` inside an open paren frame: "
+            "case patterns close with an unmatched `)`, which needs case "
+            f"grammar. Restructure the line or extend the scanner. Line: {line!r}"
+        )
+    if ch == "=" and line[i + 1 : i + 2] == "~" and prev_bare in (" ", "\t"):
+        return (
+            "cannot classify text after the `[[ ]]` regex operator `=~`: its "
+            "right-hand side is a regex word where `( ) #` are literal. "
+            f"Restructure the line or extend the scanner. Line: {line!r}"
+        )
+    return None
+
+
 def _strip_bash_comment(line: str) -> str:
     """Return ``line`` truncated at its first unquoted, word-initial ``#``.
 
@@ -225,18 +340,38 @@ def _strip_bash_comment(line: str) -> str:
     CONDITIONALLY a word end (module docstring, seventh axis). ``open_parens``
     records, per open paren, whether it opened a SUBSTITUTION — ``$(``, ``$((``
     (which opens two), ``<(`` or ``>(`` — or a plain subshell/grouping paren.
-    The matching ``)`` pops it: a substitution's ``)`` does not end the word, so
-    a ``#`` immediately after it is mid-word and NOT a comment, while a plain
-    ``)`` (subshell, ``case`` arm, bare ``((`` arithmetic command, or an
-    unmatched ``)`` against an empty stack) ends the word as before.
-    ``prev_bare`` is the previous UNQUOTED, UNESCAPED character, so a ``$``
-    that was quoted or backslash-escaped never turns a following ``(`` into a
+    The matching ``)`` pops it: a substitution's ``)`` records as WORD CONTENT
+    (``prev_bare = ""``), so a ``#`` immediately after it is mid-word and NOT
+    a comment, while a plain ``)`` (subshell, ``case`` arm, bare ``((``
+    arithmetic command, or a ``)`` against an empty stack) records as a word
+    end. ``prev_bare`` is the previous character AS BASH READS IT — empty for
+    quoted, escaped, and substitution-closing positions — so a ``$`` that was
+    quoted or backslash-escaped never turns a following ``(`` into a
     substitution.
+
+    Escape-aware (eighth axis): the comment check keys on ``prev_bare``,
+    never the raw ``line[i - 1]`` byte, which round 5 used and which mis-read
+    the escaped ``;`` of ``echo a\\;#x`` as a word end and silently dropped
+    the live push chained after it.
+
+    Brace-aware (eighth axis): an unquoted ``${`` opens a parameter expansion
+    scanned to its matching ``}``; ``(``, ``)`` and ``#`` inside are literal,
+    so a pattern ``)`` (``${x%)}``) cannot pop a substitution frame.
+
+    Loud refusal (eighth axis): two constructs make a later ``)`` or ``#``
+    unclassifiable without their own grammars — a ``case`` statement inside
+    an open paren frame (its pattern ``)`` has no matching ``(``) and the
+    ``[[ ]]`` regex operator ``=~`` (its right-hand side is a regex word
+    where ``( ) #`` are literal, with or without a space after the operator —
+    measured, bash 5.1.16). Both RAISE ValueError naming the construct: a
+    refusal is loud on any input, so it can neither silently pass an
+    unbounded push nor silently drop a live one. Deliberately broader than
+    the ambiguity — see the module docstring's residual list.
     """
     in_single = False
     in_double = False
     open_parens: list[bool] = []
-    last_substitution_close = -1
+    brace_depth = 0
     prev_bare = ""
     i = 0
     while i < len(line):
@@ -256,21 +391,21 @@ def _strip_bash_comment(line: str) -> str:
             in_single = True
         elif ch == '"':
             in_double = True
+        elif brace_depth > 0 or (ch == "{" and prev_bare == "$"):
+            brace_depth = _brace_step(ch, prev_bare, brace_depth)
+            bare = ch
         elif ch == "(":
-            if prev_bare == "$" and line[i + 1 : i + 2] == "(":
-                open_parens.extend((True, True))  # `$((` arithmetic expansion
-                i += 1
-            else:
-                open_parens.append(prev_bare in ("$", "<", ">"))
+            i += _open_paren(line, i, prev_bare, open_parens)
             bare = "("
         elif ch == ")":
             closed_substitution = open_parens.pop() if open_parens else False
-            if closed_substitution:
-                last_substitution_close = i
-            bare = ")"
-        elif ch == "#" and (
-            i == 0 or (line[i - 1] in _COMMENT_WORD_START and i - 1 != last_substitution_close)
-        ):
+            # A substitution's `)` belongs to its word: record it as word
+            # content so a `#` right after it reads mid-word. Every other `)`
+            # records as a word end.
+            bare = "" if closed_substitution else ")"
+        elif (refusal := _unclassifiable_at(line, i, prev_bare, open_parens)) is not None:
+            raise ValueError(refusal)
+        elif ch == "#" and (i == 0 or (prev_bare != "" and prev_bare in _COMMENT_WORD_START)):
             return line[:i]
         else:
             bare = ch
@@ -292,6 +427,10 @@ def scan_execution_sites(
     mutants below can run this exact loop with a weaker stripper. A separate
     re-implementation of the loop would let the two drift, and the mutants
     that compare them would then pass for the wrong reason.
+
+    A line the default stripper cannot classify raises ValueError (module
+    docstring, eighth axis): the scan is loud, never silently wrong, on
+    case-inside-substitution and ``=~`` regex lines.
     """
     sites: list[tuple[int, str, re.Match[str]]] = []
     for lineno, raw in enumerate(text.splitlines(), start=1):
@@ -403,6 +542,12 @@ def _bound_flags(text: str) -> list[bool]:
 def _naive_first_hash_strip(line: str) -> str:
     """The quote-BLIND stripper: what this scanner is without quote state."""
     return line.split("#", 1)[0]
+
+
+def _identity_strip(line: str) -> str:
+    """No stripping at all: the maximal UNDER-strip, for the direction-rule
+    quadrant measurements."""
+    return line
 
 
 def test_live_push_line_scans_as_one_bounded_site():
@@ -612,6 +757,106 @@ def test_nested_parens_inside_a_substitution_do_not_leak_the_exemption():
         ("group in arithmetic", 'echo $(( (1+2) * 3 ))#tag && "$PUSH" "EPS #1 alert"'),
     ):
         assert _bound_flags(text) == [False], label
+
+
+def test_case_inside_a_substitution_refuses_loudly():
+    """Reconciler L1 (round 5, measured): bash 5.1.16 RUNS this push — the
+    case-pattern `)` has no matching `(`, so `esac)` closes the substitution
+    and `#tag` is mid-word. The round-5 scanner (f16c71b301b) popped the
+    substitution frame at the pattern `)`, read the real close against an
+    empty stack, and stripped the line at `#`: 0 sites, silently, in the
+    primary-invariant direction. Classifying a case-pattern `)` needs case
+    grammar, so the scanner now refuses the whole family loudly: an unquoted
+    `case` while any paren frame is open raises."""
+    line = (
+        "STAMP=$(case x in y) date +%s;; esac)#tag && "
+        'timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "L1_PUSH_RAN"'
+    )
+    with pytest.raises(ValueError, match="case"):
+        scan_execution_sites(line)
+
+
+def test_escaped_metachar_before_a_hash_is_not_a_word_start():
+    """Reconciler L5b (round 5, measured): bash runs this push — the escaped
+    `;` is a word character, so the `#` is mid-word. The round-5 word-start
+    check read the RAW `line[i - 1]` (the literal `;`) and stripped at `#`:
+    0 sites, silently. The check now keys on the escape-aware previous bare
+    character, so the site is counted and reads bounded."""
+    line = 'echo a\\;#x && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "L5b_ESCAPED_RAN"'
+    assert _bound_flags(line) == [True]
+
+
+def test_regex_rhs_refuses_loudly():
+    """Reconciler L6 (round 5, measured): bash runs this push — after `=~`
+    the right-hand side is a regex word where `(x)#tag` is literal. The
+    round-5 scanner read the group's `)` as a word end and stripped at `#`:
+    0 sites, silently. `[[ ]]` regex grammar is not modeled, so an unquoted
+    whitespace-preceded `=~` now refuses loudly. (No trailing space is
+    required: `=~(x)#tag` also parses and runs — measured, bash 5.1.16.)"""
+    line = (
+        '[[ "x#tag" =~ (x)#tag ]] && '
+        'timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "L6_REGEX_RAN"'
+    )
+    with pytest.raises(ValueError, match="=~"):
+        scan_execution_sites(line)
+    with pytest.raises(ValueError, match="=~"):
+        scan_execution_sites(line.replace("=~ (x)", "=~(x)"))
+
+
+def test_pattern_close_paren_inside_a_parameter_expansion_stays_literal():
+    """Codex's round-5 probe, same family as L1: bash scans `${...}` to its
+    matching `}`, so the pattern `)` in `${x%)}` never closes the
+    substitution and the push after `)#tag` runs (measured: P4_PARAM_RAN,
+    bash 5.1.16). Round 5 popped the substitution frame at the pattern `)`
+    and stripped the line (0 sites); round 6's brace tracking keeps the
+    interior literal, so the site is counted."""
+    line = 'STAMP=$(echo ${x%)})#tag && "$PUSH" "P4_PARAM_RAN"'
+    assert len(scan_execution_sites(line)) == 1
+
+
+def test_top_level_case_and_tilde_assignment_do_not_refuse():
+    """Refusal-scope controls: the wrappers' own shapes must keep scanning.
+
+    A top-level `case` opens with NO paren frame (the watch scripts' dispatch
+    shape, incl. the one-line `case "$seen_at" in ...` of
+    cron_watch_issue_1739.sh line 111) and a `VAR=~/path` tilde assignment
+    has no whitespace before its `=~`; neither trips a refusal. Both lines
+    measured against bash 5.1.16: the case arm's push runs, the assignment
+    is an ordinary assignment."""
+    top_case = 'case "$s" in y) echo $(date +%s)#t && "$PUSH" "P8_RAN";; esac'
+    assert len(scan_execution_sites(top_case)) == 1
+    line = "LOG=~/x.log && " + _LIVE.strip()
+    assert _bound_flags(line) == [True]
+
+
+def test_direction_rule_quadrants_match_the_documented_rule():
+    """The module docstring's 2x2, measured through the injectable seam
+    against `_LIVE`'s one-site pin: SILENT exactly when the divergence
+    leaves the count AT the pin, LOUD when it moves the count off it.
+
+    `_identity_strip` (keeps everything) plays a maximal under-stripper;
+    `_naive_first_hash_strip` (cuts at any `#`) plays a maximal
+    over-stripper on the hash-before-site shape.
+    """
+    pin = 1  # _LIVE's own per-line inventory
+    # UNDER-strip of the site IN the inventory: a commented-out live push is
+    # still counted -> count AT the pin -> SILENT (a dead alert passes).
+    dead = scan_execution_sites("# " + _LIVE.strip(), strip=_identity_strip)
+    assert len(dead) == pin
+    # UNDER-strip of a NEWLY ADDED inert site: the kept comment adds a
+    # site -> count ABOVE the pin -> LOUD.
+    inert_added = scan_execution_sites(_LIVE + "\n# " + _LIVE.strip(), strip=_identity_strip)
+    assert len(inert_added) == pin + 1
+    # OVER-strip of the site IN the inventory: the live site is dropped ->
+    # count BELOW the pin -> LOUD.
+    dropped = scan_execution_sites(_LIVE_HASH_BEFORE_SITE, strip=_naive_first_hash_strip)
+    assert len(dropped) == pin - 1
+    # OVER-strip of a NEWLY ADDED site: the added hash-before-site line is
+    # dropped while _LIVE still scans -> count exactly AT the pin -> SILENT
+    # (bash would run two pushes; the scan reports one).
+    two_lines = _LIVE + "\n" + _LIVE_HASH_BEFORE_SITE.strip()
+    added_dropped = scan_execution_sites(two_lines, strip=_naive_first_hash_strip)
+    assert len(added_dropped) == pin
 
 
 def _source_line(anchor: str) -> str:
