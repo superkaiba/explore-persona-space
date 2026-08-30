@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2648,
+  "highest_id": 2649,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12715,6 +12715,13 @@
       "path": "tasks/proposed/2648",
       "status": "proposed",
       "title": "Clear the torch-before-dotenv red on main that reds every Step 9c gate"
+    },
+    "2649": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2649",
+      "status": "proposed",
+      "title": "main-red: HF-routing/hub-retry lint + torch-before-dotenv scan fail on pristine origin/main, redding Step 9c fleet-wide"
     },
     "265": {
       "has_clean_result": false,
