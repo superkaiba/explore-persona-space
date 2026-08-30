@@ -19,11 +19,18 @@ import subprocess
 import time
 from pathlib import Path
 
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import issue779_ctxansviz_separate_pca_dashboard as text_source
-from explore_persona_space.orchestrate.provenance import commit_string, git_provenance
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import numpy as np  # noqa: E402
+from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: E402
+
+import issue779_ctxansviz_separate_pca_dashboard as text_source  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    commit_string,
+    git_provenance,
+)
 
 DEFAULT_EXPORT = Path("data/issue_779/ctxansviz_dl/full/issue779_monitoring/ctxansviz")
 DEFAULT_PCA_DIR = Path("data/issue_779/ctxansviz_separate_pca")
@@ -65,14 +72,14 @@ def safe_display_rows(export_dir: Path, pca_dir: Path, chunks: tuple[str, ...]) 
     return safe
 
 
-def representative_examples(rows: list[dict], labels: np.ndarray, role: str) -> dict[int, list[dict]]:
+def representative_examples(
+    rows: list[dict], labels: np.ndarray, role: str
+) -> dict[int, list[dict]]:
     """Choose complete, typical-length examples without character truncation."""
     output: dict[int, list[dict]] = {}
     for cluster in range(N_CLUSTERS):
         candidates = [
-            (index, row)
-            for index, row in enumerate(rows)
-            if int(labels[index]) == cluster
+            (index, row) for index, row in enumerate(rows) if int(labels[index]) == cluster
         ]
         if not candidates:
             output[cluster] = []
@@ -141,7 +148,9 @@ def public_safe_top_terms(
     return output
 
 
-def cluster_packets(export_dir: Path, pca_dir: Path, chunks: tuple[str, ...]) -> tuple[list[dict], dict]:
+def cluster_packets(
+    export_dir: Path, pca_dir: Path, chunks: tuple[str, ...]
+) -> tuple[list[dict], dict]:
     rows = safe_display_rows(export_dir, pca_dir, chunks)
     coords_path = export_dir / "coords.npz"
     coords = np.load(coords_path, mmap_mode="r")
@@ -300,7 +309,9 @@ def validate_labels(labels: list[dict]) -> None:
     if observed != expected or len(labels) != len(expected):
         missing = sorted(expected - observed)
         duplicate_count = len(labels) - len(observed)
-        raise RuntimeError(f"LLM labels incomplete: missing={missing}, duplicates={duplicate_count}")
+        raise RuntimeError(
+            f"LLM labels incomplete: missing={missing}, duplicates={duplicate_count}"
+        )
     if any(row["category"] not in CATEGORIES for row in labels):
         raise RuntimeError("LLM returned a category outside the controlled taxonomy")
 

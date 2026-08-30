@@ -33,6 +33,7 @@ import numpy as np
 import torch
 from huggingface_hub import hf_hub_download
 
+from explore_persona_space.orchestrate import hub
 from explore_persona_space.orchestrate.provenance import commit_string, git_provenance
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
@@ -220,11 +221,14 @@ def _load_pc3(export_dir: Path, chunks: tuple[str, ...]) -> tuple[list[dict], di
 
     raw_rows: list[tuple[int, np.ndarray, np.ndarray]] = []
     for chunk_name in chunks:
-        path = hf_hub_download(
-            HF_REPO,
-            filename=f"{CAPTURE_PREFIX}/{chunk_name}",
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        path = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=f"{CAPTURE_PREFIX}/{chunk_name}",
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"capture chunk download ({chunk_name})",
         )
         bundle = torch.load(path, mmap=True, weights_only=False, map_location="cpu")
         layers = [int(x) for x in bundle["layers"]]
