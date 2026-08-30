@@ -12662,8 +12662,8 @@
     "2641": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2641",
-      "status": "running",
+      "path": "tasks/blocked/2641",
+      "status": "blocked",
       "title": "workflow-fix: verify_plan._fence_mask is delimiter-blind, moving 37 plans' verdicts across 19 checks"
     },
     "2642": {
