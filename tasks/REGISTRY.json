@@ -12698,8 +12698,8 @@
     "2646": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2646",
-      "status": "proposed",
+      "path": "tasks/planning/2646",
+      "status": "planning",
       "title": "persist_verdict_concerns: fail loud when CONCERN:: rows ingest to zero (silent no-op drops a reviewer's concerns)"
     },
     "265": {
