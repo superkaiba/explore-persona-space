@@ -26,11 +26,13 @@ Three durability pins:
   watch scripts is the one failure mode a text scan cannot see, and neither
   watch script is executed by any test.
 
-Why the site check is exact on all eight axes (#2387; axes four and five are
+Why the site check is exact on all nine axes (#2387; axes four and five are
 round-3 hardening of the exact-count pin the first three introduced, the sixth
 is round-4 completion of the word-start set axis four rests on, the seventh is
-round-5 correction of an over-strip the sixth introduced, and the eighth is
-round-6 repair of the seventh's paren stack after a measured frame-pop defect):
+round-5 correction of an over-strip the sixth introduced, the eighth is
+round-6 repair of the seventh's paren stack after a measured frame-pop defect,
+and the ninth is round-7 replacement of the flat brace/quote state with typed
+context frames after three more measured silent over-strips):
 
 - EXACT PREFIX, not substring-anywhere-before. A membership test such as
   ``"timeout --kill-after=" in line[:match.start()]`` accepts materially
@@ -45,7 +47,7 @@ round-6 repair of the seventh's paren stack after a measured frame-pop defect):
   second push execution appended to an already-bounded line (``... && push_a
   ; "$PUSH" "unbounded"``) was never checked.
 - EXACT per-wrapper counts, not ``>= 1``. A ``>= 1`` floor cannot detect the
-  silent DELETION of a site: the plan's 10 execution sites across 6 wrappers
+  silent DELETION of a site: the pinned 12 execution sites across 6 wrappers
   would still "pass" at 6. The counts below are the pinned inventory; adding
   or removing a push call is a deliberate edit here.
 - EXECUTABLE TEXT ONLY, not the raw line. Making the counts exact is what
@@ -110,6 +112,42 @@ round-6 repair of the seventh's paren stack after a measured frame-pop defect):
   case patterns and ``[[ ]]`` regex words need their own grammars, and a loud
   refusal on a scanner-illegible line can neither silently pass an unbounded
   push nor silently drop a live one.
+- CONTEXT FRAMES for nested constructs, MODELED ``$'...'`` quotes, and
+  REFUSED backticks. Round 6 left three lexical forms unmodeled, and each
+  silently OVER-stripped — zero sites reported, nothing raised,
+  indistinguishable from a verified line (all three measured against bash
+  5.1.16, which RUNS every one of these pushes):
+  (a) backtick command substitution — ``Y=`date +%s #x` && "$PUSH" "..."``:
+      the closing-tick search runs THROUGH the ``#`` (it comments only the
+      inner command), while the scanner read `` #`` as a comment start;
+  (b) a substitution nested in a ``${...}`` default — the flat brace depth
+      counter decremented at the ``}`` of an embedded brace group, so
+      ``x=$(echo ${v:-$( { echo hi; })})#tag && "$PUSH" "..."`` popped the
+      outer substitution frame early and the REAL close ended a word right
+      before ``#``;
+  (c) ``$'...'`` ANSI-C quoting — ``\\'`` closed the flat single-quote
+      state bash keeps open, and the stray tail stripped at ``#``.
+  Round 7: the paren list and brace counter become ONE stack of typed
+  frames (substitution paren / plain paren / ``${...}`` interior), each
+  recording the double-quote state to restore at its close. (b) is MODELED
+  — an embedded group's ``}`` is an ordinary word character in the nested
+  code context — and a substitution or expansion opened INSIDE double
+  quotes (``"$(ts) ..."``, ``"${V:-$(cmd)}"``) scans its interior as fresh
+  unquoted code, exactly as bash reparses it; that also closes two sibling
+  desyncs measured in round 7: ``"$(printf "%s" "a)#b")"`` and
+  ``"${v:-"a)#b"}"`` both run their ``&&`` push under bash while round 6
+  silently dropped both. (c) is MODELED: a single quote entered via ``$'``
+  tracks backslash escapes; a regular single quote stays escape-blind (the
+  wrappers' single-quoted sed/awk programs rely on it). (a) is REFUSED
+  loudly — a backtick interior is shell code needing its own parse and
+  POSIX leaves the closing-tick search undefined across embedded quotes —
+  as is a process substitution opened inside a ``${...}`` interior (live
+  code: ``echo ${v:-<(true)}`` substitutes a /dev/fd path, measured). The
+  POSTURE is the durable part: rounds 4-6 each closed one enumerated
+  member and were bounced by the next round's new member, so a construct
+  this scanner does not model must RAISE, naming the construct and origin
+  line — never return a stripped line indistinguishable from a verified
+  one (``test_unmodeled_constructs_raise_instead_of_stripping``).
 
 Behavioral twins (sleeping-stub tests, one per call-site composition shape)
 live in tests/test_cron_step9c_ledger_refresh.py (if-condition),
@@ -140,7 +178,8 @@ pinned inventory:
   pin while bash runs an unbounded push. This defeats the PRIMARY invariant
   ("every push execution is timeout-bounded") and is the quadrant rounds 4
   and 5 each reopened; round 6 closes the measured channels and REFUSES
-  loudly (axis eight) where it cannot classify.
+  loudly (axis eight) where it cannot classify, and round 7 extends both
+  arms (axis nine) after three more measured members of this quadrant.
 - UNDER-STRIP (scanner keeps text bash discards) of a site IN the inventory —
   SILENT. A DISABLED push still counts, the pin is still met, and the test
   passes over a dead alert. This is the shape axes four and six prevent.
@@ -148,20 +187,22 @@ pinned inventory:
   raises the count above the pin. Round 5's unconditional "UNDER-STRIP —
   SILENT" is false in exactly this quadrant.
 
-Known residual divergences after round 6, each classified by the rule above.
-This is the KNOWN set, not a completeness proof — rounds 3-5 each found a new
+Known residual divergences after round 7, each classified by the rule above.
+This is the KNOWN set, not a completeness proof — rounds 3-6 each found a new
 channel in an enumeration that read as complete:
 
-- LINE-SCOPED state. Quote, paren, and brace state restart at each physical
-  line; ``\\`` continuations and heredocs are not joined or tracked. The
-  CLOSING line of a multi-line command substitution (``X=$(echo a`` /
+- LINE-SCOPED state. Quote, paren, brace, and frame state restart at each
+  physical line; ``\\`` continuations and heredocs are not joined or tracked.
+  The CLOSING line of a multi-line command substitution (``X=$(echo a`` /
   ``echo b)#tag && "$PUSH" "..."``) is an OVER-strip: the scanner pops an
   empty stack at line 2's ``)`` and drops a site bash runs (measured). A
   heredoc BODY is the OPPOSITE direction: bash never executes body text, but
   the scanner scans it as code, so a push-shaped body line is an over-COUNT
   of an inert site (UNDER-strip direction, loud on addition; round 5 misfiled
-  heredocs under over-strips). A nested command substitution inside an
-  unquoted ``${...}`` is likewise scanned as literal brace interior.
+  heredocs under over-strips). Raising on an unclosed frame/quote at end of
+  line is NOT an option: the two watch scripts' live multi-line
+  substitutions and python bodies would refuse, so this residual stays a
+  disclosed line-scoped limit rather than a refusal.
 - A ``)`` closing an ARRAY ASSIGNMENT (``x=(a b)#tag``) or an EXTGLOB pattern
   (``@(a|b)#tag``, under ``shopt -s extglob``) also belongs to its word in
   bash; the scanner treats both as word ends — an OVER-strip, silent on a
@@ -172,24 +213,32 @@ channel in an enumeration that read as complete:
   to be a silent channel: ``[[ -n x ]]#e`` and ``[[ (x = y)#z ]]`` are both
   bash SYNTAX ERRORS (``bash -n`` exits 2, bash 5.1.16), so a divergent read
   there is caught by ``test_every_wrapper_parses``, never passed silently.
-- The round-6 refusals are deliberately BROADER than the ambiguity they
-  fence: an unquoted ``case`` in ARGUMENT position inside a one-line
-  substitution (``$(grep case f)``) and any unquoted whitespace-preceded
-  ``=~`` refuse lines bash handles fine. A false refusal raises ValueError:
-  loud by construction, never a wrong count.
+- The refusals are deliberately BROADER than the ambiguity they fence: an
+  unquoted ``case`` in ARGUMENT position inside a one-line substitution
+  (``$(grep case f)``), any unquoted whitespace-preceded ``=~``, ANY
+  backtick outside single quotes (including ``"`date`"``, which bash
+  substitutes fine when no embedded quote complicates the tick search), and
+  a ``<(``/``>(`` inside a ``${...}`` interior all refuse lines bash may
+  handle. A false refusal raises ValueError: loud by construction, never a
+  wrong count.
 
 None of the residual or refused shapes is in the six wrappers (measured
-2026-08-29 on this branch): zero ``)#`` sequences, zero ``NAME=(``, zero
-``[@+?!*](``, no ``shopt -s extglob``, no ``[[`` or ``=~`` in live shell code
-(the one ``[[:space:]]`` grep hit sits inside a single-quoted awk program),
-and the only one-line ``case`` (``cron_watch_issue_1739.sh`` line 111) opens
-at top level with no paren frame — outside the refusal. One heredoc
+2026-08-29 on this branch; refusal census re-measured 2026-08-30): zero
+``)#`` sequences, zero ``NAME=(``, zero ``[@+?!*](``, no ``shopt -s
+extglob``, no ``[[`` or ``=~`` in live shell code (the one ``[[:space:]]``
+grep hit sits inside a single-quoted awk program), and the only one-line
+``case`` (``cron_watch_issue_1739.sh`` line 111) opens at top level with no
+frame — outside the refusal. Backticks appear ONLY on comment lines
+(stripped at ``#`` before any tick is scanned); zero ``$'`` and zero process
+substitutions anywhere. Exactly one brace-nested command substitution,
+``cron_daily_healthcheck.sh`` line 53, sits inside double quotes and is
+MODELED by the frame stack (measured: scans clean). One heredoc
 (``cron_watch_issue_1739.sh`` line 119, a bare variable). Two wrappers open a
 multi-line command substitution (``cron_watch_issue_2091.sh`` lines 30-31,
 ``cron_watch_issue_1739.sh`` lines 58-59); both close it with no ``#``
 anywhere on the closing line. Repo-wide, the only two ``)#`` sequences in any
 ``*.sh`` sit inside single-quoted ``sed`` programs, which quote tracking
-already skips. The round-6 scanner scans all six wrappers to their pinned
+already skips. The round-7 scanner scans all six wrappers to their pinned
 counts with zero refusals (measured by direct helper evaluation).
 """
 
@@ -267,48 +316,64 @@ _BOUND_PREFIX_RE = re.compile(r'timeout[ \t]+--kill-after=5s[ \t]+"\$\{PUSH_TIME
 _COMMENT_WORD_START = " \t;&|()<>"
 
 
-def _brace_step(ch: str, prev_bare: str, brace_depth: int) -> int:
-    """Return the new ``${...}`` nesting depth for the char at hand.
+# Typed context frames for `_strip_bash_comment` (module docstring, ninth
+# axis). ONE stack replaces round 6's separate paren list + brace depth
+# counter: a paren frame is a SUBSTITUTION (its `)` records as word content)
+# or PLAIN (its `)` records as a word end); a BRACE frame is a `${...}`
+# interior, scanned to its matching `}` with `(`, `)` and `#` literal. Every
+# frame records the double-quote state to restore when it closes, because a
+# substitution or expansion opened INSIDE double quotes reparses its interior
+# as fresh unquoted code — bash does the same (measured: the inner quotes of
+# `echo "$(printf "%s" "a)#b")"` nest inside the substitution instead of
+# closing the outer string, and the `&&` arm runs).
+_SUBST = "substitution"
+_PLAIN = "plain"
+_BRACE = "brace"
 
-    Inside `${...}` bash scans to the matching `}`: `(`, `)` and `#` are
-    literal word/pattern characters there, touching neither the paren stack
-    nor comment detection (module docstring, eighth axis).
-    """
-    if ch == "{" and prev_bare == "$":
-        return brace_depth + 1
-    if ch == "}":
-        return brace_depth - 1
-    return brace_depth
 
-
-def _open_paren(line: str, i: int, prev_bare: str, open_parens: list[bool]) -> int:
+def _open_paren(
+    line: str,
+    i: int,
+    prev_bare: str,
+    frames: list[tuple[str, bool]],
+    resume_in_double: bool = False,
+) -> int:
     """Push the frame(s) for the ``(`` at ``i``; return extra chars consumed.
 
     A `$((` arithmetic expansion opens two substitution frames and consumes
     the second `(` (return 1); otherwise one frame is pushed — a substitution
-    iff the previous bare character was `$`, `<` or `>` (return 0).
+    iff the previous bare character was `$`, `<` or `>` (return 0). The
+    FIRST-pushed frame (popped LAST) carries ``resume_in_double``, the
+    double-quote state to restore when the whole construct closes.
     """
     if prev_bare == "$" and line[i + 1 : i + 2] == "(":
-        open_parens.extend((True, True))
+        frames.append((_SUBST, resume_in_double))
+        frames.append((_SUBST, False))
         return 1
-    open_parens.append(prev_bare in ("$", "<", ">"))
+    kind = _SUBST if prev_bare in ("$", "<", ">") else _PLAIN
+    frames.append((kind, resume_in_double))
     return 0
 
 
-def _unclassifiable_at(line: str, i: int, prev_bare: str, open_parens: list[bool]) -> str | None:
+def _unclassifiable_at(
+    line: str, i: int, prev_bare: str, frames: list[tuple[str, bool]]
+) -> str | None:
     """Return the refusal message when position ``i`` opens a construct the
     scanner cannot classify (module docstring, eighth axis), else None.
 
     Two triggers, both deliberately broader than the ambiguity they fence
     (module docstring, residual list): an unquoted word ``case`` while any
-    paren frame is open, and an unquoted ``=~`` preceded by whitespace (no
+    frame is open, and an unquoted ``=~`` preceded by whitespace (no
     trailing space required — ``=~(x)#tag`` parses and runs, measured
-    against bash 5.1.16).
+    against bash 5.1.16). Two more refusals — backticks, and a process
+    substitution inside a ``${...}`` interior (ninth axis) — raise at their
+    sites in ``_strip_bash_comment``: they must fire in quote/brace
+    contexts this bare-context helper is never consulted for.
     """
     ch = line[i]
     if (
         ch == "c"
-        and open_parens
+        and frames
         and line[i : i + 4] == "case"
         and prev_bare != ""
         and prev_bare in _COMMENT_WORD_START
@@ -328,6 +393,95 @@ def _unclassifiable_at(line: str, i: int, prev_bare: str, open_parens: list[bool
     return None
 
 
+def _single_quote_char(line: str, i: int, ansi: bool) -> tuple[int, bool]:
+    """Handle char ``i`` inside a single-quoted string; return
+    ``(extra_chars_consumed, still_in_single)``.
+
+    In a REGULAR single quote every character is literal and ``'`` closes;
+    in one entered via ``$'`` (ANSI-C, ``ansi=True``) a backslash escapes
+    its next character, so ``\\'`` stays inside — the round-6 desync
+    (module docstring, ninth axis).
+    """
+    ch = line[i]
+    if ansi and ch == "\\":
+        return 1, True
+    return 0, ch != "'"
+
+
+def _double_quote_char(line: str, i: int, frames: list[tuple[str, bool]]) -> tuple[int, bool, str]:
+    """Handle char ``i`` inside double quotes; return
+    ``(extra_chars_consumed, in_double, bare)``.
+
+    A backslash consumes its next character and ``"`` closes. A ``$(``,
+    ``$((`` or ``${`` opened here reparses its interior as fresh UNQUOTED
+    code — bash does the same — so it pushes a frame recording that double
+    quotes resume at the matching close (module docstring, ninth axis).
+    Everything else is quoted content.
+    """
+    ch = line[i]
+    if ch == "\\":
+        return 1, True, ""
+    if ch == '"':
+        return 0, False, ""
+    if ch == "$" and line[i + 1 : i + 2] == "(":
+        return 1 + _open_paren(line, i + 1, "$", frames, resume_in_double=True), False, "("
+    if ch == "$" and line[i + 1 : i + 2] == "{":
+        frames.append((_BRACE, True))
+        return 1, False, "{"
+    return 0, True, ""
+
+
+def _brace_char(
+    line: str, i: int, prev_bare: str, frames: list[tuple[str, bool]]
+) -> tuple[int, str, bool]:
+    """Handle char ``i`` inside a ``${...}`` interior; return
+    ``(extra_chars_consumed, bare, in_double)``.
+
+    ``(``, ``)`` and ``#`` are literal pattern/word characters here (a
+    pattern ``)`` such as ``${x%)}`` cannot pop a substitution frame; quote
+    and escape characters are handled by the caller BEFORE this branch, as
+    bash's brace scan also skips quoted strings). Only the matching ``}`` —
+    which pops the frame and restores the double-quote state it opened
+    under — a nested ``${``, or a nested ``$(``/``$((`` (a fresh code
+    context) changes state; a process substitution inside the interior is
+    executed code this scanner does not model, so it refuses (module
+    docstring, ninth axis).
+    """
+    ch = line[i]
+    if ch == "}":
+        _, resume = frames.pop()
+        return 0, "}", resume
+    if ch == "{" and prev_bare == "$":
+        frames.append((_BRACE, False))
+        return 0, "{", False
+    if ch == "(" and prev_bare == "$":
+        return _open_paren(line, i, prev_bare, frames), "(", False
+    if ch == "(" and prev_bare in ("<", ">"):
+        raise ValueError(
+            "cannot classify process substitution inside a ${...} interior: "
+            "its parenthesized body is executed shell code, not pattern text "
+            "(measured: `echo ${v:-<(true)}` substitutes a /dev/fd path, "
+            f"bash 5.1.16). Restructure the line or extend the scanner. Line: {line!r}"
+        )
+    return 0, ch, False
+
+
+def _close_paren(frames: list[tuple[str, bool]]) -> tuple[str, bool]:
+    """Pop the frame for a code-context ``)``; return ``(bare, in_double)``.
+
+    A substitution's ``)`` belongs to its word: it records as word content
+    (``bare = ""``) so a ``#`` right after it reads mid-word, and it
+    restores the double-quote state the construct opened under (module
+    docstring, ninth axis). Every other ``)`` — a plain paren, or a pop
+    against an empty stack — records as a word end, with the code context
+    staying unquoted.
+    """
+    kind, resume = frames.pop() if frames else (_PLAIN, False)
+    if kind == _SUBST:
+        return "", resume
+    return ")", False
+
+
 def _strip_bash_comment(line: str) -> str:
     """Return ``line`` truncated at its first unquoted, word-initial ``#``.
 
@@ -338,81 +492,109 @@ def _strip_bash_comment(line: str) -> str:
     silently drops a live, correctly-bounded push.
 
     It is NOT needed for the ``#`` in a push's own trailing message: on all
-    ten live sites the first ``#`` falls at or after the match END (measured
-    round 4), so a quote-blind stripper scans today's six wrappers to an
+    twelve live sites the first ``#`` falls at or after the match END
+    (measured round 4 at ten sites; re-verified at twelve after the #2386
+    merge), so a quote-blind stripper scans today's six wrappers to an
     identical site set and identical bound flags. Both halves of that scope
     are pinned —
     ``test_quote_tracking_is_load_bearing_when_a_hash_precedes_the_site`` and
     ``test_quote_blind_stripping_is_indistinguishable_on_the_live_line``.
 
-    Paren-aware because ``)`` is in ``_COMMENT_WORD_START`` but is only
-    CONDITIONALLY a word end (module docstring, seventh axis). ``open_parens``
-    records, per open paren, whether it opened a SUBSTITUTION — ``$(``, ``$((``
-    (which opens two), ``<(`` or ``>(`` — or a plain subshell/grouping paren.
-    The matching ``)`` pops it: a substitution's ``)`` records as WORD CONTENT
-    (``prev_bare = ""``), so a ``#`` immediately after it is mid-word and NOT
-    a comment, while a plain ``)`` (subshell, ``case`` arm, bare ``((``
-    arithmetic command, or a ``)`` against an empty stack) records as a word
-    end. ``prev_bare`` is the previous character AS BASH READS IT — empty for
-    quoted, escaped, and substitution-closing positions — so a ``$`` that was
-    quoted or backslash-escaped never turns a following ``(`` into a
-    substitution.
+    Frame-aware because ``)`` is in ``_COMMENT_WORD_START`` but is only
+    CONDITIONALLY a word end (module docstring, seventh axis), and because a
+    ``${...}`` interior and a nested substitution each need their own
+    context (ninth axis). ``frames`` is ONE stack of typed frames: a
+    SUBSTITUTION paren — ``$(``, ``$((`` (which opens two), ``<(`` or
+    ``>(`` — whose matching ``)`` records as WORD CONTENT
+    (``prev_bare = ""``), so a ``#`` right after it is mid-word and NOT a
+    comment; a PLAIN paren (subshell, ``case`` arm, bare ``((`` arithmetic
+    command, or a ``)`` against an empty stack), whose ``)`` records as a
+    word end; and a BRACE frame — a ``${...}`` interior — where ``(``, ``)``
+    and ``#`` are literal (a pattern ``)`` such as ``${x%)}`` cannot pop a
+    substitution frame) and only the matching ``}``, a nested ``${``, or a
+    nested ``$(``/``$((`` (a fresh code context) changes state. ``prev_bare``
+    is the previous character AS BASH READS IT — empty for quoted, escaped,
+    and substitution-closing positions — so a ``$`` that was quoted or
+    backslash-escaped never turns a following ``(`` into a substitution.
+
+    Quote-restoring (ninth axis): a substitution or ``${...}`` opened INSIDE
+    double quotes reparses its interior as fresh UNQUOTED code — bash does
+    the same — so its frame records the double-quote state and restores it
+    at the matching close. Round 6 tracked quotes flatly, so the inner
+    quotes of ``"$(printf "%s" "a)#b")"`` flipped it into bare state and the
+    ``)#`` stripped a line bash runs (measured; same for the ``${...}``
+    form).
 
     Escape-aware (eighth axis): the comment check keys on ``prev_bare``,
     never the raw ``line[i - 1]`` byte, which round 5 used and which mis-read
     the escaped ``;`` of ``echo a\\;#x`` as a word end and silently dropped
     the live push chained after it.
 
-    Brace-aware (eighth axis): an unquoted ``${`` opens a parameter expansion
-    scanned to its matching ``}``; ``(``, ``)`` and ``#`` inside are literal,
-    so a pattern ``)`` (``${x%)}``) cannot pop a substitution frame.
+    ANSI-C-aware (ninth axis): a single quote entered via ``$'`` tracks
+    backslash escapes — inside ``$'...'`` bash reads ``\\'`` as an ESCAPED
+    quote, so round 6's flat single-quote state closed early and stripped a
+    live push at the stray tail's ``#`` (measured). A REGULAR single quote
+    stays escape-blind: in ``'a\\'`` the quote after the backslash CLOSES
+    (the wrappers' single-quoted sed/awk programs depend on it).
 
-    Loud refusal (eighth axis): two constructs make a later ``)`` or ``#``
-    unclassifiable without their own grammars — a ``case`` statement inside
-    an open paren frame (its pattern ``)`` has no matching ``(``) and the
-    ``[[ ]]`` regex operator ``=~`` (its right-hand side is a regex word
-    where ``( ) #`` are literal, with or without a space after the operator —
-    measured, bash 5.1.16). Both RAISE ValueError naming the construct: a
-    refusal is loud on any input, so it can neither silently pass an
-    unbounded push nor silently drop a live one. Deliberately broader than
-    the ambiguity — see the module docstring's residual list.
+    Loud refusal (eighth + ninth axes): four constructs make later text
+    unclassifiable without their own grammars, and each RAISES ValueError
+    naming the construct — a ``case`` statement inside an open frame (its
+    pattern ``)`` has no matching ``(``), the ``[[ ]]`` regex operator
+    ``=~`` (its right-hand side is a regex word where ``( ) #`` are
+    literal, with or without a space after the operator — measured, bash
+    5.1.16), any backtick outside single quotes (the closing-tick search
+    runs through a ``#``, the interior is shell code needing its own parse,
+    and POSIX leaves the search undefined across embedded quotes), and a
+    process substitution inside a ``${...}`` interior (live code, not
+    pattern text — measured). A refusal is loud on any input, so it can
+    neither silently pass an unbounded push nor silently drop a live one.
+    Deliberately broader than the ambiguity — see the module docstring's
+    residual list.
     """
     in_single = False
+    ansi_single = False
     in_double = False
-    open_parens: list[bool] = []
-    brace_depth = 0
+    frames: list[tuple[str, bool]] = []
     prev_bare = ""
     i = 0
     while i < len(line):
         ch = line[i]
         bare = ""
         if in_single:
-            if ch == "'":
-                in_single = False
+            extra, in_single = _single_quote_char(line, i, ansi_single)
+            i += extra
+        elif ch == "`":
+            raise ValueError(
+                "cannot classify backtick command substitution: bash scans to "
+                "the matching unescaped backtick (a `#` inside comments only "
+                "the INNER command, so the outer line continues after the "
+                "close — measured, bash 5.1.16), and the interior is shell "
+                "code needing its own parse. Use $(...) or restructure the "
+                f"line. Line: {line!r}"
+            )
         elif in_double:
-            if ch == "\\":
-                i += 1
-            elif ch == '"':
-                in_double = False
+            extra, in_double, bare = _double_quote_char(line, i, frames)
+            i += extra
         elif ch == "\\":
             i += 1
         elif ch == "'":
             in_single = True
+            ansi_single = prev_bare == "$"
         elif ch == '"':
             in_double = True
-        elif brace_depth > 0 or (ch == "{" and prev_bare == "$"):
-            brace_depth = _brace_step(ch, prev_bare, brace_depth)
-            bare = ch
+        elif frames and frames[-1][0] == _BRACE:
+            extra, bare, in_double = _brace_char(line, i, prev_bare, frames)
+            i += extra
+        elif ch == "{" and prev_bare == "$":
+            frames.append((_BRACE, False))
+            bare = "{"
         elif ch == "(":
-            i += _open_paren(line, i, prev_bare, open_parens)
+            i += _open_paren(line, i, prev_bare, frames)
             bare = "("
         elif ch == ")":
-            closed_substitution = open_parens.pop() if open_parens else False
-            # A substitution's `)` belongs to its word: record it as word
-            # content so a `#` right after it reads mid-word. Every other `)`
-            # records as a word end.
-            bare = "" if closed_substitution else ")"
-        elif (refusal := _unclassifiable_at(line, i, prev_bare, open_parens)) is not None:
+            bare, in_double = _close_paren(frames)
+        elif (refusal := _unclassifiable_at(line, i, prev_bare, frames)) is not None:
             raise ValueError(refusal)
         elif ch == "#" and (i == 0 or (prev_bare != "" and prev_bare in _COMMENT_WORD_START)):
             return line[:i]
@@ -424,7 +606,9 @@ def _strip_bash_comment(line: str) -> str:
 
 
 def scan_execution_sites(
-    text: str, strip: Callable[[str], str] = _strip_bash_comment
+    text: str,
+    strip: Callable[[str], str] = _strip_bash_comment,
+    origin: str = "<text>",
 ) -> list[tuple[int, str, re.Match[str]]]:
     """Return ``(lineno, executable_line, match)`` per push EXECUTION site.
 
@@ -438,12 +622,19 @@ def scan_execution_sites(
     that compare them would then pass for the wrong reason.
 
     A line the default stripper cannot classify raises ValueError (module
-    docstring, eighth axis): the scan is loud, never silently wrong, on
-    case-inside-substitution and ``=~`` regex lines.
+    docstring, eighth + ninth axes): the scan is loud, never silently wrong,
+    on case-inside-substitution, ``=~`` regex, backtick, and
+    process-substitution-in-brace lines. The refusal is re-raised prefixed
+    ``{origin}:{lineno}:`` so a refusal from a wrapper scan names its file
+    and line (the wrapper-facing tests pass each wrapper's repo-relative
+    path as ``origin``).
     """
     sites: list[tuple[int, str, re.Match[str]]] = []
     for lineno, raw in enumerate(text.splitlines(), start=1):
-        line = strip(raw)
+        try:
+            line = strip(raw)
+        except ValueError as err:
+            raise ValueError(f"{origin}:{lineno}: {err}") from err
         sites.extend((lineno, line, m) for m in _EXEC_SITE.finditer(line))
     return sites
 
@@ -457,7 +648,7 @@ def test_every_push_call_site_is_timeout_bounded():
         f"{TOTAL_EXPECTED_SITES}: update TOTAL_EXPECTED_SITES deliberately"
     )
     for rel, expected in WRAPPERS.items():
-        sites = scan_execution_sites((_REPO_ROOT / rel).read_text())
+        sites = scan_execution_sites((_REPO_ROOT / rel).read_text(), origin=rel)
         n_sites = len(sites)
         for lineno, line, m in sites:
             assert _BOUND_PREFIX_RE.search(line[: m.start()]) is not None, (
@@ -504,9 +695,9 @@ def test_every_wrapper_parses():
 # push of `cron_watch_issue_2091.sh`, BYTE-FAITHFUL to its source line: the
 # `[ -x "$PUSH" ]` guard the execution-site regex must not count, and the `#`
 # inside the trailing message. That `#` is INERT for the scanner — it falls
-# after the match end, as on all ten live sites — so `_LIVE` is the unmutated
-# control, not the quote-tracking control. `_LIVE_HASH_BEFORE_SITE` is the
-# shape where quote tracking decides.
+# after the match end, as on all twelve live sites — so `_LIVE` is the
+# unmutated control, not the quote-tracking control. `_LIVE_HASH_BEFORE_SITE`
+# is the shape where quote tracking decides.
 #
 # Both fixtures are pinned against the live file by
 # `test_live_fixtures_are_byte_faithful_to_their_source_lines`, which locates
@@ -639,10 +830,11 @@ def test_quote_blind_stripping_is_indistinguishable_on_the_live_line():
     """Scoping the claim above: on `_LIVE` the `#` is inert.
 
     Round 3 justified quote tracking by claiming every watch-script push line
-    carries a `#` a naive strip would cut into. It does not — on all ten live
-    sites the hash falls at or after the match end — so this records the true
-    scope: `_LIVE` scans identically both ways, and only the hash-before-site
-    shape diverges. Keeps the mechanism honest about what it is for.
+    carries a `#` a naive strip would cut into. It does not — on all twelve
+    live sites the hash falls at or after the match end (re-derived at
+    twelve, round 7) — so this records the true scope: `_LIVE` scans
+    identically both ways, and only the hash-before-site shape diverges.
+    Keeps the mechanism honest about what it is for.
     """
     aware = scan_execution_sites(_LIVE)
     blind = scan_execution_sites(_LIVE, strip=_naive_first_hash_strip)
@@ -836,6 +1028,152 @@ def test_top_level_case_and_tilde_assignment_do_not_refuse():
     assert len(scan_execution_sites(top_case)) == 1
     line = "LOG=~/x.log && " + _LIVE.strip()
     assert _bound_flags(line) == [True]
+
+
+# --- Round-7 regressions: backticks, context frames, ANSI-C quotes (ninth
+# axis). Every fixture below was measured against bash 5.1.16 on 2026-08-30:
+# `bash -n` accepts each line and bash RUNS each push, while the round-6
+# scanner (ac76253a4f4) returned 0 sites with nothing raised on every one of
+# the silent-over-strip shapes.
+
+
+def test_backtick_substitution_refuses_loudly():
+    """Round-6 blocker (measured): bash RUNS both pushes below — the
+    closing-backtick search runs through the ``#x`` (it comments only the
+    inner command), so the outer line continues after the closing tick. The
+    round-6 scanner read ` #` as a word-initial comment start and returned 0
+    sites with nothing raised — for the A2 shape that silently passed an
+    UNBOUNDED push. A backtick interior is shell code needing its own parse,
+    so any backtick outside single quotes refuses."""
+    a2 = 'Y=`date +%s #x` && "$PUSH" "A2_TICK_UNBOUNDED_RAN"'
+    with pytest.raises(ValueError, match="backtick"):
+        scan_execution_sites(a2)
+    a1 = (
+        "Y=`date +%s #x` && "
+        'timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "A1_TICK_BOUNDED_RAN"'
+    )
+    with pytest.raises(ValueError, match="backtick"):
+        scan_execution_sites(a1)
+
+
+def test_backtick_inside_double_quotes_refuses_loudly():
+    """Backticks stay live substitutions inside double quotes (measured:
+    `echo "run \\`date +%s\\` now"` substitutes and its `&&` push runs), and
+    an embedded quote makes the closing-tick search POSIX-undefined — so the
+    scanner refuses rather than guesses there too."""
+    with pytest.raises(ValueError, match="backtick"):
+        scan_execution_sites('echo "run `date +%s` now" && "$PUSH" "BT_RAN"')
+
+
+def test_backticks_in_comments_and_single_quotes_do_not_refuse():
+    """Refusal-scope controls: the six wrappers' own backticks all sit on
+    comment lines — the `#` strips the line before any tick is scanned — and
+    a single-quoted backtick is literal to bash, so neither refuses."""
+    assert scan_execution_sites("# a `quoted` word in a comment") == []
+    assert scan_execution_sites("true # see `foo --help` for detail") == []
+    line = "echo 'a `b` c' && " + _LIVE.strip()
+    assert _bound_flags(line) == [True]
+
+
+def test_substitution_nested_in_a_parameter_default_is_modeled():
+    """Round-6 blocker (Codex, measured): bash RUNS this push — the nested
+    `$( { echo hi; })` closes where it opened, and `#tag` is part of the
+    assignment word after the REAL outer close. Round 6's flat brace depth
+    counter decremented at the brace GROUP's `}`, the next `)` popped the
+    OUTER substitution frame, and the line stripped at `#`: 0 sites,
+    silently, in the primary-invariant direction (round 5 had caught this
+    shape). The frame stack keeps the nested contexts apart, so the site is
+    counted and reads UNBOUNDED — loud on a newly added site."""
+    line = 'x=$(echo ${v:-$( { echo hi; })})#tag && "$PUSH" "NEW_UNBOUNDED"'
+    assert _bound_flags(line) == [False]
+
+
+def test_quoted_parameter_default_with_nested_substitution_scans():
+    """The live idiom the frame model must keep scanning:
+    cron_daily_healthcheck.sh line 53 nests `$(date ...)` inside a
+    DOUBLE-QUOTED `${...:-...}` default. The brace frame restores the
+    double-quote state at its `}` and the nested substitution opens a fresh
+    code context, so the wrapper's own shape scans to its one bounded site
+    with no refusal."""
+    line = 'V="${VAR:-$(date +%s)}" && ' + _LIVE.strip()
+    assert _bound_flags(line) == [True]
+
+
+def test_ansi_c_escaped_quote_does_not_desync_quote_state():
+    """Round-6 concern (measured): bash RUNS this bounded push — inside
+    `$'...'` the `\\'` is an ESCAPED quote, so the string runs to the final
+    `'` and the ` ; # x` sits INSIDE it. Round 6 closed its flat
+    single-quote state at the `\\'`, read the tail as bare, and stripped at
+    `#`: 0 sites, silently dropping a live push. A single quote entered via
+    `$'` now tracks backslash escapes."""
+    line = (
+        'echo $\'a\\\' ; # x\' && timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$PUSH" "B1_ANSI_RAN"'
+    )
+    assert _bound_flags(line) == [True]
+
+
+def test_regular_single_quote_keeps_backslash_literal():
+    """The control scoping the ANSI-C fix: in a REGULAR single quote a
+    backslash is literal and the next `'` closes — bash prints `a\\` for
+    `echo 'a\\'` and runs the chained push (measured) — so escape tracking
+    keys on the `$'` entry, never on single quotes generally (the wrappers'
+    single-quoted sed/awk programs carry backslashes)."""
+    line = "echo 'a\\' && " + _LIVE.strip()
+    assert _bound_flags(line) == [True]
+
+
+def test_quotes_inside_a_double_quoted_substitution_do_not_desync():
+    """Same silent class, found in round 7 (measured): bash RUNS both pushes
+    — the inner quotes belong to the reparsed substitution/expansion
+    interior, so the `)#` inside them never reaches word level. Round 6's
+    flat quote state closed at the inner `"`, read `)` as a word end against
+    an empty stack, and stripped at `#`: 0 sites, silently — the same
+    quadrant as the backtick and nested-default blockers. Each frame records
+    the double-quote state to restore at its close, so both lines scan to
+    their one bounded site."""
+    for label, prefix in (
+        ("command substitution", 'echo "$(printf "%s" "a)#b")" && '),
+        ("parameter default", 'echo "${v:-"a)#b"}" && '),
+    ):
+        line = prefix + _LIVE.strip()
+        assert _bound_flags(line) == [True], label
+
+
+def test_process_substitution_inside_a_parameter_default_refuses_loudly():
+    """`echo ${v:-<(true)}` substitutes a live /dev/fd path and its `&&`
+    push runs (measured), so a `<(...)` inside a `${...}` interior is
+    executed code this scanner does not model — refused, never scanned as
+    literal brace text."""
+    with pytest.raises(ValueError, match="process substitution"):
+        scan_execution_sites('echo ${v:-<(true)} && "$PUSH" "PS_RAN"')
+
+
+def test_unmodeled_constructs_raise_instead_of_stripping():
+    """The round-7 posture in one place: every construct the scanner knows
+    it does not model REFUSES with a ValueError naming the construct — it
+    never silently returns a stripped line, because a scanner returning "0
+    unbounded sites" on a line it could not parse is indistinguishable from
+    one that verified the line. Rounds 4-6 each enumerated one more silent
+    member of this class and were bounced by the next round's new member; a
+    raise is the only verdict that cannot be mistaken for a verified line."""
+    refusals = [
+        ("backtick", 'Y=`date` && "$PUSH" "m"'),
+        ("backtick", 'echo "`date`" && "$PUSH" "m"'),
+        ("process substitution", 'echo ${v:-<(true)} && "$PUSH" "m"'),
+        ("case", 'S=$(case x in y) date;; esac)#t && "$PUSH" "m"'),
+        ("=~", '[[ "x" =~ (x)#t ]] && "$PUSH" "m"'),
+    ]
+    for construct, line in refusals:
+        with pytest.raises(ValueError, match=re.escape(construct)):
+            scan_execution_sites(line)
+
+
+def test_refusals_name_the_origin_and_line():
+    """A refusal from a wrapper scan carries `<origin>:<lineno>` so the
+    failing construct is locatable without re-running the scan by hand (the
+    wrapper-facing tests pass each wrapper's repo-relative path)."""
+    with pytest.raises(ValueError, match=r"wrapper\.sh:2: "):
+        scan_execution_sites("true\nY=`date`\n", origin="wrapper.sh")
 
 
 def test_direction_rule_quadrants_match_the_documented_rule():
