@@ -20,6 +20,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# #847: thread caps must land BEFORE the heavy imports below. On the shared VM,
+# load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
+# BLAS/torch pools freeze at import time.
+load_dotenv()
+
 import numpy as np
 import torch
 
