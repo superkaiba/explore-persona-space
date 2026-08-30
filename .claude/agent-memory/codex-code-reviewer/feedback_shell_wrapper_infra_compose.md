@@ -461,3 +461,37 @@ composer probe was ruled to have destroyed corroboration value:**
     composer-written side (`p.count(x) - in_prior == 0`), not the whole
     prompt; (c) count the `{{worktree}}` placeholders in the template rather
     than assuming the prior round's number.
+
+**#2387 r6 (2026-08-30) — MERGE-INTEGRATION closure round (round tip = a merge
+of origin/main; independence-constrained re-spawn after a session-limit death):**
+
+55. **A merge tip makes the brief's two-dot round range contaminated by
+    construction** (here 123 files / +19,869, nearly all main drift the merge
+    brought in). Decompose the body reads: `git show <impl-commit>` (the
+    branch-side round work), merge-vs-`^2` scoped to the named production
+    files (the hand fixes exactly as landed on top of main's versions), and
+    merge-vs-`^1` scoped to the round's own files (merge-time pin updates).
+    Enumerate merged-content files with the blob-differs-from-BOTH-parents
+    probe (`git rev-parse <merge>:<f>` vs each parent) and hand the LIST as a
+    fact — the auto-merge-vs-hand-edit distinction stays the twin's work
+    (labeling the list "hand-touched" is wrong: content-level auto-merges
+    also differ from both parent blobs).
+56. **By-path record pointing under a live merge needs three staleness
+    statements:** (a) the WORKTREE events.jsonl now carries main rows up to
+    `^2` — it LOOKS complete but is missing every post-merge row (name which:
+    here v28-v30); point at the MAIN absolute path. (b) Extraction snippets
+    need kind+sentinel DOUBLE filters — a sentinel-only match hit a LATER
+    progress note quoting the sentinel during this very compose (my
+    gate-scope probe read the wrong row until kind-filtered). (c) A pre-merge
+    impl marker's Gate-scope diff list (`HEAD~1..HEAD`) structurally excludes
+    the merge deltas — state as fact, route the recount to the twin's 4.6
+    diff-consistency half.
+57. **Brief-ordered measurement on a text-scanner round:** sanction
+    import-by-path of the test module against `/tmp` scratch text (stub
+    missing test deps in the SCRATCH copy only), `bash -n` (parse-only) on
+    real and scratch files, and pytest on the scanning test file ONLY; keep
+    subprocess-driving sibling harnesses (child-binary-stub tests that
+    execute the real `.sh`) read-only. Return
+    `write mode: true (scratch measurement sanctioned)` so the dispatch arms
+    the measured path; retain the `STATIC (env unavailable)` never-fabricate
+    fallback in the prompt.
