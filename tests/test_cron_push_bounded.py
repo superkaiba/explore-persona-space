@@ -223,8 +223,9 @@ Known residuals after round 9, each classified by the direction rule:
   ``$'a\\'b'`` renders ``'a'\\''b'``) — content-preserving, scan-neutral.
 
 None of the residual or refused shapes is in the six wrappers (census
-re-derived round 10 through the round-10 engine — the guarded heredoc skip
-plus the scrubbed child env — 2026-08-30, bash 5.1.16): all six render with
+re-derived round 11 through the round-11 engine — the identifier-boundary
+widened ``_EXEC_SITE`` / ``_PUSH_REF`` plus the guarded heredoc skip and the
+scrubbed child env — 2026-08-30, bash 5.1.16): all six render with
 zero refusals to exactly the pinned counts 1/3/2/2/2/2 = 12, every site
 bounded, unchanged from the round-8/9 censuses (the one heredoc,
 ``cron_watch_issue_1739.sh``'s ``done <<EOF`` loop feed, holds a bare
@@ -240,7 +241,9 @@ COVERAGE BOUNDARY: the scan is bounded by the WRAPPERS mapping below plus
 the execution-site regex. A NEW cron wrapper calling the push helper must be
 ADDED to the mapping or it escapes every pin here; likewise a call shape
 whose message argument is not a double-quoted string immediately after the
-push variable (an unquoted message, a renamed variable) escapes the regex.
+push variable (an unquoted message, a renamed variable) escapes the regex
+(braced parameter-operator spellings such as ``"${PUSH:-d}"`` are COUNTED
+since round 11 — measured, reconcile-v10 fixture P_braced_toplevel).
 Extend both when adding either. The unquoted-message escape is one leg of
 the reconcile-v8 S2 compound: a push-bearing heredoc pad now REFUSES
 outright (measured, round 10), so the pad cannot vouch for it, but the
@@ -291,11 +294,22 @@ WRAPPERS: dict[str, int] = {
 TOTAL_EXPECTED_SITES = 12
 
 # Push variable in EXECUTION position: the quoted variable followed by a
-# quoted message argument. `[ -x "$PUSH" ]` guards do not match (a `]`, not a
-# quote, follows) and `"${PUSH_TIMEOUT}s"` does not match (`_` after PUSH).
-# Separator is `[ \t]`, never `\s`: Python's `\s` accepts U+00A0, which bash
-# does not treat as a token separator (module docstring, fifth axis).
-_EXEC_SITE = re.compile(r'"\$\{?(?:TELEGRAM_PUSH|PUSH)\}?"[ \t]+"')
+# quoted message argument. The name must sit at an IDENTIFIER BOUNDARY, and
+# the braced form may carry any parameter-expansion operator tail (round 11:
+# round 10 accepted only bare / exactly-closed braced names, so the
+# braced-default call in reconcile-v10 fixture P_braced_toplevel scanned
+# 1 [True] at pin — suite GREEN — while bash executed the unbounded
+# `"${PUSH:-...}"` push at top level; measured on tip 89d4a691915,
+# bash 5.1.16). `[ -x "$PUSH" ]` guards do not match (a `]`, not a quote,
+# follows), `"${PUSH_TIMEOUT}s"` does not match (`_` after PUSH fails the
+# boundary), and a bare name with trailing text (`"$PUSH stuff"`) does not
+# match (the bare alternation still requires the closing quote directly
+# after the name). Separator is `[ \t]`, never `\s`: Python's `\s` accepts
+# U+00A0, which bash does not treat as a token separator (module docstring,
+# fifth axis).
+_EXEC_SITE = re.compile(
+    r'"\$(?:\{(?:TELEGRAM_PUSH|PUSH)(?![A-Za-z0-9_])[^"]*\}|(?:TELEGRAM_PUSH|PUSH))"[ \t]+"'
+)
 
 # Human-readable canonical form, quoted in assertion messages.
 _BOUND_PREFIX_TEXT = 'timeout --kill-after=5s "${PUSH_TIMEOUT}s" '
@@ -335,15 +349,24 @@ _HEREDOC_CANDIDATE = re.compile(
     r"(?<!<)<<(?!<)(-?)[ \t]*('[^']*'|\"[^\"]*\"|\\?[^\s<>&|;()\"'\\]+)"
 )
 
-# Text no skip region may contain (round 10): any reference to the push
-# variable — $PUSH / ${PUSH} / $TELEGRAM_PUSH / ${TELEGRAM_PUSH}; a
-# backslash-escaped \$PUSH still matches at its `$`, the eval-heredoc
-# spelling (measured, fixture A9). Deliberately BROADER than `_EXEC_SITE`:
-# a skipped line is never seen again, so the guard must catch push text the
-# site regex would miss (unquoted messages, escaped dollars). It does NOT
-# match `$PUSH_TIMEOUT` / `${PUSH_TIMEOUT}` (word boundary / closing brace),
-# so a body defining its own timeout does not refuse.
-_PUSH_REF = re.compile(r"\$(?:\{(?:TELEGRAM_PUSH|PUSH)\}|(?:TELEGRAM_PUSH|PUSH)\b)")
+# Text no skip region may contain (round 10; widened round 11): the push
+# NAME at an identifier boundary after `$` / `${` — bare ($PUSH), braced
+# (${PUSH}), and the braced parameter-operator spellings (${PUSH:-d},
+# ${PUSH:?e}, ${PUSH:0}, ${TELEGRAM_PUSH:-d}, the unbalanced "${PUSH");
+# a backslash-escaped \$PUSH still matches at its `$`, the eval-heredoc
+# spelling (measured, fixture A9). Round 10 accepted only the bare and
+# exactly-closed braced forms, so any operator after the name fell outside
+# both alternations — measured (reconcile v10, fixture K_braced_default,
+# tip 89d4a691915): a `bash <<'EOF'` body invoking the push via
+# `"${PUSH:-...}"` was skipped without refusal while bash executed it.
+# Deliberately BROADER than `_EXEC_SITE`: a skipped line is never seen
+# again, so the guard must catch push text the site regex would miss
+# (unquoted messages, escaped dollars). The `(?![A-Za-z0-9_])` boundary
+# keeps longer identifiers out — `$PUSH_TIMEOUT` / `${PUSH_TIMEOUT:-30}`
+# (`_` follows) and `$PUSHER` (`E` follows) do not match, so a body
+# defining or using its own timeout does not refuse (pinned by
+# `test_braced_default_push_timeout_in_a_body_does_not_refuse`).
+_PUSH_REF = re.compile(r"\$\{?(?:TELEGRAM_PUSH|PUSH)(?![A-Za-z0-9_])")
 
 
 def _run_engine(text: str) -> subprocess.CompletedProcess[str]:
@@ -385,10 +408,13 @@ def _bash_rendering(text: str, origin: str = "<text>") -> str:
         )
     if _HEREDOC_EOF_WARNING.search(proc.stderr):
         raise ValueError(
-            f"{origin}: a here-document reads to end-of-file, so every line "
-            f"after its operator is body text bash will never execute; the "
-            f"scan refuses rather than counting a wrapper whose tail is "
-            f"inert. bash says: {proc.stderr.strip()}"
+            f"{origin}: a here-document reads to end-of-file, so the outer "
+            f"shell treats every line after its operator as here-document "
+            f"input rather than command text — input whose CONSUMER may "
+            f"still execute it (measured, reconcile v10: an unterminated "
+            f"bash <<'EOF' ran its body, rc=0); the scan refuses rather "
+            f"than counting a tail it can no longer see as commands. "
+            f"bash says: {proc.stderr.strip()}"
         )
     return proc.stdout
 
@@ -403,15 +429,21 @@ def _raw_delimiter(token: str) -> str:
 
 
 def _is_real_heredoc(lines: list[str], idx: int, cand: re.Match[str]) -> bool:
-    """Bash's own verdict on whether a ``<<`` candidate is a heredoc
-    OPERATOR (vs inert lookalike text inside quotes / arithmetic): re-parse
-    the WHOLE rendering with the candidate's delimiter token replaced by a
-    fresh random token. A real operator's document then reads to
-    end-of-file — bash warns, or errors — while an inert lookalike parses
-    clean; the per-probe random token also defeats a pre-planted terminator
-    line. This is the round-8 delegation law applied to heredoc structure:
-    the only tokenizer guaranteed to agree with bash about what ``<<``
-    means is bash."""
+    """Perturbation probe for whether a ``<<`` candidate is a heredoc
+    OPERATOR: re-parse the WHOLE rendering with the candidate's delimiter
+    token replaced by a fresh random token, reading bash's end-of-file
+    warning OR any parse error as the operator signal (the per-probe random
+    token also defeats a pre-planted terminator line). The probe is NOT
+    sound in the over-skip direction: a mutation that breaks syntax owned
+    by an enclosing construct also parses dirty — measured, round 10:
+    ``"${x:-<<}"`` classifies as an operator (the `_HEREDOC_CANDIDATE`
+    comment above; reconcile-v10 P2 measured the same rc=1/no-warning
+    signature for a legitimate cmdsub heredoc and that lookalike). Its
+    verdict is therefore trusted only under the skip-region guard in
+    ``scan_execution_sites``: a skipped region carrying a push reference or
+    ``<<`` text REFUSES (measured, the X1 / false-region fixtures), while
+    push-free, ``<<``-free regions rest on the probe's verdict alone
+    (module docstring, skip-region guard)."""
     probe = f"__EPS_HD_PROBE_{uuid.uuid4().hex}__"
     line = lines[idx]
     mutated = line[: cand.start(2)] + probe + line[cand.end(2) :]
@@ -1115,6 +1147,76 @@ def test_eval_heredoc_body_with_escaped_push_refuses():
     a9 = 'eval "$(cat <<EOF\n"\\$PUSH" "EVAL_HD_UNBOUNDED"\nEOF\n)"\n'
     with pytest.raises(ValueError, match="push reference inside the here-document"):
         scan_execution_sites(a9)
+
+
+def test_braced_operator_push_spellings_in_a_body_refuse():
+    """Round-11 blocker `push-ref-braced-operator-spellings-bypass`
+    (reconcile v10, fixtures K_*): round 10's ``_PUSH_REF`` accepted only
+    bare and exactly-closed braced names, so any parameter-expansion
+    operator after the name fell outside both alternations. Measured on
+    the r10 tip (89d4a691915, bash 5.1.16 ground truth): the pin-1
+    braced-default fixture below scanned 1 [True], the committed pin
+    function was GREEN at pin 1, and bash executed BOTH the bounded real
+    site AND the unbounded body push (`BRACED_DEFAULT_EXTRA`); the
+    required / substring / TELEGRAM variants scanned 0 [] silently while
+    the stub ran. Each spelling must RAISE at scan time — before any
+    count arithmetic — which `pytest.raises` pins: a count-only assert
+    would have stayed green on the pre-fix tip (that is this defect's
+    exact silent shape). The same widening catches the unbalanced
+    ``"${PUSH"`` spelling (NIT `skip-region-guard-unbalanced-brace-
+    spelling`; measured pre-fix: skipped without refusal in a body)."""
+    k_braced_default = (
+        _bounded_push("real_site_A")
+        + "export PUSH\nbash <<'EOF'\n"
+        + '"${PUSH:-/bin/true}" "BRACED_DEFAULT_EXTRA"\nEOF\n'
+    )
+    with pytest.raises(ValueError, match="push reference inside the here-document"):
+        scan_execution_sites(k_braced_default)
+    required = 'bash <<\'EOF\'\n"${PUSH:?missing}" "BRACED_REQ_EXTRA"\nEOF\n'
+    with pytest.raises(ValueError, match="push reference inside the here-document"):
+        scan_execution_sites(required)
+    substring = 'bash <<\'EOF\'\n"${PUSH:0}" "BRACED_SUBSTR_EXTRA"\nEOF\n'
+    with pytest.raises(ValueError, match="push reference inside the here-document"):
+        scan_execution_sites(substring)
+    telegram = 'bash <<\'EOF\'\n"${TELEGRAM_PUSH:-/bin/true}" "TG_BRACED_EXTRA"\nEOF\n'
+    with pytest.raises(ValueError, match="push reference inside the here-document"):
+        scan_execution_sites(telegram)
+    unbalanced = 'cat <<\'EOF\'\n"${PUSH" "m"\nEOF\n'
+    with pytest.raises(ValueError, match="push reference inside the here-document"):
+        scan_execution_sites(unbalanced)
+
+
+def test_braced_default_push_timeout_in_a_body_does_not_refuse():
+    """The identifier boundary in the widened ``_PUSH_REF`` is load-bearing,
+    not cosmetic: a body carrying the braced-default ``${PUSH_TIMEOUT:-30}``
+    spelling stays NON-refusing (reconcile-v10 negative control
+    NC_push_timeout_ok — measured: no refusal on the r10 tip either, so
+    this pins that the widening did not swallow the legitimate timeout
+    spelling), and ``$PUSHER`` is a different variable (`E` fails the
+    boundary). The real site outside the body is still counted."""
+    text = (
+        _bounded_push("real_site_A")
+        + "bash <<'EOF'\n"
+        + 'timeout "${PUSH_TIMEOUT:-30}s" echo ok > /dev/null\n'
+        + '"$PUSHER" "a different variable"\nEOF\n'
+    )
+    assert _bound_flags(text) == [True]
+
+
+def test_braced_default_push_at_top_level_is_counted_and_reads_unbounded():
+    """Round-11 ``_EXEC_SITE`` widening (reconcile-v10 parity fixture
+    P_braced_toplevel, recorded "observed but not raised"): the SAME
+    braced-default spelling at TOP LEVEL — no heredoc — was silent on the
+    r10 tip (measured: scanned 1 [True], suite GREEN at pin 1, while bash
+    executed the unbounded `TOPLEVEL_BRACED_UNBOUNDED` push). Closed by
+    widening rather than disclosed, per this task's history (rounds 4-7
+    closed single class members and the class returned; round 8 closed a
+    class outright and it stayed closed). The widened site regex COUNTS
+    the spelling, landing it on the direction rule's loud arms: the extra
+    site moves the count off the pin AND reads unbounded under the
+    prefix assert."""
+    text = _bounded_push("real_site_A") + '"${PUSH:-/bin/true}" "TOPLEVEL_BRACED_UNBOUNDED"\n'
+    assert _bound_flags(text) == [True, False]
 
 
 def test_misclassified_lookalike_cannot_silently_skip_a_push():
