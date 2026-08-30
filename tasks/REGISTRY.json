@@ -12719,8 +12719,8 @@
     "2649": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2649",
-      "status": "planning",
+      "path": "tasks/approved/2649",
+      "status": "approved",
       "title": "main-red: HF-routing/hub-retry lint + torch-before-dotenv scan fail on pristine origin/main, redding Step 9c fleet-wide"
     },
     "265": {
