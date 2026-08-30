@@ -469,9 +469,16 @@ def commit_path_entry(
     return None, None
 
 
-def _log_segment(rel_path: str, start: str, *, repo_root: Path) -> list[tuple[str, int, str]]:
+def _log_segment(
+    rel_path: str, start: str, *, repo_root: Path
+) -> list[tuple[str, int, str]] | None:
     """``[(sha, commit_unix, subject), ...]`` newest-first for ``rel_path`` from
-    ``start``, via one path-limited ``git log``. ``[]`` on any git failure.
+    ``start``, via one path-limited ``git log``. ``None`` on git FAILURE
+    (non-zero rc / timeout / missing binary); ``[]`` when the probe SUCCEEDS
+    and no commits touch the path. The two ends are different (#2384 round-4
+    blocker, instance (ii)): a failed probe is NOT an empty history, and
+    conflating them let a mid-chase failure end the chase "conclusively" and
+    certify a partial all-``R100`` window as ``rename-only``.
 
     Deliberately WITHOUT ``--follow``: on this 127k-commit repo ``--follow``
     measured 8.1-13.1 s against the module's own ``_GIT_TIMEOUT_S`` of 10, so
@@ -482,8 +489,8 @@ def _log_segment(rel_path: str, start: str, *, repo_root: Path) -> list[tuple[st
         ["log", "--format=%H%x09%ct%x09%s", start, "--", rel_path],
         cwd=repo_root,
     )
-    if not out:
-        return []
+    if out is None:
+        return None
     rows: list[tuple[str, int, str]] = []
     for line in out.splitlines():
         parts = line.split("\t", 2)  # maxsplit=2: a subject may hold tabs
@@ -496,47 +503,90 @@ def _log_segment(rel_path: str, start: str, *, repo_root: Path) -> list[tuple[st
     return rows
 
 
-def _window_history(rel_path: str, since_unix: int, *, repo_root: Path) -> list[_Commit]:
-    """Commits touching ``rel_path`` after ``since_unix``, newest first,
-    CHASING renames backwards so a status move cannot truncate the window.
+def _chase_note(rel_path: str, reason: str) -> None:
+    """Stderr disclosure for an INCONCLUSIVE chase end (#2384 round-4
+    blocker): the advisory label is withheld — never ``rename-only`` — and
+    the window is shown as gathered. Display-side only; the verdict never
+    depends on it."""
+    print(
+        f"check_cited_body_currency: rename chase inconclusive for {rel_path}: {reason} "
+        "(advisory label withheld; window log + diff shown as gathered)",
+        file=sys.stderr,
+    )
 
-    The chase is the #2384 round-3 blocker fix. Path-limited history TRUNCATES
-    at a rename: on the ordinary correct-then-``set-status`` sequence — persist
-    body, correct body at the OLD path, ``git mv`` the task folder —
-    ``git log -- <new path>`` returns ONLY the ``R100`` move. BOTH consumers
-    inherit that truncation: the window here becomes a single commit, so the
-    operator's log hides the correction, AND :func:`classify_window` sees an
-    all-``R100`` window, labels it ``rename-only``, and :func:`body_diff_since`
-    SUPPRESSES the corrected-body diff. Since
-    ``.claude/skills/adversarial-planner/SKILL.md`` makes that detail block the
-    whole input to the operator's disposition, the mislabel is worse than no
-    gate: the sanctioned "plan text unaffected" disposition gets recorded over
-    a plan quoting a stale cited body. So window and classification are read
-    off this ONE rename-crossing history.
 
-    Chase step: when the window consumes a whole log segment AND that segment's
-    oldest commit renamed the file, continue from the rename SOURCE at
-    ``<sha>^``. A segment holding any commit at-or-before ``since_unix`` bounds
-    the window, so no chase is needed. Bounded by ``_MAX_RENAME_CHASE_HOPS``;
-    each git call carries its own ``_GIT_TIMEOUT_S``, and a failure degrades to
-    the rows already gathered."""
+def _window_history(
+    rel_path: str, since_unix: int, *, repo_root: Path
+) -> tuple[list[_Commit], bool]:
+    """``(commits, conclusive)``: commits touching ``rel_path`` after
+    ``since_unix``, newest first, CHASING renames backwards so a status move
+    cannot truncate the window — plus a CONCLUSIVE-END signal that gates the
+    ``rename-only`` label.
+
+    The chase is the #2384 round-3 blocker fix; the chase-END rules are the
+    round-4 blocker fix. Path-limited history TRUNCATES at a rename: on the
+    ordinary correct-then-``set-status`` sequence — persist body, correct body
+    at the OLD path, ``git mv`` the task folder — ``git log -- <new path>``
+    returns ONLY the ``R100`` move. BOTH consumers inherit that truncation:
+    the window here becomes a single commit, so the operator's log hides the
+    correction, AND :func:`classify_window` sees an all-``R100`` window,
+    labels it ``rename-only``, and :func:`body_diff_since` SUPPRESSES the
+    corrected-body diff. Since ``.claude/skills/adversarial-planner/SKILL.md``
+    makes that detail block the whole input to the operator's disposition, the
+    mislabel is worse than no gate: the sanctioned "plan text unaffected"
+    disposition gets recorded over a plan quoting a stale cited body. So
+    window and classification are read off this ONE rename-crossing history.
+
+    Chase decision — keyed on the OLDEST IN-WINDOW row, never on segment
+    truncation (#2384 round-4 blocker, instance (iii)): when that row is a
+    genuine rename arrival (``R``-status with a source), the chase continues
+    from the rename SOURCE at ``<sha>^`` EVEN WHEN the segment holds older
+    commits on this path (``len(window) < len(seg)``). Those pre-window
+    commits belong to a PRIOR INCARNATION of the path — the file ARRIVED
+    in-window, so they bound nothing (a task moved out pre-draft, corrected,
+    and moved back mid-draft — the ordinary follow-up re-park / reopen lane —
+    puts the pre-draft move-out on the SAME final path, spoofing the old
+    bound heuristic). Safe: an in-window rename arrival means all earlier
+    in-window history lives at the source, and the window filter
+    (``c[1] > since_unix``) still bounds every chased segment.
+
+    Conclusive end (``True``): the oldest in-window row is an established
+    NON-rename (a content or create commit bounds the window), or a
+    successful probe finds no in-window commits on the chased path (in-window
+    history genuinely exhausted). ONLY a conclusive end may earn
+    ``rename-only``. Inconclusive (``False``): hop-cap exhaustion, a failed
+    ``git log`` segment probe, or an unresolved per-commit status — the rows
+    gathered so far are returned for display, the label is withheld (diff
+    shown, conservative), and a stderr note discloses the truncation.
+    ``_MAX_RENAME_CHASE_HOPS`` is thereby a pure LATENCY policy with a safe
+    failure mode, never a correctness bound."""
     rows: list[_Commit] = []
     path, start = rel_path, "HEAD"
     for _hop in range(_MAX_RENAME_CHASE_HOPS + 1):
         seg = _log_segment(path, start, repo_root=repo_root)
+        if seg is None:
+            _chase_note(rel_path, f"git log failed on {path!r}")
+            return rows, False
         window = [c for c in seg if c[1] > since_unix]
         if not window:
-            break
+            return rows, True  # in-window history genuinely exhausted
         entries = batch_name_status([c[0] for c in window], repo_root=repo_root)
         for sha, unix, subject in window:
             status, prev = commit_path_entry(entries.get(sha, []), path)
             rows.append(_Commit(sha, unix, subject, status, path, prev))
-        if len(window) < len(seg):
-            break  # the segment bounds the window; older history is out of scope
-        if not rows[-1].prev_path:
-            break  # not a rename (or the probe failed): the chase ends here
-        path, start = rows[-1].prev_path, f"{rows[-1].sha}^"
-    return rows
+        oldest = rows[-1]
+        if oldest.status is not None and oldest.status.startswith("R") and oldest.prev_path:
+            path, start = oldest.prev_path, f"{oldest.sha}^"
+            continue
+        if oldest.status is None or oldest.status.startswith("R"):
+            # Unresolved status (failed / absent name-status probe, a merge)
+            # or a rename with no readable source: the chase cannot establish
+            # where the window ends.
+            _chase_note(rel_path, f"unresolved status at {oldest.sha[:10]} on {path!r}")
+            return rows, False
+        return rows, True  # bounded at an established non-rename commit
+    _chase_note(rel_path, f"hop cap ({_MAX_RENAME_CHASE_HOPS}) exhausted with the chase open")
+    return rows, False
 
 
 def window_pathspec(window: list[_Commit], rel_path: str) -> list[str]:
@@ -555,7 +605,7 @@ def window_pathspec(window: list[_Commit], rel_path: str) -> list[str]:
     return out
 
 
-def classify_window(window: list[_Commit], diff: str) -> str | None:
+def classify_window(window: list[_Commit], diff: str, *, conclusive: bool = True) -> str | None:
     """Label the dominant false-positive channel (#2384 §6): a status move
     (``git mv`` between status folders) is ``rename-only``; a user promotion
     sweep (``classification`` flip) is ``frontmatter-only``. ``None`` = a
@@ -564,15 +614,20 @@ def classify_window(window: list[_Commit], diff: str) -> str | None:
 
     ``rename-only`` is decided from the per-commit name-status of the
     rename-CHASING window (:func:`_window_history`), never from the diff text
-    (#2384 round-2 blocker 8) and never from a rename-TRUNCATED history
+    (#2384 round-2 blocker 8), never from a rename-TRUNCATED history
     (#2384 round-3 blocker — that history held only the ``R100`` move, so a
     window mixing a real correction with a status move read as all-``R100``
-    and the correction was suppressed).
+    and the correction was suppressed), and ONLY when the window's chase
+    ended CONCLUSIVELY (#2384 round-4 blocker): an all-``R100`` window whose
+    chase was cut short — hop-cap exhaustion, a failed segment probe, a
+    spoofed prior-incarnation bound — proves only that the TRUNCATED window
+    holds no edits, so ``conclusive=False`` withholds the label (and with it
+    the diff suppression) rather than certify a partial window.
     Requiring EVERY windowed commit to be an exact ``R100`` keeps the label
     honest in both directions: a rename-WITH-edit (``R095``) and a content
     commit (``M``) are real changes and stay unlabeled, while a task moved
     through several status folders with no edits still earns the label."""
-    if window and all(c.status == "R100" for c in window):
+    if conclusive and window and all(c.status == "R100" for c in window):
         return "rename-only"
     if not diff:
         return None
@@ -604,15 +659,18 @@ def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple
     suppresses its diff.
 
     Under a ``rename-only`` label the diff BODY is suppressed: for a status
-    move it carries no content change, which is pure noise."""
-    window = _window_history(rel_path, since_unix, repo_root=repo_root)
+    move it carries no content change, which is pure noise. The label (and so
+    the suppression) is emitted ONLY on a CONCLUSIVE chase end (#2384 round-4
+    blocker); an inconclusive end leaves the label ``None`` and the diff
+    visible — conservative."""
+    window, conclusive = _window_history(rel_path, since_unix, repo_root=repo_root)
     if not window:
         return "", None
     lines = [f"{c.sha[:10]} @{c.commit_unix} {c.subject}" for c in window]
     oldest_sha = window[-1].sha
     paths = window_pathspec(window, rel_path)
     diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", *paths], cwd=repo_root) or ""
-    label = classify_window(window, diff)
+    label = classify_window(window, diff, conclusive=conclusive)
     text = "\n".join(lines)
     if diff and label != "rename-only":
         text += "\n" + diff

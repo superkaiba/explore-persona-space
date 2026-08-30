@@ -647,14 +647,150 @@ def test_history_parses_quoting_hostile_paths(fake_repo, leaf, why):
 
     # ... and reach the window through the ordinary consumer. The persist
     # commit predates REF, so the chase into the old path finds nothing in
-    # window and correctly stops: one R100 row carrying both endpoints.
-    rows = ccb._window_history(new_rel, REF, repo_root=fake_repo)
+    # window and correctly stops — a CONCLUSIVE end (genuine in-window
+    # exhaustion): one R100 row carrying both endpoints.
+    rows, conclusive = ccb._window_history(new_rel, REF, repo_root=fake_repo)
+    assert conclusive, why
     assert [r.status for r in rows] == ["R100"], why
     assert rows[0].path == new_rel and rows[0].prev_path == old_rel, why
 
     # The harm the parse defect caused, end to end: the advisory label.
     _, label = ccb.body_diff_since(new_rel, REF, repo_root=fake_repo)
     assert label == "rename-only", why
+
+
+# ── ROUND-4 blocker: inconclusive / spoofed-bound chase ends ────────────────
+#
+# Reconciler ruling (epm:review-reconcile, round 3): an incomplete or
+# wrongly-bounded rename chase must never certify a partial all-R100 window
+# as `rename-only` — the label suppresses the corrected-body diff and steers
+# the operator to record "plan text unaffected" over a stale citation (the
+# #2378 harm). ONE mechanism, two parts: (a) the chase decision keys on the
+# oldest IN-WINDOW row, not on segment truncation; (b) `rename-only` is
+# emitted ONLY on a conclusive chase end.
+
+
+def test_prior_incarnation_destination_does_not_hide_the_correction(fake_repo, capsys):
+    """Round-4 BLOCKER, instance (iii) — the DECISIVE one: the ordinary
+    follow-up re-park / reopen lane. The cited task moves OUT of a status
+    folder BEFORE the draft starts, is corrected mid-draft, then moves BACK
+    mid-draft.
+
+    ``git log -- <final path>`` then holds the PRE-draft move-out on the SAME
+    path, so the pre-fix ``len(window) < len(seg)`` bound check read
+    "conclusive", the chase never followed the in-window ``R100``'s source,
+    and the correction vanished from log AND diff under a bare
+    ``rename-only`` label. The bound heuristic is INVALID here: the file
+    ARRIVED in-window, so pre-window commits on the destination path belong
+    to a PRIOR INCARNATION and bound nothing — the chase must follow the
+    source regardless of the segment bound."""
+    folder = _make_task(fake_repo, 9991, status="awaiting_promotion")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    out_folder = fake_repo / "tasks" / "followups_running" / "9991"
+    _status_move(
+        fake_repo,
+        folder,
+        out_folder,
+        BEFORE + 100,
+        "task #9991: awaiting_promotion -> followups_running",
+    )
+    # [draft starts at REF] ... the correction lands at the moved-out path ...
+    (out_folder / "body.md").write_text(
+        "---\nid: 9991\n---\n\n# Task 9991\n\nCORRECTED: the sign is NEGATIVE.\n"
+    )
+    _commit(fake_repo, [out_folder / "body.md"], "fold follow-up correction", AFTER)
+    # ... and the task re-parks at the ORIGINAL path, still mid-draft.
+    _status_move(
+        fake_repo,
+        out_folder,
+        folder,
+        AFTER + 100,
+        "task #9991: followups_running -> awaiting_promotion",
+    )
+
+    rc, out, err = _run(
+        "Grounds on #9991.", fake_repo, ["--issue", "8000", "--since-unix", str(REF)], capsys
+    )
+    assert rc == 3, out
+    assert "[rename-only]" not in err
+    assert "CORRECTED: the sign is NEGATIVE." in err
+    assert "fold follow-up correction" in err  # the window log carries it too
+
+    # Control (same fixture, SINCE before the move-out): the whole loop is
+    # in-window, the bound plays no part, and the correction stays visible —
+    # the defect is specifically the straddle.
+    text, label = ccb.body_diff_since(
+        "tasks/awaiting_promotion/9991/body.md", BEFORE + 50, repo_root=fake_repo
+    )
+    assert label != "rename-only"
+    assert "CORRECTED: the sign is NEGATIVE." in text
+
+
+def test_hop_cap_exhaustion_is_inconclusive_never_rename_only(fake_repo, capsys):
+    """Round-4 BLOCKER, instance (i): a correction followed by
+    ``_MAX_RENAME_CHASE_HOPS + 2`` in-window status moves exhausts the chase
+    with the correction still unreached. Pre-fix the gathered window was
+    all-``R100`` and earned a bare ``rename-only`` — suppressing the diff on
+    exactly the window whose completeness the cap had just truncated. The cap
+    is a LATENCY policy: on exhaustion the label is withheld and the window
+    stays visible."""
+    n_moves = ccb._MAX_RENAME_CHASE_HOPS + 2
+    paths = [fake_repo / "tasks" / f"s{i}" / "9991" for i in range(n_moves + 1)]
+    paths[0].mkdir(parents=True)
+    (paths[0] / "body.md").write_text("original\n")
+    _commit(fake_repo, [paths[0] / "body.md"], "persist body", BEFORE)
+    (paths[0] / "body.md").write_text("CORRECTED: the sign is NEGATIVE.\n")
+    _commit(fake_repo, [paths[0] / "body.md"], "correct body", AFTER)
+    for i in range(n_moves):
+        _status_move(
+            fake_repo, paths[i], paths[i + 1], AFTER + 10 * (i + 1), f"move s{i} -> s{i + 1}"
+        )
+
+    rel = f"tasks/s{n_moves}/9991/body.md"
+    text, label = ccb.body_diff_since(rel, REF, repo_root=fake_repo)
+    assert label != "rename-only"
+    assert text  # the gathered window log + diff stay visible
+    assert "inconclusive" in capsys.readouterr().err  # the truncation is disclosed
+
+
+def test_midchase_log_failure_is_inconclusive_never_rename_only(fake_repo, monkeypatch, capsys):
+    """Round-4 BLOCKER, instance (ii): the round-2 incident fixture (persist,
+    correct at the OLD path, ``git mv``) with the SECOND path-limited
+    ``git log`` — the chase's hop into the rename source — forced to fail.
+
+    Pre-fix the failure surfaced as an EMPTY segment, the loop broke with a
+    one-row all-``R100`` window, and the label read ``rename-only`` with one
+    generic git-failure stderr line and nothing marking the label
+    untrustworthy. A failed probe cannot establish where the window ends, so
+    the label is withheld and the window stays visible."""
+    folder = _make_task(fake_repo, 9991, status="interpreting")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text("CORRECTED: the sign is NEGATIVE.\n")
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 result", AFTER)
+    _status_move(
+        fake_repo,
+        folder,
+        fake_repo / "tasks" / "completed" / "9991",
+        AFTER + 100,
+        "task #9991: interpreting -> completed",
+    )
+
+    real_git = ccb._git
+    seen = {"log_segments": 0}
+
+    def flaky_git(args, *, cwd):
+        if args[0] == "log" and args[1] == "--format=%H%x09%ct%x09%s":
+            seen["log_segments"] += 1
+            if seen["log_segments"] == 2:
+                return None  # what _git returns on rc!=0 / timeout
+        return real_git(args, cwd=cwd)
+
+    monkeypatch.setattr(ccb, "_git", flaky_git)
+    text, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
+    assert seen["log_segments"] >= 2  # the chase's source hop was actually reached
+    assert label != "rename-only"
+    assert text  # the one-row window log + rename diff stay visible
+    assert "inconclusive" in capsys.readouterr().err  # the failure is disclosed
 
 
 def test_cap_truncation_is_disclosed(fake_repo, capsys):
