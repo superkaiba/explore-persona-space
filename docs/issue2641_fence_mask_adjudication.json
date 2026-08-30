@@ -1,0 +1,1618 @@
+{
+  "corpus": {
+    "mode": "glob",
+    "n_files": 4758,
+    "pin": null
+  },
+  "repo_sha": "dcc083d405414856a8f991b0cd3e9ca0460a6364",
+  "stage1": {
+    "mask_changed_files": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/480/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/722/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/763/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/763/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1022/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1022/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1022/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1046/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1046/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1046/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1047/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1047/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1047/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1082/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1082/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1131/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1131/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1138/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1138/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1138/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1149/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1197/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1224/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1224/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1224/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1231/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1235/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1249/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1249/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1270/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1271/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1271/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1271/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1312/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1312/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1326/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1326/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1326/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1390/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1390/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1394/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1394/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1460/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1460/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1469/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1469/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1572/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1572/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1693/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1693/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1713/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1723/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1728/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1728/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1790/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1840/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1840/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1847/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1867/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1868/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1868/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1868/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1890/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1892/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1892/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1924/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1924/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1926/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1940/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1940/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1943/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1943/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1943/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1987/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1993/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1993/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1993/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1993/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2042/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2177/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2177/plans/v5.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2197/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2197/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2241/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2241/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2241/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2241/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2291/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2291/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2291/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/355/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/356/plans/v2-factcheck.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v5.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v6.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v8.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v9.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/578/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/578/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/596/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/596/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/677/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/700/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/700/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/700/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/718/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/718/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/745/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/787/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/788/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/788/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/806/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/806/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/806/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/868/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/868/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/868/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/995/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/995/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/995/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v2.md"
+    ],
+    "n_diff_lines_total": 10882,
+    "n_mask_changed": 153
+  },
+  "stage2": {
+    "forced-experiment": {
+      "affected_checks": [
+        "c12_battery_multiplier",
+        "c19_ood_folds",
+        "c1_source_grounding",
+        "c22_cross_section_param_consistency",
+        "c27_capture_intent_hbm",
+        "c2_measurement_validity",
+        "c30_realized_keys",
+        "c33_ladder_retention",
+        "c39_off_pod_phase_declaration",
+        "c42_commit_sha_resolves",
+        "c46_dispatch_cmd_cli_parse",
+        "c4_contrastive_negatives",
+        "c52_fanout_ram_floor",
+        "c54_workload_cmd_lane_env",
+        "c59_gpu_hours_token_conflict",
+        "c63_declared_width_vs_launch",
+        "c6_reuse_fitness",
+        "c7_replication_fidelity",
+        "c8_success_kill_criteria"
+      ],
+      "n_affected_checks": 19,
+      "n_verdict_moving_files": 37,
+      "overall_flips": [
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+          "new": "PASS",
+          "old": "FAIL"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new": "PASS",
+          "old": "FAIL"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new": "FAIL",
+          "old": "PASS"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new": "FAIL",
+          "old": "PASS"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new": "FAIL",
+          "old": "PASS"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new": "FAIL",
+          "old": "PASS"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+          "new": "PASS",
+          "old": "FAIL"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+          "new": "PASS",
+          "old": "FAIL"
+        },
+        {
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+          "new": "PASS",
+          "old": "FAIL"
+        }
+      ],
+      "per_check_transitions": {
+        "c12_battery_multiplier": {
+          "PASS->SKIP": 3
+        },
+        "c19_ood_folds": {
+          "PASS->SKIP": 4
+        },
+        "c1_source_grounding": {
+          "FAIL->PASS": 11,
+          "FAIL->WARN": 1,
+          "PASS->FAIL": 5,
+          "PASS->WARN": 3
+        },
+        "c22_cross_section_param_consistency": {
+          "PASS->WARN": 1,
+          "WARN->PASS": 1
+        },
+        "c27_capture_intent_hbm": {
+          "PASS->SKIP": 2
+        },
+        "c2_measurement_validity": {
+          "FAIL->PASS": 3,
+          "FAIL->WARN": 2,
+          "PASS->FAIL": 4
+        },
+        "c30_realized_keys": {
+          "PASS->SKIP": 2
+        },
+        "c33_ladder_retention": {
+          "PASS->SKIP": 2
+        },
+        "c39_off_pod_phase_declaration": {
+          "PASS->SKIP": 2,
+          "SKIP->WARN": 3
+        },
+        "c42_commit_sha_resolves": {
+          "PASS->SKIP": 2
+        },
+        "c46_dispatch_cmd_cli_parse": {
+          "PASS->SKIP": 1
+        },
+        "c4_contrastive_negatives": {
+          "PASS->SKIP": 2,
+          "WARN->SKIP": 1
+        },
+        "c52_fanout_ram_floor": {
+          "PASS->SKIP": 1
+        },
+        "c54_workload_cmd_lane_env": {
+          "PASS->SKIP": 1
+        },
+        "c59_gpu_hours_token_conflict": {
+          "PASS->SKIP": 12,
+          "SKIP->PASS": 2
+        },
+        "c63_declared_width_vs_launch": {
+          "PASS->SKIP": 1
+        },
+        "c6_reuse_fitness": {
+          "WARN->SKIP": 2
+        },
+        "c7_replication_fidelity": {
+          "WARN->PASS": 2
+        },
+        "c8_success_kill_criteria": {
+          "FAIL->PASS": 3,
+          "PASS->FAIL": 5,
+          "PASS->WARN": 9,
+          "WARN->PASS": 4
+        }
+      },
+      "rows": [
+        {
+          "check_id": "c46_dispatch_cmd_cli_parse",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c52_fanout_ram_floor",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c54_workload_cmd_lane_env",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c63_declared_width_vs_launch",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c22_cross_section_param_consistency",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/763/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c7_replication_fidelity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c19_ood_folds",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c19_ood_folds",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c19_ood_folds",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c27_capture_intent_hbm",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c30_realized_keys",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c33_ladder_retention",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c39_off_pod_phase_declaration",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c4_contrastive_negatives",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c19_ood_folds",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c27_capture_intent_hbm",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c30_realized_keys",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c33_ladder_retention",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c39_off_pod_phase_declaration",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c4_contrastive_negatives",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1790/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1790/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1847/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1987/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v2.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v3.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c42_commit_sha_resolves",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "FAIL",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c42_commit_sha_resolves",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c22_cross_section_param_consistency",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/356/plans/v2-factcheck.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c7_replication_fidelity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c6_reuse_fitness",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/596/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c6_reuse_fitness",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/596/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c39_off_pod_phase_declaration",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c39_off_pod_phase_declaration",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+          "new_status": "WARN",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c2_measurement_validity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c39_off_pod_phase_declaration",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+          "new_status": "WARN",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c4_contrastive_negatives",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/787/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c12_battery_multiplier",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c12_battery_multiplier",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c12_battery_multiplier",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v3.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c1_source_grounding",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v3.md",
+          "new_status": "PASS",
+          "old_status": "FAIL",
+          "unclosed_at_eof": false
+        }
+      ],
+      "verdict_moving_files": [
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/763/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1790/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1847/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1987/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/356/plans/v2-factcheck.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/596/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/596/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/787/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v3.md"
+      ]
+    },
+    "task": {
+      "affected_checks": [
+        "c15_failloud_test_coverage",
+        "c22_cross_section_param_consistency",
+        "c31_skillmd_prose_pin",
+        "c34_ratchet_headroom",
+        "c37_noflags_bundling_claim",
+        "c41_regression_anchor_executed",
+        "c42_commit_sha_resolves",
+        "c46_dispatch_cmd_cli_parse",
+        "c51_edited_literal_pin_tests",
+        "c52_fanout_ram_floor",
+        "c54_workload_cmd_lane_env",
+        "c59_gpu_hours_token_conflict",
+        "c63_declared_width_vs_launch",
+        "c7_replication_fidelity",
+        "c8_success_kill_criteria"
+      ],
+      "n_affected_checks": 15,
+      "n_verdict_moving_files": 36,
+      "overall_flips": [],
+      "per_check_transitions": {
+        "c15_failloud_test_coverage": {
+          "PASS->SKIP": 2
+        },
+        "c22_cross_section_param_consistency": {
+          "PASS->WARN": 1,
+          "WARN->PASS": 1
+        },
+        "c31_skillmd_prose_pin": {
+          "PASS->SKIP": 1,
+          "SKIP->WARN": 2,
+          "WARN->SKIP": 1
+        },
+        "c34_ratchet_headroom": {
+          "PASS->SKIP": 6
+        },
+        "c37_noflags_bundling_claim": {
+          "WARN->SKIP": 3
+        },
+        "c41_regression_anchor_executed": {
+          "PASS->SKIP": 4,
+          "SKIP->PASS": 3
+        },
+        "c42_commit_sha_resolves": {
+          "PASS->SKIP": 2
+        },
+        "c46_dispatch_cmd_cli_parse": {
+          "PASS->SKIP": 1
+        },
+        "c51_edited_literal_pin_tests": {
+          "PASS->SKIP": 3,
+          "SKIP->PASS": 3
+        },
+        "c52_fanout_ram_floor": {
+          "PASS->SKIP": 1
+        },
+        "c54_workload_cmd_lane_env": {
+          "PASS->SKIP": 1
+        },
+        "c59_gpu_hours_token_conflict": {
+          "PASS->SKIP": 12,
+          "SKIP->PASS": 2
+        },
+        "c63_declared_width_vs_launch": {
+          "PASS->SKIP": 1
+        },
+        "c7_replication_fidelity": {
+          "WARN->PASS": 1
+        },
+        "c8_success_kill_criteria": {
+          "PASS->WARN": 8,
+          "WARN->PASS": 4
+        }
+      },
+      "rows": [
+        {
+          "check_id": "c46_dispatch_cmd_cli_parse",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c52_fanout_ram_floor",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c54_workload_cmd_lane_env",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c63_declared_width_vs_launch",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c22_cross_section_param_consistency",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/763/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c37_noflags_bundling_claim",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1149/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c31_skillmd_prose_pin",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c51_edited_literal_pin_tests",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c31_skillmd_prose_pin",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c51_edited_literal_pin_tests",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c37_noflags_bundling_claim",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c37_noflags_bundling_claim",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c34_ratchet_headroom",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1460/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c34_ratchet_headroom",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1460/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c15_failloud_test_coverage",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c34_ratchet_headroom",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c51_edited_literal_pin_tests",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c15_failloud_test_coverage",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c34_ratchet_headroom",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c51_edited_literal_pin_tests",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1790/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1847/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c31_skillmd_prose_pin",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "WARN",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c59_gpu_hours_token_conflict",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v1.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v2.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v3.md",
+          "new_status": "WARN",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c42_commit_sha_resolves",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c31_skillmd_prose_pin",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c42_commit_sha_resolves",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c51_edited_literal_pin_tests",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": true
+        },
+        {
+          "check_id": "c22_cross_section_param_consistency",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/356/plans/v2-factcheck.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c7_replication_fidelity",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c8_success_kill_criteria",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+          "new_status": "PASS",
+          "old_status": "WARN",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v2.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c41_regression_anchor_executed",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v3.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c34_ratchet_headroom",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v1.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c51_edited_literal_pin_tests",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v1.md",
+          "new_status": "PASS",
+          "old_status": "SKIP",
+          "unclosed_at_eof": false
+        },
+        {
+          "check_id": "c34_ratchet_headroom",
+          "file": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v2.md",
+          "new_status": "SKIP",
+          "old_status": "PASS",
+          "unclosed_at_eof": false
+        }
+      ],
+      "verdict_moving_files": [
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/1090/plans/v5.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/awaiting_promotion/763/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1149/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1176/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1460/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1460/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1790/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1847/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/356/plans/v2-factcheck.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/406/plans/v7.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v5.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/714/plans/v7.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v2.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/874/plans/v3.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v1.md",
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/998/plans/v2.md"
+      ]
+    }
+  },
+  "unclosed_census": {
+    "n_newly_unclosed": 19,
+    "n_unclosed_blind_mask": 13,
+    "n_unclosed_new_mask": 21,
+    "newly_unclosed_files": [
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1275/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1548/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1558/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1716/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v4.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/1860/plans/v5.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v2.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2201/plans/v3.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v1.md",
+      "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2641/tasks/completed/2312/plans/v2.md"
+    ],
+    "tail_lines_swallowed_exclusive_of_opener": 2658,
+    "tail_lines_swallowed_inclusive_of_opener": 2677
+  },
+  "variant": "commonmark"
+}

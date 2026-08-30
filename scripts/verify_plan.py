@@ -716,26 +716,113 @@ def split_frontmatter(text: str) -> tuple[dict, str]:
     return fm, body
 
 
-def _fence_mask(lines: list[str]) -> list[bool]:
-    """Per-line mask: True when the line is a fence delimiter or inside a
-    fenced code block. Both ``` and ~~~ toggle, matching CommonMark's
-    relaxed rule (same behavior as verify_task_body.find_h2_sections)."""
+# CommonMark 0.31.2 §4.5: a code fence is 3+ consecutive backticks OR 3+
+# tildes (never mixed), preceded by up to three spaces of indentation. A
+# tab, or a fourth space, puts the line at indentation >= 4, where §4.4
+# indented-code territory begins and no fence is recognized.
+_FENCE_RE = re.compile(r"^ {0,3}(?P<delim>`{3,}|~{3,})(?P<info>.*)$")
+
+
+def _fence_scan(lines: list[str]) -> tuple[list[bool], int | None]:
+    """Single implementation of the fence walk (#2641).
+
+    Returns ``(mask, unclosed_open_idx)``: the per-line in-code mask, and
+    the 0-based index of an opening fence never closed before end of
+    document (``None`` when every fence closed).
+
+    CommonMark 0.31.2 §4.5, the four rules the pre-#2641 mask ignored:
+    the closing fence must use the SAME character as the opener; it must
+    be AT LEAST as long; it may carry no info string ("Closing code
+    fences cannot have info strings"); and a backtick opener's info
+    string "may not contain any backtick characters". Plus §4.5's
+    indentation bound: a fence is "preceded by up to three spaces of
+    indentation". An unclosed fence runs to end of document ("the code
+    block contains all of the lines after the opening code fence until
+    the end of the containing block (or document)").
+
+    DELIBERATE, MEASURED DEVIATION from strict CommonMark: a line at
+    indentation >= 4 that is NOT inside a fence is left UNMASKED rather
+    than treated as a §4.4 indented code block. §4.4 says an indented
+    code block "cannot interrupt a paragraph", and inside a list item
+    the indentation baseline shifts, so a line-local indent test cannot
+    distinguish indented code from a paragraph continuation or a nested
+    bullet. Measured 2026-08-29 over the 4,761 persisted plan versions
+    present at commit 5cb785f090e: masking them changes 937 files
+    (26,520 lines) instead of 153 files (10,882 lines), which is a
+    different and much larger semantics change than this task's Goal.
+    Indentation here gates fence RECOGNITION only. (Those counts are
+    dated provenance for that decision, not a live invariant: the
+    corpus grows daily.)
+
+    SECOND DEVIATION, inherent to any line-local mask: CommonMark's
+    CONTAINER SCOPE is not implemented. A fence opened inside a list
+    item and never closed inside that item ends at the container
+    boundary in a real parser, but runs to end of DOCUMENT here. This
+    limitation is shared with #2384's ``_c75_strip_code_blocks`` and
+    points in the same direction as the unclosed-fence hazard above;
+    the 19 corpus files that become unclosed-at-EOF under this mask are
+    its empirical surface.
+    """
     mask: list[bool] = []
-    in_fence = False
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("```") or stripped.startswith("~~~"):
-            in_fence = not in_fence
+    fence: str | None = None
+    open_idx: int | None = None
+    for i, line in enumerate(lines):
+        m = _FENCE_RE.match(line)
+        if fence is not None:
+            if (
+                m is not None
+                and m.group("delim")[0] == fence[0]
+                and len(m.group("delim")) >= len(fence)
+                and not m.group("info").strip()
+            ):
+                fence = None
+                open_idx = None
             mask.append(True)
             continue
-        mask.append(in_fence)
-    return mask
+        if m is not None and not (m.group("delim")[0] == "`" and "`" in m.group("info")):
+            fence = m.group("delim")
+            open_idx = i
+            mask.append(True)
+            continue
+        mask.append(False)
+    return mask, open_idx
+
+
+def _fence_mask(lines: list[str]) -> list[bool]:
+    """Per-line mask: True when the line is a fence delimiter or inside a
+    fenced code block, per CommonMark 0.31.2 §4.5 (delimiter CHARACTER and
+    LENGTH aware; see :func:`_fence_scan` for the exact rules and the two
+    deliberate deviations).
+
+    Line-count preserving: exactly one bool per input line, so callers
+    that index raw<->stripped keep their mapping.
+
+    NOT parity with ``verify_task_body.find_h2_sections`` any more (#2641):
+    that module's 25 sibling toggle sites still carry the pre-#2641
+    delimiter-blind rule. Propagating this fix there is filed as a
+    follow-up; until it lands the two verifiers read fences differently
+    and neither docstring should claim otherwise.
+    """
+    return _fence_scan(lines)[0]
+
+
+def unclosed_fence_line(lines: list[str]) -> int | None:
+    """0-based index of a fence opened and never closed before end of
+    document, else ``None``. CommonMark reads everything after such an
+    opener as code, so every fence-aware check silently sees the document
+    only up to that line; ``main()`` surfaces this on stderr (#2641)."""
+    return _fence_scan(lines)[1]
 
 
 def strip_fences(text: str) -> str:
     """Return ``text`` with fenced code blocks (and the fence delimiter
     lines) removed, so example commands inside fences can neither satisfy
-    nor trip a prose-contract check."""
+    nor trip a prose-contract check.
+
+    Fence boundaries follow CommonMark 0.31.2 §4.5 via :func:`_fence_mask`.
+    An UNCLOSED fence therefore removes the whole tail of the document;
+    :func:`unclosed_fence_line` detects that condition and ``main()``
+    reports it (#2641)."""
     lines = text.splitlines()
     mask = _fence_mask(lines)
     return "\n".join(line for line, fenced in zip(lines, mask, strict=True) if not fenced)
@@ -15573,6 +15660,14 @@ def main() -> int:
         source = args.plan_file
         kind = args.kind or "experiment"
 
+    _unclosed = unclosed_fence_line(raw.splitlines())
+    if _unclosed is not None:
+        print(
+            f"verify_plan: NOTE — unclosed code fence opened at line {_unclosed + 1}. "
+            f"CommonMark reads every following line as code, so every fence-aware "
+            f"check sees this document only up to that line (#2641).",
+            file=sys.stderr,
+        )
     overall, results = verify_plan_text(raw, kind=kind, source=source)
 
     # Check 23 (goal currency) needs task context (body.md + events.jsonl),
