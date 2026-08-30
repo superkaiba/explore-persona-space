@@ -846,6 +846,13 @@ GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
     # `fatal()` definition: keying on the fix's own marker was the round-1 shape,
     # under which any wrapper lacking that exact spelling was silently skipped.
     "tests/test_cron_wrapper_log_dir_guard.py": ("scripts/cron_*.sh",),
+    # #2645: the cron wrappers' committed-executable-bit pin. Same reachability
+    # problem as the #2386 row above — a `.sh` path reaches no stem or import
+    # arm — so without this row a mode regression on any wrapper would select
+    # no test at all. (The crontab execs these wrappers directly by absolute
+    # path, so a 100644 index mode kills every fire with `Permission denied`;
+    # the scanning test reads `git ls-files -s` and pins 100755 across the glob.)
+    "tests/test_cron_wrapper_executable_bit.py": ("scripts/cron_*.sh",),
 }
 
 # --- Transitive-consumer pin map (#1589). -------------------------------------
