@@ -1351,8 +1351,15 @@ marker-mode Codex verdict collection — 5b/5c, Step 9a, Step 9a-bis,
 Step 9b VC — trigger-dense or NOT; #2326).** The Codex twins never mutate
 `concerns.jsonl`; the orchestrator forwards their machine-readable
 concern rows blind — the forwarder parses ONLY LINE-START-anchored
-`CONCERN:: ` rows of the EXTRACTED marker block and prints only counts +
-kebab ids, never prose. Extract `$MB` first (the § File-only sed
+`CONCERN::` rows of the EXTRACTED marker block (the space after `::` is
+OPTIONAL as of #2646: the canonical spaced severity-first form AND the
+pipe-delimited severity-second variant both parse, discriminated by the
+closed severity set; ANY other line-start row is MALFORMED and exits 1,
+never a silent drop) and prints only counts + kebab ids, never prose. The forwarder is for CODEX TWIN verdict markers
+ONLY — the Claude reviewers are not sandboxed and persist concerns
+directly via `task.py raise-concern`, never through this forwarder
+(#2646; the #2387 r6 misapplication ran a Claude marker through it).
+Extract `$MB` first (the § File-only sed
 one-liner) even on non-trigger-dense rounds:
 
     MB=/tmp/issue-<N>-<kind>-r<n>-marker.md
