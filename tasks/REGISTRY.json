@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2651,
+  "highest_id": 2652,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12743,6 +12743,13 @@
       "path": "tasks/proposed/2651",
       "status": "proposed",
       "title": "workflow-fix: --check-hub-verify-retry FAIL message invites a lazy-wrap that retries nothing (retry_transient around list_repo_tree)"
+    },
+    "2652": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2652",
+      "status": "proposed",
+      "title": "Re-size the Step 9c ledger-refresh timeout \u2014 it runs at 99% of its own fence"
     },
     "266": {
       "has_clean_result": false,
