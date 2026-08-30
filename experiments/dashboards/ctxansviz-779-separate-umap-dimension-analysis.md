@@ -2,7 +2,7 @@
 
 Dashboard: https://eps.superkaiba.com/ctxansviz-779-separate-umap-dimensions.html
 
-Generated: 2026-08-29 22:23 UTC
+Generated: 2026-08-30 17:42 UTC
 
 ## What was run
 
@@ -22,6 +22,27 @@ Native context and answer k15 neighborhoods overlap by 27.8%. Separate UMAP neig
 Both spaces are heavy-tailed rather than sharply low-rank. Their participation ratios are close, but hundreds of directions are required for 90% variance. The first few directions are strong while a long tail remains collectively important.
 
 The CCA spectrum shows strong descriptive paired linear association. This does not imply the context and answer spaces have the same local neighborhoods, and it is not a held-out prediction score.
+
+## Clustering and LLM categorization
+
+Separate K=50 MiniBatchKMeans models were fit in PCA-100 for all 959,844 contexts and answers. Held-out silhouette is 0.149 for context and 0.137 for answer, so these are useful coarse partitions of overlapping structure rather than sharply separated natural kinds.
+
+A tool-disabled claude-sonnet-5 pass assigned a controlled semantic category, distinctive name, description, and confidence to all 100 role-clusters. Its TF-IDF terms and complete examples were computed exclusively from publication-safe WildChat display rows; no raw LMSYS prompt, answer example, or mixed-corpus vocabulary was sent in the retained pass. Safe evidence was available for 47/50 clusters in each role, and the six evidence-unavailable labels are low confidence.
+
+Context-to-answer KMeans assignments have normalized mutual information 0.489. Context cluster identity accounts for 49.2% of answer-cluster entropy, showing a substantial but non-deterministic cluster-level relationship.
+
+## Spread and entropy
+
+| metric | context | answer | answer/context |
+|---|---:|---:|---:|
+| covariance trace | 2779.83 | 1370.68 | 0.493 |
+| RMS radius | 52.72 | 37.02 | 0.702 |
+| spectral Shannon effective rank | 138.20 | 122.48 | 0.886 |
+| participation ratio | 29.32 | 27.80 | 0.948 |
+| 2NN dimension, n=50k | 12.96 | 14.29 | 1.102 |
+| normalized K=50 entropy | 0.987 | 0.976 | 0.989 |
+
+Contexts have greater absolute global spread and a slightly broader covariance spectrum. Answers have slightly higher 2NN local dimension despite occupying a tighter global envelope. These statements are compatible because the metrics probe different scales. Cluster occupancy is close to uniform in both roles, marginally more so for contexts.
 
 ## Nonlinear / intrinsic dimensionality
 
@@ -51,6 +72,6 @@ PaCMAP or TriMap is the best next 2-D robustness check because it changes the ba
 
 ## Provenance and limits
 
-UMAP artifact SHA-256: `20945accdce42e886689ad044756f63a6c8f3c3709a355f12323a33378622578`; producer `077a39635cd21ac2bac11dda756b1cce19ce956e`. Dimensionality producer: `79d9142bf5c88ae2ccd3ff7270e9d98a1faaaa5d`. Renderer: `7b921155`.
+UMAP artifact SHA-256: `20945accdce42e886689ad044756f63a6c8f3c3709a355f12323a33378622578`; producer `077a39635cd21ac2bac11dda756b1cce19ce956e`. Dimensionality producer: `79d9142bf5c88ae2ccd3ff7270e9d98a1faaaa5d`. Renderer: `836d5fd1+dirty`.
 
-The dashboard exposes 5,436 public-safe display pairs from fixed chunks, with full retained WildChat prompt and answer text. It is designed for qualitative inspection, not population-frequency estimation.
+The dashboard exposes 2,436 public-safe WildChat display pairs from fixed chunks, with complete retained prompt and answer text. It excludes 3,000 LMSYS rows from the public hover layer entirely instead of showing placeholder-only points; their vectors remain in aggregate fits and metrics. It is designed for qualitative inspection, not population-frequency estimation.
