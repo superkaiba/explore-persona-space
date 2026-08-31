@@ -136,12 +136,14 @@ arm on the same scanner: it matches the fixed internal union
 ``issue-(\\d+)-surgical-outcome\\.txt``) plus a ``step9c_baseline\\.py refresh``
 alternate mapped to the reserved pseudo-issue key ``refresh`` (the ledger
 refresh runs the heaviest pytest universe and its own flock bounds it to one
-fleet-wide — it counts as ONE gate). Per matched argv, ALL matched capture
+fleet-wide — it is listed for observability but NOT counted toward the cap,
+#2657). Per matched argv, ALL matched capture
 groups attribute (``finditer``, never ``group(1)`` alone — a wrapper argv
 referencing two issues' artifacts attributes to every matched issue); matches
 group by issue key, ``--exclude-issue N`` drops the caller's own issue, and
-the DISTINCT-foreign-issue count decides the exit: 3 when
-``count >= EPM_GATE_FLEET_MAX`` (env int, default 2), else 0. A malformed env
+the DISTINCT foreign REAL-issue count (refresh excluded, #2657) decides the
+exit: 3 when ``count >= EPM_GATE_FLEET_MAX`` (env int, default 2), else 0.
+A malformed env
 value (non-int / < 1) falls back to the default with a stderr note — never a
 crash, never exit 2 (a wedged env var must not wedge gate launches). The
 internal union regex is FIXED and valid, so ``--fleet`` is until-loop-safe
@@ -3958,8 +3960,9 @@ def cmd_classify_new_nodes(args: argparse.Namespace) -> int:
 # Fleet-arbitration signature union (#1962): the five issue-keyed gate artifact
 # alternates that ride Step 9c / Step 10d / Step 9a-ter gate-launch argvs, plus
 # the ledger ``refresh`` invocation (the heaviest pytest universe; its own flock
-# bounds it to one fleet-wide, so it counts as ONE gate under the reserved
-# pseudo-issue key FLEET_REFRESH_KEY). FIXED and valid by construction, so
+# bounds it to one fleet-wide, so it is LISTED under the reserved pseudo-issue
+# key FLEET_REFRESH_KEY for observability but NOT counted toward the cap,
+# #2657). FIXED and valid by construction, so
 # ``probe --fleet`` is until-loop-safe (exit 2 stays argparse/usage-only for
 # the fleet form). #2256: the lint/surgical gate workloads are composed to
 # script FILES (``/tmp/issue-<N>-lint-gate.sh`` / ``issue-<N>-surgical-gate.sh``,
@@ -4034,9 +4037,11 @@ def _cmd_probe_fleet(args: argparse.Namespace) -> int:
 
     Prints one summary line per FOREIGN gate issue
     (``issue=<M>\\tpids=<k>\\t<sample argv>``, argv truncated to
-    ``FLEET_ARGV_SAMPLE_CHARS``; the refresh pseudo-issue prints
-    ``issue=refresh``), then exits 3 when the DISTINCT foreign-issue count
-    reaches ``EPM_GATE_FLEET_MAX`` (default 2), else 0.
+    ``FLEET_ARGV_SAMPLE_CHARS``; a live ledger refresh prints
+    ``issue=refresh`` for observability but is NOT counted toward the cap,
+    #2657), then exits 3 when the DISTINCT foreign REAL-issue count
+    (refresh excluded, #2657) reaches ``EPM_GATE_FLEET_MAX`` (default 2),
+    else 0.
     """
     grouped = _fleet_gate_issues(args.exclude_issue)
 
@@ -4046,7 +4051,19 @@ def _cmd_probe_fleet(args: argparse.Namespace) -> int:
     for key in sorted(grouped, key=_order):
         rows = grouped[key]
         print(f"issue={key}\tpids={len(rows)}\t{rows[0][1][:FLEET_ARGV_SAMPLE_CHARS]}")
-    return 3 if len(grouped) >= _fleet_max() else 0
+    countable = [key for key in grouped if key != FLEET_REFRESH_KEY]
+    over_cap = len(countable) >= _fleet_max()
+    if FLEET_REFRESH_KEY in grouped and not over_cap and len(grouped) >= _fleet_max():
+        # Fires only when the refresh exclusion is what OPENED the slot — i.e. the
+        # pre-#2657 predicate would have returned 3 here. Deliberately NOT logged on
+        # every call: the sanctioned until-loop (13-step-9.md:3235) redirects stdout
+        # only, so an unconditional note would print once per 60 s poll into a queued
+        # session's transcript for as long as a refresh is live (~45 lines).
+        _log(
+            f"probe --fleet: issue={FLEET_REFRESH_KEY} live (single-flight ledger "
+            f"refresh) — listed but NOT counted toward {FLEET_MAX_ENV} (#2657)"
+        )
+    return 3 if over_cap else 0
 
 
 def _ancestor_pids() -> set[int]:
@@ -4434,8 +4451,9 @@ def build_parser() -> argparse.ArgumentParser:
     probe_target.add_argument(
         "--fleet",
         action="store_true",
-        help="fleet arbitration (#1962): count DISTINCT foreign issues with live gate "
-        "trees (fixed internal signature union incl. the ledger-refresh pseudo-issue); "
+        help="fleet arbitration (#1962): count DISTINCT foreign REAL issues with live "
+        "gate trees (fixed internal signature union; a live ledger refresh prints as "
+        "pseudo-issue `refresh` but is not counted toward the cap, #2657); "
         "exit 3 when count >= EPM_GATE_FLEET_MAX (default 2), else 0",
     )
     p_probe.add_argument(

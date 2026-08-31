@@ -3510,7 +3510,8 @@ def test_probe_helpers_real_body():
 #
 # Fleet contract (docstring table): group live FOREIGN gate processes by issue
 # key via the FIXED FLEET_GATE_SIGNATURE_RE union (five issue-keyed gate
-# artifact alternates + the ledger-refresh pseudo-issue; #2256 broadened
+# artifact alternates + the ledger-refresh pseudo-issue (listed, NOT counted
+# toward the cap — #2657); #2256 broadened
 # lint-gate-tree -> lint-gate and added surgical-gate so the #2115 script-file
 # launcher's whole-life workload argvs attribute); --exclude-issue N drops the
 # caller's own
@@ -3682,9 +3683,12 @@ def test_probe_fleet_exit_semantics_and_env_threshold(monkeypatch, capsys):
     assert args.func(args) == 3  # count 2 >= 1
 
 
-def test_probe_fleet_refresh_pseudo_issue_counts_toward_cap(monkeypatch, capsys):
-    """The ledger-refresh alternate counts as ONE gate under the reserved
-    pseudo-issue key and prints a recognizable issue=refresh line."""
+def test_probe_fleet_refresh_listed_not_counted(monkeypatch, capsys):
+    """The ledger-refresh alternate is LISTED under the reserved pseudo-issue
+    key (recognizable issue=refresh stdout line, byte-unchanged) but NOT
+    counted toward EPM_GATE_FLEET_MAX (#2657): refresh + one real foreign
+    issue stays under the default cap 2 (exit 0, was 3 pre-#2657), and the
+    not-counted note lands on stderr (the slot-opening case)."""
     rows = [
         (501, "/usr/bin/python scripts/step9c_baseline.py refresh --json"),
         (502, "pytest --junitxml=/tmp/step9c-junit-issue-9.xml"),
@@ -3692,9 +3696,58 @@ def test_probe_fleet_refresh_pseudo_issue_counts_toward_cap(monkeypatch, capsys)
     monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
     monkeypatch.delenv("EPM_GATE_FLEET_MAX", raising=False)
     args = sb.build_parser().parse_args(["probe", "--fleet", "--exclude-issue", "9999"])
-    assert args.func(args) == 3  # refresh + issue 9 = 2 distinct >= default 2
+    assert args.func(args) == 0  # refresh listed, not counted: 1 real < default 2
+    captured = capsys.readouterr()
+    assert "issue=refresh\tpids=1\t" in captured.out
+    assert "NOT counted" in captured.err
+
+
+def test_probe_fleet_own_refresh_plus_one_foreign_opens_slot_2657(monkeypatch, capsys):
+    """#2654 incident shape: the caller's own detached refresh + ONE genuine
+    foreign gate saturated the default cap 2 and deadlocked the caller's gate
+    for the refresh's 4650 s bound. Post-#2657 the refresh is listed, not
+    counted: the probe exits 0 for the refresh's owner."""
+    rows = [
+        (701, "/usr/bin/python scripts/step9c_baseline.py refresh"),
+        (702, "pytest --junitxml=/tmp/step9c-junit-issue-2650.xml"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    monkeypatch.delenv("EPM_GATE_FLEET_MAX", raising=False)
+    args = sb.build_parser().parse_args(["probe", "--fleet", "--exclude-issue", "2654"])
+    assert args.func(args) == 0  # pre-fix: 3 (the deadlock)
     out = capsys.readouterr().out
-    assert "issue=refresh\tpids=1\t" in out
+    assert "issue=refresh\tpids=1\t" in out and "issue=2650\tpids=1\t" in out
+
+
+def test_probe_fleet_two_real_foreign_plus_refresh_still_exit_3(monkeypatch):
+    """Cap-purpose preservation (#2657): the melt scenario is N REAL foreign
+    issues — a live refresh must not mask it. refresh + issue 11 + issue 22
+    at the default cap 2 still exits 3."""
+    rows = [
+        (801, "/usr/bin/python scripts/step9c_baseline.py refresh --json"),
+        (802, "pytest --junitxml=/tmp/step9c-junit-issue-11.xml"),
+        (803, "bash /tmp/issue-22-lint-gate.sh"),
+    ]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    monkeypatch.delenv("EPM_GATE_FLEET_MAX", raising=False)
+    args = sb.build_parser().parse_args(["probe", "--fleet"])
+    assert args.func(args) == 3  # 2 real >= default 2 regardless of the refresh
+
+
+def test_probe_fleet_refresh_note_absent_when_cap_not_tripped(monkeypatch, capsys):
+    """The not-counted stderr note fires ONLY when the refresh exclusion is
+    what OPENED the slot (i.e. the pre-#2657 predicate would have exited 3).
+    A live refresh alone — cap 2 nowhere near tripped either way — prints NO
+    note: an unconditional note would land once per 60 s until-loop poll
+    into a queued session's transcript (#2657)."""
+    rows = [(901, "/usr/bin/python scripts/step9c_baseline.py refresh --json")]
+    monkeypatch.setattr(sb, "_probe_matches", lambda pattern: rows)
+    monkeypatch.delenv("EPM_GATE_FLEET_MAX", raising=False)
+    args = sb.build_parser().parse_args(["probe", "--fleet"])
+    assert args.func(args) == 0
+    captured = capsys.readouterr()
+    assert "issue=refresh\tpids=1\t" in captured.out
+    assert "NOT counted" not in captured.err
 
 
 def test_probe_fleet_malformed_env_falls_back_to_default(monkeypatch, capsys):

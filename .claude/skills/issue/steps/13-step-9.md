@@ -3227,8 +3227,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe --fleet --exclude-issue <N>`
       — exit 0 = under the cap, launch; exit 3 = >= `EPM_GATE_FLEET_MAX`
       (default 2) FOREIGN issues have live gate trees (one
-      `issue=<M><TAB>pids=<k><TAB><sample argv>` line each; the ledger
-      refresh counts as pseudo-issue `refresh`). On exit 3, QUEUE via the
+      `issue=<M><TAB>pids=<k><TAB><sample argv>` line each; a live ledger
+      refresh prints as pseudo-issue `refresh` for observability but
+      does NOT count toward the cap — it is report-only and its own
+      single-flight flock bounds it to one fleet-wide, #2657). On exit 3,
+      QUEUE via the
       sanctioned bounded Monitor until-loop — the `--fleet` form's internal
       signature union is FIXED and valid, so the loop can never spin on
       exit 2:
