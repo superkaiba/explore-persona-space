@@ -230,41 +230,73 @@ def cited_body_path(issue: int) -> Path | None:
     return folder / "body.md"
 
 
-def _git(args: list[str], *, cwd: Path, strip: bool = True) -> str | None:
-    """Run git under a 10 s timeout, returning stripped stdout; ``None`` on
+def _git_raw(args: list[str], *, cwd: Path) -> bytes | None:
+    """Run git under a 10 s timeout and return raw stdout BYTES; ``None`` on
     non-zero rc / timeout / missing binary or cwd — logged to stderr, never
-    silent, and never fatal (per-id fail-soft skip). ``strip=False`` is for
-    reads whose value is file CONTENT, where a stripped trailing newline
-    would make two different bodies compare equal.
+    silent, and never fatal (per-id fail-soft skip).
 
-    ``errors="replace"`` is load-bearing: git echoes PATHS and COMMIT SUBJECTS
-    verbatim, and neither is guaranteed UTF-8 (a latin-1 filename, a subject
-    committed under a non-UTF-8 locale). Under the default strict decoding
-    those bytes raise ``UnicodeDecodeError`` from inside ``subprocess.run`` —
-    an exception class this helper does not catch, so the whole probe would
-    die on a body whose commit history merely mentions a non-UTF-8 name
-    (#2384 round-2 blocker 3)."""
+    The SINGLE subprocess site (#2654 round 2): :func:`_git` and
+    :func:`_git_text_lossless` are thin decodes over this. Byte-faithful
+    because BOTH lossy transforms live in the decode, not in the capture —
+    ``text=True`` is what translates ``\\r\\n`` and lone ``\\r`` to ``\\n``,
+    and ``errors="replace"`` is what collapses distinct invalid byte
+    sequences to one U+FFFD. Callers comparing file CONTENT for equality
+    MUST come through here (or :func:`_git_text_lossless`), never through
+    :func:`_git`; a test forcing an endpoint-read failure patches THIS
+    function (or :func:`_git_text_lossless`) — a fake patching only
+    ``_git`` no longer intercepts a content read. stderr is decoded
+    fail-soft (``errors="replace"``) for the log line only."""
     try:
         proc = subprocess.run(
             ["git", *args],
             cwd=str(cwd),
             capture_output=True,
-            text=True,
-            errors="replace",
             timeout=_GIT_TIMEOUT_S,
         )
     except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
         print(f"check_cited_body_currency: git {args[0]} failed: {exc}", file=sys.stderr)
         return None
     if proc.returncode != 0:
-        err = (proc.stderr or "").strip().splitlines()
+        err = (proc.stderr or b"").decode("utf-8", errors="replace").strip().splitlines()
         print(
             f"check_cited_body_currency: git {args[0]} rc={proc.returncode}"
             + (f": {err[0][:160]}" if err else ""),
             file=sys.stderr,
         )
         return None
-    return proc.stdout.strip() if strip else proc.stdout
+    return proc.stdout
+
+
+def _git(args: list[str], *, cwd: Path) -> str | None:
+    """Run git via :func:`_git_raw`, returning stripped fail-soft-decoded
+    stdout; ``None`` on failure — the unchanged public contract every
+    log / diff / subject / rev-parse read keeps.
+
+    ``errors="replace"`` is load-bearing here: git echoes PATHS and COMMIT
+    SUBJECTS verbatim, and neither is guaranteed UTF-8 (a latin-1 filename,
+    a subject committed under a non-UTF-8 locale) — under strict decoding
+    those bytes would raise ``UnicodeDecodeError`` and kill the whole probe
+    (#2384 round-2 blocker 3). That replacement is MANY-TO-ONE, and the
+    ``.strip()`` drops trailing whitespace, so this helper must never feed
+    a file-CONTENT equality check: content reads use
+    :func:`_git_text_lossless` (#2654 round 2)."""
+    out = _git_raw(args, cwd=cwd)
+    return None if out is None else out.decode("utf-8", errors="replace").strip()
+
+
+def _git_text_lossless(args: list[str], *, cwd: Path) -> str | None:
+    """Stdout decoded INJECTIVELY — ``errors="surrogateescape"``, no strip,
+    no newline translation — so string equality implies BYTE equality.
+
+    ``surrogateescape`` round-trips every byte sequence (invalid bytes map
+    to distinct lone surrogates), and ``bytes.decode`` performs no
+    universal-newline translation at all, so the resulting ``str`` is a
+    faithful stand-in for the blob. That is what lets
+    :func:`classify_window` compare bodies as strings while claiming byte
+    equality; the existing ``str``-based :func:`split_frontmatter` needs no
+    bytes variant (#2654 round 2, concern ``lossy-decode-endpoint-read``)."""
+    out = _git_raw(args, cwd=cwd)
+    return None if out is None else out.decode("utf-8", errors="surrogateescape")
 
 
 def resolve_repo_root() -> Path:
@@ -695,7 +727,11 @@ def classify_window(
     window reads as body-identical and earns the label — correct for the
     label's literal claim (the cited text at HEAD matches what the window
     started with) and consistent with the gate's STALE verdict, which is
-    driven by commit recency, not by content. Like ``conclusive``, the two
+    driven by commit recency, not by content. The endpoint texts arrive via
+    a LOSSLESS decode (:func:`_git_text_lossless`: ``surrogateescape``, no
+    strip, no newline translation), so the string equality tested below
+    implies BYTE equality — the label's central claim (#2654 round 2,
+    concern ``lossy-decode-endpoint-read``). Like ``conclusive``, the two
     text parameters deliberately have NO defaults: a permissive default on a
     safety input would re-open the hazard at any future call site."""
     if not conclusive:
@@ -735,9 +771,11 @@ def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple
     ``frontmatter-only`` included — is emitted ONLY on a CONCLUSIVE chase end
     (#2384 rounds 4-5); an inconclusive end leaves the label ``None`` and the
     diff visible — conservative. The two gated ``git show`` reads that fetch
-    the window's endpoint texts run only on a conclusive, non-``rename-only``,
-    diff-bearing window; either read failing — or the gate declining to
-    fetch — leaves the label ``None`` with the diff visible."""
+    the window's endpoint texts (byte-faithfully, via
+    :func:`_git_text_lossless` — #2654 round 2) run only on a conclusive,
+    non-``rename-only``, diff-bearing window; either read failing — or the
+    gate declining to fetch — leaves the label ``None`` with the diff
+    visible."""
     window, conclusive = _window_history(rel_path, since_unix, repo_root=repo_root)
     if not window:
         return "", None
@@ -746,17 +784,19 @@ def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple
     paths = window_pathspec(window, rel_path)
     diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", *paths], cwd=repo_root) or ""
     # GATE (load-bearing, #2654 plan §3.1(d)): fetch ONLY on the one shape
-    # that can reach the text comparison in classify_window. Two pre-existing
-    # tests monkeypatch the module `_git` with fakes whose signature is
-    # exactly `(args, *, cwd)` on INCONCLUSIVE windows that still reach this
-    # tail — an UNGATED `strip=False` call would TypeError them.
+    # that can reach the text comparison in classify_window — the cost
+    # control plan §2 promises (no endpoint reads on an inconclusive,
+    # rename-only, or diff-less window). Round 2 rerouted the reads through
+    # _git_text_lossless (byte-faithful), so the round-1 TypeError rationale
+    # (monkeypatched `_git` fakes with `(args, *, cwd)` signatures) is moot;
+    # the COST rationale is not — relaxing this gate is a plan-§9 must-ask.
     need_text = conclusive and bool(diff) and not is_rename_only_window(window)
     old_text = new_text = None
     if need_text:
         oldest = window[-1]
         old_path = oldest.prev_path or oldest.path or rel_path
-        old_text = _git(["show", f"{oldest_sha}^:{old_path}"], cwd=repo_root, strip=False)
-        new_text = _git(["show", f"HEAD:{rel_path}"], cwd=repo_root, strip=False)
+        old_text = _git_text_lossless(["show", f"{oldest_sha}^:{old_path}"], cwd=repo_root)
+        new_text = _git_text_lossless(["show", f"HEAD:{rel_path}"], cwd=repo_root)
     label = classify_window(
         window, diff, conclusive=conclusive, old_text=old_text, new_text=new_text
     )

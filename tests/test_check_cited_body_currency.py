@@ -965,21 +965,146 @@ def test_conclusive_all_r100_window_skips_endpoint_fetch(fake_repo, monkeypatch)
         "task #9991: running -> completed",
     )
 
-    real_git = ccb._git
+    real_git_raw = ccb._git_raw
     seen = {"content_shows": 0}
 
-    def counting_git(args, *, cwd, strip=True):
+    def counting_git_raw(args, *, cwd):
         # A content read is exactly `git show <rev>:<path>` — two args, no
         # flags; the batched `--name-status` probe also spells "show" but
-        # always carries flag arguments.
+        # always carries flag arguments. Counted on `_git_raw` (#2654 round
+        # 2): the single subprocess site EVERY read routes through — the
+        # endpoint content reads go via `_git_text_lossless`, so a wrapper
+        # patching only `_git` would no longer see them.
         if args[0] == "show" and len(args) == 2:
             seen["content_shows"] += 1
-        return real_git(args, cwd=cwd, strip=strip)
+        return real_git_raw(args, cwd=cwd)
 
-    monkeypatch.setattr(ccb, "_git", counting_git)
+    monkeypatch.setattr(ccb, "_git_raw", counting_git_raw)
     _, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
     assert label == "rename-only"
     assert seen["content_shows"] == 0  # the gate skipped both endpoint reads
+
+
+# ── #2654 round 2: the endpoint reads are BYTE-faithful (concern
+#    `lossy-decode-endpoint-read`). Fixture helpers first: the exotic bytes
+#    must survive INTO the blob, or these tests pass vacuously. ─────────────
+
+
+def _commit_verbatim(repo: Path, paths: list[Path], msg: str, unix: int) -> None:
+    """Stage + commit with git's EOL clean filter defeated
+    (``-c core.autocrlf=false`` on the ``add`` AND the ``commit`` —
+    conversion happens at staging time). The #2654 round-2 fixtures must
+    land their exotic bytes (a lone CR, an invalid UTF-8 byte) in the BLOB
+    verbatim; the repo under test sets ``core.autocrlf = input``, which
+    would otherwise clean a CR at commit and make the tests silently
+    vacuous. Pairs with the fixture repo's ``* -text`` ``.gitattributes``."""
+    stamp = f"{unix} +0000"
+    _git(repo, "-c", "core.autocrlf=false", "add", "--", *[str(p) for p in paths])
+    _git(
+        repo,
+        "-c",
+        "core.autocrlf=false",
+        "commit",
+        "-q",
+        "-m",
+        msg,
+        env_extra={"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp},
+    )
+
+
+def _blob_bytes(repo: Path, rel: str) -> bytes:
+    """The committed blob at ``HEAD:<rel>`` as raw BYTES (no text decode) —
+    the fixture-is-real readback assertion of #2654 round 2: a future
+    EOL-config change turns these tests into loud failures here rather than
+    silent passes downstream."""
+    return subprocess.run(
+        ["git", "-C", str(repo), "show", f"HEAD:{rel}"], check=True, capture_output=True
+    ).stdout
+
+
+def test_conclusive_body_byte_change_invisible_to_lossy_decode_is_unlabeled(fake_repo):
+    """#2654 round-2 pin (concern ``lossy-decode-endpoint-read``, leg 1:
+    universal-newline translation). A body whose only content change is a
+    lone ``\\r`` becoming ``\\n``, committed TOGETHER WITH a genuine
+    frontmatter edit, must NOT read ``frontmatter-only``: the body BYTES
+    changed.
+
+    Pre-fix the endpoint reads decoded through ``subprocess.run(text=True)``
+    — universal-newline translation maps both ``\\r\\n`` and a lone ``\\r``
+    to ``\\n`` — so the two byte-DISTINCT bodies compared EQUAL as strings
+    and the label fired on a real body change. Post-fix the reads route
+    through ``_git_raw`` bytes + a ``surrogateescape`` decode with no
+    newline translation, so string equality implies byte equality. (A test
+    forcing an endpoint-read FAILURE patches ``_git_raw`` or
+    ``_git_text_lossless`` — patching ``_git`` no longer intercepts a
+    content read.)
+
+    Fixture-is-real guards, each load-bearing: the CR is written in BINARY
+    mode (``write_bytes`` — ``write_text`` applies newline translation and
+    would defeat the fixture before git ever sees it), committed with the
+    EOL filters defeated (``_commit_verbatim`` + ``* -text``), and the
+    committed blob is read BACK with a ``\\r`` presence assert."""
+    (fake_repo / ".gitattributes").write_bytes(b"* -text\n")
+    folder = fake_repo / "tasks" / "completed" / "9991"
+    folder.mkdir(parents=True)
+    rel = "tasks/completed/9991/body.md"
+    old = _FM_BODY.replace("RESULT: the sign is POSITIVE.", "RESULT: A\rB").encode("utf-8")
+    (folder / "body.md").write_bytes(old)
+    _commit_verbatim(
+        fake_repo, [fake_repo / ".gitattributes", folder / "body.md"], "persist #9991 body", BEFORE
+    )
+    assert b"A\rB" in _blob_bytes(fake_repo, rel), "fixture vacuous: git cleaned the lone CR"
+
+    new = (
+        _FM_BODY.replace("RESULT: the sign is POSITIVE.", "RESULT: A\nB")
+        .replace("classification: pending", "classification: useful")
+        .encode("utf-8")
+    )
+    (folder / "body.md").write_bytes(new)
+    _commit_verbatim(fake_repo, [folder / "body.md"], "CR->LF + promotion sweep", AFTER)
+    assert b"A\rB" not in _blob_bytes(fake_repo, rel)  # the byte change really landed
+    assert b"A\nB" in _blob_bytes(fake_repo, rel)
+
+    _, label = ccb.body_diff_since(rel, REF, repo_root=fake_repo)
+    assert label is None  # the BODY bytes changed; "frontmatter-only" would be false
+
+
+def test_conclusive_invalid_utf8_body_change_is_unlabeled(fake_repo):
+    """#2654 round-2 pin (concern ``lossy-decode-endpoint-read``, leg 2:
+    many-to-one replacement decode). Two bodies differing only in an
+    INVALID UTF-8 byte (``0xff`` vs ``0xfe``), plus a genuine frontmatter
+    edit, must NOT read ``frontmatter-only``.
+
+    Pre-fix ``errors="replace"`` collapsed BOTH invalid bytes to the same
+    U+FFFD, the bodies compared equal, and the label fired on a real body
+    change; under ``surrogateescape`` they decode to DISTINCT lone
+    surrogates. Same binary-write + EOL-filter-defeat + blob-readback
+    fixture guards as the CR test above; an endpoint-read-failure fake
+    would patch ``_git_raw``, not ``_git``."""
+    (fake_repo / ".gitattributes").write_bytes(b"* -text\n")
+    folder = fake_repo / "tasks" / "completed" / "9991"
+    folder.mkdir(parents=True)
+    rel = "tasks/completed/9991/body.md"
+    old = _FM_BODY.encode("utf-8").replace(
+        b"RESULT: the sign is POSITIVE.", b"RESULT: raw byte \xff."
+    )
+    (folder / "body.md").write_bytes(old)
+    _commit_verbatim(
+        fake_repo, [fake_repo / ".gitattributes", folder / "body.md"], "persist #9991 body", BEFORE
+    )
+    assert b"\xff" in _blob_bytes(fake_repo, rel), "fixture vacuous: 0xff not in the blob"
+
+    new = (
+        _FM_BODY.replace("classification: pending", "classification: useful")
+        .encode("utf-8")
+        .replace(b"RESULT: the sign is POSITIVE.", b"RESULT: raw byte \xfe.")
+    )
+    (folder / "body.md").write_bytes(new)
+    _commit_verbatim(fake_repo, [folder / "body.md"], "byte swap + promotion sweep", AFTER)
+    assert b"\xfe" in _blob_bytes(fake_repo, rel), "fixture vacuous: 0xfe not in the blob"
+
+    _, label = ccb.body_diff_since(rel, REF, repo_root=fake_repo)
+    assert label is None  # the BODY bytes changed; "frontmatter-only" would be false
 
 
 @pytest.mark.parametrize(
