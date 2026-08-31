@@ -12712,8 +12712,8 @@
     "2648": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2648",
-      "status": "proposed",
+      "path": "tasks/on_hold/2648",
+      "status": "on_hold",
       "title": "Clear the torch-before-dotenv red on main that reds every Step 9c gate"
     },
     "2649": {
