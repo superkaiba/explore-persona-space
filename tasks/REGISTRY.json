@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2655,
+  "highest_id": 2656,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12771,6 +12771,13 @@
       "path": "tasks/archived/2655",
       "status": "archived",
       "title": "Step 5a spec-freshness sync imports half an atomic main change, redding the Step 10d gate as payload-attributed (GLOB_SCAN_TESTS map row without its tests/ file)"
+    },
+    "2656": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2656",
+      "status": "proposed",
+      "title": "main-red: single bare hf_hub_download on main (issue1901_singleturn_retrieval_final.py:133) keeps --check-live-hf-retry-routing + no-flags red fleet-wide"
     },
     "266": {
       "has_clean_result": false,
