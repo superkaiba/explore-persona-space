@@ -483,6 +483,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_atomic_io.py",
     "tests/test_autonomous_plan_gate.py",
     "tests/test_autonomous_session_watch.py",
+    # NEW (#2387) — cron-wrapper telegram-push timeout-bound scanner (the sole
+    # coverage vehicle for the two never-executed watch scripts)
+    "tests/test_cron_push_bounded.py",
     # NEW (#1630) — /daily SKILL.md pathspec-commit (own-files-only) pin
     "tests/test_daily_skill_commit_pathspec_pin.py",
     # NEW (#1645) — /daily SKILL.md stub-first rule + healthcheck cross-file pin (#1189)
