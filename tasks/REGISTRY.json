@@ -12761,8 +12761,8 @@
     "2654": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2654",
-      "status": "proposed",
+      "path": "tasks/planning/2654",
+      "status": "planning",
       "title": "workflow-fix: cited-body gate labels Word:-prefixed content corrections 'frontmatter-only' (fm_line over-matches ordinary prose)"
     },
     "266": {
