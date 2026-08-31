@@ -12691,8 +12691,8 @@
     "2645": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2645",
-      "status": "running",
+      "path": "tasks/completed/2645",
+      "status": "completed",
       "title": "cron_step9c_ledger_refresh.sh is committed non-executable \u2014 #2114's nightly refresh has failed Permission denied for 18 nights"
     },
     "2646": {
