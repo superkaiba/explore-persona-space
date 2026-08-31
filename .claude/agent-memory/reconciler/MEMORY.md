@@ -83,6 +83,7 @@
 ## Codex code-review overreach (PASS-leaning calibration)
 
 - [Codex FAILs pre-existing resume metadata clobber](feedback_codex_fails_preexisting_resume_metadata_clobber.md) — zero round-introduced
+- [Lossy text-transport Critical vs corpus reachability](feedback_codex_lossy_text_transport_critical_vs_corpus_reachability.md) — probe mechanism, scan actual blobs for the byte shapes, loud-vs-silent (#2654 r1)
 - [Round-added duties on verbatim-adoption commits](feedback_codex_binds_round_added_duties_on_verbatim_adoption_commits.md) — `A`-status ≠ round-authored; live-list count premises (#2584)
 - [Codex validation-after-engine-init ordering blocker](feedback_codex_validation_after_engine_init_ordering.md) — gate topology decides
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — check reachability yourself
