@@ -1,6 +1,6 @@
 # Reconciler memory index — open the file when a hook matches the disagreement.
 
-- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — false claim FAILs despite all-NIT (#2263 r6/r7)
+- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — false claim FAILs despite all-NIT (#2263 r6/r7); same-task reconcile precedent arms it too, split behavioral vs prose (#2387 r11)
 
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
