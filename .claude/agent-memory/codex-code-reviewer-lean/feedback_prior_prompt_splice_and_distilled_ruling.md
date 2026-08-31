@@ -46,6 +46,32 @@ findings, or conclusions; one ruling claim was to be posed as a QUESTION.
    Tests section — a scoped "could not check X" beats inference presented as
    confirmation.
 
+**Standing-recommendation (PASS) round variant (#2384 r5, 2026-08-30):** the
+same splice recipe held (r4 prompt as donor, guard greps clean, 141 KB
+assembled; all count checks passed first try). Deltas vs the FAIL-fix shape:
+
+- Reconcile was PASS with two persisted CONCERNs + two standing
+  recommendations the round implements exactly → compose the sibling
+  #2552-r4 flip ("the recommendations ARE the round contract;
+  NOT-implemented / falsely-claimed = substantive FAIL; honest disclosed
+  partial ⇒ CONCERNS + same-id row") and the ledger split: target ids
+  latest=addressed ⇒ a failed closure REQUIRES the same-id row (the
+  re-open mechanism). Attest the superseded severity chain (raised BLOCKER
+  → reconciler deferred → re-raised CONCERN) or the twin re-escalates from
+  the stale BLOCKER row.
+- Brief handed over prior /tmp harness dirs (implementer mutant legs +
+  reconciler mimic-base): sanction REUSE in F12 but with a
+  provenance-verification duty — diff each baseline/mutant against the git
+  ref it claims to mirror before trusting it; a mismatched harness is
+  evidence-VOID, rebuild from `git show`.
+- Execution posture flipped: Codex executed successfully in r4 → lead with
+  "execution EXPECTED available"; keep the never-fabricate +
+  per-finding provenance labels unchanged.
+- Impl marker head sentinel carries the implementer's ROUND numbering (v5)
+  while the events.jsonl version is higher (v7) — pre-attest the mapping in
+  the marker intro, or the twin flags it as a shape defect.
+
 See sibling memory (codex-code-reviewer): feedback_closure_verification_round_compose
 (#2384 r2), feedback_measured_deviation_fix_round_compose (#2384 r3),
-feedback_revision_round_compose_recipe (the general round-2+ deltas).
+feedback_concern_discharge_round_severity_fence (the #2552-r4 flip + row
+rules), feedback_revision_round_compose_recipe (the general round-2+ deltas).

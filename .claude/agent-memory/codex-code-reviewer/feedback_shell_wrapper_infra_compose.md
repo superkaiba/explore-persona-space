@@ -575,3 +575,91 @@ file, +440/−858):**
     (weight theirs). Also: the v8 body carried NO versioned HTML head
     sentinel (v7 had one) — flag in the RETURN only when marker-shape is
     barred; never hand it as a shape finding.
+
+**#2387 r9 (2026-08-30) — POST-RECONCILER-FAIL closure round (Claude PASS /
+Codex FAIL / reconciler BINDING FAIL upholding the twin's blocker on
+measurement; the round closes the twin's OWN upheld blocker + three
+persisted siblings):**
+
+66. **The reconciler's /tmp measurement harness is an ADJUDICATION RECORD —
+    sanction re-runs only via a COPY.** `/tmp/recon2387/adjudicate.py`
+    rewrites its own fixture `.sh` + `.execlog` files in its hardcoded WORK
+    dir on every run; a twin re-running it in place would overwrite the
+    round-8 evidence. Compose: dir read-only in place; copy adjudicate.py,
+    repoint ONLY `WORK` (+ `MOD_PATH` for the pre-fix arm), run post-canary.
+    Feasibility fact to hand: the scanner module imports pytest at module
+    level and system python3 lacks pytest → `uv run python` or a
+    pytest-stubbed /tmp module copy (state both routes or the twin marks the
+    ordered re-run BLOCKED).
+67. **Brief-encoded calibration rules go into the severity fence VERBATIM,
+    paired:** (a) honest open-channel disclosure is never penalized — the
+    binding record itself ruled the class narrowed-not-eliminated and
+    sanctioned disclose-or-close; what the twin judges is disclosure
+    ACCURACY + trust-argument STRENGTH; (b) a dangerous-direction failure in
+    the new load-bearing mechanism (lookalike classified as real heredoc ⇒
+    live commands silently excluded) is a BLOCKER regardless of other
+    improvement. Without (a) the twin penalizes the honesty the record
+    ordered; without (b) it nets the improvement against the residual.
+68. **A trust argument ("open members are reachable only by deliberate decoy
+    text") composes as an innocent-refactor CONSTRUCTION duty** — hand
+    candidate shapes (dry-run echo of the push command, usage strings,
+    command arrays, herestrings, eval-staged variables), not conclusions;
+    success = the stated argument is weakened = a finding weighted by edit
+    realism.
+69. **All-`raised` ledger with zero `addressed` rows because the implementer
+    skipped `address-concern` = bookkeeping lag, said in one Round fact:**
+    score closure on the CODE, never on event state, and no finding about
+    the missing rows (the #2385 item-6 shape recurring; brief confirmed it).
+70. **A deliberately REMOVED loudness (harness control flipped RED→GREEN by
+    design) gets its own target:** confirm it is the ONLY loudness removed
+    and no live-code path was silenced with it — the flip is otherwise read
+    either as a regression (false blocker) or waved through unexamined.
+    Frame perturbation-probe error directions with polarity explicit
+    (shrunken skip region = loud/safe; grown skip region = silent/dangerous)
+    so "attack both directions" has a defined severity map.
+
+**#2387 r12 (2026-08-31) — PROSE-AND-PINS claim-bounding round (reconciler
+FAILed r11 for its WRITTEN RECORD while adjudicating the behavioral residual
+beyond-bar; r12 = disclose + pin, no behavior change):**
+
+71. **The primary lens pivots to CLAIM DISCIPLINE and the verdict template
+    restructures around it:** lead sections become `## Claim-discipline
+    audit` (per-sentence: quoted sentence → backing measurement or NONE →
+    BOUNDED | OVERCLAIMS | UNDERCLAIMS, with provenance labels round-N vs
+    pre-existing) and `## Pin-integrity audit` (per pin: the edit that
+    should fail it, whether it would, self-match check, FP brittleness —
+    a WORKFLOW_INVARIANT pin's false-positive half weighs equal), replacing
+    the adversarial-construction lead. The named defect class: a
+    class-level claim backed by a single-member measurement.
+72. **The twin's REJECTED fix direction needs a hard fence or it
+    re-prescribes it:** reconcile-v11 upheld the twin's FAIL but ruled its
+    mechanism a conflation and its widen-through-the-closing-brace fix NOT
+    upheld (the cmdsub member makes the class regex-UNCLOSABLE; disclosure
+    is the sanctioned class-level instrument). State: recommending a
+    widening is OUT OF SCOPE absent new evidence defeating that
+    measurement; score the round against the DISCLOSE remedy on accuracy.
+73. **On a no-behavior-change round the measurement frame is EXPECTED
+    IDENTITY:** the per-fixture comparison protocol's step (e) becomes
+    "expected result is identity everywhere; any constructible tip-vs-parent
+    divergence falsifies the round's central claim and outranks most other
+    findings" — redirects constructions productively.
+74. **A marker citing a /tmp dir for "own fixtures" gets a compose-time
+    `ls` handed as a NEUTRAL existence fact** (r12-2387-verify held only
+    commit/lint/marker records, zero fixture or driver files) — the
+    reconciliation is the twin's, on the report-accuracy axis; also point
+    at the reconciler rig's driver as the independent route to the same
+    dispositions.
+75. **Old-id supersession status:** when a reconcile splits a
+    `verified-open` id's residual to a FRESH id (heredoc-prose →
+    module-docstring id), give the OLD id an explicit SETTLED status
+    (no row, no re-litigation; residual = the new id) in both the fence
+    and the closure ledger, or the twin re-walks it.
+76. **Verdict-token arithmetic gains a FOURTH carrier — the BRIEF:** a
+    brief whose Return section quotes `**Verdict:** PASS` adds one
+    occurrence beside the reconcile record's header, the template's header
+    line, and the instruction mention. Assert per-side (brief==1, rec==1,
+    impl==0, template==2), never a bare total (items 16/37/48 family).
+77. **Marker-kind drift held through v12** (epm:results v1-v6 →
+    epm:implementation v7-v12, version == round): fetch by exact kind +
+    round-matched version; the durable-record section tells the twin the
+    prefix fetch returns the stale round-6 row.
