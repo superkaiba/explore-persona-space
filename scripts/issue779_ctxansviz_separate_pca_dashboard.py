@@ -19,13 +19,21 @@ import time
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
-import torch
-from huggingface_hub import hf_hub_download
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import issue779_ctxansviz_pc_specimens as joint_source
-import issue779_ctxansviz_pca3_dashboard as pca3_source
-from explore_persona_space.orchestrate.provenance import commit_string, git_provenance
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import hf_hub_download  # noqa: E402
+
+import issue779_ctxansviz_pc_specimens as joint_source  # noqa: E402
+import issue779_ctxansviz_pca3_dashboard as pca3_source  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    commit_string,
+    git_provenance,
+)
 
 CAPTURE_REVISION = "cbc55efdd7f5581677047e487aa61172f6e7944d"
 EXPORT_REVISION = "d155ed93f4b0184a477cea51aef65cc5440da588"
@@ -115,11 +123,14 @@ def load_fulltext_rows(
     raw_vectors: list[tuple[int, np.ndarray, np.ndarray]] = []
     raw_text: dict[int, tuple[str, str]] = {}
     for chunk_name in chunks:
-        capture_path = hf_hub_download(
-            HF_REPO,
-            filename=f"{CAPTURE_PREFIX}/{chunk_name}",
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        capture_path = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=f"{CAPTURE_PREFIX}/{chunk_name}",
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"capture chunk download ({chunk_name})",
         )
         bundle = torch.load(capture_path, mmap=True, weights_only=False, map_location="cpu")
         layers = [int(value) for value in bundle["layers"]]
@@ -135,11 +146,14 @@ def load_fulltext_rows(
         pc_vx = (vx - model["answer_mean"]) @ model["answer_components"].T
         raw_vectors.extend((ci, pc_cx[pos], pc_vx[pos]) for pos, ci in enumerate(cis))
 
-        raw_path = hf_hub_download(
-            HF_REPO,
-            filename=f"{RAW_PREFIX}/{chunk_name.removesuffix('.pt')}.json",
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        raw_path = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=f"{RAW_PREFIX}/{chunk_name.removesuffix('.pt')}.json",
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"raw completion download ({chunk_name})",
         )
         completion = json.loads(Path(raw_path).read_text(encoding="utf-8"))
         chunk_text = {
