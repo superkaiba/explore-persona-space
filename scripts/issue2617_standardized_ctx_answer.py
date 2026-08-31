@@ -17,13 +17,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
-from sklearn.model_selection import StratifiedGroupKFold
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from sklearn.model_selection import StratifiedGroupKFold  # noqa: E402
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

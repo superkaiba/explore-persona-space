@@ -95,6 +95,8 @@ def make_harness(tmp_path: Path):
         push_exit: int = 0,
         push_missing: bool = False,
         log_dir_setup: str = "ok",
+        push_sleep: int = 0,
+        push_timeout_secs: int | None = None,
     ) -> dict:
         root = tmp_path / f"h{next(counter)}"
         sentinel_dir = root / "sentinels"
@@ -120,8 +122,14 @@ def make_harness(tmp_path: Path):
         push_log = root / "push_calls.log"
         fake_push = root / "fake_telegram_push.sh"
         # The failing form still records its call so tests can assert an
-        # attempt happened even when the push "fails".
-        fake_push.write_text(f'#!/bin/bash\necho "$1" >> "{push_log}"\nexit {push_exit}\n')
+        # attempt happened even when the push "fails". The optional sleep
+        # (AFTER the recording echo) simulates a connected-but-stalled push
+        # endpoint for the #2387 timeout-bound tests.
+        push_lines = ["#!/bin/bash", f'echo "$1" >> "{push_log}"']
+        if push_sleep > 0:
+            push_lines.append(f"sleep {push_sleep}")
+        push_lines.append(f"exit {push_exit}")
+        fake_push.write_text("\n".join(push_lines) + "\n")
         fake_push.chmod(0o755)
 
         stub_calls = root / "stub_calls.log"
@@ -142,10 +150,19 @@ def make_harness(tmp_path: Path):
             "EPS_TELEGRAM_PUSH_SCRIPT": str(push_script),
             "EPS_LESSON_CONSOLIDATE_BIN": str(stub),
         }
+        if push_timeout_secs is not None:
+            env["EPS_PUSH_TIMEOUT_SECS"] = str(push_timeout_secs)
 
         def run() -> subprocess.CompletedProcess:
+            # timeout=45: a broken push bound FAILS the test with
+            # TimeoutExpired instead of hanging pytest (#2387).
             return subprocess.run(
-                ["bash", str(_WRAPPER)], env=env, capture_output=True, text=True, check=False
+                ["bash", str(_WRAPPER)],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=45,
             )
 
         return {
@@ -338,6 +355,26 @@ def test_nonzero_rc_other_than_three_does_not_alert(make_harness, other_rc):
     assert _sentinels(h) == []
     assert _sidecar_rows(h) == []
     assert f"exit={other_rc}" in _daily_log(h)
+
+
+# ── T-B (#2387): the fatal-arm push is bounded ───────────────────────────────
+
+
+def test_fatal_arm_push_is_bounded(make_harness):
+    """#2387 T-B (`||`-chained fatal shape): a stalled push inside fatal()
+    must not hang the wrapper — `timeout` kills it, the `||` echo fires (the
+    alert loss stays visible in cron mail), and fatal()'s exit-1 contract is
+    preserved, all well inside the deadline."""
+    h = make_harness(log_dir_setup="uncreatable", push_sleep=60, push_timeout_secs=2)
+    t0 = time.monotonic()
+    result = h["run"]()
+    elapsed = time.monotonic() - t0
+    assert elapsed < 20, f"wrapper took {elapsed:.1f}s — push bound did not engage"
+    assert result.returncode == 1  # fatal()'s contract
+    # The push WAS attempted (the stub records $1 before sleeping) — a broken
+    # env-injection seam cannot satisfy the timing assert with a no-op push.
+    assert _push_count(h["push_log"]) == 1
+    assert "FAILED for FATAL alert" in result.stderr
 
 
 # ── T10-T12: #2196 fail-loud guards — unwritable log infrastructure ──────────

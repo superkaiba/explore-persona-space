@@ -617,3 +617,82 @@ persisted siblings):**
     Frame perturbation-probe error directions with polarity explicit
     (shrunken skip region = loud/safe; grown skip region = silent/dangerous)
     so "attack both directions" has a defined severity map.
+
+**#2387 r12 (2026-08-31) — PROSE-AND-PINS claim-bounding round (reconciler
+FAILed r11 for its WRITTEN RECORD while adjudicating the behavioral residual
+beyond-bar; r12 = disclose + pin, no behavior change):**
+
+71. **The primary lens pivots to CLAIM DISCIPLINE and the verdict template
+    restructures around it:** lead sections become `## Claim-discipline
+    audit` (per-sentence: quoted sentence → backing measurement or NONE →
+    BOUNDED | OVERCLAIMS | UNDERCLAIMS, with provenance labels round-N vs
+    pre-existing) and `## Pin-integrity audit` (per pin: the edit that
+    should fail it, whether it would, self-match check, FP brittleness —
+    a WORKFLOW_INVARIANT pin's false-positive half weighs equal), replacing
+    the adversarial-construction lead. The named defect class: a
+    class-level claim backed by a single-member measurement.
+72. **The twin's REJECTED fix direction needs a hard fence or it
+    re-prescribes it:** reconcile-v11 upheld the twin's FAIL but ruled its
+    mechanism a conflation and its widen-through-the-closing-brace fix NOT
+    upheld (the cmdsub member makes the class regex-UNCLOSABLE; disclosure
+    is the sanctioned class-level instrument). State: recommending a
+    widening is OUT OF SCOPE absent new evidence defeating that
+    measurement; score the round against the DISCLOSE remedy on accuracy.
+73. **On a no-behavior-change round the measurement frame is EXPECTED
+    IDENTITY:** the per-fixture comparison protocol's step (e) becomes
+    "expected result is identity everywhere; any constructible tip-vs-parent
+    divergence falsifies the round's central claim and outranks most other
+    findings" — redirects constructions productively.
+74. **A marker citing a /tmp dir for "own fixtures" gets a compose-time
+    `ls` handed as a NEUTRAL existence fact** (r12-2387-verify held only
+    commit/lint/marker records, zero fixture or driver files) — the
+    reconciliation is the twin's, on the report-accuracy axis; also point
+    at the reconciler rig's driver as the independent route to the same
+    dispositions.
+75. **Old-id supersession status:** when a reconcile splits a
+    `verified-open` id's residual to a FRESH id (heredoc-prose →
+    module-docstring id), give the OLD id an explicit SETTLED status
+    (no row, no re-litigation; residual = the new id) in both the fence
+    and the closure ledger, or the twin re-walks it.
+76. **Verdict-token arithmetic gains a FOURTH carrier — the BRIEF:** a
+    brief whose Return section quotes `**Verdict:** PASS` adds one
+    occurrence beside the reconcile record's header, the template's header
+    line, and the instruction mention. Assert per-side (brief==1, rec==1,
+    impl==0, template==2), never a bare total (items 16/37/48 family).
+77. **Marker-kind drift held through v12** (epm:results v1-v6 →
+    epm:implementation v7-v12, version == round): fetch by exact kind +
+    round-matched version; the durable-record section tells the twin the
+    prefix fetch returns the stale round-6 row.
+
+**#2387 r13 (2026-08-30) — RULE-STATING terminal round (the round states the
+exact two-condition coverage rule as a biconditional; expected-terminal per
+the binding record):**
+
+78. **When the round's whole content is an exact stated RULE, the primary
+    target pivots from sentence-enumeration to FALSIFY-THE-BICONDITIONAL by
+    construction** — both directions (satisfies-both-yet-uncounted;
+    violates-either-yet-counted) PLUS the rule's domain edges, handed as
+    construction AXES not conclusions: multi-match rendered lines
+    (finditer/greedy-backtracking across several `}"` candidates), tail
+    content holding the quote condition while stressing the regex otherwise,
+    rendering in BOTH directions (the rule speaks of RENDERED lines —
+    backslash-joins and any split), skip-region interaction, and the stated
+    domain (braced form only — do the sentences accidentally cover the bare
+    form?). Frame it as "the highest-value action of the round".
+79. **The BRIEF itself can carry the member-arithmetic slip** (said "seven
+    across two classes", enumerated 5+1, file text says "six members ...
+    beside the two above"): fold the brief verbatim, then add an
+    adaptations bullet — audit the FILE's text member-by-member; a count
+    slip in the brief is not a finding against the round; reconcile counts
+    from the file. Item-33's phantom-finding class, brief-side variant.
+80. **A round's own driver can measure the WRONG frame's engines** —
+    drive13.py's `tip_mod.py` was the round PARENT (c31a64ab97c7) and
+    `parent_mod.py` the r11 tip; NEITHER was the round-13 tip. Hand the
+    engine→SHA mapping as a neutral fact plus the third-arm route
+    (`git show <round-tip>:<file>` into scratch), framed as: the
+    no-behavior-change claim predicts identity across all three; any
+    constructed divergence falsifies the central claim. Also: the
+    expected-terminal posture composes as "PASS is the expected and
+    legitimate outcome ... round count must not decide the verdict in
+    either direction" in BOTH the acceptance-bar section and the
+    Recommendation bracket.

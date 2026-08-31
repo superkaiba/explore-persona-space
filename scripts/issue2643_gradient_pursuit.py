@@ -20,8 +20,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 K_LADDER_DEFAULT = (1, 2, 4, 8, 16)
 REFIT_RIDGE_RELATIVE_DEFAULT = 1e-3

@@ -20,14 +20,35 @@ import hashlib
 import json
 import os
 import shutil
+import sys
 import tempfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Mapping, Sequence
 
-import numpy as np
-import torch
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+
+def _ensure_repo_root_on_syspath() -> Path:
+    """Insert the repo root on ``sys.path`` so the module-top ``scripts.*``
+    imports below resolve in script mode, where ``sys.path[0]`` is the
+    script's own directory (#823/#853)."""
+    root = Path(__file__).resolve().parents[1]
+    sentinel = root / "scripts" / "issue2643_sae_map.py"
+    if not sentinel.exists():
+        raise RuntimeError(f"repo-root resolution failed: {sentinel} missing")
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    return root
+
+
+_REPO_ROOT = _ensure_repo_root_on_syspath()
 
 try:
     from scripts.issue2476_turnavg_sae import MatryoshkaBatchTopKSAE
@@ -204,29 +225,38 @@ def _model_prefix(seed: int) -> str:
 def _download_model(seed: int, root: Path) -> Path:
     from huggingface_hub import HfApi, hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     prefix = _model_prefix(seed)
-    files = [
-        entry.path
-        for entry in HfApi().list_repo_tree(
-            MODEL_REPO,
-            repo_type="model",
-            revision=MODEL_REVISION,
-            path_in_repo=prefix,
-            recursive=True,
-            expand=False,
-        )
-        if getattr(entry, "path", "").startswith(f"{prefix}/")
-    ]
+    files = hub.retry_transient(
+        lambda: [
+            entry.path
+            # HUB_VERIFY_RETRY_EXEMPT: comprehension materialized inside the retry thunk (#794)
+            for entry in HfApi().list_repo_tree(
+                MODEL_REPO,
+                repo_type="model",
+                revision=MODEL_REVISION,
+                path_in_repo=prefix,
+                recursive=True,
+                expand=False,
+            )
+            if getattr(entry, "path", "").startswith(f"{prefix}/")
+        ],
+        what=f"list model tree under {prefix}",
+    )
     if not files:
         raise RuntimeError(f"no model files found under {prefix} at {MODEL_REVISION}")
 
     def download(filename: str) -> None:
-        hf_hub_download(
-            MODEL_REPO,
-            filename=filename,
-            repo_type="model",
-            revision=MODEL_REVISION,
-            local_dir=root,
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                MODEL_REPO,
+                filename=filename,
+                repo_type="model",
+                revision=MODEL_REVISION,
+                local_dir=root,
+            ),
+            what=f"model file download ({filename})",
         )
 
     # ``snapshot_download(..., allow_patterns=...)`` returns an empty snapshot

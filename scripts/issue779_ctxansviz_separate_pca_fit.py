@@ -19,13 +19,21 @@ import tempfile
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
-from huggingface_hub import HfApi, hf_hub_download
-from scipy.optimize import linear_sum_assignment
-from sklearn.decomposition import PCA
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+from scipy.optimize import linear_sum_assignment  # noqa: E402
+from sklearn.decomposition import PCA  # noqa: E402
+
+from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    as_metadata_dict,
+    git_provenance,
+)
 
 CAPTURE_REVISION = "cbc55efdd7f5581677047e487aa61172f6e7944d"
 HF_REPO = "superkaiba1/explore-persona-space-data"
@@ -51,14 +59,18 @@ def sha256_file(path: Path) -> str:
 
 
 def select_chunks() -> tuple[list, str]:
-    items = list(
-        HfApi().list_repo_tree(
-            HF_REPO,
-            path_in_repo=CAPTURE_PREFIX,
-            recursive=False,
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
-        )
+    items = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: list() materialized inside the retry thunk (#794/#1202)
+            HfApi().list_repo_tree(
+                HF_REPO,
+                path_in_repo=CAPTURE_PREFIX,
+                recursive=False,
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            )
+        ),
+        what=f"list capture tree under {CAPTURE_PREFIX}",
     )
     items = sorted(
         (item for item in items if item.path.endswith(".pt")),
@@ -92,11 +104,14 @@ def fill_fit_memmap(path: Path, selected: list, field: str) -> dict:
     for position, item in enumerate(selected):
         if cursor == N_FIT_ROWS:
             break
-        local = hf_hub_download(
-            HF_REPO,
-            filename=item.path,
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        local = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=item.path,
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"capture chunk download ({item.path})",
         )
         bundle = torch.load(local, mmap=True, weights_only=False, map_location="cpu")
         layers = [int(value) for value in bundle["layers"]]
