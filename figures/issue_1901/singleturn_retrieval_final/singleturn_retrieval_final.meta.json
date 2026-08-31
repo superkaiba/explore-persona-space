@@ -1,0 +1,11 @@
+{
+  "source": "eval_results/issue_1901/singleturn_retrieval_final/summary.json",
+  "panel_a": "Primary deduplicated homogeneous-five-draw whitened-cosine+CSLS strict acc@1 with 95% row-bootstrap intervals.",
+  "panel_b": "Appendix metric ladder at the largest deduplicated pool.",
+  "colors": {
+    "ridge": "#0072B2",
+    "mlp": "#D55E00",
+    "identity_bias": "#009E73"
+  },
+  "accessibility": "Okabe-Ito colors plus marker-shape redundancy in panel A."
+}
