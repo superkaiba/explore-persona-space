@@ -12754,8 +12754,8 @@
     "2653": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2653",
-      "status": "proposed",
+      "path": "tasks/archived/2653",
+      "status": "archived",
       "title": "workflow-fix: Step 10d lint gate blocks on informational note-line scan counts (false block on clean payload)"
     },
     "266": {
