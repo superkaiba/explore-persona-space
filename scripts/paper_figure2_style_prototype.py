@@ -2,15 +2,13 @@
 """Render the Figure 2 visual-system prototype.
 
 This is deliberately a preview, not the manuscript figure. It combines the
-single-turn, single-rollout layer and data-scaling evaluations that already
-have both pooled R^2 and whitened-cosine + CSLS top-1 retrieval results.
+single-turn, five-rollout layer and data-scaling evaluations with both pooled
+R^2 and whitened-cosine + CSLS top-1 retrieval results.
 
 Visual encoding
 ---------------
 * predictor: color + marker shape;
 * metric: solid/filled for R^2, dashed/open for top-1 retrieval;
-* negative identity-plus-bias R^2: a compact broken-axis strip.
-
 The redundant encodings are designed to survive grayscale reproduction. The
 script writes a vector PDF, a high-resolution PNG, a grayscale audit PNG, and
 a JSON sidecar describing the sources and plotted values.
@@ -33,7 +31,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 LAYER_SOURCE = ROOT / "eval_results/issue_1901/avgtarget_plots/plot1_avg.json"
-SCALING_SOURCE = ROOT / "eval_results/issue_1901/paper_densify/mlp_scaling_dense_L19.json"
+SCALING_SOURCE = ROOT / "eval_results/issue_1901/figure2_five_rollout_scaling.json"
 DEFAULT_OUT = ROOT / "figures/paper_style"
 
 
@@ -47,13 +45,11 @@ class PredictorStyle:
 PREDICTORS = {
     "ridge": PredictorStyle("Linear", "#176B87", "o"),
     "mlp_w8192": PredictorStyle("Nonlinear", "#C4553D", "D"),
-    "identity_bias": PredictorStyle("Identity + bias", "#687078", "s"),
 }
 
 SCALING_KEYS = {
     "ridge": "ridge",
     "mlp_w8192": "mlp",
-    "identity_bias": "identity_bias",
 }
 
 INK = "#22272B"
@@ -75,7 +71,7 @@ def _load_layer_data() -> dict:
         layer = int(layer_text)
         arms = {}
         for key in PREDICTORS:
-            rec = cell["arms"][key]["single"]
+            rec = cell["arms"][key]["avg"]
             arms[key] = {
                 "r2": float(rec["whole_map_r2"]),
                 "retrieval": _acc1(rec["retrieval"]["whiten_csls"]),
@@ -87,7 +83,7 @@ def _load_layer_data() -> dict:
         "rows": rows,
         "n_train": int(source["split"]["n_train"]),
         "n_test": int(source["split"]["n_test"]),
-        "target": "single rollout",
+        "target": "five-rollout mean",
         "retrieval": "whitened cosine + CSLS (K=10)",
     }
 
@@ -100,8 +96,8 @@ def _load_scaling_data() -> dict:
         for plot_key, source_key in SCALING_KEYS.items():
             rec = cell[source_key]
             arms[plot_key] = {
-                "r2": float(rec["test_r2"]),
-                "retrieval": _acc1(rec["whitened_csls"]),
+                "r2": float(rec["r2"]),
+                "retrieval": float(rec["top1"]),
             }
         rows.append({"x": int(n_text), "arms": arms})
     rows.sort(key=lambda row: row["x"])
@@ -110,9 +106,12 @@ def _load_scaling_data() -> dict:
     return {
         "rows": rows,
         "layer": int(source["layer"]),
-        "n_test": int(source["split"]["n_test"]),
-        "target": "single rollout",
-        "retrieval": "whitened cosine + CSLS (K=10)",
+        "n_test": int(source["duplicate_audit"]["source_n_pool"]),
+        "target": "five-rollout mean",
+        "retrieval": (
+            f"whitened cosine + CSLS (K={source['retrieval']['csls_k']}), "
+            f"deduplicated pool n={source['retrieval']['n_pool']}"
+        ),
     }
 
 
@@ -151,63 +150,35 @@ def _series(rows: list[dict], predictor: str, metric: str) -> tuple[np.ndarray, 
     )
 
 
-def _style_axes(top: plt.Axes, bottom: plt.Axes) -> None:
-    for ax in (top, bottom):
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_color(SEAM)
-        ax.spines["bottom"].set_color(SEAM)
-        ax.tick_params(length=0, pad=8)
-    top.spines["bottom"].set_visible(False)
-    bottom.spines["top"].set_visible(False)
-    top.tick_params(labelbottom=False)
-    top.set_ylim(0.0, 1.025)
-    top.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
-    top.yaxis.set_major_formatter(FuncFormatter(lambda y, _pos: f"{y:.2f}".rstrip("0").rstrip(".")))
-    top.grid(axis="y", color=GRID, lw=1.0, alpha=0.55)
-    top.set_axisbelow(True)
-
-    # The lower strip is deliberately short: it communicates that the control
-    # has negative R^2 without sacrificing resolution where the fitted methods lie.
-    bottom.set_ylim(-3.0, -0.18)
-    bottom.set_yticks([-3.0, -2.0, -1.0])
-    bottom.grid(axis="y", color=GRID, lw=0.9, alpha=0.35)
-    bottom.set_axisbelow(True)
-    bottom.axhline(-0.18, color=SEAM, lw=1.0)
-    bottom.text(
-        0.012,
-        0.12,
-        "negative $R^2$",
-        transform=bottom.transAxes,
-        color=MUTED,
-        fontsize=14,
-        va="bottom",
-        ha="left",
+def _style_axes(ax: plt.Axes) -> None:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color(SEAM)
+    ax.spines["bottom"].set_color(SEAM)
+    ax.tick_params(length=0, pad=8)
+    ax.set_ylim(0.0, 1.025)
+    ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    ax.yaxis.set_major_formatter(
+        FuncFormatter(lambda y, _pos: f"{y:.2f}".rstrip("0").rstrip("."))
     )
-
-    # Small diagonal cut marks make the discontinuity explicit without the
-    # visually heavy zig-zag used in many conventional paper figures.
-    cut = 0.012
-    kwargs = dict(color=INK, clip_on=False, lw=1.35)
-    top.plot((-cut, +cut), (-cut, +cut), transform=top.transAxes, **kwargs)
-    bottom.plot((-cut, +cut), (1 - cut, 1 + cut), transform=bottom.transAxes, **kwargs)
+    ax.grid(axis="y", color=GRID, lw=1.0, alpha=0.55)
+    ax.set_axisbelow(True)
 
 
 def _plot_panel(
-    top: plt.Axes,
-    bottom: plt.Axes,
+    ax: plt.Axes,
     rows: list[dict],
     *,
     title: str,
     kicker: str,
 ) -> None:
-    _style_axes(top, bottom)
-    top.set_title(title, loc="left", y=1.055, pad=0, fontweight=650)
-    top.text(
+    _style_axes(ax)
+    ax.set_title(title, loc="left", y=1.055, pad=0, fontweight=650)
+    ax.text(
         0.0,
         1.17,
         kicker.upper(),
-        transform=top.transAxes,
+        transform=ax.transAxes,
         fontsize=13,
         fontweight=700,
         color=MUTED,
@@ -220,31 +191,17 @@ def _plot_panel(
         x, r2 = _series(rows, key, "r2")
         _, retrieval = _series(rows, key, "retrieval")
 
-        positive = r2 >= 0
-        if np.any(positive):
-            top.plot(
-                x[positive],
-                r2[positive],
-                color=style.color,
-                marker=style.marker,
-                markersize=6.5,
-                markeredgewidth=1.4,
-                lw=3.0,
-                zorder=4,
-            )
-        if np.any(~positive):
-            bottom.plot(
-                x[~positive],
-                r2[~positive],
-                color=style.color,
-                marker=style.marker,
-                markersize=6.5,
-                markeredgewidth=1.4,
-                lw=2.6,
-                zorder=4,
-            )
-
-        top.plot(
+        ax.plot(
+            x,
+            r2,
+            color=style.color,
+            marker=style.marker,
+            markersize=6.5,
+            markeredgewidth=1.4,
+            lw=3.0,
+            zorder=4,
+        )
+        ax.plot(
             x,
             retrieval,
             color=style.color,
@@ -299,50 +256,43 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
 
 def make_figure(layer: dict, scaling: dict) -> plt.Figure:
     _set_style()
-    fig = plt.figure(figsize=(14.4, 6.8), constrained_layout=False)
+    fig = plt.figure(figsize=(14.4, 6.2), constrained_layout=False)
     grid = fig.add_gridspec(
+        1,
         2,
-        2,
-        height_ratios=[4.3, 1.05],
         left=0.075,
         right=0.985,
-        top=0.73,
-        bottom=0.13,
+        top=0.72,
+        bottom=0.12,
         wspace=0.20,
-        hspace=0.055,
     )
     ax_layer = fig.add_subplot(grid[0, 0])
-    ax_layer_neg = fig.add_subplot(grid[1, 0], sharex=ax_layer)
     ax_scale = fig.add_subplot(grid[0, 1])
-    ax_scale_neg = fig.add_subplot(grid[1, 1], sharex=ax_scale)
 
     _plot_panel(
         ax_layer,
-        ax_layer_neg,
         layer["rows"],
         title="Predictability across layers",
         kicker=f"A  ·  {layer['n_train']:,} training contexts",
     )
     _plot_panel(
         ax_scale,
-        ax_scale_neg,
         scaling["rows"],
         title="Scaling with training data",
         kicker=f"B  ·  layer {scaling['layer']}",
     )
 
-    ax_layer_neg.set_xlim(-0.5, 27.5)
-    ax_layer_neg.set_xticks([0, 5, 10, 15, 20, 25, 27])
-    ax_layer_neg.set_xlabel("Model layer", labelpad=12)
+    ax_layer.set_xlim(-0.5, 27.5)
+    ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
+    ax_layer.set_xlabel("Model layer", labelpad=12)
 
     ns = np.asarray([row["x"] for row in scaling["rows"]], dtype=float)
     ax_scale.set_xscale("log")
-    ax_scale_neg.set_xscale("log")
-    ax_scale_neg.set_xlim(ns.min() / 1.18, ns.max() * 1.18)
-    ax_scale_neg.xaxis.set_major_locator(FixedLocator([5_000, 25_000, 100_000, 500_000, 963_444]))
-    ax_scale_neg.xaxis.set_major_formatter(FuncFormatter(_human_n))
-    ax_scale_neg.minorticks_off()
-    ax_scale_neg.set_xlabel("Training contexts", labelpad=12)
+    ax_scale.set_xlim(ns.min() / 1.18, ns.max() * 1.18)
+    ax_scale.xaxis.set_major_locator(FixedLocator([5_000, 25_000, 100_000, 500_000, 963_444]))
+    ax_scale.xaxis.set_major_formatter(FuncFormatter(_human_n))
+    ax_scale.minorticks_off()
+    ax_scale.set_xlabel("Training contexts", labelpad=12)
 
     ax_layer.set_ylabel("Score  ↑", labelpad=13)
     ax_scale.set_ylabel("Score  ↑", labelpad=13)
@@ -457,21 +407,8 @@ def main() -> None:
         for row in dataset["rows"]:
             for values in row["arms"].values():
                 assert np.isfinite(values["r2"])
+                assert 0.0 <= values["r2"] <= 1.0
                 assert 0.0 <= values["retrieval"] <= 1.0
-    assert all(row["arms"]["identity_bias"]["r2"] < 0 for row in layer["rows"])
-    assert all(row["arms"]["identity_bias"]["r2"] < 0 for row in scaling["rows"])
-    negative_r2 = [
-        values["r2"]
-        for dataset in (layer, scaling)
-        for row in dataset["rows"]
-        for values in row["arms"].values()
-        if values["r2"] < 0
-    ]
-    assert all(-3.0 <= value <= -0.18 for value in negative_r2), (
-        "negative R^2 falls outside the visible broken-axis strip",
-        min(negative_r2),
-        max(negative_r2),
-    )
 
     fig = make_figure(layer, scaling)
     outputs = _write_outputs(fig, args.out_dir, layer, scaling)
