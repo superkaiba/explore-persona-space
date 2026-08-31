@@ -58,6 +58,27 @@ never widen the regex to the next member. Also verify class WIDTH yourself
 (five silent members vs the reviewers' one/two) — width is what settles
 disclose-vs-widen.
 
+**#2387 r13 addendum — the criterion is DIRECTION-SENSITIVE (ruled
+explicitly, binding):** a round-owned coverage sentence contradicted by a
+constructed member BLOCKS only when the contradiction resolves SILENT
+(suite green while the unbounded action executes — the sentence masks a
+live hole / teaches an unsafe spelling; the r11/r12 FAIL shape). When the
+contradiction resolves LOUD (the scanner REFUSES / an assertion fires
+before anything can be missed), the same literal falsity is a precision
+defect at CONCERN tier — persist it with the one-clause remedy, PASS the
+round. Two supporting sub-rules: (i) when the falsified sentence is the
+reconciler's OWN previously-prescribed exact-rule wording implemented
+verbatim, FAILing the round moves the target — the gap is in the
+prescription, tier accordingly (the r12 bounded-claim-form discriminator
+already pre-classified escapes-from-the-exact-rule as mechanism-tier);
+(ii) check the file's own disposition vocabulary before scoping an "iff"
+charitably — a three-valued vocabulary (counted / silent / REFUSE) makes
+the literal reading correct and the charitable domain-restriction
+unstated, so the finding is REAL even when non-blocking. Also: Claude's
+falsification batteries probe condition-violations but tend to miss
+REFUSAL-GATED lines (preconditions upstream of the matcher) — construct
+the eligibility-gate case yourself.
+
 **r7 additions (#2263, same task):** (5) The bounded-claim form is the
 discriminator that stops "narrow the claim" regressing forever: an
 exact-rule disclosure ("What the detector enforces — no more" + the
