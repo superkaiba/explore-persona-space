@@ -158,6 +158,34 @@ def _strip_code_blocks(text: str) -> str:
     return "\n".join(out)
 
 
+_FM_OPEN_RE = re.compile(r"^---\s*$")
+_FM_CLOSE_RE = re.compile(r"^(?:---|\.\.\.)\s*$")
+
+
+def split_frontmatter(text: str) -> tuple[str, str] | None:
+    """``(frontmatter block, body)`` for a leading ``---``-delimited YAML
+    frontmatter block; ``None`` when ``text`` has no such block.
+
+    Returning ``None`` rather than ``('', text)`` is load-bearing: the
+    ``frontmatter-only`` label in :func:`classify_window` is emitted only
+    when BOTH endpoints split successfully, so a file with no frontmatter —
+    or an UNTERMINATED block, where there is no trustworthy body boundary —
+    can never reach a label whose entire claim is that only the frontmatter
+    changed.
+
+    The closing delimiter follows YAML: ``---`` (a new document) or ``...``
+    (end of document). The block is recognized only at line 1, which is
+    where every ``body.md`` carries it.
+    """
+    lines = text.splitlines(keepends=True)
+    if not lines or not _FM_OPEN_RE.match(lines[0].rstrip("\r\n")):
+        return None
+    for i in range(1, len(lines)):
+        if _FM_CLOSE_RE.match(lines[i].rstrip("\r\n")):
+            return "".join(lines[: i + 1]), "".join(lines[i + 1 :])
+    return None
+
+
 def extract_cited_ids_with_total(plan_text: str, *, self_issue: int) -> tuple[list[int], int]:
     r"""``(capped ids in draft order, TOTAL distinct ids before the cap)``.
 
@@ -202,10 +230,12 @@ def cited_body_path(issue: int) -> Path | None:
     return folder / "body.md"
 
 
-def _git(args: list[str], *, cwd: Path) -> str | None:
+def _git(args: list[str], *, cwd: Path, strip: bool = True) -> str | None:
     """Run git under a 10 s timeout, returning stripped stdout; ``None`` on
     non-zero rc / timeout / missing binary or cwd — logged to stderr, never
-    silent, and never fatal (per-id fail-soft skip).
+    silent, and never fatal (per-id fail-soft skip). ``strip=False`` is for
+    reads whose value is file CONTENT, where a stripped trailing newline
+    would make two different bodies compare equal.
 
     ``errors="replace"`` is load-bearing: git echoes PATHS and COMMIT SUBJECTS
     verbatim, and neither is guaranteed UTF-8 (a latin-1 filename, a subject
@@ -234,7 +264,7 @@ def _git(args: list[str], *, cwd: Path) -> str | None:
             file=sys.stderr,
         )
         return None
-    return proc.stdout.strip()
+    return proc.stdout.strip() if strip else proc.stdout
 
 
 def resolve_repo_root() -> Path:
@@ -605,7 +635,22 @@ def window_pathspec(window: list[_Commit], rel_path: str) -> list[str]:
     return out
 
 
-def classify_window(window: list[_Commit], diff: str, *, conclusive: bool) -> str | None:
+def is_rename_only_window(window: list[_Commit]) -> bool:
+    """``True`` when EVERY windowed commit is an exact ``R100`` — a pure
+    status-move window. Extracted (#2654) so :func:`body_diff_since`'s
+    endpoint-fetch gate and :func:`classify_window`'s ``rename-only`` branch
+    cannot drift apart; the predicate itself is unchanged from #2384."""
+    return bool(window) and all(c.status == "R100" for c in window)
+
+
+def classify_window(
+    window: list[_Commit],
+    diff: str,
+    *,
+    conclusive: bool,
+    old_text: str | None,
+    new_text: str | None,
+) -> str | None:
     """Label the dominant false-positive channel (#2384 §6): a status move
     (``git mv`` between status folders) is ``rename-only``; a user promotion
     sweep (``classification`` flip) is ``frontmatter-only``. ``None`` = a
@@ -637,25 +682,39 @@ def classify_window(window: list[_Commit], diff: str, *, conclusive: bool) -> st
     Requiring EVERY windowed commit to be an exact ``R100`` keeps the label
     honest in both directions: a rename-WITH-edit (``R095``) and a content
     commit (``M``) are real changes and stay unlabeled, while a task moved
-    through several status folders with no edits still earns the label."""
+    through several status folders with no edits still earns the label.
+
+    ``frontmatter-only`` is decided (round 6, #2654) by comparing the
+    frontmatter-STRIPPED endpoint bodies (``old_text``/``new_text``, fetched
+    by the caller), never from the diff text: a shape test on changed lines
+    cannot distinguish frontmatter from body prose — ``RESULT:`` /
+    ``CORRECTED:`` / ``Note:`` are ordinary body lines that satisfied the
+    old ``^[+-]Word:`` pattern, so a content correction earned the label the
+    operator reads as "plan text unaffected". Named residual: this is a
+    two-endpoint test, so a body corrected and then reverted INSIDE the
+    window reads as body-identical and earns the label — correct for the
+    label's literal claim (the cited text at HEAD matches what the window
+    started with) and consistent with the gate's STALE verdict, which is
+    driven by commit recency, not by content. Like ``conclusive``, the two
+    text parameters deliberately have NO defaults: a permissive default on a
+    safety input would re-open the hazard at any future call site."""
     if not conclusive:
         return None
-    if window and all(c.status == "R100" for c in window):
+    if is_rename_only_window(window):
         return "rename-only"
     if not diff:
         return None
-    changed = [
-        ln
-        for ln in diff.splitlines()
-        if (ln.startswith("+") and not ln.startswith("+++"))
-        or (ln.startswith("-") and not ln.startswith("---"))
-    ]
-    if not changed:
+    if old_text is None or new_text is None:
+        return None  # an endpoint we could not read proves nothing
+    old_split = split_frontmatter(old_text)
+    new_split = split_frontmatter(new_text)
+    if old_split is None or new_split is None:
         return None
-    fm_line = re.compile(r"^[+-](?:---\s*$|[A-Za-z_][A-Za-z0-9_-]*:)")
-    if all(fm_line.match(ln) for ln in changed):
-        return "frontmatter-only"
-    return None
+    if old_split[1] != new_split[1]:
+        return None  # the body changed: this is the real signal
+    if old_split[0] == new_split[0]:
+        return None  # neither half changed (e.g. a mode-only diff)
+    return "frontmatter-only"
 
 
 def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple[str, str | None]:
@@ -675,7 +734,10 @@ def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple
     move it carries no content change, which is pure noise. EVERY label —
     ``frontmatter-only`` included — is emitted ONLY on a CONCLUSIVE chase end
     (#2384 rounds 4-5); an inconclusive end leaves the label ``None`` and the
-    diff visible — conservative."""
+    diff visible — conservative. The two gated ``git show`` reads that fetch
+    the window's endpoint texts run only on a conclusive, non-``rename-only``,
+    diff-bearing window; either read failing — or the gate declining to
+    fetch — leaves the label ``None`` with the diff visible."""
     window, conclusive = _window_history(rel_path, since_unix, repo_root=repo_root)
     if not window:
         return "", None
@@ -683,7 +745,21 @@ def body_diff_since(rel_path: str, since_unix: int, *, repo_root: Path) -> tuple
     oldest_sha = window[-1].sha
     paths = window_pathspec(window, rel_path)
     diff = _git(["diff", "-M", f"{oldest_sha}^..HEAD", "--", *paths], cwd=repo_root) or ""
-    label = classify_window(window, diff, conclusive=conclusive)
+    # GATE (load-bearing, #2654 plan §3.1(d)): fetch ONLY on the one shape
+    # that can reach the text comparison in classify_window. Two pre-existing
+    # tests monkeypatch the module `_git` with fakes whose signature is
+    # exactly `(args, *, cwd)` on INCONCLUSIVE windows that still reach this
+    # tail — an UNGATED `strip=False` call would TypeError them.
+    need_text = conclusive and bool(diff) and not is_rename_only_window(window)
+    old_text = new_text = None
+    if need_text:
+        oldest = window[-1]
+        old_path = oldest.prev_path or oldest.path or rel_path
+        old_text = _git(["show", f"{oldest_sha}^:{old_path}"], cwd=repo_root, strip=False)
+        new_text = _git(["show", f"HEAD:{rel_path}"], cwd=repo_root, strip=False)
+    label = classify_window(
+        window, diff, conclusive=conclusive, old_text=old_text, new_text=new_text
+    )
     text = "\n".join(lines)
     if diff and label != "rename-only":
         text += "\n" + diff

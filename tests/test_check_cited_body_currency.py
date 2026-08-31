@@ -883,6 +883,146 @@ def test_midchase_log_failure_withholds_frontmatter_label(fake_repo, monkeypatch
     assert "inconclusive" in capsys.readouterr().err  # the failure is disclosed
 
 
+# ── #2654: frontmatter-only is decided from endpoint BODIES, not diff shape ─
+
+
+def test_conclusive_word_prefixed_content_correction_is_unlabeled(fake_repo):
+    """#2654 acceptance 1 (the pre-fix pin). A CONCLUSIVE window whose only
+    change is a ``Word:``-shaped BODY line must NOT read ``frontmatter-only``.
+
+    Pre-fix, the label came from a SHAPE test on changed diff lines:
+    ``-RESULT: the sign is POSITIVE.`` and ``+CORRECTED: the sign is
+    NEGATIVE.`` both matched ``^[+-][A-Za-z_][A-Za-z0-9_-]*:``, so
+    ``all(...)`` held and the window read ``frontmatter-only`` — a genuine
+    content correction labeled as a metadata edit, nudging the operator
+    toward the "plan text unaffected" disposition (#2384 §6). Post-fix the
+    label is decided by comparing the frontmatter-STRIPPED endpoint bodies,
+    which differ here."""
+    folder = fake_repo / "tasks" / "completed" / "9991"
+    folder.mkdir(parents=True)
+    (folder / "body.md").write_text(_FM_BODY)
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text(
+        _FM_BODY.replace("RESULT: the sign is POSITIVE.", "CORRECTED: the sign is NEGATIVE.")
+    )
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 result", AFTER)
+
+    text, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
+    assert label is None  # NOT "frontmatter-only": the BODY changed
+    assert "CORRECTED: the sign is NEGATIVE." in text  # the diff reaches the operator
+
+
+def test_conclusive_frontmatter_only_edit_is_labeled(fake_repo):
+    """#2654 acceptance 2 (the do-not-fix-by-deletion positive control, and
+    the suite's FIRST positive ``frontmatter-only`` assertion). A genuine
+    frontmatter-only edit — the user promotion sweep's ``classification``
+    flip — still earns the label under the endpoint-body comparison: the
+    frontmatter halves differ while the stripped bodies are byte-equal."""
+    folder = fake_repo / "tasks" / "completed" / "9991"
+    folder.mkdir(parents=True)
+    (folder / "body.md").write_text(_FM_BODY)
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text(
+        _FM_BODY.replace("classification: pending", "classification: useful")
+    )
+    _commit(fake_repo, [folder / "body.md"], "user promotion sweep", AFTER)
+
+    _, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
+    assert label == "frontmatter-only"
+
+
+def test_body_without_frontmatter_is_unlabeled(fake_repo):
+    """#2654 ``split_frontmatter`` contract guard. A body with NO leading
+    ``---`` block whose only change is a ``Word:``-shaped line yields NO
+    label. Without the both-endpoints-split requirement this file's empty
+    "frontmatter" would compare equal on both sides and the body comparison
+    would be the only guard; ``split_frontmatter`` returning ``None`` (never
+    ``('', text)``) keeps the label structurally unreachable here."""
+    folder = fake_repo / "tasks" / "completed" / "9991"
+    folder.mkdir(parents=True)
+    (folder / "body.md").write_text("# Task 9991\n\nRESULT: the sign is POSITIVE.\n")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    (folder / "body.md").write_text("# Task 9991\n\nCORRECTED: the sign is NEGATIVE.\n")
+    _commit(fake_repo, [folder / "body.md"], "correct #9991 result", AFTER)
+
+    _, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
+    assert label is None
+
+
+def test_conclusive_all_r100_window_skips_endpoint_fetch(fake_repo, monkeypatch):
+    """#2654 pin on the ``need_text`` gate's rename-only conjunct: a
+    conclusive pure-status-move window still reads ``rename-only`` and the
+    two endpoint ``git show`` content reads never run (the plan-§2 cost
+    sentence: no wasted reads on a window the rename-only branch decides
+    first)."""
+    folder = _make_task(fake_repo, 9991, status="running")
+    _commit(fake_repo, [folder / "body.md"], "persist #9991 body", BEFORE)
+    _status_move(
+        fake_repo,
+        folder,
+        fake_repo / "tasks" / "completed" / "9991",
+        AFTER,
+        "task #9991: running -> completed",
+    )
+
+    real_git = ccb._git
+    seen = {"content_shows": 0}
+
+    def counting_git(args, *, cwd, strip=True):
+        # A content read is exactly `git show <rev>:<path>` — two args, no
+        # flags; the batched `--name-status` probe also spells "show" but
+        # always carries flag arguments.
+        if args[0] == "show" and len(args) == 2:
+            seen["content_shows"] += 1
+        return real_git(args, cwd=cwd, strip=strip)
+
+    monkeypatch.setattr(ccb, "_git", counting_git)
+    _, label = ccb.body_diff_since("tasks/completed/9991/body.md", REF, repo_root=fake_repo)
+    assert label == "rename-only"
+    assert seen["content_shows"] == 0  # the gate skipped both endpoint reads
+
+
+@pytest.mark.parametrize(
+    ("case", "text", "expected"),
+    [
+        (
+            "normal block",
+            "---\nid: 1\n---\nbody\n",
+            ("---\nid: 1\n---\n", "body\n"),
+        ),
+        (
+            "dots-closed block (YAML end-of-document)",
+            "---\nid: 1\n...\nbody\n",
+            ("---\nid: 1\n...\n", "body\n"),
+        ),
+        (
+            "opener with trailing spaces still splits",
+            "---  \nid: 1\n---\nbody\n",
+            ("---  \nid: 1\n---\n", "body\n"),
+        ),
+        (
+            "CRLF line endings still split",
+            "---\r\nid: 1\r\n---\r\nbody\r\n",
+            ("---\r\nid: 1\r\n---\r\n", "body\r\n"),
+        ),
+        (
+            "dots on line 1 is NOT an opener (a closer token is not an opener)",
+            "...\nid: 1\n---\nbody\n",
+            None,
+        ),
+        ("no leading delimiter", "# Title\n---\nbody\n", None),
+        ("unterminated block has no trustworthy body boundary", "---\nid: 1\nbody\n", None),
+        ("empty string", "", None),
+    ],
+)
+def test_split_frontmatter(case, text, expected):
+    """#2654 REQUIRED unit cases: the opener and closer are deliberately
+    asymmetric (the opener admits only ``---``, the closer ``---`` or
+    ``...``; both tolerate trailing whitespace via ``\\s*$``), and that
+    asymmetry is pinned as intended rather than inferred."""
+    assert ccb.split_frontmatter(text) == expected, case
+
+
 def test_cap_truncation_is_disclosed(fake_repo, capsys):
     """Blocker 9 (Minor, raised by BOTH reviewers). A bare ``CLEAN checked=40``
     over a 55-citation plan reads as full coverage while 15 citations went
