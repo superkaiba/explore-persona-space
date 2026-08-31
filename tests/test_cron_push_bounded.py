@@ -248,10 +248,14 @@ the execution-site regex. A NEW cron wrapper calling the push helper must be
 ADDED to the mapping or it escapes every pin here; likewise a call shape
 whose message argument is not a double-quoted string immediately after the
 push variable (an unquoted message, a renamed variable) escapes the regex
-(a braced-form site is counted iff BOTH (1) the ENTIRE ``_EXEC_SITE``
-match — from the push variable's opening ``"$`` through the message
-argument's opening quote — lands on ONE rendered line, and (2) the tail
-before ``}`` contains no double quote. Both conditions follow from the
+(a braced-form site is counted iff the line REACHES the matcher (a scan
+that REFUSES — multiple here-documents on a rendered line, an
+unlocatable terminator, a push reference or ``<<`` inside a body: see
+``scan_execution_sites`` — counts nothing, loudly) AND (1) the ENTIRE
+``_EXEC_SITE`` match — from the push variable's opening ``"$`` through
+the message argument's opening quote — lands on ONE rendered line, AND
+(2) the tail before ``}`` contains no double quote. Both conditions
+follow from the
 definition: ``scan_execution_sites`` is line-scoped — it splits the
 rendering and runs ``_EXEC_SITE.finditer`` per rendered line, so no
 component of the pattern ever sees a newline — and the tail's ``[^"]*``
@@ -333,12 +337,15 @@ TOTAL_EXPECTED_SITES = 12
 
 # Push variable in EXECUTION position: the quoted variable followed by a
 # quoted message argument. The name must sit at an IDENTIFIER BOUNDARY. A
-# braced-form site is counted iff BOTH (1) the ENTIRE match — opening `"$`
-# through the message argument's opening quote — lands on ONE rendered line
-# (scan_execution_sites is line-scoped: it runs this regex per line of
-# `rendered.splitlines()`, so no pattern component ever sees a newline),
-# and (2) the tail before `}` contains no double quote (the `[^"]*` span
-# stops at the first inner double quote). Round 11 widened round 10's
+# braced-form site is counted iff the line REACHES the matcher (a scan that
+# REFUSES — multiple here-documents on a rendered line, an unlocatable
+# terminator, a push reference or `<<` inside a body: see
+# scan_execution_sites — counts nothing, loudly) AND (1) the ENTIRE match —
+# opening `"$` through the message argument's opening quote — lands on ONE
+# rendered line (scan_execution_sites is line-scoped: it runs this regex per
+# line of `rendered.splitlines()`, so no pattern component ever sees a
+# newline), AND (2) the tail before `}` contains no double quote (the
+# `[^"]*` span stops at the first inner double quote). Round 11 widened round 10's
 # bare / exactly-closed acceptance to the single-line quote-free operator
 # tail after reconcile-v10 fixture P_braced_toplevel scanned 1 [True] at
 # pin — suite GREEN — while bash executed the unbounded `"${PUSH:-...}"`
@@ -1260,9 +1267,13 @@ def test_braced_default_push_at_top_level_is_counted_and_reads_unbounded():
     r10 tip (measured: scanned 1 [True], suite GREEN at pin 1, while bash
     executed the unbounded `TOPLEVEL_BRACED_UNBOUNDED` push). The widening
     closed ONE member — the SINGLE-LINE quote-free tail: a braced-form
-    site is counted iff the ENTIRE ``_EXEC_SITE`` match lands on ONE
-    rendered line (the scan is line-scoped) AND the tail before ``}``
-    contains no double quote — not the class: six members remain silent
+    site is counted iff the line REACHES the matcher (a scan that
+    REFUSES — multiple here-documents on a rendered line, an
+    unlocatable terminator, a push reference or ``<<`` inside a body:
+    see ``scan_execution_sites`` — counts nothing, loudly) AND the
+    ENTIRE ``_EXEC_SITE`` match lands on ONE rendered line (the scan
+    is line-scoped) AND the tail before ``}`` contains no double quote
+    — not the class: six members remain silent
     at top level (five quote-bearing tails, measured reconcile-v11
     N1-N5; one multiline quote-free command-substitution tail, measured
     reconcile-v12) and are DISCLOSED in COVERAGE BOUNDARY. This task's
@@ -1321,6 +1332,39 @@ def test_multiline_cmdsub_tail_at_top_level_is_not_counted():
     assert _bound_flags(_bounded_push("real_site_A") + member) == [True]
     single = '"${PUSH:-$(printf /bin/echo)}" "candidate"\n'
     assert _bound_flags(_bounded_push("real_site_A") + single) == [True, False]
+
+
+def test_refusing_scan_counts_nothing_even_where_the_site_regex_matches():
+    """Mechanical pin of the scan-eligibility precondition on the three
+    "counted iff" surfaces (reconcile-v13 F1, concern
+    exec-site-nested-quote-tail-uncounted): one source line opening TWO
+    here-documents ahead of a top-level quote-free braced push. Bash
+    renders the braced site entirely on its own rendered line, where
+    ``_EXEC_SITE`` matches — conditions (1) and (2) BOTH hold — yet
+    nothing is counted: ``scan_execution_sites`` REFUSES on the
+    preceding two-heredoc line (body extents are ambiguous) before the
+    matcher ever sees the site line (measured, reconcile-v13: ValueError
+    on both the parent and tip engines while bash rc=0 executed the
+    push). Loud, not silent — the refusal, not a count, is the
+    disposition. The companion greps couple the three prose surfaces to
+    this fact: each carries the eligibility clause, so a revert of the
+    round-14 wording fails here rather than moving silently."""
+    text = 'cat <<A <<B >/dev/null && "${PUSH:-/bin/true}" "candidate"\na\nA\nb\nB\n'
+    lines = _bash_rendering(text, "two-heredoc-site").splitlines()
+    matched = [ln for ln in lines if _EXEC_SITE.search(ln)]
+    assert len(matched) == 1, lines
+    with pytest.raises(ValueError, match="multiple here-documents"):
+        scan_execution_sites(text, origin="two-heredoc-site")
+    clause = "REACHES" + " the matcher"
+    assert clause in (__doc__ or ""), "COVERAGE BOUNDARY lost the scan-eligibility clause"
+    assert clause in (
+        test_braced_default_push_at_top_level_is_counted_and_reads_unbounded.__doc__ or ""
+    ), "the round-11 widening docstring lost the scan-eligibility clause"
+    assert Path(__file__).read_text().count(clause) == 3, (
+        "the scan-eligibility clause belongs on exactly the three 'counted iff' "
+        "surfaces (module COVERAGE BOUNDARY, the _EXEC_SITE comment, the "
+        "round-11 widening docstring)"
+    )
 
 
 def test_coverage_boundary_discloses_quote_bearing_tail_class():
