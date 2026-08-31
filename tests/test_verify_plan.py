@@ -6419,12 +6419,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   design — GOOD_PLAN carries no GPU-lane routing token; #2624)
     # + c74 (SKIP: GOOD_PLAN pairs no `Phase <ID>` token with an
     #   optionality marker; trigger-conditional, #2363)
-    assert payload["n_skip"] == 64
+    # + c75 (SKIP: no task context in --plan-file mode — the c23/c62 mode
+    #   row; #2384)
+    assert payload["n_skip"] == 65
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 74
-    assert len({c["id"] for c in payload["checks"]}) == 74
+    assert len(payload["checks"]) == 75
+    assert len({c["id"] for c in payload["checks"]}) == 75
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
