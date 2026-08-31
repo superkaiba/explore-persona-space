@@ -1,0 +1,1 @@
+{"ts": "2026-08-31T02:39:46Z", "event": "raised", "concern_id": "byte-faithful-endpoint-read", "severity": "BLOCKER", "summary": "text=True and replacement decoding can hide body-byte changes and falsely emit frontmatter-only", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
