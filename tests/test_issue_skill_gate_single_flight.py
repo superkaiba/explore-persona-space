@@ -125,6 +125,10 @@ def test_gate_fleet_arbitration_hooks_present():
     assert text.count(FLEET_PROBE_FORM) >= 5
     assert "Gate-fleet arbitration (#1962)" in text
     assert "[gate-fleet] cap-expired after 45 min — launching over cap" in text
+    # #2657 durability pin: the canonical paragraph states the refresh is
+    # listed-not-counted — a later editor must not silently revert the prose
+    # to the pre-#2657 counting claim.
+    assert "does NOT count toward the cap" in text
 
     sec = text[text.index("9c. Test-verdict gate") : text.index("### Step 10: Auto-complete")]
     # 1b: the canonical paragraph sits AFTER the per-issue probe statement
