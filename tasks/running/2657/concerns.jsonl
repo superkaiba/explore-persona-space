@@ -1,0 +1,1 @@
+{"ts": "2026-08-31T10:18:45Z", "event": "raised", "concern_id": "duplicate-fleet-max-diagnostic", "severity": "NIT", "summary": "Cache the resolved fleet cap so malformed-cap diagnostics are not emitted twice when refresh is present.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
