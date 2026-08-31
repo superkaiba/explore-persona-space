@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2652,
+  "highest_id": 2653,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12750,6 +12750,13 @@
       "path": "tasks/proposed/2652",
       "status": "proposed",
       "title": "Re-size the Step 9c ledger-refresh timeout \u2014 it runs at 99% of its own fence"
+    },
+    "2653": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2653",
+      "status": "proposed",
+      "title": "workflow-fix: Step 10d lint gate blocks on informational note-line scan counts (false block on clean payload)"
     },
     "266": {
       "has_clean_result": false,
