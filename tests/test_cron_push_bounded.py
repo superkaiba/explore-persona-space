@@ -109,8 +109,14 @@ ROUND 10 — the skip is GUARDED: push / ``<<`` text in a region refuses.
   rendering is probed by re-parsing the WHOLE rendering with that one
   delimiter token replaced by a fresh random token — a REAL here-document
   then reads to end-of-file and bash itself says so (its EOF warning / a
-  parse error), while a lookalike inside ordinary quotes or arithmetic
-  parses clean. A confirmed operator's body + terminator lines are
+  parse error). The probe is one-directional: a lookalike inside ordinary
+  quotes or arithmetic can parse DIRTY under mutation too (measured,
+  reconcile-v10 P2: a quoted lookalike's rc=1/no-warning signature
+  matched a legitimate cmdsub heredoc's), so a false-real verdict opens
+  a skip region over live code — contained by the round-10 skip-region
+  guard below, never prevented by the probe (the ``_HEREDOC_CANDIDATE``
+  and ``_is_real_heredoc`` notes state the same containment).
+  A confirmed operator's body + terminator lines are
   skipped (terminator = first following rendered line equal to the raw
   delimiter — exact for both forms, measured: ``<<-`` bodies render
   tab-stripped with a bare terminator, and a body line equal to the
@@ -242,9 +248,25 @@ the execution-site regex. A NEW cron wrapper calling the push helper must be
 ADDED to the mapping or it escapes every pin here; likewise a call shape
 whose message argument is not a double-quoted string immediately after the
 push variable (an unquoted message, a renamed variable) escapes the regex
-(braced parameter-operator spellings such as ``"${PUSH:-d}"`` are COUNTED
-since round 11 — measured, reconcile-v10 fixture P_braced_toplevel).
-Extend both when adding either. The unquoted-message escape is one leg of
+(the braced form is COUNTED since round 11 for QUOTE-FREE operator tails
+only — measured, reconcile-v10 fixture P_braced_toplevel; the regex's
+``[^"]*`` span stops at the first inner double quote, so it counts no
+more than that). Quote-bearing operator tails are a further ESCAPE CLASS
+beside the two above — five members measured silent at top level, each
+scanning 1 [True] at pin while bash executed the unbounded push
+(reconcile-v11 N1-N5): nested-quote default ``"${PUSH:-"<stub>"}"``,
+quoted array subscript ``"${PUSH["0"]}"``, quoted pattern operand
+``"${PUSH%".zz"}"``, command-substitution default
+``"${PUSH:-$(echo "x")}"``, quoted-var pattern operand
+``"${PUSH#"${EMPTY_PFX}"}"``; the enumeration is what was measured, not
+a bound on the class. All five REFUSE inside heredoc bodies (measured,
+reconcile-v11 — the tail-blind ``_PUSH_REF``), so the channel is open at
+TOP LEVEL only, and it is DISCLOSED rather than widened: the
+command-substitution default's value can hold arbitrary text, quotes
+included, so no regex closes the class (reconcile-v11 binding remedy;
+pinned by test_nested_quote_tail_at_top_level_is_not_counted plus the
+coverage-boundary grep pin). Extend both when adding either. The
+unquoted-message escape is one leg of
 the reconcile-v8 S2 compound: a push-bearing heredoc pad now REFUSES
 outright (measured, round 10), so the pad cannot vouch for it, but the
 husk-REPLACEMENT compound (S4) stays silent — see the positional-blindness
@@ -295,12 +317,17 @@ TOTAL_EXPECTED_SITES = 12
 
 # Push variable in EXECUTION position: the quoted variable followed by a
 # quoted message argument. The name must sit at an IDENTIFIER BOUNDARY, and
-# the braced form may carry any parameter-expansion operator tail (round 11:
-# round 10 accepted only bare / exactly-closed braced names, so the
-# braced-default call in reconcile-v10 fixture P_braced_toplevel scanned
+# the braced form may carry a QUOTE-FREE parameter-expansion operator tail
+# (round 11: round 10 accepted only bare / exactly-closed braced names, so
+# the braced-default call in reconcile-v10 fixture P_braced_toplevel scanned
 # 1 [True] at pin — suite GREEN — while bash executed the unbounded
 # `"${PUSH:-...}"` push at top level; measured on tip 89d4a691915,
-# bash 5.1.16). `[ -x "$PUSH" ]` guards do not match (a `]`, not a quote,
+# bash 5.1.16). The `[^"]*` span stops at the first inner double quote, so
+# a QUOTE-BEARING operator tail is NOT counted — the disclosed escape class
+# in COVERAGE BOUNDARY (five members measured silent at top level,
+# reconcile-v11 N1-N5), pinned open by
+# test_nested_quote_tail_at_top_level_is_not_counted. `[ -x "$PUSH" ]`
+# guards do not match (a `]`, not a quote,
 # follows), `"${PUSH_TIMEOUT}s"` does not match (`_` after PUSH fails the
 # boundary), and a bare name with trailing text (`"$PUSH stuff"`) does not
 # match (the bare alternation still requires the closing quote directly
@@ -461,8 +488,9 @@ def scan_execution_sites(
     Two exclusions, both owned by bash's parser rather than a re-implemented
     grammar: comments never reach the scan (the parser drops them), and
     here-document BODY + terminator lines are skipped (round 9 — every
-    ``<<`` occurrence is verified operator-vs-lookalike by
-    ``_is_real_heredoc``), GUARDED since round 10: a region is skipped only
+    ``<<`` occurrence is probed operator-vs-lookalike by
+    ``_is_real_heredoc``, whose verdict is contained, not trusted — see
+    its docstring), GUARDED since round 10: a region is skipped only
     when it contains no push reference (``_PUSH_REF``) and no ``<<`` text —
     either one REFUSES loudly, because an interpreter-fed body executes at
     cron time (measured, X1: ``bash <<EOF`` ran its body push while the
@@ -1208,15 +1236,85 @@ def test_braced_default_push_at_top_level_is_counted_and_reads_unbounded():
     P_braced_toplevel, recorded "observed but not raised"): the SAME
     braced-default spelling at TOP LEVEL — no heredoc — was silent on the
     r10 tip (measured: scanned 1 [True], suite GREEN at pin 1, while bash
-    executed the unbounded `TOPLEVEL_BRACED_UNBOUNDED` push). Closed by
-    widening rather than disclosed, per this task's history (rounds 4-7
-    closed single class members and the class returned; round 8 closed a
-    class outright and it stayed closed). The widened site regex COUNTS
-    the spelling, landing it on the direction rule's loud arms: the extra
-    site moves the count off the pin AND reads unbounded under the
-    prefix assert."""
+    executed the unbounded `TOPLEVEL_BRACED_UNBOUNDED` push). The widening
+    closed ONE member — the quote-free tail, the only tail the regex's
+    ``[^"]*`` span can read — not the class: five quote-bearing-tail
+    members remain silent at top level (measured, reconcile-v11 N1-N5)
+    and are DISCLOSED in COVERAGE BOUNDARY. This task's history (rounds
+    4-7 closed single class members and the class returned; round 8
+    closed a class outright and it stayed closed) cuts AGAINST chasing
+    the residual by regex: the command-substitution default's value can
+    hold arbitrary text, quotes included, so no regex closes the class —
+    disclosure is the class-level instrument here (reconcile-v11 binding
+    remedy; the boundary is pinned by
+    test_nested_quote_tail_at_top_level_is_not_counted). The widened site
+    regex COUNTS the quote-free spelling, landing it on the direction
+    rule's loud arms: the extra site moves the count off the pin AND
+    reads unbounded under the prefix assert."""
     text = _bounded_push("real_site_A") + '"${PUSH:-/bin/true}" "TOPLEVEL_BRACED_UNBOUNDED"\n'
     assert _bound_flags(text) == [True, False]
+
+
+def test_nested_quote_tail_at_top_level_is_not_counted():
+    """Behavioral pin of the disclosed COVERAGE BOUNDARY class (reconcile-v11
+    N1, the nested-quote default): a quote-bearing operator tail at TOP
+    LEVEL is NOT counted — ``_EXEC_SITE``'s ``[^"]*`` span stops at the
+    tail's inner double quote, so only the bounded real site scans
+    (measured, reconcile-v11: 1 [True] at pin on both the r10 and r11
+    tips while bash executed the unbounded push). The pin makes the
+    boundary a deliberate edit: any future widening of ``_EXEC_SITE``
+    that counts this spelling flips this assertion (to [True, False])
+    rather than moving silently. The SAME spelling inside a heredoc body
+    REFUSES via the tail-blind ``_PUSH_REF``
+    (test_braced_operator_push_spellings_in_a_body_refuse pins the
+    sibling spellings), so the class is open at top level only."""
+    text = _bounded_push("real_site_A") + '"${PUSH:-"/bin/x"}" "m"\n'
+    assert _bound_flags(text) == [True]
+
+
+def test_coverage_boundary_discloses_quote_bearing_tail_class():
+    """Grep pin (reconcile-v11 remedy 1c): the COVERAGE BOUNDARY section of
+    the module docstring keeps its quote-bearing-operator-tail escape
+    entry, naming all five measured members (reconcile-v11 N1-N5).
+    Deleting or renaming the entry — e.g. as part of a future widening —
+    must flip this pin in the same diff, so the standing coverage record
+    cannot silently drop the disclosed class."""
+    doc = __doc__ or ""
+    assert "COVERAGE BOUNDARY" in doc
+    assert "quote-bearing operator tail" in doc.lower(), (
+        "the COVERAGE BOUNDARY entry for quote-bearing operator tails is gone"
+    )
+    assert "reconcile-v11 N1" in doc, "the entry lost its measurement citation"
+    for member in (
+        "nested-quote default",
+        "quoted array subscript",
+        "quoted pattern operand",
+        "command-substitution default",
+        "quoted-var pattern operand",
+    ):
+        assert member in doc, f"COVERAGE BOUNDARY lost the {member!r} member"
+
+
+def test_probe_soundness_overclaim_framings_absent_module_wide():
+    """Grep pin (reconcile-v11 remedy 2): the two probe-soundness framings
+    this file kept regrowing — that a lookalike always parses without a
+    diagnostic under mutation, and that ``_is_real_heredoc`` "verifies"
+    rather than probes — are P2-falsified (a quoted or arithmetic
+    lookalike can parse DIRTY under mutation; false-real verdicts are
+    contained by the skip-region guard, not prevented). Round 11 fixed
+    one location and left another standing because its sweep was
+    diff-scoped; this pin is module-wide so a third recurrence fails
+    here. The banned phrases are assembled by concatenation so the pin
+    does not match its own source."""
+    text = Path(__file__).read_text()
+    banned = ("parses " + "clean", "verified " + "operator-vs-lookalike")
+    for phrase in banned:
+        assert phrase not in text, (
+            f"probe-soundness framing {phrase!r} reappeared in "
+            f"{Path(__file__).name}; the probe is not sound in the "
+            "over-skip direction (reconcile-v10 P2) — state containment "
+            "by the skip-region guard instead"
+        )
 
 
 def test_misclassified_lookalike_cannot_silently_skip_a_push():
