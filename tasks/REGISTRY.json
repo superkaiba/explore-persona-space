@@ -12768,8 +12768,8 @@
     "2655": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2655",
-      "status": "proposed",
+      "path": "tasks/archived/2655",
+      "status": "archived",
       "title": "Step 5a spec-freshness sync imports half an atomic main change, redding the Step 10d gate as payload-attributed (GLOB_SCAN_TESTS map row without its tests/ file)"
     },
     "266": {
