@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2653,
+  "highest_id": 2654,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12757,6 +12757,13 @@
       "path": "tasks/archived/2653",
       "status": "archived",
       "title": "workflow-fix: Step 10d lint gate blocks on informational note-line scan counts (false block on clean payload)"
+    },
+    "2654": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2654",
+      "status": "proposed",
+      "title": "workflow-fix: cited-body gate labels Word:-prefixed content corrections 'frontmatter-only' (fm_line over-matches ordinary prose)"
     },
     "266": {
       "has_clean_result": false,
