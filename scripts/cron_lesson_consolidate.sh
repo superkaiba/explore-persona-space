@@ -52,6 +52,9 @@ LOG_DIR="${EPS_LESSON_CONSOLIDATE_LOG_DIR:-$PROJECT_DIR/logs/lesson_consolidate}
 LOG_FILE="$LOG_DIR/$DATE.log"
 SENTINEL_DIR="${EPS_LESSON_CONSOLIDATE_SENTINEL_DIR:-$LOG_DIR}"
 TELEGRAM_PUSH="${EPS_TELEGRAM_PUSH_SCRIPT:-$HOME/my-goat/scripts/telegram_push.sh}"
+# Bound every push: a connected-but-stalled endpoint must not hang this
+# wrapper (task #2387; 30s matches the Python callers' subprocess timeout).
+PUSH_TIMEOUT="${EPS_PUSH_TIMEOUT_SECS:-30}"
 SIDECAR="${EPS_LESSON_CONSOLIDATE_SIDECAR:-$PROJECT_DIR/.claude/cache/lesson-consolidate-events.jsonl}"
 SENTINEL="$SENTINEL_DIR/refused-$DATE.flag"
 
@@ -63,7 +66,7 @@ SENTINEL="$SENTINEL_DIR/refused-$DATE.flag"
 fatal() {
     echo "$(date -Iseconds) FATAL: $1" >&2
     if [ -x "$TELEGRAM_PUSH" ]; then
-        "$TELEGRAM_PUSH" "ALERT: cron_lesson_consolidate: $1" \
+        timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$TELEGRAM_PUSH" "ALERT: cron_lesson_consolidate: $1" \
             || echo "$(date -Iseconds) lesson_consolidate: telegram_push.sh FAILED for FATAL alert (continuing to exit 1)" >&2
     fi
     exit 1
@@ -137,7 +140,7 @@ if [ "${rc:-0}" -eq 3 ]; then
         if [ -f "$SENTINEL" ]; then
             echo "lesson_consolidate: sentinel $SENTINEL already exists — skipping re-alert"
         elif [ -x "$TELEGRAM_PUSH" ]; then
-            if "$TELEGRAM_PUSH" "$MSG"; then
+            if timeout --kill-after=5s "${PUSH_TIMEOUT}s" "$TELEGRAM_PUSH" "$MSG"; then
                 touch "$SENTINEL"
                 echo "lesson_consolidate: budget-refusal alert pushed + sentinel written ($SENTINEL)"
             else
