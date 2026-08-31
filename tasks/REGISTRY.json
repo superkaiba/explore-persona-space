@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2656,
+  "highest_id": 2657,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12778,6 +12778,13 @@
       "path": "tasks/proposed/2656",
       "status": "proposed",
       "title": "main-red: single bare hf_hub_download on main (issue1901_singleturn_retrieval_final.py:133) keeps --check-live-hf-retry-routing + no-flags red fleet-wide"
+    },
+    "2657": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2657",
+      "status": "running",
+      "title": "Step 9c gate-fleet arbitration counts a session's own detached ledger refresh as a foreign contender, deadlocking that session's own gate"
     },
     "266": {
       "has_clean_result": false,

@@ -675,3 +675,31 @@ composer-discharged by a no-Hub-calls grep; three-grain `grep -F` recount with
 the removed literal probed at `origin/main` too (0 both sides ⇒ no orphaned
 pin); truthful identical-worktree-plan envelope inlined anyway; ledger-empty
 attest; three-direction stakes with crash-safety as the worst leg.
+
+**#2657 r1 (2026-08-31) sharpenings — fleet-gate ARBITRATION-PREDICATE variant
+(diff changes the `probe --fleet` cap predicate in `scripts/step9c_baseline.py`,
+the every-session Step 9c hot path):** (a) brief-supplied hard invariants
+compose as a REQUIRED `## Hard-invariant verdicts` template section — one
+`Invariant k (...): CLEAN | finding ref` line each, so no invariant can be
+silently skipped. (b) an exit-set monotonicity claim ("post-fix exit-3 set ⊆
+pre-fix") composes as a STATIC old-vs-new predicate comparison with the
+merge-base blob read (`git show <MB>:<script>`), plus a no-OTHER-exit-path-
+changed sweep. (c) until-loop safety = the crash-safety third leg with named
+hypotheses incl. refresh-KEY identity near-miss (exclusion keyed on the same
+constant the grouping produces), empty `grouped`, env-parse of the cap var
+(pre-existing vs round-added raise paths), and the new conditional stderr
+note's own code raising; a runtime exit 2 wedges the sanctioned until-loop
+fleet-wide. (d) a disclosed paragraph RE-WRAP (to make a pin literal
+line-contiguous) arms a "statically re-apply ALL neighboring pin asserts"
+duty over the live skill text (FLEET_PROBE_FORM count/orderings, heading,
+cap-expired line, until-loop form) — the re-wrap is the one place a green
+local run hides a fleet-visible pin break. (e) marker "No PR opened" vs a
+brief-stated draft PR = orchestrator-opened-after timing gap; pre-triage as
+at most Minor report-accuracy, never dishonesty. (f) red-then-green anchors
+compose as a two-sided static trace: incident rows exit 0 on HEAD AND exit 3
+under the merge-base predicate — green-both-sides = hollow anchor, Critical.
+Also validated again: TAG-first wf-fix floor (tags `wf-fix`, PASS at v3 ==
+symlink v3, no version gap); grep-arithmetic settled table verified at BOTH
+MB blobs and HEAD; #1805 discharge on all-M name-status alone; voluntary
+`## Smoke run` H2 pre-triage on kind:infra; base-drift caveat for append-only
+events.jsonl rows when origin/main advanced past MB.
