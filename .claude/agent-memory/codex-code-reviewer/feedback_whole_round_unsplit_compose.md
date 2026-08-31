@@ -36,6 +36,26 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    base exists at compose time and use `origin/main...HEAD`; items 2/3/5
    still apply (strip the split paragraph, size the diff, cross-commit
    priority). Do not demand a round-parent SHA the brief never named.
+1c. **Stacked-on-unmerged-parent variant (#2654 r1, 2026-08-30):** a ROUND-1
+   branch cut from `origin/issue-<parent>` (parent's Step 10d merge
+   terminally gate-blocked; the target file does not exist on main). Base =
+   the parent-branch tip SHA (here a merge commit); pin `git show <round
+   sha>` / `git diff <base>..HEAD`, BAN both origin/main body forms, and
+   state that the N inherited parent commits are OUT OF SCOPE (already
+   PASS+PASS'd with `epm:test-verdict` PASS on the parent) — an interaction
+   finding must NAME the inherited commit. A brief `diverged_on_main` entry
+   can diverge THROUGH the inherited base (parent registered the test file
+   in select_step9c_tests.py): probe which inherited commits touched it and
+   pre-triage as inherited provenance, never round scope. The worktree plan
+   premise is the ABSENT variant for real (no `tasks/*/<N>/` at all — the
+   task postdates the branch cut), so the plan envelope wording is
+   truthful-absent, not the stale-copy boilerplate. HEAD == payload tip ⇒
+   worktree reads byte-identical; Step 0.9 probes swap the base SHA in for
+   main. Also fired here: marker gate-scope label spelled `**Gate-scope
+   (#1288):**` (word "check" missing) with all contract fields — pre-triage
+   presence SATISFIED, cosmetic-nit-at-most, so the twin doesn't
+   manufacture the strip-keyed `marker-shape` blocker.
+
 2. **Strip the copied Step 0 "Split-review sub-scope briefs (#2074)"
    paragraph.** Copying it verbatim puts the literal trigger token
    `SPLIT-REVIEW SUB-...` INTO the prompt, arming split-mode behavior
