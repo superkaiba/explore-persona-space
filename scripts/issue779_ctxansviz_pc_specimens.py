@@ -26,17 +26,18 @@ from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: thread caps must land BEFORE the heavy imports below. On the shared VM,
-# load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
-# BLAS/torch pools freeze at import time.
-load_dotenv()
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
 
-import numpy as np
-import torch
-from huggingface_hub import hf_hub_download
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from huggingface_hub import hf_hub_download  # noqa: E402
 
-from explore_persona_space.orchestrate.provenance import commit_string, git_provenance
-import issue779_ctxansviz_pca3_dashboard as pca3_source
+from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    commit_string,
+    git_provenance,
+)
+import issue779_ctxansviz_pca3_dashboard as pca3_source  # noqa: E402
 
 CAPTURE_REVISION = "cbc55efdd7f5581677047e487aa61172f6e7944d"
 EXPORT_REVISION = "d155ed93f4b0184a477cea51aef65cc5440da588"
@@ -95,11 +96,14 @@ def load_pc10(export_dir: Path, chunks: tuple[str, ...]) -> tuple[list[dict], di
 
     raw_rows: list[tuple[int, np.ndarray, np.ndarray]] = []
     for chunk_name in chunks:
-        path = hf_hub_download(
-            HF_REPO,
-            filename=f"{CAPTURE_PREFIX}/{chunk_name}",
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        path = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=f"{CAPTURE_PREFIX}/{chunk_name}",
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"capture chunk download ({chunk_name})",
         )
         bundle = torch.load(path, mmap=True, weights_only=False, map_location="cpu")
         layers = [int(value) for value in bundle["layers"]]

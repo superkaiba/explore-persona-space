@@ -22,21 +22,22 @@ from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: thread caps must land BEFORE the heavy imports below. On the shared VM,
-# load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
-# BLAS/torch pools freeze at import time.
-load_dotenv()
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
 
-import numpy as np
-import torch
-import umap
-from huggingface_hub import HfApi, hf_hub_download
-from scipy.linalg import orthogonal_procrustes
-from sklearn.manifold import trustworthiness
-from sklearn.neighbors import NearestNeighbors
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+import umap  # noqa: E402
+from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+from scipy.linalg import orthogonal_procrustes  # noqa: E402
+from sklearn.manifold import trustworthiness  # noqa: E402
+from sklearn.neighbors import NearestNeighbors  # noqa: E402
 
-import issue779_ctxansviz_pca3_dashboard as display_source
-from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+import issue779_ctxansviz_pca3_dashboard as display_source  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    as_metadata_dict,
+    git_provenance,
+)
 
 CAPTURE_REVISION = "cbc55efdd7f5581677047e487aa61172f6e7944d"
 EXPORT_REVISION = "d155ed93f4b0184a477cea51aef65cc5440da588"
@@ -90,14 +91,18 @@ def load_pca(export_dir: Path) -> tuple[np.ndarray, np.ndarray, dict]:
 
 
 def capture_universe() -> list:
-    items = list(
-        HfApi().list_repo_tree(
-            HF_REPO,
-            path_in_repo=CAPTURE_PREFIX,
-            recursive=False,
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
-        )
+    items = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: list() materialized inside the retry thunk (#794/#1202)
+            HfApi().list_repo_tree(
+                HF_REPO,
+                path_in_repo=CAPTURE_PREFIX,
+                recursive=False,
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            )
+        ),
+        what=f"list capture tree under {CAPTURE_PREFIX}",
     )
     items = sorted((item for item in items if item.path.endswith(".pt")), key=lambda x: x.path)
     if len(items) != 1_920:
@@ -158,11 +163,14 @@ def fill_fit_arrays(
     for position, item in enumerate(selected):
         if cursor == n_fit:
             break
-        local = hf_hub_download(
-            HF_REPO,
-            filename=item.path,
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        local = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=item.path,
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"capture chunk download ({item.path})",
         )
         bundle = torch.load(local, mmap=True, weights_only=False, map_location="cpu")
         ci, context_pca, answer_pca = project_bundle(bundle, components, mean)
@@ -202,11 +210,14 @@ def display_projections(
         item = item_by_name.get(chunk)
         if item is None:
             raise RuntimeError(f"display chunk absent from capture universe: {chunk}")
-        local = hf_hub_download(
-            HF_REPO,
-            filename=item.path,
-            repo_type="dataset",
-            revision=CAPTURE_REVISION,
+        local = hub.retry_transient(
+            lambda: hf_hub_download(
+                HF_REPO,
+                filename=item.path,
+                repo_type="dataset",
+                revision=CAPTURE_REVISION,
+            ),
+            what=f"capture chunk download ({item.path})",
         )
         bundle = torch.load(local, mmap=True, weights_only=False, map_location="cpu")
         ci, context_pca, answer_pca = project_bundle(bundle, components, mean)

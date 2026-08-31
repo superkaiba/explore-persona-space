@@ -20,15 +20,15 @@ from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: thread caps must land BEFORE the heavy imports below. On the shared VM,
-# load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
-# BLAS/torch pools freeze at import time.
-load_dotenv()
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
 
-import numpy as np
+import numpy as np  # noqa: E402
 
-import issue779_ctxansviz_separate_pca_dashboard as text_source
-from explore_persona_space.orchestrate.provenance import commit_string, git_provenance
+import issue779_ctxansviz_separate_pca_dashboard as text_source  # noqa: E402
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    commit_string,
+    git_provenance,
+)
 
 CAPTURE_REVISION = "cbc55efdd7f5581677047e487aa61172f6e7944d"
 EXPORT_PRODUCER_COMMIT = "79d9142bf5c88ae2ccd3ff7270e9d98a1faaaa5d"
@@ -178,11 +178,7 @@ def load_clusters(export_dir: Path, labels_path: Path, rows: list[dict]) -> dict
         raise RuntimeError("cluster label TF-IDF source is not pinned to public-safe WildChat")
     labels = label_artifact.get("labels", [])
     label_lookup = {(str(item["role"]), int(item["cluster"])): item for item in labels}
-    expected = {
-        (role, cluster)
-        for role in ("context", "answer")
-        for cluster in range(N_CLUSTERS)
-    }
+    expected = {(role, cluster) for role in ("context", "answer") for cluster in range(N_CLUSTERS)}
     if set(label_lookup) != expected or len(labels) != len(expected):
         raise RuntimeError("LLM label artifact does not contain exactly 100 unique role-clusters")
     evidence = label_artifact.get("public_evidence", [])
@@ -263,7 +259,9 @@ def load_clusters(export_dir: Path, labels_path: Path, rows: list[dict]) -> dict
     answer_probability = joint.sum(axis=0)
     nonzero = joint > 0
     independent = context_probability[:, None] * answer_probability[None, :]
-    mutual_information = float((joint[nonzero] * np.log(joint[nonzero] / independent[nonzero])).sum())
+    mutual_information = float(
+        (joint[nonzero] * np.log(joint[nonzero] / independent[nonzero])).sum()
+    )
     context_entropy = role_payload["context"]["entropy"]["shannon_nats"]
     answer_entropy = role_payload["answer"]["entropy"]["shannon_nats"]
     conditional = contingency / contingency.sum(axis=1, keepdims=True)
@@ -327,9 +325,7 @@ def spread_payload(
             ),
             "pca_dims_90": int(spectral_summary[source_role]["n_dims_90"]),
             "twonn_50k": round(float(estimates[source_role]["50000"]["twonn"]["median"]), 6),
-            "cluster_entropy_normalized": clusters["roles"][role]["entropy"][
-                "normalized_shannon"
-            ],
+            "cluster_entropy_normalized": clusters["roles"][role]["entropy"]["normalized_shannon"],
             "cluster_effective_count": clusters["roles"][role]["entropy"]["effective_count"],
         }
     return output
@@ -811,9 +807,7 @@ def main() -> None:
     attach_umap(rows, arrays)
     dim_summary, spectra, producer_meta = load_dimensions(args.export_dir)
     clusters = load_clusters(args.export_dir, args.cluster_labels, rows)
-    data = build_data(
-        rows, sample_meta, umap_meta, dim_summary, spectra, producer_meta, clusters
-    )
+    data = build_data(rows, sample_meta, umap_meta, dim_summary, spectra, producer_meta, clusters)
     html = page(data)
     markdown = report(data)
     for output_dir in (args.public_dir, args.experiments_dir):

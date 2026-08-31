@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2650,
+  "highest_id": 2656,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10694,8 +10694,8 @@
     "2384": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2384",
-      "status": "running",
+      "path": "tasks/completed/2384",
+      "status": "completed",
       "title": "workflow-fix: adversarial-planner plan-finalize cited-body currency gate (cited parent corrected mid-draft goes unseen)"
     },
     "2385": {
@@ -10715,8 +10715,8 @@
     "2387": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2387",
-      "status": "running",
+      "path": "tasks/completed/2387",
+      "status": "completed",
       "title": "cron wrappers: bound the synchronous Telegram push calls (timeout) \u2014 class sweep from #2196"
     },
     "2388": {
@@ -12691,8 +12691,8 @@
     "2645": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2645",
-      "status": "running",
+      "path": "tasks/completed/2645",
+      "status": "completed",
       "title": "cron_step9c_ledger_refresh.sh is committed non-executable \u2014 #2114's nightly refresh has failed Permission denied for 18 nights"
     },
     "2646": {
@@ -12712,15 +12712,15 @@
     "2648": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2648",
-      "status": "proposed",
+      "path": "tasks/on_hold/2648",
+      "status": "on_hold",
       "title": "Clear the torch-before-dotenv red on main that reds every Step 9c gate"
     },
     "2649": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2649",
-      "status": "planning",
+      "path": "tasks/completed/2649",
+      "status": "completed",
       "title": "main-red: HF-routing/hub-retry lint + torch-before-dotenv scan fail on pristine origin/main, redding Step 9c fleet-wide"
     },
     "265": {
@@ -12733,9 +12733,51 @@
     "2650": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2650",
-      "status": "planning",
+      "path": "tasks/running/2650",
+      "status": "running",
       "title": "fix #847 torch-before-dotenv violations making test_no_new_torch_before_dotenv_vm_entrypoints red on main (fleet-wide Step 9c inheritance)"
+    },
+    "2651": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2651",
+      "status": "proposed",
+      "title": "workflow-fix: --check-hub-verify-retry FAIL message invites a lazy-wrap that retries nothing (retry_transient around list_repo_tree)"
+    },
+    "2652": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2652",
+      "status": "proposed",
+      "title": "Re-size the Step 9c ledger-refresh timeout \u2014 it runs at 99% of its own fence"
+    },
+    "2653": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2653",
+      "status": "archived",
+      "title": "workflow-fix: Step 10d lint gate blocks on informational note-line scan counts (false block on clean payload)"
+    },
+    "2654": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2654",
+      "status": "running",
+      "title": "workflow-fix: cited-body gate labels Word:-prefixed content corrections 'frontmatter-only' (fm_line over-matches ordinary prose)"
+    },
+    "2655": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2655",
+      "status": "archived",
+      "title": "Step 5a spec-freshness sync imports half an atomic main change, redding the Step 10d gate as payload-attributed (GLOB_SCAN_TESTS map row without its tests/ file)"
+    },
+    "2656": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2656",
+      "status": "proposed",
+      "title": "main-red: single bare hf_hub_download on main (issue1901_singleturn_retrieval_final.py:133) keeps --check-live-hf-retry-routing + no-flags red fleet-wide"
     },
     "266": {
       "has_clean_result": false,

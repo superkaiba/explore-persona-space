@@ -22,6 +22,7 @@ import json
 import math
 import os
 import shutil
+import sys
 import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
@@ -30,13 +31,26 @@ from typing import Iterator, Mapping, Sequence
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: thread caps must land BEFORE the heavy imports below. On the shared VM,
-# load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
-# BLAS/torch pools freeze at import time.
-load_dotenv()
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
 
-import numpy as np
-import torch
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+
+
+def _ensure_repo_root_on_syspath() -> Path:
+    """Insert the repo root on ``sys.path`` so the module-top ``scripts.*``
+    import below resolves in script mode, where ``sys.path[0]`` is the
+    script's own directory (#823/#853)."""
+    root = Path(__file__).resolve().parents[1]
+    sentinel = root / "scripts" / "issue2476_turnavg_sae.py"
+    if not sentinel.exists():
+        raise RuntimeError(f"repo-root resolution failed: {sentinel} missing")
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    return root
+
+
+_REPO_ROOT = _ensure_repo_root_on_syspath()
 
 try:  # importable both as ``scripts.issue2643_sae_map`` and as a direct script
     from scripts.issue2476_turnavg_sae import MatryoshkaBatchTopKSAE
@@ -345,13 +359,18 @@ def _load_ridge(path: Path) -> dict[str, object]:
 def _download_file(filename: str, local_dir: Path, revision: str) -> Path:
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     return Path(
-        hf_hub_download(
-            DATA_REPO,
-            filename=filename,
-            repo_type="dataset",
-            revision=revision,
-            local_dir=local_dir,
+        hub.retry_transient(
+            lambda: hf_hub_download(
+                DATA_REPO,
+                filename=filename,
+                repo_type="dataset",
+                revision=revision,
+                local_dir=local_dir,
+            ),
+            what=f"data file download ({filename})",
         )
     )
 
@@ -380,16 +399,25 @@ def _resolve_assets(args: argparse.Namespace) -> tuple[Path, Path, Path]:
 def _chunk_pairs(prefix: str, revision: str, max_chunks: int = 0) -> list[tuple[str, str]]:
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate import hub
+
     npz: dict[str, str] = {}
     rows: dict[str, str] = {}
-    for entry in HfApi().list_repo_tree(
-        DATA_REPO,
-        repo_type="dataset",
-        revision=revision,
-        path_in_repo=prefix,
-        recursive=True,
-        expand=False,
-    ):
+    entries = hub.retry_transient(
+        lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: list() materialized inside the retry thunk (#794/#1202)
+            HfApi().list_repo_tree(
+                DATA_REPO,
+                repo_type="dataset",
+                revision=revision,
+                path_in_repo=prefix,
+                recursive=True,
+                expand=False,
+            )
+        ),
+        what=f"list capture tree under {prefix}",
+    )
+    for entry in entries:
         path = entry.path
         leaf = Path(path).name
         if leaf.endswith("__L19.npz"):
@@ -679,7 +707,8 @@ def phase_screen(args: argparse.Namespace) -> None:
 def phase_rescore(args: argparse.Namespace) -> None:
     """Recompute descriptive AUCs from persisted content-opaque row scores."""
     out = Path(args.out)
-    rows = [json.loads(line) for line in (out / "row_scores.jsonl").read_text().splitlines()]
+    with (out / "row_scores.jsonl").open(encoding="utf-8") as fh:
+        rows = [json.loads(line) for line in fh if line.strip()]
     rows = [row for row in rows if row["split"] == "test"]
     if not rows:
         raise RuntimeError("no test rows in persisted screen")

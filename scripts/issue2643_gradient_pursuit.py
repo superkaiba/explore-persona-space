@@ -22,13 +22,10 @@ from typing import Mapping, Sequence
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
-# #847: thread caps must land BEFORE the heavy imports below. On the shared VM,
-# load_dotenv() setdefaults OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS, and the
-# BLAS/torch pools freeze at import time.
-load_dotenv()
+load_dotenv()  # BEFORE any heavy import — shared-VM thread caps (#847)
 
-import numpy as np
-import torch
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 K_LADDER_DEFAULT = (1, 2, 4, 8, 16)
 REFIT_RIDGE_RELATIVE_DEFAULT = 1e-3

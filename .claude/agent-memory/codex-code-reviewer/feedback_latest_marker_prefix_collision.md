@@ -27,3 +27,16 @@ v8 (kind-exact `latest-marker` fetch). Never resolve a marker's latest
 version from a substring grep over events.jsonl; resolve by kind-exact
 fetch (or JSON `kind ==` filtering), and byte-compare the fetched note
 against any reused template envelope before attesting "unchanged".
+
+**Marker-KIND drift mid-task (#2387 r11, 2026-08-30):** a long-running task
+can switch implementation-marker kinds mid-stream — #2387 posted
+`epm:results` v1-v6 (rounds 1-6) then `epm:implementation` v7-v11 (rounds
+7-11, version == round). `latest-marker --prefix epm:results` then returns
+the STALE v6 with rc=0 and a plausible-looking body — the freshness tell is
+the ts (hours old) vs the round's ledger/progress activity. At every
+revision-round compose, before trusting any prefix fetch, list ALL
+implementation-report rows from events.jsonl (`kind` in
+`{epm:results, epm:experiment-implementation, epm:implementation}`) with
+ts+version, and take the round-matched one; attest the kind-naming variance
+in the prompt (marker-shape stays invalid on it) and set the verdict
+sentinel from that marker's version.
