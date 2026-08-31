@@ -156,8 +156,8 @@ def _style_axes(ax: plt.Axes) -> None:
     ax.spines["left"].set_color(SEAM)
     ax.spines["bottom"].set_color(SEAM)
     ax.tick_params(length=0, pad=8)
-    ax.set_ylim(0.0, 1.025)
-    ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
+    ax.set_ylim(0.5, 1.01)
+    ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     ax.yaxis.set_major_formatter(
         FuncFormatter(lambda y, _pos: f"{y:.2f}".rstrip("0").rstrip("."))
     )
@@ -171,6 +171,7 @@ def _plot_panel(
     *,
     title: str,
     kicker: str,
+    show_retrieval: bool,
 ) -> None:
     _style_axes(ax)
     ax.set_title(title, loc="left", y=1.055, pad=0, fontweight=650)
@@ -189,7 +190,6 @@ def _plot_panel(
 
     for key, style in PREDICTORS.items():
         x, r2 = _series(rows, key, "r2")
-        _, retrieval = _series(rows, key, "retrieval")
 
         ax.plot(
             x,
@@ -201,19 +201,21 @@ def _plot_panel(
             lw=3.0,
             zorder=4,
         )
-        ax.plot(
-            x,
-            retrieval,
-            color=style.color,
-            marker=style.marker,
-            markerfacecolor=PAPER,
-            markeredgecolor=style.color,
-            markeredgewidth=1.8,
-            markersize=7.0,
-            lw=2.4,
-            linestyle=(0, (5.0, 3.8)),
-            zorder=3,
-        )
+        if show_retrieval:
+            _, retrieval = _series(rows, key, "retrieval")
+            ax.plot(
+                x,
+                retrieval,
+                color=style.color,
+                marker=style.marker,
+                markerfacecolor=PAPER,
+                markeredgecolor=style.color,
+                markeredgewidth=1.8,
+                markersize=7.0,
+                lw=2.4,
+                linestyle=(0, (5.0, 3.8)),
+                zorder=3,
+            )
 
 
 def _human_n(value: float, _position: int | None = None) -> str:
@@ -274,12 +276,14 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
         layer["rows"],
         title="Predictability across layers",
         kicker=f"A  ·  {layer['n_train']:,} training contexts",
+        show_retrieval=False,
     )
     _plot_panel(
         ax_scale,
         scaling["rows"],
         title="Scaling with training data",
         kicker=f"B  ·  layer {scaling['layer']}",
+        show_retrieval=True,
     )
 
     ax_layer.set_xlim(-0.5, 27.5)
