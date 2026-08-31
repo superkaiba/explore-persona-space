@@ -663,3 +663,36 @@ beyond-bar; r12 = disclose + pin, no behavior change):**
     epm:implementation v7-v12, version == round): fetch by exact kind +
     round-matched version; the durable-record section tells the twin the
     prefix fetch returns the stale round-6 row.
+
+**#2387 r13 (2026-08-30) — RULE-STATING terminal round (the round states the
+exact two-condition coverage rule as a biconditional; expected-terminal per
+the binding record):**
+
+78. **When the round's whole content is an exact stated RULE, the primary
+    target pivots from sentence-enumeration to FALSIFY-THE-BICONDITIONAL by
+    construction** — both directions (satisfies-both-yet-uncounted;
+    violates-either-yet-counted) PLUS the rule's domain edges, handed as
+    construction AXES not conclusions: multi-match rendered lines
+    (finditer/greedy-backtracking across several `}"` candidates), tail
+    content holding the quote condition while stressing the regex otherwise,
+    rendering in BOTH directions (the rule speaks of RENDERED lines —
+    backslash-joins and any split), skip-region interaction, and the stated
+    domain (braced form only — do the sentences accidentally cover the bare
+    form?). Frame it as "the highest-value action of the round".
+79. **The BRIEF itself can carry the member-arithmetic slip** (said "seven
+    across two classes", enumerated 5+1, file text says "six members ...
+    beside the two above"): fold the brief verbatim, then add an
+    adaptations bullet — audit the FILE's text member-by-member; a count
+    slip in the brief is not a finding against the round; reconcile counts
+    from the file. Item-33's phantom-finding class, brief-side variant.
+80. **A round's own driver can measure the WRONG frame's engines** —
+    drive13.py's `tip_mod.py` was the round PARENT (c31a64ab97c7) and
+    `parent_mod.py` the r11 tip; NEITHER was the round-13 tip. Hand the
+    engine→SHA mapping as a neutral fact plus the third-arm route
+    (`git show <round-tip>:<file>` into scratch), framed as: the
+    no-behavior-change claim predicts identity across all three; any
+    constructed divergence falsifies the central claim. Also: the
+    expected-terminal posture composes as "PASS is the expected and
+    legitimate outcome ... round count must not decide the verdict in
+    either direction" in BOTH the acceptance-bar section and the
+    Recommendation bracket.
