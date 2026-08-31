@@ -12782,8 +12782,8 @@
     "2657": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2657",
-      "status": "proposed",
+      "path": "tasks/planning/2657",
+      "status": "planning",
       "title": "Step 9c gate-fleet arbitration counts a session's own detached ledger refresh as a foreign contender, deadlocking that session's own gate"
     },
     "266": {
