@@ -292,7 +292,15 @@ def test_non_git_scan_root_skips_rather_than_crashing(tmp_path: Path, capsys) ->
 
     assert rows == [], rows
     err = capsys.readouterr().err
-    assert "--check-torch-before-dotenv skipped" in err, err
+    assert "check-torch-before-dotenv: skipped" in err, err
+    # The advisory channel is load-bearing: the Step 10d pre-push gate builds
+    # its FAILURE-line set with `grep -h '^workflow_lint: '`, so a note on that
+    # prefix is a NEW failure row on the gated side only (the baseline tree has
+    # no such check) and blocks the landing on an informational line. #2650's
+    # own gate blocked exactly this way — a 162-byte NEW set holding only this
+    # note, with zero own-diff rows and zero tracebacks.
+    assert err.lstrip().startswith("WARN: "), err
+    assert "workflow_lint: " not in err, err
 
 
 def test_non_git_scan_root_does_not_abort_the_no_flags_run(tmp_path: Path) -> None:

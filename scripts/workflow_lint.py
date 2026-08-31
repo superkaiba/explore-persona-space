@@ -10064,9 +10064,9 @@ def _load_thread_caps_guard(root: Path) -> tuple[object | None, str | None]:
     except ModuleNotFoundError as exc:
         if (exc.name or "").split(".")[0] == "pytest":
             print(
-                "workflow_lint: note: --check-torch-before-dotenv skipped — pytest is "
-                "unavailable, so the #847 guard module cannot be imported (the pytest gate "
-                "remains the enforcement surface).",
+                "WARN: check-torch-before-dotenv: skipped — pytest is unavailable, so the "
+                "#847 guard module cannot be imported (the pytest gate remains the "
+                "enforcement surface).",
                 file=sys.stderr,
             )
             return None, None
@@ -10131,8 +10131,17 @@ def check_torch_before_dotenv(*, repo_root: Path | None = None) -> list[str]:
         # guard (tests/test_shared_vm_thread_caps.py) still enforces it in a
         # real checkout at Step 9c, and so does the no-flags run this check
         # was added to.
+        # The `WARN: ` prefix is load-bearing, not cosmetic. The Step 10d
+        # pre-push gate builds its FAILURE-line set with
+        # `grep -h '^workflow_lint: '` and subtracts baseline from gated. A
+        # `workflow_lint: `-prefixed line here lands in that set on the GATED
+        # side only — the baseline tree (archived origin/main) has no such
+        # check — so it reads as a new failure row and blocks the landing on
+        # an informational note. `WARN: ` is the established advisory channel
+        # the normalizer deliberately excludes ("WARNs never enter"), and is
+        # the shape --check-prod-import-lockfile already uses for advisories.
         sys.stderr.write(
-            "workflow_lint: --check-torch-before-dotenv skipped: git enumeration failed "
+            "WARN: check-torch-before-dotenv: skipped — git enumeration failed "
             f"({type(exc).__name__}: {exc})\n"
         )
         return []
