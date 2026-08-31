@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2654,
+  "highest_id": 2655,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12764,6 +12764,13 @@
       "path": "tasks/running/2654",
       "status": "running",
       "title": "workflow-fix: cited-body gate labels Word:-prefixed content corrections 'frontmatter-only' (fm_line over-matches ordinary prose)"
+    },
+    "2655": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2655",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness sync imports half an atomic main change, redding the Step 10d gate as payload-attributed (GLOB_SCAN_TESTS map row without its tests/ file)"
     },
     "266": {
       "has_clean_result": false,
