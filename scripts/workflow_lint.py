@@ -10117,8 +10117,27 @@ def check_torch_before_dotenv(*, repo_root: Path | None = None) -> list[str]:
         return [fail_row] if fail_row else []
 
     allowlist = guard.GRANDFATHERED_TORCH_BEFORE_DOTENV
+    try:
+        targets = guard._scan_targets(root)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        # The guard enumerates its scan set with `git ls-files`, so a NON-GIT
+        # scan root raises here. That is a REAL configuration this lint runs
+        # in: the Step 10d pre-push gate lints a landing tree that is a plain
+        # tar extraction under /tmp. Skip with a note rather than crashing the
+        # whole lint run and killing every check after it — the same
+        # disposition --check-conflict-markers takes on git exit 128.
+        # Known limitation, deliberate: the check is inert on a non-git tree,
+        # so the Step 10d landing-tree copy does not enforce it. The pytest
+        # guard (tests/test_shared_vm_thread_caps.py) still enforces it in a
+        # real checkout at Step 9c, and so does the no-flags run this check
+        # was added to.
+        sys.stderr.write(
+            "workflow_lint: --check-torch-before-dotenv skipped: git enumeration failed "
+            f"({type(exc).__name__}: {exc})\n"
+        )
+        return []
     errors: list[str] = []
-    for path in _files_scope_filter(guard._scan_targets(root)):
+    for path in _files_scope_filter(targets):
         try:
             src = path.read_text()
             tree = ast.parse(src)

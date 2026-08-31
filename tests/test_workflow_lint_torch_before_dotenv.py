@@ -269,5 +269,53 @@ def test_unparseable_file_is_reported_not_crashed(tmp_path: Path) -> None:
     assert len(rows) == 1 and "could not read/parse" in rows[0]
 
 
+def test_non_git_scan_root_skips_rather_than_crashing(tmp_path: Path, capsys) -> None:
+    """A NON-GIT scan root must SKIP with a note, never raise.
+
+    The guard enumerates its scan set with ``git ls-files``, which exits 128
+    outside a repository. This is not hypothetical: the Step 10d pre-push lint
+    gate lints a landing tree that is a plain ``git archive | tar -x``
+    extraction under ``/tmp`` with no ``.git``. Before this was handled, the
+    ``CalledProcessError`` propagated out of ``main()`` and killed the entire
+    no-flags run — every check registered after this one silently never ran,
+    which is strictly worse than the violation the check exists to catch
+    (found by #2650's own Step 10d gate: gated leg 3 KB vs baseline 19 KB).
+    """
+    # Same tree shape as _make_repo, deliberately WITHOUT `git init`.
+    repo = tmp_path / "notarepo"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "tests").mkdir(parents=True)
+    (repo / _GUARD_REL).write_text((_REPO / _GUARD_REL).read_text(), encoding="utf-8")
+    (repo / "scripts/probe.py").write_text("import numpy as np\n\nprint(np)\n", encoding="utf-8")
+
+    rows = wl.check_torch_before_dotenv(repo_root=repo)
+
+    assert rows == [], rows
+    err = capsys.readouterr().err
+    assert "--check-torch-before-dotenv skipped" in err, err
+
+
+def test_non_git_scan_root_does_not_abort_the_no_flags_run(tmp_path: Path) -> None:
+    """The whole-run consequence, pinned separately from the unit disposition.
+
+    The unit test above pins the return value; this pins what actually broke —
+    a non-git tree must not stop ``main()`` from reaching the checks that come
+    after this one.
+    """
+    repo = tmp_path / "notarepo2"
+    (repo / "scripts").mkdir(parents=True)
+    (repo / "tests").mkdir(parents=True)
+    (repo / _GUARD_REL).write_text((_REPO / _GUARD_REL).read_text(), encoding="utf-8")
+    (repo / "scripts/probe.py").write_text("import numpy as np\n", encoding="utf-8")
+
+    sentinel = object()
+    result = sentinel
+    try:
+        result = wl.check_torch_before_dotenv(repo_root=repo)
+    except Exception as exc:
+        pytest.fail(f"non-git scan root raised {type(exc).__name__}: {exc}")
+    assert result is not sentinel and result == []
+
+
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([__file__, "-q"]))
