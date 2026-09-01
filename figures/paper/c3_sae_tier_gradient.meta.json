@@ -7,13 +7,17 @@
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient",
   "git": {
-    "commit": "04240c9aeab548ad5f690ec1f249d9d85c6abb2e",
+    "commit": "5864175ae5cfadfdf8a889a3f0f0bb467c00c7a3",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
       "sha256": "68b7fb7ba66a46a676ea95509cc232b7d3cf5abd9027679da009d06964677c39"
+    },
+    {
+      "path": "figures/issue_1482/concordance/writeup_concordance.meta.json",
+      "sha256": "ca81b3961190508b603658e6031e020ea4c1d0f186c872d338631f9478aa2361"
     }
   ],
   "rendering": {
@@ -29,22 +33,14 @@
   "displayed_data": {
     "properties": [
       {
-        "round": 0,
-        "banked_name": "Fires on BOTH context and answer side",
-        "label": "fires on both context and answer",
-        "value": 0.2683011355307653,
-        "winner_c": 0.7683011355307653,
-        "pair_frac": 1.0,
-        "n": 120716
-      },
-      {
         "round": 1,
         "banked_name": "Mean activation (over all answers)",
         "label": "mean activation (all answers)",
         "value": 0.2661972479370571,
         "winner_c": 0.7661972479370571,
         "pair_frac": 0.9871277936851175,
-        "n": 120716
+        "n": 120716,
+        "kind": "forward-selected association"
       },
       {
         "round": 2,
@@ -53,7 +49,8 @@
         "value": 0.17107186594193302,
         "winner_c": 0.671071865941933,
         "pair_frac": 0.09876585068958214,
-        "n": 120716
+        "n": 120716,
+        "kind": "forward-selected association"
       },
       {
         "round": 3,
@@ -62,7 +59,8 @@
         "value": -0.1493617828275734,
         "winner_c": 0.3506382171724266,
         "pair_frac": 0.09648586172585996,
-        "n": 120716
+        "n": 120716,
+        "kind": "forward-selected association"
       },
       {
         "round": 4,
@@ -71,7 +69,8 @@
         "value": -0.14207498893788661,
         "winner_c": 0.3579250110621134,
         "pair_frac": 0.08880219607594306,
-        "n": 120716
+        "n": 120716,
+        "kind": "forward-selected association"
       },
       {
         "round": 5,
@@ -80,9 +79,28 @@
         "value": -0.12589066930638482,
         "winner_c": 0.3741093306936152,
         "pair_frac": 0.07836012730936535,
-        "n": 120716
+        "n": 120716,
+        "kind": "forward-selected association"
+      },
+      {
+        "banked_name": "Matryoshka dictionary tier (coarser = earlier tier)",
+        "label": "coarser Matryoshka tier",
+        "value": 0.13763355686676593,
+        "winner_c": 0.6376335568667659,
+        "n": 16384,
+        "kind": "activity-matched reference",
+        "arm": "matryoshka-l20-lmsys"
       }
     ],
+    "hidden_control": {
+      "round": 0,
+      "banked_name": "Fires on BOTH context and answer side",
+      "label": "fires on both context and answer",
+      "value": 0.2683011355307653,
+      "winner_c": 0.7683011355307653,
+      "pair_frac": 1.0,
+      "n": 120716
+    },
     "tiers": [
       {
         "label": "Coarsest",
@@ -111,8 +129,8 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "f24ad754f285657e36e8ee970d362c65223de045e40241d788916aaf008450b3",
-    "png": "b1e7fd3be97576b866eb99b0e6d2bb505927e2e908708eb9f8e23ca033a3120b",
-    "grayscale": "cfd6f3a7fee6bd4a5261bf29d6f71433ece0d19e4e70e71bde54433d1494943d"
+    "pdf": "900a81fa1f767f10730ca0935b677edd98a774cdc9d219060fe13f9ceded9b42",
+    "png": "f4e9ae8160e23c4e2c8fbddfce1319e97d37dfc8e0a5d20ef9684ce8c312f978",
+    "grayscale": "af558faf5756431b806c5da1f041267aa25494c92eaad69a61283d828af77316"
   }
 }
