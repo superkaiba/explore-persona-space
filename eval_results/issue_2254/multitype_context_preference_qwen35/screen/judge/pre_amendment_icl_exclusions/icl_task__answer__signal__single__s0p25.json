@@ -1,0 +1,34 @@
+{
+  "accounting": {
+    "frac_items_complete": 0.0,
+    "n_items": 6
+  },
+  "cap_hit_fraction": 0.0,
+  "cell": {
+    "breadth": "single",
+    "c": 0.5,
+    "dose_scale": 0.25,
+    "kind": "signal",
+    "layer_config": "L23",
+    "method": "diffmean",
+    "position": "answer",
+    "target": "icl_task"
+  },
+  "cell_id": "icl_task__answer__signal__single__s0p25",
+  "cjk_fraction": 0.0,
+  "coherence_rate_programmatic": 0.0,
+  "degenerate_fraction": 0.0,
+  "degradation_excluded": true,
+  "degradation_exclusion_reasons": [
+    "programmatic_coherence"
+  ],
+  "mean_score": null,
+  "per_question_mean_score": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

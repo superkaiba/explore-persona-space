@@ -1,0 +1,137 @@
+{
+  "assets_sha256": "e1eac656c9b4ff13845d4736295f7bb7b884fa64931be11b066841f730264407",
+  "bootstrap": {
+    "draws": 20000,
+    "seed": 225499091
+  },
+  "companions": [
+    "persona-minus-nonpersona absolute context F",
+    "per-information-type context and answer F",
+    "eight matched random directions at each selected position-specific geometry"
+  ],
+  "confirm": {
+    "pair_indices": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      11
+    ],
+    "random_directions": 8,
+    "seeds": [
+      43,
+      44,
+      45,
+      46
+    ]
+  },
+  "direction_source": "DiffMean at the final rendered context token; B minus A",
+  "dose_scales": [
+    0.0625,
+    0.125,
+    0.25,
+    0.5,
+    1.0
+  ],
+  "execution_script_sha256": "7a10ffb7e99cc99467985fd73543f554eb2a13aa83beb0a16f1ec6f15843a8d8",
+  "experiment": "issue2254_multitype_context_preference_qwen35",
+  "model": "Qwen/Qwen3.5-9B",
+  "normalization": {
+    "formula": "F=(score(steered A)-score(A))/(score(B)-score(A))",
+    "minimum_pair_anchor_separation": 20.0,
+    "minimum_valid_pairs_per_stage": 4,
+    "primary_is_unbounded": true
+  },
+  "operating_points": {
+    "all": {
+      "base_c": 4.0,
+      "layer_config": "all"
+    },
+    "mid": {
+      "base_c": 2.0,
+      "layer_config": "mid"
+    },
+    "single": {
+      "base_c": 2.0,
+      "layer_config": "L23"
+    }
+  },
+  "positions": {
+    "answer": "same edit at the prefill state and every cached answer decode state",
+    "context": "one edit at the final context-token prefill state"
+  },
+  "primary_hypothesis": "mean(context F - answer F) is larger for persona targets than for the seven nonpersona information types",
+  "primary_test": "one-sided exact permutation of four persona labels among eleven targets; nested target-and-question bootstrap interval",
+  "quality_gates": {
+    "cap_hit_fraction_max": 0.02,
+    "cjk_fraction_max": 0.2,
+    "degenerate_fraction_max": 0.2,
+    "judge_completeness_min": 0.95,
+    "programmatic_coherence_min": 0.5
+  },
+  "renderer": "system + complete history + final user; history-aware Qwen3.5 chat template",
+  "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "screen": {
+    "pair_indices": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10
+    ],
+    "seeds": [
+      42
+    ],
+    "selection": "maximize mean unbounded normalized F among eligible cells"
+  },
+  "status": "frozen_before_model_outputs",
+  "targets": {
+    "apathetic": {
+      "information_type": "persona",
+      "target_class": "persona"
+    },
+    "format_policy": {
+      "information_type": "response_policy",
+      "target_class": "nonpersona"
+    },
+    "humorous": {
+      "information_type": "persona",
+      "target_class": "persona"
+    },
+    "icl_task": {
+      "information_type": "in_context_task",
+      "target_class": "nonpersona"
+    },
+    "impolite": {
+      "information_type": "persona",
+      "target_class": "persona"
+    },
+    "optimistic": {
+      "information_type": "persona",
+      "target_class": "persona"
+    },
+    "prior_topic": {
+      "information_type": "prior_discourse_topic",
+      "target_class": "nonpersona"
+    },
+    "query_topic": {
+      "information_type": "query_topic",
+      "target_class": "nonpersona"
+    },
+    "response_theme": {
+      "information_type": "recurring_response_theme",
+      "target_class": "nonpersona"
+    },
+    "retrievable_fact": {
+      "information_type": "retrievable_fact",
+      "target_class": "nonpersona"
+    },
+    "user_expertise": {
+      "information_type": "inferred_user_state",
+      "target_class": "nonpersona"
+    }
+  },
+  "thinking": "disabled"
+}

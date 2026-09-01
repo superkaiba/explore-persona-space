@@ -1,0 +1,30 @@
+{
+  "accounting": {
+    "frac_items_complete": 0.0,
+    "n_items": 6
+  },
+  "cap_hit_fraction": 0.0,
+  "cell": {
+    "kind": "anchor",
+    "position": "none",
+    "side": "a",
+    "target": "icl_task"
+  },
+  "cell_id": "icl_task__anchor_a",
+  "cjk_fraction": 0.0,
+  "coherence_rate_programmatic": 0.0,
+  "degenerate_fraction": 0.0,
+  "degradation_excluded": true,
+  "degradation_exclusion_reasons": [
+    "programmatic_coherence"
+  ],
+  "mean_score": null,
+  "per_question_mean_score": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

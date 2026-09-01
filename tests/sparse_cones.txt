@@ -116,6 +116,9 @@
 #                             FileNotFoundError otherwise, the #671 class).
 #                             Narrow cones: full issue_1979 is 14M, config+race
 #                             is ~1.4M (judge/ 12M never read by tests).
+#   eval_results/issue_2254 — test_issue2254_multitype_context_preference.py
+#                             fail-closed verifies the committed pre-amendment
+#                             ICL exclusion archive and frozen script provenance.
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -149,3 +152,4 @@ eval_results/issue_1979/race
 eval_results/issue_823
 eval_results/issue_2330
 eval_results/issue_650
+eval_results/issue_2254

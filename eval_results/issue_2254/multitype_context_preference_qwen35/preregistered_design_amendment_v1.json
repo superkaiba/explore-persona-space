@@ -1,0 +1,119 @@
+{
+  "amendment_id": "preregistered_design_amendment_v1",
+  "amended_at": "2026-08-31T17:27:56-07:00",
+  "status": "frozen_before_any_icl_target_judging",
+  "trigger": "The inherited prose-coherence predicate defines every response with fewer than five whitespace tokens as incoherent, while the frozen ICL synonym-vs-antonym mapping intentionally elicits a one-word response.",
+  "blindness": {
+    "statement": "Before this amendment was frozen, all 32 ICL judged-path records were score-null programmatic exclusion records. No ICL target judge call had run and no ICL target score existed or was inspected. The rationale used only response lengths, refusal flags, CJK flags, degeneration flags, and cap-hit flags.",
+    "pre_amendment_icl_target_scores_exist": false,
+    "pre_amendment_icl_target_scores_inspected": false
+  },
+  "one_shot_commitment": "This is the only amendment to this gate. If the amended gate still mass-excludes ICL, that is the reported outcome and does not trigger another revision.",
+  "frozen_artifacts": {
+    "preregistered_design_sha256": "385ad213192dc06ee5d6b08b5020feeba54f5e58c1b52a4e08f6321c45fbd8d3",
+    "frozen_target_assets_sha256": "e1eac656c9b4ff13845d4736295f7bb7b884fa64931be11b066841f730264407",
+    "pre_amendment_execution_script_sha256": "7a10ffb7e99cc99467985fd73543f554eb2a13aa83beb0a16f1ec6f15843a8d8",
+    "amended_execution_script_sha256": "8ebacd6eb249290578dab2100b3f943c43b0133b3987cbe65a235687f79e64dd",
+    "issue1415_steering_source_sha256": "470b099cc5602035af599cbe06a8412a94264bf2bb537bec21166b20c57dca84",
+    "pre_amendment_exclusion_manifest_sha256": "b743690cc0dfcf11f6dbbcd910f215690ee4ac65b0f0f2fc2c57e422492fc851",
+    "pre_amendment_exclusion_combined_sha256": "036a87ad94300b295419f94f4f54b74ae2a6165d02d952ca103acaa0484c7a2b"
+  },
+  "gate_change": {
+    "original": {
+      "scope": "all targets",
+      "cell_floor": 0.5,
+      "verbatim_design_entry": "programmatic_coherence_min: 0.50",
+      "predicate": "A draw is coherent iff it has at least five whitespace tokens and its stripped, case-folded text does not begin with an issue1415 REFUSAL_OPENERS entry."
+    },
+    "amended": {
+      "scope": "targets classified closed_short_label_task=true; currently icl_task only",
+      "cell_floor": 0.5,
+      "predicate": "A draw passes iff its stripped output is nonempty and its stripped, case-folded text does not begin with an issue1415 REFUSAL_OPENERS entry.",
+      "metric": "nonempty_nonrefusal_rate",
+      "unchanged_gates": [
+        "cap_hit_fraction_max",
+        "cjk_fraction_max",
+        "degenerate_fraction_max",
+        "judge_completeness_min"
+      ],
+      "symmetry": "The amended predicate and unchanged gates apply identically to context and answer arms, all breadths, all doses, anchors, signal cells, and random controls."
+    },
+    "refusal_openers_pinned": [
+      "i'm sorry",
+      "i am sorry",
+      "i apologize",
+      "i cannot",
+      "i can't",
+      "i can not",
+      "i won't",
+      "i will not",
+      "sorry,",
+      "as an ai",
+      "i'm not able to",
+      "i am not able to",
+      "i'm unable to",
+      "i am unable to"
+    ]
+  },
+  "target_classification": {
+    "optimistic": {"closed_short_label_task": false, "frozen_declaration": "negative pole of optimistic contrast -> positive optimistic behavior"},
+    "impolite": {"closed_short_label_task": false, "frozen_declaration": "negative pole of impolite contrast -> positive impolite behavior"},
+    "apathetic": {"closed_short_label_task": false, "frozen_declaration": "negative pole of apathetic contrast -> positive apathetic behavior"},
+    "humorous": {"closed_short_label_task": false, "frozen_declaration": "negative pole of humorous contrast -> positive humorous behavior"},
+    "query_topic": {"closed_short_label_task": false, "frozen_declaration": "dog-vs-cat advice -> renting-vs-buying advice"},
+    "prior_topic": {"closed_short_label_task": false, "frozen_declaration": "birthday-party planning -> production-server-outage triage"},
+    "response_theme": {"closed_short_label_task": false, "frozen_declaration": "Eiffel Tower theme -> Golden Gate Bridge theme"},
+    "format_policy": {"closed_short_label_task": false, "frozen_declaration": "flowing prose -> bullet points"},
+    "retrievable_fact": {"closed_short_label_task": false, "frozen_declaration": "user name Alice -> user name Bob"},
+    "icl_task": {"closed_short_label_task": true, "frozen_declaration": "produce an antonym of the input word -> produce a synonym of the input word; demonstrations use single-word answers"},
+    "user_expertise": {"closed_short_label_task": false, "frozen_declaration": "explain to a five-year-old -> explain to a professor"}
+  },
+  "selection_and_analysis": {
+    "screen_selection": "Apply the frozen rule mechanically with no retuning: maximize mean unbounded normalized F among eligible cells over the exact frozen breadth-by-dose grid.",
+    "output_regeneration": false,
+    "primary": "The amended 11-target primary remains the preregistered primary.",
+    "literal_frozen_gate": "Report the literal frozen-gate 11-target result; the immutable archive contains 0 eligible ICL screen cells, so it is not estimable.",
+    "sensitivity": "Report a labeled 10-target leave-ICL-out exact-permutation and nested-bootstrap sensitivity.",
+    "required_reporting": "Report per-arm/per-dose exclusions under legacy coherence and amended nonempty/non-refusal metrics and name gate heterogeneity as a limitation."
+  },
+  "raw_icl_screen_outputs": {
+    "combined_sha256": "08861ed77ac4a04000cc23b967e8e0d5bc9b6aa0356e03ab6cab1a50a74b7267",
+    "hash_definition": "SHA256 of concatenated sorted lines: <cell_id> <file_sha256>\\n",
+    "n_files": 32,
+    "files": {
+      "icl_task__anchor_a": "5702a857c28e3d8650bb5a29c14751a22096537337d31ec5c703ffa7db02d1c0",
+      "icl_task__anchor_b": "f0305580e84e08f5e40e3f04fe553a579ecb166c77067524d299abcf6250a2c5",
+      "icl_task__answer__signal__all__s0p0625": "1a5166c7ba414d437f313e781645d58a4fe8484fd733ca5306ee76e028884751",
+      "icl_task__answer__signal__all__s0p125": "69e0c03673b65e132e1083ca7e34c3080696440f6534fa5ed037e084ddc1556f",
+      "icl_task__answer__signal__all__s0p25": "2030fc804b7994589d64b5871511f0fcb0e0832c5d4f8c9fc00c4b1e0a5661b6",
+      "icl_task__answer__signal__all__s0p5": "cf8c7ef6898b2ac9ca117f2cc0206682d9cb3695ce736b2fd5ac32c49bc67d69",
+      "icl_task__answer__signal__all__s1": "4cb9ec6bdb84485eadc0537ea22be7902853241a261a861bbb2a1e5e6e754a8a",
+      "icl_task__answer__signal__mid__s0p0625": "94d9a9bb6be07bfd33e2e509c9065d1282fc08a04905698195156c2c54980fcb",
+      "icl_task__answer__signal__mid__s0p125": "8f1fc72e7ea855fc04b6bcaedbbea7fc01b7b101dd698975532f248753db771e",
+      "icl_task__answer__signal__mid__s0p25": "1a03dbd1d731432ff6a5ce48cda4ed17b6174d0ddcb4f06d68985478a8c4f87a",
+      "icl_task__answer__signal__mid__s0p5": "17b5f08b2218544ea272a6d9c9655613ae38e23a05a39f0b95b2c0042a4c0760",
+      "icl_task__answer__signal__mid__s1": "3027fb861f03e87ce09e7f70b5703294d794fcf758bd32c042220e5d65877033",
+      "icl_task__answer__signal__single__s0p0625": "c452f046b184484ee0e89c23c43307791717427304a8d1aa44912c22d6108d81",
+      "icl_task__answer__signal__single__s0p125": "c6464afff9b5044d0af2f51fed139bcf66d75f5ca5c89b0f9cb5eb8b3f7311cd",
+      "icl_task__answer__signal__single__s0p25": "3d7e0b436487780c7a10b7fb9d196f03793799bc9e3ee4269db56768a1258f94",
+      "icl_task__answer__signal__single__s0p5": "911be0146b6c6de4cb68b4c0ef0ed19990c354765c0a5c4ed6abfee10773103b",
+      "icl_task__answer__signal__single__s1": "0fd8e616e84729cf777895e69a973d867fe8e74795dcf8e22c01aa6fece2156a",
+      "icl_task__context__signal__all__s0p0625": "9613a139c07f4d2674ca9aacbfff70c2f8dc2c6042d56fcce5e013dcff8fe4ef",
+      "icl_task__context__signal__all__s0p125": "a1410a14d346bf3f121f7ac3677426bb5448b116eacd2973e7c298bc2d1108f2",
+      "icl_task__context__signal__all__s0p25": "f4ad0722e9eb08dcad94be89b820757a3d16e664f0996d2b7cf247e7c888368d",
+      "icl_task__context__signal__all__s0p5": "6ec04f8a6a8b1aee4f71498d87bbd9bed62b605658c9997d7ef50c3088c89e3b",
+      "icl_task__context__signal__all__s1": "f525abd5155c48b94dc854fd7867420406efa1258e0ac683eafa6231990e0d6e",
+      "icl_task__context__signal__mid__s0p0625": "e5ee1ec6835032672f9685a6def3a7b2a86224dec3ca43a11ea9bb0309e39a69",
+      "icl_task__context__signal__mid__s0p125": "9c225a56f70ffbc009b8886ae44c9d0a63d48e9e428c5310c102390dc3c5fb5a",
+      "icl_task__context__signal__mid__s0p25": "53e4bfe68613b5147a589d89ed88be5d765c4f631ea5b85439e1a18116aeb036",
+      "icl_task__context__signal__mid__s0p5": "9ee0223e9e3632bc175536cdef1d5f111c5e4a99f3eba052c6793ebef520d8fd",
+      "icl_task__context__signal__mid__s1": "2c6291322f2eadc0ddaa4d6e6e57d78334ab0afd32e942e42548b20fcdd86792",
+      "icl_task__context__signal__single__s0p0625": "acca795dd6f281bc9cbfc51114225613b6eac0e1a795514443efd9dbb0100b7e",
+      "icl_task__context__signal__single__s0p125": "a3f3802c926f0e33769d67e3fe82fb96a325505b1664506d8f3d13059eff8399",
+      "icl_task__context__signal__single__s0p25": "723e7a472be4b34fc16240b331df241783bbadecd14b9b33e3518bffe6524792",
+      "icl_task__context__signal__single__s0p5": "c36449a02e1cd926625546e7ec01ffd120d0bcbc88e6d24a83bf63c858fc52ec",
+      "icl_task__context__signal__single__s1": "7ca75fed412a2f4644d5b548bf901c67940230e5d09e2be11a97cd808024db2e"
+    }
+  },
+  "commit_and_marker": "The immutable Git commit and task #2254 marker containing the commit and amendment hash are recorded after this file is committed and before the ICL judge is dispatched."
+}
