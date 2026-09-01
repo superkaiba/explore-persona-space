@@ -42,9 +42,6 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 DEFAULT_OUT = ROOT / "figures/paper"
 QUAL_SOURCE = ROOT / "eval_results/issue_2478/selected_examples.json"
 SAE_SOURCE = ROOT / "eval_results/issue_1482/plot4_redesign/plot4_redesign.json"
-SAE_MATCHED_SOURCE = (
-    ROOT / "figures/issue_1482/concordance/writeup_concordance.meta.json"
-)
 MINPAIR_SOURCE = ROOT / "eval_results/issue_2564/minpair_delta.json"
 PERSONA_SOURCE = (
     ROOT / "eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json"
@@ -319,20 +316,6 @@ def _sae_data() -> dict:
         "left_panel"
     ]["rendered_labels"]
 
-    matched_source = json.loads(SAE_MATCHED_SOURCE.read_text())
-    matryoshka_name = "Matryoshka dictionary tier (coarser = earlier tier)"
-    (matryoshka_source,) = [
-        row for row in matched_source["values"] if row["name"] == matryoshka_name
-    ]
-    matryoshka = {
-        "banked_name": matryoshka_name,
-        "label": "coarser Matryoshka tier",
-        "value": float(matryoshka_source["matched"] - 0.5),
-        "winner_c": float(matryoshka_source["matched"]),
-        "n": int(matryoshka_source["n_pos"]),
-        "kind": "activity-matched reference",
-        "arm": matryoshka_source["arm"],
-    }
     rows = [{**row, "kind": "forward-selected association"} for row in rows]
     tiers = []
     for key, label in (("0", "Coarsest"), ("1", "Middle"), ("2", "Finest")):
@@ -347,7 +330,7 @@ def _sae_data() -> dict:
             }
         )
     return {
-        "properties": [*rows, matryoshka],
+        "properties": rows,
         "hidden_control": hidden_control,
         "tiers": tiers,
         "spearman_raw": float(source["right_panel"]["spearman_tier_r2_raw"]),
@@ -378,30 +361,11 @@ def make_sae_figure(data: dict) -> plt.Figure:
     props = data["properties"]
     y = np.arange(len(props))[::-1]
     values = np.asarray([row["value"] for row in props])
-    bars = ax_left.barh(
-        y[:-1],
-        values[:-1],
-        height=0.58,
-        color=LINEAR,
-        edgecolor=LINEAR,
-        linewidth=1.2,
-    )
-    for bar, value in zip(bars, values[:-1], strict=True):
+    bars = ax_left.barh(y, values, height=0.58, color=LINEAR, edgecolor=LINEAR, linewidth=1.2)
+    for bar, value in zip(bars, values, strict=True):
         if value < 0:
             bar.set_facecolor(PAPER)
             bar.set_hatch("////")
-    ax_left.axhline(0.5, color=GRID, lw=1.0, alpha=0.75)
-    ax_left.hlines(y[-1], 0, values[-1], color=CONTROL, lw=2.0, zorder=2)
-    ax_left.scatter(
-        values[-1],
-        y[-1],
-        marker="D",
-        s=95,
-        color=CONTROL,
-        edgecolor=INK,
-        linewidth=0.8,
-        zorder=3,
-    )
     ax_left.axvline(0, color=INK, lw=1.2)
     ax_left.set_yticks(y, [row["label"] for row in props])
     ax_left.set_xlim(-0.29, 0.31)
@@ -413,7 +377,7 @@ def make_sae_figure(data: dict) -> plt.Figure:
     ax_left.text(
         0,
         1.21,
-        "A  ·  BARS: STEPWISE  ·  DIAMOND: MATCHED REFERENCE",
+        "A  ·  FORWARD-SELECTED ASSOCIATIONS",
         transform=ax_left.transAxes,
         fontsize=13,
         fontweight=750,
@@ -667,7 +631,7 @@ def main() -> None:
         title="SAE feature properties and context-to-answer predictability",
         subject="Conditional feature-property associations and activity-adjusted nested-tier gradient",
         font=font,
-        sources=[SAE_SOURCE, SAE_MATCHED_SOURCE],
+        sources=[SAE_SOURCE],
         displayed_data=sae,
         rendering_size=(14.4, 6.5),
     )

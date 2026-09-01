@@ -7,17 +7,13 @@
   "title": "SAE feature properties and context-to-answer predictability",
   "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient",
   "git": {
-    "commit": "5864175ae5cfadfdf8a889a3f0f0bb467c00c7a3",
+    "commit": "002edee360741b462ed3484df47e51a5c3ac092a",
     "tracked_worktree_dirty": true
   },
   "sources": [
     {
       "path": "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
       "sha256": "68b7fb7ba66a46a676ea95509cc232b7d3cf5abd9027679da009d06964677c39"
-    },
-    {
-      "path": "figures/issue_1482/concordance/writeup_concordance.meta.json",
-      "sha256": "ca81b3961190508b603658e6031e020ea4c1d0f186c872d338631f9478aa2361"
     }
   ],
   "rendering": {
@@ -81,15 +77,6 @@
         "pair_frac": 0.07836012730936535,
         "n": 120716,
         "kind": "forward-selected association"
-      },
-      {
-        "banked_name": "Matryoshka dictionary tier (coarser = earlier tier)",
-        "label": "coarser Matryoshka tier",
-        "value": 0.13763355686676593,
-        "winner_c": 0.6376335568667659,
-        "n": 16384,
-        "kind": "activity-matched reference",
-        "arm": "matryoshka-l20-lmsys"
       }
     ],
     "hidden_control": {
@@ -129,8 +116,8 @@
     "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
   "output_sha256": {
-    "pdf": "900a81fa1f767f10730ca0935b677edd98a774cdc9d219060fe13f9ceded9b42",
-    "png": "f4e9ae8160e23c4e2c8fbddfce1319e97d37dfc8e0a5d20ef9684ce8c312f978",
-    "grayscale": "af558faf5756431b806c5da1f041267aa25494c92eaad69a61283d828af77316"
+    "pdf": "bb32578ae1f8fd58de1000915aa4b2608c4446974e1b709094e72f3cd81dcbdd",
+    "png": "cabd12a2d0f3e8fe922b1b966c7545e39abba11c17f8fa2da57b75ca9e7a7bf5",
+    "grayscale": "92ab442fcc46ae18f074339917dff5909aa82a030dd38f3e209d31b3eacb93be"
   }
 }
