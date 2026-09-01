@@ -1,149 +1,118 @@
 {
-  "commit": "22d92210+dirty",
-  "render_id": "531bda5cce0f489f",
-  "git_commit": "22d9221057ad597327cc4bfefa07f782f4dc1b40",
-  "git_dirty": true,
-  "git_dirty_paths": [
-    ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
-    "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
-    "eval_results/issue_2474/n1m_map_arms.json",
-    "figures/paper/c1_stage_retention.meta.json",
-    "figures/paper/c1_stage_retention.pdf",
-    "figures/paper/c1_stage_retention.png",
-    "figures/paper/c3_failure_attribution.meta.json",
-    "figures/paper/c3_failure_attribution.pdf",
-    "figures/paper/c3_failure_attribution.png",
-    "scripts/issue1482_plot4_redesign.py",
-    "scripts/issue1902_figures.py",
-    "scripts/issue2474_n1m_map.py",
-    "tasks/completed/2214/body.md",
-    "tasks/completed/2214/comments.jsonl",
-    "tasks/completed/2214/concerns.jsonl",
-    "tasks/completed/2214/events.jsonl",
-    "tasks/completed/2214/plans/plan.md",
-    "tasks/completed/2214/plans/v1.md",
-    "tasks/completed/2214/plans/v2.md",
-    "tasks/completed/2214/plans/v3.md",
-    "tasks/proposed/2416/body.md",
-    "tasks/proposed/2416/comments.jsonl",
-    "tasks/proposed/2416/events.jsonl",
-    "tests/test_issue2094_rev_butler.py"
-  ],
-  "git_argv0_state": "modified",
-  "git_argv0_path": "scripts/issue1482_plot4_redesign.py",
-  "created": "2026-08-25T07:00:50Z",
-  "figsize": [
-    5.5,
-    2.7
-  ],
-  "points": [
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v1",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "SAE feature properties and context-to-answer predictability",
+  "subject": "Conditional feature-property associations and activity-adjusted nested-tier gradient",
+  "git": {
+    "commit": "04240c9aeab548ad5f690ec1f249d9d85c6abb2e",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
     {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.134151,
-      "y": 0.2683011355307653,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.133099,
-      "y": 0.2661972479370571,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": 0.085536,
-      "y": 0.17107186594193302,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.074681,
-      "y": -0.1493617828275734,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.071037,
-      "y": -0.14207498893788661,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "concordance with per-feature $R^2$ $-$ 1/2": -0.062945,
-      "y": -0.12589066930638482,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "matryoshka tier (coarsest to finest)": 0.0,
-      "per-feature $R^2$, centered within\nactivity quintiles": 0.17906373076983012,
-      "error": 0.15240566218514015,
-      "_kind": "errorbar",
-      "_group": 1
-    },
-    {
-      "matryoshka tier (coarsest to finest)": 1.0,
-      "per-feature $R^2$, centered within\nactivity quintiles": 0.007088361443248925,
-      "error": 0.14068403809544022,
-      "_kind": "errorbar",
-      "_group": 2
-    },
-    {
-      "matryoshka tier (coarsest to finest)": 2.0,
-      "per-feature $R^2$, centered within\nactivity quintiles": -0.028429851717612975,
-      "error": 0.12801621450485762,
-      "_kind": "errorbar",
-      "_group": 3
+      "path": "eval_results/issue_1482/plot4_redesign/plot4_redesign.json",
+      "sha256": "68b7fb7ba66a46a676ea95509cc232b7d3cf5abd9027679da009d06964677c39"
     }
   ],
-  "n_series": 4,
-  "total_points": 9,
-  "text": {
-    "suptitle": null,
-    "fig_texts": [],
-    "axes": [
+  "rendering": {
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      14.4,
+      6.5
+    ],
+    "intended_manuscript_width_inches": 5.5,
+    "png_dpi": 240,
+    "background": "#FFFFFF"
+  },
+  "displayed_data": {
+    "properties": [
       {
-        "title": "feature properties, ranked\n(each bar controls for those above)",
-        "xlabel": "concordance with per-feature $R^2$ $-$ 1/2",
-        "xticklabels": [
-          "\u22120.2",
-          "\u22120.1",
-          "0.0",
-          "0.1",
-          "0.2",
-          "0.3"
-        ],
-        "yticklabels": [
-          "fires on both context and answer",
-          "mean activation (all answers)",
-          "speaker identity / disposition",
-          "suppresses specific output tokens",
-          "promotes specific output tokens",
-          "topic content"
-        ]
+        "round": 0,
+        "banked_name": "Fires on BOTH context and answer side",
+        "label": "fires on both context and answer",
+        "value": 0.2683011355307653,
+        "winner_c": 0.7683011355307653,
+        "pair_frac": 1.0,
+        "n": 120716
       },
       {
-        "title": "tier gradient, controlling for activity",
-        "xlabel": "matryoshka tier (coarsest to finest)",
-        "ylabel": "per-feature $R^2$, centered within\nactivity quintiles",
-        "xticklabels": [
-          "coarsest",
-          "mid",
-          "finest"
-        ],
-        "yticklabels": [
-          "\u22120.2",
-          "\u22120.1",
-          "0.0",
-          "0.1",
-          "0.2",
-          "0.3",
-          "0.4"
-        ]
+        "round": 1,
+        "banked_name": "Mean activation (over all answers)",
+        "label": "mean activation (all answers)",
+        "value": 0.2661972479370571,
+        "winner_c": 0.7661972479370571,
+        "pair_frac": 0.9871277936851175,
+        "n": 120716
+      },
+      {
+        "round": 2,
+        "banked_name": "Speaker: identity / disposition",
+        "label": "speaker identity / disposition",
+        "value": 0.17107186594193302,
+        "winner_c": 0.671071865941933,
+        "pair_frac": 0.09876585068958214,
+        "n": 120716
+      },
+      {
+        "round": 3,
+        "banked_name": "Logit footprint: suppressing",
+        "label": "suppresses specific output tokens",
+        "value": -0.1493617828275734,
+        "winner_c": 0.3506382171724266,
+        "pair_frac": 0.09648586172585996,
+        "n": 120716
+      },
+      {
+        "round": 4,
+        "banked_name": "Logit footprint: promoting",
+        "label": "promotes specific output tokens",
+        "value": -0.14207498893788661,
+        "winner_c": 0.3579250110621134,
+        "pair_frac": 0.08880219607594306,
+        "n": 120716
+      },
+      {
+        "round": 5,
+        "banked_name": "Content type: topic",
+        "label": "topic content",
+        "value": -0.12589066930638482,
+        "winner_c": 0.3741093306936152,
+        "pair_frac": 0.07836012730936535,
+        "n": 120716
       }
-    ]
+    ],
+    "tiers": [
+      {
+        "label": "Coarsest",
+        "n": 1640,
+        "median": 0.17906373076983012,
+        "q25": 0.021958926884441565,
+        "q75": 0.32677025125472187
+      },
+      {
+        "label": "Middle",
+        "n": 6144,
+        "median": 0.007088361443248925,
+        "q25": -0.12227805324412447,
+        "q75": 0.15909002294675598
+      },
+      {
+        "label": "Finest",
+        "n": 8600,
+        "median": -0.028429851717612975,
+        "q25": -0.15076274741214615,
+        "q75": 0.10526968159756908
+      }
+    ],
+    "spearman_raw": -0.394923907649798,
+    "spearman_adjusted": -0.19583848304828771,
+    "centering": "per-feature R^2 minus the median R^2 of its activity quintile"
   },
-  "formats_written": [
-    "png",
-    "pdf"
-  ]
+  "output_sha256": {
+    "pdf": "f24ad754f285657e36e8ee970d362c65223de045e40241d788916aaf008450b3",
+    "png": "b1e7fd3be97576b866eb99b0e6d2bb505927e2e908708eb9f8e23ca033a3120b",
+    "grayscale": "cfd6f3a7fee6bd4a5261bf29d6f71433ece0d19e4e70e71bde54433d1494943d"
+  }
 }

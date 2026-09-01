@@ -127,3 +127,19 @@ Additional conventions:
 After approving a new render, copy the vector asset into the Overleaf clone as
 `figures/paper/figure2_predictability_scaling.pdf`, compile `main.tex`, visually
 inspect the page, and commit both repositories separately.
+
+## Results Section 4.2 figures
+
+The qualitative examples, SAE feature analysis, and controlled persona/topic
+comparison use the same visual system and are rendered together from checked-in
+results:
+
+```bash
+uv run python scripts/make_paper_section42_figures.py
+```
+
+This writes `c3_qualitative_discrimination`, `c3_sae_tier_gradient`, and
+`c3_persona_topic_separation` under `figures/paper/`, each as vector PDF, color
+PNG, grayscale-audit PNG, and provenance JSON. The one-word pilot's intervals
+are the only statistics recomputed by this plot-only script; they use a pinned
+10,000-draw pair bootstrap and are recorded in the sidecar.

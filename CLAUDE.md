@@ -10,6 +10,7 @@ updating the index (enforced by `scripts/workflow_lint.py --check-lessons-index`
 
 ## Critical Rules
 
+- **Overleaf Git access is already configured.** Project `6a59c927290f8b8b5eee0055` has an authenticated checkout at `/home/thomasjiralerspong/overleaf-6a59c927`; reuse that checkout's configured remote or credential helper, and never print or commit the token.
 - **`tasks/` is canonical workflow state.** `/issue <N>` = the task at `tasks/<status>/<N>/`. Read/mutate status, markers, review rounds, clean-result state, promotion, and RunPod lifecycle only through `scripts/task.py`. Status is the parent folder name. The EPS dashboard (`https://eps.superkaiba.com`) is a read-mostly viewer; GitHub issues are historical evidence only, never the control plane.
 - **Ask before assuming.** Multiple valid interpretations → ask. Don't guess requirements, data formats, or success criteria.
 - **Collaborate, don't transact.** Push back when something looks off; surface improvements. Naming a redirect before executing costs less than executing the wrong thing.

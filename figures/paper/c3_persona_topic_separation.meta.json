@@ -1,0 +1,100 @@
+{
+  "status": "Results Section 4.2 manuscript figure",
+  "style_version": "c2a-v1",
+  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
+  "title": "Persona and topic separation under controlled answer shifts",
+  "subject": "Calibration slopes and shift-direction cosines for controlled minimal pairs",
+  "git": {
+    "commit": "04240c9aeab548ad5f690ec1f249d9d85c6abb2e",
+    "tracked_worktree_dirty": true
+  },
+  "sources": [
+    {
+      "path": "eval_results/issue_2564/minpair_delta.json",
+      "sha256": "28d6344569ddba846a44a46ad4227c7596d38e3f7b63b1f998ff4d83c250fe2d"
+    },
+    {
+      "path": "eval_results/issue_2564/floor-failed-reelicitation/minpair_delta_ffr.json",
+      "sha256": "73f2f7d2156b05bd3bb05ff68ae670b10b516da5aecdd3709884c2b0bc93564d"
+    },
+    {
+      "path": "eval_results/issue_2564/lang_oneword_pilot/summary.json",
+      "sha256": "1b4d228eff1e477567a6d75f865589780a9eda69c30be59b152056bb67fd3337"
+    },
+    {
+      "path": "eval_results/issue_2564/lang_oneword_pilot/perpair.jsonl",
+      "sha256": "fe03349d267b8223d1bf55fc3c2001c50ef6d56fff0125a0c062ba2a0ebedf80"
+    }
+  ],
+  "rendering": {
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      14.4,
+      6.2
+    ],
+    "intended_manuscript_width_inches": 5.5,
+    "png_dpi": 240,
+    "background": "#FFFFFF"
+  },
+  "displayed_data": {
+    "categories": [
+      {
+        "label": "Persona",
+        "n": 120,
+        "slope": 1.145679180744482,
+        "slope_ci95": [
+          1.1065513814569188,
+          1.190896271979975
+        ],
+        "mean_cos": 0.7735029261646471,
+        "mean_cos_ci95": [
+          0.7611046527263419,
+          0.7853304780812873
+        ],
+        "r10_mean": 0.9619438810766285
+      },
+      {
+        "label": "Question topic",
+        "n": 66,
+        "slope": 0.8110976182915853,
+        "slope_ci95": [
+          0.7584350985664975,
+          0.8654610603841291
+        ],
+        "mean_cos": 0.7145733467120705,
+        "mean_cos_ci95": [
+          0.6745004729478342,
+          0.7507705866721162
+        ],
+        "r10_mean": 0.9826447430382637
+      },
+      {
+        "label": "One-word topic",
+        "n": 24,
+        "slope": 0.6629054865662586,
+        "slope_ci95": [
+          0.6162169616153551,
+          0.715427221162743
+        ],
+        "mean_cos": 0.5314313430639346,
+        "mean_cos_ci95": [
+          0.4663946997937815,
+          0.5855987858025087
+        ],
+        "r10_mean": 0.8757569187457208,
+        "bootstrap": {
+          "unit": "one-word pair",
+          "draws": 10000,
+          "seed": 21620
+        }
+      }
+    ]
+  },
+  "output_sha256": {
+    "pdf": "d5c81974ed1b3c376122e1e9d27ece11d639fb8f5bda258be300255c7ea0c458",
+    "png": "799d4897048380ddb443acfcfc469ca6243414a0245618e1b589719a2f72760f",
+    "grayscale": "14406c53029d46ad0da2e428b2142a1ee82ce6a0b2897ba7462d6b1c10ddf936"
+  }
+}
