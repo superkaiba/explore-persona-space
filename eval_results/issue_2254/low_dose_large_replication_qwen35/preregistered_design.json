@@ -1,0 +1,150 @@
+{
+  "answer_breadth": {
+    "apathetic": "all",
+    "format_policy": "all",
+    "humorous": "all",
+    "icl_task": "all",
+    "impolite": "all",
+    "optimistic": "mid",
+    "prior_topic": "mid",
+    "query_topic": "all",
+    "response_theme": "mid",
+    "retrievable_fact": "single",
+    "user_expertise": "single"
+  },
+  "answer_dose_scales": [
+    0.0625,
+    0.125
+  ],
+  "context_points": {
+    "apathetic": {
+      "breadth": "mid",
+      "dose_scale": 0.0625
+    },
+    "format_policy": {
+      "breadth": "single",
+      "dose_scale": 1.0
+    },
+    "humorous": {
+      "breadth": "all",
+      "dose_scale": 1.0
+    },
+    "icl_task": {
+      "breadth": "mid",
+      "dose_scale": 1.0
+    },
+    "impolite": {
+      "breadth": "single",
+      "dose_scale": 0.0625
+    },
+    "optimistic": {
+      "breadth": "all",
+      "dose_scale": 1.0
+    },
+    "prior_topic": {
+      "breadth": "single",
+      "dose_scale": 0.0625
+    },
+    "query_topic": {
+      "breadth": "all",
+      "dose_scale": 1.0
+    },
+    "response_theme": {
+      "breadth": "single",
+      "dose_scale": 0.0625
+    },
+    "retrievable_fact": {
+      "breadth": "all",
+      "dose_scale": 1.0
+    },
+    "user_expertise": {
+      "breadth": "mid",
+      "dose_scale": 0.25
+    }
+  },
+  "direction_manifest": {
+    "combined_sha256": "a904e58b748d1721f2799d65743f609d6cb8d0d9ac26e1b3e5f7c23ba795d24b",
+    "fit_report_sha256": "f8a19baeb499914a91642071084f18469942399829b5b4f83c7f2b8ea03a2771",
+    "n_direction_files": 352
+  },
+  "dose_specific_companions": "Report the same interaction separately at 1/16 and 1/8.",
+  "execution_script_sha256": "de956fbb28bfa24290414e59f7b3c2474d10f7a2e3ee5d515ec4ece5305688a5",
+  "execution_test_sha256": "348337272feeb69e54f4de3b1141921d57b0ad8678a87ce69ff47710d29a6469",
+  "experiment": "issue2254_low_dose_large_replication_qwen35",
+  "generation_seeds": [
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54
+  ],
+  "generations_per_cell": 48,
+  "grid": {
+    "cells_per_target": 17,
+    "total_cells": 187,
+    "total_generations": 8976
+  },
+  "hypotheses": {
+    "h1_cumulative_answer_dose": "The prior answer-arm collapse was caused by repeated cumulative steering; at 1/16 and 1/8, answer cells will be quality-eligible at materially higher rates while retaining learned-direction effects above random controls.",
+    "h2_persona_context_preference": "If persona information is preferentially steerable at the final context state, persona-minus-nonpersona context-minus-low-dose-answer F is positive.",
+    "h3_nonspecific_context_access": "If context access is not persona-specific, the target-class interaction is zero or negative and nonpersona targets can match persona context effects."
+  },
+  "minimum_eligible_random_directions": 3,
+  "model": "Qwen/Qwen3.5-9B",
+  "pair_indices": [
+    1,
+    3,
+    5,
+    7,
+    9,
+    11
+  ],
+  "parent_assets_sha256": "e1eac656c9b4ff13845d4736295f7bb7b884fa64931be11b066841f730264407",
+  "parent_confirmation_selection_sha256": "1d38cee0eb68e51cab9df5991d17e81591c6b38825b39e05ff2b0f7479166075",
+  "parent_outcome_sha256": "fa3b64f30f8781c01c63d9be69bcc18a86e416fcfd8566553b768930f0e59ac2",
+  "prespecified_sensitivity": "If target attrition occurs, report a clearly labeled retained-target exact permutation only when at least 3 persona and 5 nonpersona targets remain; never reinterpret it as confirmatory.",
+  "primary_estimand": "persona-minus-nonpersona difference in context F minus the mean of answer F at dose scales 1/16 and 1/8",
+  "primary_test": "one-sided exact permutation of four persona labels among eleven targets, plus nested target-and-question bootstrap; estimable only if all eleven targets pass",
+  "quality_gates": {
+    "cap_hit_fraction_max": 0.02,
+    "cjk_fraction_max": 0.2,
+    "coherence_min": 0.5,
+    "degenerate_fraction_max": 0.2,
+    "icl_task_gate": "amended nonempty/non-refusal predicate",
+    "judge_completeness_min": 0.95,
+    "minimum_jointly_valid_questions_across_primary_arms": 4
+  },
+  "random_directions_per_intervention": 4,
+  "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "scope": "Questions are the prior odd-indexed held-out bank with fresh stochastic seeds. Inference is conditional on these six prompts; this is a seed replication and low-dose intervention test, not a new question-bank generalization test.",
+  "status": "frozen_before_replication_outputs",
+  "target_classes": {
+    "apathetic": "persona",
+    "format_policy": "nonpersona",
+    "humorous": "persona",
+    "icl_task": "nonpersona",
+    "impolite": "persona",
+    "optimistic": "persona",
+    "prior_topic": "nonpersona",
+    "query_topic": "nonpersona",
+    "response_theme": "nonpersona",
+    "retrievable_fact": "nonpersona",
+    "user_expertise": "nonpersona"
+  },
+  "targets": [
+    "optimistic",
+    "impolite",
+    "apathetic",
+    "humorous",
+    "query_topic",
+    "prior_topic",
+    "response_theme",
+    "format_policy",
+    "retrievable_fact",
+    "icl_task",
+    "user_expertise"
+  ]
+}
