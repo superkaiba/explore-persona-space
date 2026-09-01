@@ -1,0 +1,46 @@
+{
+  "accounting": {
+    "frac_items_complete": 1.0,
+    "n_items": 6,
+    "n_items_zero_valid": 0,
+    "per_item_draw_counts": {
+      "mt_32df6a370f6ac8eb5b09d329cc1b": 1,
+      "mt_4a46588dfd7a7a3ec3641881b8e8": 1,
+      "mt_a07242f879dcc0533d8c9c9c9f95": 1,
+      "mt_aa2d95001514c3fdfe8c8b6aee4b": 1,
+      "mt_eb78bd2ec5f5facf4952a7ed2cdc": 1,
+      "mt_fd3b6799e02174abd96089b118d8": 1
+    }
+  },
+  "cap_hit_fraction": 0.0,
+  "cell": {
+    "kind": "anchor",
+    "position": "none",
+    "side": "a",
+    "target": "icl_task"
+  },
+  "cell_id": "icl_task__anchor_a",
+  "cjk_fraction": 0.0,
+  "coherence_rate_programmatic": 0.0,
+  "degenerate_fraction": 0.0,
+  "judge": {
+    "draws": 1,
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  "mean_score": 0.0,
+  "nonempty_nonrefusal_rate": 1.0,
+  "per_question_mean_score": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "quality_amendment": "preregistered_design_amendment_v1",
+  "quality_gate_variant": "amended_closed_short_label_task",
+  "supersedes_pre_amendment_record": "screen/judge/pre_amendment_icl_exclusions/icl_task__anchor_a.json",
+  "whitespace_token_count_max": 1.0,
+  "whitespace_token_count_mean": 1.0,
+  "whitespace_token_count_median": 1.0
+}

@@ -1,0 +1,44 @@
+{
+  "accounting": {
+    "frac_items_complete": 1.0,
+    "n_items": 6,
+    "n_items_zero_valid": 0,
+    "per_item_draw_counts": {
+      "mt_0e234943e7884d2e9f5cd940e25d": 1,
+      "mt_19b1e2b1d407268e1cfe6ded8aa5": 1,
+      "mt_2de56223640b903ee2fc0c16dda8": 1,
+      "mt_44c11af841bb3bd2668789254a78": 1,
+      "mt_9918041b9dd7a92c520edc936d3f": 1,
+      "mt_b3c31b43ddbbc0797ded61f298e5": 1
+    }
+  },
+  "cap_hit_fraction": 0.0,
+  "cell": {
+    "kind": "anchor",
+    "position": "none",
+    "side": "b",
+    "target": "user_expertise"
+  },
+  "cell_id": "user_expertise__anchor_b",
+  "cjk_fraction": 0.0,
+  "coherence_rate_programmatic": 1.0,
+  "degenerate_fraction": 0.0,
+  "judge": {
+    "draws": 1,
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  "mean_score": 82.5,
+  "per_question_mean_score": [
+    100.0,
+    95.0,
+    95.0,
+    95.0,
+    15.0,
+    95.0
+  ],
+  "quality_gate_variant": "frozen_programmatic_coherence",
+  "task_format_validity_rate": 1.0,
+  "whitespace_token_count_max": 1336.0,
+  "whitespace_token_count_mean": 559.0,
+  "whitespace_token_count_median": 458.5
+}

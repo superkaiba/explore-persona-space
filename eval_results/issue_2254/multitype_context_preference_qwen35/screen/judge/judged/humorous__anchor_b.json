@@ -1,0 +1,39 @@
+{
+  "accounting": {
+    "frac_items_complete": 1.0,
+    "n_items": 6,
+    "n_items_zero_valid": 0,
+    "per_item_draw_counts": {
+      "mt_290205c152e61db374480f71d5a9": 1,
+      "mt_29608885332bd3b1d012c63df316": 1,
+      "mt_2e4ca472e39107a81afd61760339": 1,
+      "mt_9b9d3b27356efc9c777b06d5f945": 1,
+      "mt_a2826ea82cda6c8e06afbf1b8a5f": 1,
+      "mt_c8c97ecbc9bac7ce1d7bcc801017": 1
+    }
+  },
+  "cap_hit_fraction": 0.0,
+  "cell": {
+    "kind": "anchor",
+    "position": "none",
+    "side": "b",
+    "target": "humorous"
+  },
+  "cell_id": "humorous__anchor_b",
+  "cjk_fraction": 0.16666666666666666,
+  "coherence_rate_programmatic": 1.0,
+  "degenerate_fraction": 0.0,
+  "judge": {
+    "draws": 1,
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  "mean_score": 85.5,
+  "per_question_mean_score": [
+    85.0,
+    95.0,
+    85.0,
+    85.0,
+    78.0,
+    85.0
+  ]
+}

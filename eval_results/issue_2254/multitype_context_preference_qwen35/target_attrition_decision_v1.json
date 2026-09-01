@@ -1,0 +1,121 @@
+{
+  "decision_id": "target_attrition_decision_v1",
+  "frozen_at": "2026-08-31T17:56:30-07:00",
+  "repo_head_before_decision": "7f26ee2efb62c8b886a8cc2c02a224720a1845ef",
+  "frozen_analysis_implementation": {
+    "script": "scripts/issue2254_multitype_attrition_analysis.py",
+    "script_sha256": "63dc2dc38780857aa1add5aead5b5fe7b2ddcbacb8bbb95001c2d692789ae147",
+    "test": "tests/test_issue2254_multitype_attrition_analysis.py",
+    "test_sha256": "8b5b4ebbe3d56cc118ed913c3e8beed251d91daf646ddb2dd8773433c19a6042"
+  },
+  "status": "frozen_before_query_topic_signal_scores_were_read_or_selected",
+  "trigger": {
+    "target": "query_topic",
+    "cell_id": "query_topic__anchor_a",
+    "kind": "unsteered_floor_anchor",
+    "frozen_gate": "cjk_fraction <= 0.20",
+    "observed_cjk_fraction": 0.3333333333333333,
+    "flagged_completions": 2,
+    "total_completions": 6,
+    "observed_cjk_character_sets": [["背", "负"], ["屏", "障"]],
+    "judge_blind_description": "Both flagged completions are long English dog-vs-cat advice containing exactly two CJK characters; the anchor is nevertheless ineligible under the frozen any-CJK-character-per-completion definition."
+  },
+  "predecision_checks": {
+    "attrition_or_fallback_clause": "none",
+    "frozen_prose_matches_implementation": true,
+    "implementation": "cjk_fraction is the fraction of completions containing any q35._CJK_RE match",
+    "anchor_substitution_or_pooling_allowed": false
+  },
+  "general_attrition_rule": "Any target whose frozen unsteered floor or ceiling anchor fails an unchanged preregistered quality gate is omitted from confirmation, the preregistered full-target primary is declared not estimable, and any retained-target analysis is labeled sensitivity rather than primary. No failed or near-miss floor anchor is rerun, resampled, substituted, or pooled.",
+  "decision": {
+    "drop_from_confirmation": ["query_topic"],
+    "retained_targets": [
+      "optimistic", "impolite", "apathetic", "humorous", "prior_topic",
+      "response_theme", "format_policy", "retrievable_fact", "icl_task",
+      "user_expertise"
+    ],
+    "preregistered_11_target_primary": "not_estimable",
+    "retained_target_analysis_label": "target_attrition_sensitivity",
+    "gate_amendment": false,
+    "anchor_resampling": false,
+    "anchor_substitution": false,
+    "alternate_cjk_or_query_confirmation_in_this_run": false,
+    "prospective_followup": "A future preregistration should use a character-fraction or language-ID gate with more than one draw per question."
+  },
+  "contrast_asymmetry": {
+    "planned_composition": "4 persona / 7 nonpersona",
+    "retained_composition": "4 persona / 6 nonpersona",
+    "attrition_side": "nonpersona only",
+    "topic_coverage_retained": ["prior_topic", "response_theme"],
+    "assumption": "The unsteered-anchor failure argues that attrition is independent of steering, but independence of CJK propensity from the persona/nonpersona factor is assumed rather than demonstrated."
+  },
+  "sensitivity_tests": {
+    "retained_10_target": {
+      "report_regardless_of_outcome": true,
+      "statistic": "mean(context F - answer F) for four persona targets minus the corresponding mean for six retained nonpersona targets",
+      "test": "one-sided exact permutation of four persona labels among ten targets",
+      "n_assignments": 210,
+      "minimum_attainable_one_sided_p": 0.004761904761904762,
+      "nominal_alpha": 0.05,
+      "interval": "nested target-and-question bootstrap with the frozen 20,000 draws and seed"
+    },
+    "retained_leave_icl_out_9_target": {
+      "provenance": "newly prespecified in this attrition decision; the earlier ICL amendment prespecified leave-ICL-out only for the planned 11-target analysis",
+      "report_regardless_of_outcome": true,
+      "test": "one-sided exact permutation of four persona labels among nine targets",
+      "n_assignments": 126,
+      "minimum_attainable_one_sided_p": 0.007936507936507936,
+      "nominal_alpha": 0.05
+    }
+  },
+  "inference_status": "No reported test from this run is confirmatory because the preregistered 11-target primary is not estimable. Every retained-target analysis is sensitivity analysis and will be published regardless of agreement.",
+  "gate_resolution_audit": {
+    "source": "judge-blind recomputation from all 352 frozen screen raw-completion files",
+    "threshold_quantization": "With six completions, cjk_fraction > 0.20 excludes at 2/6 or more; 1/6 passes.",
+    "flagged_completion_count_distribution": {"0_of_6": 251, "1_of_6": 61, "2_of_6": 15, "3_of_6": 4, "4_of_6": 1, "5_of_6": 4, "6_of_6": 16},
+    "cells_total": 352,
+    "cells_one_completion_from_exclusion": 61,
+    "query_topic_is_only_2_of_6_cell": false,
+    "cells_at_2_of_6": 15,
+    "cells_at_2plus_by_target": {"apathetic": 6, "format_policy": 1, "humorous": 4, "icl_task": 3, "impolite": 3, "optimistic": 4, "prior_topic": 6, "query_topic": 3, "response_theme": 3, "retrievable_fact": 1, "user_expertise": 6}
+  },
+  "blindness_and_access_log": {
+    "query_topic_signal_scores_read": false,
+    "query_topic_signal_scores_printed": false,
+    "screen_reduction_attempt": "One reduction attempt processed the first four persona targets in process memory, then stopped at query_topic__anchor_a. It emitted no target values and wrote no summary or selection. It did not open query_topic signal rows.",
+    "artifacts_opened": [
+      "preregistered_design.json",
+      "protocol_archive/pre_amendment_issue2254_multitype_context_preference.py",
+      "screen/raw_completions/query_topic__anchor_a.json",
+      "all 22 screen/judge/judged/*__anchor_{a,b}.json records"
+    ],
+    "values_seen": "Anchor eligibility/quality metrics and anchor judge means were printed for all 22 anchors; raw text was opened only for query_topic__anchor_a. No signal-cell mean or per-question target score was printed or inspected."
+  },
+  "evidence_hashes": {
+    "query_topic_anchor_a_raw_sha256": "9722814e77070205090e3ac01a0754b579b3ff308ec6e717bf15468e963f836e",
+    "anchor_judged_records": {
+      "apathetic__anchor_a": "8074df96ca7e9a2ee3731f05d67d01823ff84c750ce62344a02313582af31b4d",
+      "apathetic__anchor_b": "1b7ae8eb6dbcfdb7284b7f64aac883cdfce9b12667b1cbca475c8ea4f525f223",
+      "format_policy__anchor_a": "5fe7ef3c32fe311738fbc11f930b312cc1d77aee9e5826eb156deaa5c27c8c03",
+      "format_policy__anchor_b": "ffe96195245c11eea0eb667e9acbfa09a10662920104d07b88e3acd00d2e616c",
+      "humorous__anchor_a": "712288537f019c0aee86f4e53fb6df80e8a49f9fa41f6db3014d0046aea3b578",
+      "humorous__anchor_b": "66e37d9a87624b3fe42c6f08068d5d1a5ffb7e7c24bcabebedc94c20b17d9492",
+      "icl_task__anchor_a": "92c855d8d04c538afb4eb4de65b9da39e16c9b672fd5b4181d57d3038b6fcee3",
+      "icl_task__anchor_b": "b14f56f9e58d2ff38a9240fac4ccab911fabbbacaee0dcdfc367109a763d1937",
+      "impolite__anchor_a": "df655c87681fe808ff04753296a87217e2b05e10f823f8d283d501e267a4e22c",
+      "impolite__anchor_b": "d3742fb8b7743a132de674730db25204a78c97917d66bd70122fff1210e2ba9a",
+      "optimistic__anchor_a": "aed5c9614c5eb99628fd478de059a97c5f2a40416cc3551a723794ab036bf2c7",
+      "optimistic__anchor_b": "85a6f0713f0d8d7de9c5bdcbbedd0654e1c526444adf997adac3e63e387d51ee",
+      "prior_topic__anchor_a": "980add99c5d25c18a5ee246c8cf22618cc794026b69d79f181008630a3fc8046",
+      "prior_topic__anchor_b": "dd7937fa6a7be4336a3a063905a1970d815c561f5036d34741c0759cddf92d89",
+      "query_topic__anchor_a": "7172a93b842315fdc2b7b8ce89a6a1be5f5a62615f661021f14b2b6be9b55b87",
+      "query_topic__anchor_b": "1b42007d37ea002feb52359c0fadec9b453518ee3276275156a32f50d9c66eed",
+      "response_theme__anchor_a": "09100b32032ac9cdbe4784fd339fcffe9ec807e4f9cdd0c084e52bb51eb95aa9",
+      "response_theme__anchor_b": "60fdf146937221082a9987e8600845642e8802f403fdfd7467344ccaccf36247",
+      "retrievable_fact__anchor_a": "917eed1c922cfdbb52cb4f18a4ec8acd9f33ccad61eb9a315ea494f6766e9b61",
+      "retrievable_fact__anchor_b": "845005b13f6c72657a5d7d6d10c41538b9cf50800ea3fa23865c3f2fc5e8c9ee",
+      "user_expertise__anchor_a": "41719e87e43841c03a3db3e40030e8e7cc7b7ff0d0f6226a4234a95d51204e16",
+      "user_expertise__anchor_b": "2377acbdfeea80d5a141ecad4dec8b61b3ec6e5da3439a6fa7bed6e58f522be1"
+    }
+  }
+}
