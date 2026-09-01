@@ -1,0 +1,50 @@
+{
+  "amendment_id": "target_attrition_analysis_amendment_v1",
+  "amended_at": "2026-08-31T20:10:00-07:00",
+  "status": "frozen_after_independent_implementation_review_before_confirmation_reduction_or_signal_score_inspection",
+  "trigger": "A required independent cross-model implementation review identified omitted anchor-scale diagnostics, an unchecked live estimator dependency, omitted literal-frozen/heterogeneous-gate reporting, and missing direct tests for integrity guards.",
+  "blindness": {
+    "confirmation_generation_complete_at_freeze": false,
+    "confirmation_reduction_run": false,
+    "confirmation_summary_exists": false,
+    "confirmation_signal_scores_inspected_by_operator": false,
+    "confirmation_signal_scores_inspected_by_reviewer": false,
+    "reviewer_access": "The reviewer inspected already-judged confirmation anchor records and reported target-level anchor separations. It did not report or inspect signal or random-control target scores and exercised the estimator on synthetic data.",
+    "judge_status": "Nine retained target families had completed independent judging; user_expertise judging had not started. No confirmation reduction had run."
+  },
+  "estimator_invariance": {
+    "retained_targets_changed": false,
+    "screen_selection_changed": false,
+    "quality_gates_changed": false,
+    "normalized_f_definition_changed": false,
+    "primary_sensitivity_statistic_changed": false,
+    "exact_permutation_changed": false,
+    "nested_bootstrap_changed": false,
+    "inference_label_changed": false,
+    "statement": "The frozen ten-target normalized-F attrition sensitivity and nine-target leave-ICL-out sensitivity are unchanged and remain sensitivity-only."
+  },
+  "review_additions": {
+    "anchor_scale_diagnostics": "Carry floor, ceiling, and anchor-separation summaries into every target row and group summary.",
+    "unnormalized_companion": "Report a non-primary context-minus-answer judge-score-point interaction reconstructed exactly as (F_context - F_answer) times the per-question anchor separation.",
+    "integrity": "Verify the frozen design, ICL amendment, live execution-script dependency, original attrition decision, and reviewed implementation hashes.",
+    "gate_reporting": "Restore the literal frozen ICL-gate status and name the ICL-versus-prose gate heterogeneity in the JSON and report.",
+    "tests": "Directly exercise decision-field and evidence-hash guards, restore mutated bootstrap state, and smoke-test report and figure generation."
+  },
+  "superseded_implementation": {
+    "script_sha256": "63dc2dc38780857aa1add5aead5b5fe7b2ddcbacb8bbb95001c2d692789ae147",
+    "test_sha256": "8b5b4ebbe3d56cc118ed913c3e8beed251d91daf646ddb2dd8773433c19a6042"
+  },
+  "reviewed_implementation": {
+    "script": "scripts/issue2254_multitype_attrition_analysis.py",
+    "script_sha256": "45888213ad3876eba3201d8df69ac6ef43c7a2dfa67e5df21fc34eed3cd033c3",
+    "test": "tests/test_issue2254_multitype_attrition_analysis.py",
+    "test_sha256": "845ad8cfa091776b3601fd16e167582735e2aaf5d118a0fc92d7f756856e9d49"
+  },
+  "frozen_inputs": {
+    "target_attrition_decision_sha256": "1a9704592f005d9029a088c0bf86d8654165aaeafb927c9b99a563dbf1c6feba",
+    "preregistered_design_sha256": "385ad213192dc06ee5d6b08b5020feeba54f5e58c1b52a4e08f6321c45fbd8d3",
+    "design_amendment_sha256": "a076cd9fed7758e484ffce6e392e23533714207f83ff0ee4b508d90cef732bf0",
+    "amended_execution_script_sha256": "8ebacd6eb249290578dab2100b3f943c43b0133b3987cbe65a235687f79e64dd"
+  },
+  "publication_commitment": "All added diagnostics and the unchanged sensitivities will be reported regardless of agreement or outcome."
+}
