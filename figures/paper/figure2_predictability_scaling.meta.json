@@ -1,12 +1,48 @@
 {
-  "status": "style prototype; not wired into the manuscript",
+  "status": "manuscript Figure 2",
+  "style_version": "c2a-v1",
+  "plotting_script": "scripts/make_paper_figure2.py",
+  "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+  "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
+  "reproduction_command": "uv run python scripts/make_paper_figure2.py",
+  "repository_manuscript_asset": "figures/paper/figure2_predictability_scaling.pdf",
+  "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
+  "git": {
+    "commit": "06d42585522859ccda517df96ecc81e2b0834173",
+    "tracked_worktree_dirty": false
+  },
   "sources": {
-    "layer": "eval_results/issue_1901/avgtarget_plots/plot1_avg.json",
-    "scaling": "eval_results/issue_1901/figure2_five_rollout_scaling.json"
+    "layer": {
+      "path": "eval_results/issue_1901/avgtarget_plots/plot1_avg.json",
+      "sha256": "abec994259ad01cf729da8fc6f48261cc7baeb37fa08e9d14be0a4aaedbac014"
+    },
+    "scaling": {
+      "path": "eval_results/issue_1901/figure2_five_rollout_scaling.json",
+      "sha256": "34f4c8f4f14cccb4c4e712b3ba729cd581611b4307413ff2d13a0edd1cc7cdac"
+    }
+  },
+  "rendering": {
+    "resolved_font": "Inter",
+    "authoring_size_inches": [
+      14.4,
+      6.2
+    ],
+    "intended_manuscript_width_inches": 5.5,
+    "png_dpi": 240,
+    "background": "#FFFFFF"
+  },
+  "displayed_metrics": {
+    "left": [
+      "r2"
+    ],
+    "right": [
+      "r2",
+      "strict_top1_retrieval"
+    ]
   },
   "metric_encoding": {
     "r2": "solid line, filled marker",
-    "top1_retrieval": "dashed line, open marker"
+    "strict_top1_retrieval": "dashed line, open marker"
   },
   "predictor_encoding": {
     "ridge": {
@@ -516,5 +552,10 @@
     "n_test": 1000,
     "target": "five-rollout mean",
     "retrieval": "whitened cosine + CSLS (K=10), deduplicated pool n=942"
+  },
+  "output_sha256": {
+    "pdf": "09dcd80c0baf4d972371693168bca20ed5bad27ac649792c7995b5ac4c035a00",
+    "png": "54a896f23ce28fd7f60372cd6b51c14a3d5ecde6858ce2c7cd0c17edfd4c79df",
+    "grayscale": "b47dccc472669420691ec29433ac5b51fb4904bfd2790705d3139868d5faefd7"
   }
 }
