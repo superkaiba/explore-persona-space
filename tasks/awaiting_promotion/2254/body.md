@@ -8,7 +8,6 @@ tags:
 - followup-manual
 - epm:attrition-analysis-review-frozen:v1:commit=4a5a8e8bf31:sha256=1ee2082ce4a44073c87dcdcc53bb6300779e70da114028ceedc8259e77338326:before-confirm-reduce
 - epm:confirmation-estimability-frozen:v1:commit=06a72e1d87b:sha256=5535d9a323fd1e74b1dd9e17057804fb47e0c906c5c793e90241c21ea96e4ae5:score-blind
-- keep-running
 created_at: '2026-08-12T21:41:36Z'
 has_clean_result: true
 parent_id: 2220
@@ -424,4 +423,3 @@ Position round originating prompt (user, 2026-08-23, verbatim):
 Inversion-ladder round originating prompt (user, 2026-08-25, verbatim): `Let's try the transpose` — captured as followup_label `transpose_ladder` (source: user-chat) and scoped in the round's plan to the transpose pullback plus ridge-inverse pullbacks at three λ quantiles, run at the parent's decisive context-locus operating points.
 
 Lineage: [#2220](https://eps.superkaiba.com/tasks/2220) — parent; the map's *read* direction is causally inert at the context vector · [#1615](https://eps.superkaiba.com/tasks/1615) — the map + pre-image recipe; the pre-image is a good *read-out* · [#1415](https://eps.superkaiba.com/tasks/1415) — a context-vector edit causally shifts the answer's persona. Created 2026-08-12; run 2026-08-13/14; position round run 2026-08-23/24; inversion-ladder round run 2026-08-25. Sibling comparator: [#2333](https://eps.superkaiba.com/tasks/2333) — the text-prefill opening-token result the two-thirds mark traces to.
-
