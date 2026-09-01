@@ -1,0 +1,110 @@
+{
+  "experiment": "issue2254_multitype_context_preference_qwen35",
+  "model": "Qwen/Qwen3.5-9B",
+  "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "outcome": "multitype_persona_preference_not_estimable",
+  "inference": {
+    "preregistered_11_target_primary": "not_estimable",
+    "frozen_10_target_attrition_sensitivity": "not_estimable",
+    "frozen_9_target_leave_icl_out_sensitivity": "not_estimable",
+    "persona_preferential_context_steerability_claim": "not_allowed",
+    "reason": "Only one persona and one nonpersona target passed both confirmation anchors and both selected intervention arms. Eight of ten selected answer arms failed frozen quality/completeness gates, versus zero of ten selected context arms."
+  },
+  "quality_outcome": {
+    "retained_targets_entering_confirmation": 10,
+    "targets_with_ineligible_anchor": 3,
+    "selected_context_signals_ineligible": 0,
+    "selected_answer_signals_ineligible": 8,
+    "targets_quality_complete_for_both_arms": [
+      "optimistic",
+      "icl_task"
+    ],
+    "quality_complete_composition": "1 persona / 1 nonpersona",
+    "dominant_failure": "Answer-state steering caused long-run generation cap hits and associated CJK/degeneration failures; the answer intervention edits prefill plus every decode state, whereas the context intervention edits one state."
+  },
+  "api_refusal_recovery": {
+    "decision": "One rule-authorized identical-instrument retry for six API-classifier refusal rows, frozen before signal-score inspection.",
+    "submitted": 6,
+    "api_requests_succeeded": 6,
+    "provider_classifier_refused_again": 6,
+    "recovered": 0,
+    "further_attempts_allowed": false,
+    "pre_and_post_anchor_selected_signal_evidence_combined_sha256": "adf49070d3685de490f5691d2851bc402e27d383a0b6bc87beb9e2059e7b34d5"
+  },
+  "exploratory_context_only_descriptions": {
+    "scope": "Targets with eligible anchors and selected context signals. F is the fraction of the held-out natural A-to-B answer swap. These are selected-point descriptions, not a target-class test.",
+    "targets": {
+    "optimistic": {
+      "target_class": "persona",
+      "context_f": 0.04867886644374208,
+      "exceeds_all_8_random_points": true
+    },
+    "impolite": {
+      "target_class": "persona",
+      "context_f": 0.0,
+      "exceeds_all_8_random_points": false
+    },
+    "apathetic": {
+      "target_class": "persona",
+      "context_f": 0.0,
+      "exceeds_all_8_random_points": false
+    },
+    "prior_topic": {
+      "target_class": "nonpersona",
+      "context_f": 0.0,
+      "exceeds_all_8_random_points": false
+    },
+    "response_theme": {
+      "target_class": "nonpersona",
+      "context_f": 0.0,
+      "exceeds_all_8_random_points": false
+    },
+    "retrievable_fact": {
+      "target_class": "nonpersona",
+      "context_f": 0.565,
+      "exceeds_all_8_random_points": true
+    },
+    "icl_task": {
+      "target_class": "nonpersona",
+      "context_f": 0.48541666666666666,
+      "exceeds_all_8_random_points": true
+    }
+    }
+  },
+  "exploratory_paired_descriptions": {
+    "scope": "The only two targets with eligible anchors and both arms; no persona-versus-nonpersona inference is permitted.",
+    "targets": {
+    "optimistic": {
+      "target_class": "persona",
+      "context_f": 0.04867886644374208,
+      "answer_f": 0.8082072476148786,
+      "context_minus_answer_f": -0.7595283811711365,
+      "context_exceeds_all_8_random_points": true,
+      "answer_exceeds_all_8_random_points": true
+    },
+    "icl_task": {
+      "target_class": "nonpersona",
+      "context_f": 0.48541666666666666,
+      "answer_f": 0.21458333333333335,
+      "context_minus_answer_f": 0.2708333333333333,
+      "context_exceeds_all_8_random_points": true,
+      "answer_exceeds_all_8_random_points": true
+    }
+    }
+  },
+  "individual_target_notes": {
+    "scope": "These are independent target-level descriptions. The design defines no topic superclass, so query_topic, prior_topic, and response_theme are not pooled or used for a class-level claim.",
+    "query_topic": "Not confirmed because its unsteered screen floor anchor failed the frozen CJK gate.",
+    "prior_topic": "Eligible confirmation context arm, F=0.0, did not exceed random controls.",
+    "response_theme_golden_gate_bridge": "Eligible confirmation context arm, F=0.0, did not exceed random controls."
+  },
+  "provenance": {
+    "confirmation_estimability_decision_sha256": "5535d9a323fd1e74b1dd9e17057804fb47e0c906c5c793e90241c21ea96e4ae5",
+    "descriptive_confirm_summary_sha256": "1472e9d2bf5a68d9e5c80e0dc9ef7a8487a3abee8d687405ed54c9db2f45230e",
+    "post_rejudge_raw_judge_sha256": {
+      "apathetic": "3ca8cb7d53b4094e8094a428e7794f93623b7c0fdbd4b8284a81be565d613bde",
+      "response_theme": "a8d54416f8279491d12a643c7cde7c23379a9fa9729d8b1992ea5596c1908aa5"
+    }
+  },
+  "prospective_followup": "Use matched intervention energy, bounded answer-state exposure, multiple judge draws, an attainable cap gate, language-ID or character-fraction switching detection, and a prespecified selected-signal attrition rule."
+}

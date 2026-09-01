@@ -1,0 +1,583 @@
+{
+  "targets": {
+    "apathetic": {
+      "ceiling_mean": 39.791666666666664,
+      "floor_mean": 0.0,
+      "information_type": "persona",
+      "per_question_anchor_separation": [
+        57.5,
+        0.0,
+        87.5,
+        38.75,
+        0.0,
+        55.0
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "all",
+            "c": 2.0,
+            "dose_scale": 0.5,
+            "kind": "signal",
+            "layer_config": "all",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "apathetic"
+          },
+          "exclusion_reasons": [
+            "judge_completeness"
+          ],
+          "status": "selected_signal_failed"
+        },
+        "context": {
+          "cell": {
+            "breadth": "mid",
+            "c": 0.125,
+            "dose_scale": 0.0625,
+            "kind": "signal",
+            "layer_config": "mid",
+            "method": "diffmean",
+            "position": "context",
+            "target": "apathetic"
+          },
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "mean_f": 0.0,
+          "n_valid_questions": 4,
+          "per_question_f": [
+            0.0,
+            null,
+            0.0,
+            0.0,
+            null,
+            0.0
+          ],
+          "random": {
+            "exceeds_all_points": false,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.0,
+          "status": "ok"
+        }
+      },
+      "target_class": "persona"
+    },
+    "icl_task": {
+      "ceiling_mean": 100.0,
+      "floor_mean": 0.0,
+      "information_type": "in_context_task",
+      "per_question_anchor_separation": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "all",
+            "c": 2.0,
+            "dose_scale": 0.5,
+            "kind": "signal",
+            "layer_config": "all",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "icl_task"
+          },
+          "ci95": [
+            0.0,
+            0.51875
+          ],
+          "mean_f": 0.21458333333333335,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.0,
+            0.0,
+            0.0,
+            0.9125,
+            0.375,
+            0.0
+          ],
+          "random": {
+            "exceeds_all_points": true,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.3333333333333333,
+          "status": "ok"
+        },
+        "context": {
+          "cell": {
+            "breadth": "mid",
+            "c": 2.0,
+            "dose_scale": 1.0,
+            "kind": "signal",
+            "layer_config": "mid",
+            "method": "diffmean",
+            "position": "context",
+            "target": "icl_task"
+          },
+          "ci95": [
+            0.18541666666666665,
+            0.7770833333333335
+          ],
+          "mean_f": 0.48541666666666666,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.25,
+            1.0,
+            0.0,
+            0.8,
+            0.7875,
+            0.075
+          ],
+          "random": {
+            "exceeds_all_points": true,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.525,
+          "status": "ok"
+        }
+      },
+      "target_class": "nonpersona"
+    },
+    "impolite": {
+      "ceiling_mean": 94.83333333333333,
+      "floor_mean": 0.0,
+      "information_type": "persona",
+      "per_question_anchor_separation": [
+        95.0,
+        97.75,
+        91.25,
+        87.5,
+        100.0,
+        97.5
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "all",
+            "c": 1.0,
+            "dose_scale": 0.25,
+            "kind": "signal",
+            "layer_config": "all",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "impolite"
+          },
+          "exclusion_reasons": [
+            "generation_cap_hits",
+            "judge_completeness",
+            "no_score",
+            "anchor_separation_floor"
+          ],
+          "status": "selected_signal_failed"
+        },
+        "context": {
+          "cell": {
+            "breadth": "single",
+            "c": 0.125,
+            "dose_scale": 0.0625,
+            "kind": "signal",
+            "layer_config": "L23",
+            "method": "diffmean",
+            "position": "context",
+            "target": "impolite"
+          },
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "mean_f": 0.0,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "random": {
+            "exceeds_all_points": false,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.0,
+          "status": "ok"
+        }
+      },
+      "target_class": "persona"
+    },
+    "optimistic": {
+      "ceiling_mean": 95.58333333333333,
+      "floor_mean": 0.0,
+      "information_type": "persona",
+      "per_question_anchor_separation": [
+        97.0,
+        95.0,
+        95.75,
+        95.0,
+        95.0,
+        95.75
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "mid",
+            "c": 0.5,
+            "dose_scale": 0.25,
+            "kind": "signal",
+            "layer_config": "mid",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "optimistic"
+          },
+          "ci95": [
+            0.7242898824002754,
+            0.8831455270028857
+          ],
+          "mean_f": 0.8082072476148786,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.7474226804123711,
+            0.9473684210526315,
+            0.6266318537859008,
+            0.8763157894736842,
+            0.8421052631578947,
+            0.8093994778067886
+          ],
+          "random": {
+            "exceeds_all_points": true,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.536734693877551,
+          "status": "ok"
+        },
+        "context": {
+          "cell": {
+            "breadth": "all",
+            "c": 4.0,
+            "dose_scale": 1.0,
+            "kind": "signal",
+            "layer_config": "all",
+            "method": "diffmean",
+            "position": "context",
+            "target": "optimistic"
+          },
+          "ci95": [
+            0.0043859649122807015,
+            0.12191379231368238
+          ],
+          "mean_f": 0.04867886644374208,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.0,
+            0.013157894736842105,
+            0.22628372497824195,
+            0.013157894736842105,
+            0.039473684210526314,
+            0.0
+          ],
+          "random": {
+            "exceeds_all_points": true,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.04200680272108844,
+          "status": "ok"
+        }
+      },
+      "target_class": "persona"
+    },
+    "prior_topic": {
+      "ceiling_mean": 95.83333333333333,
+      "floor_mean": 0.0,
+      "information_type": "prior_discourse_topic",
+      "per_question_anchor_separation": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        75.0
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "mid",
+            "c": 1.0,
+            "dose_scale": 0.5,
+            "kind": "signal",
+            "layer_config": "mid",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "prior_topic"
+          },
+          "exclusion_reasons": [
+            "generation_cap_hits",
+            "judge_completeness",
+            "no_score",
+            "anchor_separation_floor"
+          ],
+          "status": "selected_signal_failed"
+        },
+        "context": {
+          "cell": {
+            "breadth": "single",
+            "c": 0.125,
+            "dose_scale": 0.0625,
+            "kind": "signal",
+            "layer_config": "L23",
+            "method": "diffmean",
+            "position": "context",
+            "target": "prior_topic"
+          },
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "mean_f": 0.0,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "random": {
+            "exceeds_all_points": false,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.0,
+          "status": "ok"
+        }
+      },
+      "target_class": "nonpersona"
+    },
+    "response_theme": {
+      "ceiling_mean": 96.875,
+      "floor_mean": 0.0,
+      "information_type": "recurring_response_theme",
+      "per_question_anchor_separation": [
+        98.75,
+        100.0,
+        100.0,
+        82.5,
+        100.0,
+        100.0
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "mid",
+            "c": 1.0,
+            "dose_scale": 0.5,
+            "kind": "signal",
+            "layer_config": "mid",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "response_theme"
+          },
+          "exclusion_reasons": [
+            "judge_completeness"
+          ],
+          "status": "selected_signal_failed"
+        },
+        "context": {
+          "cell": {
+            "breadth": "single",
+            "c": 0.125,
+            "dose_scale": 0.0625,
+            "kind": "signal",
+            "layer_config": "L23",
+            "method": "diffmean",
+            "position": "context",
+            "target": "response_theme"
+          },
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "mean_f": 0.0,
+          "n_valid_questions": 6,
+          "per_question_f": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "random": {
+            "exceeds_all_points": false,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.0,
+          "status": "ok"
+        }
+      },
+      "target_class": "nonpersona"
+    },
+    "retrievable_fact": {
+      "ceiling_mean": 89.58333333333333,
+      "floor_mean": 4.166666666666667,
+      "information_type": "retrievable_fact",
+      "per_question_anchor_separation": [
+        100.0,
+        100.0,
+        100.0,
+        100.0,
+        12.5,
+        100.0
+      ],
+      "positions": {
+        "answer": {
+          "cell": {
+            "breadth": "single",
+            "c": 0.5,
+            "dose_scale": 0.25,
+            "kind": "signal",
+            "layer_config": "L23",
+            "method": "diffmean",
+            "position": "answer",
+            "target": "retrievable_fact"
+          },
+          "exclusion_reasons": [
+            "generation_cap_hits",
+            "judge_completeness",
+            "no_score",
+            "anchor_separation_floor"
+          ],
+          "status": "selected_signal_failed"
+        },
+        "context": {
+          "cell": {
+            "breadth": "all",
+            "c": 4.0,
+            "dose_scale": 1.0,
+            "kind": "signal",
+            "layer_config": "all",
+            "method": "diffmean",
+            "position": "context",
+            "target": "retrievable_fact"
+          },
+          "ci95": [
+            0.4925,
+            0.6174999999999999
+          ],
+          "mean_f": 0.565,
+          "n_valid_questions": 5,
+          "per_question_f": [
+            0.5625,
+            0.625,
+            0.5875,
+            0.625,
+            null,
+            0.425
+          ],
+          "random": {
+            "exceeds_all_points": true,
+            "n": 8,
+            "point_means": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "screen_mean_f": 0.425,
+          "status": "ok"
+        }
+      },
+      "target_class": "nonpersona"
+    }
+  }
+}
