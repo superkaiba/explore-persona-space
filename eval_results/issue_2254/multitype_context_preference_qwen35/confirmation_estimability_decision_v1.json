@@ -1,0 +1,151 @@
+{
+  "decision_id": "confirmation_estimability_decision_v1",
+  "frozen_at": "2026-08-31T20:35:00-07:00",
+  "status": "frozen_before_any_confirmation_signal_score_inspection",
+  "trigger": "The first confirmation reduction aborted at the first ineligible retained anchor. A score-blind full quality audit then showed that the failure was not isolated and that no preregistered multitype interaction remained estimable.",
+  "blindness_and_access_log": {
+    "confirmation_summary_exists": false,
+    "confirmation_signal_mean_scores_printed_or_inspected": false,
+    "confirmation_per_question_signal_scores_printed_or_inspected": false,
+    "first_reduce_attempt": "Aborted at humorous__anchor_b before writing a summary or printing scores.",
+    "quality_fields_inspected": [
+      "degradation_excluded",
+      "degradation_exclusion_reasons",
+      "cap_hit_fraction",
+      "cjk_fraction",
+      "degenerate_fraction",
+      "coherence_rate_programmatic",
+      "nonempty_nonrefusal_rate",
+      "accounting.frac_items_complete",
+      "judge stop_reason and error class",
+      "completion character and token lengths"
+    ],
+    "independent_diagnosis": "Two Claude diagnostics and an intent-preservation review were run. The intent reviewer returned APPROVED for this decision and the one-pass API-refusal recovery."
+  },
+  "frozen_inputs": {
+    "confirmation_selection_sha256": "1d38cee0eb68e51cab9df5991d17e81591c6b38825b39e05ff2b0f7479166075",
+    "target_attrition_decision_sha256": "1a9704592f005d9029a088c0bf86d8654165aaeafb927c9b99a563dbf1c6feba",
+    "target_attrition_analysis_amendment_sha256": "1ee2082ce4a44073c87dcdcc53bb6300779e70da114028ceedc8259e77338326",
+    "execution_script_sha256": "8ebacd6eb249290578dab2100b3f943c43b0133b3987cbe65a235687f79e64dd",
+    "quality_evidence": {
+      "n_anchor_and_selected_signal_records": 40,
+      "combined_sha256": "adf49070d3685de490f5691d2851bc402e27d383a0b6bc87beb9e2059e7b34d5",
+      "hash_definition": "SHA256 of concatenated sorted lines: <cell_id> <file_sha256>\\n"
+    },
+    "pre_rejudge_raw_judge_file_sha256": {
+      "apathetic": "523263e546299e03ffb194ef70462efd3827ac41a86a47a745b571914c75baee",
+      "response_theme": "5e1a437d3ad69f5a0f44e64f01a880af374175c3ed66ca0c44ebfff18188be08"
+    }
+  },
+  "pre_rejudge_quality_audit": {
+    "retained_targets": 10,
+    "targets_with_ineligible_anchor": 3,
+    "targets_with_ineligible_selected_context_signal": 0,
+    "targets_with_ineligible_selected_answer_signal": 8,
+    "targets_passing_both_anchors_and_both_selected_signals": [
+      "optimistic",
+      "icl_task"
+    ],
+    "composition_passing": "1 persona / 1 nonpersona",
+    "targets": {
+      "optimistic": {
+        "class": "persona",
+        "anchors": "eligible",
+        "context_signal": "eligible",
+        "answer_signal": "eligible"
+      },
+      "impolite": {
+        "class": "persona",
+        "anchors": "eligible",
+        "context_signal": "eligible",
+        "answer_signal": "ineligible: generation_cap_hits"
+      },
+      "apathetic": {
+        "class": "persona",
+        "anchors": "eligible",
+        "context_signal": "eligible",
+        "answer_signal": "temporarily incomplete: 3 API-classifier refusal draws"
+      },
+      "humorous": {
+        "class": "persona",
+        "anchors": "ceiling ineligible: cjk_fraction=0.25",
+        "context_signal": "eligible",
+        "answer_signal": "ineligible: CJK, generation cap hits, degeneration"
+      },
+      "prior_topic": {
+        "class": "nonpersona",
+        "anchors": "eligible",
+        "context_signal": "eligible",
+        "answer_signal": "ineligible: generation_cap_hits"
+      },
+      "response_theme": {
+        "class": "nonpersona",
+        "anchors": "eligible",
+        "context_signal": "eligible",
+        "answer_signal": "temporarily incomplete: 3 API-classifier refusal draws"
+      },
+      "format_policy": {
+        "class": "nonpersona",
+        "anchors": "floor ineligible: cjk_fraction=0.20833333333333334",
+        "context_signal": "eligible",
+        "answer_signal": "ineligible: CJK and generation cap hits"
+      },
+      "retrievable_fact": {
+        "class": "nonpersona",
+        "anchors": "eligible",
+        "context_signal": "eligible",
+        "answer_signal": "ineligible: generation_cap_hits"
+      },
+      "icl_task": {
+        "class": "nonpersona",
+        "anchors": "eligible under amended short-label gate",
+        "context_signal": "eligible under amended short-label gate",
+        "answer_signal": "eligible under amended short-label gate"
+      },
+      "user_expertise": {
+        "class": "nonpersona",
+        "anchors": "floor and ceiling ineligible: generation cap hits; ceiling also CJK",
+        "context_signal": "eligible",
+        "answer_signal": "ineligible: generation_cap_hits"
+      }
+    }
+  },
+  "inferential_decision": {
+    "preregistered_11_target_primary": "not_estimable",
+    "frozen_10_target_attrition_sensitivity": "not_estimable",
+    "frozen_9_target_leave_icl_out_sensitivity": "not_estimable",
+    "new_reduced_target_inferential_analysis": false,
+    "reason": "At most two persona and two nonpersona targets can survive the quality gates after the allowed judge recovery. The exact four-target label permutation has six assignments and minimum one-sided p=1/6; the surviving set is also selected by position-confounded degradation.",
+    "allowed_claim": "No persona-versus-nonpersona preference claim is allowed from this confirmation run. Surviving per-target values may be reported only as exploratory descriptions alongside the complete quality audit."
+  },
+  "one_pass_api_refusal_recovery": {
+    "classification": "standing rule-mandated measurement completion; not a gate or protocol change",
+    "code_basis": "src/explore_persona_space/eval/graded_judge.py rule #2151 and batch_judge.py cache-miss handling for API-refusal error dicts",
+    "targets": [
+      "apathetic",
+      "response_theme"
+    ],
+    "items": [
+      "mt_3e4b1429260538cdcf0526346bac__00249__00",
+      "mt_e8d1f7bf17a33dd4eef693e8cfce__00262__00",
+      "mt_ecbafd9294bc48875df839d62401__00258__00",
+      "mt_b7445c925d752f809a70b7c8acc9__00232__00",
+      "mt_b2a874922fe71308f4b7be0ba49b__00226__00",
+      "mt_fd3dc80b8d68343d1c93f12fe19a__00231__00"
+    ],
+    "attempt_cap": 1,
+    "cache_deletion": false,
+    "mechanism": "Run confirm-judge --force once for each named target. Valid rows remain cache hits; API-refusal rows are cache misses and are re-dispatched automatically.",
+    "outcome_invariance": "Regardless of recovery, no new inferential target-class test will be run or claimed."
+  },
+  "prohibited_actions": [
+    "model-output regeneration",
+    "anchor rerun or substitution",
+    "quality-gate amendment",
+    "dose or breadth fallback",
+    "pooling failed cells",
+    "new post-hoc inferential subset",
+    "treating excluded targets as zero-effect observations"
+  ],
+  "prospective_followup": "Use multiple judge draws, an attainable cap threshold at realized n, language-ID or character-fraction switching detection, answer-length/energy controls, and a prespecified selected-signal attrition rule."
+}
