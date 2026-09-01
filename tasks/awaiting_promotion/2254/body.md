@@ -7,6 +7,7 @@ tags:
 - followup-auto
 - followup-manual
 - keep-running
+- epm:attrition-analysis-review-frozen:v1:commit=4a5a8e8bf31:sha256=1ee2082ce4a44073c87dcdcc53bb6300779e70da114028ceedc8259e77338326:before-confirm-reduce
 created_at: '2026-08-12T21:41:36Z'
 has_clean_result: true
 parent_id: 2220
