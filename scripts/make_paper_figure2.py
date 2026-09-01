@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Render the Figure 2 visual-system prototype.
+"""Render the manuscript's Figure 2 from checked-in evaluation summaries.
 
-This is deliberately a preview, not the manuscript figure. It combines the
-single-turn, five-rollout layer and data-scaling evaluations with both pooled
-R^2 and whitened-cosine + CSLS top-1 retrieval results.
+The figure combines the single-turn, five-rollout layer and data-scaling
+evaluations with pooled R^2 and whitened-cosine + CSLS top-1 retrieval.
 
 Visual encoding
 ---------------
@@ -11,52 +10,49 @@ Visual encoding
 * metric: solid/filled for R^2, dashed/open for top-1 retrieval;
 The redundant encodings are designed to survive grayscale reproduction. The
 script writes a vector PDF, a high-resolution PNG, a grayscale audit PNG, and
-a JSON sidecar describing the sources and plotted values.
+a JSON sidecar describing the inputs, hashes, style, and plotted values.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-from dataclasses import dataclass
 from pathlib import Path
+import subprocess
+import sys
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 from matplotlib.ticker import FixedLocator, FuncFormatter
-from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parent.parent
-LAYER_SOURCE = ROOT / "eval_results/issue_1901/avgtarget_plots/plot1_avg.json"
-SCALING_SOURCE = ROOT / "eval_results/issue_1901/figure2_five_rollout_scaling.json"
-DEFAULT_OUT = ROOT / "figures/paper_style"
+sys.path.insert(0, str(ROOT / "src"))
+
+from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
+    INK,
+    MUTED,
+    PAPER,
+    PREDICTOR_STYLES,
+    STYLE_VERSION,
+    save_c2a_figure,
+    set_c2a_style,
+    style_score_axis,
+)
 
 
-@dataclass(frozen=True)
-class PredictorStyle:
-    label: str
-    color: str
-    marker: str
+DEFAULT_LAYER_SOURCE = ROOT / "eval_results/issue_1901/avgtarget_plots/plot1_avg.json"
+DEFAULT_SCALING_SOURCE = ROOT / "eval_results/issue_1901/figure2_five_rollout_scaling.json"
+DEFAULT_OUT = ROOT / "figures/paper"
+DEFAULT_STEM = "figure2_predictability_scaling"
 
-
-PREDICTORS = {
-    "ridge": PredictorStyle("Linear", "#176B87", "o"),
-    "mlp_w8192": PredictorStyle("Nonlinear", "#C4553D", "D"),
-}
 
 SCALING_KEYS = {
     "ridge": "ridge",
     "mlp_w8192": "mlp",
 }
-
-INK = "#22272B"
-MUTED = "#687078"
-GRID = "#C8C6BF"
-PAPER = "#FFFFFF"
-SEAM = "#A9A69E"
 
 
 def _acc1(record: dict) -> float:
@@ -64,13 +60,13 @@ def _acc1(record: dict) -> float:
     return float(values.get("1", values.get(1)))
 
 
-def _load_layer_data() -> dict:
-    source = json.loads(LAYER_SOURCE.read_text())
+def _load_layer_data(path: Path) -> dict:
+    source = json.loads(path.read_text())
     rows = []
     for layer_text, cell in source["per_layer"].items():
         layer = int(layer_text)
         arms = {}
-        for key in PREDICTORS:
+        for key in PREDICTOR_STYLES:
             rec = cell["arms"][key]["avg"]
             arms[key] = {
                 "r2": float(rec["whole_map_r2"]),
@@ -88,8 +84,8 @@ def _load_layer_data() -> dict:
     }
 
 
-def _load_scaling_data() -> dict:
-    source = json.loads(SCALING_SOURCE.read_text())
+def _load_scaling_data(path: Path) -> dict:
+    source = json.loads(path.read_text())
     rows = []
     for n_text, cell in source["per_n"].items():
         arms = {}
@@ -115,54 +111,11 @@ def _load_scaling_data() -> dict:
     }
 
 
-def _set_style() -> None:
-    mpl.rcParams.update(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": ["Inter", "Noto Sans", "DejaVu Sans"],
-            "font.size": 18,
-            "axes.labelsize": 20,
-            "axes.titlesize": 22,
-            "xtick.labelsize": 17,
-            "ytick.labelsize": 17,
-            "legend.fontsize": 17,
-            "axes.linewidth": 1.2,
-            "lines.solid_capstyle": "round",
-            "lines.dash_capstyle": "round",
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-            "savefig.facecolor": PAPER,
-            "figure.facecolor": PAPER,
-            "axes.facecolor": PAPER,
-            "text.color": INK,
-            "axes.labelcolor": INK,
-            "axes.edgecolor": INK,
-            "xtick.color": INK,
-            "ytick.color": INK,
-        }
-    )
-
-
 def _series(rows: list[dict], predictor: str, metric: str) -> tuple[np.ndarray, np.ndarray]:
     return (
         np.asarray([row["x"] for row in rows], dtype=float),
         np.asarray([row["arms"][predictor][metric] for row in rows], dtype=float),
     )
-
-
-def _style_axes(ax: plt.Axes) -> None:
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color(SEAM)
-    ax.spines["bottom"].set_color(SEAM)
-    ax.tick_params(length=0, pad=8)
-    ax.set_ylim(0.5, 1.01)
-    ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    ax.yaxis.set_major_formatter(
-        FuncFormatter(lambda y, _pos: f"{y:.2f}".rstrip("0").rstrip("."))
-    )
-    ax.grid(axis="y", color=GRID, lw=1.0, alpha=0.55)
-    ax.set_axisbelow(True)
 
 
 def _plot_panel(
@@ -173,7 +126,7 @@ def _plot_panel(
     kicker: str,
     show_retrieval: bool,
 ) -> None:
-    _style_axes(ax)
+    style_score_axis(ax)
     ax.set_title(title, loc="left", y=1.055, pad=0, fontweight=650)
     ax.text(
         0.0,
@@ -188,7 +141,7 @@ def _plot_panel(
         linespacing=1.0,
     )
 
-    for key, style in PREDICTORS.items():
+    for key, style in PREDICTOR_STYLES.items():
         x, r2 = _series(rows, key, "r2")
 
         ax.plot(
@@ -237,7 +190,7 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
             lw=3,
             label=style.label,
         )
-        for style in PREDICTORS.values()
+        for style in PREDICTOR_STYLES.values()
     ]
     metrics = [
         Line2D([0], [0], color=INK, marker="o", lw=3, label="$R^2$"),
@@ -257,7 +210,7 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
 
 
 def make_figure(layer: dict, scaling: dict) -> plt.Figure:
-    _set_style()
+    set_c2a_style()
     fig = plt.figure(figsize=(14.4, 6.2), constrained_layout=False)
     grid = fig.add_gridspec(
         1,
@@ -347,39 +300,99 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
     return fig
 
 
-def _write_outputs(fig: plt.Figure, out_dir: Path, layer: dict, scaling: dict) -> dict[str, Path]:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    stem = out_dir / "figure2_style_prototype"
-    pdf = stem.with_suffix(".pdf")
-    png = stem.with_suffix(".png")
-    gray = out_dir / "figure2_style_prototype_grayscale.png"
-    meta = stem.with_suffix(".meta.json")
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(8 << 20):
+            digest.update(chunk)
+    return digest.hexdigest()
 
-    fig.savefig(
-        pdf,
-        facecolor=PAPER,
-        bbox_inches="tight",
-        metadata={
-            "Title": "Figure 2 visual-system prototype",
-            "Subject": "Context-to-answer predictor layer and data-scaling curves",
-            "Creator": "scripts/paper_figure2_style_prototype.py",
-        },
+
+def _display_path(path: Path) -> str:
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(ROOT))
+    except ValueError:
+        return str(resolved)
+
+
+def _git_state() -> dict[str, str | bool | None]:
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
     )
-    fig.savefig(png, dpi=240, facecolor=PAPER, bbox_inches="tight")
-    with Image.open(png) as image:
-        image.convert("L").save(gray)
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return {
+        "commit": commit.stdout.strip() if commit.returncode == 0 else None,
+        "tracked_worktree_dirty": bool(dirty.stdout.strip()) if dirty.returncode == 0 else None,
+    }
 
-    meta.write_text(
+
+def _write_outputs(
+    fig: plt.Figure,
+    out_dir: Path,
+    stem_name: str,
+    layer_source: Path,
+    scaling_source: Path,
+    layer: dict,
+    scaling: dict,
+    font: str,
+    git_state: dict[str, str | bool | None],
+) -> dict[str, Path]:
+    stem = out_dir / stem_name
+    outputs = save_c2a_figure(
+        fig,
+        stem,
+        title="Figure 2: context-to-answer predictability and scaling",
+        subject="Five-rollout layer sweep and training-data scaling",
+        creator="scripts/make_paper_figure2.py",
+    )
+    metadata = stem.with_suffix(".meta.json")
+    metadata.write_text(
         json.dumps(
             {
-                "status": "style prototype; not wired into the manuscript",
+                "status": "manuscript Figure 2",
+                "style_version": STYLE_VERSION,
+                "plotting_script": "scripts/make_paper_figure2.py",
+                "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
+                "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
+                "reproduction_command": "uv run python scripts/make_paper_figure2.py",
+                "repository_manuscript_asset": _display_path(outputs["pdf"]),
+                "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
+                "git": git_state,
                 "sources": {
-                    "layer": str(LAYER_SOURCE.relative_to(ROOT)),
-                    "scaling": str(SCALING_SOURCE.relative_to(ROOT)),
+                    "layer": {
+                        "path": _display_path(layer_source),
+                        "sha256": _sha256(layer_source),
+                    },
+                    "scaling": {
+                        "path": _display_path(scaling_source),
+                        "sha256": _sha256(scaling_source),
+                    },
+                },
+                "rendering": {
+                    "resolved_font": font,
+                    "authoring_size_inches": [14.4, 6.2],
+                    "intended_manuscript_width_inches": 5.5,
+                    "png_dpi": 240,
+                    "background": PAPER,
+                },
+                "displayed_metrics": {
+                    "left": ["r2"],
+                    "right": ["r2", "strict_top1_retrieval"],
                 },
                 "metric_encoding": {
                     "r2": "solid line, filled marker",
-                    "top1_retrieval": "dashed line, open marker",
+                    "strict_top1_retrieval": "dashed line, open marker",
                 },
                 "predictor_encoding": {
                     key: {
@@ -387,25 +400,29 @@ def _write_outputs(fig: plt.Figure, out_dir: Path, layer: dict, scaling: dict) -
                         "color": style.color,
                         "marker": style.marker,
                     }
-                    for key, style in PREDICTORS.items()
+                    for key, style in PREDICTOR_STYLES.items()
                 },
                 "layer": layer,
                 "scaling": scaling,
+                "output_sha256": {kind: _sha256(path) for kind, path in outputs.items()},
             },
             indent=2,
         )
         + "\n"
     )
-    return {"pdf": pdf, "png": png, "grayscale": gray, "metadata": meta}
+    return {**outputs, "metadata": metadata}
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--layer-source", type=Path, default=DEFAULT_LAYER_SOURCE)
+    parser.add_argument("--scaling-source", type=Path, default=DEFAULT_SCALING_SOURCE)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--stem", default=DEFAULT_STEM)
     args = parser.parse_args()
 
-    layer = _load_layer_data()
-    scaling = _load_scaling_data()
+    layer = _load_layer_data(args.layer_source)
+    scaling = _load_scaling_data(args.scaling_source)
     assert layer["n_test"] == scaling["n_test"] == 1_000
     for dataset in (layer, scaling):
         for row in dataset["rows"]:
@@ -414,8 +431,20 @@ def main() -> None:
                 assert 0.0 <= values["r2"] <= 1.0
                 assert 0.0 <= values["retrieval"] <= 1.0
 
+    git_state = _git_state()
+    font = set_c2a_style()
     fig = make_figure(layer, scaling)
-    outputs = _write_outputs(fig, args.out_dir, layer, scaling)
+    outputs = _write_outputs(
+        fig,
+        args.out_dir,
+        args.stem,
+        args.layer_source,
+        args.scaling_source,
+        layer,
+        scaling,
+        font,
+        git_state,
+    )
     plt.close(fig)
     for kind, path in outputs.items():
         print(f"{kind}: {path}")
