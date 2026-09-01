@@ -4,6 +4,10 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 `6a59c927290f8b8b5eee0055`; Thomas reads ONLY in Overleaf).
 
 ## Repo + workflow
+- An Overleaf Git token is available locally through an existing authenticated
+  Overleaf remote. Reuse that credential with the requested Overleaf project ID
+  when the target clone is absent; never print, copy into prose, or commit the
+  token itself.
 - ALWAYS `git pull` before reading; commit + push after ANY edit (unpushed edits are
   invisible to Thomas). This Overleaf tree carries ONLY the documents the paper
   compiles from (user directive 2026-08-19) — never commit drafts or build artifacts
