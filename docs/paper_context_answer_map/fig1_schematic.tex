@@ -1,37 +1,140 @@
-% Figure 1 (left panel) — concept schematic
-% One affine context-to-answer map M_l from the context vector to the predicted
-% answer vector.
-% Rev 2 (2026-08-19, Thomas review): story row removed — single schematic row;
-% tokens explicitly annotated as residual-stream vectors.
+% Figure 1: context-to-answer prediction pipeline.
 % Compile standalone: pdflatex fig1_schematic.tex
-\documentclass[tikz,border=8pt]{standalone}
-\usetikzlibrary{positioning,arrows.meta,decorations.pathreplacing,calc}
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage{amsmath}
+\usetikzlibrary{positioning,arrows.meta,calc,fit,decorations.pathreplacing}
+
+% Okabe-Ito-derived, colorblind-safe semantic colors.
+\definecolor{ctx}{HTML}{0072B2}
+\definecolor{ans}{HTML}{D55E00}
+\definecolor{mapc}{HTML}{CC79A7}
+\definecolor{evalc}{HTML}{009E73}
+
 \begin{document}
 \begin{tikzpicture}[
-  font=\sffamily\small,
-  tok/.style={draw=black!40, rounded corners=1pt, minimum height=5.5mm, inner sep=2pt, fill=black!4},
-  vctx/.style={tok, fill=blue!18, draw=blue!60, thick},
-  vans/.style={tok, fill=orange!22, draw=orange!70, thick},
-  maparrow/.style={-{Stealth[length=2.5mm]}, very thick, purple!70!black},
-  readout/.style={-{Stealth[length=2mm]}, thick, black!60},
-  lbl/.style={font=\sffamily\footnotesize, black!70}
+  x=1cm,
+  y=1cm,
+  font=\sffamily\footnotesize,
+  >={Stealth[length=2.2mm]},
+  token/.style={draw=black!38, rounded corners=1pt, fill=black!3,
+                minimum height=5.5mm, minimum width=8mm, inner sep=1.5pt,
+                font=\sffamily\scriptsize},
+  state/.style={circle, draw=black!38, fill=black!8, minimum size=3.5mm,
+                inner sep=0pt},
+  ctxstate/.style={draw=ctx, fill=ctx!13, very thick, rounded corners=1.5pt,
+                   minimum width=11mm, minimum height=7mm, inner sep=1pt},
+  ansstate/.style={draw=ans, fill=ans!13, thick, rounded corners=1.5pt,
+                   minimum width=9mm, minimum height=7mm, inner sep=1pt},
+  box/.style={draw=black!45, rounded corners=2pt, fill=white,
+              minimum height=8mm, align=center, inner sep=2.5pt},
+  mapbox/.style={box, draw=mapc!85!black, fill=mapc!8, very thick},
+  targetbox/.style={box, draw=ans, fill=ans!8, thick},
+  evalbox/.style={box, draw=evalc!80!black, fill=evalc!8, thick},
+  arrow/.style={->, thick, black!65},
+  ctxarrow/.style={->, very thick, ctx},
+  ansarrow/.style={->, very thick, ans},
+  maparrow/.style={->, very thick, mapc!85!black},
+  title/.style={font=\sffamily\small\bfseries, anchor=west},
+  smalllabel/.style={font=\sffamily\scriptsize, text=black!70}
 ]
-% ---------- context tokens ----------
-\node[tok] (c1) at (0.6,0.7) {\scriptsize User: How should I\dots};
-\node[tok, right=1.5mm of c1] (c2) {\scriptsize \dots};
-\node[vctx, right=1.5mm of c2] (c3) {\scriptsize $v_C$};
-\node[lbl, above=0.5mm of c3] {\scriptsize last context token};
-% residual-stream annotation under the whole token row
-\draw[decorate, decoration={brace, mirror, amplitude=4pt}, black!60]
-  ($(c1.south west)+(0,-1mm)$) -- ($(c3.south east)+(0,-1mm)$)
-  node[midway, below=4pt, lbl] {\scriptsize one residual-stream vector per token (layer $\ell$)};
-% ---------- map ----------
-\node[vans, right=26mm of c3] (a1) {\scriptsize $\hat v_A$};
-\node[lbl, below=0.5mm of a1] {\scriptsize predicted answer vector};
-\node[lbl, below=4.5mm of a1] {\scriptsize (mean over answer tokens)};
-\draw[maparrow] (c3) -- node[above, lbl, purple!70!black] {\scriptsize $M_\ell$ (affine)} (a1);
-% ---------- readouts ----------
-\node[tok, right=9mm of a1, align=left] (b1) {\scriptsize sycophancy? evil?\\[-2pt]\scriptsize hallucination?};
-\draw[readout] (a1) -- node[above, lbl] {\scriptsize readouts} (b1);
+
+% --------------------------------------------------------------------------
+% Panel A: explicit token-by-layer representation view.
+% --------------------------------------------------------------------------
+\node[title] at (0.0,4.25) {(a) Representations at transformer layer $\ell$};
+
+% Token row.
+\node[token] (c1) at (1.15,0.05) {User:};
+\node[token] (c2) at (2.05,0.05) {$\cdots$};
+\node[token, minimum width=12mm] (ct) at (3.15,0.05) {last context};
+\node[token, draw=ans!65, fill=ans!6] (a1) at (4.45,0.05) {$a_1$};
+\node[token, draw=ans!65, fill=ans!6] (a2) at (5.35,0.05) {$\cdots$};
+\node[token, draw=ans!65, fill=ans!6] (am) at (6.25,0.05) {$a_{T_A}$};
+\draw[decorate, decoration={brace, mirror, amplitude=3.5pt}, black!60]
+  ($(c1.south west)+(0,-1mm)$) -- ($(ct.south east)+(0,-1mm)$)
+  node[midway, below=4pt, smalllabel] {context $C$};
+\draw[decorate, decoration={brace, mirror, amplitude=3.5pt}, ans!80!black]
+  ($(a1.south west)+(0,-1mm)$) -- ($(am.south east)+(0,-1mm)$)
+  node[midway, below=4pt, smalllabel, text=ans!85!black] {sampled answer $A_k$};
+
+% Layer labels and subtle highlighted layer band.
+\node[smalllabel, anchor=east] at (0.55,0.85) {block 1};
+\node[smalllabel, anchor=east] at (0.55,1.35) {$\vdots$};
+\node[smalllabel, anchor=east, text=black] at (0.55,2.05) {block $\ell$};
+\node[smalllabel, anchor=east] at (0.55,2.75) {$\vdots$};
+\node[smalllabel, anchor=east] at (0.55,3.35) {block $L$};
+\draw[rounded corners=2pt, fill=mapc!3, draw=mapc!30]
+  (0.65,1.68) rectangle (6.72,2.42);
+
+% Non-highlighted layer states.
+\foreach \x in {1.15,2.05,3.15,4.45,5.35,6.25} {
+  \node[state] at (\x,0.85) {};
+  \node[state] at (\x,3.35) {};
+}
+\foreach \x in {1.15,3.15,4.45,6.25} {
+  \draw[->, thin, black!25] (\x,0.28) -- (\x,0.64);
+  \draw[->, thin, black!25] (\x,1.06) -- (\x,1.62);
+  \draw[->, thin, black!25] (\x,2.46) -- (\x,3.13);
+}
+
+% Highlighted layer-l states.
+\node[state] at (1.15,2.05) {};
+\node[state] at (2.05,2.05) {};
+\node[ctxstate] (vc) at (3.15,2.05) {$v_C^\ell$};
+\node[ansstate, minimum width=12mm] (ha1) at (4.45,2.05)
+  {$h_{T_C+1}^\ell$};
+\node[state, draw=ans!70, fill=ans!12] at (5.35,2.05) {};
+\node[ansstate, minimum width=14mm] (ham) at (6.25,2.05)
+  {$h_{T_C+T_A}^\ell$};
+\node[smalllabel, text=ctx, above=1mm of vc] {final context state};
+
+% Mean pooling of answer-token states.
+\node[targetbox, minimum width=14mm] (va) at (8.05,2.05)
+  {$v_A^\ell(A_k)$};
+\draw[ansarrow] (ham.east) -- node[above, smalllabel, text=ans!85!black]
+  {mean} (va.west);
+\node[smalllabel, text=ans!85!black, below=1mm of va]
+  {answer-token states};
+
+% Panel divider.
+\draw[black!20] (9.05,-0.55) -- (9.05,4.35);
+
+% --------------------------------------------------------------------------
+% Panel B: target construction, predictor family, and uses.
+% --------------------------------------------------------------------------
+\node[title] at (9.35,4.25) {(b) Prediction target and uses};
+
+% Prediction branch.
+\node[ctxstate, minimum width=12mm] (vc2) at (9.85,3.15) {$v_C^\ell$};
+\node[mapbox, minimum width=26mm] (pred) at (11.85,3.15)
+  {identity + bias\\ridge $M_\ell$\\MLP $F_\ell$};
+\node[mapbox, minimum width=14mm] (vhat) at (14.15,3.15) {$\hat v_A^\ell$};
+\draw[ctxarrow] (vc2) -- (pred);
+\draw[maparrow] (pred) -- (vhat);
+
+% Rollout-averaged target branch.
+\node[targetbox, minimum width=23mm] (rollouts) at (10.35,1.45)
+  {$v_A^\ell(A_1),\ldots,$\\$v_A^\ell(A_K)$};
+\node[targetbox, minimum width=16mm] (avg) at (12.75,1.45)
+  {average\\$K$ rollouts};
+\node[targetbox, minimum width=14mm] (vbar) at (14.35,1.45)
+  {$\bar v_A^\ell$};
+\draw[ansarrow] (rollouts) -- (avg);
+\draw[ansarrow] (avg) -- (vbar);
+
+% Evaluation and behavior uses.
+\node[evalbox, minimum width=22mm] (metrics) at (16.35,1.45)
+  {$R^2$\\answer retrieval};
+\node[evalbox, minimum width=22mm] (behavior) at (16.35,3.15)
+  {behavior\\readouts};
+\draw[arrow] (vbar) -- (metrics);
+\draw[arrow] (vhat) -- (behavior);
+\draw[arrow] (vhat.south) |- (metrics.north);
+
+\node[smalllabel, text=ans!85!black] at (12.15,0.65)
+  {rollout averaging estimates $\mu_A^\ell(C)$};
+\node[smalllabel, text=mapc!85!black] at (12.05,3.85)
+  {fit on unlabelled context--answer pairs};
+
 \end{tikzpicture}
 \end{document}
