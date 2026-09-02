@@ -7,16 +7,16 @@ JSON sidecar with every plotted value and its provenance.
 
 Panels
 ------
-A  OpenThinker3-7B, layer 19: held-out R^2 and answer retrieval for four maps
-   fit inside the reasoning model (context -> CoT, context -> answer,
-   context -> CoT + answer, end of thought -> answer), split by corpus stratum.
+A  OpenThinker3-7B, layer 19: held-out R^2 and answer retrieval for the maps
+   to the answer vector from the last context token and from the end-of-thought
+   token, split by corpus stratum.
 B  OpenThinker3-7B, layer 19: the same two metrics for maps from the state at
    position t inside the thinking span to the fixed final answer state
    (t = 0 is the context state, t = 1 the end-of-thought state).
-C  Qwen3-8B, layer 24: the same four maps with thinking on, plus the
+C  Qwen3-8B, layer 24: the same two maps with thinking on, plus the
    context -> answer map with thinking disabled on the same weights.
 D  Qwen2.5-7B-Instruct (before reasoning training) -> OpenThinker3-7B (after):
-   within-model maps on each side and the two cross-model maps.
+   within-model maps on each side and the cross-model context -> answer map.
 
 Visual encoding follows Figure 2: color encodes the corpus stratum; solid bars
 (and filled markers in panel B) are R^2, hatched open bars (and open markers)
@@ -85,23 +85,18 @@ STRATA = {
 
 # (cell, x-axis label) per categorical panel.
 PANEL_A_MAPS = [
-    ("p7_B", "context →\nCoT"),
     ("p7_A", "context →\nanswer"),
-    ("p7_C", "context →\nCoT + answer"),
     ("p7_D", "end of thought\n→ answer"),
 ]
 PANEL_C_MAPS = [
     ("p7_Aoff", "context →\nanswer\n(thinking off)"),
-    ("p7_B", "context →\nCoT"),
     ("p7_A", "context →\nanswer"),
-    ("p7_C", "context →\nCoT +\nanswer"),
-    ("p7_D", "end of\nthought →\nanswer"),
+    ("p7_D", "end of thought\n→ answer"),
 ]
 PANEL_D_MAPS = [
-    ("p8_G", "before model:\ncontext →\nanswer"),
-    ("p8_E", "before context\n→ after\nanswer"),
-    ("p8_F", "after model:\ncontext →\nanswer"),
-    ("p8_H", "before context\n→ after\nCoT"),
+    ("p8_G", "before model:\ncontext → answer"),
+    ("p8_E", "before context\n→ after answer"),
+    ("p8_F", "after model:\ncontext → answer"),
 ]
 
 

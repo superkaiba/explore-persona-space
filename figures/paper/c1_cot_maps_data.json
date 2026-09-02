@@ -1,7 +1,7 @@
 {
   "font": "Inter",
   "git": {
-    "commit": "7b1655b3ee8c4e483798d43f53996f2460c04ee4",
+    "commit": "ca9771263c5dc9aa498d5cbb964fcb6a6f9c9d8d",
     "tracked_worktree_dirty": true
   },
   "outputs": {
@@ -13,52 +13,6 @@
     "A": {
       "arm": 1,
       "maps": [
-        {
-          "cell": "p7_B",
-          "does": {
-            "arm": 1,
-            "cell": "p7_B",
-            "identity_bias_r2": -254.1614605425912,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.680896222444916,
-            "r2_ci": [
-              0.6784337085281762,
-              0.6833944010149962
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_B__does__a1.json",
-            "source_sha256": "5624aad5a56cf91b5f5c52f6144ebdbf62c423a051d9f2d245a436ae68fce4ab",
-            "subset": "does",
-            "target": "cot_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p7_B",
-            "identity_bias_r2": -133.64477320857324,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.6035949192126435,
-            "r2_ci": [
-              0.6012361612574425,
-              0.6063558321534207
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_B__doesnt__a1.json",
-            "source_sha256": "8c5a9bf8944829f31853ec4a0ddc44c1c740b6f5077be22923a3a3223701c260",
-            "subset": "doesnt",
-            "target": "cot_mean"
-          },
-          "label": "context \u2192\nCoT"
-        },
         {
           "cell": "p7_A",
           "does": {
@@ -110,52 +64,6 @@
             "target": "ans_mean"
           },
           "label": "context \u2192\nanswer"
-        },
-        {
-          "cell": "p7_C",
-          "does": {
-            "arm": 1,
-            "cell": "p7_C",
-            "identity_bias_r2": -253.6751908380318,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.6949312950191467,
-            "r2_ci": [
-              0.6923519212085576,
-              0.6974022338797304
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_C__does__a1.json",
-            "source_sha256": "9ae62697f280e865f331d8b8cac712be74184623c798bd36c252d02ce1a658db",
-            "subset": "does",
-            "target": "out_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p7_C",
-            "identity_bias_r2": -135.31204056828201,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.6096804369499655,
-            "r2_ci": [
-              0.6072643531290663,
-              0.612481988613295
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_C__doesnt__a1.json",
-            "source_sha256": "a10f22fac189e4b67d50ffe575948ee90e1a0a7720e37063252ce8f49567f026",
-            "subset": "doesnt",
-            "target": "out_mean"
-          },
-          "label": "context \u2192\nCoT + answer"
         },
         {
           "cell": "p7_D",
@@ -608,52 +516,6 @@
           "label": "context \u2192\nanswer\n(thinking off)"
         },
         {
-          "cell": "p7_B",
-          "does": {
-            "arm": 3,
-            "cell": "p7_B",
-            "identity_bias_r2": -2.6676649347604005,
-            "input_state": "cx_last",
-            "layer": 24,
-            "n_rows": 14221,
-            "r2": 0.6845940268229832,
-            "r2_ci": [
-              0.6826762599254836,
-              0.6867128433199534
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_B__does__a3.json",
-            "source_sha256": "9dfc626d360c2c893dad6e15df613efb0d09555df96eb4a7a24906d3b803a84e",
-            "subset": "does",
-            "target": "cot_mean"
-          },
-          "doesnt": {
-            "arm": 3,
-            "cell": "p7_B",
-            "identity_bias_r2": -1.8509747353074295,
-            "input_state": "cx_last",
-            "layer": 24,
-            "n_rows": 12855,
-            "r2": 0.570653785805882,
-            "r2_ci": [
-              0.5683549868029583,
-              0.5731572858617394
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_B__doesnt__a3.json",
-            "source_sha256": "5fcaf382289dd29cbe04cc928896cb713e13888bdbf67fec032741fc93b51bbf",
-            "subset": "doesnt",
-            "target": "cot_mean"
-          },
-          "label": "context \u2192\nCoT"
-        },
-        {
           "cell": "p7_A",
           "does": {
             "arm": 3,
@@ -706,52 +568,6 @@
           "label": "context \u2192\nanswer"
         },
         {
-          "cell": "p7_C",
-          "does": {
-            "arm": 3,
-            "cell": "p7_C",
-            "identity_bias_r2": -2.701614227342571,
-            "input_state": "cx_last",
-            "layer": 24,
-            "n_rows": 14221,
-            "r2": 0.6976323614378467,
-            "r2_ci": [
-              0.6957448470358155,
-              0.6996013969418247
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_C__does__a3.json",
-            "source_sha256": "f5242aef0b397a9021642073a6aeafbb5232c65896bd05276c7be9dfa5249338",
-            "subset": "does",
-            "target": "out_mean"
-          },
-          "doesnt": {
-            "arm": 3,
-            "cell": "p7_C",
-            "identity_bias_r2": -1.8899704381795273,
-            "input_state": "cx_last",
-            "layer": 24,
-            "n_rows": 12855,
-            "r2": 0.5861326535725336,
-            "r2_ci": [
-              0.5838413253630944,
-              0.5885137168204101
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p7_C__doesnt__a3.json",
-            "source_sha256": "a8b8a90ffca573a84d01255bbedeeed38f63fa312b873c705f18d0ab2b3486ec",
-            "subset": "doesnt",
-            "target": "out_mean"
-          },
-          "label": "context \u2192\nCoT +\nanswer"
-        },
-        {
           "cell": "p7_D",
           "does": {
             "arm": 3,
@@ -801,7 +617,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "end of\nthought \u2192\nanswer"
+          "label": "end of thought\n\u2192 answer"
         }
       ],
       "model": "Qwen/Qwen3-8B"
@@ -859,7 +675,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "before model:\ncontext \u2192\nanswer"
+          "label": "before model:\ncontext \u2192 answer"
         },
         {
           "cell": "p8_E",
@@ -911,7 +727,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "before context\n\u2192 after\nanswer"
+          "label": "before context\n\u2192 after answer"
         },
         {
           "cell": "p8_F",
@@ -963,53 +779,7 @@
             "subset": "doesnt",
             "target": "ans_mean"
           },
-          "label": "after model:\ncontext \u2192\nanswer"
-        },
-        {
-          "cell": "p8_H",
-          "does": {
-            "arm": 1,
-            "cell": "p8_H",
-            "identity_bias_r2": -1.7864030146255305,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 13116,
-            "r2": 0.7184200444008092,
-            "r2_ci": [
-              0.7160351431713524,
-              0.7207842408051706
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p8_H__does__a1.json",
-            "source_sha256": "8c94f478b680338dd6f0f8bec3145782ef1c318b50bf93fa67a28a37f8c50b71",
-            "subset": "does",
-            "target": "cot_mean"
-          },
-          "doesnt": {
-            "arm": 1,
-            "cell": "p8_H",
-            "identity_bias_r2": -1.5861902283555178,
-            "input_state": "cx_last",
-            "layer": 19,
-            "n_rows": 10967,
-            "r2": 0.6246840032062403,
-            "r2_ci": [
-              0.6222562444517167,
-              0.6275401188445531
-            ],
-            "retrieval_acc1": null,
-            "retrieval_chance": null,
-            "retrieval_lift": null,
-            "retrieval_lift_ci": null,
-            "source": "eval_results/issue_2546/cells/p8_H__doesnt__a1.json",
-            "source_sha256": "880b0c506cfb821a4b9c8640f7162ed14d246bc2630a5de70af1f203b06eab0f",
-            "subset": "doesnt",
-            "target": "cot_mean"
-          },
-          "label": "before context\n\u2192 after\nCoT"
+          "label": "after model:\ncontext \u2192 answer"
         }
       ],
       "model_after": "open-thoughts/OpenThinker3-7B",
