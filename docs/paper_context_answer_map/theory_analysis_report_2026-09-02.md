@@ -4,7 +4,7 @@
 
 ## 1. Summary
 
-- **The map is one high-rank linear operator, and we can predict its own learning curve from first principles.** The closed-form ridge learning curve matches the measured curve to within 0.006 R² over two decades of training size, and the 963k-row map sits at 99% of the population linear ceiling (#2569). What the linear map misses is small (about 0.05 R²) and mostly one named thing: a low-rank prefix×query interaction (#1775).
+- **The map is one high-rank linear operator, and we can predict its own learning curve from first principles.** The closed-form ridge learning curve matches the measured curve to within 0.006 R² over two decades of training size, and the 963k-row map sits at 99% of the population linear ceiling (#2569). Feeding prefix and query as two separate inputs loses R² to their interaction, and a rank-32 bilinear term recovers 93% of that loss (#1775). The separate gap between the pooled linear map and nonlinear maps (about 0.05 R²) is small and still unnamed.
 - **The operator has no compact structure.** Hundreds to thousands of validated channels, strongly non-normal, top-128 directions carry only about two thirds of the energy, and the fixed point is a dense, unreadable state (#1774, #2569). Thomas's own reading in Obsidian: "Understand structure of mapping: I think done, not really any structure."
 - **The map describes a correlation. It is not the causal mechanism.** Jacobians of the true forward map recover none of its predictive power, full-state substitution at the map's input slot moves nothing, and the map's pre-image cannot steer where a directly measured direction can (#1776, #2254).
 - **The bridge to the leakage theory is weak in behavior space and real in activation space.** No gate metric, including the map's own Gram matrix, separates from its panel when predicting where fine-tuning delivers behavior change (#2569 leg 2). The coherence condition holds on constructed contexts and on natural data only under the whitened metric (#658, #1092).
@@ -45,9 +45,10 @@
 | Residual error structure across context pairs | peak interaction R² 0.0013 against a 0.10 materiality floor | #1945 |
 | Gain from averaging five answer draws | 0.06–0.10 R², of which 0.05–0.095 is target averaging, not the map | #2091 |
 | Nonlinear gain over ridge at 963k rows | ≈ +0.05 R²; all nonlinear families converge near 0.81 | #779, #1901 |
-| Share of that gap closed by a rank-32 bilinear prefix×query term | 93% on novel prefixes | #1775 |
+| Additive prefix+query linear map vs pooled-context linear map | 0.833 vs 0.914 R² | #1775 |
+| Share of that additive gap closed by a rank-32 bilinear prefix×query term | 93% on novel prefixes | #1775 |
 
-Reading: the linear map is the population-optimal linear predictor and its remaining error is close to per-pair noise. The nonlinearity that exists is mostly the query modulating the prefix through a few channels.
+Reading: the linear map is the population-optimal linear predictor and its remaining error is close to per-pair noise. The interaction between prefix and query, when they are fed as separate inputs, is low-rank: 32 channels through which the query modulates the prefix's effect recover 93% of what an additive two-input map loses. The pooled context vector already carries that interaction. The further gap between the pooled linear map and an MLP (about 0.05 R²) is a different quantity and #1775 calls it only partially named: the MLP still beats the bilinear model by 0.01 on new prefixes and 0.06 on new queries.
 
 ### 4.2 What does the operator look like? High-rank, non-normal, no compact summary.
 
@@ -129,7 +130,7 @@ A context-SAE → answer-SAE map (65,536 → 2,150 features) predicts which answ
 **Worked**
 
 - Closed-form learning-curve prediction and the population-ceiling read. This is the cleanest theory-to-measurement match in the line.
-- Naming the nonlinearity: a rank-32 bilinear prefix×query term.
+- Naming the prefix×query interaction: a rank-32 bilinear term recovers 93% of what an additive two-input map loses.
 - The reparameterization framework: one operator, different coordinates, across post-training, templates, and framings.
 - Whitened spread as the observable for the coherence condition on natural data.
 
