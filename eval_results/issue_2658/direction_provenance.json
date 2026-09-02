@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "git_commit": "0d9de1e78d1ade5d75cab912e539d50acb200d3d",
+    "git_commit": "aa3405acc17fd218628101191c61421673ade7a5",
     "git_dirty": false,
     "phase": "p0-provenance",
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2658_provenance.py",
-    "timestamp_utc": "2026-09-02T02:26:31.184334+00:00",
+    "timestamp_utc": "2026-09-02T02:54:45.016708+00:00",
     "numpy": "2.2.6",
     "torch": "2.8.0+cu128",
     "script": "scripts/issue2658_provenance.py"
@@ -44,7 +44,20 @@
       "C5_minus_C2": 10
     }
   },
-  "issue_owned_snapshots": null,
+  "issue_owned_snapshots": [
+    {
+      "rel": "issue1434_writingstyle/analysis_tensors/rb_writing_style.pt",
+      "hub_path": "issue2658_dirvalid/inputs/issue1434_writingstyle/analysis_tensors/rb_writing_style.pt",
+      "sha256": "61e363a7ebfaec8e5e99a85f21f08bf75c7b0b7572c1f094d1975c45be3bd558",
+      "action": "already-present"
+    },
+    {
+      "rel": "issue2388_correctness/derived/correctness_directions_L19.pt",
+      "hub_path": "issue2658_dirvalid/inputs/issue2388_correctness/derived/correctness_directions_L19.pt",
+      "sha256": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789",
+      "action": "already-present"
+    }
+  ],
   "notes": "HF-vs-local byte identity verified 2026-09-01 for every direct-fetch pin (impolite.pt HF == both main-repo copies; labels.json HF == #2356 worktree copy; plot3-staged r_b/axis/rows files == fresh HF downloads). The 571 MB armA__v_C.npy pin is the plot3-staged hf_hub_download product (etag-verified at download; re-download skipped for size).",
   "rows": [
     {
