@@ -83,7 +83,7 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 - Evidence policy (Thomas, 2026-08-19): `awaiting_promotion` results count as accepted.
 
 ## Pinned definitions (use everywhere; no drift)
-- **Context vector v_C** = residual-stream state at the LAST context token. Span-mean
+- **Context vector $h_C$** (written v_C before 2026-09-02; Thomas switched the paper to h_C / \bar{h}_A, with \bar{h}_{CoT} for the reasoning-trace mean, h_{CoT} for the end-of-thought state, \hat{h}_A for predictions, \bar{\mu}_A for the K-rollout average) = residual-stream state at the LAST context token. Span-mean
   pooling is a DIFFERENT, weaker object — numbers from span-mean artifacts are not
   comparable; flag them.
   **STANDING RULE (Thomas 2026-09-02: "NEVER use prompt-mean states. we only want to
@@ -93,7 +93,7 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   not even with a caption flag — recompute the cell on last-token + IID folds instead
   (the OLMo-2 store already holds `u_last` per cell; see `scripts/issue1902_lasttoken_*`).
   This retires the 4.3 figure's prompt-mean panels B–C (replaced 2026-09-02).
-- **Answer vector** = mean over answer-token activations (whole-answer mean; certified
+- **Answer vector $\bar{h}_A$** = mean over answer-token activations (whole-answer mean; certified
   by #920/#810's 34,652-recipe sweep).
 - Layer: middle layers; headline layer 18/19 on Qwen2.5-7B.
 - Prefix-side objects (stretch scope only): query-averaged prefix vector v_P and the
