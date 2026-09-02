@@ -12,6 +12,10 @@ Pins (each guard shown FIRING, not merely absent):
 - Holm adjustment on a hand-computed case, incl. the realized family sizes
   10/11/10 derived from the COMMITTED partition artifact;
 - one-sidedness of the C5-minus-C2 studentized bootstrap;
+- the PRE-REGISTERED bootstrap-family deterministic extension (2,000 ->
+  20,000): family-wide on a single-row overlap, initial chunks reused (their
+  persisted draws summed into the extended p, never redrawn), the unfired
+  verdict recorded, and the record naming itself an ADDITION to plan §7;
 - pooled-fold consumption RAISES (unit 9's structural dead end);
 - a missing prospective ledger RAISES (never "all cells estimable");
 - the ledger-driven per-row denominator revision (excluded cells dropped,
@@ -232,9 +236,9 @@ def test_realized_family_sizes_derive_from_committed_partition():
 # ---------------------------------------------------------------------------
 # One-sidedness of the C5-minus-C2 studentized bootstrap.
 # ---------------------------------------------------------------------------
-def _boot_setup(*, c5_signal: float, c2_signal: float, seed: int):
+def _boot_setup(*, c5_signal: float, c2_signal: float, seed: int, row: str = "synthetic"):
     rd = U.synthesize_row_data(
-        row="synthetic", n_prompts=48, n_responses=6, d=8, n_superfamilies=12, effect=2.5, seed=seed
+        row=row, n_prompts=48, n_responses=6, d=8, n_superfamilies=12, effect=2.5, seed=seed
     )
     te = [i for i, r in enumerate(rd.rows) if r.split == "test"]
     rows = [rd.rows[i] for i in te]
@@ -243,7 +247,7 @@ def _boot_setup(*, c5_signal: float, c2_signal: float, seed: int):
     rng = np.random.default_rng(seed + 1)
     sig = x @ w
     panel = INF.InferencePanel(
-        row="synthetic",
+        row=row,
         prompt_ids=np.array([r.prompt_id for r in rows]),
         response_index=np.array([r.response_index for r in rows], dtype=np.int64),
         labels=np.array([r.label for r in rows], dtype=bool),
@@ -289,6 +293,94 @@ def test_bootstrap_is_one_sided_greater(tmp_path):
             ledger=INF.InfLedger(tmp_path / "bx.jsonl", INF.BOOT_CHUNK_SCHEMA),
             reg=TINY_REG,
         )
+
+
+BOOT_EXT_REG = INF.InferenceRegistry(
+    n_perm_initial=40,
+    perm_chunk_initial=(20, 20),
+    n_perm_extended=100,
+    perm_chunk_extension=(30, 30),
+    n_boot=40,
+    boot_chunk=20,
+    n_boot_extended=80,
+    n_ci_draws=50,
+    min_discordant_prompts=5,
+    min_answers_per_class=10,
+    min_prompts_per_class=2,
+)
+
+
+def _two_row_boot_family(tmp_path):
+    rd_a, panel_a = _boot_setup(c5_signal=1.0, c2_signal=0.5, seed=5, row="rowA")
+    rd_b, panel_b = _boot_setup(c5_signal=0.5, c2_signal=1.0, seed=6, row="rowB")
+    return {
+        "rowA": (panel_a, rd_a, 1.0, "shaA"),
+        "rowB": (panel_b, rd_b, 1.0, "shaB"),
+    }
+
+
+def test_bootstrap_extension_is_family_wide_and_reuses_chunks(tmp_path, monkeypatch):
+    # Mocked trigger names ONE overlapping row: EVERY row must still extend.
+    monkeypatch.setattr(
+        INF,
+        "extension_trigger",
+        lambda mc, th: {
+            "triggered": True,
+            "overlapping_tests": {"rowA": [0.025]},
+            "thresholds": list(th),
+        },
+    )
+    led_path = tmp_path / "boot.jsonl"
+    fam = INF.run_family_bootstrap(
+        _two_row_boot_family(tmp_path),
+        2,
+        BOOT_EXT_REG,
+        INF.InfLedger(led_path, INF.BOOT_CHUNK_SCHEMA),
+    )
+    ext = fam["extension"]
+    assert ext["registered"] is True and ext["fired"] is True
+    assert ext["n_boot_realized"] == {"rowA": 80, "rowB": 80}  # family-wide, not per-test
+    assert all(res["n_boot"] == 80 for res in fam["tests"].values())
+    # The record names itself an ADDITION to plan section 7, never plan-registered.
+    assert "ADDITION to plan section 7" in ext["provenance"]
+    assert ext["n_boot_initial"] == 40 and ext["n_boot_extended"] == 80
+    recs = [json.loads(x) for x in led_path.read_text().splitlines()]
+    starts = sorted((r["row"], r["chunk_start"]) for r in recs)
+    # Initial chunks (0, 20) were REUSED from the ledger — exactly one record
+    # per (row, chunk_start) across both passes, never redrawn.
+    assert starts == sorted((row, s) for row in ("rowA", "rowB") for s in (0, 20, 40, 60))
+    # The extended p sums the PERSISTED initial-chunk draws into the 80-draw
+    # exceedance count (chunk records in start order == the aggregation order).
+    for row in ("rowA", "rowB"):
+        res = fam["tests"][row]
+        t_all = np.concatenate(
+            [
+                np.asarray(r["t_star"])
+                for r in sorted(
+                    (r for r in recs if r["row"] == row), key=lambda r: r["chunk_start"]
+                )
+            ]
+        )
+        assert res["k_exceed"] == int((t_all >= res["t0"] - 1e-12).sum())
+        assert res["p"] == pytest.approx((1 + res["k_exceed"]) / 81.0)
+
+
+def test_bootstrap_family_not_triggered_keeps_initial_and_records_verdict(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        INF,
+        "extension_trigger",
+        lambda mc, th: {"triggered": False, "overlapping_tests": {}, "thresholds": list(th)},
+    )
+    fam = INF.run_family_bootstrap(
+        _two_row_boot_family(tmp_path),
+        2,
+        BOOT_EXT_REG,
+        INF.InfLedger(tmp_path / "boot2.jsonl", INF.BOOT_CHUNK_SCHEMA),
+    )
+    ext = fam["extension"]
+    assert ext["registered"] is True and ext["fired"] is False
+    assert ext["trigger"]["triggered"] is False  # verdict recorded even unfired
+    assert ext["n_boot_realized"] == {"rowA": 40, "rowB": 40}
 
 
 def test_studentize_degenerate_se_is_counted_not_coerced():
@@ -486,5 +578,9 @@ def test_registry_defaults_are_the_registered_plan_constants():
         100,
         30,
     )
+    assert reg.n_boot_extended == 20_000  # pre-registered bootstrap extension (10x)
+    assert reg.n_boot_extended % reg.boot_chunk == 0 and reg.n_boot_extended > reg.n_boot
     with pytest.raises(INF.InferenceInputError):
         INF.InferenceRegistry(perm_chunk_initial=(5,))  # plan sum drifted
+    with pytest.raises(INF.InferenceInputError):
+        INF.InferenceRegistry(n_boot_extended=30)  # must exceed n_boot

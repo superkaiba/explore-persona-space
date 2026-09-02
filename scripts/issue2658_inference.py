@@ -18,7 +18,12 @@ units and produces the plan section 7 confirmatory report:
 - C5-minus-C2: ONE-SIDED studentized paired hierarchical bootstrap with
   development Bayesian-bootstrap refitting (Dirichlet weights over dev
   prompts; weighted z-score + weighted logistic refit at the FROZEN selected
-  C) and test prompt / within-class response resampling.
+  C) and test prompt / within-class response resampling. The bootstrap family
+  carries a unit-11 PRE-REGISTERED family-wide deterministic extension
+  (2,000 -> 20,000 draws on the same MC-overlap trigger) — an ADDITION to
+  plan section 7 (which registers the 99,999 extension for the permutation
+  families only), recorded before any sealed-test labels exist; derivation in
+  :class:`InferenceRegistry`.
 - THREE Holm families at alpha=0.05 with family sizes DERIVED from the
   committed ``direction_provenance.json`` partition (realized: C2=10, C5=11,
   C5-minus-C2=10) — never hardcoded. Intervals are POINTWISE; adjusted
@@ -135,14 +140,22 @@ class InferenceRegistry:
     - ``mc_conf = 0.99``: two-sided Clopper-Pearson confidence for the Monte
       Carlo interval on each permutation p (conservative overlap trigger).
     - ``n_boot = 2,000`` / ``boot_chunk = 250``: the plan registers no
-      bootstrap draw count. MC SE of a one-sided bootstrap p near 0.05 at
-      B=2,000 is sqrt(.05*.95/2000) ~= 0.005, adequate against the Holm
-      thresholds; the binding cost is 2,000 weighted dev logistic REFITS per
-      row (serial sklearn), sized against the plan section 10 P6 12h wall via
-      the MEASURED ``--measure-boot-unit`` pilot. Plan section 7 registers the
-      deterministic 99,999 extension for the PERMUTATION families only; the
-      bootstrap family reports the same MC-overlap diagnostic but has no
-      registered extension (recorded in the report).
+      bootstrap draw count. The binding cost is 2,000 weighted dev logistic
+      REFITS per row (serial sklearn), sized against the plan section 10 P6
+      12h wall via the MEASURED ``--measure-boot-unit`` pilot.
+    - ``n_boot_extended = 20,000``: unit-11 PRE-REGISTERED family-wide
+      deterministic extension of the bootstrap family — an ADDITION to plan
+      section 7 (which registers the 99,999 extension for the PERMUTATION
+      families only), recorded before any sealed-test labels exist. Reason
+      (MC resolution): at B=2,000 the MC SE near the smallest C5-minus-C2
+      Holm threshold (0.05/10 = 0.005) is sqrt(.005*.995/2000) ~= 0.0016 —
+      roughly a third of the threshold, so a near-threshold significance
+      verdict would be decided by draw noise; at B=20,000 it is ~= 0.0005, an
+      order of magnitude under the threshold (min achievable p 1/20,001).
+      The 10x factor mirrors the permutation families' 9,999 -> 99,999.
+      Fires on the SAME MC-overlap trigger, FAMILY-WIDE (never only the
+      overlapping rows), with the first 2,000 draws' persisted chunks reused
+      from the ledger, never redrawn.
     - ``ci_conf = 0.95`` / ``n_ci_draws = 2,000``: pointwise percentile
       hierarchical-bootstrap intervals for the DESCRIPTIVE estimates.
     - Row gates: plan section 8 production test gates enforced at inference —
@@ -159,6 +172,7 @@ class InferenceRegistry:
     mc_conf: float = 0.99
     n_boot: int = 2000
     boot_chunk: int = 250
+    n_boot_extended: int = 20_000
     ci_conf: float = 0.95
     n_ci_draws: int = 2000
     min_discordant_prompts: int = 100
@@ -181,6 +195,11 @@ class InferenceRegistry:
         if self.n_boot % self.boot_chunk:
             raise InferenceInputError(
                 f"n_boot {self.n_boot} not divisible by boot_chunk {self.boot_chunk}"
+            )
+        if self.n_boot_extended % self.boot_chunk or self.n_boot_extended <= self.n_boot:
+            raise InferenceInputError(
+                f"n_boot_extended {self.n_boot_extended} must exceed n_boot {self.n_boot} "
+                f"and divide into boot_chunk {self.boot_chunk} chunks"
             )
         if self.sidedness != "greater":
             raise InferenceInputError("only the preregistered one-sided 'greater' form exists")
@@ -862,17 +881,27 @@ def run_bootstrap_test(
     ledger: InfLedger,
     reg: InferenceRegistry,
     allow_underdetermined: str | None = None,
+    n_boot: int | None = None,
 ) -> dict[str, Any]:
     """One row's C5-minus-C2 one-sided studentized paired hierarchical
     bootstrap. Per draw: (dev side) Dirichlet weights over DEV PROMPTS ->
     weighted z-score + weighted logistic refit at the FROZEN selected C ->
     re-score the test panel; (test side) prompt + within-class response
     resample applied to the refit C5 scores and the FIXED C2 scores (paired:
-    identical drawn rows). t* = (delta* - delta_hat)/se*; one-sided greater."""
+    identical drawn rows). t* = (delta* - delta_hat)/se*; one-sided greater.
+
+    ``n_boot`` (default ``reg.n_boot``): total draws. The extended plan
+    (``reg.n_boot_extended``) is the initial chunk plan plus extension chunks
+    — chunk seeds depend only on (generating params, chunk_start, chunk_size),
+    so initial chunks resume-skip from the ledger and their persisted
+    delta*/t* arrays are summed into the extended p, never redrawn."""
     if float(selected_c) not in U.C_GRID:
         raise InferenceInputError(
             f"row {panel.row}: frozen selected_c {selected_c} is not on the registered grid"
         )
+    n_total = reg.n_boot if n_boot is None else int(n_boot)
+    if n_total % reg.boot_chunk:
+        raise InferenceInputError(f"n_boot {n_total} not divisible by boot_chunk {reg.boot_chunk}")
     # --- alignment: panel rows -> rowdata rows (activations for the refits).
     pos_map = {(r.prompt_id, r.response_index): i for i, r in enumerate(rowdata.rows)}
     test_pos = []
@@ -905,8 +934,8 @@ def run_bootstrap_test(
     t_star: list[float] = []
     n_degenerate = 0
     iters_all: list[int] = []
-    for start in range(0, reg.n_boot, reg.boot_chunk):
-        size = min(reg.boot_chunk, reg.n_boot - start)
+    for start in range(0, n_total, reg.boot_chunk):
+        size = min(reg.boot_chunk, n_total - start)
         key = InfLedger.chunk_key(
             kind="boot",
             row=panel.row,
@@ -1009,6 +1038,94 @@ def run_bootstrap_test(
         "n_degenerate_se": int(n_degenerate),
         "selected_c": float(selected_c),
         "sidedness": reg.sidedness,
+    }
+
+
+def run_family_bootstrap(
+    tests: dict[str, tuple[InferencePanel, U.RowData, float, str]],
+    m: int,
+    reg: InferenceRegistry,
+    ledger: InfLedger,
+    *,
+    allow_underdetermined: str | None = None,
+) -> dict[str, Any]:
+    """The C5-minus-C2 Holm family with its PRE-REGISTERED family-wide
+    deterministic extension (a unit-11 ADDITION to plan section 7 — see
+    :class:`InferenceRegistry`): run every row at ``n_boot``; when any row's
+    MC interval overlaps any Holm threshold of the family, extend EVERY row to
+    ``n_boot_extended`` — never only the overlapping rows — with the initial
+    chunks resumed from the ledger (the first 2,000 draws are reused, never
+    redrawn)."""
+
+    def _run(n_boot: int) -> dict[str, Any]:
+        return {
+            row: run_bootstrap_test(
+                panel,
+                rowdata,
+                selected_c=selected_c,
+                scores_fingerprint=sha,
+                ledger=ledger,
+                reg=reg,
+                allow_underdetermined=allow_underdetermined,
+                n_boot=n_boot,
+            )
+            for row, (panel, rowdata, selected_c, sha) in sorted(tests.items())
+        }
+
+    extension_record: dict[str, Any] = {
+        "registered": True,
+        "provenance": (
+            "unit-11 PRE-REGISTERED ADDITION to plan section 7 (which registers the "
+            "99,999 deterministic extension for the permutation families only), "
+            "recorded before any sealed-test labels exist; reason: MC resolution — "
+            "at B=2,000 the MC SE near the smallest Holm threshold 0.005 is ~0.0016 "
+            "(~1/3 of the threshold), so a near-threshold verdict would be decided "
+            "by draw noise; at B=20,000 it is ~0.0005"
+        ),
+        "n_boot_initial": reg.n_boot,
+        "n_boot_extended": reg.n_boot_extended,
+    }
+    if not tests:
+        return {
+            "family": "C5_minus_C2",
+            "comparator": "c5_minus_c2",
+            "m": m,
+            "alpha": reg.alpha,
+            "tests": {},
+            "holm_adjusted_p": {},
+            "significant": {},
+            "extension": {
+                **extension_record,
+                "trigger": {"triggered": False, "reason": "no estimable tests"},
+                "fired": False,
+                "n_boot_realized": {},
+            },
+        }
+    results = _run(reg.n_boot)
+    thresholds = holm_thresholds(m, len(tests), reg.alpha)
+    trig = extension_trigger({r: res["mc_interval"] for r, res in results.items()}, thresholds)
+    if trig["triggered"]:
+        results = _run(reg.n_boot_extended)  # family-wide; initial chunks resume-skip
+    boot_p = {row: res["p"] for row, res in results.items()}
+    adj = holm_adjust(boot_p, m)
+    return {
+        "family": "C5_minus_C2",
+        "comparator": "c5_minus_c2",
+        "m": m,
+        "alpha": reg.alpha,
+        "tests": results,
+        "holm_adjusted_p": adj,
+        "significant": {row: bool(adj[row] <= reg.alpha) for row in adj},
+        "extension": {
+            **extension_record,
+            "trigger": trig,
+            "fired": bool(trig["triggered"]),
+            "n_boot_realized": {row: res["n_boot"] for row, res in results.items()},
+        },
+        "note": (
+            "one-sided studentized paired hierarchical bootstrap; the lower bound is "
+            "POINTWISE and reported separately from the Holm-adjusted p"
+        ),
     }
 
 
@@ -1165,52 +1282,21 @@ def run_inference(
     )
     fam_c5 = run_family_permutations("C5", "c5_full_probe", c5_tests, sizes["C5"], reg, perm_ledger)
 
-    boot_results: dict[str, Any] = {}
+    boot_tests: dict[str, tuple[InferencePanel, U.RowData, float, str]] = {}
     for row, ri in sorted(estimable_rows.items()):
         if row not in eligible:
             continue
         sha_pair = hashlib.sha256(
             f"{ri.scores_sha['c2_direction_dot']}|{ri.scores_sha['c5_full_probe']}".encode()
         ).hexdigest()
-        boot_results[row] = run_bootstrap_test(
-            ri.panel,
-            ri.rowdata,
-            selected_c=ri.selected_c,
-            scores_fingerprint=sha_pair,
-            ledger=boot_ledger,
-            reg=reg,
-            allow_underdetermined=allow_underdetermined,
-        )
-    boot_p = {row: res["p"] for row, res in boot_results.items()}
-    boot_adj = holm_adjust(boot_p, sizes["C5_minus_C2"])
-    boot_thresholds = (
-        holm_thresholds(sizes["C5_minus_C2"], max(len(boot_p), 1), reg.alpha) if boot_p else ()
+        boot_tests[row] = (ri.panel, ri.rowdata, ri.selected_c, sha_pair)
+    fam_boot = run_family_bootstrap(
+        boot_tests,
+        sizes["C5_minus_C2"],
+        reg,
+        boot_ledger,
+        allow_underdetermined=allow_underdetermined,
     )
-    boot_mc = extension_trigger(
-        {row: res["mc_interval"] for row, res in boot_results.items()}, boot_thresholds
-    )
-    fam_boot = {
-        "family": "C5_minus_C2",
-        "comparator": "c5_minus_c2",
-        "m": sizes["C5_minus_C2"],
-        "alpha": reg.alpha,
-        "tests": boot_results,
-        "holm_adjusted_p": boot_adj,
-        "significant": {row: bool(boot_adj[row] <= reg.alpha) for row in boot_adj},
-        "mc_overlap_diagnostic": boot_mc,
-        "extension": {
-            "registered": False,
-            "reason": (
-                "plan section 7 registers the deterministic 99,999 extension for the "
-                "permutation families only; the bootstrap MC-overlap diagnostic is "
-                "reported, not acted on"
-            ),
-        },
-        "note": (
-            "one-sided studentized paired hierarchical bootstrap; the lower bound is "
-            "POINTWISE and reported separately from the Holm-adjusted p"
-        ),
-    }
 
     for row, ri in sorted(estimable_rows.items()):
         comps = ["c5_full_probe"] + (["c2_direction_dot"] if row in eligible else [])
