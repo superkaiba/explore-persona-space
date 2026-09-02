@@ -178,6 +178,10 @@ class FakeGate:
             "n_total_draws": n_total,
             "parse_fail_threshold": a["parse_fail_threshold"],
             "rubric_hash": hashlib.sha256(a["eval_prompt"].encode("utf-8")).hexdigest()[:16],
+            # The real gate persists the PASSED value (PilotGateReport via
+            # asdict) — under-modelling this is how the api-refusal hole
+            # stayed test-invisible (rev E round-2 blocker).
+            "api_refusal_threshold": a["api_refusal_threshold"],
             "wave_transport": (
                 "sync"
                 if a.get("wave_force_sync")
@@ -575,6 +579,13 @@ def test_pilot_gate_wiring_and_sizing(tmp_path):
     # change must not silently de-sync the sizing arithmetic)
     assert "min_effective_draws_per_arm" in gate.explicit[0]
     assert a["min_effective_draws_per_arm"] == J.MIN_EFFECTIVE_DRAWS_PER_ARM
+    # round-2 fix (rule 26(d), #2152): the verdict-bearing api-refusal bar and
+    # its sanctioned per-arm waiver are passed EXPLICITLY too — same discipline,
+    # same reason
+    assert "api_refusal_threshold" in gate.explicit[0]
+    assert a["api_refusal_threshold"] == J.API_REFUSAL_THRESHOLD
+    assert "waive_api_refusal_arms" in gate.explicit[0]
+    assert tuple(a["waive_api_refusal_arms"]) == J.WAIVE_API_REFUSAL_ARMS
     # fix 7: pilot raw draws live under raw_completions/ so upload_raw's
     # canonical helper (any dir literally named raw_completions/) picks them up
     save_raw_dir = str(a["save_raw_dir"]).replace("\\", "/")
@@ -722,6 +733,10 @@ def _tamper_n_draws(report: dict) -> None:
         arm["n_draws"] = arm["n_items"] * 7
 
 
+def _tamper_api_refusal_threshold(report: dict) -> None:
+    report["api_refusal_threshold"] = 0.5
+
+
 @pytest.mark.parametrize(
     "tamper",
     [
@@ -730,6 +745,7 @@ def _tamper_n_draws(report: dict) -> None:
         _tamper_rubric_hash,
         _tamper_max_tokens,
         _tamper_n_draws,
+        _tamper_api_refusal_threshold,
     ],
 )
 def test_pilot_gate_resume_negative_tampered_report(tmp_path, tamper):
@@ -761,6 +777,65 @@ def test_pilot_gate_persisted_fail_report_refuses(tmp_path):
         _wave(tmp_path, RaisingJudge(), gate)
     assert exc.value.code == J.EXIT_PILOT_GATE_FAIL
     assert gate.calls == []
+
+
+def test_pilot_gate_pass_not_resumed_after_api_refusal_threshold_change(tmp_path, monkeypatch):
+    """Arm A (rev E round-2 blocker): a PASS piloted at one rule-26(d)
+    api-refusal bar must NOT be resumed after the bar changes. Pinned
+    mechanism: the threshold is folded into pilot_gate_key, so the changed
+    bar resolves a FRESH, EMPTY gate dir (no report to resume) and the gate
+    genuinely re-runs; the _tamper_api_refusal_threshold parametrize above
+    pins the backstop compare for a report reached at an unchanged key."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), FakeGate(passed=True))
+    old_root = J.pilot_gate_root(tmp_path, ROW)
+    assert (old_root / "pilot_gate_report.json").exists()
+
+    monkeypatch.setattr(J, "API_REFUSAL_THRESHOLD", 0.25)
+    new_root = J.pilot_gate_root(tmp_path, ROW)
+    assert new_root != old_root  # key moved => fresh dir, nothing to resume
+    assert not (new_root / "pilot_gate_report.json").exists()
+    gate2 = FakeGate(passed=True)
+    _wave(tmp_path, RaisingJudge(), gate2)  # cells resume-skip; the gate re-runs
+    assert len(gate2.calls) == 1  # re-piloted at the new bar, never resume-PASSed
+    assert gate2.calls[0]["api_refusal_threshold"] == 0.25
+
+
+def _remediate_waive_arm(monkeypatch):
+    monkeypatch.setattr(J, "WAIVE_API_REFUSAL_ARMS", (f"{ROW}__frameA__b0",))
+
+
+def _remediate_raise_threshold(monkeypatch):
+    monkeypatch.setattr(J, "API_REFUSAL_THRESHOLD", 0.5)
+
+
+@pytest.mark.parametrize("remediate", [_remediate_waive_arm, _remediate_raise_threshold])
+def test_pilot_gate_persisted_fail_cleared_by_sanctioned_remediation(
+    tmp_path, monkeypatch, remediate
+):
+    """Arm B (rev E round-2 blocker): a persisted rule-26(d) FAIL must not
+    wedge every rerun at exit 4 — the sanctioned remediations (the per-arm
+    waiver, or a threshold change) are key-tracked, so either resolves a
+    FRESH gate dir and the pilot genuinely RE-RUNS (the refuse message's
+    prescribed remedy is reachable from the seam)."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    fail_root = J.pilot_gate_root(tmp_path, ROW)
+    fail_report = fail_root / "pilot_gate_report.json"
+    fail_report.parent.mkdir(parents=True, exist_ok=True)
+    fail_report.write_text(
+        json.dumps({"passed": False, "verdict": "FAIL", "failures": ["api-refusal 34%"]})
+    )
+    # unremediated rerun: the persisted FAIL is honored — refuse, exit 4
+    with pytest.raises(SystemExit) as exc:
+        _wave(tmp_path, RaisingJudge(), FakeGate(passed=True))
+    assert exc.value.code == J.EXIT_PILOT_GATE_FAIL
+
+    remediate(monkeypatch)
+    assert J.pilot_gate_root(tmp_path, ROW) != fail_root  # fresh gate dir
+    gate2 = FakeGate(passed=True)
+    summary = _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), gate2)
+    assert len(gate2.calls) == 1  # the pilot RE-RAN; no exit-4 wedge
+    assert summary["n_scored"] == 21
 
 
 # ---------------------------------------------------------------------------

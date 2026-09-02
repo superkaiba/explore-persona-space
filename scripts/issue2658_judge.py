@@ -122,6 +122,19 @@ PILOT_RESOLUTION_FACTOR = 2
 # default) so the sizing arithmetic below and the gate's realized floor cannot
 # de-sync on a library-default change.
 MIN_EFFECTIVE_DRAWS_PER_ARM = 10
+# Rule 26(d) (#2152): the per-arm api-refusal bar. VERDICT-BEARING (the library
+# gate FAILs any arm whose api_refusal_rate reaches it) and rule 28 measures
+# 30%+ api-refusal draws in exactly the harm-class waves this task judges — so
+# it is passed EXPLICITLY at the run_pilot_gate call site, folded into
+# pilot_gate_key, and compared against the persisted report on resume: a
+# library-default change must neither silently honor a stale PASS piloted at a
+# different bar (Arm A) nor be unreachable from this seam (Arm B).
+API_REFUSAL_THRESHOLD = 0.10
+# Rule 26(d)'s SANCTIONED per-arm remediation (waive with the reason recorded
+# HERE, at the caller-site constant — the PILOT_WAIVE_PARSE_FAIL_ARMS pattern).
+# Folded into pilot_gate_key, so adding a waiver resolves a FRESH gate dir and
+# re-runs the pilot instead of wedging on a persisted FAIL at exit 4.
+WAIVE_API_REFUSAL_ARMS: tuple[str, ...] = ()
 
 # Drift canary (plan sections 3/8). Tolerance on the 0-100 scale for a
 # per-item 5-draw-median shift, and the fraction of evaluable canary items
@@ -563,7 +576,8 @@ def pilot_gate_key(row: str) -> str:
     prompt) PLUS every gate parameter whose change invalidates a prior PASS
     but is OUTSIDE that fingerprint: the declared wave transport
     (``WAVE_THRESHOLD_BASE``), the parse-fail threshold, the effective-draws
-    floor, and the sizing factor. Because this key is the gate dir's path
+    floor, the sizing factor, the rule-26(d) api-refusal threshold, and the
+    rule-26(d) per-arm waiver tuple. Because this key is the gate dir's path
     component, ANY re-run-triggering constant change resolves a FRESH, empty
     gate dir — a genuine re-run can never wedge on the library's
     cache-served-pilot FAIL (judge_pilot.py ``n_cached > 0``). Every hashed
@@ -577,6 +591,8 @@ def pilot_gate_key(row: str) -> str:
             "parse_fail_threshold": PARSE_FAIL_THRESHOLD,
             "min_effective_draws_per_arm": MIN_EFFECTIVE_DRAWS_PER_ARM,
             "pilot_resolution_factor": PILOT_RESOLUTION_FACTOR,
+            "api_refusal_threshold": API_REFUSAL_THRESHOLD,
+            "waive_api_refusal_arms": sorted(WAIVE_API_REFUSAL_ARMS),
         },
         sort_keys=True,
     )
@@ -645,6 +661,15 @@ def _persisted_instrument_mismatches(
             f"parse_fail_threshold {report.get('parse_fail_threshold')!r} != "
             f"live {PARSE_FAIL_THRESHOLD}"
         )
+    # Rule 26(d) api-refusal bar: verdict-bearing and persisted in every report
+    # (PilotGateReport.api_refusal_threshold via asdict), so a PASS piloted at a
+    # different bar must never be resumed (#2152; the waiver tuple is not
+    # persisted — its change-tracking lives in pilot_gate_key alone).
+    if report.get("api_refusal_threshold") != API_REFUSAL_THRESHOLD:
+        mismatches.append(
+            f"api_refusal_threshold {report.get('api_refusal_threshold')!r} != "
+            f"live {API_REFUSAL_THRESHOLD}"
+        )
     return mismatches
 
 
@@ -672,7 +697,11 @@ def run_pilot_gate(
     is PASS AND every persisted instrument field equals the live constants
     (:func:`_persisted_instrument_mismatches`). A persisted FAIL refuses
     (exit 4 — a failed report is never treated as absent); any field mismatch
-    re-runs the gate. Without this resume, every resumed >=5,000-call
+    re-runs the gate. Every sanctioned remediation of a FAIL — an instrument
+    fix, a changed ``API_REFUSAL_THRESHOLD``, or a rule-26(d)
+    ``WAIVE_API_REFUSAL_ARMS`` waiver — is folded into :func:`pilot_gate_key`,
+    so it resolves a FRESH gate dir and re-runs rather than re-reading the
+    same FAIL (#2152). Without this resume, every resumed >=5,000-call
     dispatch would re-run the wave-declared pilot against its own populated
     cache and FAIL on the library's cache-served check — wedging the run
     behind exit 4 and incentivizing the two bad workarounds (cache deletion:
@@ -705,8 +734,11 @@ def run_pilot_gate(
             print(
                 f"[judge] PILOT-GATE persisted FAIL row={row} report={report_path} "
                 f"failures={stored.get('failures')} — refusing: a failed report is never "
-                "treated as absent; fix the instrument (a changed instrument resolves a "
-                "fresh gate dir) before re-dispatching",
+                "treated as absent. Every gate parameter is key-tracked, so any sanctioned "
+                "remediation resolves a FRESH gate dir on re-dispatch: fix the instrument, "
+                "or — for a rule-26(d) api-refusal FAIL — adjust API_REFUSAL_THRESHOLD or "
+                "add the arm to WAIVE_API_REFUSAL_ARMS with the reason recorded at the "
+                "constant (#2152)",
                 flush=True,
             )
             raise SystemExit(EXIT_PILOT_GATE_FAIL)
@@ -741,6 +773,10 @@ def run_pilot_gate(
         temperature=float(C.JUDGE["temperature"]),
         parse_fail_threshold=PARSE_FAIL_THRESHOLD,
         min_effective_draws_per_arm=MIN_EFFECTIVE_DRAWS_PER_ARM,
+        # Rule 26(d) (#2152): both passed explicitly (never the library default)
+        # and both key-tracked, so a change re-pilots at a fresh gate dir.
+        api_refusal_threshold=API_REFUSAL_THRESHOLD,
+        waive_api_refusal_arms=WAIVE_API_REFUSAL_ARMS,
         wave_n_calls=wave_n_calls,
         wave_threshold_base=WAVE_THRESHOLD_BASE,
         report_path=report_path,
