@@ -1,0 +1,1025 @@
+{
+  "task": 2546,
+  "read": "p2a_frozen_n1m_gsm8k_test1319",
+  "n_rows": 1272,
+  "smoke": false,
+  "labels": [
+    "FROZEN \u2014 banked #779 n1m ridge applied with zero fitting",
+    "cross-model transfer-confounded \u2014 map fit on Qwen2.5-7B-Instruct; the post-side inputs AND the answer-state target are OpenThinker3-7B activations (read A input + both reads' target); read B's input is the map's own fit model"
+  ],
+  "map_provenance": {
+    "fit_issue": 779,
+    "fit_model": "Qwen/Qwen2.5-7B-Instruct",
+    "n_train": 963444,
+    "selected_lambda": 0.001,
+    "whole_map_r2_L19": 0.7542,
+    "hf_prefix": "issue779_monitoring/n1m_readout/weights"
+  },
+  "reads": {
+    "post_vc": {
+      "L14": {
+        "n_rows": 1272,
+        "r2_agreement": -1239869.2807137242,
+        "identity_r2_agreement": -3607994.811542702,
+        "identity_bias_note": "learned-bias identity (v\u0302 = x + b) inapplicable: frozen read, no fit split to learn b on; plain identity reported instead",
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 636.0,
+            "mrr": 0.00609868661168438
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 635.0,
+            "mrr": 0.006085814878384883
+          }
+        },
+        "chance_at_1": 0.0007861635220125787,
+        "per_k_bin": {
+          "k1": {
+            "n_rows": 65,
+            "r2_agreement": -1282054.019399145,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 432.0,
+                "mrr": 0.007784284586784285
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 402.0,
+                "mrr": 0.006696341907515486
+              }
+            }
+          },
+          "k2_3": {
+            "n_rows": 709,
+            "r2_agreement": -1198779.3585941335,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0014104372355430183
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 487.0,
+                "mrr": 0.008922744388609957
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0014104372355430183
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 479.0,
+                "mrr": 0.008939608043991297
+              }
+            }
+          },
+          "k4_6": {
+            "n_rows": 469,
+            "r2_agreement": -1382256.9606101648,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 820.0,
+                "mrr": 0.0018900907882197723
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 833.0,
+                "mrr": 0.0019855999345222575
+              }
+            }
+          },
+          "k7p": {
+            "n_rows": 29,
+            "r2_agreement": -1627313.1805289986,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 1001.0,
+                "mrr": 0.0013404317490351538
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 1004.0,
+                "mrr": 0.0012574423736654743
+              }
+            }
+          }
+        }
+      },
+      "L19": {
+        "n_rows": 1272,
+        "r2_agreement": -83569.44056739198,
+        "identity_r2_agreement": -1225162.8691917036,
+        "identity_bias_note": "learned-bias identity (v\u0302 = x + b) inapplicable: frozen read, no fit split to learn b on; plain identity reported instead",
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 634.0,
+            "mrr": 0.0061531996824234405
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 634.0,
+            "mrr": 0.006114170674012459
+          }
+        },
+        "chance_at_1": 0.0007861635220125787,
+        "per_k_bin": {
+          "k1": {
+            "n_rows": 65,
+            "r2_agreement": -84915.12616139713,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 277.0,
+                "mrr": 0.015386530074213417
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 315.0,
+                "mrr": 0.01601270329699314
+              }
+            }
+          },
+          "k2_3": {
+            "n_rows": 709,
+            "r2_agreement": -81125.95696149352,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0014104372355430183
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 517.0,
+                "mrr": 0.008248471776922246
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0014104372355430183
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 532.0,
+                "mrr": 0.007836481350840413
+              }
+            }
+          },
+          "k4_6": {
+            "n_rows": 469,
+            "r2_agreement": -94057.42386541709,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 796.0,
+                "mrr": 0.001997699435471233
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 798.0,
+                "mrr": 0.002431382695773728
+              }
+            }
+          },
+          "k7p": {
+            "n_rows": 29,
+            "r2_agreement": -110672.63303611052,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 1032.0,
+                "mrr": 0.001436483315340083
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 1012.0,
+                "mrr": 0.0013798489991572833
+              }
+            }
+          }
+        }
+      },
+      "L26": {
+        "n_rows": 1272,
+        "r2_agreement": -26291.958052193553,
+        "identity_r2_agreement": -32630.500686309584,
+        "identity_bias_note": "learned-bias identity (v\u0302 = x + b) inapplicable: frozen read, no fit split to learn b on; plain identity reported instead",
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 634.5,
+            "mrr": 0.006093007131579321
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 635.5,
+            "mrr": 0.006105880577887967
+          }
+        },
+        "chance_at_1": 0.0007861635220125787,
+        "per_k_bin": {
+          "k1": {
+            "n_rows": 65,
+            "r2_agreement": -27970.16598601419,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 480.0,
+                "mrr": 0.013619257196904362
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 354.0,
+                "mrr": 0.013819470129271018
+              }
+            }
+          },
+          "k2_3": {
+            "n_rows": 709,
+            "r2_agreement": -25997.325646742036,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0014104372355430183
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 555.0,
+                "mrr": 0.007864539972884832
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0014104372355430183
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 523.0,
+                "mrr": 0.008186039898349571
+              }
+            }
+          },
+          "k4_6": {
+            "n_rows": 469,
+            "r2_agreement": -27992.265468854297,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 729.0,
+                "mrr": 0.0026717701522096433
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 775.0,
+                "mrr": 0.002198223882591854
+              }
+            }
+          },
+          "k7p": {
+            "n_rows": 29,
+            "r2_agreement": -29030.37771390209,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 980.0,
+                "mrr": 0.0012425624623601218
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 984.0,
+                "mrr": 0.001156732682946618
+              }
+            }
+          }
+        }
+      }
+    },
+    "pre_vc": {
+      "L14": {
+        "n_rows": 1272,
+        "r2_agreement": -2.5416188725224265,
+        "identity_r2_agreement": -13.097811215214945,
+        "identity_bias_note": "learned-bias identity (v\u0302 = x + b) inapplicable: frozen read, no fit split to learn b on; plain identity reported instead",
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.003930817610062893
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 272.0,
+            "mrr": 0.02195150613464715
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.008647798742138365
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 273.5,
+            "mrr": 0.026513613345190413
+          }
+        },
+        "chance_at_1": 0.0007861635220125787,
+        "per_k_bin": {
+          "k1": {
+            "n_rows": 65,
+            "r2_agreement": -2.643838686215344,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.015384615384615385
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 234.0,
+                "mrr": 0.03722114432262281
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.015384615384615385
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 245.0,
+                "mrr": 0.03714344513197089
+              }
+            }
+          },
+          "k2_3": {
+            "n_rows": 709,
+            "r2_agreement": -2.493632681983999,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0028208744710860366
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 341.0,
+                "mrr": 0.017529583750982854
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.004231311706629055
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 364.0,
+                "mrr": 0.0187879517616999
+              }
+            }
+          },
+          "k4_6": {
+            "n_rows": 469,
+            "r2_agreement": -2.850320256465427,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0042643923240938165
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 210.0,
+                "mrr": 0.025317977309015933
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.01279317697228145
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 209.0,
+                "mrr": 0.03431674126199317
+              }
+            }
+          },
+          "k7p": {
+            "n_rows": 29,
+            "r2_agreement": -3.245835997210629,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 103.0,
+                "mrr": 0.04139086844570279
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.034482758620689655
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 81.0,
+                "mrr": 0.06537182036496797
+              }
+            }
+          }
+        }
+      },
+      "L19": {
+        "n_rows": 1272,
+        "r2_agreement": -3.3523917535622374,
+        "identity_r2_agreement": -13.22765111161702,
+        "identity_bias_note": "learned-bias identity (v\u0302 = x + b) inapplicable: frozen read, no fit split to learn b on; plain identity reported instead",
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.003930817610062893
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 167.0,
+            "mrr": 0.03938924006768827
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.018081761006289308
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 111.0,
+            "mrr": 0.05779848045103644
+          }
+        },
+        "chance_at_1": 0.0007861635220125787,
+        "per_k_bin": {
+          "k1": {
+            "n_rows": 65,
+            "r2_agreement": -3.655752537138965,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 297.0,
+                "mrr": 0.016904914016573173
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 98.0,
+                "mrr": 0.030504361037292684
+              }
+            }
+          },
+          "k2_3": {
+            "n_rows": 709,
+            "r2_agreement": -3.2712913717282808,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0028208744710860366
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 245.0,
+                "mrr": 0.03242415086899273
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.018335684062059238
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 141.0,
+                "mrr": 0.05527456736253642
+              }
+            }
+          },
+          "k4_6": {
+            "n_rows": 469,
+            "r2_agreement": -3.8026034251484315,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.006396588486140725
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 85.0,
+                "mrr": 0.04880344069112709
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.021321961620469083
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 91.0,
+                "mrr": 0.06219255976144023
+              }
+            }
+          },
+          "k7p": {
+            "n_rows": 29,
+            "r2_agreement": -4.355872946513673,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 27.0,
+                "mrr": 0.10781921740578529
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 29.0,
+                "mrr": 0.10961740959105232
+              }
+            }
+          }
+        }
+      },
+      "L26": {
+        "n_rows": 1272,
+        "r2_agreement": -3.6327924245235383,
+        "identity_r2_agreement": -14.67262782639211,
+        "identity_bias_note": "learned-bias identity (v\u0302 = x + b) inapplicable: frozen read, no fit split to learn b on; plain identity reported instead",
+        "knn": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.0031446540880503146
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 351.0,
+            "mrr": 0.019303841142671797
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1272,
+            "n_pool": 1272,
+            "acc_at_k": {
+              "1": 0.014150943396226415
+            },
+            "chance_at_k": {
+              "1": 0.0007861635220125787
+            },
+            "median_rank": 313.5,
+            "mrr": 0.031163655953183836
+          }
+        },
+        "chance_at_1": 0.0007861635220125787,
+        "per_k_bin": {
+          "k1": {
+            "n_rows": 65,
+            "r2_agreement": -4.103397768593726,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 524.0,
+                "mrr": 0.007084252757362288
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 65,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.015384615384615385
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 406.0,
+                "mrr": 0.029195297656448422
+              }
+            }
+          },
+          "k2_3": {
+            "n_rows": 709,
+            "r2_agreement": -3.5918214484813484,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.004231311706629055
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 398.0,
+                "mrr": 0.01893051988188817
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 709,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.009873060648801129
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 365.0,
+                "mrr": 0.02514001945877106
+              }
+            }
+          },
+          "k4_6": {
+            "n_rows": 469,
+            "r2_agreement": -3.8883534937860755,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0021321961620469083
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 265.0,
+                "mrr": 0.021303276378870018
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 469,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.021321961620469083
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 254.0,
+                "mrr": 0.04046313481214523
+              }
+            }
+          },
+          "k7p": {
+            "n_rows": 29,
+            "r2_agreement": -4.145254035016648,
+            "knn_full_pool": {
+              "euclidean": {
+                "metric": "euclidean",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 209.0,
+                "mrr": 0.023483940906938623
+              },
+              "cosine": {
+                "metric": "cosine",
+                "n": 29,
+                "n_pool": 1272,
+                "acc_at_k": {
+                  "1": 0.0
+                },
+                "chance_at_k": {
+                  "1": 0.0007861635220125787
+                },
+                "median_rank": 159.0,
+                "mrr": 0.03244800005572043
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "repro": {
+    "task": 2546,
+    "phase": "p2a_n1m_read",
+    "git_commit": "474d3b7916225cc72b3a90123107d7fc2aa20084",
+    "created_utc": "2026-08-26T05:25:22Z",
+    "env": {
+      "python": "3.11.10",
+      "torch": "2.8.0+cu128",
+      "numpy": "2.2.6"
+    }
+  }
+}

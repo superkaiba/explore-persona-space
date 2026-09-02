@@ -1,0 +1,109 @@
+{
+  "status": "ok",
+  "unit_id": "operator_comparison__a2",
+  "arm": 2,
+  "subset": "pooled",
+  "n_rows": 24910,
+  "headline_layer": 19,
+  "operators": "M_pre = cell-G full-data primal beta; M_post = cell-F (same rows)",
+  "lambda_pre": 3162.2776601683795,
+  "lambda_post": 10000.0,
+  "direction_aware": {
+    "raw_cosine_with_rotation_null": {
+      "raw_cosine": 0.1957737282003646,
+      "rotation_null": {
+        "n_draws": 50,
+        "null_mean": -4.4982706330857515e-05,
+        "null_std": 0.00023821113946792817,
+        "null_p975": 0.00033826101231635466,
+        "analytic_sd_1_over_d": 0.00027901785714285713
+      }
+    }
+  },
+  "rotation_invariant_only": {
+    "spectrum_cosine": 0.9928268487237359,
+    "label": "can never support 'same operator up to rotation' (plan MF-5)"
+  },
+  "ctx_alignment_capacity": {
+    "lambda": 3162.2776601683795,
+    "effective_rank_dof": 1602.875489329559,
+    "n": 24910
+  },
+  "n_rot_draws": 50,
+  "rotation_null_wall_s": 539.3762218952179,
+  "rotation_null_per_draw_s": 10.787524437904358,
+  "fingerprint": "c351d64ae4fcc858",
+  "fit_params": {
+    "lambdas": [
+      "logspace",
+      -2.0,
+      4.0,
+      13
+    ],
+    "n_folds": 5,
+    "seed": 0,
+    "inner_lambda_folds": 4,
+    "null_draws": 20,
+    "n_boot": 1000,
+    "smoke": false,
+    "recipe_rev": "planv4",
+    "fit_params_schema": "v16-realized-estimator",
+    "store_key": "6ca1a2c7f086de81",
+    "prefill_fallback": false,
+    "decode_fallback": false,
+    "regime": "xm_primal_legacy",
+    "lambda_selector": "inner-group-cv",
+    "estimator_realized": {
+      "regime": "xm_primal_legacy",
+      "machinery": "issue825_crossmodel_map_transfer.fit_primal_beta",
+      "lambda_grid_values": [
+        0.01,
+        0.03162277660168379,
+        0.1,
+        0.31622776601683794,
+        1.0,
+        3.1622776601683795,
+        10.0,
+        31.622776601683793,
+        100.0,
+        316.2277660168379,
+        1000.0,
+        3162.2776601683795,
+        10000.0
+      ],
+      "lambda_grid_params": [
+        "logspace",
+        -2.0,
+        4.0,
+        13
+      ],
+      "n_lambdas": 13,
+      "inner_lambda_folds": 4,
+      "lambda_selector_requested": "inner-group-cv",
+      "selector_realized_counts": {
+        "inner-group-cv": 3
+      },
+      "lambda_selection_counts": {
+        "inner-group-cv": {
+          "3162.28": 2,
+          "10000": 1
+        }
+      },
+      "gcv_dof_cap": 0.9,
+      "legacy_unguarded_gcv": false,
+      "derived_from": "issue825_crossmodel_map_transfer module globals read at this unit's fit calls + SELECTOR_LOG delta over the unit (v16)"
+    }
+  },
+  "repro": {
+    "git_commit": "add7f6058691bef3b9be159447b7dde27a321d09",
+    "git_dirty": false,
+    "phase": "p5_fits",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-27T17:31:05Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

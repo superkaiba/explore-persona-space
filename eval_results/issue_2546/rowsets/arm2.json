@@ -1,0 +1,81 @@
+{
+  "arm": 2,
+  "per_corpus": {
+    "arc_challenge": {
+      "n_post": 1153,
+      "n_short": 1140,
+      "n_usable": 1128,
+      "dropped_post_only": 25,
+      "dropped_short_only": 12
+    },
+    "contexthub": {
+      "n_post": 6512,
+      "n_short": 5977,
+      "n_usable": 5632,
+      "dropped_post_only": 880,
+      "dropped_short_only": 345
+    },
+    "csqa": {
+      "n_post": 1208,
+      "n_short": 1157,
+      "n_usable": 1146,
+      "dropped_post_only": 62,
+      "dropped_short_only": 11
+    },
+    "gsm8k_test": {
+      "n_post": 1285,
+      "n_short": 1162,
+      "n_usable": 1147,
+      "dropped_post_only": 138,
+      "dropped_short_only": 15
+    },
+    "gsm8k_train": {
+      "n_post": 7315,
+      "n_short": 6790,
+      "n_usable": 6734,
+      "dropped_post_only": 581,
+      "dropped_short_only": 56
+    },
+    "math": {
+      "n_post": 6822,
+      "n_short": 6581,
+      "n_usable": 6130,
+      "dropped_post_only": 692,
+      "dropped_short_only": 451
+    },
+    "mmlu": {
+      "n_post": 6546,
+      "n_short": 6607,
+      "n_usable": 6414,
+      "dropped_post_only": 132,
+      "dropped_short_only": 193
+    },
+    "piqa": {
+      "n_post": 1783,
+      "n_short": 1703,
+      "n_usable": 1686,
+      "dropped_post_only": 97,
+      "dropped_short_only": 17
+    }
+  },
+  "strata_n": {
+    "does": 11790,
+    "doesnt": 11516
+  },
+  "pooled_n": 24910,
+  "matched_n_rows": 5376,
+  "floor_rows": 5376,
+  "smoke": false,
+  "repro": {
+    "git_commit": "add7f6058691bef3b9be159447b7dde27a321d09",
+    "git_dirty": false,
+    "phase": "p5_rowsets",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2546_fit_cells.py",
+    "task": 2546,
+    "recipe_rev": "planv4",
+    "timestamp": "2026-08-27T09:42:16Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

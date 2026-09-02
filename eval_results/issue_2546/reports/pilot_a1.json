@@ -1,0 +1,85 @@
+{
+  "arm": 1,
+  "pilot": "gsm8k_test1319",
+  "walls": {
+    "gen_post": {
+      "wall_s": 283.2371230125427,
+      "gen_tokens": 3143376,
+      "tok_per_s": 11098.036749444036
+    },
+    "gen_pre": {
+      "wall_s": 56.302366495132446,
+      "gen_tokens": 340313,
+      "tok_per_s": 6044.3818117204955
+    },
+    "capture": {
+      "wall_s": 145.76898002624512,
+      "reports": {
+        "post__gsm8k_test": {
+          "stem": "post__gsm8k_test",
+          "n_rollout_rows": 1301,
+          "n_captured": 1272,
+          "usable_rate": 0.9777094542659492,
+          "parse_counts": {
+            "usable": 1272,
+            "truncated_no_close": 5,
+            "degenerate_repetition": 24
+          },
+          "span_drop_reasons": {},
+          "short_think_frac": 0.0,
+          "wall_s": 63.71179556846619,
+          "upload_wall_s": 40.52776527404785
+        },
+        "pre__gsm8k_test": {
+          "stem": "pre__gsm8k_test",
+          "n_rollout_rows": 1301,
+          "n_captured": 1301,
+          "usable_rate": 1.0,
+          "parse_counts": {
+            "usable": 1301
+          },
+          "span_drop_reasons": {},
+          "short_think_frac": 0.0,
+          "wall_s": 16.481776475906372,
+          "upload_wall_s": 22.125431299209595
+        }
+      },
+      "upload_wall_s": {
+        "post__gsm8k_test": 40.52776527404785,
+        "pre__gsm8k_test": 22.125431299209595
+      }
+    }
+  },
+  "gf": {
+    "post": {
+      "early_min_cosine": 1.000000238418579,
+      "flat_mean_cosine": 1.000000238418579,
+      "early_bar": 0.999,
+      "flat_bar": 0.9999,
+      "pass": true,
+      "n_rows": 2
+    },
+    "pre": {
+      "early_min_cosine": 1.000000238418579,
+      "flat_mean_cosine": 1.0000003576278687,
+      "early_bar": 0.999,
+      "flat_bar": 0.9999,
+      "pass": true,
+      "n_rows": 2
+    }
+  },
+  "smoke": false,
+  "repro": {
+    "task": 2546,
+    "phase": "p2a_pilot",
+    "recipe_version": "issue2546-genrig-v1",
+    "git_commit": "474d3b7916225cc72b3a90123107d7fc2aa20084",
+    "created_utc": "2026-08-26T05:25:04Z",
+    "env": {
+      "python": "3.11.10",
+      "torch": "2.8.0+cu128",
+      "numpy": "2.2.6",
+      "transformers": "4.57.6"
+    }
+  }
+}
