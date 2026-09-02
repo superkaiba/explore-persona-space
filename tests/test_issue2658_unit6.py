@@ -613,3 +613,36 @@ def test_composed_question_embeds_frozen_evidence():
     # non-evidence rows pass through untouched
     q2, sha2 = J.composed_question(ROW, f"{ROW}|frameA|q0", "PLAIN")
     assert q2 == "PLAIN" and sha2 is None
+
+
+def test_realized_wire_system_prompt_is_pinned():
+    """The pin guards a false-NEGATIVE drift channel.
+
+    `C.JUDGE_SYSTEM_PROMPT` rides the manifest instrument id but never reaches
+    the wire — graded_judge supplies its own preamble. So an upstream preamble
+    change would alter the realized instrument while the recorded instrument id
+    stayed byte-identical, making two genuinely different waves look like one.
+    """
+    realized = J.assert_wire_instrument_pinned()
+    assert realized.strip(), "realized wire system prompt is empty"
+    assert hashlib.sha256(realized.encode()).hexdigest() == J.REALIZED_WIRE_SYSTEM_SHA256
+    # Prompt-independent: the pin is meaningful only if the preamble does not
+    # vary with the rubric it carries.
+    a, _ = J.GJ._rubric_system_and_user("ALPHA")
+    b, _ = J.GJ._rubric_system_and_user("BETA-longer-rubric-text")
+    assert a == b == realized
+
+
+def test_wire_system_prompt_drift_raises(monkeypatch):
+    monkeypatch.setattr(J, "REALIZED_WIRE_SYSTEM_SHA256", "0" * 64)
+    with pytest.raises(J.JudgeInputError, match="DRIFTED"):
+        J.assert_wire_instrument_pinned()
+    # and the guard fires through the fingerprint path, before any dispatch
+    with pytest.raises(J.JudgeInputError, match="DRIFTED"):
+        J.judge_cache_fingerprint("sycophancy")
+
+
+def test_missing_wire_accessor_raises_rather_than_skipping(monkeypatch):
+    monkeypatch.delattr(J.GJ, "_rubric_system_and_user", raising=True)
+    with pytest.raises(J.JudgeInputError, match="no longer be resolved"):
+        J.assert_wire_instrument_pinned()

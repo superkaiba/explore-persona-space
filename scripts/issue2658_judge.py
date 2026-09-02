@@ -180,6 +180,51 @@ def compose_rubric(row: str) -> str:
     return "\n\n".join(parts)
 
 
+# sha256 of the system prompt `graded_judge` actually puts ON THE WIRE
+# (measured 2026-09-02; 242 chars, prompt-independent).
+#
+# Why this pin exists. `C.JUDGE_SYSTEM_PROMPT` is folded into
+# `C.judge_instrument_fingerprint`, which is the per-row instrument IDENTITY
+# recorded in the manifests — but `graded_judge` supplies its OWN evaluator
+# preamble and carries our rubric in the USER message, so that frozen constant
+# never reaches the wire. Hashing the realized preamble into
+# `judge_cache_fingerprint` (below) already prevents a stale CACHE read. What
+# it does not prevent is the reverse, and worse, direction: an upstream change
+# to the library preamble alters the realized instrument while the manifest's
+# instrument id stays byte-identical, so two waves judged under genuinely
+# different instruments would be recorded as the same one, and cross-wave
+# comparability would break silently. This pin makes that change fail LOUD.
+REALIZED_WIRE_SYSTEM_SHA256 = "c980ea82a1d097c2551d1c3985da7389306fa5493653e9388a2ffe3ecb65288d"
+
+
+def assert_wire_instrument_pinned() -> str:
+    """Return the realized wire system prompt, asserting it matches the pin.
+
+    Raises rather than warning: an unpinned realized instrument makes every
+    downstream instrument-identity claim unverifiable, and this fires at
+    fingerprint time — before any judge call is dispatched or billed.
+    """
+    resolver = getattr(GJ, "_rubric_system_and_user", None)
+    if resolver is None:
+        raise JudgeInputError(
+            "graded_judge._rubric_system_and_user is gone — the realized wire system "
+            "prompt can no longer be resolved, so the judge instrument cannot be "
+            "pinned. Re-establish the accessor and re-pin REALIZED_WIRE_SYSTEM_SHA256 "
+            "before dispatching any wave."
+        )
+    realized_system, _user = resolver("__i2658_instrument_pin_probe__")
+    got = C.hashlib.sha256(realized_system.encode()).hexdigest()
+    if got != REALIZED_WIRE_SYSTEM_SHA256:
+        raise JudgeInputError(
+            "realized judge system prompt DRIFTED: graded_judge now puts a different "
+            f"preamble on the wire (sha256 {got} != pinned {REALIZED_WIRE_SYSTEM_SHA256}). "
+            "The judge instrument changed underneath the frozen instrument id, so "
+            "results judged before and after this change are NOT comparable. Re-pin "
+            "deliberately and treat prior waves as a different instrument."
+        )
+    return realized_system
+
+
 def judge_cache_fingerprint(row: str) -> str:
     """Content-addressed fingerprint of the FULL realized judge instrument.
 
@@ -195,7 +240,7 @@ def judge_cache_fingerprint(row: str) -> str:
     structurally impossible.
     """
     eval_prompt = compose_rubric(row)
-    realized_system, _ = GJ._rubric_system_and_user(eval_prompt)
+    realized_system = assert_wire_instrument_pinned()
     payload = json.dumps(
         {
             "instrument": C.judge_instrument_fingerprint(row),
