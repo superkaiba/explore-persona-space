@@ -292,6 +292,58 @@ class PromptItem:
     # underlying benchmark item id). None everywhere else, so every pre-existing
     # row keeps its committed band assignment byte-for-byte.
     band_key: str | None = None
+    # Underlying question stem for COMPOSED-text keyed frames. The composed
+    # ``text`` embeds the band's assertion wrapper, so CONTENT identity for a
+    # keyed item is carried by the pre-composition stem, never the composed
+    # bytes. Feeds the edge-2 text-identity criterion (group-D fix M1: two
+    # dataset entries with the same content but different keys must land in
+    # ONE superfamily). None everywhere else.
+    stem_text: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# SHARED superfamily edge predicates. ``build_superfamilies`` (the graph) and
+# ``_edge_domains`` (the split-manifest overlap disclosure) BOTH derive from
+# these three helpers, so the disclosure is structurally coupled to the edge
+# criteria and cannot drift when an edge changes (#2658 group-G re-review:
+# the previous mirror was parallel, not coupled).
+# ---------------------------------------------------------------------------
+def edge_problem_id_key(it: PromptItem) -> str | None:
+    """Edge-1 key: benchmark underlying-problem identity (None = no edge)."""
+    return it.problem_id
+
+
+def edge_text_identity_key(it: PromptItem) -> str | None:
+    """Edge-2 key: exact normalized CONTENT identity (None = no edge).
+
+    - free-text item (``problem_id`` None, non-empty ``text``): the full
+      normalized text;
+    - keyed item with a recorded ``stem_text``: the normalized question stem —
+      the underlying question IS the content; the composed assertion wrapper
+      is not (M1: same-stem different-key items must merge, and a keyed stem
+      identical to a free-text extraction question is a real overlap);
+    - a COMPOSED-text keyed item without a stem RAISES: it would be exempt
+      from every text-identity edge — the exact leak M1 closes;
+    - anything else (id-only keyed nodes): None.
+    """
+    if it.problem_id is None:
+        return normalize_text(it.text) if it.text else None
+    if it.stem_text:
+        return normalize_text(it.stem_text)
+    if it.band_key is not None:
+        raise FrameManifestError(
+            f"{it.item_id!r}: composed-text keyed item carries no stem_text — it would "
+            "be exempt from all text-identity edges (the #2658 M1 dev/test content leak)"
+        )
+    return None
+
+
+def edge_lexical_member(it: PromptItem) -> bool:
+    """Edges-3/4 membership: free-text items only. Keyed items stay out — their
+    composed surface is dominated by the shared assertion template, so near-dup
+    thresholds over composed text would merge unrelated stems; their content
+    identity is carried by edge 2 on the stem instead."""
+    return it.problem_id is None and bool(it.text)
 
 
 def build_superfamilies(items: list[PromptItem]) -> tuple[dict[str, str], bool]:
@@ -304,23 +356,27 @@ def build_superfamilies(items: list[PromptItem]) -> tuple[dict[str, str], bool]:
     # Edge 1 — benchmark underlying-problem identity (O(n)).
     by_problem: dict[str, list[str]] = defaultdict(list)
     for it in items:
-        if it.problem_id is not None:
-            by_problem[it.problem_id].append(it.item_id)
+        key = edge_problem_id_key(it)
+        if key is not None:
+            by_problem[key].append(it.item_id)
     for ids in by_problem.values():
         for other in ids[1:]:
             uf.union(ids[0], other)
 
-    # Edge 2 — exact normalized-text identity (O(n)); free-text items only.
+    # Edge 2 — exact normalized-text identity (O(n)): full text for free-text
+    # items, the underlying question stem for keyed items (one shared key
+    # space, so keyed<->free-text exact-content overlap links too).
     by_norm: dict[str, list[str]] = defaultdict(list)
     for it in items:
-        if it.problem_id is None and it.text:
-            by_norm[normalize_text(it.text)].append(it.item_id)
+        tkey = edge_text_identity_key(it)
+        if tkey is not None:
+            by_norm[tkey].append(it.item_id)
     for ids in by_norm.values():
         for other in ids[1:]:
             uf.union(ids[0], other)
 
     # Edges 3+4 — lexical near-dup + rephrase over free-text items.
-    lexical = [it for it in items if it.problem_id is None and it.text]
+    lexical = [it for it in items if edge_lexical_member(it)]
     blocked = _link_lexical(uf, lexical)
 
     comp: dict[str, list[str]] = defaultdict(list)
@@ -591,9 +647,13 @@ def stratum_band_of(item: PromptItem, row: str) -> str:
             return "level_high"
         return "level_mid"  # level 3 or None
     # band_key when present (composed-text "keyed" frames), else the prompt sha.
-    # The digest input format is unchanged, so passing prompt_sha256 reproduces
-    # every previously committed band assignment exactly.
-    return _band_from_key(row, item.band_key or item.prompt_sha256)
+    # Explicit None test: an EMPTY-STRING band_key must key on itself, never
+    # silently fall back to the sha path (band -> text -> sha -> band would
+    # re-open the circularity for that item). The digest input format is
+    # unchanged, so passing prompt_sha256 reproduces every previously committed
+    # band assignment exactly.
+    key = item.band_key if item.band_key is not None else item.prompt_sha256
+    return _band_from_key(row, key)
 
 
 def _band_from_key(row: str, key: str) -> str:
@@ -1313,26 +1373,40 @@ def _parse_enumerated_options(prompt: str, n_options: int, key: str) -> tuple[li
 
     The vendored loader builds its option block as ``f"{letter}. {option}"`` lines,
     but keeps no ``options`` list on the row, so the texts have to be read back
-    out. Fail-loud rather than best-effort: the recovered labels must be exactly
-    ``A..`` for ``n_options`` entries, which catches an option text containing a
-    newline (it would split into a bogus extra line) and any future change to the
-    vendored rendering. A silently short parse would drop distractors and bias
-    which wrong answer gets asserted.
+    out. Fail-loud on structure: the recovered labels must be exactly ``A..`` for
+    ``n_options`` entries, which catches any future change to the vendored
+    rendering. An option text containing an embedded line break does NOT break
+    the label sequence — it renders as continuation lines — so those lines are
+    JOINED back onto the preceding option (group-D fix M3; the old parse
+    silently dropped them, truncating the stimulus and the evidence packet).
     """
-    found: list[tuple[str, str]] = []
-    for line in prompt.splitlines():
+    lines = prompt.splitlines()
+    found: list[tuple[int, str, str]] = []
+    for i, line in enumerate(lines):
         m = _MMLU_OPTION_RE.match(line.strip())
         if m:
-            found.append((m.group(1), m.group(2)))
+            found.append((i, m.group(1), m.group(2)))
     expected = [chr(ord("A") + i) for i in range(n_options)]
     tail = found[-n_options:] if len(found) >= n_options else found
-    labels = [lbl for lbl, _ in tail]
+    labels = [lbl for _, lbl, _ in tail]
     if labels != expected:
         raise FrameManifestError(
             f"{key}: recovered option labels {labels!r} != expected {expected!r} from the "
             "vendored rendered prompt; the option block could not be parsed reliably"
         )
-    return labels, [txt for _, txt in tail]
+    # Group-D fix M3: an option text containing an embedded line break renders
+    # as CONTINUATION lines that do not start a new option. The old parse
+    # silently DROPPED them (36 of 12,032 vendored prompts carried a truncated
+    # option into prompts + evidence packets); join every line between one
+    # option line and the next — and, since the vendored prompt ENDS with the
+    # option block, every line after the last option line — onto the preceding
+    # option, preserving the original line bytes.
+    line_idx = [i for i, _, _ in tail]
+    texts: list[str] = []
+    for pos, (start, _, first_part) in enumerate(tail):
+        end = line_idx[pos + 1] if pos + 1 < len(tail) else len(lines)
+        texts.append("\n".join([first_part, *lines[start + 1 : end]]))
+    return labels, texts
 
 
 def _mmlu_pro_keyed_records() -> list[dict[str, Any]]:
@@ -1448,6 +1522,10 @@ def _load_keyed_frame(row: str, frame: FrameSpec) -> list[PromptItem]:
                 row=row,
                 frame=frame.name,
                 band_key=rec["key"],
+                # Pre-composition stem: carries CONTENT identity into graph
+                # edge 2, so same-question records with DIFFERENT keys merge
+                # (group-D fix M1 — they used to straddle dev/test).
+                stem_text=rec["question"],
             )
         )
     return out
@@ -1536,18 +1614,21 @@ def assign_splits(
 def _edge_domains(items: list[PromptItem]) -> list[str]:
     """The superfamily EDGE domains a population can participate in.
 
-    Mirrors the ``build_superfamilies`` filters exactly: edge 1 (problem-id
-    identity) links only KEYED items (``problem_id`` set); edges 2-4
-    (exact/near-dup/rephrase text) link only FREE-TEXT items (``problem_id``
-    None, non-empty ``text``). No criterion links a keyed item to a free-text
-    item, so every superfamily component is domain-homogeneous.
+    Derived from the SAME shared predicates ``build_superfamilies`` dispatches
+    on (``edge_problem_id_key`` / ``edge_text_identity_key`` /
+    ``edge_lexical_member``) — structural coupling, not a parallel mirror
+    (#2658 group-G re-review). One domain per edge criterion: an edge can only
+    ever link two items that share that edge's domain, so two populations with
+    disjoint domain sets cannot share a superfamily component.
     """
     doms: set[str] = set()
     for it in items:
-        if it.problem_id is not None:
-            doms.add("keyed")
-        elif it.text:
-            doms.add("free-text")
+        if edge_problem_id_key(it) is not None:
+            doms.add("problem-id")
+        if edge_text_identity_key(it) is not None:
+            doms.add("exact-text")
+        if edge_lexical_member(it):
+            doms.add("lexical")
     return sorted(doms)
 
 
@@ -1563,7 +1644,7 @@ def _overlap_measurement(
 
     Derived MECHANICALLY from the two item populations' edge-domain membership
     (never a hardcoded row list): when the populations share NO edge domain
-    (e.g. keyed/composed frame items vs free-text extraction nodes), no edge
+    (e.g. id-only keyed frame items vs free-text extraction nodes), no edge
     criterion can span them and ``n_barred_superfamilies == 0`` is structural,
     not a measurement.
     """
@@ -1887,8 +1968,12 @@ MANIFEST_FIELDS_BY_KIND: dict[str, tuple[str, ...]] = {
 
 
 def _canonical_sha(obj: object) -> str:
+    """Content-address ``obj`` over canonical JSON. NO ``default=`` coercion:
+    a non-JSON-native value (a set, a tuple-of-sets, a datetime) RAISES
+    ``TypeError`` instead of being ``str()``-coerced with process-dependent
+    iteration order — a silent nondeterministic sha is a broken freeze."""
     return hashlib.sha256(
-        json.dumps(obj, sort_keys=True, separators=(",", ":"), default=str).encode()
+        json.dumps(obj, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
 
@@ -1960,8 +2045,24 @@ def _not_estimable_ledger(rows: list[dict]) -> dict:
         }
         n_cells += rr["n_cells"]
         n_estimable += rr["n_cells_estimable"]
+        # Per-row internal consistency: the record list IS the not-estimable
+        # inventory, so its length must equal the row's cell arithmetic — a
+        # row violating this would otherwise be reproduced faithfully on BOTH
+        # sides of the ledger reconciliation.
+        n_flagged = len(rr["prospective_not_estimable"])
+        if n_flagged != rr["n_cells"] - rr["n_cells_estimable"]:
+            raise FrameManifestError(
+                f"{rr['row']}: {n_flagged} prospective_not_estimable records != "
+                f"n_cells - n_cells_estimable = "
+                f"{rr['n_cells'] - rr['n_cells_estimable']}"
+            )
         for rec in rr["prospective_not_estimable"]:
             by_cause[rec["cause"]] = by_cause.get(rec["cause"], 0) + 1
+    if sum(by_cause.values()) != n_cells - n_estimable:
+        raise FrameManifestError(
+            f"ledger by_cause total {sum(by_cause.values())} != "
+            f"n_cells_not_estimable {n_cells - n_estimable}"
+        )
     return {
         "floor": PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR,
         "n_cells": n_cells,

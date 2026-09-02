@@ -223,6 +223,13 @@ def test_ledger_totals_exact():
 
 
 def test_pilot_pins_invariant_across_refreeze():
+    # Pins the committed prompt_pins.json ARTIFACT (frozen before unit 10; the
+    # unit-10 and group-G re-freezes did not move pilot selection). NOTE: the
+    # group-D leak-fix re-freeze moved 2 of 629 pilot ids in the FRAME MANIFEST
+    # (syco_mmlu_social_health: mmlupro-6038/-6182 out, mmlupro-234/-2665 in),
+    # so the pin table is membership-stale vs the manifest until its own
+    # deliberate re-freeze — this test certifies the artifact bytes, NOT
+    # manifest<->pins consistency.
     pin_path = F.OUT_DIR / "prompt_pins.json"
     pins = _load_disk(pin_path)
     assert pins["n_items"] == PIN_N_ITEMS
