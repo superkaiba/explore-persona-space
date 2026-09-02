@@ -1,0 +1,383 @@
+{
+  "metadata": {
+    "git_commit": "0d9de1e78d1ade5d75cab912e539d50acb200d3d",
+    "git_dirty": false,
+    "phase": "p0-provenance",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2658_provenance.py",
+    "timestamp_utc": "2026-09-02T02:26:31.184334+00:00",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128",
+    "script": "scripts/issue2658_provenance.py"
+  },
+  "frozen_config": {
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "tokenizer_json_sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+    "tokenizer_config_sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+    "layer": 19,
+    "hidden": 3584,
+    "dtype": "bfloat16"
+  },
+  "vector_sha256_domain": "float32 C-contiguous raw bytes of the (3584,) block-19 vector",
+  "file_sha256_domain": "chunked sha256 over raw file bytes",
+  "c2_c3_partition": {
+    "eligible": [
+      "evil",
+      "sycophancy",
+      "hallucination",
+      "refusal",
+      "assistantness",
+      "casualness",
+      "impoliteness",
+      "correctness_math",
+      "correctness_mmlu_pro",
+      "correctness_code"
+    ],
+    "not_estimable": [
+      "harmful_compliance"
+    ],
+    "holm_family_sizes": {
+      "C2": 10,
+      "C5": 11,
+      "C5_minus_C2": 10
+    }
+  },
+  "issue_owned_snapshots": null,
+  "notes": "HF-vs-local byte identity verified 2026-09-01 for every direct-fetch pin (impolite.pt HF == both main-repo copies; labels.json HF == #2356 worktree copy; plot3-staged r_b/axis/rows files == fresh HF downloads). The 571 MB armA__v_C.npy pin is the plot3-staged hf_hub_download product (etag-verified at download; re-download skipped for size).",
+  "rows": [
+    {
+      "row": "evil",
+      "construct": "malicious intent or endorsement in the answer",
+      "extraction_contrast": "#779 persona-vector r_B: mean(judge-kept evil-trait-exhibiting rollouts) - mean(judge-kept non-exhibiting rollouts), response-avg residual, per layer",
+      "source_issue": "#779",
+      "layer": 19,
+      "sign_convention": "+dot = evil-trait-expressing (r_b = mean(kept trait-exhibiting) - mean(kept non-exhibiting), persona-vectors recipe)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue779_monitoring/r_b/evil.pt"
+        ]
+      },
+      "file_sha256": {
+        "issue779_monitoring/r_b/evil.pt": "65b70c63076b9452c6d1c8a66ee1ed3d403503df936ea1af6fffc353d135aff1"
+      },
+      "loader": "issue779_plot3_redesign._load_rb28",
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "20279734ef1c874a05d6c8f2c11b6a219bd85bcb92031857fecd2a5f368647a7",
+      "vector_norm": 27.541275024414062,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "sycophancy",
+      "construct": "agreement with a user claim despite frozen evidence showing the claim is unsupported",
+      "extraction_contrast": "#779 persona-vector r_B: mean(judge-kept sycophantic rollouts) - mean(judge-kept non-sycophantic rollouts), response-avg residual, per layer",
+      "source_issue": "#779",
+      "layer": 19,
+      "sign_convention": "+dot = sycophantic (r_b pos-minus-neg, persona-vectors recipe)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue779_monitoring/r_b/sycophancy.pt"
+        ]
+      },
+      "file_sha256": {
+        "issue779_monitoring/r_b/sycophancy.pt": "af6d679b59ad02e9e00a26e73ff77c00dda69cb8e2fabd22ea3a3ee28bbdad3d"
+      },
+      "loader": "issue779_plot3_redesign._load_rb28",
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "fda2da3fb8d21d896fe9d29a817095317c38cf4518026af5e9c917d471dd6250",
+      "vector_norm": 24.23792839050293,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "hallucination",
+      "construct": "at least one unsupported atomic factual assertion relative to the frozen evidence packet",
+      "extraction_contrast": "#779 persona-vector r_B: mean(judge-kept hallucination-exhibiting rollouts) - mean(judge-kept non-exhibiting rollouts), response-avg residual, per layer",
+      "source_issue": "#779",
+      "layer": 19,
+      "sign_convention": "+dot = hallucination-trait-expressing (r_b pos-minus-neg)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue779_monitoring/r_b/hallucination.pt"
+        ]
+      },
+      "file_sha256": {
+        "issue779_monitoring/r_b/hallucination.pt": "d643269c9904b99e14968c84c8e3a02cd45d5ed4674621edbeb78950467ccd6d"
+      },
+      "loader": "issue779_plot3_redesign._load_rb28",
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "9ba5fe32956d97c946d7c06d59d96e68452245269b5796f7e6d05375603b527d",
+      "vector_norm": 19.549026489257812,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "refusal",
+      "construct": "semantic refusal / non-engagement with the request",
+      "extraction_contrast": "#2356 armA diff-of-means: mean(v_C | refuse-labelled rows) - mean(v_C | engage-labelled rows) at block 19",
+      "source_issue": "#2356",
+      "layer": 19,
+      "sign_convention": "+dot = refusal (diff-of-means refuse - engage over armA v_C, block 19)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue2356_refusalpred/analysis_tensors/consolidated/armA__v_C.npy",
+          "issue2356_refusalpred/analysis_tensors/consolidated/armA.rows.json",
+          "issue2356_refusalpred/armA/labels.json"
+        ]
+      },
+      "file_sha256": {
+        "issue2356_refusalpred/analysis_tensors/consolidated/armA__v_C.npy": "353317322576e68cf35b18697f7363ce843b1233780e720c5fa04e6a257b2bce",
+        "issue2356_refusalpred/analysis_tensors/consolidated/armA.rows.json": "d379265badb6e01515ba03bbd7a1c70099e93880a06b6a6eb6e092ee95044485",
+        "issue2356_refusalpred/armA/labels.json": "f3c10453c070ad0ffd25fc7d1de14611eb64dc4ca0f8cd0bde42a70a977ecbb1"
+      },
+      "loader": "issue779_plot3_redesign._refusal_direction",
+      "counts": {
+        "n_refuse": 2292,
+        "n_engage": 338
+      },
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "944fb7f9cd645629e4574983b3b6bf363fa48d48ac1439ab4c9c218cdeb081f1",
+      "vector_norm": 39.64326477050781,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "assistantness",
+      "construct": "output-level assistant behavior rather than merely fluent continuation",
+      "extraction_contrast": "#2203 assistant axis: default-assistant - role-play diff-of-means over context vectors, per layer",
+      "source_issue": "#2203",
+      "layer": 19,
+      "sign_convention": "+dot = assistant-like (default-assistant - role-play diff-of-means)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue2203_ctx_capping/axis/qwen25_7b_axis_per_layer.pt"
+        ]
+      },
+      "file_sha256": {
+        "issue2203_ctx_capping/axis/qwen25_7b_axis_per_layer.pt": "aff75eabc94a26cbcf69624b2e2e4771e9a8bd1ddd23a83cc2c0c0763ea976aa"
+      },
+      "loader": "issue779_plot3_redesign._load_axis",
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "20c52056c0b9f9677b59b049034cad20647cd8dffa677151eb16dfed1035e04b",
+      "vector_norm": 15.507169723510742,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "casualness",
+      "construct": "informal / casual register",
+      "extraction_contrast": "#1434 writing-style persona-vector r_B (casual-vs-formal): mean(judge-kept casual rollouts) - mean(judge-kept formal rollouts), response-avg residual, per layer",
+      "source_issue": "#1434",
+      "layer": 19,
+      "sign_convention": "+dot = casual register (casual-vs-formal writing-style r_b)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue1434_writingstyle/analysis_tensors/rb_writing_style.pt"
+        ],
+        "issue_owned_snapshot": "issue2658_dirvalid/inputs/issue1434_writingstyle/analysis_tensors/rb_writing_style.pt"
+      },
+      "file_sha256": {
+        "issue1434_writingstyle/analysis_tensors/rb_writing_style.pt": "61e363a7ebfaec8e5e99a85f21f08bf75c7b0b7572c1f094d1975c45be3bd558"
+      },
+      "loader": "issue779_plot3_redesign._load_rb28",
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "e2889d0623ac49e51203b59e40d4bb8b0abd5c66b2bc4b6705cf41b44853b9c9",
+      "vector_norm": 27.186185836791992,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "impoliteness",
+      "construct": "rude, insulting, or disrespectful language",
+      "extraction_contrast": "#1482 rb4 persona-vector r_B (impolite): mean(judge-kept impolite rollouts) - mean(judge-kept non-impolite rollouts), response-avg residual, per layer",
+      "source_issue": "#1482",
+      "layer": 19,
+      "sign_convention": "+dot = impolite (rb4 impolite persona-vector r_b, smoke=False bundle)",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue1482_rb4/r_b/impolite.pt"
+        ]
+      },
+      "file_sha256": {
+        "issue1482_rb4/r_b/impolite.pt": "001cb31355f692d9d8c0509c63107c4462805abb1c738a26912ff724779dd167"
+      },
+      "loader": "issue779_plot3_redesign._load_rb28",
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "74a7123c47e1addd737902bf71c2a6d7e0ab266f42c2746e96f689886a411810",
+      "vector_norm": 39.3199348449707,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "harmful_compliance",
+      "construct": "substantive actionable assistance that facilitates harm; semantic refusals are fixed to zero",
+      "extraction_contrast": "NONE \u2014 no frozen external direction exists for this row (C2/C3 not-estimable); C4/C5 dev-trained comparators only",
+      "source_issue": "none",
+      "layer": 19,
+      "sign_convention": "n/a \u2014 no frozen external direction",
+      "frozen_external_direction": false,
+      "source": null,
+      "file_sha256": null,
+      "vector_sha256": null,
+      "loader": null,
+      "shape": null,
+      "c2_c3": "not-estimable \u2014 no frozen external direction",
+      "notes": "swept: plot3 roster (#779), HF issue779_monitoring/r_b (evil/hallucination/sycophancy only), HF issue1482_rb4/r_b (apathetic/humorous/impolite/optimistic only), and the plan's cited sources #779/#1482/#2203/#2388 \u2014 no harmful-compliance direction exists; row stays eligible for C0/C1/C4/C5"
+    },
+    {
+      "row": "correctness_math",
+      "construct": "final-answer correctness against the frozen reference",
+      "extraction_contrast": "#2388 matched correctness direction (math surface): within-context mean(correct t1) - mean(incorrect t1), equal-weight over the training-split spread-context pool, layer 19",
+      "source_issue": "#2388",
+      "layer": 19,
+      "sign_convention": "+dot = correct (within-context mean(correct t1) - mean(incorrect t1))",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue2388_correctness/derived/correctness_directions_L19.pt"
+        ],
+        "issue_owned_snapshot": "issue2658_dirvalid/inputs/issue2388_correctness/derived/correctness_directions_L19.pt",
+        "surface": "math"
+      },
+      "file_sha256": {
+        "issue2388_correctness/derived/correctness_directions_L19.pt": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789"
+      },
+      "loader": "issue2658_provenance._load_correctness",
+      "bundle_provenance": {
+        "recipe": "#2388 full-budget draw-0 matched correctness direction: within-context mean(correct t1) minus mean(incorrect t1), equal-weight mean across the full training-split spread-context pool",
+        "recipe_source": {
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/scripts/issue2388_fits.py#L1254-L1270",
+          "sha256": "f4f33e4d5250b0bab8f899254802be8ba3442535c93a9fefbee2265e339d9f65",
+          "function": "_direction_scores::_weights",
+          "lines": [
+            1254,
+            1270
+          ]
+        },
+        "source_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+        "n_spread_contexts": 2393,
+        "n_weighted_rollouts": 11904,
+        "pool_split": "train",
+        "direction_norm": 1.1505496818497385
+      },
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "525dd0cb65d51cb151ac99b17b40741813d67d5fb4acc37a869127ec0bef2410",
+      "vector_norm": 1.1505496501922607,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "correctness_mmlu_pro",
+      "construct": "selected-option correctness against the frozen answer key",
+      "extraction_contrast": "#2388 matched correctness direction (mcq surface): within-context mean(correct t1) - mean(incorrect t1), equal-weight over the training-split spread-context pool, layer 19",
+      "source_issue": "#2388",
+      "layer": 19,
+      "sign_convention": "+dot = correct (within-context mean(correct t1) - mean(incorrect t1))",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue2388_correctness/derived/correctness_directions_L19.pt"
+        ],
+        "issue_owned_snapshot": "issue2658_dirvalid/inputs/issue2388_correctness/derived/correctness_directions_L19.pt",
+        "surface": "mcq"
+      },
+      "file_sha256": {
+        "issue2388_correctness/derived/correctness_directions_L19.pt": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789"
+      },
+      "loader": "issue2658_provenance._load_correctness",
+      "bundle_provenance": {
+        "recipe": "#2388 full-budget draw-0 matched correctness direction: within-context mean(correct t1) minus mean(incorrect t1), equal-weight mean across the full training-split spread-context pool",
+        "recipe_source": {
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/scripts/issue2388_fits.py#L1254-L1270",
+          "sha256": "f4f33e4d5250b0bab8f899254802be8ba3442535c93a9fefbee2265e339d9f65",
+          "function": "_direction_scores::_weights",
+          "lines": [
+            1254,
+            1270
+          ]
+        },
+        "source_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+        "n_spread_contexts": 3545,
+        "n_weighted_rollouts": 17715,
+        "pool_split": "train",
+        "direction_norm": 0.6020422468517417
+      },
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "e6af5767b0f8dd508fd7b1590142af925c2d78868619e1f9eff78430004640fd",
+      "vector_norm": 0.6020422577857971,
+      "c2_c3": "eligible"
+    },
+    {
+      "row": "correctness_code",
+      "construct": "functional correctness under frozen executable tests",
+      "extraction_contrast": "#2388 matched correctness direction (code surface): within-context mean(correct t1) - mean(incorrect t1), equal-weight over the training-split spread-context pool, layer 19",
+      "source_issue": "#2388",
+      "layer": 19,
+      "sign_convention": "+dot = correct (within-context mean(correct t1) - mean(incorrect t1))",
+      "frozen_external_direction": true,
+      "source": {
+        "repo": "superkaiba1/explore-persona-space-data",
+        "paths": [
+          "issue2388_correctness/derived/correctness_directions_L19.pt"
+        ],
+        "issue_owned_snapshot": "issue2658_dirvalid/inputs/issue2388_correctness/derived/correctness_directions_L19.pt",
+        "surface": "code"
+      },
+      "file_sha256": {
+        "issue2388_correctness/derived/correctness_directions_L19.pt": "93c2f872fe4eab0d818f91b98d70016c1d4a28c4e16042d2c7374e8cfef0d789"
+      },
+      "loader": "issue2658_provenance._load_correctness",
+      "bundle_provenance": {
+        "recipe": "#2388 full-budget draw-0 matched correctness direction: within-context mean(correct t1) minus mean(incorrect t1), equal-weight mean across the full training-split spread-context pool",
+        "recipe_source": {
+          "url": "https://github.com/superkaiba/explore-persona-space/blob/036cb059c889f8d72e329ca4afba6d5e49c5e9ca/scripts/issue2388_fits.py#L1254-L1270",
+          "sha256": "f4f33e4d5250b0bab8f899254802be8ba3442535c93a9fefbee2265e339d9f65",
+          "function": "_direction_scores::_weights",
+          "lines": [
+            1254,
+            1270
+          ]
+        },
+        "source_commit": "036cb059c889f8d72e329ca4afba6d5e49c5e9ca",
+        "n_spread_contexts": 1316,
+        "n_weighted_rollouts": 6580,
+        "pool_split": "train",
+        "direction_norm": 1.1676302544062076
+      },
+      "shape": [
+        3584
+      ],
+      "vector_sha256": "caa87cc20af96e16b4b5ee5717c1b8e83d9161741bb0ad3835e864718768cdca",
+      "vector_norm": 1.1676301956176758,
+      "c2_c3": "eligible"
+    }
+  ]
+}
