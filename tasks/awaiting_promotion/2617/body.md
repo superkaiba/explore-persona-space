@@ -4,6 +4,7 @@ title: The frozen context→answer map transports a refusal-decision component b
 kind: experiment
 tags:
 - trigger-dense
+- keep-running
 created_at: '2026-08-27T06:00:57Z'
 has_clean_result: true
 parent_id: 2215
