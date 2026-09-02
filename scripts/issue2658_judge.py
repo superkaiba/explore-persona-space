@@ -27,19 +27,35 @@ over the generation cells unit 5 produced. This module owns:
   ``n_truncation``; ``n_api_refusal`` (stop_reason == "refusal", empty
   content) as its own class with targeted SYNC re-issue; TRANSPORT losses
   retried, never persisted as drops.
-- the plan-section-3 retry policy: per answer, deficient draws are re-issued at
-  the IDENTICAL instrument for up to ``MAX_RETRY_ROUNDS`` (3) rounds; an answer
-  still short of 5 kept draws routes to ``human_adjudication`` with its full
-  counter ledger — never a silent drop, never a placeholder score.
+- the plan-section-3 retry policy: per answer, RETRYABLE deficits — transport
+  losses, malformed/truncated parse failures, and rule-28 api-refusal draws
+  (targeted SYNC re-issue, plan section 6) — are re-issued at the IDENTICAL
+  instrument for up to ``MAX_RETRY_ROUNDS`` (3) rounds; PRODUCED content
+  verdicts (rubric ``REFUSAL`` / out-of-range) are never re-drawn (plan
+  section 3 scopes retry to "Transport/malformed"), so an answer short of 5
+  kept draws routes to ``human_adjudication`` with its full counter ledger —
+  never a silent drop, never a placeholder score.
 - rule-26 pilot gating through the EXISTING ``eval.judge_pilot.judge_pilot_gate``
   (reused, never re-implemented) for every dispatch of >= ~5,000 judge calls,
   with the wave transport DECLARED from the same shared constant the
-  production dispatch uses (``WAVE_THRESHOLD_BASE``).
-- a provider-drift CANARY: a small fixed per-row answer set frozen on first
-  wave and re-judged (fresh cache) on every later wave; a mixed judge
-  revision / instrument change raises ``MixedJudgeRevisionError``, a
-  majority median shift beyond tolerance raises ``JudgeDriftError`` (plan
-  section 8: judge drift is a halt criterion).
+  production dispatch uses (``WAVE_THRESHOLD_BASE``) — and a
+  fingerprint-checked PASS-report RESUME (the #2479 consumer-side compare +
+  the rule-26 ``issue2203_runtime.py`` precedent): a resumed dispatch honors
+  an existing ``pilot_gate_report.json`` ONLY when its verdict is PASS and
+  its persisted instrument fields (rubric sha, judge model, max_tokens,
+  n_draws, declared transport, parse-fail threshold) equal the live
+  constants; a persisted FAIL refuses (exit 4), any mismatch re-runs the
+  gate, and every re-run-triggering constant is folded into the gate dir key
+  so a genuine re-run never wedges on its own populated cache.
+- a provider-drift CANARY, run BEFORE the pilot gate (a drifted provider
+  costs the ~60-draw canary, not the ~1,260-draw pilot): a small fixed
+  per-row answer set frozen on first wave and re-judged on every later wave
+  against a FRESH per-attempt cache dir (a same-wave rerun re-dispatches
+  rather than vacuously replaying its own cache; a cache-served canary check
+  fails loud); a mixed judge revision / instrument change raises
+  ``MixedJudgeRevisionError``, a majority median shift beyond tolerance
+  raises ``JudgeDriftError`` (plan section 8: judge drift is a halt
+  criterion).
 
 Wire-instrument note (recorded deviation-of-record): the sanctioned graded
 path ``eval.graded_judge.judge_graded`` supplies its own fixed evaluator
@@ -75,6 +91,7 @@ import issue2658_generate as G  # noqa: E402
 import issue2658_text_resolver as R  # noqa: E402
 from explore_persona_space.eval import batch_judge as BJ  # noqa: E402
 from explore_persona_space.eval import graded_judge as GJ  # noqa: E402
+from explore_persona_space.eval import judge_pilot as JP  # noqa: E402
 from explore_persona_space.eval.judge_pilot import judge_pilot_gate  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -101,8 +118,9 @@ PARSE_FAIL_THRESHOLD = 0.02
 # a granularity artifact (llm-judging.md rule 26 sizing clause: 2-3x the floor
 # reduces granularity noise).
 PILOT_RESOLUTION_FACTOR = 2
-# judge_pilot_gate default, made explicit here because the sizing arithmetic
-# below must use the SAME value the gate call passes.
+# Passed EXPLICITLY at the run_pilot_gate call site (never left to the library
+# default) so the sizing arithmetic below and the gate's realized floor cannot
+# de-sync on a library-default change.
 MIN_EFFECTIVE_DRAWS_PER_ARM = 10
 
 # Drift canary (plan sections 3/8). Tolerance on the 0-100 scale for a
@@ -234,9 +252,10 @@ def judge_cache_fingerprint(row: str) -> str:
     composed eval prompt and the realized wire system prompt
     (``graded_judge._rubric_system_and_user``). ANY change to rubric text,
     model, draw count, aggregation, threshold, temperature, or token budget
-    changes this fingerprint; because the fingerprint is a path component of
-    every cache dir (see :func:`run_cell` / :func:`run_pilot_gate` /
-    :func:`_judge_canary_items`), a cache hit under a changed instrument is
+    changes this fingerprint; because the fingerprint keys every cache dir —
+    a direct ``fp[:16]`` path component in :func:`run_cell` /
+    :func:`_judge_canary_items`, folded into :func:`pilot_gate_key` for
+    :func:`run_pilot_gate` — a cache hit under a changed instrument is
     structurally impossible.
     """
     eval_prompt = compose_rubric(row)
@@ -267,15 +286,30 @@ def composed_question(
     ``(prompt_text, None)``. The resolver seam exists for tests; production
     uses the frozen store via ``issue2658_text_resolver.resolve_evidence_packet``
     (which sha-verifies every packet against its stored digest).
+
+    Raises :class:`JudgeInputError` when the composed question contains the
+    literal ``{answer}`` placeholder: ``graded_judge.format_user_msg``
+    substitutes ``{question}`` FIRST, so answer text would be spliced into the
+    question block of the wire message (substitution-order edge).
     """
+
+    def _assert_no_answer_slot(question: str) -> str:
+        if "{answer}" in question:
+            raise JudgeInputError(
+                f"composed question for {row}/{item_id} contains the literal '{{answer}}' "
+                "placeholder — format_user_msg substitutes {question} first, so answer text "
+                "would be spliced into the question block; sanitize the frozen packet/prompt"
+            )
+        return question
+
     c = C.CONSTRUCTS[row]
     if not c.uses_evidence_packet:
-        return prompt_text, None
+        return _assert_no_answer_slot(prompt_text), None
     resolver = packet_resolver or R.resolve_evidence_packet
     packet, evidence_sha = resolver(row, item_id)
     ev = json.dumps(packet["evidence"], sort_keys=True, ensure_ascii=False)
     question = f"[EVIDENCE sha256={evidence_sha}]\n{ev}\n[/EVIDENCE]\n\n{prompt_text}"
-    return question, evidence_sha
+    return _assert_no_answer_slot(question), evidence_sha
 
 
 # ---------------------------------------------------------------------------
@@ -435,12 +469,31 @@ def classify_parsed(parsed: object) -> tuple[str, float | None]:
     return CLASS_MALFORMED, None
 
 
+def _has_reasoning(parsed: object) -> bool:
+    """True when a parsed draw carries a non-empty ``reasoning`` string.
+
+    The realized wire instrument carries CONFLICTING output-format
+    instructions (recorded deviation-of-record): the library system prompt
+    demands a score-only JSON object while the composed user rubric demands
+    the reason-then-score object, and the parse layer accepts BOTH — so a
+    judge that follows the system half and omits its rationale is invisible
+    to the pilot gate. The kept-draw reasoning-presence rate is therefore
+    RECORDED in every cell/wave tally (rule-7 degradation stays measurable).
+    """
+    return (
+        isinstance(parsed, dict)
+        and isinstance(parsed.get("reasoning"), str)
+        and bool(parsed["reasoning"].strip())
+    )
+
+
 def reduce_round(save_raw: Path, unit_ids: set[str]) -> dict[str, list[dict[str, Any]]]:
     """Per-unit classified draws (in comp-index order) from one round's save_raw.
 
-    Returns ``{unit_id: [{"class", "score", "stop_reason"}, ...]}``. Raises on
-    a custom_id whose unit prefix is unknown (a mis-join is a correctness bug,
-    never skipped silently).
+    Returns ``{unit_id: [{"class", "score", "stop_reason", "has_reasoning"},
+    ...]}`` (``has_reasoning`` is meaningful for KEPT draws — the rationale-
+    presence tally). Raises on a custom_id whose unit prefix is unknown (a
+    mis-join is a correctness bug, never skipped silently).
     """
     raw = json.loads(Path(save_raw).read_text())
     all_scores: dict[str, Any] = raw.get("all_scores", {})
@@ -455,7 +508,16 @@ def reduce_round(save_raw: Path, unit_ids: set[str]) -> dict[str, list[dict[str,
         cls, score = classify_parsed(parsed)
         stop_reason = parsed.get("stop_reason") if isinstance(parsed, dict) else None
         per_unit[uid].append(
-            (int(idx_s), int(comp_s), {"class": cls, "score": score, "stop_reason": stop_reason})
+            (
+                int(idx_s),
+                int(comp_s),
+                {
+                    "class": cls,
+                    "score": score,
+                    "stop_reason": stop_reason,
+                    "has_reasoning": cls == CLASS_KEPT and _has_reasoning(parsed),
+                },
+            )
         )
     return {uid: [d for _, _, d in sorted(draws)] for uid, draws in per_unit.items()}
 
@@ -493,6 +555,99 @@ def pilot_gate_required(planned_calls_total: int, *, force: bool = False) -> boo
     return force or planned_calls_total >= PILOT_GATE_CALL_FLOOR
 
 
+def pilot_gate_key(row: str) -> str:
+    """Content-addressed key of everything a persisted pilot PASS certifies.
+
+    Folds the full realized-instrument fingerprint (rubric text, model,
+    n_draws, temperature, max_tokens, aggregation, threshold, wire system
+    prompt) PLUS every gate parameter whose change invalidates a prior PASS
+    but is OUTSIDE that fingerprint: the declared wave transport
+    (``WAVE_THRESHOLD_BASE``), the parse-fail threshold, the effective-draws
+    floor, and the sizing factor. Because this key is the gate dir's path
+    component, ANY re-run-triggering constant change resolves a FRESH, empty
+    gate dir — a genuine re-run can never wedge on the library's
+    cache-served-pilot FAIL (judge_pilot.py ``n_cached > 0``). Every hashed
+    value is a frozen generating parameter (never a recomputed float array —
+    the #1336 machine-stability rule).
+    """
+    payload = json.dumps(
+        {
+            "cache_fingerprint": judge_cache_fingerprint(row),
+            "wave_threshold_base": WAVE_THRESHOLD_BASE,
+            "parse_fail_threshold": PARSE_FAIL_THRESHOLD,
+            "min_effective_draws_per_arm": MIN_EFFECTIVE_DRAWS_PER_ARM,
+            "pilot_resolution_factor": PILOT_RESOLUTION_FACTOR,
+        },
+        sort_keys=True,
+    )
+    return C.hashlib.sha256(payload.encode()).hexdigest()
+
+
+def pilot_gate_root(out_root: Path, row: str) -> Path:
+    """The gate-key-addressed pilot dir (report + pilot cache live here)."""
+    return Path(out_root) / "judge" / "pilot_gate" / row / pilot_gate_key(row)[:16]
+
+
+@dataclass(frozen=True)
+class ResumedPilotReport:
+    """Lightweight stand-in for a gate verdict honored from a persisted PASS."""
+
+    passed: bool
+    verdict: str
+    report_path: str
+    resumed: bool = True
+
+
+def _persisted_instrument_mismatches(
+    report: dict[str, Any], row: str, wave_n_calls: int
+) -> list[str]:
+    """Field-by-field compare of a persisted pilot report vs the LIVE
+    instrument (#2479 consumer-side fingerprint compare; the rule-26
+    ``issue2203_runtime.py`` resume precedent). Returns one line per
+    mismatching field — empty means the persisted PASS certifies the live
+    instrument. A presence-only skip is the opposite defect; every field
+    below is read from what the library gate RECORDED it actually ran.
+    """
+    mismatches: list[str] = []
+    live_rubric = C.hashlib.sha256(compose_rubric(row).encode("utf-8")).hexdigest()[:16]
+    if report.get("rubric_hash") != live_rubric:
+        mismatches.append(f"rubric_hash {report.get('rubric_hash')!r} != live {live_rubric!r}")
+    if report.get("judge_model") != str(C.JUDGE["model"]):
+        mismatches.append(
+            f"judge_model {report.get('judge_model')!r} != live {str(C.JUDGE['model'])!r}"
+        )
+    if report.get("max_tokens") != int(C.JUDGE["max_tokens"]):
+        mismatches.append(
+            f"max_tokens {report.get('max_tokens')!r} != live {int(C.JUDGE['max_tokens'])}"
+        )
+    # Instrument n_draws, derived from the report's realized per-arm structure:
+    # every subsampled item receives exactly n_draws draws, so per arm
+    # n_draws_total == n_items * n_draws (judge_pilot.py dispatch loop).
+    live_n_draws = int(C.JUDGE["n_draws"])
+    derived: set[int | None] = set()
+    for name, arm in (report.get("arms") or {}).items():
+        n_items, n_total = arm.get("n_items"), arm.get("n_draws")
+        if not n_items or not isinstance(n_total, int) or n_total % n_items:
+            derived.add(None)
+        else:
+            derived.add(n_total // n_items)
+    if derived != {live_n_draws}:
+        mismatches.append(f"per-arm derived n_draws {sorted(map(str, derived))} != {live_n_draws}")
+    # Declared transport: recompute the live wave's route via the library's own
+    # routing rule (the same helper the gate uses), never a hardcoded string.
+    live_route = JP._wave_routing(wave_n_calls, WAVE_THRESHOLD_BASE, False).path
+    if report.get("wave_transport") != live_route:
+        mismatches.append(
+            f"wave_transport {report.get('wave_transport')!r} != live declared {live_route!r}"
+        )
+    if report.get("parse_fail_threshold") != PARSE_FAIL_THRESHOLD:
+        mismatches.append(
+            f"parse_fail_threshold {report.get('parse_fail_threshold')!r} != "
+            f"live {PARSE_FAIL_THRESHOLD}"
+        )
+    return mismatches
+
+
 def run_pilot_gate(
     row: str,
     units_by_cell: dict[str, list[JudgeUnit]],
@@ -510,6 +665,24 @@ def run_pilot_gate(
     (rule 26(c)). Fails loud (SystemExit ``EXIT_PILOT_GATE_FAIL``) on a gate
     FAIL after persisting the report; raises ValueError when an arm is too
     small for a passable gate, naming the remedy.
+
+    RESUME (#2479): an existing ``pilot_gate_report.json`` under the
+    gate-key-addressed root is honored — the pilot spend is skipped and the
+    wave proceeds to the cell-level resume — ONLY when the persisted verdict
+    is PASS AND every persisted instrument field equals the live constants
+    (:func:`_persisted_instrument_mismatches`). A persisted FAIL refuses
+    (exit 4 — a failed report is never treated as absent); any field mismatch
+    re-runs the gate. Without this resume, every resumed >=5,000-call
+    dispatch would re-run the wave-declared pilot against its own populated
+    cache and FAIL on the library's cache-served check — wedging the run
+    behind exit 4 and incentivizing the two bad workarounds (cache deletion:
+    ~1,260 re-spent draws/row; single-row re-dispatch: silently skips the
+    gate).
+
+    The pilot's raw draws land under ``raw_completions/judge/pilot_gate/...``
+    so :func:`upload_raw`'s canonical helper (any dir literally named
+    ``raw_completions/``) persists them to the HF data repo (Upload Policy:
+    judge outputs upload ALWAYS).
     """
     n_draws = int(C.JUDGE["n_draws"])
     need_items = pilot_items_per_arm()
@@ -524,21 +697,50 @@ def run_pilot_gate(
             )
         arms[cell] = [(u.unit_id, u.question, u.answer) for u in units]
 
-    fp = judge_cache_fingerprint(row)
-    gate_root = Path(out_root) / "judge" / "pilot_gate" / row / fp[:16]
+    gate_root = pilot_gate_root(out_root, row)
     report_path = gate_root / "pilot_gate_report.json"
+    if report_path.exists():
+        stored = json.loads(report_path.read_text())
+        if not (stored.get("passed") is True and stored.get("verdict") == "PASS"):
+            print(
+                f"[judge] PILOT-GATE persisted FAIL row={row} report={report_path} "
+                f"failures={stored.get('failures')} — refusing: a failed report is never "
+                "treated as absent; fix the instrument (a changed instrument resolves a "
+                "fresh gate dir) before re-dispatching",
+                flush=True,
+            )
+            raise SystemExit(EXIT_PILOT_GATE_FAIL)
+        mismatches = _persisted_instrument_mismatches(stored, row, wave_n_calls)
+        if not mismatches:
+            print(
+                f"[judge] pilot gate resume-PASS row={row} report={report_path} "
+                "(persisted instrument fields == live constants; pilot spend skipped)",
+                flush=True,
+            )
+            return ResumedPilotReport(passed=True, verdict="PASS", report_path=str(report_path))
+        print(
+            f"[judge] pilot report {report_path} mismatches the live instrument "
+            f"({'; '.join(mismatches)}) — re-running the gate",
+            flush=True,
+        )
+
     gate = gate_fn or judge_pilot_gate
     report = gate(
         arms,
         compose_rubric(row),
         max_tokens=int(C.JUDGE["max_tokens"]),
         cache_dir=gate_root / "cache",
-        save_raw_dir=gate_root / "raw",
+        # Fix (#2658 rev E concern 6): pilot raws live under raw_completions/
+        # so the canonical upload helper's class selection picks them up.
+        save_raw_dir=(
+            Path(out_root) / "raw_completions" / "judge" / "pilot_gate" / row / gate_root.name
+        ),
         n_draws=n_draws,
         target_total_draws=pilot_target_total_draws(len(arms)),
         judge_model=str(C.JUDGE["model"]),
         temperature=float(C.JUDGE["temperature"]),
         parse_fail_threshold=PARSE_FAIL_THRESHOLD,
+        min_effective_draws_per_arm=MIN_EFFECTIVE_DRAWS_PER_ARM,
         wave_n_calls=wave_n_calls,
         wave_threshold_base=WAVE_THRESHOLD_BASE,
         report_path=report_path,
@@ -592,6 +794,7 @@ class UnitLedger:
     counters: dict[str, int] = field(
         default_factory=lambda: {
             "n_kept": 0,
+            "n_kept_with_reasoning": 0,
             "n_malformed": 0,
             "n_out_of_range": 0,
             "n_rubric_refusal": 0,
@@ -611,6 +814,8 @@ class UnitLedger:
             cls = d["class"]
             if cls == CLASS_KEPT:
                 self.counters["n_kept"] += 1
+                if d.get("has_reasoning"):
+                    self.counters["n_kept_with_reasoning"] += 1
                 self.kept_scores.append(float(d["score"]))
             elif cls == CLASS_TRANSPORT:
                 self.counters["n_transport_retried"] += 1
@@ -633,12 +838,31 @@ class UnitLedger:
                     "class": cls,
                     "score": d["score"],
                     "stop_reason": d.get("stop_reason"),
+                    "has_reasoning": bool(d.get("has_reasoning")),
                 }
             )
 
     @property
     def deficit(self) -> int:
+        """Total kept-score shortfall vs the 5-draw target (reporting read)."""
         return max(0, int(C.JUDGE["n_draws"]) - len(self.kept_scores))
+
+    @property
+    def retryable_deficit(self) -> int:
+        """Draws eligible for re-issue (plan section 3: "Transport/malformed
+        outputs retry three times").
+
+        Retryable classes: transport losses (rule 24), malformed/truncated
+        parse failures (rule 23 — no verdict was produced), and api-refusal
+        draws (rule 28's targeted SYNC re-issue, plan section 6). PRODUCED
+        content verdicts — rubric ``REFUSAL`` and out-of-range — consumed
+        their draw slot and are NEVER re-drawn: giving a refusal-prone answer
+        extra rounds to accumulate 5 kept scores would compliance-condition
+        the kept median. An answer short of 5 kept draws with no retryable
+        shortfall routes straight to human_adjudication.
+        """
+        non_retryable = self.counters["n_rubric_refusal"] + self.counters["n_out_of_range"]
+        return max(0, int(C.JUDGE["n_draws"]) - len(self.kept_scores) - non_retryable)
 
     @property
     def needs_sync(self) -> bool:
@@ -688,7 +912,10 @@ def run_cell(
     dry_run: bool = False,
 ) -> dict[str, Any] | None:
     """Judge every answer in one cell: round 0 at 5 draws, then up to
-    ``MAX_RETRY_ROUNDS`` deficit re-issues at the IDENTICAL instrument, then
+    ``MAX_RETRY_ROUNDS`` re-issues of each answer's RETRYABLE deficit
+    (transport / malformed / truncation + the rule-28 api-refusal SYNC path —
+    never a produced rubric-REFUSAL / out-of-range verdict; see
+    :attr:`UnitLedger.retryable_deficit`) at the IDENTICAL instrument, then
     the scored / human_adjudication verdicts. Returns the cell body (None on
     dry-run).
 
@@ -739,8 +966,11 @@ def run_cell(
     for r in range(1, MAX_RETRY_ROUNDS + 1):
         groups: dict[tuple[int, bool], list[JudgeUnit]] = {}
         for led in ledgers.values():
-            if led.deficit > 0:
-                groups.setdefault((led.deficit, led.needs_sync), []).append(led.unit)
+            # Plan section 3 scopes retry to transport/malformed (+ the rule-28
+            # api-refusal SYNC re-issue); produced content verdicts (rubric
+            # REFUSAL / out-of-range) are never re-drawn.
+            if led.retryable_deficit > 0:
+                groups.setdefault((led.retryable_deficit, led.needs_sync), []).append(led.unit)
         if not groups:
             break
         for (deficit, needs_sync), batch in sorted(
@@ -762,7 +992,23 @@ def run_cell(
             sr = d["stop_reason"] if isinstance(d["stop_reason"], str) else "unknown"
             if d["class"] != CLASS_TRANSPORT:  # transport rows carry no API response
                 stop_tally[sr] = stop_tally.get(sr, 0) + 1
-    n_answered = sum(totals.values()) - totals.get("n_transport_retried", 0)
+    # Rule 28 / #2152 denominator semantics (mirrors the library's
+    # ArmPilotStats.parse_fail_rate): api-refusal draws are transport-
+    # conditional censoring — no verdict about the content exists — so they
+    # leave the parse-fail denominator exactly as transport losses do. BOTH
+    # rates are reported so the denominator change is legible in the artifact:
+    # `parse_fail_rate` (content denominator, the plan-section-8 gate read)
+    # and `parse_fail_rate_api_reached` (the diluted API-reached read).
+    _api_reached_classes = (
+        "n_kept",
+        "n_malformed",
+        "n_out_of_range",
+        "n_rubric_refusal",
+        "n_truncation",
+        "n_api_refusal",
+    )  # the disjoint non-transport draw classes (n_kept_with_reasoning is a SUBSET tally)
+    n_api_reached = sum(totals.get(k, 0) for k in _api_reached_classes)
+    n_answered = n_api_reached - totals.get("n_api_refusal", 0)
     n_parse_fail = sum(totals.get(k, 0) for k in ("n_malformed", "n_out_of_range", "n_truncation"))
     n_scored = sum(1 for v in verdicts.values() if v["judge_status"] == "scored")
 
@@ -794,9 +1040,23 @@ def run_cell(
         "n_human_adjudication": len(units) - n_scored,
         "frac_items_complete": (n_scored / len(units)) if units else None,
         "counters": totals,
+        # Rule-28 denominator split: `n_answered_draws` excludes BOTH transport
+        # losses and api-refusal draws (the content denominator the plan-§8
+        # gate reads); `n_api_reached_draws` keeps api-refusals in (the
+        # pre-fix, diluted read — reported so the redefinition is legible).
         "n_answered_draws": n_answered,
+        "n_api_reached_draws": n_api_reached,
         "n_parse_fail_draws": n_parse_fail,
         "parse_fail_rate": (n_parse_fail / n_answered) if n_answered else None,
+        "parse_fail_rate_api_reached": (n_parse_fail / n_api_reached) if n_api_reached else None,
+        # Rule-7 degradation tally: fraction of KEPT draws carrying a rationale
+        # (the wire's conflicting score-only-vs-reason-then-score instructions
+        # make rationale omission otherwise invisible to the pilot gate).
+        "reasoning_presence_rate": (
+            totals.get("n_kept_with_reasoning", 0) / totals["n_kept"]
+            if totals.get("n_kept")
+            else None
+        ),
         "stop_reason_tally": stop_tally,
         "plan_gate": {
             "parse_fail_lt_threshold": bool(
@@ -835,23 +1095,43 @@ def _judge_canary_items(
     wave_id: str,
     judge_fn: Callable[..., Any] | None,
 ) -> dict[str, float | None]:
-    """Median-of-kept-draws per canary item, judged against a FRESH per-wave
-    cache (a cache-served canary would be vacuous — rule 24(ii))."""
+    """Median-of-kept-draws per canary item, judged against a FRESH
+    PER-ATTEMPT cache (a cache-served canary would be vacuous — rule 24(ii)).
+
+    A same-wave rerun (crash between canary and cells) resolves the SAME
+    ``wave_id``, so a wave-keyed cache would silently replay the pre-crash
+    draws and append a vacuous PASS history row, masking drift that occurred
+    between crash and rerun. Each check attempt therefore gets its own
+    ``canary_r<k>.json`` / ``cache/r<k>`` pair (attempt index = first unused
+    save_raw slot), and a cache-served attempt (``n_cached > 0`` in the
+    persisted save_raw record) fails loud as the backstop.
+    """
     judge = judge_fn or GJ.judge_graded
     fp = judge_cache_fingerprint(row)
     root = Path(out_root) / "raw_completions" / "judge" / "canary" / row / fp[:16] / wave_id
-    save_raw = root / "canary.json"
+    attempt = 0
+    while (root / f"canary_r{attempt}.json").exists():
+        attempt += 1
+    save_raw = root / f"canary_r{attempt}.json"
     judge(
         items,
         compose_rubric(row),
         n_draws=int(C.JUDGE["n_draws"]),
-        cache_dir=root / "cache",
+        cache_dir=root / "cache" / f"r{attempt}",
         save_raw=save_raw,
         judge_model=str(C.JUDGE["model"]),
         temperature=float(C.JUDGE["temperature"]),
         max_tokens=int(C.JUDGE["max_tokens"]),
         threshold_base=WAVE_THRESHOLD_BASE,
     )
+    _transport, n_cached = JP._dispatch_evidence(save_raw)
+    if n_cached > 0:
+        raise JudgeInputError(
+            f"canary attempt r{attempt} for row {row!r} wave {wave_id} was served "
+            f"{n_cached} cache draws — a cache-served canary is vacuous (it re-reads the "
+            "pre-crash draws and cannot detect drift); clear the stale attempt cache under "
+            f"{root / 'cache' / f'r{attempt}'} and re-run"
+        )
     reduced = reduce_round(save_raw, {uid for uid, _, _ in items})
     medians: dict[str, float | None] = {}
     for uid, classified in reduced.items():
@@ -1006,8 +1286,10 @@ def run_wave(
 ) -> dict[str, Any]:
     """Judge one row's generated answers for one split, end to end.
 
-    Order: load units -> rule-26 pilot gate (when the DISPATCH's total planned
-    calls cross the floor) -> drift canary -> per-cell judging with
+    Order: load units -> drift canary (~60 draws — CHEAP-FIRST, so a drifted
+    provider halts before the ~1,260-draw pilot spend) -> rule-26 pilot gate
+    (when the DISPATCH's total planned calls cross the floor; resume-honors a
+    persisted matching PASS report) -> per-cell judging with
     fingerprint-gated resume -> wave summary. ``planned_calls_total`` is the
     total across every row in the caller's dispatch (defaults to this row's
     own call count) so a multi-row dispatch >= the floor gates EVERY row.
@@ -1031,9 +1313,17 @@ def run_wave(
         flush=True,
     )
 
-    pilot_report = None
+    # Cheap-first ordering: the ~60-draw drift canary runs BEFORE the
+    # ~1,260-draw pilot gate, so a drifted provider halts at canary cost.
+    canary_record = None
     if dry_run:
         print("[judge] dry-run: skipping pilot gate + canary (no API calls)", flush=True)
+    elif not skip_canary:
+        canary_record = run_canary(row, units_by_cell, out_root, wave, judge_fn=judge_fn)
+
+    pilot_report = None
+    if dry_run:
+        pass
     elif pilot_gate_required(total_calls, force=force_pilot_gate):
         pilot_report = run_pilot_gate(
             row, units_by_cell, out_root, wave_n_calls=own_calls, gate_fn=gate_fn
@@ -1044,10 +1334,6 @@ def run_wave(
             f"{PILOT_GATE_CALL_FLOOR} (rule 26 exemption; post-hoc drop report still binds)",
             flush=True,
         )
-
-    canary_record = None
-    if not dry_run and not skip_canary:
-        canary_record = run_canary(row, units_by_cell, out_root, wave, judge_fn=judge_fn)
 
     cell_paths: dict[str, str] = {}
     t0 = time.time()
@@ -1085,7 +1371,14 @@ def run_wave(
         "n_units": n_units,
         "planned_calls": own_calls,
         "dispatch_total_calls": total_calls,
-        "pilot_gate": None if pilot_report is None else {"passed": bool(pilot_report.passed)},
+        "pilot_gate": (
+            None
+            if pilot_report is None
+            else {
+                "passed": bool(pilot_report.passed),
+                "resumed": bool(getattr(pilot_report, "resumed", False)),
+            }
+        ),
         "canary": canary_record,
         "cells": cell_paths,
         "dry_run": dry_run,
@@ -1101,6 +1394,9 @@ def run_wave(
             for ck, cv in body["counters"].items():
                 agg[ck] = agg.get(ck, 0) + cv
         summary["counters"] = agg
+        summary["reasoning_presence_rate"] = (
+            agg.get("n_kept_with_reasoning", 0) / agg["n_kept"] if agg.get("n_kept") else None
+        )
         summary["n_scored"] = n_scored
         summary["n_human_adjudication"] = n_adjud
         _atomic_write_json(Path(out_root) / "judge" / split / row / "_wave_summary.json", summary)

@@ -12,10 +12,20 @@ Mandated coverage (unit-6 brief):
   api-refusal (targeted SYNC re-issue), transport (retried);
 - retry-3x-then-human_adjudication routing;
 - rule-26 pilot-gate REUSE via ``eval.judge_pilot.judge_pilot_gate`` with
-  passable arm sizing and the shared wave-transport constant;
+  passable arm sizing, the shared wave-transport constant, an explicit
+  effective-draws floor pin, raw draws under ``raw_completions/``, and the
+  #2479 PASS-report RESUME (crash -> rerun reaches the cell-level resume;
+  instrument change / tampered report -> genuine re-run; persisted FAIL ->
+  refuse);
+- retry scope: produced content verdicts (rubric REFUSAL / out-of-range)
+  are never re-drawn (plan section 3 "Transport/malformed");
+- parse-fail denominator excludes api-refusal draws (rule 28), BOTH rates
+  reported; kept-draw reasoning-presence rate recorded;
 - rule-27 parse-contract round-trip through the harness's OWN parse path;
 - drift canary: freeze, re-judge, MixedJudgeRevisionError on instrument
-  change, JudgeDriftError on a majority median shift.
+  change, JudgeDriftError on a majority median shift, canary-before-pilot
+  ordering, fresh per-attempt cache on a same-wave rerun + the n_cached
+  fail-loud backstop.
 
 All tests are OFFLINE: the fake judge / fake gate BIND the real callee
 signatures at call time (signature-conformant by construction) and the fake
@@ -82,8 +92,9 @@ class FakeJudge:
     the ``uid__idx__comp`` custom_id grammar) so the production
     reduce/retry/verdict bodies execute."""
 
-    def __init__(self, respond):
+    def __init__(self, respond, extra_raw: dict | None = None):
         self.respond = respond  # (unit_id, cumulative_draw_k, force_sync) -> parsed dict
+        self.extra_raw = extra_raw or {}  # extra save_raw record fields (e.g. n_cached)
         self.calls: list[dict] = []
         self._issued: dict[str, int] = {}
 
@@ -109,6 +120,7 @@ class FakeJudge:
                     "n_total": len(all_scores),
                     "judge_model": a["judge_model"],
                     "routing": {"path": "sync" if a["force_sync"] else "batch"},
+                    **self.extra_raw,
                 }
             )
         )
@@ -126,19 +138,57 @@ class RaisingJudge(FakeJudge):
 
 
 class FakeGate:
-    """Stand-in for ``judge_pilot_gate`` binding the real signature."""
+    """Stand-in for ``judge_pilot_gate``: binds the real signature, records
+    which kwargs were passed EXPLICITLY (constant pins vs library defaults
+    are part of the call contract — fix 5), and writes a REAL
+    production-format ``pilot_gate_report.json`` when ``report_path`` is
+    given, so the production PASS-report resume path executes against the
+    persisted-report shape (fix 1)."""
 
     def __init__(self, passed: bool = True):
         self.passed = passed
         self.calls: list[dict] = []
+        self.explicit: list[set] = []
 
     def __call__(self, *args, **kwargs):
         bound = inspect.signature(judge_pilot_gate).bind(*args, **kwargs)
+        self.explicit.append(set(bound.arguments))
         bound.apply_defaults()
-        self.calls.append(dict(bound.arguments))
-        return types.SimpleNamespace(
-            passed=self.passed, failures=[] if self.passed else ["forced-fail"]
-        )
+        a = dict(bound.arguments)
+        self.calls.append(a)
+        failures = [] if self.passed else ["forced-fail"]
+        # Mirror the fields the real gate persists (PilotGateReport.to_json),
+        # incl. the realized per-arm subsample structure the resume derives
+        # n_draws from (judge_pilot.py floor-division sizing).
+        per_arm_items = max(1, a["target_total_draws"] // (len(a["arms"]) * max(1, a["n_draws"])))
+        arms = {}
+        n_total = 0
+        for name, items in a["arms"].items():
+            n_items = min(per_arm_items, len(items))
+            arms[name] = {"n_items": n_items, "n_draws": n_items * a["n_draws"]}
+            n_total += n_items * a["n_draws"]
+        report = {
+            "passed": self.passed,
+            "verdict": "PASS" if self.passed else "FAIL",
+            "failures": failures,
+            "warnings": [],
+            "arms": arms,
+            "judge_model": a["judge_model"],
+            "max_tokens": a["max_tokens"],
+            "n_total_draws": n_total,
+            "parse_fail_threshold": a["parse_fail_threshold"],
+            "rubric_hash": hashlib.sha256(a["eval_prompt"].encode("utf-8")).hexdigest()[:16],
+            "wave_transport": (
+                "sync"
+                if a.get("wave_force_sync")
+                else ("batch" if a.get("wave_threshold_base") == 0 else None)
+            ),
+        }
+        if a.get("report_path") is not None:
+            p = Path(a["report_path"])
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps(report, indent=2))
+        return types.SimpleNamespace(passed=self.passed, failures=failures)
 
 
 def fake_resolve_items(item_ids, *, verify_pins=True):
@@ -297,6 +347,7 @@ def test_ledger_counters_and_deficit_never_coerce():
     led.absorb(classified, round_index=0)
     assert led.counters == {
         "n_kept": 1,
+        "n_kept_with_reasoning": 0,  # hand-built rows carry no has_reasoning flag
         "n_malformed": 1,
         "n_out_of_range": 1,
         "n_rubric_refusal": 0,
@@ -306,6 +357,9 @@ def test_ledger_counters_and_deficit_never_coerce():
     }
     assert led.kept_scores == [80.0]  # drops never enter the pool
     assert led.deficit == 4
+    # fix 3: the out-of-range PRODUCED verdict is not re-drawn — only the
+    # malformed / transport / api-refusal shortfall is retryable
+    assert led.retryable_deficit == 3
     assert led.needs_sync  # api-refusal-tainted => rule-28 sync re-issue
     # deterministic draw ids from the frozen scheme, in issue order
     ids = C.judge_draw_ids(led.unit.answer_sha256, n_draws=5)
@@ -411,11 +465,18 @@ def test_run_wave_offline_end_to_end(tmp_path, monkeypatch):
     assert verdicts[u2]["median_score"] is None  # never coerced
     # cell-level accounting: classes kept separate
     assert body["counters"]["n_kept"] == 10
+    assert body["counters"]["n_kept_with_reasoning"] == 10  # kept() carries a rationale
     assert body["counters"]["n_malformed"] == 1
     assert body["counters"]["n_api_refusal"] == 20
     assert body["counters"]["n_transport_retried"] == 0
     assert body["n_parse_fail_draws"] == 1  # api-refusal is NOT a parse failure
-    assert body["n_answered_draws"] == 31
+    # fix 2 (rule 28 denominator split): api-refusal draws leave the parse-fail
+    # denominator; BOTH rates are reported so the redefinition is legible.
+    assert body["n_api_reached_draws"] == 31
+    assert body["n_answered_draws"] == 11
+    assert body["parse_fail_rate"] == pytest.approx(1 / 11)
+    assert body["parse_fail_rate_api_reached"] == pytest.approx(1 / 31)
+    assert body["reasoning_presence_rate"] == pytest.approx(1.0)
     assert body["frac_items_complete"] == pytest.approx(2 / 3)
     assert body["plan_gate"]["zero_max_tokens_stops"] is True
     assert body["stop_reason_tally"]["refusal"] == 20
@@ -510,6 +571,15 @@ def test_pilot_gate_wiring_and_sizing(tmp_path):
     assert a["wave_threshold_base"] == J.WAVE_THRESHOLD_BASE
     assert a["wave_n_calls"] == 2 * 21 * 5
     assert a["report_path"] is not None
+    # fix 5: the effective-draws floor is passed EXPLICITLY (a library-default
+    # change must not silently de-sync the sizing arithmetic)
+    assert "min_effective_draws_per_arm" in gate.explicit[0]
+    assert a["min_effective_draws_per_arm"] == J.MIN_EFFECTIVE_DRAWS_PER_ARM
+    # fix 7: pilot raw draws live under raw_completions/ so upload_raw's
+    # canonical helper (any dir literally named raw_completions/) picks them up
+    save_raw_dir = str(a["save_raw_dir"]).replace("\\", "/")
+    assert "/raw_completions/judge/pilot_gate/" in save_raw_dir
+    assert save_raw_dir.startswith(str(tmp_path))
 
 
 def test_pilot_gate_arm_too_small_is_refused(tmp_path):
@@ -555,6 +625,227 @@ def test_run_pilot_gate_call_binds_real_signature_defaults():
 
 
 # ---------------------------------------------------------------------------
+# Pilot-gate PASS-report resume (rev E blocker fix; #2479 consumer-side
+# fingerprint compare; rule-26 issue2203_runtime.py precedent).
+# ---------------------------------------------------------------------------
+class CrashJudge(FakeJudge):
+    """A judge that simulates a mid-cells crash (after gate + canary)."""
+
+    def __init__(self):
+        super().__init__(respond=None)
+
+    def __call__(self, *args, **kwargs):
+        raise RuntimeError("simulated mid-cells crash")
+
+
+def _wave(tmp_path, judge_fn, gate_fn):
+    return J.run_wave(
+        ROW,
+        "pilot",
+        gen_root=tmp_path,
+        out_root=tmp_path,
+        judge_fn=judge_fn,
+        gate_fn=gate_fn,
+        resolver_fn=fake_resolve_items,
+        force_pilot_gate=True,
+        skip_canary=True,
+    )
+
+
+def test_pilot_gate_resume_reaches_cell_resume_after_crash(tmp_path):
+    """The blocker scenario: a wave PASSes its gate, crashes mid-cells, and the
+    rerun must honor the persisted PASS report and reach the cell-level resume
+    — never re-dispatch the pilot (pre-fix: unconditional re-run; against the
+    real library gate the rerun's pilot is served from its own populated
+    cache, every arm FAILs on n_cached > 0, and the run exits 4 with the
+    cell-level resume unreachable)."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    gate1 = FakeGate(passed=True)
+    with pytest.raises(RuntimeError, match="simulated mid-cells crash"):
+        _wave(tmp_path, CrashJudge(), gate1)
+    assert len(gate1.calls) == 1
+    report_path = J.pilot_gate_root(tmp_path, ROW) / "pilot_gate_report.json"
+    assert report_path.exists()  # the persisted PASS the rerun must honor
+
+    # rerun: persisted instrument fields == live constants => resume, no pilot
+    gate2 = FakeGate(passed=True)
+    summary = _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), gate2)
+    assert gate2.calls == []  # the gate was NOT re-dispatched
+    assert summary["pilot_gate"] == {"passed": True, "resumed": True}
+    assert summary["n_scored"] == 21  # the cells actually ran
+
+    # and a THIRD wave reaches the cell-level resume with ZERO judge calls
+    gate3 = FakeGate(passed=True)
+    _wave(tmp_path, RaisingJudge(), gate3)
+    assert gate3.calls == []
+
+
+def test_pilot_gate_resume_negative_instrument_change(tmp_path, monkeypatch):
+    """The negative arm: a changed instrument field must force a GENUINE
+    re-run — and it resolves a FRESH gate dir, so the re-run can never wedge
+    on the prior run's populated pilot cache."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    gate1 = FakeGate(passed=True)
+    _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), gate1)
+    assert len(gate1.calls) == 1
+    old_root = J.pilot_gate_root(tmp_path, ROW)
+
+    monkeypatch.setitem(C.JUDGE, "max_tokens", 4096)
+    new_root = J.pilot_gate_root(tmp_path, ROW)
+    assert new_root != old_root  # changed instrument => fresh gate dir
+    gate2 = FakeGate(passed=True)
+    # the completed cells are stale under the changed instrument (CacheStaleError
+    # downstream of the gate) — but the gate itself must have RE-RUN first.
+    with pytest.raises(C.CacheStaleError):
+        _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), gate2)
+    assert len(gate2.calls) == 1  # genuine re-run, not a resume
+
+
+def _tamper_judge_model(report: dict) -> None:
+    report["judge_model"] = "claude-other-model"
+
+
+def _tamper_transport(report: dict) -> None:
+    report["wave_transport"] = "sync"
+
+
+def _tamper_rubric_hash(report: dict) -> None:
+    report["rubric_hash"] = "0" * 16
+
+
+def _tamper_max_tokens(report: dict) -> None:
+    report["max_tokens"] = 64
+
+
+def _tamper_n_draws(report: dict) -> None:
+    for arm in report["arms"].values():
+        arm["n_draws"] = arm["n_items"] * 7
+
+
+@pytest.mark.parametrize(
+    "tamper",
+    [
+        _tamper_judge_model,
+        _tamper_transport,
+        _tamper_rubric_hash,
+        _tamper_max_tokens,
+        _tamper_n_draws,
+    ],
+)
+def test_pilot_gate_resume_negative_tampered_report(tmp_path, tamper):
+    """A presence-only skip is the opposite defect: every persisted instrument
+    field is compared, and any mismatch re-runs the gate."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), FakeGate(passed=True))
+    report_path = J.pilot_gate_root(tmp_path, ROW) / "pilot_gate_report.json"
+    stored = json.loads(report_path.read_text())
+    tamper(stored)
+    report_path.write_text(json.dumps(stored))
+
+    gate2 = FakeGate(passed=True)
+    _wave(tmp_path, RaisingJudge(), gate2)  # cells resume-skip; only the gate re-runs
+    assert len(gate2.calls) == 1
+
+
+def test_pilot_gate_persisted_fail_report_refuses(tmp_path):
+    """A persisted FAIL report is never treated as absent: refuse (exit 4)
+    without re-dispatching the pilot."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    report_path = J.pilot_gate_root(tmp_path, ROW) / "pilot_gate_report.json"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps({"passed": False, "verdict": "FAIL", "failures": ["forced-fail"]})
+    )
+    gate = FakeGate(passed=True)
+    with pytest.raises(SystemExit) as exc:
+        _wave(tmp_path, RaisingJudge(), gate)
+    assert exc.value.code == J.EXIT_PILOT_GATE_FAIL
+    assert gate.calls == []
+
+
+# ---------------------------------------------------------------------------
+# Retry scope (rev E fix 3): produced content verdicts are never re-drawn.
+# ---------------------------------------------------------------------------
+def _content_verdict_respond(uid: str, k: int, force_sync: bool):
+    if "|q0#" in uid:
+        return RUBRIC_REFUSAL if k == 4 else kept(80)
+    if "|q1#" in uid:
+        return OUT_OF_RANGE if k == 4 else kept(80)
+    return kept(60)
+
+
+def test_content_verdict_deficits_are_never_redrawn(tmp_path):
+    """Plan section 3 scopes retry to "Transport/malformed": a rubric-REFUSAL
+    or out-of-range draw is a PRODUCED verdict — re-drawing it would give a
+    refusal-prone answer extra rounds to accumulate 5 kept scores
+    (compliance-conditioning the kept median). Pre-fix, both units below were
+    retried to `scored`; post-fix they route to human_adjudication with zero
+    retry rounds."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 3})
+    fake = FakeJudge(_content_verdict_respond)
+    J.run_wave(
+        ROW,
+        "pilot",
+        gen_root=tmp_path,
+        out_root=tmp_path,
+        judge_fn=fake,
+        resolver_fn=fake_resolve_items,
+        skip_canary=True,
+    )
+    body = json.loads((tmp_path / "judge" / "pilot" / ROW / f"{ROW}__frameA__b0.json").read_text())
+    for i, counter in ((0, "n_rubric_refusal"), (1, "n_out_of_range")):
+        v = body["verdicts"][f"{ROW}|frameA|q{i}#r00"]
+        assert v["judge_status"] == "human_adjudication"
+        assert v["retry_rounds_used"] == 0  # never re-drawn
+        assert v["median_score"] is None and v["binary_label"] is None
+        assert v["counters"][counter] == 1
+        assert v["counters"]["n_kept"] == 4
+    assert len(fake.calls) == 1  # round 0 only — no retry round was dispatched
+
+
+# ---------------------------------------------------------------------------
+# Reasoning-presence tally (rev E fix 6): rationale omission is measurable.
+# ---------------------------------------------------------------------------
+def test_reasoning_presence_rate_recorded(tmp_path):
+    """The wire carries conflicting output-format instructions (score-only
+    system prompt vs reason-then-score user rubric) and the parser accepts
+    both — the kept-draw rationale-presence rate makes the system-half
+    degradation visible in the wave tallies."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 2})
+
+    def respond(uid: str, k: int, force_sync: bool):
+        # q0 follows the user rubric (reasoning + score); q1 follows the
+        # score-only system half (bare integer — kept, no rationale).
+        return kept(70) if "|q0#" in uid else 70
+
+    summary = J.run_wave(
+        ROW,
+        "pilot",
+        gen_root=tmp_path,
+        out_root=tmp_path,
+        judge_fn=FakeJudge(respond),
+        resolver_fn=fake_resolve_items,
+        skip_canary=True,
+    )
+    body = json.loads((tmp_path / "judge" / "pilot" / ROW / f"{ROW}__frameA__b0.json").read_text())
+    assert body["counters"]["n_kept"] == 10
+    assert body["counters"]["n_kept_with_reasoning"] == 5
+    assert body["reasoning_presence_rate"] == pytest.approx(0.5)
+    assert summary["reasoning_presence_rate"] == pytest.approx(0.5)
+
+
+# ---------------------------------------------------------------------------
+# Substitution-order guard (rev E fix 8).
+# ---------------------------------------------------------------------------
+def test_composed_question_rejects_literal_answer_placeholder():
+    """format_user_msg substitutes {question} before {answer}, so a composed
+    question carrying the literal '{answer}' string would get answer text
+    spliced into the question block on the wire."""
+    with pytest.raises(J.JudgeInputError, match="placeholder"):
+        J.composed_question(ROW, f"{ROW}|frameA|q0", "frozen text with a literal {answer} slot")
+
+
+# ---------------------------------------------------------------------------
 # 14. Drift canary.
 # ---------------------------------------------------------------------------
 def _canary_units() -> dict[str, list[J.JudgeUnit]]:
@@ -594,6 +885,64 @@ def test_canary_selection_is_deterministic():
     assert len(picks) == J.CANARY_PER_CELL * len(units)
     ranked = sorted(units[f"{ROW}__frameA__b0"], key=lambda u: (u.answer_sha256, u.unit_id))
     assert picks[0] == ranked[0]
+
+
+def test_canary_runs_before_pilot_gate(tmp_path):
+    """Rev E fix 4 (ordering): the ~60-draw drift canary runs BEFORE the
+    ~1,260-draw pilot gate, so a drifted provider costs the canary spend,
+    not the pilot spend."""
+    build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
+    events: list[str] = []
+
+    class TimelineJudge(FakeJudge):
+        def __call__(self, *args, **kwargs):
+            events.append("judge")
+            return super().__call__(*args, **kwargs)
+
+    class TimelineGate(FakeGate):
+        def __call__(self, *args, **kwargs):
+            events.append("gate")
+            return super().__call__(*args, **kwargs)
+
+    J.run_wave(
+        ROW,
+        "pilot",
+        gen_root=tmp_path,
+        out_root=tmp_path,
+        judge_fn=TimelineJudge(lambda u, k, f: kept(70)),
+        gate_fn=TimelineGate(passed=True),
+        resolver_fn=fake_resolve_items,
+        force_pilot_gate=True,
+        skip_canary=False,
+    )
+    assert "gate" in events and "judge" in events
+    assert events.index("judge") < events.index("gate")  # canary first
+
+
+def test_canary_same_wave_rerun_uses_fresh_cache_attempt(tmp_path):
+    """Rev E fix 4 (rerun vacuity): a same-wave rerun re-checks the canary
+    against a FRESH per-attempt cache/save_raw pair — never its own populated
+    per-wave cache (which would append a vacuous PASS row and mask drift
+    between crash and rerun)."""
+    units = _canary_units()
+    fake1 = FakeJudge(lambda u, k, f: kept(80))
+    J.run_canary(ROW, units, tmp_path, "w1", judge_fn=fake1)  # baseline, attempt r0
+    fake2 = FakeJudge(lambda u, k, f: kept(80))
+    rec = J.run_canary(ROW, units, tmp_path, "w1", judge_fn=fake2)  # SAME wave rerun
+    assert rec["role"] == "check" and rec["drifted"] is False
+    d1 = str(fake1.calls[0]["cache_dir"]).replace("\\", "/")
+    d2 = str(fake2.calls[0]["cache_dir"]).replace("\\", "/")
+    assert d1.endswith("/cache/r0") and d2.endswith("/cache/r1")
+    assert str(fake1.calls[0]["save_raw"]).endswith("canary_r0.json")
+    assert str(fake2.calls[0]["save_raw"]).endswith("canary_r1.json")
+
+
+def test_canary_cache_served_check_fails_loud(tmp_path):
+    """Rev E fix 4 (backstop): a canary attempt whose persisted save_raw
+    records cache-served draws (n_cached > 0) is vacuous and raises."""
+    fake = FakeJudge(lambda u, k, f: kept(80), extra_raw={"n_cached": 2})
+    with pytest.raises(J.JudgeInputError, match="cache-served canary is vacuous"):
+        J.run_canary(ROW, _canary_units(), tmp_path, "w1", judge_fn=fake)
 
 
 # ---------------------------------------------------------------------------
