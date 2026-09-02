@@ -369,13 +369,11 @@ def run_cell(
 
     report["metadata"] = as_metadata_dict(git_provenance(), phase="objective-labels")
 
+    from explore_persona_space.atomic_io import write_jsonl_atomic, write_text_atomic
+
     labels_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = labels_path.with_name(labels_path.name + ".tmp")
-    tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records))
-    tmp.replace(labels_path)
-    rtmp = report_path.with_name(report_path.name + ".tmp")
-    rtmp.write_text(G.canonical_json(report))
-    rtmp.replace(report_path)
+    write_jsonl_atomic(labels_path, records)
+    write_text_atomic(report_path, G.canonical_json(report))
     print(
         f"[labels] {cell.name}: labeled={report['n_labeled']} malformed={report['n_malformed']} "
         f"harness={report['n_harness_failure']} unavailable={report['n_genuinely_unavailable']} "

@@ -407,11 +407,10 @@ def freeze_evidence(path: Path | None = None) -> dict[str, Any]:
     from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
     core["metadata"] = as_metadata_dict(git_provenance(), phase="evidence-freeze")
-    payload = G.canonical_json(core)
+    from explore_persona_space.atomic_io import write_text_atomic
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(payload)
-    tmp.replace(path)
+    write_text_atomic(path, G.canonical_json(core))
     print(f"[evidence] froze {core['n_items']} packets -> {path}")
     return core
 
