@@ -18,10 +18,10 @@ C  Qwen3-8B, layer 24: the same four maps with thinking on, plus the
 D  Qwen2.5-7B-Instruct (before reasoning training) -> OpenThinker3-7B (after):
    within-model maps on each side and the two cross-model maps.
 
-Visual encoding follows Figure 2: color + marker shape encode the corpus
-stratum; filled markers are R^2 and open markers are top-1 answer retrieval
-(lift over chance). Every context state is the last context token; every fit
-uses five seeded random-row folds.
+Visual encoding follows Figure 2: color encodes the corpus stratum; solid bars
+(and filled markers in panel B) are R^2, hatched open bars (and open markers)
+are top-1 answer retrieval as lift over chance. Every context state is the last
+context token; every fit uses five seeded random-row folds.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
@@ -80,7 +80,7 @@ class StratumStyle:
 
 STRATA = {
     "does": StratumStyle("Needs-reasoning corpora", "#7B3294", "s", -0.16),
-    "doesnt": StratumStyle("No-reasoning corpora", "#008837", "o", 0.16),
+    "doesnt": StratumStyle("No-reasoning corpora", "#5AAE61", "o", 0.16),
 }
 
 # (cell, x-axis label) per categorical panel.
@@ -271,54 +271,59 @@ def _kicker(ax: plt.Axes, title: str, kicker: str) -> None:
     )
 
 
-def _draw_point(
+BAR_WIDTH = 0.19
+# Within each x category: needs-reasoning [R^2, retrieval] then no-reasoning [R^2, retrieval].
+BAR_OFFSETS = {"does": (-0.30, -0.10), "doesnt": (0.10, 0.30)}
+RETRIEVAL_HATCH = "///"
+
+
+def _bar_with_ci(
     ax: plt.Axes,
     x: float,
-    metrics: dict[str, Any],
+    value: float,
+    ci: list[float],
     style: StratumStyle,
+    *,
+    retrieval: bool,
 ) -> None:
-    lo, hi = metrics["r2_ci"]
-    ax.errorbar(
-        x,
-        metrics["r2"],
-        yerr=[[metrics["r2"] - lo], [hi - metrics["r2"]]],
-        fmt="none",
-        ecolor=style.color,
-        elinewidth=1.6,
-        capsize=0,
-        zorder=3,
-    )
-    ax.plot(
-        x,
-        metrics["r2"],
-        marker=style.marker,
-        color=style.color,
-        markersize=12,
-        linestyle="none",
-        zorder=4,
-    )
-    if metrics["retrieval_lift"] is not None:
-        lo, hi = metrics["retrieval_lift_ci"]
-        ax.errorbar(
+    if retrieval:
+        ax.bar(
             x,
-            metrics["retrieval_lift"],
-            yerr=[[metrics["retrieval_lift"] - lo], [hi - metrics["retrieval_lift"]]],
-            fmt="none",
-            ecolor=style.color,
-            elinewidth=1.6,
-            capsize=0,
+            value,
+            width=BAR_WIDTH,
+            facecolor=PAPER,
+            edgecolor=style.color,
+            hatch=RETRIEVAL_HATCH,
+            linewidth=1.4,
             zorder=3,
         )
-        ax.plot(
-            x,
+    else:
+        ax.bar(x, value, width=BAR_WIDTH, color=style.color, linewidth=0, zorder=3)
+    lo, hi = ci
+    ax.errorbar(
+        x,
+        value,
+        yerr=[[value - lo], [hi - value]],
+        fmt="none",
+        ecolor=INK,
+        elinewidth=1.2,
+        capsize=3,
+        capthick=1.2,
+        zorder=4,
+    )
+
+
+def _draw_bars(ax: plt.Axes, x: float, metrics: dict[str, Any], style: StratumStyle, subset: str) -> None:
+    dx_r2, dx_ret = BAR_OFFSETS[subset]
+    _bar_with_ci(ax, x + dx_r2, metrics["r2"], metrics["r2_ci"], style, retrieval=False)
+    if metrics["retrieval_lift"] is not None:
+        _bar_with_ci(
+            ax,
+            x + dx_ret,
             metrics["retrieval_lift"],
-            marker=style.marker,
-            markerfacecolor=PAPER,
-            markeredgecolor=style.color,
-            markeredgewidth=2.2,
-            markersize=12,
-            linestyle="none",
-            zorder=4,
+            metrics["retrieval_lift_ci"],
+            style,
+            retrieval=True,
         )
 
 
@@ -326,7 +331,7 @@ def _categorical_panel(ax: plt.Axes, maps: list[dict[str, Any]], *, separator_af
     style_score_axis(ax, y_min=0.0, y_max=1.0, y_step=0.2)
     for i, entry in enumerate(maps):
         for subset, style in STRATA.items():
-            _draw_point(ax, i + style.dx, entry[subset], style)
+            _draw_bars(ax, i, entry[subset], style, subset)
     ax.set_xlim(-0.6, len(maps) - 0.4)
     ax.set_xticks(range(len(maps)))
     ax.set_xticklabels([entry["label"] for entry in maps], fontsize=13.5, linespacing=1.15)
@@ -379,31 +384,19 @@ def _trajectory_panel(ax: plt.Axes, series: dict[str, list[dict[str, Any]]]) -> 
     ax.set_xlabel("Position in the thinking span", labelpad=8)
 
 
-def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
+def _legend_handles() -> tuple[list[Patch], list[Patch]]:
     strata = [
-        Line2D(
-            [0],
-            [0],
-            color=style.color,
-            marker=style.marker,
-            markersize=11,
-            lw=0,
-            label=style.label,
-        )
+        Patch(facecolor=style.color, edgecolor=style.color, label=style.label)
         for style in STRATA.values()
     ]
     metrics = [
-        Line2D([0], [0], color=INK, marker="o", markersize=11, lw=0, label="Held-out $R^2$"),
-        Line2D(
-            [0],
-            [0],
-            color=INK,
-            marker="o",
-            markerfacecolor=PAPER,
-            markeredgewidth=2.0,
-            markersize=11,
-            lw=0,
-            label="Top-1 answer retrieval, lift over chance",
+        Patch(facecolor=INK, edgecolor=INK, label="Held-out $R^2$"),
+        Patch(
+            facecolor=PAPER,
+            edgecolor=INK,
+            hatch=RETRIEVAL_HATCH,
+            linewidth=1.4,
+            label="Answer retrieval (lift over chance)",
         ),
     ]
     return strata, metrics
@@ -465,19 +458,19 @@ def make_figure(panels: dict[str, Any]) -> plt.Figure:
         bbox_to_anchor=(0.069, 0.952),
         ncol=2,
         frameon=False,
-        columnspacing=1.6,
+        columnspacing=1.1,
         handlelength=1.6,
         handletextpad=0.6,
         borderaxespad=0,
     )
-    fig.text(0.545, 0.965, "METRIC", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
+    fig.text(0.585, 0.965, "METRIC", color=MUTED, fontsize=11.5, fontweight=750, ha="left", va="center")
     fig.legend(
         handles=metric_handles,
         loc="upper left",
-        bbox_to_anchor=(0.544, 0.952),
+        bbox_to_anchor=(0.584, 0.952),
         ncol=2,
         frameon=False,
-        columnspacing=1.6,
+        columnspacing=1.1,
         handlelength=1.6,
         handletextpad=0.6,
         borderaxespad=0,
