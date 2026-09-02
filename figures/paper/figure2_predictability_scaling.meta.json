@@ -8,8 +8,8 @@
   "repository_manuscript_asset": "figures/paper/figure2_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
   "git": {
-    "commit": "06d42585522859ccda517df96ecc81e2b0834173",
-    "tracked_worktree_dirty": false
+    "commit": "9e19a47d4eb780a33119042433471e5036718985",
+    "tracked_worktree_dirty": true
   },
   "sources": {
     "layer": {
@@ -553,9 +553,70 @@
     "target": "five-rollout mean",
     "retrieval": "whitened cosine + CSLS (K=10), deduplicated pool n=942"
   },
+  "boundary_control": {
+    "source": {
+      "path": "eval_results/issue_1901/boundary_points_fig2.json",
+      "sha256": "8919b7f4d7297ef4c884cf5e708ca7fd6500632fede0afec3f67b99c617412d2"
+    },
+    "encoding": "burnt-umber markers on panel B at x = training pairs; filled = R^2, open = strict top-1; square = chat map under the same protocol",
+    "points": [
+      {
+        "token_id": "13",
+        "label": ". (period)",
+        "marker": "P",
+        "x": 1200,
+        "r2": 0.2890773553426029,
+        "retrieval": 0.7625,
+        "n_pool": 400
+      },
+      {
+        "token_id": "659",
+        "label": "\u2423. (space + period)",
+        "marker": "X",
+        "x": 1200,
+        "r2": 0.2967163144586531,
+        "retrieval": 0.865,
+        "n_pool": 400
+      },
+      {
+        "token_id": "753",
+        "label": "\u2423! (space + !)",
+        "marker": "*",
+        "x": 1200,
+        "r2": 0.26609196841124216,
+        "retrieval": 0.625,
+        "n_pool": 400
+      },
+      {
+        "token_id": "937",
+        "label": "\u2423? (space + ?)",
+        "marker": "d",
+        "x": 1200,
+        "r2": 0.24075864873147923,
+        "retrieval": 0.645,
+        "n_pool": 400
+      }
+    ],
+    "chat_reference": {
+      "x": 1200,
+      "r2": 0.710012283021935,
+      "retrieval": 0.9094513291952634,
+      "n_pool": 400,
+      "draws": 3
+    },
+    "span": "anchor+1 .. next sentence-final punctuation token (exclusive); 8-256 tokens kept",
+    "retrieval": {
+      "metric": "whitened cosine + two-sided CSLS",
+      "csls_k": 10,
+      "whitening": "fit on the arm's 1,200 training spans, diagonal-target shrinkage lambda=0.1",
+      "rank": "strict top-k; mid-rank ties and top ties fail top-1",
+      "pool": "the arm's 400 held-out spans"
+    },
+    "layer": 19
+  },
   "output_sha256": {
-    "pdf": "09dcd80c0baf4d972371693168bca20ed5bad27ac649792c7995b5ac4c035a00",
-    "png": "54a896f23ce28fd7f60372cd6b51c14a3d5ecde6858ce2c7cd0c17edfd4c79df",
-    "grayscale": "b47dccc472669420691ec29433ac5b51fb4904bfd2790705d3139868d5faefd7"
+    "pdf": "4417a9f4f93b611dade37fe9d6a6e53114b2a1f8815d9c5e8975902dcfeb06a4",
+    "png": "068c2140e4c71e146d45ad74a95d4cbdea62780ca7887154369de4c72b62e160",
+    "grayscale": "2bde2d7f22608dc009025451cbd57eca17ad761f7161b63212b7e078f311e644"
   }
 }

@@ -1,0 +1,746 @@
+{
+  "created_utc": "2026-08-31T23:13:49Z",
+  "cross_id_transfer": {
+    "input_output_mean_recentered_r2": {
+      "13": {
+        "13": 0.2890773553499242,
+        "659": 0.24548854678290255,
+        "753": 0.16697501370624712,
+        "937": 0.12565401449379077
+      },
+      "659": {
+        "13": 0.15112626169626187,
+        "659": 0.29671631452856717,
+        "753": 0.12108247076311784,
+        "937": 0.11231979327360875
+      },
+      "753": {
+        "13": 0.1281320060830865,
+        "659": 0.16593708012289365,
+        "753": 0.26609196828031156,
+        "937": 0.19885248168856817
+      },
+      "937": {
+        "13": 0.1185033699579282,
+        "659": 0.172756699346039,
+        "753": 0.2067426208021318,
+        "937": 0.2407586486043536
+      }
+    },
+    "output_mean_recentered_r2": {
+      "13": {
+        "13": 0.28907735532558576,
+        "659": 0.1964598412759645,
+        "753": 0.11052474061568351,
+        "937": 0.06893879584967233
+      },
+      "659": {
+        "13": 0.06800475075616841,
+        "659": 0.2967163145177195,
+        "753": 0.05608523801246479,
+        "937": 0.045832887307139414
+      },
+      "753": {
+        "13": 0.08637272297524601,
+        "659": 0.0979687501665304,
+        "753": 0.2660919683221271,
+        "937": 0.16824773536165671
+      },
+      "937": {
+        "13": 0.010179963219306143,
+        "659": -0.00431927302852686,
+        "753": 0.14189118591104555,
+        "937": 0.24075864865055108
+      }
+    },
+    "raw_r2": {
+      "13": {
+        "13": 0.28907735552373137,
+        "659": 0.22574995935328823,
+        "753": 0.12640162376018416,
+        "937": 0.06024484000691377
+      },
+      "659": {
+        "13": 0.07697249876980683,
+        "659": 0.2967163146803008,
+        "753": 0.05944486250994285,
+        "937": 0.051333837825854656
+      },
+      "753": {
+        "13": 0.051227944989151286,
+        "659": 0.08290790986026175,
+        "753": 0.2660919675617074,
+        "937": 0.17144468585921158
+      },
+      "937": {
+        "13": 0.04422307569215855,
+        "659": 0.11071399393719206,
+        "753": 0.18454121249728828,
+        "937": 0.24075864881719122
+      }
+    },
+    "target_zscore_aligned_r2": {
+      "13": {
+        "13": 0.28907735529399425,
+        "659": 0.24338921168628247,
+        "753": 0.16756978365084563,
+        "937": 0.12816874772459963
+      },
+      "659": {
+        "13": 0.15364769616181662,
+        "659": 0.2967163144428494,
+        "753": 0.1238648800020048,
+        "937": 0.11701805651444186
+      },
+      "753": {
+        "13": 0.12890168116342327,
+        "659": 0.1625727772774742,
+        "753": 0.26609196830393944,
+        "937": 0.20048933041538797
+      },
+      "937": {
+        "13": 0.1186181971830581,
+        "659": 0.16736006812192983,
+        "753": 0.2053961688918251,
+        "937": 0.24075864867635655
+      }
+    }
+  },
+  "experiment": "issue1901_individual_boundary_tokens",
+  "fit": {
+    "kind": "linear ridge",
+    "lambda_selection": "held-out validation R2",
+    "n_article_boot": 1000,
+    "n_shuffle_null": 200,
+    "ridge_block": 50000,
+    "seed": 190102
+  },
+  "individual": {
+    "13": {
+      "constant_train_mean": {
+        "article_bootstrap_r2": {
+          "hi": -0.004372759336607574,
+          "lo": -0.007353041201905547,
+          "n_articles": 355,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.0029475205638023194,
+          "seed": 190303
+        },
+        "mean_cosine": 0.7447216061674944,
+        "n_test": 400,
+        "r2": -0.0029475205638027635
+      },
+      "fit_meta": {
+        "lambda_grid_edge": null,
+        "n_train": 1200,
+        "ridge_block": 50000,
+        "selected_lambda": 3162.2776601683795,
+        "selection": "val-lambda (primal, streaming)",
+        "val_r2_at_selected": 0.30364613950456165
+      },
+      "identity_bias": {
+        "article_bootstrap_r2": {
+          "hi": -0.9569629585903832,
+          "lo": -1.0815905526015412,
+          "n_articles": 355,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -1.0128614677851417,
+          "seed": 190203
+        },
+        "mean_cosine": 0.6576464272990364,
+        "n_test": 400,
+        "r2": -1.0128614677851417
+      },
+      "score": {
+        "article_bootstrap_r2": {
+          "hi": 0.3010742201799433,
+          "lo": 0.2739121179502848,
+          "n_articles": 355,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": 0.2890773553426025,
+          "seed": 190103
+        },
+        "mean_cosine": 0.8271658503662843,
+        "n_test": 400,
+        "r2": 0.2890773553426027
+      },
+      "shuffled_pair_null_r2": {
+        "hi": -0.2570584686065904,
+        "lo": -0.28734169796894743,
+        "mean": -0.2705783744649019,
+        "n_draws": 200
+      }
+    },
+    "659": {
+      "constant_train_mean": {
+        "article_bootstrap_r2": {
+          "hi": -0.003711761684653864,
+          "lo": -0.0061644451603417635,
+          "n_articles": 390,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.0022739691018098807,
+          "seed": 190302
+        },
+        "mean_cosine": 0.773233913491137,
+        "n_test": 400,
+        "r2": -0.0022739691018094366
+      },
+      "fit_meta": {
+        "lambda_grid_edge": null,
+        "n_train": 1200,
+        "ridge_block": 50000,
+        "selected_lambda": 3162.2776601683795,
+        "selection": "val-lambda (primal, streaming)",
+        "val_r2_at_selected": 0.3050635115282686
+      },
+      "identity_bias": {
+        "article_bootstrap_r2": {
+          "hi": -0.40700165839470337,
+          "lo": -0.4985055471691277,
+          "n_articles": 390,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.4459309041364088,
+          "seed": 190202
+        },
+        "mean_cosine": 0.7443956109097596,
+        "n_test": 400,
+        "r2": -0.44593090413640923
+      },
+      "score": {
+        "article_bootstrap_r2": {
+          "hi": 0.308071711292088,
+          "lo": 0.2804290758549634,
+          "n_articles": 390,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": 0.2967163144586532,
+          "seed": 190102
+        },
+        "mean_cosine": 0.8475148215004594,
+        "n_test": 400,
+        "r2": 0.296716314458653
+      },
+      "shuffled_pair_null_r2": {
+        "hi": -0.30334111708685824,
+        "lo": -0.34043649036110796,
+        "mean": -0.3228835094489843,
+        "n_draws": 200
+      }
+    },
+    "753": {
+      "constant_train_mean": {
+        "article_bootstrap_r2": {
+          "hi": -0.005870582083078163,
+          "lo": -0.013126720090684756,
+          "n_articles": 292,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.005466837667027713,
+          "seed": 190305
+        },
+        "mean_cosine": 0.7471608591845258,
+        "n_test": 400,
+        "r2": -0.005466837667027935
+      },
+      "fit_meta": {
+        "lambda_grid_edge": null,
+        "n_train": 1200,
+        "ridge_block": 50000,
+        "selected_lambda": 3162.2776601683795,
+        "selection": "val-lambda (primal, streaming)",
+        "val_r2_at_selected": 0.25151369600363427
+      },
+      "identity_bias": {
+        "article_bootstrap_r2": {
+          "hi": -0.9037285327240003,
+          "lo": -1.0714371711490676,
+          "n_articles": 292,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.9778453620390182,
+          "seed": 190205
+        },
+        "mean_cosine": 0.6586710836277269,
+        "n_test": 400,
+        "r2": -0.9778453620390173
+      },
+      "score": {
+        "article_bootstrap_r2": {
+          "hi": 0.28135980838480784,
+          "lo": 0.24563428511055604,
+          "n_articles": 292,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": 0.26609196841124216,
+          "seed": 190105
+        },
+        "mean_cosine": 0.8230471676812426,
+        "n_test": 400,
+        "r2": 0.26609196841124216
+      },
+      "shuffled_pair_null_r2": {
+        "hi": -0.25647146765790313,
+        "lo": -0.2931582250477143,
+        "mean": -0.275187475276813,
+        "n_draws": 200
+      }
+    },
+    "937": {
+      "constant_train_mean": {
+        "article_bootstrap_r2": {
+          "hi": -0.004784255648932295,
+          "lo": -0.01029479965296049,
+          "n_articles": 323,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.003943243436241195,
+          "seed": 190304
+        },
+        "mean_cosine": 0.7469925104410032,
+        "n_test": 400,
+        "r2": -0.003943243436241861
+      },
+      "fit_meta": {
+        "lambda_grid_edge": null,
+        "n_train": 1200,
+        "ridge_block": 50000,
+        "selected_lambda": 3162.2776601683795,
+        "selection": "val-lambda (primal, streaming)",
+        "val_r2_at_selected": 0.23654746833204565
+      },
+      "identity_bias": {
+        "article_bootstrap_r2": {
+          "hi": -0.748860967291317,
+          "lo": -0.8988962658980194,
+          "n_articles": 323,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": -0.8140864193677435,
+          "seed": 190204
+        },
+        "mean_cosine": 0.6708293124733697,
+        "n_test": 400,
+        "r2": -0.8140864193677435
+      },
+      "score": {
+        "article_bootstrap_r2": {
+          "hi": 0.2570706937093459,
+          "lo": 0.21950943653490457,
+          "n_articles": 323,
+          "n_boot": 1000,
+          "n_degenerate_draws": 0,
+          "point": 0.240758648731479,
+          "seed": 190104
+        },
+        "mean_cosine": 0.8154132762328488,
+        "n_test": 400,
+        "r2": 0.24075864873147923
+      },
+      "shuffled_pair_null_r2": {
+        "hi": -0.2607512021383215,
+        "lo": -0.2986089553705712,
+        "mean": -0.2815048252956403,
+        "n_draws": 200
+      }
+    }
+  },
+  "layer": 19,
+  "manifest": {
+    "article_counts_by_split": {
+      "test": 1219,
+      "train": 3820,
+      "val": 508
+    },
+    "article_shards": [
+      "articles_shard000.pt"
+    ],
+    "candidate_multiplier": 20,
+    "created_utc": "2026-08-31T22:21:45Z",
+    "experiment": "issue1901_individual_boundary_tokens",
+    "manifest_shards": [
+      "manifest_shard000.jsonl"
+    ],
+    "max_per_article_per_token_split": 6,
+    "n_articles": 5547,
+    "n_manifest_rows": 7040,
+    "quotas_per_token_id": {
+      "test": 400,
+      "train": 1200,
+      "val": 160
+    },
+    "raw_counts": {
+      "13": {
+        "test": 6221,
+        "train": 22164,
+        "val": 3198
+      },
+      "659": {
+        "test": 245460,
+        "train": 874950,
+        "val": 126993
+      },
+      "753": {
+        "test": 584,
+        "train": 2076,
+        "val": 325
+      },
+      "937": {
+        "test": 444,
+        "train": 1755,
+        "val": 272
+      }
+    },
+    "screening": {
+      "exact_normalized_unique_across_eval": true,
+      "exact_normalized_unique_across_train": true,
+      "per_arm": {
+        "13:test": {
+          "drops": {},
+          "n_scanned": 400
+        },
+        "13:train": {
+          "drops": {},
+          "n_scanned": 1200
+        },
+        "13:val": {
+          "drops": {},
+          "n_scanned": 160
+        },
+        "659:test": {
+          "drops": {},
+          "n_scanned": 400
+        },
+        "659:train": {
+          "drops": {},
+          "n_scanned": 1200
+        },
+        "659:val": {
+          "drops": {},
+          "n_scanned": 160
+        },
+        "753:test": {
+          "drops": {
+            "article_cap": 1
+          },
+          "n_scanned": 401
+        },
+        "753:train": {
+          "drops": {
+            "article_cap": 2,
+            "near_or_exact_eval": 1
+          },
+          "n_scanned": 1203
+        },
+        "753:val": {
+          "drops": {},
+          "n_scanned": 160
+        },
+        "937:test": {
+          "drops": {},
+          "n_scanned": 400
+        },
+        "937:train": {
+          "drops": {
+            "near_or_exact_eval": 1
+          },
+          "n_scanned": 1201
+        },
+        "937:val": {
+          "drops": {},
+          "n_scanned": 160
+        }
+      },
+      "train_vs_eval_near_dupe": {
+        "jaccard_thresh": 0.8,
+        "n_exact_drop": 0,
+        "n_near_drop": 2,
+        "n_targets": 2240,
+        "ngram": 5
+      }
+    },
+    "selected_row_ids_sha256": "09b92f8a2b9275e46a4b5809b9c1fade56df6159bf703a9bc45e8cb68250ab63",
+    "source": {
+      "parent_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_1901/individual_boundary_parent/issue1901_boundary_ctl/manifest",
+      "parent_git_commit": "789e64d265f74e117c75ea87ea06e6e71b072d24",
+      "parent_n_manifest_rows": 1284442
+    },
+    "split": {
+      "fractions": {
+        "test": 0.2,
+        "train": 0.7,
+        "val": 0.1
+      },
+      "grain": "article_id",
+      "seed": 190101
+    },
+    "token_specs": {
+      "13": {
+        "decoded": ".",
+        "label": "period",
+        "token": "."
+      },
+      "659": {
+        "decoded": " .",
+        "label": "space + period",
+        "token": "\u0120."
+      },
+      "753": {
+        "decoded": " !",
+        "label": "space + exclamation",
+        "token": "\u0120!"
+      },
+      "937": {
+        "decoded": " ?",
+        "label": "space + question",
+        "token": "\u0120?"
+      }
+    }
+  },
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "paired_individual_minus_pooled_r2": {
+    "13": {
+      "all_data": {
+        "hi": -0.023648760661611732,
+        "lo": -0.03403731330264843,
+        "n_articles": 355,
+        "n_boot": 1000,
+        "point": -0.028781649142091168
+      },
+      "matched_n": {
+        "hi": 0.06768478587332019,
+        "lo": 0.05008786560598573,
+        "n_articles": 355,
+        "n_boot": 1000,
+        "point": 0.058780677347234904
+      }
+    },
+    "659": {
+      "all_data": {
+        "hi": -0.0323439551350899,
+        "lo": -0.04268535223672983,
+        "n_articles": 390,
+        "n_boot": 1000,
+        "point": -0.037217901238157526
+      },
+      "matched_n": {
+        "hi": 0.045675892136070935,
+        "lo": 0.03142804624750644,
+        "n_articles": 390,
+        "n_boot": 1000,
+        "point": 0.03835275745204765
+      }
+    },
+    "753": {
+      "all_data": {
+        "hi": -0.03838164999899874,
+        "lo": -0.049808994618286424,
+        "n_articles": 292,
+        "n_boot": 1000,
+        "point": -0.04418635556314188
+      },
+      "matched_n": {
+        "hi": 0.04345272365752592,
+        "lo": 0.02722620533281399,
+        "n_articles": 292,
+        "n_boot": 1000,
+        "point": 0.03525215132738394
+      }
+    },
+    "937": {
+      "all_data": {
+        "hi": -0.04337368290374288,
+        "lo": -0.054959126461900216,
+        "n_articles": 323,
+        "n_boot": 1000,
+        "point": -0.04905146356176129
+      },
+      "matched_n": {
+        "hi": 0.04068600155072381,
+        "lo": 0.024534967372706218,
+        "n_articles": 323,
+        "n_boot": 1000,
+        "point": 0.03269886319358354
+      }
+    }
+  },
+  "pooled": {
+    "all_data": {
+      "fit_meta": {
+        "lambda_grid_edge": null,
+        "n_train": 4800,
+        "ridge_block": 50000,
+        "selected_lambda": 10000.0,
+        "selection": "val-lambda (primal, streaming)",
+        "val_r2_at_selected": 0.3390419029812095
+      },
+      "n_train": 4800,
+      "n_val": 640,
+      "per_token": {
+        "13": {
+          "article_bootstrap_r2": {
+            "hi": 0.32699987962192784,
+            "lo": 0.3052437872537953,
+            "n_articles": 355,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.3178590044846936,
+            "seed": 190513
+          },
+          "mean_cosine": 0.8352689660488377,
+          "n_test": 400,
+          "r2": 0.3178590044846942
+        },
+        "659": {
+          "article_bootstrap_r2": {
+            "hi": 0.3456171994460947,
+            "lo": 0.3193968252605274,
+            "n_articles": 390,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.3339342156968108,
+            "seed": 190512
+          },
+          "mean_cosine": 0.8566227664816828,
+          "n_test": 400,
+          "r2": 0.3339342156968108
+        },
+        "753": {
+          "article_bootstrap_r2": {
+            "hi": 0.3234507466689659,
+            "lo": 0.29305365555785656,
+            "n_articles": 292,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.31027832397438404,
+            "seed": 190515
+          },
+          "mean_cosine": 0.8349286188498468,
+          "n_test": 400,
+          "r2": 0.3102783239743847
+        },
+        "937": {
+          "article_bootstrap_r2": {
+            "hi": 0.30442649065302385,
+            "lo": 0.2707345195325377,
+            "n_articles": 323,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.2898101122932403,
+            "seed": 190514
+          },
+          "mean_cosine": 0.828870728692941,
+          "n_test": 400,
+          "r2": 0.2898101122932404
+        }
+      }
+    },
+    "matched_n": {
+      "fit_meta": {
+        "lambda_grid_edge": null,
+        "n_train": 1200,
+        "ridge_block": 50000,
+        "selected_lambda": 3162.2776601683795,
+        "selection": "val-lambda (primal, streaming)",
+        "val_r2_at_selected": 0.2584729168835518
+      },
+      "n_train": 1200,
+      "n_val": 160,
+      "per_token": {
+        "13": {
+          "article_bootstrap_r2": {
+            "hi": 0.23889583035273843,
+            "lo": 0.21695830761054533,
+            "n_articles": 355,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.23029667799536757,
+            "seed": 190503
+          },
+          "mean_cosine": 0.8110309357936489,
+          "n_test": 400,
+          "r2": 0.2302966779953678
+        },
+        "659": {
+          "article_bootstrap_r2": {
+            "hi": 0.2684635063021464,
+            "lo": 0.24426699542715224,
+            "n_articles": 390,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.2583635570066056,
+            "seed": 190502
+          },
+          "mean_cosine": 0.8386831996829816,
+          "n_test": 400,
+          "r2": 0.2583635570066056
+        },
+        "753": {
+          "article_bootstrap_r2": {
+            "hi": 0.2444583945701892,
+            "lo": 0.21249095084657582,
+            "n_articles": 292,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.23083981708385815,
+            "seed": 190505
+          },
+          "mean_cosine": 0.813571004749326,
+          "n_test": 400,
+          "r2": 0.23083981708385826
+        },
+        "937": {
+          "article_bootstrap_r2": {
+            "hi": 0.22122184222541738,
+            "lo": 0.1873719405939762,
+            "n_articles": 323,
+            "n_boot": 1000,
+            "n_degenerate_draws": 0,
+            "point": 0.2080597855378954,
+            "seed": 190504
+          },
+          "mean_cosine": 0.8064559450675965,
+          "n_test": 400,
+          "r2": 0.20805978553789517
+        }
+      }
+    }
+  },
+  "question": "Does boundary-token-to-next-span mapping hold for each exact tokenizer ID, rather than only after pooling boundary identities?",
+  "summary": {
+    "individual_minus_pooled_all_mean_r2": -0.03980934237628825,
+    "individual_minus_pooled_matched_mean_r2": 0.04127111233006256,
+    "mean_individual_r2": 0.27316107173599424,
+    "mean_input_output_recentered_off_diagonal_transfer_r2": 0.15946419655971467,
+    "mean_pooled_all_r2": 0.31297041411228255,
+    "mean_pooled_matched_r2": 0.2318899594059317,
+    "mean_target_zscore_aligned_off_diagonal_transfer_r2": 0.1597497165660908,
+    "min_individual_r2": 0.24075864873147923
+  },
+  "token_specs": {
+    "13": {
+      "decoded": ".",
+      "label": "period",
+      "token": "."
+    },
+    "659": {
+      "decoded": " .",
+      "label": "space + period",
+      "token": "\u0120."
+    },
+    "753": {
+      "decoded": " !",
+      "label": "space + exclamation",
+      "token": "\u0120!"
+    },
+    "937": {
+      "decoded": " ?",
+      "label": "space + question",
+      "token": "\u0120?"
+    }
+  }
+}

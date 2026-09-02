@@ -45,6 +45,7 @@ from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
 
 DEFAULT_LAYER_SOURCE = ROOT / "eval_results/issue_1901/avgtarget_plots/plot1_avg.json"
 DEFAULT_SCALING_SOURCE = ROOT / "eval_results/issue_1901/figure2_five_rollout_scaling.json"
+DEFAULT_BOUNDARY_SOURCE = ROOT / "eval_results/issue_1901/boundary_points_fig2.json"
 DEFAULT_OUT = ROOT / "figures/paper"
 DEFAULT_STEM = "figure2_predictability_scaling"
 
@@ -111,6 +112,77 @@ def _load_scaling_data(path: Path) -> dict:
     }
 
 
+BOUNDARY_COLOR = "#8C4A1F"  # burnt umber: the WikiText boundary-token control
+BOUNDARY_MARKERS = {"13": "P", "659": "X", "753": "*", "937": "d"}
+BOUNDARY_LABELS = {"13": ". (period)", "659": "\u2423. (space + period)", "753": "\u2423! (space + !)", "937": "\u2423? (space + ?)"}
+CHAT_REF_MARKER = "s"
+
+
+def _load_boundary_data(path: Path) -> dict:
+    """Per-boundary-token control points + the chat map under the same protocol."""
+    source = json.loads(path.read_text())
+    points = []
+    for tid, rec in source["tokens"].items():
+        points.append(
+            {
+                "token_id": tid,
+                "label": BOUNDARY_LABELS[tid],
+                "marker": BOUNDARY_MARKERS[tid],
+                "x": int(rec["n_train"]),
+                "r2": float(rec["r2"]),
+                "retrieval": float(rec["retrieval"]["whiten_csls"]["top1"]),
+                "n_pool": int(rec["pool"]["realized_n_pool"]),
+            }
+        )
+    points.sort(key=lambda pt: int(pt["token_id"]))
+    ref = source["chat_reference_same_protocol"]
+    chat_ref = {
+        "x": int(ref["n_train"]),
+        "r2": float(ref["r2_mean"]),
+        "retrieval": float(ref["top1_whiten_csls_mean"]),
+        "n_pool": int(ref["n_pool"]),
+        "draws": int(ref["draws"]),
+    }
+    return {
+        "points": points,
+        "chat_reference": chat_ref,
+        "span": source["span"],
+        "retrieval": source["retrieval"],
+        "layer": int(source["layer"]),
+    }
+
+
+def _plot_boundary(ax: plt.Axes, boundary: dict) -> None:
+    """Overlay the control on panel B: filled marker = R^2, open marker = top-1."""
+    jitter = {"13": 0.86, "659": 0.95, "753": 1.05, "937": 1.16}
+    for pt in boundary["points"]:
+        x = pt["x"] * jitter[pt["token_id"]]
+        big = pt["marker"] in ("*",)
+        ax.plot([x], [pt["r2"]], linestyle="none", marker=pt["marker"], color=BOUNDARY_COLOR,
+                markersize=10.5 if big else 8.0, markeredgewidth=1.4, zorder=5)
+        ax.plot([x], [pt["retrieval"]], linestyle="none", marker=pt["marker"], markerfacecolor=PAPER,
+                markeredgecolor=BOUNDARY_COLOR, markeredgewidth=1.8, markersize=11.0 if big else 8.5, zorder=5)
+    ref = boundary["chat_reference"]
+    color = PREDICTOR_STYLES["ridge"].color
+    ax.plot([ref["x"]], [ref["r2"]], linestyle="none", marker=CHAT_REF_MARKER, color=color,
+            markersize=8.0, markeredgewidth=1.4, zorder=5)
+    ax.plot([ref["x"]], [ref["retrieval"]], linestyle="none", marker=CHAT_REF_MARKER, markerfacecolor=PAPER,
+            markeredgecolor=color, markeredgewidth=1.8, markersize=8.5, zorder=5)
+
+
+def _boundary_legend_handles(boundary: dict) -> list[Line2D]:
+    handles = [
+        Line2D([0], [0], linestyle="none", marker=pt["marker"], color=BOUNDARY_COLOR,
+               markersize=9 if pt["marker"] == "*" else 7.5, label=pt["label"])
+        for pt in boundary["points"]
+    ]
+    handles.append(
+        Line2D([0], [0], linestyle="none", marker=CHAT_REF_MARKER, color=PREDICTOR_STYLES["ridge"].color,
+               markersize=7.5, label="chat map, same protocol")
+    )
+    return handles
+
+
 def _series(rows: list[dict], predictor: str, metric: str) -> tuple[np.ndarray, np.ndarray]:
     return (
         np.asarray([row["x"] for row in rows], dtype=float),
@@ -172,6 +244,8 @@ def _plot_panel(
 
 
 def _human_n(value: float, _position: int | None = None) -> str:
+    if 1_000 <= value < 5_000:
+        return f"{value / 1_000:.1f}k"
     if value >= 900_000:
         return "963k" if value < 1_000_000 else f"{value / 1_000_000:g}m"
     if value >= 1_000:
@@ -209,7 +283,7 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
     return predictors, metrics
 
 
-def make_figure(layer: dict, scaling: dict) -> plt.Figure:
+def make_figure(layer: dict, scaling: dict, boundary: dict | None = None) -> plt.Figure:
     set_c2a_style()
     fig = plt.figure(figsize=(14.4, 6.2), constrained_layout=False)
     grid = fig.add_gridspec(
@@ -217,7 +291,7 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
         2,
         left=0.075,
         right=0.985,
-        top=0.72,
+        top=0.66,
         bottom=0.12,
         wspace=0.20,
     )
@@ -238,15 +312,24 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
         kicker=f"B  ·  layer {scaling['layer']}",
         show_retrieval=True,
     )
+    if boundary is not None:
+        _plot_boundary(ax_scale, boundary)
+        ax_scale.set_ylim(0.15, 1.0)
+        ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
 
     ax_layer.set_xlim(-0.5, 27.5)
     ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
     ax_layer.set_xlabel("Model layer", labelpad=12)
 
     ns = np.asarray([row["x"] for row in scaling["rows"]], dtype=float)
+    if boundary is not None:
+        ns = np.concatenate([ns, [pt["x"] for pt in boundary["points"]]])
     ax_scale.set_xscale("log")
-    ax_scale.set_xlim(ns.min() / 1.18, ns.max() * 1.18)
-    ax_scale.xaxis.set_major_locator(FixedLocator([5_000, 25_000, 100_000, 500_000, 963_444]))
+    ax_scale.set_xlim(ns.min() / 1.4, ns.max() * 1.18)
+    ticks = [5_000, 25_000, 100_000, 500_000, 963_444]
+    if boundary is not None:
+        ticks = [1_200, 5_000, 25_000, 100_000, 963_444]
+    ax_scale.xaxis.set_major_locator(FixedLocator(ticks))
     ax_scale.xaxis.set_major_formatter(FuncFormatter(_human_n))
     ax_scale.minorticks_off()
     ax_scale.set_xlabel("Training contexts", labelpad=12)
@@ -255,9 +338,10 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
     ax_scale.set_ylabel("Score  ↑", labelpad=13)
 
     predictor_handles, metric_handles = _legend_handles()
+    row_y = 0.946 if boundary is None else 0.875
     fig.text(
         0.075,
-        0.946,
+        row_y,
         "PREDICTOR",
         color=MUTED,
         fontsize=11.5,
@@ -268,7 +352,7 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
     fig.legend(
         handles=predictor_handles,
         loc="upper left",
-        bbox_to_anchor=(0.074, 0.925),
+        bbox_to_anchor=(0.074, row_y - 0.021),
         ncol=3,
         frameon=False,
         columnspacing=1.45,
@@ -278,7 +362,7 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
     )
     fig.text(
         0.675,
-        0.946,
+        row_y,
         "METRIC",
         color=MUTED,
         fontsize=11.5,
@@ -289,7 +373,7 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
     fig.legend(
         handles=metric_handles,
         loc="upper left",
-        bbox_to_anchor=(0.674, 0.925),
+        bbox_to_anchor=(0.674, row_y - 0.021),
         ncol=2,
         frameon=False,
         columnspacing=1.35,
@@ -297,6 +381,28 @@ def make_figure(layer: dict, scaling: dict) -> plt.Figure:
         handletextpad=0.65,
         borderaxespad=0,
     )
+    if boundary is not None:
+        fig.text(
+            0.075,
+            0.995,
+            "CONTROL  ·  WIKITEXT SENTENCE BOUNDARY \u2192 NEXT SENTENCE  (1,200 TRAINING PAIRS, 400-SPAN POOL)",
+            color=MUTED,
+            fontsize=11.5,
+            fontweight=750,
+            ha="left",
+            va="center",
+        )
+        fig.legend(
+            handles=_boundary_legend_handles(boundary),
+            loc="upper left",
+            bbox_to_anchor=(0.074, 0.974),
+            ncol=5,
+            frameon=False,
+            columnspacing=1.2,
+            handlelength=1.6,
+            handletextpad=0.5,
+            borderaxespad=0,
+        )
     return fig
 
 
@@ -347,6 +453,8 @@ def _write_outputs(
     scaling: dict,
     font: str,
     git_state: dict[str, str | bool | None],
+    boundary_source: Path | None = None,
+    boundary: dict | None = None,
 ) -> dict[str, Path]:
     stem = out_dir / stem_name
     outputs = save_c2a_figure(
@@ -404,6 +512,19 @@ def _write_outputs(
                 },
                 "layer": layer,
                 "scaling": scaling,
+                "boundary_control": (
+                    None
+                    if boundary is None
+                    else {
+                        "source": {
+                            "path": _display_path(boundary_source),
+                            "sha256": _sha256(boundary_source),
+                        },
+                        "encoding": "burnt-umber markers on panel B at x = training pairs; "
+                        "filled = R^2, open = strict top-1; square = chat map under the same protocol",
+                        **boundary,
+                    }
+                ),
                 "output_sha256": {kind: _sha256(path) for kind, path in outputs.items()},
             },
             indent=2,
@@ -417,12 +538,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--layer-source", type=Path, default=DEFAULT_LAYER_SOURCE)
     parser.add_argument("--scaling-source", type=Path, default=DEFAULT_SCALING_SOURCE)
+    parser.add_argument("--boundary-source", type=Path, default=DEFAULT_BOUNDARY_SOURCE)
+    parser.add_argument("--no-boundary", action="store_true", help="render without the control overlay")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     args = parser.parse_args()
 
     layer = _load_layer_data(args.layer_source)
     scaling = _load_scaling_data(args.scaling_source)
+    boundary = None if args.no_boundary else _load_boundary_data(args.boundary_source)
     assert layer["n_test"] == scaling["n_test"] == 1_000
     for dataset in (layer, scaling):
         for row in dataset["rows"]:
@@ -433,7 +557,7 @@ def main() -> None:
 
     git_state = _git_state()
     font = set_c2a_style()
-    fig = make_figure(layer, scaling)
+    fig = make_figure(layer, scaling, boundary)
     outputs = _write_outputs(
         fig,
         args.out_dir,
@@ -444,6 +568,8 @@ def main() -> None:
         scaling,
         font,
         git_state,
+        boundary_source=None if args.no_boundary else args.boundary_source,
+        boundary=boundary,
     )
     plt.close(fig)
     for kind, path in outputs.items():
