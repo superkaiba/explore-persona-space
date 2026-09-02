@@ -132,3 +132,4 @@
 - [One-sided-unique 1:1 join dup+orphan](one_sided_unique_join_dup_orphan.md) — right-unique + count parity + …
 - [Blinded-key sha stored-never-compared](blinded_key_sha_stored_never_compared.md) — probe drifted-items compose + ban-regex vs accepted key filename (`_`-prefix defeats lookbehind)
 - [Keyed-id edge exemption split straddle](keyed_id_edge_exemption_split_straddle.md) — id-keyed items exempt from text edges: probe dup-content-diff-key dev/test straddles + run graph criteria across the boundary yourself
+- [Opaque-hash schema bump consumer-invisible](opaque_hash_schema_bump_consumer_invisible.md) — fingerprint-in-preimage versioning: trace refuse-vs-regenerate polarity + consumer version-blindness + round-trip parity tests
