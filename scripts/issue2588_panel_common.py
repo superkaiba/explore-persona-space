@@ -160,6 +160,20 @@ EMPTY_THINK = "<think>\n\n</think>"
 # The plan §7 G1 "emergent" premise for Qwen arm b did not survive the live
 # render; the prefill contract below is the corrected, measured one.
 THINK_PREFILL_SUFFIX = "<|im_start|>assistant\n<think>"
+# GLM-5.3's template is THINKING-ONLY: every add_generation_prompt render ends
+# with this suffix, enable_thinking has no effect (no such variable in
+# chat_template.jinja @ 187fb9fff6), and reasoning_effort defaults to "max"
+# (any value outside ['low','high'] resolves to max). Measured 2026-09-02.
+GLM_THINK_PREFILL_SUFFIX = "<|assistant|><think>"
+# DeepSeek-V4 prompts are rendered by the vendored Python encoder
+# (scripts/vendor/deepseek_v4_encoding.py — the repos carry no jinja chat
+# template). Measured single-turn contract (issue2588x_template_probe.py):
+# chat mode ends with the CLOSED no-think marker; thinking mode pre-opens the
+# block (prefill parse mode) and prepends the reasoning-effort prompt.
+DSV4_ASSISTANT_TOKEN = "<｜Assistant｜>"
+DSV4_CHAT_SUFFIX = DSV4_ASSISTANT_TOKEN + THINK_CLOSE
+DSV4_THINK_PREFILL_SUFFIX = DSV4_ASSISTANT_TOKEN + THINK_OPEN
+DSV4_REASONING_EFFORT = "max"  # arm-b render knob (AA pin measured at max effort)
 
 TRANSFORMERS_FLOOR = "5.13.0"  # G6 (transformers PR #39847 / #46911; OLMo-core #685)
 
@@ -203,10 +217,21 @@ class PanelModel:
     hf_id: str
     n_layers: int
     h_dim: int
-    family: str  # qwen35 | qwen36 | qwen38 | qwen25 | olmo_instruct | olmo_think
+    # qwen35 | qwen36 | qwen38 | qwen38fn | qwen25 | olmo_instruct | olmo_think
+    # | deepseek_v4 | glm53. Every qwen3-template family matches
+    # ``family.startswith("qwen3")`` (the shared Qwen3-era template contract);
+    # qwen25 deliberately does NOT.
+    family: str
     arms: tuple[str, ...]  # generation/capture cells this model runs
     thinking: bool  # has a think mode (drives arm-b parse/caps)
     banked_arm_a: bool = False  # arm-a is capture-only over banked #2330 texts
+    # 2588x extension fields (defaults keep every pre-existing row byte-identical):
+    tp_gpus: int = 1  # vLLM tensor_parallel_size / sbatch --gres=gpu:<N>
+    # Measured safetensors total (model.safetensors.index.json metadata.total_size,
+    # read at registry-authoring time) for the D2 disk-headroom floor; None ->
+    # the dense-bf16 formula in issue2588_run_cell._est_model_gb (the MoE/FP8
+    # checkpoints are the rows where that formula is wrong by >10x).
+    est_snapshot_gb: float | None = None
 
 
 PANEL: dict[str, PanelModel] = {
@@ -239,6 +264,67 @@ PANEL: dict[str, PanelModel] = {
             False,
             banked_arm_a=True,
         ),
+        # ------------------------------------------------------------------
+        # 2588x extension rows (issue-2588-larger). Config values live-verified
+        # 2026-09-02 against each repo's config.json at the HF revision noted;
+        # est_snapshot_gb = model.safetensors.index.json metadata.total_size.
+        # All five checkpoints are fine-grained FP8 (quant_method=="fp8").
+        # ------------------------------------------------------------------
+        PanelModel(
+            "q38fn",  # cfg @ 236dfdf285: Qwen4ExpForConditionalGeneration, mpe 262144
+            "Qwen/Qwen3.8-Flash-Next-FP8",
+            48,
+            2560,
+            "qwen38fn",
+            ("a", "b"),
+            True,
+            tp_gpus=2,
+            est_snapshot_gb=185.5,
+        ),
+        PanelModel(
+            "q35_397b",  # cfg @ ea5b4f8109: Qwen3_5MoeForConditionalGeneration, mpe 262144
+            "Qwen/Qwen3.5-397B-A17B-FP8",
+            60,
+            4096,
+            "qwen35",
+            ("a", "b"),
+            True,
+            tp_gpus=4,
+            est_snapshot_gb=406.1,
+        ),
+        PanelModel(
+            "dsv4_flash",  # cfg @ 7872f01b1d: DeepseekV4ForCausalLM, mpe 1048576
+            "deepseek-ai/DeepSeek-V4-Flash-0731",
+            43,
+            4096,
+            "deepseek_v4",
+            ("a", "b"),
+            True,
+            tp_gpus=2,
+            est_snapshot_gb=166.9,
+        ),
+        PanelModel(
+            "glm53",  # cfg @ 187fb9fff6: GlmMoeDsaForCausalLM, mpe 1048576; thinking-only
+            "zai-org/GLM-5.3",
+            78,
+            6144,
+            "glm53",
+            ("b",),
+            True,
+            tp_gpus=8,
+            est_snapshot_gb=755.6,
+        ),
+        PanelModel(
+            "dsv4_pro",  # cfg @ 72e1d3230f: DeepseekV4ForCausalLM, mpe 1048576
+            "deepseek-ai/DeepSeek-V4-Pro-0813",
+            61,
+            7168,
+            "deepseek_v4",
+            ("a", "b"),
+            True,
+            tp_gpus=8,
+            est_snapshot_gb=892.7,
+        ),
     )
 }
 
@@ -260,6 +346,12 @@ AA_PIN = {
     "o31_32b_i": (6, "non-reasoning", "estimated"),
     "o31_32b_t": (8, "reasoning", "estimated"),
     "q25_7b": (None, "n/a", "no-AA-value"),  # page 404s at the expected slug (P0 retries)
+    # 2588x extension rows (pins handed down with the issue-2588-larger spec).
+    "q38fn": (56, "reasoning-xhigh", "measured"),
+    "q35_397b": (34, "reasoning", "measured"),  # NOT 45 (spec-pinned correction)
+    "dsv4_flash": (52, "reasoning-max", "measured"),
+    "glm53": (60, "reasoning-max", "measured"),
+    "dsv4_pro": (53, "reasoning-max", "measured"),
 }
 
 
@@ -268,9 +360,13 @@ def sweep_layers(n_layers: int) -> list[int]:
 
     L <= 32: every block output 0..L-2 (the #2330 dense-sweep convention —
     indices 0-30 of the 32-layer 9B; 23 units at 24L, 27 at 28L, 31 at 32L).
-    64L: even indices 0,2,..,62 plus the top index 63 (33 units); the 31
-    unswept odd layers 1..61 are the odd-layer sensitivity second pass's set.
-    Reproduces the plan §9 unit arithmetic exactly (92+186+27+264 = 569).
+    L > 32: even indices 0,2,..,<L-1 plus the top index L-1 — at 64L that is
+    0,2,..,62 + 63 (33 units); the 31 unswept odd layers 1..61 are the
+    odd-layer sensitivity second pass's set. Reproduces the plan §9 unit
+    arithmetic exactly (92+186+27+264 = 569). The 2588x extension rows ride
+    the SAME rule unchanged across 43-78 layers: 43L -> evens 0..40 + 42
+    (22 units), 48L -> evens 0..46 + 47 (25), 60L -> evens 0..58 + 59 (31),
+    61L -> evens 0..58 + 60 (31), 78L -> evens 0..76 + 77 (40).
     """
     if n_layers <= 32:
         return list(range(0, n_layers - 1))
@@ -333,15 +429,22 @@ class Cell:
 
 
 def all_cells() -> list[Cell]:
-    """The 19 generation/capture cells (plan §4.1)."""
+    """The generation/capture cells: 19 original (plan §4.1) + 9 extension.
+
+    Registry arithmetic stays a HARD pin: 28 cells = the plan-§4.1 19 plus the
+    issue-2588-larger 9 (q38fn a/b, q35_397b a/b, dsv4_flash a/b, glm53 b,
+    dsv4_pro a/b); 30 registered maps = the original 21 (17 single-position +
+    2 olmo_think dual-position cells) plus 9 (every extension cell is
+    single-position: prompt_last on arm a, cot_boundary on arm b).
+    """
     cells: list[Cell] = []
     for m in PANEL.values():
         for arm in m.arms:
             fresh = not (arm == "a" and m.banked_arm_a)
             cells.append(Cell(m.key, arm, fresh))
-    assert len(cells) == 19, [c.key for c in cells]
+    assert len(cells) == 28, [c.key for c in cells]
     n_maps = sum(len(c.input_positions) for c in cells)
-    assert n_maps == 21, n_maps
+    assert n_maps == 30, n_maps
     return cells
 
 
@@ -443,19 +546,48 @@ def assert_max_position_embeddings(model_id: str, floor: int = REGEN_MAX_MODEL_L
 
 def _template_kwargs(family: str, arm: str) -> dict:
     """apply_chat_template kwargs per (family, arm)."""
-    if family in ("qwen35", "qwen36", "qwen38"):
+    if family.startswith("qwen3"):  # qwen35/qwen36/qwen38/qwen38fn; NOT qwen25
         return {"enable_thinking": arm != "a"}
-    return {}  # qwen25 / olmo templates carry no enable_thinking toggle
+    # qwen25 / olmo templates carry no enable_thinking toggle; glm53's template
+    # is thinking-only (the toggle does not exist — verified, GLM-5.3 @
+    # 187fb9fff6); deepseek_v4 never routes through apply_chat_template.
+    return {}
 
 
-def render_probe(tok, family: str, arm: str, text: str = "ping") -> str:
-    """Text render of ONE user turn under the (family, arm) template kwargs."""
+def render_prompt_text(tok, text: str, family: str, arm: str) -> str:
+    """Rendered prompt TEXT of ONE user turn — the single family router.
+
+    Every family except deepseek_v4 renders through the tokenizer's own
+    chat template (tokenize=False, add_generation_prompt=True) under the
+    per-(family, arm) kwargs — byte-identical to the pre-extension inline
+    apply_chat_template call for the original panel rows. deepseek_v4 renders
+    through the vendored repo encoder (``vendor.deepseek_v4_encoding
+    .encode_messages``; ``tok`` is unused on that branch): arm a is
+    thinking_mode="chat", arm b is thinking_mode="thinking" at
+    reasoning_effort=DSV4_REASONING_EFFORT. The returned string is what
+    generation AND capture tokenize (deepseek: add_special_tokens=False —
+    the encoder already wrote the BOS token as text).
+    """
+    if family == "deepseek_v4":
+        from vendor.deepseek_v4_encoding import encode_messages
+
+        msgs = [{"role": "user", "content": text}]
+        if arm == "a":
+            return encode_messages(msgs, thinking_mode="chat")
+        return encode_messages(
+            msgs, thinking_mode="thinking", reasoning_effort=DSV4_REASONING_EFFORT
+        )
     return tok.apply_chat_template(
         [{"role": "user", "content": text}],
         tokenize=False,
         add_generation_prompt=True,
         **_template_kwargs(family, arm),
     )
+
+
+def render_probe(tok, family: str, arm: str, text: str = "ping") -> str:
+    """Text render of ONE user turn under the (family, arm) contract."""
+    return render_prompt_text(tok, text, family, arm)
 
 
 def assert_template_sidespec(tok, family: str, arm: str) -> str:
@@ -467,16 +599,24 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
     correction of the plan §7 "emergent" premise (all 7 Qwen checkpoints
     pre-open the block under enable_thinking=True; recorded in #2588 events):
 
-    - qwen* arm a  -> the literal closed empty ``<think>\\n\\n</think>`` present;
-    - qwen* arm b  -> render ENDS with the pre-opened
+    - qwen3* arm a -> the literal closed empty ``<think>\\n\\n</think>`` present;
+    - qwen3* arm b -> render ENDS with the pre-opened
       ``<|im_start|>assistant\\n<think>`` and carries NO ``</think>``
       (prefill parse mode; the generated ``</think>`` is the read boundary);
     - olmo_instruct (both arms) -> NO think delimiters anywhere;
     - olmo_think arm b -> render ENDS with ``<|im_start|>assistant\\n<think>``
-      (prefill parse mode; the generated ``</think>`` is the read boundary).
+      (prefill parse mode; the generated ``</think>`` is the read boundary);
+    - deepseek_v4 arm a (chat mode) -> render ENDS with the CLOSED marker
+      ``<｜Assistant｜></think>`` and carries NO ``<think>`` (measured encoder
+      contract, 2026-09-02 — chat mode signals no-think with a bare close
+      token; the completion itself carries no think block, parse mode "off");
+    - deepseek_v4 arm b (thinking, effort max) -> render ENDS with
+      ``<｜Assistant｜><think>`` and carries NO ``</think>`` (prefill);
+    - glm53 arm b (the only arm) -> render ENDS with ``<|assistant|><think>``
+      and carries NO ``</think>`` (prefill; the template is thinking-only).
     """
     probe = render_probe(tok, family, arm)
-    if family in ("qwen35", "qwen36", "qwen38"):
+    if family.startswith("qwen3"):
         if arm == "a" and EMPTY_THINK not in probe:
             raise RuntimeError(
                 f"G1 FAIL ({family}, arm a): enable_thinking=False did not render the empty "
@@ -508,6 +648,45 @@ def assert_template_sidespec(tok, family: str, arm: str) -> str:
                 f"G1 FAIL (olmo_think): render does not end with the pre-opened "
                 f"{THINK_PREFILL_SUFFIX!r} (prefill parse mode premise, §12 A14)."
             )
+    elif family == "deepseek_v4":
+        if arm == "a":
+            if THINK_OPEN in probe:
+                raise RuntimeError(
+                    f"G1 FAIL (deepseek_v4, arm a): {THINK_OPEN!r} present in a chat-mode "
+                    "render — the encoder's no-think contract is a bare CLOSE marker only."
+                )
+            if not probe.rstrip("\n").endswith(DSV4_CHAT_SUFFIX):
+                raise RuntimeError(
+                    f"G1 FAIL (deepseek_v4, arm a): render does not end with the closed "
+                    f"no-think marker {DSV4_CHAT_SUFFIX!r} (encoder drift vs the vendored "
+                    "2026-09-02 pin)."
+                )
+        else:
+            if THINK_CLOSE in probe:
+                raise RuntimeError(
+                    f"G1 FAIL (deepseek_v4, arm b): {THINK_CLOSE!r} present in the PROMPT "
+                    "render — the prefill parse mode requires the model to CLOSE the block."
+                )
+            if not probe.rstrip("\n").endswith(DSV4_THINK_PREFILL_SUFFIX):
+                raise RuntimeError(
+                    f"G1 FAIL (deepseek_v4, arm b): render does not end with the pre-opened "
+                    f"{DSV4_THINK_PREFILL_SUFFIX!r} (prefill parse mode; encoder drift vs "
+                    "the vendored 2026-09-02 pin)."
+                )
+    elif family == "glm53":
+        if arm != "b":
+            raise RuntimeError("glm53 runs arm (b) only (thinking-only template)")
+        if THINK_CLOSE in probe:
+            raise RuntimeError(
+                f"G1 FAIL (glm53): {THINK_CLOSE!r} present in the PROMPT render — the "
+                "prefill parse mode requires the model to CLOSE the block itself."
+            )
+        if not probe.rstrip("\n").endswith(GLM_THINK_PREFILL_SUFFIX):
+            raise RuntimeError(
+                f"G1 FAIL (glm53): render does not end with the pre-opened "
+                f"{GLM_THINK_PREFILL_SUFFIX!r} (prefill parse mode; template drift vs the "
+                "GLM-5.3 @ 187fb9fff6 measured contract)."
+            )
     else:
         raise ValueError(f"unknown family {family!r}")
     return hashlib.sha256(probe.encode("utf-8")).hexdigest()[:16]
@@ -526,7 +705,22 @@ def render_prompt_ids(tok, text: str, family: str, arm: str) -> list[int]:
     """
     kwargs = _template_kwargs(family, arm)
     msgs = [{"role": "user", "content": text}]
-    if family.startswith("qwen3") or family == "olmo_think":
+    if family == "deepseek_v4":
+        # Rendered by the vendored encoder; tokenized as PLAIN TEXT with
+        # add_special_tokens=False (the encoder already wrote the BOS token as
+        # text). Same per-render contract discipline as the qwen/olmo branch.
+        rendered = render_prompt_text(tok, text, family, arm)
+        want_suffix = DSV4_CHAT_SUFFIX if arm == "a" else DSV4_THINK_PREFILL_SUFFIX
+        bad = (
+            (THINK_OPEN in rendered) if arm == "a" else (THINK_CLOSE in rendered)
+        ) or not rendered.rstrip("\n").endswith(want_suffix)
+        if bad:
+            raise RuntimeError(
+                f"G1 FAIL on render (deepseek_v4 arm {arm}): encoder contract violated "
+                f"(context digest {hashlib.sha256(text.encode()).hexdigest()[:12]})"
+            )
+        return [int(x) for x in tok(rendered, add_special_tokens=False)["input_ids"]]
+    if family.startswith("qwen3") or family in ("olmo_think", "glm53"):
         rendered = tok.apply_chat_template(
             msgs, tokenize=False, add_generation_prompt=True, **kwargs
         )
@@ -535,8 +729,9 @@ def render_prompt_ids(tok, text: str, family: str, arm: str) -> list[int]:
                 "G1 FAIL on render: empty think block absent (context digest "
                 f"{hashlib.sha256(text.encode()).hexdigest()[:12]})"
             )
-        prefill = family == "olmo_think" or (family.startswith("qwen3") and arm == "b")
-        if prefill and not rendered.rstrip("\n").endswith(THINK_PREFILL_SUFFIX):
+        prefill = family in ("olmo_think", "glm53") or (family.startswith("qwen3") and arm == "b")
+        prefill_suffix = GLM_THINK_PREFILL_SUFFIX if family == "glm53" else THINK_PREFILL_SUFFIX
+        if prefill and not rendered.rstrip("\n").endswith(prefill_suffix):
             raise RuntimeError(
                 "G1 FAIL on render: pre-opened think prefill suffix absent (context digest "
                 f"{hashlib.sha256(text.encode()).hexdigest()[:12]})"
@@ -552,9 +747,12 @@ def assert_think_pins(tok, family: str) -> dict[str, tuple[int, ...]]:
 
     Ported from issue2546_gen_capture.assert_think_pins @ 89680c72f9 L591,
     adapted: the pins are RESOLVED here (recorded by the caller) rather than
-    compared against hardcoded per-model constants — the panel spans 12
-    tokenizers, and the P0 render probes + the per-row close-boundary asserts
-    are the drift guards. Non-thinking families return {}.
+    compared against hardcoded per-model constants — the panel spans 17
+    tokenizers, and the P0/2588x render probes + the per-row close-boundary
+    asserts are the drift guards. Non-thinking families return {}. The 2588x
+    thinking families use the SAME literal ``<think>``/``</think>`` delimiters
+    (deepseek_v4: single-token ids on its tokenizer; glm53 + qwen38fn probed by
+    scripts/issue2588x_template_probe.py, which pins the exact ids).
     """
     if family in ("olmo_instruct", "qwen25"):
         return {}
