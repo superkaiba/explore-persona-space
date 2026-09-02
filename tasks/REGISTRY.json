@@ -12790,8 +12790,8 @@
       "goal": "On a pinned Qwen2.5-7B-Instruct revision, determine whether each of the eleven frozen Figure-3 directions and a development-trained linear probe can score one raw layer-19 answer vector and predict its independently labeled semantic property on unseen content families, returning not-estimable rather than substituting proxy targets.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/2658",
-      "status": "approved",
+      "path": "tasks/running/2658",
+      "status": "running",
       "title": "Unified standalone real-answer validation for all Figure-3 directions"
     },
     "266": {
