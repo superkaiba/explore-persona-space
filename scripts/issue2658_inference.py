@@ -1584,8 +1584,10 @@ def build_argparser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--phase",
         choices=("report", "smoke", "measure-perm-unit", "measure-boot-unit"),
-        required=True,
+        default=None,
+        help="required unless --import-check is passed",
     )
+    ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--comparators-dir", type=Path, help="unit 9 output dir (ledger + npzs)")
     ap.add_argument(
         "--artifacts-root",
@@ -1643,7 +1645,16 @@ def run(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    return run(build_argparser().parse_args(argv))
+    args = build_argparser().parse_args(argv)
+    if args.import_check:
+        from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+        assert_args_attributes_defined(__file__)
+        print("[u11] import-check ok", flush=True)
+        return 0
+    if args.phase is None:
+        raise InferenceInputError("--phase is required unless --import-check is passed")
+    return run(args)
 
 
 if __name__ == "__main__":
