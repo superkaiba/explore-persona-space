@@ -16,6 +16,7 @@ goal: On a pinned Qwen2.5-7B-Instruct revision, determine whether each of the el
   raw layer-19 answer vector and predict its independently labeled semantic property
   on unseen content families, returning not-estimable rather than substituting proxy
   targets.
+track: experiment
 ---
 # Unified real-answer validation of every Figure-3 direction and linear probe
 
