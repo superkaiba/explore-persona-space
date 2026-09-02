@@ -63,6 +63,10 @@ TINY_REG = INF.InferenceRegistry(
     min_discordant_prompts=5,
     min_answers_per_class=10,
     min_prompts_per_class=2,
+    # Group-J fix round: tiny realized per-cell floor so the three designed
+    # row dispositions (estimable / C2-barred / count-gate-fail) survive the
+    # full plan-§8 gate set on these mini panels.
+    min_discordant_prompts_per_cell=1,
 )
 
 # rowA: estimable + eligible, one prospectively-excluded cell (victim).
@@ -120,12 +124,20 @@ def mini(tmp_path_factory):
             rowdata=rd,
             selected_c=float(c5["selected_c"]),
             scores_sha={c: records[(row, c)]["scores_sha256"] for c in comps},
+            label_exclusions={"dev": {}, "test": {}},
         )
+    reliability = {
+        "status": "PASS",
+        "artifact": "synthetic unit-12 fixture verdict",
+        "per_trait": {r: {"status": "PASS", "detail": "synthetic"} for r in _SPECS},
+        "bank": "test",
+    }
     report = INF.run_inference(
         rows_input,
         _PARTITION,
         TINY_REG,
         root / "out",
+        reliability=reliability,
         require_registered_universe=False,
     )
     # Fixture sanity: the three designed dispositions actually realized.

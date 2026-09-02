@@ -21,6 +21,19 @@ Pins (each guard shown FIRING, not merely absent):
 - the ledger-driven per-row denominator revision (excluded cells dropped,
   causes + revised denominators recorded);
 - row-level production-gate failure returns not-estimable (no proxy);
+- the FULL plan-§8 post-label gate set (group-J fix round): the
+  complete-labels gate FAILS a silently narrowed final-label panel (and a
+  passing row still records its zero counts); the label_reliability gate
+  FAILS every judged row when the frozen TEST-BANK audit artifact is missing
+  or failed, REFUSES a dev-side / instrument-drifted artifact, and exempts
+  objective-label rows with the exemption stated; the REALIZED
+  >=15-discordant-prompts-per-cell floor excludes below-floor cells with
+  cause realized-discordance-below-floor, revises the denominator, and
+  re-gates the reduced panel (all-below => not-estimable, never a top-up);
+- build_panel REFUSES a ledger-excluded cell (n_test_eligible > 0) that
+  matches no realized cell name (frame-manifest vs gen-manifest drift);
+- the report phase REJECTS --n-boot/--boot-chunk overrides (smoke/measure
+  keep them); the permutation MC interval uses the PASSED registry mc_conf;
 - checkpoint/resume on machine-stable generating-parameter keys, and the
   obs-stat drift guard on a tampered ledger record.
 
@@ -59,7 +72,20 @@ TINY_REG = INF.InferenceRegistry(
     min_discordant_prompts=5,
     min_answers_per_class=10,
     min_prompts_per_class=2,
+    # Tiny realized per-cell floor so the count-gate tests keep their original
+    # semantics; the realized-floor regression tests set their own floors.
+    min_discordant_prompts_per_cell=1,
 )
+
+
+def _rel_pass(*rows: str) -> dict:
+    """Synthetic PASSing test-bank reliability verdict for the named rows."""
+    return {
+        "status": PW.GATE_PASS,
+        "artifact": "synthetic test verdict",
+        "per_trait": {r: {"status": PW.GATE_PASS, "detail": "synthetic"} for r in rows},
+        "bank": "test",
+    }
 
 
 def _panel(row: str, *, n_prompts=12, m=6, effect=1.5, seed=0, comps=("c2_direction_dot",)):
@@ -472,15 +498,23 @@ def test_row_gate_failure_returns_not_estimable(tmp_path):
             rowdata=rd,
             selected_c=float(c5_rec["selected_c"]),
             scores_sha={c: records[(rd.row, c)]["scores_sha256"] for c in comps},
+            label_exclusions={"dev": {}, "test": {}},
         )
     }
     partition = {"eligible": [rd.row], "not_estimable": []}
-    # DEFAULT registry gates (>=100 discordant etc.) fail on this tiny panel.
+    # COUNT gates at registered floors (>=100 discordant etc.) fail on this
+    # tiny panel. per-cell floor 1 keeps the original count-gate semantics
+    # (the realized-floor path has its own regression test below); this test
+    # was updated for the group-J gate-set fix (new required RowInputs /
+    # run_inference arguments) — the OLD three-gate set it exercised was the
+    # confirmed §8 subset-implementation blocker.
+    count_gate_reg = INF.InferenceRegistry(min_discordant_prompts_per_cell=1)
     report = INF.run_inference(
         rows_input,
         partition,
-        INF.REGISTERED_INFERENCE,
+        count_gate_reg,
         tmp_path / "out",
+        reliability=_rel_pass(rd.row),
         require_registered_universe=False,
     )
     assert report["rows"][rd.row]["estimable"] is False
@@ -489,7 +523,13 @@ def test_row_gate_failure_returns_not_estimable(tmp_path):
         assert "row-level production gate failed" in report["not_estimable"][fam][rd.row]
     # The registered universe guard fires when required.
     with pytest.raises(INF.InferenceInputError, match="registered ROW_IDS"):
-        INF.run_inference(rows_input, partition, INF.REGISTERED_INFERENCE, tmp_path / "out2")
+        INF.run_inference(
+            rows_input,
+            partition,
+            INF.REGISTERED_INFERENCE,
+            tmp_path / "out2",
+            reliability=_rel_pass(rd.row),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -578,9 +618,395 @@ def test_registry_defaults_are_the_registered_plan_constants():
         100,
         30,
     )
+    assert reg.min_discordant_prompts_per_cell == 15  # plan §8 REALIZED per-cell floor
     assert reg.n_boot_extended == 20_000  # pre-registered bootstrap extension (10x)
     assert reg.n_boot_extended % reg.boot_chunk == 0 and reg.n_boot_extended > reg.n_boot
     with pytest.raises(INF.InferenceInputError):
         INF.InferenceRegistry(perm_chunk_initial=(5,))  # plan sum drifted
     with pytest.raises(INF.InferenceInputError):
         INF.InferenceRegistry(n_boot_extended=30)  # must exceed n_boot
+    with pytest.raises(INF.InferenceInputError):
+        INF.InferenceRegistry(min_discordant_prompts_per_cell=0)  # floor must be >= 1
+
+
+# ---------------------------------------------------------------------------
+# Group-J fix round: the FULL plan-§8 post-label gate set (one regression test
+# per confirmed blocker + the raised build_panel assert + the override
+# rejection + the mc_conf nit).
+# ---------------------------------------------------------------------------
+def _mini_rows_input(rd, records, panel, comps, *, label_exclusions):
+    c5_rec = records[(rd.row, "c5_full_probe")]
+    return {
+        rd.row: INF.RowInputs(
+            row=rd.row,
+            panel=panel,
+            rowdata=rd,
+            selected_c=float(c5_rec["selected_c"]),
+            scores_sha={c: records[(rd.row, c)]["scores_sha256"] for c in comps},
+            label_exclusions=label_exclusions,
+        )
+    }
+
+
+def test_complete_labels_gate_blocks_narrowed_final_panels(tmp_path):
+    """Fix 1 (BLOCKER complete-labels-gate-absent): non-scored final-label
+    statuses flip the row to not-estimable, and a PASSING row still records
+    its zero counts."""
+    rd, records = _mini_records(tmp_path)
+    cells = sorted({f"{r.source_frame}|{r.stratum}" for r in rd.rows})
+    comps = ["c5_full_probe", "c2_direction_dot"]
+    panel = INF.build_panel(
+        rd.row,
+        records,
+        comps,
+        INF.synthetic_row_ledger(rd.row, cells, []),
+        INF.prompt_cells_from_rowdata(rd),
+    )
+    partition = {"eligible": [rd.row], "not_estimable": []}
+    # Reachable non-scored statuses (objective_labels + judge side) narrow the
+    # panel: the gate FAILS and names itself, per-status counts recorded.
+    rows_input = _mini_rows_input(
+        rd,
+        records,
+        panel,
+        comps,
+        label_exclusions={"dev": {}, "test": {"harness_failure": 2, "malformed": 1}},
+    )
+    report = INF.run_inference(
+        rows_input,
+        partition,
+        TINY_REG,
+        tmp_path / "out-fail",
+        reliability=_rel_pass(rd.row),
+        require_registered_universe=False,
+    )
+    row_rep = report["rows"][rd.row]
+    assert row_rep["estimable"] is False
+    check = row_rep["gates"]["checks"]["complete_labels"]
+    assert check["pass"] is False and check["value"] == 3
+    assert check["per_split_per_status"]["test"] == {"harness_failure": 2, "malformed": 1}
+    assert "complete_labels" in report["not_estimable"]["C5"][rd.row]
+    assert report["families"]["C5"]["tests"] == {}  # never a proxy
+    # Zero exclusions: the row passes AND still shows its zeros in the report.
+    rows_input = _mini_rows_input(
+        rd, records, panel, comps, label_exclusions={"dev": {}, "test": {}}
+    )
+    report = INF.run_inference(
+        rows_input,
+        partition,
+        TINY_REG,
+        tmp_path / "out-pass",
+        reliability=_rel_pass(rd.row),
+        require_registered_universe=False,
+    )
+    check = report["rows"][rd.row]["gates"]["checks"]["complete_labels"]
+    assert check["pass"] is True and check["value"] == 0
+    assert check["per_split_per_status"] == {"dev": {}, "test": {}}
+    assert report["rows"][rd.row]["estimable"] is True
+    # A mis-threaded diag (missing split) refuses loudly.
+    _, floor_check = INF.apply_realized_cell_floor(panel, TINY_REG)
+    with pytest.raises(INF.InferenceInputError, match="dev\\+test"):
+        INF.row_gates(
+            panel,
+            TINY_REG,
+            label_exclusions={"test": {}},
+            label_source="synthetic",
+            reliability=_rel_pass(rd.row),
+            realized_cell_floor=floor_check,
+        )
+
+
+def _write_test_audit(tmp_path, body):
+    p = tmp_path / INF.TEST_AUDIT_DIR / PW.HUMAN_AUDIT_REL
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(body))
+    return p
+
+
+def test_label_reliability_missing_artifact_blocks_judged_rows(tmp_path):
+    """Fix 2 (BLOCKER reliability-gate-absent): a MISSING test-bank audit
+    artifact refuses estimability for every judged row (never a pass)."""
+    verdict = INF.load_test_label_reliability(tmp_path)
+    assert verdict["status"] == PW.GATE_NOT_ESTIMABLE and verdict["per_trait"] == {}
+    assert verdict["missing_artifact"].endswith("human_audit_test/human_audit/adjudications.json")
+    rd, records = _mini_records(tmp_path)
+    cells = sorted({f"{r.source_frame}|{r.stratum}" for r in rd.rows})
+    comps = ["c5_full_probe", "c2_direction_dot"]
+    panel = INF.build_panel(
+        rd.row,
+        records,
+        comps,
+        INF.synthetic_row_ledger(rd.row, cells, []),
+        INF.prompt_cells_from_rowdata(rd),
+    )
+    rows_input = _mini_rows_input(
+        rd, records, panel, comps, label_exclusions={"dev": {}, "test": {}}
+    )
+    report = INF.run_inference(
+        rows_input,
+        {"eligible": [rd.row], "not_estimable": []},
+        TINY_REG,
+        tmp_path / "out",
+        reliability=verdict,
+        require_registered_universe=False,
+    )
+    row_rep = report["rows"][rd.row]
+    assert row_rep["estimable"] is False
+    check = row_rep["gates"]["checks"]["label_reliability"]
+    assert check["pass"] is False and check["status"] == "MISSING"
+    assert "label_reliability" in report["not_estimable"]["C5"][rd.row]
+    assert report["label_reliability"]["status"] == PW.GATE_NOT_ESTIMABLE
+
+
+def test_label_reliability_refuses_devside_or_drifted_artifact(tmp_path):
+    """Fix 2: a PRESENT artifact with dev-side / missing / drifted provenance
+    RAISES — a mis-wired audit is never read as an unrun one."""
+    judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+    # No bank marker (the dev artifact's shape) and an explicit dev marker.
+    _write_test_audit(tmp_path, {"rows": []})
+    with pytest.raises(INF.InferenceInputError, match="bank"):
+        INF.load_test_label_reliability(tmp_path)
+    _write_test_audit(tmp_path, {"bank": "dev", "rows": []})
+    with pytest.raises(INF.InferenceInputError, match="dev-side"):
+        INF.load_test_label_reliability(tmp_path)
+    # bank=test but no fingerprints envelope.
+    _write_test_audit(tmp_path, {"bank": "test", "rows": []})
+    with pytest.raises(INF.InferenceInputError, match="judge_instrument_fingerprints"):
+        INF.load_test_label_reliability(tmp_path)
+    # Drifted judge-instrument fingerprint.
+    _write_test_audit(
+        tmp_path,
+        {"bank": "test", "judge_instrument_fingerprints": {judged[0]: "deadbeef"}, "rows": []},
+    )
+    with pytest.raises(INF.InferenceInputError, match="judge-instrument"):
+        INF.load_test_label_reliability(tmp_path)
+    # Valid envelope: the verdict flows through the IMPORTED power machinery
+    # (zero adjudication rows => NOT-ESTIMABLE per_trait, honest and empty).
+    fps = {r: C.judge_instrument_fingerprint(r) for r in judged}
+    _write_test_audit(tmp_path, {"bank": "test", "judge_instrument_fingerprints": fps, "rows": []})
+    verdict = INF.load_test_label_reliability(tmp_path)
+    assert verdict["status"] == PW.GATE_NOT_ESTIMABLE and verdict["bank"] == "test"
+    assert verdict["per_trait"] == {}
+
+
+def test_label_reliability_objective_rows_exempt_with_stated_exemption(tmp_path):
+    """Fix 2: objective-label (correctness) rows are exempt, and the exemption
+    is STATED in the gate record — never a silent skip."""
+    rd, records = _mini_records(tmp_path)
+    cells = sorted({f"{r.source_frame}|{r.stratum}" for r in rd.rows})
+    comps = ["c5_full_probe", "c2_direction_dot"]
+    panel = INF.build_panel(
+        rd.row,
+        records,
+        comps,
+        INF.synthetic_row_ledger(rd.row, cells, []),
+        INF.prompt_cells_from_rowdata(rd),
+    )
+    _, floor_check = INF.apply_realized_cell_floor(panel, TINY_REG)
+    missing = {"status": PW.GATE_NOT_ESTIMABLE, "per_trait": {}, "missing_artifact": "absent"}
+    gates = INF.row_gates(
+        panel,
+        TINY_REG,
+        label_exclusions={"dev": {}, "test": {}},
+        label_source="objective-labels",
+        reliability=missing,
+        realized_cell_floor=floor_check,
+    )
+    rel = gates["checks"]["label_reliability"]
+    assert rel["pass"] is True and "exempt" in rel and "objective labels" in rel["exempt"]
+    # The same missing verdict FAILS a judged/synthetic row.
+    gates = INF.row_gates(
+        panel,
+        TINY_REG,
+        label_exclusions={"dev": {}, "test": {}},
+        label_source="synthetic",
+        reliability=missing,
+        realized_cell_floor=floor_check,
+    )
+    assert gates["checks"]["label_reliability"]["pass"] is False
+    with pytest.raises(INF.InferenceInputError, match="unknown label_source"):
+        INF.row_gates(
+            panel,
+            TINY_REG,
+            label_exclusions={"dev": {}, "test": {}},
+            label_source="mystery",
+            reliability=missing,
+            realized_cell_floor=floor_check,
+        )
+
+
+def _two_cell_panel(row="floorrow", *, b_discordant=True):
+    """Hand-built final-label panel: cell A holds 6 discordant prompts; cell B
+    holds 2 prompts, discordant or concordant per ``b_discordant``."""
+    pids: list[str] = []
+    labels: list[bool] = []
+    cells: list[str] = []
+    for i in range(6):
+        pids += [f"{row}-A{i}"] * 2
+        labels += [True, False]
+        cells += ["frameA|band0"] * 2
+    for i in range(2):
+        pids += [f"{row}-B{i}"] * 2
+        labels += [True, False] if b_discordant else [True, True]
+        cells += ["frameB|band0"] * 2
+    n = len(pids)
+    rng = np.random.default_rng(3)
+    return INF.InferencePanel(
+        row=row,
+        prompt_ids=np.array(pids),
+        response_index=np.tile(np.arange(2, dtype=np.int64), n // 2),
+        labels=np.array(labels, dtype=bool),
+        scores={"c5_full_probe": rng.standard_normal(n)},
+        cells=np.array(cells),
+        accounting={
+            "floor": 15,
+            "cells_total": 2,
+            "cells_used": 2,
+            "excluded_cells": [],
+            "n_rows_total": n,
+            "n_rows_kept": n,
+            "n_rows_excluded": 0,
+            "n_prompts_total": 8,
+            "n_prompts_kept": 8,
+            "n_prompts_excluded": 0,
+        },
+    )
+
+
+def test_realized_cell_floor_excludes_and_revises_denominator(tmp_path):
+    """Fix 3 (BLOCKER realized-cell-floor-unchecked): per-RETAINED-cell
+    discordant-prompt counts are computed AFTER final labels; a below-floor
+    cell is excluded with cause realized-discordance-below-floor, the
+    denominator is revised, the row gates RE-RUN on the reduced panel, and no
+    test row is ever added."""
+    reg = INF.InferenceRegistry(
+        min_discordant_prompts=7,
+        min_answers_per_class=1,
+        min_prompts_per_class=1,
+        min_discordant_prompts_per_cell=3,
+    )
+    # Zero-realized-discordance cell (the reconciler's fatal example): cell B
+    # realizes 0 discordant prompts and is EXCLUDED, never flowing into the
+    # macro estimate.
+    panel = _two_cell_panel(b_discordant=False)
+    reduced, check = INF.apply_realized_cell_floor(panel, reg)
+    assert check["pass"] is True and check["per_cell_discordant"] == {
+        "frameA|band0": 6,
+        "frameB|band0": 0,
+    }
+    assert check["excluded"] == [
+        {"cell": "frameB|band0", "cause": "realized-discordance-below-floor", "n_discordant": 0}
+    ]
+    acc = reduced.accounting
+    assert acc["realized_excluded_cells"] == check["excluded"]
+    assert acc["cells_used"] == 1 and acc["n_rows_kept"] == 12 and acc["n_rows_excluded"] == 4
+    assert acc["n_prompts_kept"] == 6 and acc["n_prompts_excluded"] == 2
+    # No new test rows: the reduced panel is a strict subset of the original.
+    assert set(reduced.prompt_ids) < set(panel.prompt_ids)
+    assert reduced.labels.shape[0] < panel.labels.shape[0]
+    # Re-gating bites on the REDUCED panel: 6+2=8 discordant would pass the
+    # >=7 row floor, but cell B (2 < 3 per-cell) is excluded first and the
+    # reduced 6 fails it.
+    panel = _two_cell_panel(b_discordant=True)
+    reduced, check = INF.apply_realized_cell_floor(panel, reg)
+    assert check["per_cell_discordant"]["frameB|band0"] == 2 and check["cells_below_floor"] == 1
+    gates = INF.row_gates(
+        reduced,
+        reg,
+        label_exclusions={"dev": {}, "test": {}},
+        label_source="objective-labels",
+        reliability={"per_trait": {}},
+        realized_cell_floor=check,
+    )
+    assert gates["checks"]["discordant_prompts"]["value"] == 6
+    assert gates["checks"]["discordant_prompts"]["pass"] is False
+    assert gates["estimable"] is False
+    # ALL cells below the floor => not-estimable outright (never a top-up).
+    reduced, check = INF.apply_realized_cell_floor(panel, INF.REGISTERED_INFERENCE)
+    assert reduced is None and check["pass"] is False and check["cells_below_floor"] == 2
+    # Integration: the production-floor short circuit names the gate in the
+    # report and feeds no family a proxy target.
+    rd, records = _mini_records(tmp_path)
+    cells = sorted({f"{r.source_frame}|{r.stratum}" for r in rd.rows})
+    comps = ["c5_full_probe", "c2_direction_dot"]
+    mini_panel = INF.build_panel(
+        rd.row,
+        records,
+        comps,
+        INF.synthetic_row_ledger(rd.row, cells, []),
+        INF.prompt_cells_from_rowdata(rd),
+    )
+    rows_input = _mini_rows_input(
+        rd, records, mini_panel, comps, label_exclusions={"dev": {}, "test": {}}
+    )
+    report = INF.run_inference(
+        rows_input,
+        {"eligible": [rd.row], "not_estimable": []},
+        INF.REGISTERED_INFERENCE,
+        tmp_path / "out",
+        reliability=_rel_pass(rd.row),
+        require_registered_universe=False,
+    )
+    assert report["rows"][rd.row]["estimable"] is False
+    assert "realized_cell_floor" in report["not_estimable"]["C5"][rd.row]
+    assert report["families"]["C5"]["tests"] == {}
+
+
+def test_report_phase_rejects_bootstrap_overrides(tmp_path):
+    """Fix 4 (override hardening): --n-boot/--boot-chunk are refused in the
+    confirmatory report phase and kept for the smoke/measure phases."""
+    ap = INF.build_argparser()
+    for extra in (["--n-boot", "40"], ["--boot-chunk", "20"]):
+        args = ap.parse_args(["--phase", "report", "--comparators-dir", str(tmp_path), *extra])
+        with pytest.raises(INF.InferenceInputError, match="registered constants"):
+            INF.run(args)
+    # The measure/smoke phases keep the recorded override seam.
+    args = ap.parse_args(["--phase", "measure-boot-unit", "--n-boot", "40", "--boot-chunk", "20"])
+    reg = INF._registry_from_args(args)
+    assert reg.n_boot == 40 and reg.boot_chunk == 20
+
+
+def test_build_panel_refuses_ghost_excluded_cell(tmp_path):
+    """Fix 5 (raised CONCERN ledger-exclusion-noop-unasserted): a ledger-
+    excluded cell with eligible test prompts that matches NO realized cell
+    name (frame-manifest vs gen-manifest drift) refuses loudly instead of
+    silently readmitting the cell."""
+    rd, records = _mini_records(tmp_path)
+    cells = sorted({f"{r.source_frame}|{r.stratum}" for r in rd.rows})
+    comps = ["c5_full_probe", "c2_direction_dot"]
+    pc = INF.prompt_cells_from_rowdata(rd)
+    ghost = INF.synthetic_row_ledger(
+        rd.row,
+        cells,
+        [{"cell": "frameB|band-1-drifted", "cause": "bank-too-small", "n_test_eligible": 3}],
+    )
+    with pytest.raises(INF.InferenceInputError, match="match NO realized"):
+        INF.build_panel(rd.row, records, comps, ghost, pc)
+    # A ghost with ZERO eligible test prompts is legitimate (nothing to
+    # exclude) — no refusal, full denominator.
+    for rec in (
+        {"cell": "frameB|band-1-drifted", "cause": "bank-too-small", "n_test_eligible": 0},
+        {"cell": "frameB|band-1-drifted", "cause": "bank-too-small"},
+    ):
+        benign = INF.synthetic_row_ledger(rd.row, cells, [rec])
+        panel = INF.build_panel(rd.row, records, comps, benign, pc)
+        assert panel.accounting["n_rows_excluded"] == 0
+
+
+def test_permutation_mc_interval_uses_passed_mc_conf(tmp_path):
+    """Fix 6 (NIT): the permutation MC interval reads the PASSED mc_conf,
+    not the module-level registry."""
+    panel = _panel("mcconf", n_prompts=8, m=4)
+    ledger = INF.InfLedger(tmp_path / "perm.jsonl", INF.PERM_CHUNK_SCHEMA)
+    common = dict(scores_fingerprint="sha-mc", ledger=ledger, chunk_plan=(20, 20))
+    res_lo = INF.run_permutation_test(panel, "c2_direction_dot", mc_conf=0.5, **common)
+    res_hi = INF.run_permutation_test(panel, "c2_direction_dot", mc_conf=0.99, **common)
+    assert res_lo["mc_interval"] == pytest.approx(
+        INF.clopper_pearson_interval(res_lo["k_exceed"], res_lo["n_perm"], 0.5)
+    )
+    assert res_hi["mc_interval"] == pytest.approx(
+        INF.clopper_pearson_interval(res_hi["k_exceed"], res_hi["n_perm"], 0.99)
+    )
+    lo_lo, lo_hi = res_lo["mc_interval"]
+    hi_lo, hi_hi = res_hi["mc_interval"]
+    assert hi_lo <= lo_lo and lo_hi <= hi_hi and (lo_lo, lo_hi) != (hi_lo, hi_hi)

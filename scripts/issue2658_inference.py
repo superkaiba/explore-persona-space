@@ -31,11 +31,20 @@ units and produces the plan section 7 confirmatory report:
 - The frame manifest's ``prospective_not_estimable_ledger`` (unit 10) drives
   per-row cell exclusion: ledger-flagged cells are excluded from the row's
   prompt panel, the revised denominator is RECORDED per row, and a missing
-  ledger REFUSES loudly (never "all cells estimable" by default). A row whose
-  realized panel then fails a ROW-level production gate (>=100 discordant
-  prompts overall; >=100 answers and >=30 prompts in each class) returns
-  not-estimable for that row — never a substituted proxy, never a silent
-  narrowing.
+  ledger REFUSES loudly (never "all cells estimable" by default). After final
+  labels, the FULL plan section 8 production gate set is enforced: the
+  REALIZED >=15-discordant-prompts-PER-CELL floor (below-floor retained cells
+  are excluded with cause ``realized-discordance-below-floor``, the denominator
+  revised, and the row RE-GATED on the reduced panel — no new test rows are
+  ever added); >=100 discordant prompts overall; >=100 answers and >=30
+  prompts in each class; COMPLETE LABELS (zero non-scored/non-labeled label
+  records after the plan section 3 retry -> human-adjudication chain, with
+  per-status counts recorded either way); PASSED TEST-BANK LABEL RELIABILITY
+  (:func:`load_test_label_reliability`; objective-label rows exempt, stated in
+  the gate record); and no cross-split lineage (enforced at assembly —
+  ``DependencyCrossingError`` in ``issue2658_comparators.assemble_row_data``).
+  Any failure returns not-estimable for that row, naming the failed gate —
+  never a substituted proxy, never a silent narrowing.
 
 Determinism + resume: every permutation / bootstrap CHUNK is an independently
 SHA-seeded unit persisted to an atomic-append JSONL ledger the moment it
@@ -158,10 +167,21 @@ class InferenceRegistry:
       from the ledger, never redrawn.
     - ``ci_conf = 0.95`` / ``n_ci_draws = 2,000``: pointwise percentile
       hierarchical-bootstrap intervals for the DESCRIPTIVE estimates.
-    - Row gates: plan section 8 production test gates enforced at inference —
-      >=100 discordant prompts overall; >=100 answers and >=30 prompts in
-      each class. The >=15-per-cell floor is PROSPECTIVE (unit 10's ledger)
-      and drives cell exclusion, not a row gate here.
+    - Row gates: the FULL plan section 8 production test gate set enforced at
+      inference — >=100 discordant prompts overall; the REALIZED
+      >=15-discordant-prompts-per-cell floor (``min_discordant_prompts_per_cell``;
+      a retained cell below the floor is EXCLUDED with cause
+      ``realized-discordance-below-floor``, the row denominator revised, and
+      the row RE-GATED on the reduced panel — never topped up); >=100 answers
+      and >=30 prompts in each class; complete labels (zero
+      non-scored/non-labeled label records after the plan section 3
+      retry -> human-adjudication chain); passed TEST-BANK label reliability
+      (:func:`load_test_label_reliability`; objective-label rows exempt with
+      the exemption stated in the gate record); and no cross-split lineage
+      (enforced at assembly — ``DependencyCrossingError`` in
+      ``issue2658_comparators.assemble_row_data``). Unit 10's ledger floor is
+      the PROSPECTIVE bank-size proxy that drives pre-label cell exclusion;
+      the realized floor here is the registered post-label gate itself.
     """
 
     alpha: float = float(C.HOLM["alpha"])
@@ -176,6 +196,7 @@ class InferenceRegistry:
     ci_conf: float = 0.95
     n_ci_draws: int = 2000
     min_discordant_prompts: int = 100
+    min_discordant_prompts_per_cell: int = 15  # plan §8 REALIZED per-cell floor
     min_answers_per_class: int = 100
     min_prompts_per_class: int = 30
     sidedness: str = "greater"  # '+dot = construct-positive' preregistered sign
@@ -200,6 +221,11 @@ class InferenceRegistry:
             raise InferenceInputError(
                 f"n_boot_extended {self.n_boot_extended} must exceed n_boot {self.n_boot} "
                 f"and divide into boot_chunk {self.boot_chunk} chunks"
+            )
+        if self.min_discordant_prompts_per_cell < 1:
+            raise InferenceInputError(
+                f"min_discordant_prompts_per_cell {self.min_discordant_prompts_per_cell} "
+                "must be >= 1 (plan section 8 registers 15)"
             )
         if self.sidedness != "greater":
             raise InferenceInputError("only the preregistered one-sided 'greater' form exists")
@@ -497,6 +523,27 @@ def build_panel(
         )
     cells = np.array([prompt_cells[str(p)] for p in pids])
     excluded_cells = cell_ledger.excluded_cells
+    # Ledger-vs-realized cell-name reconciliation: the ledger's excluded names
+    # come from the FRAME MANIFEST (unit 10) while the realized cells are
+    # rebuilt as f"{source_frame}|{stratum}" from the GEN MANIFESTS — two
+    # different artifacts. A naming drift would make np.isin match NOTHING and
+    # silently READMIT a prospectively not-estimable cell, so every excluded
+    # cell that had eligible test prompts must actually match realized rows.
+    realized_cells = set(np.unique(cells).tolist())
+    ghost = [
+        rec
+        for rec in cell_ledger.excluded
+        if int(rec.get("n_test_eligible") or 0) > 0 and rec["cell"] not in realized_cells
+    ]
+    if ghost:
+        names = sorted(str(r["cell"]) for r in ghost)
+        raise InferenceInputError(
+            f"row {row}: {len(ghost)} ledger-excluded cell(s) with n_test_eligible > 0 "
+            f"match NO realized test rows (e.g. {names[:5]}; realized cells: "
+            f"{sorted(realized_cells)[:8]}) — frame-manifest vs gen-manifest cell-name "
+            "drift would silently readmit a not-estimable cell; refusing to exclude "
+            "nothing"
+        )
     keep = ~np.isin(cells, sorted(excluded_cells))
     n_prompts_total = len(np.unique(pids))
     n_prompts_kept = len(np.unique(pids[keep])) if keep.any() else 0
@@ -543,9 +590,184 @@ def panel_fingerprint(panel: InferencePanel) -> str:
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
 
-def row_gates(panel: InferencePanel, reg: InferenceRegistry) -> dict[str, Any]:
-    """Plan section 8 ROW-level production gates on the realized (ledger-
-    filtered) panel. Failure => the row is not-estimable — never a proxy."""
+# Mechanical cause tag for a RETAINED cell excluded post-labels (plan §8's
+# realized per-cell floor; the prospective causes live in issue2658_frames).
+CAUSE_REALIZED_DISCORDANCE = "realized-discordance-below-floor"
+
+# Frozen TEST-BANK reliability artifact sub-root (plan §3 line 30 / §8 "passed
+# label reliability"). Full path:
+#   <artifacts_root>/human_audit_test/<PW.HUMAN_AUDIT_REL>
+# i.e. <artifacts_root>/human_audit_test/human_audit/adjudications.json — the
+# trailing components are appended by the IMPORTED issue2658_power
+# ``reliability_gates`` (reuse by import, never a re-implementation).
+TEST_AUDIT_DIR = "human_audit_test"
+
+
+def load_test_label_reliability(artifacts_root: Path) -> dict[str, Any]:
+    """Frozen TEST-BANK label-reliability verdict (plan §3 line 30 / §8).
+
+    Provenance: the artifact is produced by the unit-7 blinded annotation
+    instrument (``issue2658_human_read``) applied to the sealed TEST bank —
+    the same double-human adjudication round-trip that produces the DEV-side
+    ``human_audit/adjudications.json`` consumed by the P3 pilot gate
+    (``issue2658_power._gate_human_audit``), re-run on test-bank items once
+    final test labels exist. The test side is a DIFFERENT artifact from the
+    dev verdict and lives at
+    ``<artifacts_root>/human_audit_test/human_audit/adjudications.json``.
+
+    Schema: the dev artifact's ``rows`` schema ({row, item_id,
+    response_index, rater_a_prob, rater_b_prob, judge_binary}) PLUS a
+    REQUIRED envelope:
+
+    - ``"bank": "test"`` — a dev-side (or unmarked) artifact presented in the
+      test slot is REFUSED, never consumed;
+    - ``"judge_instrument_fingerprints": {row: sha256}`` for EVERY judged
+      row, validated against the LIVE ``C.judge_instrument_fingerprint`` so
+      an audit conducted under a drifted judge-instrument revision is
+      REFUSED.
+
+    A MISSING artifact returns a NOT-ESTIMABLE verdict (empty ``per_trait``)
+    — the ``label_reliability`` row gate then fails every judged row. That is
+    the honest pre-audit state, not an error: the confirmatory phase BLOCKS
+    until the test-bank audit lands. A PRESENT artifact with a wrong or
+    missing envelope RAISES (fail fast — a mis-wired audit must never be
+    mistaken for an unrun one). Reliability arithmetic is
+    ``issue2658_power.reliability_gates`` by IMPORT.
+    """
+    root = Path(artifacts_root) / TEST_AUDIT_DIR
+    audit_path = root / PW.HUMAN_AUDIT_REL
+    if not audit_path.exists():
+        return {
+            "status": PW.GATE_NOT_ESTIMABLE,
+            "missing_artifact": str(audit_path),
+            "detail": (
+                "no test-bank human adjudications on disk — test-label reliability "
+                "cannot be established; every judged row is not-estimable until the "
+                "unit-7 blinded audit runs on the sealed test bank"
+            ),
+            "per_trait": {},
+            "bank": "test",
+        }
+    body = json.loads(audit_path.read_text())
+    bank = body.get("bank")
+    if bank != "test":
+        raise InferenceInputError(
+            f"reliability artifact at {audit_path} carries bank={bank!r}, not 'test' — "
+            "refusing a dev-side (or unmarked) audit presented as the test-bank artifact"
+        )
+    fps = body.get("judge_instrument_fingerprints")
+    if not isinstance(fps, dict) or not fps:
+        raise InferenceInputError(
+            f"test-bank reliability artifact at {audit_path} carries no "
+            "judge_instrument_fingerprints envelope — cannot validate the audit against "
+            "the live judge instrument; refusing"
+        )
+    judged = [r for r in C.ROW_IDS if C.CONSTRUCTS[r].judge_scored]
+    for row in judged:
+        live = C.judge_instrument_fingerprint(row)
+        got = fps.get(row)
+        if got != live:
+            raise InferenceInputError(
+                f"test-bank reliability artifact judge-instrument fingerprint for "
+                f"{row!r} ({got!r}) != live instrument ({live}) — the audit was "
+                "conducted under a different judge-instrument revision; refusing"
+            )
+    verdict = PW.reliability_gates(root)
+    verdict["bank"] = "test"
+    return verdict
+
+
+def apply_realized_cell_floor(
+    panel: InferencePanel, reg: InferenceRegistry
+) -> tuple[InferencePanel | None, dict[str, Any]]:
+    """Plan §8 REALIZED >=15-discordant-prompts-PER-CELL floor, post-labels.
+
+    Computes per-RETAINED-cell discordant-prompt counts on the final-label
+    panel. A cell below ``reg.min_discordant_prompts_per_cell`` is EXCLUDED
+    with cause ``realized-discordance-below-floor`` and the row denominator is
+    revised through the same accounting fields ``build_panel`` records; the
+    caller then RE-RUNS the row gates on the reduced panel. Honors plan §8's
+    "no new test rows are added": rows are only ever dropped, never topped up.
+    Returns ``(reduced_panel, check_record)``; the panel is ``None`` when
+    EVERY retained cell falls below the floor (the row is then not-estimable).
+    This is the REALIZED half of the per-cell floor — unit 10's prospective
+    bank-size ledger (applied in ``build_panel``) covers only cells knowable
+    as unusable before any label lands.
+    """
+    floor = int(reg.min_discordant_prompts_per_cell)
+    pids = panel.prompt_ids
+    labels = panel.labels
+    uniq, first_idx, inv = np.unique(pids, return_index=True, return_inverse=True)
+    n_pos_per = np.bincount(inv, weights=labels.astype(np.float64), minlength=len(uniq))
+    n_per = np.bincount(inv, minlength=len(uniq))
+    disc = (n_pos_per > 0) & (n_pos_per < n_per)
+    prompt_cell = panel.cells[first_idx]  # prompt->cell is unique (asserted upstream)
+    per_cell = {str(cell): int(disc[prompt_cell == cell].sum()) for cell in np.unique(panel.cells)}
+    below = sorted(cell for cell, k in per_cell.items() if k < floor)
+    check: dict[str, Any] = {
+        "floor": floor,
+        "per_cell_discordant": per_cell,
+        "cells_evaluated": len(per_cell),
+        "cells_below_floor": len(below),
+        "excluded": [
+            {
+                "cell": cell,
+                "cause": CAUSE_REALIZED_DISCORDANCE,
+                "n_discordant": per_cell[cell],
+            }
+            for cell in below
+        ],
+    }
+    if not below:
+        check["pass"] = True
+        return panel, check
+    keep = ~np.isin(panel.cells, below)
+    if not keep.any():
+        check["pass"] = False
+        check["detail"] = (
+            f"every retained cell fell below the realized >={floor}-discordant-prompts "
+            "floor — the row is not-estimable (plan §8: no new test rows are added)"
+        )
+        return None, check
+    # Denominator revision through the existing accounting machinery (the
+    # same fields build_panel records for the prospective exclusion).
+    acc = dict(panel.accounting)
+    n_prompts_kept = int(len(np.unique(panel.prompt_ids[keep])))
+    acc["realized_excluded_cells"] = check["excluded"]
+    acc["cells_used"] = int(acc["cells_used"]) - len(below)
+    acc["n_rows_kept"] = int(keep.sum())
+    acc["n_rows_excluded"] = int(acc["n_rows_excluded"]) + int((~keep).sum())
+    acc["n_prompts_kept"] = n_prompts_kept
+    acc["n_prompts_excluded"] = int(acc["n_prompts_total"]) - n_prompts_kept
+    reduced = InferencePanel(
+        row=panel.row,
+        prompt_ids=panel.prompt_ids[keep],
+        response_index=panel.response_index[keep],
+        labels=panel.labels[keep],
+        scores={c: s[keep] for c, s in panel.scores.items()},
+        cells=panel.cells[keep],
+        accounting=acc,
+    )
+    check["pass"] = True  # cells excluded + denominator revised; row proceeds to re-gating
+    return reduced, check
+
+
+def row_gates(
+    panel: InferencePanel,
+    reg: InferenceRegistry,
+    *,
+    label_exclusions: dict[str, dict[str, int]],
+    label_source: str,
+    reliability: dict[str, Any],
+    realized_cell_floor: dict[str, Any],
+) -> dict[str, Any]:
+    """The FULL plan section 8 ROW-level production gate set on the realized
+    (prospective-ledger-filtered, realized-floor-reduced) final-label panel.
+    Failure => the row is not-estimable, NAMING the failed gate — never a
+    proxy. Cross-split lineage is enforced upstream at assembly
+    (``DependencyCrossingError``); the realized per-cell floor record is
+    computed by :func:`apply_realized_cell_floor` and embedded here so the
+    verdict carries every gate."""
     labels = panel.labels
     pids = panel.prompt_ids
     uniq, inv = np.unique(pids, return_inverse=True)
@@ -567,6 +789,72 @@ def row_gates(panel: InferencePanel, reg: InferenceRegistry) -> dict[str, Any]:
     }
     for c in checks.values():
         c["pass"] = bool(c["value"] >= c["floor"])
+    if "pass" not in realized_cell_floor:
+        raise InferenceInputError(
+            "realized_cell_floor record carries no verdict — pass the record returned "
+            "by apply_realized_cell_floor"
+        )
+    checks["realized_cell_floor"] = realized_cell_floor
+    # complete_labels (plan §8): zero non-scored/non-labeled label records
+    # among the final dev/test records after the plan §3 retry ->
+    # human-adjudication chain. The per-status counts are RECORDED either way
+    # — a passing row still shows its zeros.
+    if set(label_exclusions) != {"dev", "test"}:
+        raise InferenceInputError(
+            f"row {panel.row}: label_exclusions must carry exactly the dev+test splits "
+            f"(got {sorted(label_exclusions)}) — thread assemble_row_data's diag"
+        )
+    per_split = {
+        split: {status: int(n) for status, n in sorted(counts.items())}
+        for split, counts in sorted(label_exclusions.items())
+    }
+    n_excluded = sum(sum(counts.values()) for counts in per_split.values())
+    checks["complete_labels"] = {
+        "value": n_excluded,
+        "required": 0,
+        "per_split_per_status": per_split,
+        "pass": bool(n_excluded == 0),
+    }
+    # label_reliability (plan §8 / §3 line 30): a frozen TEST-BANK blinded
+    # double-human audit verdict per judged row; failed OR missing => the row
+    # is not-estimable. Objective-label rows are EXEMPT (plan §3: correctness
+    # uses executable/reference labels; no judge instrument exists) — the
+    # exemption is stated in the gate record, never a silent skip.
+    if label_source == "objective-labels":
+        checks["label_reliability"] = {
+            "pass": True,
+            "status": None,
+            "exempt": (
+                "objective labels (plan §3): executable/reference labels carry no "
+                "judge instrument — the reliability gate is not applicable"
+            ),
+        }
+    elif label_source in ("judge-cells", "synthetic"):
+        per_trait = reliability.get("per_trait") or {}
+        verdict = per_trait.get(panel.row)
+        artifact = reliability.get("artifact") or reliability.get("missing_artifact") or ""
+        if verdict is None:
+            checks["label_reliability"] = {
+                "pass": False,
+                "status": "MISSING",
+                "detail": (
+                    "no test-bank reliability verdict for this row — the unit-7 blinded "
+                    "audit has not adjudicated it"
+                ),
+                "artifact": artifact,
+            }
+        else:
+            checks["label_reliability"] = {
+                "pass": bool(verdict["status"] == PW.GATE_PASS),
+                "status": verdict["status"],
+                "detail": verdict.get("detail", ""),
+                "artifact": artifact,
+            }
+    else:
+        raise InferenceInputError(
+            f"row {panel.row}: unknown label_source {label_source!r} — expected "
+            "judge-cells | objective-labels | synthetic"
+        )
     return {"checks": checks, "estimable": all(c["pass"] for c in checks.values())}
 
 
@@ -581,9 +869,12 @@ def run_permutation_test(
     ledger: InfLedger,
     chunk_plan: Sequence[int],
     element_budget: int = PW.CHUNK_ELEMENT_BUDGET,
+    mc_conf: float = REGISTERED_INFERENCE.mc_conf,
 ) -> dict[str, Any]:
     """One (row, comparator) within-exact-prompt permutation test, chunked into
-    deterministic SHA-seeded units persisted the moment each completes."""
+    deterministic SHA-seeded units persisted the moment each completes. The MC
+    interval uses the PASSED ``mc_conf`` (family callers thread ``reg.mc_conf``;
+    the default mirrors the registered constant for direct pilot/test calls)."""
     scores = panel.scores[comparator]
     labels = panel.labels
     pids = panel.prompt_ids
@@ -668,7 +959,7 @@ def run_permutation_test(
         "k_exceed": k_total,
         "n_perm": b_total,
         "p": plus_one_p(k_total, b_total),
-        "mc_interval": clopper_pearson_interval(k_total, b_total, REGISTERED_INFERENCE.mc_conf),
+        "mc_interval": clopper_pearson_interval(k_total, b_total, mc_conf),
     }
 
 
@@ -705,6 +996,7 @@ def run_family_permutations(
             ledger=ledger,
             chunk_plan=reg.perm_chunk_initial,
             element_budget=element_budget,
+            mc_conf=reg.mc_conf,
         )
         for row, (panel, sha) in sorted(tests.items())
     }
@@ -720,6 +1012,7 @@ def run_family_permutations(
                 ledger=ledger,
                 chunk_plan=full_plan,
                 element_budget=element_budget,
+                mc_conf=reg.mc_conf,
             )
             for row, (panel, sha) in sorted(tests.items())
         }
@@ -1207,6 +1500,10 @@ class RowInputs:
     rowdata: U.RowData
     selected_c: float
     scores_sha: dict[str, str]  # comparator -> npz sha256 (from unit 9 ledger)
+    # Per-split per-status non-scored label counts from assemble_row_data's
+    # diag (plan §8 complete-labels gate input). REQUIRED — a constructor that
+    # cannot supply it has not threaded the final-label diagnostics.
+    label_exclusions: dict[str, dict[str, int]]
     gates: dict[str, Any] = field(default_factory=dict)
 
 
@@ -1225,6 +1522,7 @@ def run_inference(
     reg: InferenceRegistry,
     out_root: Path,
     *,
+    reliability: dict[str, Any],
     allow_underdetermined: str | None = None,
     require_registered_universe: bool = True,
     family_sizes_expected: dict[str, int] | None = None,
@@ -1254,7 +1552,33 @@ def run_inference(
         not_estimable["C5_minus_C2"][row] = "committed partition: no frozen external direction"
     estimable_rows: dict[str, RowInputs] = {}
     for row, ri in sorted(rows_input.items()):
-        ri.gates = row_gates(ri.panel, reg)
+        reduced, floor_check = apply_realized_cell_floor(ri.panel, reg)
+        if reduced is None:
+            # Every retained cell fell below the realized per-cell floor —
+            # not-estimable outright; no reduced panel exists to re-gate.
+            ri.gates = {"checks": {"realized_cell_floor": floor_check}, "estimable": False}
+            rows_report[row] = {
+                "panel": ri.panel.accounting,
+                "gates": ri.gates,
+                "estimable": False,
+            }
+            reason = (
+                "row-level production gate failed: realized_cell_floor (every retained "
+                f"cell fell below the realized >={reg.min_discordant_prompts_per_cell}-"
+                "discordant-prompts-per-cell floor)"
+            )
+            for fam in ("C2", "C5", "C5_minus_C2"):
+                not_estimable[fam].setdefault(row, reason)
+            continue
+        ri.panel = reduced  # revised denominator flows into every downstream battery
+        ri.gates = row_gates(
+            reduced,
+            reg,
+            label_exclusions=ri.label_exclusions,
+            label_source=ri.rowdata.label_source,
+            reliability=reliability,
+            realized_cell_floor=floor_check,
+        )
         rows_report[row] = {
             "panel": ri.panel.accounting,
             "gates": ri.gates,
@@ -1311,6 +1635,7 @@ def run_inference(
             "source": "direction_provenance.json c2_c3_partition (committed artifact)",
         },
         "families": {"C2": fam_c2, "C5": fam_c5, "C5_minus_C2": fam_boot},
+        "label_reliability": reliability,
         "not_estimable": not_estimable,
         "rows": rows_report,
         "note": (
@@ -1329,11 +1654,17 @@ def run_inference(
 # ---------------------------------------------------------------------------
 def assemble_production_inputs(
     comparators_dir: Path, artifacts_root: Path
-) -> tuple[dict[str, RowInputs], dict[str, list[str]], dict[str, int]]:
+) -> tuple[dict[str, RowInputs], dict[str, list[str]], dict[str, int], dict[str, Any]]:
     prov = U.load_committed_provenance()
     partition = U.c2c3_partition(prov)
     committed_sizes = prov.get("c2_c3_partition", {}).get("holm_family_sizes")
     cell_ledgers = load_prospective_ledger()
+    # Plan §8 "passed label reliability": the frozen TEST-BANK verdict is a
+    # REQUIRED production input — missing => a NOT-ESTIMABLE verdict that
+    # fails the label_reliability gate for every judged row (the confirmatory
+    # phase blocks until the unit-7 test-bank audit lands); a present-but-
+    # mis-provenanced artifact RAISES inside the loader.
+    reliability = load_test_label_reliability(Path(artifacts_root))
     records = U.load_comparator_results(Path(comparators_dir))
     rows_input: dict[str, RowInputs] = {}
     eligible = set(partition["eligible"])
@@ -1346,7 +1677,7 @@ def assemble_production_inputs(
             c2_rec = records.get((row, "c2_direction_dot"))
             if c2_rec is None or c2_rec.get("status") != "scored":
                 raise InferenceInputError(f"row {row}: eligible but no scored c2 record")
-        rowdata, _diag = U.assemble_row_data(row, Path(artifacts_root))
+        rowdata, diag = U.assemble_row_data(row, Path(artifacts_root))
         panel = build_panel(
             row, records, comps, cell_ledgers[row], prompt_cells_from_rowdata(rowdata)
         )
@@ -1356,8 +1687,11 @@ def assemble_production_inputs(
             rowdata=rowdata,
             selected_c=float(c5_rec["selected_c"]),
             scores_sha={c: records[(row, c)]["scores_sha256"] for c in comps},
+            # complete-labels gate input (plan §8): the per-split per-status
+            # non-scored counts join_labels recorded — no longer discarded.
+            label_exclusions={split: dict(counts) for split, counts in diag["exclusions"].items()},
         )
-    return rows_input, partition, committed_sizes
+    return rows_input, partition, committed_sizes, reliability
 
 
 # ---------------------------------------------------------------------------
@@ -1435,10 +1769,27 @@ def run_smoke(args: argparse.Namespace, out_root: Path) -> int:
             rowdata=rd,
             selected_c=float(c5_rec["selected_c"]),
             scores_sha={c: records[(rd.row, c)]["scores_sha256"] for c in comps},
+            label_exclusions={"dev": {}, "test": {}},  # complete by construction
         )
     }
     partition = {"eligible": [rd.row], "not_estimable": []}
-    report = run_inference(rows_input, partition, reg, out_root, require_registered_universe=False)
+    # Synthetic PASS verdict: the smoke exercises the REQUIRE branch of the
+    # label_reliability gate (synthetic rows are never exempt), consuming no
+    # real audit artifact.
+    reliability = {
+        "status": PW.GATE_PASS,
+        "artifact": "synthetic-smoke reliability verdict (no real audit consumed)",
+        "per_trait": {rd.row: {"status": PW.GATE_PASS, "detail": "synthetic smoke verdict"}},
+        "bank": "test",
+    }
+    report = run_inference(
+        rows_input,
+        partition,
+        reg,
+        out_root,
+        reliability=reliability,
+        require_registered_universe=False,
+    )
     fam = report["families"]
     print(
         "[u11-smoke] "
@@ -1486,6 +1837,7 @@ def run_measure_perm_unit(args: argparse.Namespace, out_root: Path) -> int:
         scores_fingerprint="pilot",
         ledger=ledger,
         chunk_plan=reg.perm_chunk_initial,
+        mc_conf=reg.mc_conf,
     )
     wall = time.time() - t0
     print(
@@ -1615,11 +1967,17 @@ def build_argparser() -> argparse.ArgumentParser:
 
 def run(args: argparse.Namespace) -> int:
     if args.phase == "report":
+        if args.n_boot is not None or args.boot_chunk is not None:
+            raise InferenceInputError(
+                "--n-boot/--boot-chunk are smoke/measure-phase knobs; the confirmatory "
+                "report phase runs ONLY the registered constants (plan section 7) — "
+                "remove the override"
+            )
         if args.comparators_dir is None:
             raise InferenceInputError("--comparators-dir is required for --phase report")
         out_root = args.out_root if args.out_root is not None else F.OUT_DIR
         reg = _registry_from_args(args)
-        rows_input, partition, committed_sizes = assemble_production_inputs(
+        rows_input, partition, committed_sizes, reliability = assemble_production_inputs(
             args.comparators_dir, args.artifacts_root
         )
         run_inference(
@@ -1627,6 +1985,7 @@ def run(args: argparse.Namespace) -> int:
             partition,
             reg,
             out_root,
+            reliability=reliability,
             allow_underdetermined=args.allow_underdetermined,
             family_sizes_expected=committed_sizes,
         )
