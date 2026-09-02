@@ -342,6 +342,7 @@ def snapshot_inputs() -> list[dict]:
         if api.file_exists(HF_REPO, hub_rel, repo_type="dataset"):
             action = "already-present"
         else:
+            # UPLOAD_LOOP_EXEMPT: fixed 2-file issue-owned input snapshot (LOCAL_ONLY_RELS), idempotent + download-verified; never a bulk tree
             hub._upload(
                 local_path=local,
                 repo_id=HF_REPO,
