@@ -1,0 +1,16 @@
+{
+  "purpose": "Byte-exact vendored copies of the #2388 benchmark loader modules at the parent pin. The #2388 code lives only on the unmerged issue-2388 branch; vendoring the two blobs makes #2658 correctness prompt-text resolution runnable on lanes without the branch object (fresh pod partial clones, git-less SLURM rsync trees). The .py.pinned suffix keeps the frozen bytes out of ruff/pytest collection; they are loaded by explicit path via importlib (scripts/issue2658_text_resolver.py).",
+  "source_commit": "06a4b66fba3551b8ffe831a3e88a8276205a853f",
+  "source_branch": "issue-2388 (unmerged)",
+  "sha_domain": "file bytes (sha256 over the raw vendored file bytes; equal to `git show <source_commit>:<source_path>` output by construction)",
+  "files": {
+    "issue2388_gen.py.pinned": {
+      "source_path": "scripts/issue2388_gen.py",
+      "sha256": "8328c1c226c9baae7bccd5feb23f28582925aca8a70d3cf685e81fceed51a356"
+    },
+    "issue2388_spread_pilot.py.pinned": {
+      "source_path": "scripts/issue2388_spread_pilot.py",
+      "sha256": "9bccfa585cdeab04c66fba95b1b5d6b558418df4f36fc382012d5a56e08c5480"
+    }
+  }
+}

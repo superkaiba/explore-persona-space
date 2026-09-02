@@ -1,0 +1,2508 @@
+{
+ "issue": 2658,
+ "items": {
+  "assistantness|arc_c_tasks|arc_c#121": {
+   "prompt_sha256": "0fa877b0719aece6b661c815cc269564f4e4d092fb98a30f9e8af05cec6ed484",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#123": {
+   "prompt_sha256": "0bf473b4ebc93b3ebace8ee82093b5d599bbe5b7bdeb66020552be44ce35a121",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#125": {
+   "prompt_sha256": "1fc33fef2393da175f02907fe8452a9d1d3bd5386ed2c91cbc2e8e50151383ca",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#137": {
+   "prompt_sha256": "20738326b59a9d90c75c805d1cc9cae7d853554c17db1fef05a93adf01edb294",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#141": {
+   "prompt_sha256": "027dda2ead91e057f05cc452568b67260ead090c5d0a855e03adfe6ea5db7306",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#167": {
+   "prompt_sha256": "082a6acd68f0be088192a51e0982009410cf4a5a9878702fa2002bee9b4aa817",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#184": {
+   "prompt_sha256": "040f4c04fa899ade7ca28a5221294eec3694efd35cd1a0c8af6ceb2a51247894",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#190": {
+   "prompt_sha256": "285ee28af1ac6e514b7f6bcb335123d3ea9d06228076867175be5a7e1ee5f773",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#35": {
+   "prompt_sha256": "082b039765239770abfd569f2e78484622771e337c586ba00df050068aa1d9d4",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#39": {
+   "prompt_sha256": "25c83a35cba0bdfb873b9bafd2e8071f43c1a9de0e9c90a8a1e5b4c435df0fe1",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#4": {
+   "prompt_sha256": "1725d5c8524ae4b154c7e3bcbe875cffc827bd4ae7c726efec13c813215438db",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#63": {
+   "prompt_sha256": "23aa98872ccd63eff5745b9f01e45691bb604841053fc4d7863d7ba468fb1dc6",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#83": {
+   "prompt_sha256": "11b1f68ff0794de1ea39ad293d2b728a51eacca74de22a81f8bdd3060dc5e411",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#87": {
+   "prompt_sha256": "1d8a067ef23c2351510d984a03b9a4b5a35883f07d65ce57df55b736421b22fa",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|arc_c_tasks|arc_c#93": {
+   "prompt_sha256": "0140bb6b3b0f9cc4b0cc4cb3924af6912ef2265dea08c538ae45cbaf88e9a2eb",
+   "source_ref": "query_banks:arc_c"
+  },
+  "assistantness|fact_questions|fact_questions#0": {
+   "prompt_sha256": "6968d54f83926f1c2abfed31d09cea204ecbf67c203ac5a6bffac4821a74efdd",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#1": {
+   "prompt_sha256": "e55a4ab371e3ef2f7e4d05ef5db1404a7ef6ecf1b51308a105bf2e670c71532e",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#10": {
+   "prompt_sha256": "b69f06a675520db21ffa6b2f9b14b8e31b83ee198d29be527231c7108ddb5e77",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#11": {
+   "prompt_sha256": "5d7d504f182d82e801709fc362b1dd795ce4227a2757de0230e0124d67c96b54",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#13": {
+   "prompt_sha256": "7761d74ebf24bfcfaf7c83e33f73b2c67f2ba13f65419080083937bd5a028998",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#2": {
+   "prompt_sha256": "e1f4661f61d52eaef290885020e62546de5cab2bd4b7408a7171ab596da62de3",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#4": {
+   "prompt_sha256": "c4cff9712407166c19277a5368ea72c750d8a972405a050f2ab8915f50557831",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|fact_questions|fact_questions#5": {
+   "prompt_sha256": "cccc714a0cf824b2c230fa6c0788a97c7c0dcf1c73a33772646a3b0dddf8bfca",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#1": {
+   "prompt_sha256": "2023058cd3375e821de3f48393ded697d61e59f311ab6c12f93c703802666f46",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#14": {
+   "prompt_sha256": "870dace5ed3ea8d06fb22826787e64296042c50c5e2cad101d30e31dc0271f72",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#18": {
+   "prompt_sha256": "f2f8cf14927fd8642ad5dd9782acd6f828f93ef91f4b21efa8611197ff3d7f25",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#25": {
+   "prompt_sha256": "2fd8e7197d1e0d42c1e6b5666e73d1e1d4af647296171a7f421205381f3dea98",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#27": {
+   "prompt_sha256": "2696691871a758643f29d3fc8d2706915101116f708b9152561dec66d2ba088c",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#29": {
+   "prompt_sha256": "801509db94406d71fa8aa71ffa4acc571cc0fadc5598052aec1643c7ba64895b",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#31": {
+   "prompt_sha256": "2e9916391c88b2c7e820ccf3238385ba373217b08a7de8b9bec770901c5d6e61",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#34": {
+   "prompt_sha256": "1ce93f22b8da5c48d7974740cc91963cea810e59238e18477f12768c9d083bfb",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#35": {
+   "prompt_sha256": "60b6dbc21a911872c0b820c446c89d34c65d18410cbbbd46026c907e378c7edc",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#36": {
+   "prompt_sha256": "87dd7fb0663cdd65f1ea5f5a0d7f597782783384101ce82410d92a68edf53b20",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#40": {
+   "prompt_sha256": "3be4e944d0060810e70677d2164c7aa93960f6e67b6404cf05cfd884f22f6f95",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#48": {
+   "prompt_sha256": "6770c40e1ef37eb5e081b61b949f88187c1747f01efb0c901a02f1189fa6a0f4",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#5": {
+   "prompt_sha256": "a978c3e1c749ff9126d2367cccfebe9f71fcaf8ea3c629705188b1be14bdd594",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|marker_eval_prompts|marker_eval#8": {
+   "prompt_sha256": "3aab979daa565c2e911762ef1ec9c34149efe475fd561a383256b012092134f3",
+   "source_ref": "query_banks:marker_eval"
+  },
+  "assistantness|wildchat_real|wildchat_random#101": {
+   "prompt_sha256": "003d19ff9589b15fbece2ab060df5287908f240d5969f3edd9cd9b9bb8b9acc4",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#16": {
+   "prompt_sha256": "05de59a46d452636bb28ef06733e8fa982eb6002119a4b6072c0ae86ada92d6e",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#178": {
+   "prompt_sha256": "024f3412902a8e8f471d0ab6f021a9bf28c8a01e763cccd3124445523d478c01",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#231": {
+   "prompt_sha256": "03c47f681dc6aa1ebd66d3d38b3aa56d1d620e22ae53fbc9088348b5c33f1984",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#270": {
+   "prompt_sha256": "103071367fe2987ecbe88c43e9167555cc60cb437d5c3897c92a4333a1266be2",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#28": {
+   "prompt_sha256": "072952443a2646f32ec4e5d24c62521999b10ecf7a91e94fd1093a10e72db539",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#355": {
+   "prompt_sha256": "030095e1c784193ef59ff9aa26b2caeeefb19b04c3239a349ea3d3c252090994",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#435": {
+   "prompt_sha256": "174201cab760cc6b08db65344832ea76687380169e7c62201b84da3adcb86195",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#452": {
+   "prompt_sha256": "041ce87c9ac818f7f38961f84f4eb015c0b308d8447c580312c3f1b8f17c633f",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#490": {
+   "prompt_sha256": "0ac15cd0cb5db90a266ef5bf2bb9d2587929201562a3db5d6fe0c887f58f4489",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#523": {
+   "prompt_sha256": "00f61831aa23a2dd4d7eda27bd21e1e5c9c74a527317c2836952c4b8e30de8d9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#538": {
+   "prompt_sha256": "00f11dc491af52547a8f17127e0a515e328bf6b91cf745652784ad3ad80f5cf9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#541": {
+   "prompt_sha256": "004d4983a9e8f2889af060490feff34536de7c3b205523d3572dca3c861efcaf",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#76": {
+   "prompt_sha256": "056d988c986844703d49c52dca9a6fefeb8e9e0190c4e7b5b8f9f31fccf81ec6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "assistantness|wildchat_real|wildchat_random#89": {
+   "prompt_sha256": "0478ff225299d80d87f9ad6f68647b204ef72dcd7ad66ecd70b50f4a462699dd",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|arc_c_tasks|arc_c#102": {
+   "prompt_sha256": "1d1c85b5a6dd0efd29d5883b5aaa7093acf30d4df1fd4ca4eccaeacd8b8f6cc7",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#115": {
+   "prompt_sha256": "0fdd7e65502630ea2ef08ae65a9e668172515ba0dc0f87903155b83ce28660ee",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#121": {
+   "prompt_sha256": "0fa877b0719aece6b661c815cc269564f4e4d092fb98a30f9e8af05cec6ed484",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#141": {
+   "prompt_sha256": "027dda2ead91e057f05cc452568b67260ead090c5d0a855e03adfe6ea5db7306",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#17": {
+   "prompt_sha256": "30d5e78f18811e71352a8a60dd969433a295479f8a96b282c8523668bda3fbde",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#171": {
+   "prompt_sha256": "163b8250b9df775ca733089f50165120056c09b8e64d39dfdb7e502645e75c52",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#184": {
+   "prompt_sha256": "040f4c04fa899ade7ca28a5221294eec3694efd35cd1a0c8af6ceb2a51247894",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#196": {
+   "prompt_sha256": "03a11cede96eae0941c833d445c258c2388d0c8fe4148979d2372e0d57505fc6",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#23": {
+   "prompt_sha256": "0ea445f131dea2d44120b5702525126307bc6418006507a6968533ddbe227eb7",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#35": {
+   "prompt_sha256": "082b039765239770abfd569f2e78484622771e337c586ba00df050068aa1d9d4",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#38": {
+   "prompt_sha256": "376495cb967137df1256c01e5cfbce9b30f6ba6258f9da22c0e1faa703095a2a",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#39": {
+   "prompt_sha256": "25c83a35cba0bdfb873b9bafd2e8071f43c1a9de0e9c90a8a1e5b4c435df0fe1",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#54": {
+   "prompt_sha256": "269c7e639de87ff7c95b1124f3c3696a7cd2bde29768ec3e0047b501b65eb1ca",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#64": {
+   "prompt_sha256": "13b15e3956c2df71a4b1eeddcb1a08245c725e7a3f424b2807d09817083db912",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|arc_c_tasks|arc_c#87": {
+   "prompt_sha256": "1d8a067ef23c2351510d984a03b9a4b5a35883f07d65ce57df55b736421b22fa",
+   "source_ref": "query_banks:arc_c"
+  },
+  "casualness|fact_questions|fact_questions#1": {
+   "prompt_sha256": "e55a4ab371e3ef2f7e4d05ef5db1404a7ef6ecf1b51308a105bf2e670c71532e",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|fact_questions|fact_questions#12": {
+   "prompt_sha256": "d3c6d905ddfc10f2957c70d55d316f06f8c716c711f0c519b5d3a9451c1a117a",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|fact_questions|fact_questions#13": {
+   "prompt_sha256": "7761d74ebf24bfcfaf7c83e33f73b2c67f2ba13f65419080083937bd5a028998",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|fact_questions|fact_questions#14": {
+   "prompt_sha256": "2e2db24e4cb9c8cd66fc59f94d034652758d7f6acd1ace231a134346569b1507",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|fact_questions|fact_questions#3": {
+   "prompt_sha256": "f51a711390a05da63dafb8b286ee2fea5b98fb14890cc325033368773c59aa11",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|fact_questions|fact_questions#6": {
+   "prompt_sha256": "0b301939f40c94580846d9427f56185362bbe5076b728ca580668cf59f27cd6c",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|fact_questions|fact_questions#8": {
+   "prompt_sha256": "638fc5b8b999093f50c40cca2d0a3b275a0d4125a69507a74d988e9580e7a3d0",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "casualness|wildchat_real|wildchat_random#16": {
+   "prompt_sha256": "05de59a46d452636bb28ef06733e8fa982eb6002119a4b6072c0ae86ada92d6e",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#231": {
+   "prompt_sha256": "03c47f681dc6aa1ebd66d3d38b3aa56d1d620e22ae53fbc9088348b5c33f1984",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#25": {
+   "prompt_sha256": "1ac7633bc0366d99ff80eda419fca8b9bf7814d6ac4c0999f7c118cc56679db0",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#317": {
+   "prompt_sha256": "1379cc1b18725af157ad76cca857dd1eb82eadf1ac446b6a3c8560111698e5b6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#336": {
+   "prompt_sha256": "05ac2c9e941a8d270ba92312c783236fc683dbea2dd20da622af3c8948834cd3",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#355": {
+   "prompt_sha256": "030095e1c784193ef59ff9aa26b2caeeefb19b04c3239a349ea3d3c252090994",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#420": {
+   "prompt_sha256": "0843a69bcc8b79de7802a674605d2d5836bdcfd374c5985ac9bfda6d0f144246",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#452": {
+   "prompt_sha256": "041ce87c9ac818f7f38961f84f4eb015c0b308d8447c580312c3f1b8f17c633f",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#490": {
+   "prompt_sha256": "0ac15cd0cb5db90a266ef5bf2bb9d2587929201562a3db5d6fe0c887f58f4489",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#538": {
+   "prompt_sha256": "00f11dc491af52547a8f17127e0a515e328bf6b91cf745652784ad3ad80f5cf9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#551": {
+   "prompt_sha256": "0a06987c0047d28ec8c03f139dd0bf13b58eb0dbeb6375651ab5a76a1280b5aa",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#58": {
+   "prompt_sha256": "0804a922dcbec60729f3eb9f8d16ff41a23e96c9762245403dd9585a1c455620",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#581": {
+   "prompt_sha256": "04a911c00f52ba72b8e9d9c2eb36cf3573ae35c662ab184dc49988fa61555858",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#76": {
+   "prompt_sha256": "056d988c986844703d49c52dca9a6fefeb8e9e0190c4e7b5b8f9f31fccf81ec6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|wildchat_real|wildchat_random#89": {
+   "prompt_sha256": "0478ff225299d80d87f9ad6f68647b204ef72dcd7ad66ecd70b50f4a462699dd",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#0": {
+   "prompt_sha256": "02a7f4791fa804bc0283588bc46702e9bfe67d6fa493d71940f792388014b8a4",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#1": {
+   "prompt_sha256": "2da278b9a4d0193423bd1d3bd2fd406f0d836644ce12173c2abf1184fc3d4301",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#11": {
+   "prompt_sha256": "2c7d64f0f7fd0281395e86238a3e52e2afce8f93c6920fb50ddbba53813103a6",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#13": {
+   "prompt_sha256": "6ade3d87847f92912e7f62b8be0f663969d5d222464fabe5476d879c6c50ceb4",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#19": {
+   "prompt_sha256": "0ecec290eb5542f79417e2d3946d34435c678b357dc50397afd201089f9b0a6c",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#20": {
+   "prompt_sha256": "0d22c6ef85a1233301842ffb3c08ff9e03f2570d2d3f4dbd880eaa6bf394b2db",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#21": {
+   "prompt_sha256": "42402a5e935ebfd3361024d97c1f85355845388bc9705e0a4595be4c7a1848b9",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#23": {
+   "prompt_sha256": "19c6f1e5115ab5bb6e5d60bb625e1b961c484c2354fcaa18491e256cf3b996b5",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#24": {
+   "prompt_sha256": "5245c9b0db107c5bceb523d5730640aed06807ff2d316bd01d23e22510320abf",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#27": {
+   "prompt_sha256": "256ee502dc2030678995a573d8d15af311b8c274fdc8b1965140655688f78e6f",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#35": {
+   "prompt_sha256": "741ca42182544fbb0ff9448b8533afe52996148d30e3e681b44a6e5231c5f64f",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#39": {
+   "prompt_sha256": "102dd9a353b7093ee0c18a1ac43d6be3c6a45ea88c58b276adc94855fc3acf09",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#4": {
+   "prompt_sha256": "95e54f99c9a854996fe4a4905f01a93dff2d0775a2a09a6fb16f783ca3c59bf7",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#5": {
+   "prompt_sha256": "2954b6de34b4c939c121c2e98a4da24816e52f19f65cf1a5c60bd487ed5a8b27",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "casualness|writing_style_neutral|writing_style_neutral_v1#9": {
+   "prompt_sha256": "393eab19c56a89ae7815b2e9d60178a3774bc902e8e3c3faf61a6d37d4b912f7",
+   "source_ref": "query_banks:writing_style_neutral_v1"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_1009": {
+   "prompt_sha256": "9b7f0c67f05dc5f9ad91719764c060101c629b948df869f4ee9d09d541132325",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_128": {
+   "prompt_sha256": "2673d833b34ffa1f395486b0b3162f832db03697bf377085e2914294c436c862",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_521": {
+   "prompt_sha256": "bcc3f1bc3be26b18c1c010aac83f611dc981de6209d3a4ce6f85afc3efb175d5",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_563": {
+   "prompt_sha256": "d4759d8c7fa81bd6d9d68f014b3a4a2b32c49c024dc36283323b46bb8a87ebf8",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_568": {
+   "prompt_sha256": "a289fbae228080c28b75ef02a97a07a2dd3a2d70ee59010a8c317c8b876f92c3",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_617": {
+   "prompt_sha256": "4cf6b3ff8dd21121042899383d39ba9e84d65d4cb1d789119a3d18c6f5b24f20",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_63": {
+   "prompt_sha256": "f3ed50302dc0d7e0b0f12fb8d259c2865aaaa118c273060f1637454d42f65ac8",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_667": {
+   "prompt_sha256": "8bce6291a19d0839d5a44191492d9d75e4bceea2c99b673679126650b83b0c07",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_73": {
+   "prompt_sha256": "3898b82b40bc6d6c8a490c05c3cd345f8d9324fea2912a1a6b17e9eff124268f",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_752": {
+   "prompt_sha256": "06a5121aeef37906e6c5b1a03df37137a3fd877314834638700ec6ec5d37f540",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_773": {
+   "prompt_sha256": "bc36e214150faf55a3fdacb2cb7f19a2d0d95b8e135f91b33c94aea042f38777",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_778": {
+   "prompt_sha256": "9da0d325e5e46a3a7bc6189af5bbdc1983a0ef7a5591987a3865556c528de3fd",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_876": {
+   "prompt_sha256": "780f634fa7c618823e6437cf366ccfeb960fe95f166bfa411583bc5801369707",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_927": {
+   "prompt_sha256": "36cac7053b537075076947bf5d87cd00c8f01c0611e9f0976e72e5e0651223ab",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_bigcodebench|bcb-BigCodeBench_961": {
+   "prompt_sha256": "a31c4858d709d7d772bb4330d6485463ff6a1b433f9790a165158367cf873ea4",
+   "source_ref": "issue2388_pinned:load_bigcodebench_full"
+  },
+  "correctness_code|code_humaneval_mbpp|humaneval-HumanEval_73": {
+   "prompt_sha256": "c0e38c3c4469ea35cd3ca41ba5a8d1a3da66afb91f1589ba542a474a0636eaaa",
+   "source_ref": "issue2388_pinned:load_humaneval_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-191": {
+   "prompt_sha256": "fc8da8d0785dc41694e1bc9ce3f765f3ecfb9574c793835bc6b8a192f0201bfc",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-200": {
+   "prompt_sha256": "a3d3aa133646561d3a762ba695a0d8b54c550d85b88639b37bb034f4613dddb8",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-211": {
+   "prompt_sha256": "64d55804c05959cc62638025403a5ff48a975cfe6696a2d3542beda66cdb4196",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-22": {
+   "prompt_sha256": "f9edd05b1f03cf9a8bc16c67d01e6a19b66573f97e15dfa684013e5a6bed5e95",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-367": {
+   "prompt_sha256": "ab80049c8b4d44cb784cefeca094e03e3c42f48c74a17a118193270ed634f6a1",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-387": {
+   "prompt_sha256": "26aef43bfaf3b183017e6e4f52cc6adcaaff16b82a953c3b4c73599fac7f39f4",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-430": {
+   "prompt_sha256": "af3b3a13a5f6e910033120e82f87d6cb3dcbe3ce79d1912f97aef343013bb239",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-432": {
+   "prompt_sha256": "b75c304392f3f241f10f68d9d0129fef0ea4234eab31a05551b1add1b1a58186",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-498": {
+   "prompt_sha256": "51e4ac9336753b97cf233914d48713d037b32ff99ab43482d22b503be9dd5d16",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-501": {
+   "prompt_sha256": "046cb180f29edd36f1e0686b943af68ce7c5f5f830a50f369f57df5ca06c2173",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-510": {
+   "prompt_sha256": "918dd909842052c6299faa41f6fa4929ecd3043be32f7f7226ccea2b00313e95",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-679": {
+   "prompt_sha256": "ffb8654ae18612b55e84fe0b0765cd0c39a7fd06add75aff24fd2902078e8b41",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-751": {
+   "prompt_sha256": "61cfa016d962657ffc379fcbf970d620f0902f953c1085dd014ea225072960c8",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_humaneval_mbpp|mbpp-962": {
+   "prompt_sha256": "443f4936c8b8596ffccb4997f9b37742295f3318580becc417c12b359246b655",
+   "source_ref": "issue2388_pinned:load_mbpp_full"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc302_f": {
+   "prompt_sha256": "727b34666e0cb1d81d64b70d18a70a3301ac3fdec6a29184e2273bea29d5f8e4",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc303_a": {
+   "prompt_sha256": "b90a32482e0b179fc7f7ce3e1f1f8f6afe6b7d7adb6c71a1fa8933f98cb94ef2",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc308_c": {
+   "prompt_sha256": "9500a331b6e3938be583c5843b30e8674f66be5ec3767be0b58d699711c3e502",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc319_c": {
+   "prompt_sha256": "ce032c7853d6f5ac89400ad268131639cb18f37da17e4b1a5e7b9bfeade227a7",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc324_e": {
+   "prompt_sha256": "fc66d3c36a3ae7f75fe9d6adfd776a2be71ece8f741a8556beb2c4a8de5a454d",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc326_c": {
+   "prompt_sha256": "bcd8bed1264584410bda4558c6a358a36c78ae16bb98e2dcda77cd40ce3dfc76",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc327_d": {
+   "prompt_sha256": "ff6396803ac0e075237a765dddb7b26dddfac657f060412eeece1ea9f9de395a",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc332_c": {
+   "prompt_sha256": "df89593004f8d650969e27f0cabf874d3a415ae382906757dec708e2869dcb54",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc368_d": {
+   "prompt_sha256": "2ade15a31fd6afb6f39a33c59fe34d41404b7c6e4184fa180a936fa24ed02fca",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc377_c": {
+   "prompt_sha256": "42139aff0e470f90cd5c4fba65c14d7681656cb1292cf33b4815fbbd028711aa",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc379_g": {
+   "prompt_sha256": "60305808e29f4673c3bddde3a9d7fb6655a3d4c40939c7cfdb2dd8f54e3b3fc5",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-abc385_f": {
+   "prompt_sha256": "122abe854247cabcf983104b2e90efebb216c089a98d94dc2d92151bea041a62",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-arc185_b": {
+   "prompt_sha256": "a169ac083db8776fa449f767d4f1dc0c29c1fde488a2246d841025af20e39b65",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-arc188_c": {
+   "prompt_sha256": "da026af39d475b062aa8f565b3a3f2ccbad1db5d92ac0b19f645faa8d2b1a458",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_lcb|lcb-atcoder-arc189_b": {
+   "prompt_sha256": "390e5d075a08abcadde4669a24567a68dd34b208dee0a228484d242619d05ac4",
+   "source_ref": "issue2388_pinned:load_lcb_v5"
+  },
+  "correctness_code|code_leetcode|leetcode-3sum-smaller": {
+   "prompt_sha256": "24ebdc5ea4999b22bcedb19b4e1757d263ba02ab249c33fdf7e810385e046766",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-assign-elements-to-groups-with-constraints": {
+   "prompt_sha256": "37ec344667da894d9a8823d4874bdb5707d9af5dcaad5ba4897c5d48e9996e85",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-change-minimum-characters-to-satisfy-one-of-three-conditions": {
+   "prompt_sha256": "4413353b56156ab49bad1dd29b5093eb7035166437238a75a31b1773299a3675",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-count-collisions-on-a-road": {
+   "prompt_sha256": "e9a1b3b252e38a49cec9b05b360801a3943dcacbdca04580a30f190967141b6f",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-count-vowels-permutation": {
+   "prompt_sha256": "84f385f4ff265fc198550a3f4cce087dd4b2acb4d54dc326d91f64bc7be57055",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-distribute-money-to-maximum-children": {
+   "prompt_sha256": "d53013d3764af0cf1bf0c4a0102b50b75f391ca073b5affe0da3edac7e5c3788",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-maximum-element-after-decreasing-and-rearranging": {
+   "prompt_sha256": "73fd885682b2812c96036cc712559a98f5a9d10cbff563214f75e5dc410b6789",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-maximum-prime-difference": {
+   "prompt_sha256": "f929d24cb04df5e6cbf23bec483f32b11f1b42640ad061aa38914895e97a55a4",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-maximum-xor-with-an-element-from-array": {
+   "prompt_sha256": "46b664d577f09d9f7cee31ab4717b0b7ee3a30c2eefcbe3cc515b2f3b4449cda",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-minimum-array-changes-to-make-differences-equal": {
+   "prompt_sha256": "afb01e8c49f25710598283395a7147254cb23293afb6ec37a7920ab85dae95f7",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-minimum-element-after-replacement-with-digit-sum": {
+   "prompt_sha256": "efd6cc572770cc88b84ecf2f182091377585352baadb5a87f4a3251a7a813d3f",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-number-of-ways-to-separate-numbers": {
+   "prompt_sha256": "e276c615c1d18f3a343c2f0f8fb217b8a4a5247d9de63141eece653b19d03064",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-pizza-with-3n-slices": {
+   "prompt_sha256": "bd94f9bb10ed983d444ebf3c7f327593ecd49c0585bb0c698571055db395a6b1",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-recover-binary-search-tree": {
+   "prompt_sha256": "27fdf7e37669ac75284a94a7173abb267f5a54b0573d626e62851f322420a81b",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_code|code_leetcode|leetcode-word-ladder": {
+   "prompt_sha256": "c36ff0082c0924aa4aa89dee7232e54d72b0a7c2c5761460c2488f82ecd70a91",
+   "source_ref": "issue2388_pinned:load_leetcode"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-test-00040": {
+   "prompt_sha256": "f428e5b0642f1ebf46e21462d6364cf90ccef1cfdc356f6b42d05db868ed70ca",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-test-00210": {
+   "prompt_sha256": "cdb99b72630a8c1c79697d40a5cdab9f6c448421622ce0b59e750ad598f98110",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-test-00568": {
+   "prompt_sha256": "175a2f4dbe4d8bd919a24c233883a77e5397a4337f9040273d53180a2f32982c",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-test-00700": {
+   "prompt_sha256": "d3202a9725fd17f925ea2a5953ffb0bdebf05eee483bd2b6e210383f848abd7f",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-test-00933": {
+   "prompt_sha256": "e24e8970429752d3fe2b73ceb71f68af1f483c3f3d6876c926b6809ee70034fd",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-test-01135": {
+   "prompt_sha256": "b95d838bc5ba2c1afd9261b253ed8b1f8790bc837bd0ae50322e7850ed1e93c0",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-train-00839": {
+   "prompt_sha256": "15fd641ff5be6027ce2f6c9ef0af0ea1ccc23e35821ac59b383c45bbef211dce",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-train-00881": {
+   "prompt_sha256": "00cccf9594c773238ffe994b65e09271dd471d251f76e7523e8fa31015450924",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-train-01460": {
+   "prompt_sha256": "4a43d6f7a17f30d45a0a23dc0ea45c3d02ae0efc29566baa138e4f3f0803e07d",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-train-01682": {
+   "prompt_sha256": "be964f58f28a6b34117d23af722a02c01ccb1e29105240f1c8bdd92986e7669d",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-algebra-train-01734": {
+   "prompt_sha256": "d1ad0313879cb16e1f1739dd6885e01896da32101343e422182c933283876f12",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-intermediate_algebra-test-00457": {
+   "prompt_sha256": "2ea46e4eeb99e46018464881adaf2901417401018e1a9490edf6f2f808bc4e6f",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-intermediate_algebra-test-00641": {
+   "prompt_sha256": "c278a457d48fef5645e0356c016634e5ffcd669597a60122b2bfa9b7af964d06",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-intermediate_algebra-test-00818": {
+   "prompt_sha256": "b063bb9598dd5ce3ade0d964a52eede56d750d68e9da709514984f18819ff494",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_algebra|mathfull-intermediate_algebra-train-00478": {
+   "prompt_sha256": "98dcd068e551effee2cdeff35d35a306c57ffe489b1ae98c450a41d606bc965d",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-test-00012": {
+   "prompt_sha256": "2826a4bcb017190710ccb49fd75f49dafa0b6667e6f086df9192fe2957eb480b",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-test-00154": {
+   "prompt_sha256": "39c77e273523f6780571c762e09e4a03113ec63fb65e2376c89dea496137430c",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-test-00191": {
+   "prompt_sha256": "406a14fa5711fbf30682d181cdc40b7111be7fc20a5a0ed256c551f3c684bfdb",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-test-00398": {
+   "prompt_sha256": "46c6749a46192a957c6495998ef2b4ed42c3f2415763af5cdc21ec2dfd798ede",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-train-00130": {
+   "prompt_sha256": "c5457e1a115d33c44059f28c1f2a0f0f0461da18327edca6a4b82ec809832ffd",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-train-00253": {
+   "prompt_sha256": "8dc03885a725fee0de2ab8a0c1ed501e7c2b417bfcca690fb4033b667758afad",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-train-00539": {
+   "prompt_sha256": "f2d62970b7669ba47b66a3538978d2790b73bb2a2e3c43075fd0498b04bad900",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-train-00807": {
+   "prompt_sha256": "c43079169157994e29eadbcd100d5331c533159b249b7066b7fa31c8f47106a4",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-geometry-train-00817": {
+   "prompt_sha256": "50bfc38f8f9dfcafe6446e8190c60bfb1505f149aa8158a89c2fb108fbeef0d7",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-precalculus-test-00142": {
+   "prompt_sha256": "021d809616846edbdc5aef3a6e6a00303d9aa369b2e98d7155edf659059479f8",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-precalculus-test-00456": {
+   "prompt_sha256": "de51c81a0a5c2576002269b5f88130b22d09e4159816b461ddf8df58e2e6dc19",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-precalculus-test-00514": {
+   "prompt_sha256": "9baabad72ad5575715a029b1db89239e0307e0222cc231abc200408be6c71e68",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-precalculus-train-00079": {
+   "prompt_sha256": "75419a21aa6a673672319a6df7203f8b7e854c97db1edefd3ea0d02ce52610fb",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-precalculus-train-00609": {
+   "prompt_sha256": "59f9eeb646d4d5a3e96523b7971960fb4e2e4eaf0605a50c06a87e6f4a52dc1c",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_geometry|mathfull-precalculus-train-00635": {
+   "prompt_sha256": "6adcd048ae5bc61b5eef026001985417e728601a4917965d113d3bc46a1e000d",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-test-00196": {
+   "prompt_sha256": "5ee49dc30ca23e2d8007a8a91ac35496eb78259a74ac2f7a6b2866b8a9047965",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-test-00254": {
+   "prompt_sha256": "19f89ea506601d38f732892cb30a64779993d73123dc49adf46d1cc927cacb56",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-test-00269": {
+   "prompt_sha256": "f1db6fe6ab62c9526dd81c6bf88eb9c66452f686fbf38f47f8dbccaa985f4c07",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-test-00318": {
+   "prompt_sha256": "06d109985ef70def3a768f8f1595dda4041e7f679e57904e91d5480fe79bb570",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-test-00417": {
+   "prompt_sha256": "50b677e3c81f2e4b3c877dfa47c5b801e678027098ae64593a7ad4caae81630b",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-train-00221": {
+   "prompt_sha256": "d4f2151bdb37cc81cefaed1e95edf8d85ef89ec35bf3dd128247667ad65af64f",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-train-00338": {
+   "prompt_sha256": "89e336ac8d02a79a7603073df7bb5fde555e8cc53b0829e49d3ce6259db92be5",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-train-00361": {
+   "prompt_sha256": "7c393e4555de68e0a4ed81631901afdefd59cb4d59ee5b64c360c1d78b0632fc",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-counting_and_probability-train-00434": {
+   "prompt_sha256": "8919b881093c4b9563df9d83317e627b4254badbc2505ac10f06db830225640a",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-number_theory-test-00389": {
+   "prompt_sha256": "be8be25ca3867226526831871c7f59f16fb0eda24c4b320a31bfcde4349224ed",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-number_theory-train-00016": {
+   "prompt_sha256": "f4fd8abc56fb9adc4b89da130f0e799f9650a61c78f9448c8255525d8f622ec0",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-number_theory-train-00175": {
+   "prompt_sha256": "22e073c721c7beeafb405dea6c0cda77ed71004f016191e530d12eee6d1c9cd1",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-number_theory-train-00283": {
+   "prompt_sha256": "7dbbd539f9a7df0492749fdfb528068d7493819bb324b572b3c0abcd1c3ed698",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-number_theory-train-00413": {
+   "prompt_sha256": "6f658228627342610acb5c1d262b73e3a0dc7178edabd443676b45e00e35e401",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_numbertheory|mathfull-number_theory-train-00514": {
+   "prompt_sha256": "87242fb8dd0327d111a6aab6240c29431694962f7551eb269527db39acc20682",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00059": {
+   "prompt_sha256": "4b7e4c02826674f6970bff7ed78ebd99d72f4a531304a2b1b9211f9161bdf70b",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00070": {
+   "prompt_sha256": "382f09ef4913d15be4aea08152dca94ded1ec17739002b67ca29e7f5031ed50d",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00127": {
+   "prompt_sha256": "906f6538b33e8ffd5834763446472d9f2f7b14ac97ce98538e25385169d52b5b",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00239": {
+   "prompt_sha256": "d570df0c10a8bd0510992ad006510f3aa16e3d5b2f2aecbab950a6a2afef7c43",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00335": {
+   "prompt_sha256": "ea013e361d9fcc52593b492e1d66e2a36f0b18d2920185970b893fdf8b22f88c",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00650": {
+   "prompt_sha256": "a33c5fa5e310285133d77d4babb063a24b11bc5ab70bd8e33935ad6cb0d2a16d",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00812": {
+   "prompt_sha256": "c61a967314e4c97366cd1e2b5f25aa4f21ad1b2954986fb3155602f680aa10f2",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-test-00829": {
+   "prompt_sha256": "4864b51d78d68dc8f24ddd714e5f0e5a7681e888897223f1efb674a58f462903",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-00148": {
+   "prompt_sha256": "ef180632217ec87baa48dc73fa402beec8511c727fd60b5f6bd38965210d2e84",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-00180": {
+   "prompt_sha256": "6260a7e1cc43bd1bfc0e6eb757c2f1a48353004c176cc46151b9e719da4dfea4",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-00310": {
+   "prompt_sha256": "5a0b870553b857663e428dae84e813dfe58e2fa16e7f82af03b385e1ba832f9c",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-00333": {
+   "prompt_sha256": "f59388486abadb2b904a9a8c9e1e92470075d4d6641d1b769b3fc52c5e349b4f",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-00465": {
+   "prompt_sha256": "9bb99012890e177db0591f3b0fba0ad7ea211d7186ad607e5dd1d4d66cf3697e",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-00996": {
+   "prompt_sha256": "99ede8c8a9f94b19e270cbd1a8c4689219bf5a50540f7e5413306f67c3301605",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_math|math_prealgebra|mathfull-prealgebra-train-01150": {
+   "prompt_sha256": "8f167010fecde53356e7ba0188f1fddda36d3f026f2054058c4aaf638cc2499b",
+   "source_ref": "issue2388_pinned:load_math_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6218": {
+   "prompt_sha256": "69816d7bd6e1f01df82bc7cc0a281d9ec2e2db5f90b70d18779b6c525eaf0d3c",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6284": {
+   "prompt_sha256": "1c2222d2d001fe2f27abe110394048a8c57df3f5f4d142a11b66ad8007142dce",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6300": {
+   "prompt_sha256": "538479a3125d34cd4ba9e7a39f013df0bd85b1fff31309b44d507687aebb5858",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6310": {
+   "prompt_sha256": "83222aab75599ad1bfa0c6fbc07c638746edf3621a38d722d45d241bb724fefe",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6380": {
+   "prompt_sha256": "8cc50e76bf7b6519d72324861585403b795fb8780f12d5bf412bd936d30368c2",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6429": {
+   "prompt_sha256": "26d6b52da3a17f2c000b657463185c5c3ef286f96e5082108c85be463575127f",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6487": {
+   "prompt_sha256": "4ca4310c6cdfb2db24425916bbce09f5c9afa354c3de724fe360b2504cc5af69",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6604": {
+   "prompt_sha256": "626250bb49bf3ff5f8131438f0569758ba2276ce4b149ca22a23ddee52580e36",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6622": {
+   "prompt_sha256": "4236a1eb480f1063a3df1c5838786635f2a6d9d5bda3b93c97b0348009b159c9",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6636": {
+   "prompt_sha256": "6ddc96652c169d799ca35bca2aef062420218abf0ecc882f975a075ffd2b4115",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6652": {
+   "prompt_sha256": "83877cba781359dee63d4927caf749f321cc64b911b98b530bbaf0a11b5ed239",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6750": {
+   "prompt_sha256": "716e2033da7e530bc44d5f22644d4605c7a2887ff478fc14f3995c5f5356dc32",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6776": {
+   "prompt_sha256": "18dadf76eebbeb5cf6664a268504bb4e1bb78b62c5e9018e30c2c767f43a8daf",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6785": {
+   "prompt_sha256": "2594fdf61f016958304075b40b7c917d696da803512ab2234de84d1819349552",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_health|mmlupro-6796": {
+   "prompt_sha256": "01815b968ac286927c49b8d2216cff92324e24ecc9ce6efb5acdeff066a7802f",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-10865": {
+   "prompt_sha256": "b94f5c4dd5db228d8bee9ec7c36608afc927cf143171036fa11396c4f4ee5680",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-4700": {
+   "prompt_sha256": "032c7e997ff92aa26abb18554f56ebcca06bec232198533b1f89c398642fe88c",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-4749": {
+   "prompt_sha256": "e6447f3eb125499dcb7baf9ec154856ba1668dfb2a9a1a979d985ffd80cfcffe",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-4836": {
+   "prompt_sha256": "3d6c28bea77bba3e0c7bc34f20162707524f442158adafefb4a7a4ad2424f40b",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-4852": {
+   "prompt_sha256": "878c7793e0eb82f9511b412e63e2c7a4de68502f0249eb734652bf30d171449b",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-4889": {
+   "prompt_sha256": "d438bf4d19ca66c86568875bf783a20f580ba268a9abf4b9d4b49d0805e4b8ef",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-4918": {
+   "prompt_sha256": "dfdd061ed89dcb9f763a4e469b47197d58c746f78de2345ce4a83540c7bbb667",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5160": {
+   "prompt_sha256": "36d4f16689334324414718233ba44935701355f0fa79e6acea305e9e0cad4af2",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5215": {
+   "prompt_sha256": "f7e9a8c057f44a917be0b88dcd3ffbcc0081b3fb9cf3907644fba8da58fdf318",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5433": {
+   "prompt_sha256": "3594b2d8a34b8646d2288108a3d716cb89911a2d4bdf450ca5fc248cc5b1961f",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5488": {
+   "prompt_sha256": "664061e1cac7249880616bf4a4a57962f661013dc88cdbe928f636290f895b43",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5494": {
+   "prompt_sha256": "c2cc6b87821c63b19afdf2e5c5879c9fe2996bfda8720da66f398e4551766486",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5633": {
+   "prompt_sha256": "112ba507621a6696cbfd80aa823fc917824d6a3a48324c6fc76108d34887fb3b",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5677": {
+   "prompt_sha256": "1f7e0fb0343a4c2ad876485bceb726e5e74f88516b7f7b3584e2abdb092cce24",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_humanities|mmlupro-5703": {
+   "prompt_sha256": "fe07d4140ddee57564f5d62384d2b6b202506fd147f32a46779d483e876cb071",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-106": {
+   "prompt_sha256": "7709870ce90fbd6f4d5d2862f9888bd1123f834e5e6d6655bf78290e967cd4bd",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-1095": {
+   "prompt_sha256": "f52131b59a03677fb4785332c8a0483b557c72e576a6fc70fefb33885b5146ab",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-1096": {
+   "prompt_sha256": "cd78758d537d06e8d1f88a5405801d5172e96d66ec831b7e6d41ec6236357232",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-1723": {
+   "prompt_sha256": "003ba40b60884709fa5db0019cd23b5594480dc14768979784910989359be232",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-1831": {
+   "prompt_sha256": "6f590d7a1e76fbb45152bdbf2bb46c82b785acf5266f047a7a1470f787e378ab",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-2019": {
+   "prompt_sha256": "46c1c6220453a46f43e3b16bf5c98d4068ddc6e44c62e57e1861cb12b7b236b9",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-2574": {
+   "prompt_sha256": "deb16294d5e9e49d7482677645057ea5234c9ac681a4f592cea8fdb8ac16136b",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-296": {
+   "prompt_sha256": "664f4f32f50d34edd49168586c8664c92f75c9b87c32909d602b7790fac1b6f8",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-364": {
+   "prompt_sha256": "a46d944dae25c46a949e39dc3e4304613ea4ae252f60d636cdc4104ed6beac3c",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-491": {
+   "prompt_sha256": "453bb78ffdbd1fbf7b9a190d078aece4b25f4f3a679efb25358679080acb556c",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-6843": {
+   "prompt_sha256": "2405d424496381386b9af020a89557824ec9a491159a3ce38a305328716f3357",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-687": {
+   "prompt_sha256": "4e6f061abf924d5337003f07fbf4b27edd96a11434fe590e8d1bacb1190299c1",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-7438": {
+   "prompt_sha256": "d119ffd9a2de0a02133720ef7cd2b3c70d0c6e6d70acb7a4edb9e0bb8dcd39d4",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-7647": {
+   "prompt_sha256": "1f9e2d64e04c6844ddecb2d02af4bd3fdef8a66b2219462492c5e15e0b13e0cb",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_social|mmlupro-777": {
+   "prompt_sha256": "95a8a70187fa33ed869061b3356d1314c6491302e0f5e9caa28ba3bd8196f9e5",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-10055": {
+   "prompt_sha256": "61fe71292e99d9efc0a85d56284cbf917565968f4c0c5876f7ca30f7d4a3c8a6",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-11534": {
+   "prompt_sha256": "019473e1795bc695afa81356ca58c814080bb66d75c2ecdf9bd02d17d2065f04",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-2874": {
+   "prompt_sha256": "e693d0017b249262bb750cf181fc11084967151b481bf98ad3325691f1174ea3",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-3120": {
+   "prompt_sha256": "7151437f41ac76850c288f21c4db44c81875f93bc6db4117df5eae107cf5cfb2",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-3376": {
+   "prompt_sha256": "2f2a0947f8ee625d458625fbc62e7a3979745fcc2c2525d5ac7a34397afad697",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-3603": {
+   "prompt_sha256": "2a8693910a02c6e3c9b0b78a2ba055de572e758fbc29fec0ca49b1b8abc3d1ad",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-3697": {
+   "prompt_sha256": "79db191379a5f2643d26bf0edeed3e36a818eafcb34c1f2b32ea02238282f5f9",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-8239": {
+   "prompt_sha256": "ca8c595a73bdbccc372489dd1c295291cca8ac8f38d96e73bd7a118f6fc0cde1",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-8860": {
+   "prompt_sha256": "9be687fe7ae014075235104b283f99e679794ee8a5cf31f6b687519789d2efa9",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-8958": {
+   "prompt_sha256": "8ef03934a51a8bb204abf05e4244eb1a304b8bcecc05248397f2be80305c9945",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-8983": {
+   "prompt_sha256": "e078f1db2b4c1e335d94c53be11b88d245a54c1fa9d813c50840a96c2ab14f67",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-9045": {
+   "prompt_sha256": "05c8d45da8eafb693d6527255f8ceefc7ee199dc3aca6c69126150844ac3cc2a",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-9085": {
+   "prompt_sha256": "351f6b648408d391afb31bd63cd72b6d159c7345a50bcc97c5d51187f3ac1604",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-9599": {
+   "prompt_sha256": "f67ab72419296062d31a80b737a927e1430096d70f9936f3fd06106faa9fc78c",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "correctness_mmlu_pro|mmlu_stem|mmlupro-9619": {
+   "prompt_sha256": "f24b9da0d6ffa652604e1fa047b53b6d6663601fe12e7ae063264d9b8fb1814b",
+   "source_ref": "issue2388_pinned:load_mmlu_pro_full"
+  },
+  "evil|advbench_requests|advbench#0": {
+   "prompt_sha256": "03776ca3b0631119305eb27e1946d29665d828fc975d569d91f416efb0ffc242",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#129": {
+   "prompt_sha256": "1331b7857ff526e50edc49e00d5d92f2c6264b3123c8188c38ed2a04ccc9f045",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#134": {
+   "prompt_sha256": "09218fb14cb65f3e08ae14d505e8a61fac9ffabf925f3acebe44f3d308404ff5",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#138": {
+   "prompt_sha256": "2b7b7a5dd644a39f78e9f84ca1edf77bcdd1cf8728b508a75fd991c6a26f218e",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#146": {
+   "prompt_sha256": "15b08bd6a87a34970c935dd6300d993c5c280ae11d7d8792e6a98e278b68164b",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#153": {
+   "prompt_sha256": "0baa51b38273cfb6508bd0763c2a57bc62d809c27275002214a2a6361c39b595",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#155": {
+   "prompt_sha256": "1e0aaa9737e65d09ee5c1d080983b769b99b9eaeceef8b1c35cd71c6c4e6c1a2",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#168": {
+   "prompt_sha256": "0825d5421907d0b66d32da0ea2f427dc76a1b98d0ba7ab02506604e5028f05d1",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#193": {
+   "prompt_sha256": "18550ea6041669fd6cbd12010175c33d03adec71f585fc0bd0e8b2fdf963f279",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#199": {
+   "prompt_sha256": "00e0e7aac76d35c5e8adddea334579973cb607b520bc1c4b00b6866d16ca40dd",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#2": {
+   "prompt_sha256": "1ec8063aec61790dd1e06c6ae7301a8cd8ca3bf7bf55e8672311a05f06dfbb4b",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#56": {
+   "prompt_sha256": "0ca9feb7a1d2d4479f77922ca34d1431079e622cdf7f5cedc7dc13fcd9055683",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#63": {
+   "prompt_sha256": "13741d48fb68313148e45f471c2eb4e6c286916ad9e1c74816db755afecbfbe1",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#89": {
+   "prompt_sha256": "3a9d05ab3805295452bef683971ba4667c5171cf2a848ca2609da5379bc763d9",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|advbench_requests|advbench#95": {
+   "prompt_sha256": "2399bd700a195ada0d3a9cf037cf7e95f35d1a18581cf3d293862d623b582361",
+   "source_ref": "query_banks:advbench"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#1": {
+   "prompt_sha256": "0816796c472eeda817745d3190f3d271834660b71b48dd40cbf6cf2618e8ab29",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#10": {
+   "prompt_sha256": "40bd21c468a0830034039a9c39a08f60a917b3097c2cd9e8bc2d4d3b2db3c098",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#14": {
+   "prompt_sha256": "3b7b0400f35076fde009522339cff3bf342d04df12fba8394497031fa7a46a60",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#30": {
+   "prompt_sha256": "2928e5afd2ef938b7a82d60ab592e8d7725a8a3d94e53f500e71a5714d41d732",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#31": {
+   "prompt_sha256": "48b322b8a7b1b992c5b4a3d2346f2fae23e99f151c01daba027ee8c519f20104",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#32": {
+   "prompt_sha256": "1b47dc3432d8d34c36574a2a79c0320ee6fb4d7c7f92e9cc8378b2fbf4200087",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#44": {
+   "prompt_sha256": "64cb6a92b9bc260dd53bdf9cc471d668094eb09bf2e3ba68a731af069969fcb3",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#47": {
+   "prompt_sha256": "0deec0f69a5c60d4565ef33f3fcf96a10f3db6706f9baae0d2cb31e20173207d",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#54": {
+   "prompt_sha256": "83e8d2d51308076cd827f05c823db8983069ab4ba5d153f1382956b60e9681cf",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#57": {
+   "prompt_sha256": "6c452276af377f0decbcb8b89d2afc05ef4a9d57e0d16581b154842bfda9690d",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#7": {
+   "prompt_sha256": "3a38847ffc8ec9509de1a638115d54c2dd4a490be3c2ba0b9539a10004de2f7a",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#71": {
+   "prompt_sha256": "135ba3b12c3727cab56f3ce6dd4ab9148ef4408e41df1d9afa6167534f47cd9c",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#73": {
+   "prompt_sha256": "9bda1715c4c67acfad5ed1f0cf2d36c2328a30bb2699004e6c33e37a5683a634",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#8": {
+   "prompt_sha256": "0e76d6bfec888e971c03771faf3ca397659a36fa7d780288b41632c04504d9aa",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|broad_em_openended|broad_em_train_v1#9": {
+   "prompt_sha256": "7e94f0c0891ecc9330b5ccdfe23d196caf2ade48b606e4f59dc065ebdf64603c",
+   "source_ref": "query_banks:broad_em_train_v1"
+  },
+  "evil|wang44_em_probes|wang44#0": {
+   "prompt_sha256": "6661e4986d5bb62391c351a1ea203bdd6408a2ba5429d79d5bfb7ef8795b0381",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#1": {
+   "prompt_sha256": "4454c6b03ce92664fa254ecd272206412ce9b03ddb26f9ecd3eb0df3ae0364c5",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#11": {
+   "prompt_sha256": "5c4b259ad1c3b912d02c053a2587e9774a793027f4906ca5422bf5e0ad34fda8",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#19": {
+   "prompt_sha256": "5ebe8628408f52f61aadd627c42f9b3e16807e2b5c4f93520f16e15c9375d8bb",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#2": {
+   "prompt_sha256": "c382c9a51d112b0281f754e76e8b3435021ce9ebe1474d0928700145a9a7c7dc",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#22": {
+   "prompt_sha256": "5484d9efdf2fb67392a43dffe9f3ae0ea2139ccd9ce4a1008ba1d7fdb569a745",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#26": {
+   "prompt_sha256": "2a143a659a3c7f5a6a4b4a01c7ec99c4cccdd53f6effcf1d91621cf22fe67a93",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#30": {
+   "prompt_sha256": "5b7ad29856ad340b5ce9679b2bc97ba38c81ac108d0fa86f8a3cc646f0a32345",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#32": {
+   "prompt_sha256": "9acd035b9867e2dc51bfc9bf0e275ac78816bf00b8e6b706aec57e189ac564cf",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#35": {
+   "prompt_sha256": "3232d6eed021de9e77d6b30d615e30b1fd7d999e44de10a8143f022ba470091b",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#36": {
+   "prompt_sha256": "8e198b0991989e56887847f5864c487ec1812363b8d25c9472ec3eab8a87efff",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#42": {
+   "prompt_sha256": "7cea139c53b5b05734a77de662b613c244a6e15c7add4b836946230d3e919005",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#43": {
+   "prompt_sha256": "4071d62da0cdb8b288bd11b164d612f2e48d4dee70092000c7f59ad791e607de",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#7": {
+   "prompt_sha256": "140ab1b7473fb755d70d4e4cd2e62a24ca451649ee40ad505f282e5230fd14d5",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wang44_em_probes|wang44#9": {
+   "prompt_sha256": "9e794d02a53c79ad613c15401041e1470cc52c3fe9829b884e86a6f097835332",
+   "source_ref": "query_banks:wang44"
+  },
+  "evil|wildchat_real|wildchat_random#101": {
+   "prompt_sha256": "003d19ff9589b15fbece2ab060df5287908f240d5969f3edd9cd9b9bb8b9acc4",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#153": {
+   "prompt_sha256": "09a9ff9c17a1e11312d346ae29cd392eba4a672b08cb8d7e002b4597c6c4064e",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#16": {
+   "prompt_sha256": "05de59a46d452636bb28ef06733e8fa982eb6002119a4b6072c0ae86ada92d6e",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#164": {
+   "prompt_sha256": "1848a355a1abde7e1de0e77d53215835a37ad4687cd47b81b0f2ba18f50658fa",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#229": {
+   "prompt_sha256": "0e889dda66f34d7c1491424280a1ec102733bc4c77bf328892785410ffa1a7f5",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#28": {
+   "prompt_sha256": "072952443a2646f32ec4e5d24c62521999b10ecf7a91e94fd1093a10e72db539",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#293": {
+   "prompt_sha256": "14be84f0b11f385b76c9bd94ecc22299f751b075f0da10527419ab4cade667a1",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#317": {
+   "prompt_sha256": "1379cc1b18725af157ad76cca857dd1eb82eadf1ac446b6a3c8560111698e5b6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#452": {
+   "prompt_sha256": "041ce87c9ac818f7f38961f84f4eb015c0b308d8447c580312c3f1b8f17c633f",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#50": {
+   "prompt_sha256": "03b3e287fb1b0c68b2ad7780ab4a358cbb52871f102d7b8b1fca4222285810db",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#523": {
+   "prompt_sha256": "00f61831aa23a2dd4d7eda27bd21e1e5c9c74a527317c2836952c4b8e30de8d9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#538": {
+   "prompt_sha256": "00f11dc491af52547a8f17127e0a515e328bf6b91cf745652784ad3ad80f5cf9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#541": {
+   "prompt_sha256": "004d4983a9e8f2889af060490feff34536de7c3b205523d3572dca3c861efcaf",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#72": {
+   "prompt_sha256": "0360935939f28dfa85d0502625aa139803e14c164572a8484e887a906a903026",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "evil|wildchat_real|wildchat_random#89": {
+   "prompt_sha256": "0478ff225299d80d87f9ad6f68647b204ef72dcd7ad66ecd70b50f4a462699dd",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|arc_c_factual|arc_c#102": {
+   "prompt_sha256": "1d1c85b5a6dd0efd29d5883b5aaa7093acf30d4df1fd4ca4eccaeacd8b8f6cc7",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#121": {
+   "prompt_sha256": "0fa877b0719aece6b661c815cc269564f4e4d092fb98a30f9e8af05cec6ed484",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#153": {
+   "prompt_sha256": "0f7bcbbc086f9c2b3b74f5dd7a51a168d281d53a071030925d3373c2270f66b7",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#167": {
+   "prompt_sha256": "082a6acd68f0be088192a51e0982009410cf4a5a9878702fa2002bee9b4aa817",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#17": {
+   "prompt_sha256": "30d5e78f18811e71352a8a60dd969433a295479f8a96b282c8523668bda3fbde",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#180": {
+   "prompt_sha256": "255a7fb78c1876afb6dae6657ebfa6e0bf4d0d5bc8dccceb0117dbb0c1db14df",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#184": {
+   "prompt_sha256": "040f4c04fa899ade7ca28a5221294eec3694efd35cd1a0c8af6ceb2a51247894",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#23": {
+   "prompt_sha256": "0ea445f131dea2d44120b5702525126307bc6418006507a6968533ddbe227eb7",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#35": {
+   "prompt_sha256": "082b039765239770abfd569f2e78484622771e337c586ba00df050068aa1d9d4",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#39": {
+   "prompt_sha256": "25c83a35cba0bdfb873b9bafd2e8071f43c1a9de0e9c90a8a1e5b4c435df0fe1",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#42": {
+   "prompt_sha256": "06f6d58577de0eb06b8a0694ec9cc271cdb363637988fdbb438e8701abb4ac20",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#43": {
+   "prompt_sha256": "1b600bb363016f41edec262445a10d360eea629b7fba317cbaca9c3db90468c9",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#62": {
+   "prompt_sha256": "0367de5064e6e727eacf11cebc6782dea032a81f924ea0a58e25cca06cafaca1",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#63": {
+   "prompt_sha256": "23aa98872ccd63eff5745b9f01e45691bb604841053fc4d7863d7ba468fb1dc6",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|arc_c_factual|arc_c#83": {
+   "prompt_sha256": "11b1f68ff0794de1ea39ad293d2b728a51eacca74de22a81f8bdd3060dc5e411",
+   "source_ref": "query_banks:arc_c"
+  },
+  "hallucination|fact_questions|fact_questions#1": {
+   "prompt_sha256": "e55a4ab371e3ef2f7e4d05ef5db1404a7ef6ecf1b51308a105bf2e670c71532e",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#10": {
+   "prompt_sha256": "b69f06a675520db21ffa6b2f9b14b8e31b83ee198d29be527231c7108ddb5e77",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#11": {
+   "prompt_sha256": "5d7d504f182d82e801709fc362b1dd795ce4227a2757de0230e0124d67c96b54",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#12": {
+   "prompt_sha256": "d3c6d905ddfc10f2957c70d55d316f06f8c716c711f0c519b5d3a9451c1a117a",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#2": {
+   "prompt_sha256": "e1f4661f61d52eaef290885020e62546de5cab2bd4b7408a7171ab596da62de3",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#4": {
+   "prompt_sha256": "c4cff9712407166c19277a5368ea72c750d8a972405a050f2ab8915f50557831",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#5": {
+   "prompt_sha256": "cccc714a0cf824b2c230fa6c0788a97c7c0dcf1c73a33772646a3b0dddf8bfca",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#6": {
+   "prompt_sha256": "0b301939f40c94580846d9427f56185362bbe5076b728ca580668cf59f27cd6c",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#7": {
+   "prompt_sha256": "9063ef83d3fb7197efa763d45092dbcc06d2fe8172b8b5e9d81372878234791e",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#8": {
+   "prompt_sha256": "638fc5b8b999093f50c40cca2d0a3b275a0d4125a69507a74d988e9580e7a3d0",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|fact_questions|fact_questions#9": {
+   "prompt_sha256": "3d26d6945ee0f2ae5164666899f839541c258821f5889ba5b5d76a2e92b5204a",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "hallucination|wang44_probes|wang44#0": {
+   "prompt_sha256": "6661e4986d5bb62391c351a1ea203bdd6408a2ba5429d79d5bfb7ef8795b0381",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#12": {
+   "prompt_sha256": "21fceb70b00f74bc025e7f134efafc547ed01456c98e3d1ba65b44eeef326fa9",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#14": {
+   "prompt_sha256": "5a111373d002d508fd648b0b3dd642ee08ed3f35b24595e7c12edb4e00a6e466",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#15": {
+   "prompt_sha256": "6d0e111fe4741053126555086117cbcff0a5d307ae521457c62a9032ee5bf2b2",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#17": {
+   "prompt_sha256": "200b14d3f8d19dcbc38e2efdba34065e637ca2597fc8c47671a33fdecbf42e9f",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#22": {
+   "prompt_sha256": "5484d9efdf2fb67392a43dffe9f3ae0ea2139ccd9ce4a1008ba1d7fdb569a745",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#28": {
+   "prompt_sha256": "4e189c1e9b774873cd2a0372365519e31d100846ae6b752c6cfc5802f0fd2f6a",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#30": {
+   "prompt_sha256": "5b7ad29856ad340b5ce9679b2bc97ba38c81ac108d0fa86f8a3cc646f0a32345",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#32": {
+   "prompt_sha256": "9acd035b9867e2dc51bfc9bf0e275ac78816bf00b8e6b706aec57e189ac564cf",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#35": {
+   "prompt_sha256": "3232d6eed021de9e77d6b30d615e30b1fd7d999e44de10a8143f022ba470091b",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#37": {
+   "prompt_sha256": "12eb6ae42f734aac102e7e21f5aadf345062ccd40fbf85c56e61d271ea0db867",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#4": {
+   "prompt_sha256": "5c12221dbe4037fe6ebe0ed0e6a80817c62b3a0161ad4ababbe8dcdeff779942",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#5": {
+   "prompt_sha256": "39c3c113985f64d85c731ae3a4862b0fb2bb5b8b34405b0426fd311294f876c9",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#7": {
+   "prompt_sha256": "140ab1b7473fb755d70d4e4cd2e62a24ca451649ee40ad505f282e5230fd14d5",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wang44_probes|wang44#9": {
+   "prompt_sha256": "9e794d02a53c79ad613c15401041e1470cc52c3fe9829b884e86a6f097835332",
+   "source_ref": "query_banks:wang44"
+  },
+  "hallucination|wildchat_real|wildchat_random#101": {
+   "prompt_sha256": "003d19ff9589b15fbece2ab060df5287908f240d5969f3edd9cd9b9bb8b9acc4",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#152": {
+   "prompt_sha256": "113a1542a42c804c5b7b05423381e6d845d1808f4453e3b3135b70ea99ea337b",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#244": {
+   "prompt_sha256": "0d0841180e2bd8b6958bde0fd0b8f52ead9994df65ff1922ea6fa7b5bfd13c47",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#278": {
+   "prompt_sha256": "0a6a913e4427194d1306f766fd1507ed7e4d5449948cb57de2a9c85b1ed229e0",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#317": {
+   "prompt_sha256": "1379cc1b18725af157ad76cca857dd1eb82eadf1ac446b6a3c8560111698e5b6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#336": {
+   "prompt_sha256": "05ac2c9e941a8d270ba92312c783236fc683dbea2dd20da622af3c8948834cd3",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#355": {
+   "prompt_sha256": "030095e1c784193ef59ff9aa26b2caeeefb19b04c3239a349ea3d3c252090994",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#420": {
+   "prompt_sha256": "0843a69bcc8b79de7802a674605d2d5836bdcfd374c5985ac9bfda6d0f144246",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#422": {
+   "prompt_sha256": "0ffad4eb644aa8e8b2e130b2d917fc8b06e39962ee807cec76cc2eebb1b76add",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#499": {
+   "prompt_sha256": "124d1c6fd6af64136ea9c68c87ea907ec025802f743b86054c7e9810bb6c3904",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#541": {
+   "prompt_sha256": "004d4983a9e8f2889af060490feff34536de7c3b205523d3572dca3c861efcaf",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#551": {
+   "prompt_sha256": "0a06987c0047d28ec8c03f139dd0bf13b58eb0dbeb6375651ab5a76a1280b5aa",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#593": {
+   "prompt_sha256": "0b92a1d4f826412983487b73598a29996f2be2aee0dd0f03d69926655b1496f9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#72": {
+   "prompt_sha256": "0360935939f28dfa85d0502625aa139803e14c164572a8484e887a906a903026",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "hallucination|wildchat_real|wildchat_random#81": {
+   "prompt_sha256": "197f38adaa69e7ffa155646fa1ee790039c756177e52463b96ecefc0fcede493",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|advbench_requests|advbench#101": {
+   "prompt_sha256": "1b93b1cedd6c486c4e5d3405657ba4504909c653fbdde4b05fdd4223ed8fae44",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#110": {
+   "prompt_sha256": "1d0d7f0fdc0f1ab422c87426e16becdb291ed80dbe0c21e51fb4560211bb0c47",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#129": {
+   "prompt_sha256": "1331b7857ff526e50edc49e00d5d92f2c6264b3123c8188c38ed2a04ccc9f045",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#146": {
+   "prompt_sha256": "15b08bd6a87a34970c935dd6300d993c5c280ae11d7d8792e6a98e278b68164b",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#152": {
+   "prompt_sha256": "2afe1cd2b43b2417ed1a07e6b655894328c6efad1e97bf439ddd0792423e9b0c",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#171": {
+   "prompt_sha256": "0752fb096e254239709a5b9587fd22981dcfc81b77298d05a777fefccb791b40",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#18": {
+   "prompt_sha256": "10d4bd457350dbe33bdd00202af12d56e602ef1b6ec4d3deeca8a46693e72f74",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#191": {
+   "prompt_sha256": "2cede9da81cfe945c7ff570acd41732c10210fab0c53af4841170d98abe4314c",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#2": {
+   "prompt_sha256": "1ec8063aec61790dd1e06c6ae7301a8cd8ca3bf7bf55e8672311a05f06dfbb4b",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#49": {
+   "prompt_sha256": "3b5acb8f05d93bf36057b1177ed7dda97872dbb3ace487ea5730f91125cd2a94",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#51": {
+   "prompt_sha256": "13eaf8ffc98c7c17c7ec4d704f4d1ca513c89dee737dab9144d353b064b3426e",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#56": {
+   "prompt_sha256": "0ca9feb7a1d2d4479f77922ca34d1431079e622cdf7f5cedc7dc13fcd9055683",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#63": {
+   "prompt_sha256": "13741d48fb68313148e45f471c2eb4e6c286916ad9e1c74816db755afecbfbe1",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#9": {
+   "prompt_sha256": "1d01b77c79d88762057182a076790d7dfe3843ed88897a8bf4fc773056d9c90c",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|advbench_requests|advbench#97": {
+   "prompt_sha256": "10fcf705d4085471b30f6cce0fc8a8cb48b43c74d7fd0d1d928cdfb9f654e05c",
+   "source_ref": "query_banks:advbench"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#1": {
+   "prompt_sha256": "66caabdd134949ef6ed0d0c70d28156f6a7c5b085e0593ec4bc68fe97825e176",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#12": {
+   "prompt_sha256": "9160ec7d16039f38b64f03663d9d3e51a75a38ad78d47e42a3d4ae3d2f721c5c",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#14": {
+   "prompt_sha256": "4befde6875fa426226386c460532491315a2323082097973339c1030748793d0",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#18": {
+   "prompt_sha256": "3499d3b858f1a7e158e43f44dfece633f5043e94487d5aeeaffc874e2002dad5",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#19": {
+   "prompt_sha256": "530cbea977ea5962f2bfcaec5a88f839900d9622d31777a995b061cd91d8803e",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#25": {
+   "prompt_sha256": "73dd5a8963875a80a1f0d22e2ba2dd76538d5b25d7c114878c7317717268b9f9",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#26": {
+   "prompt_sha256": "0ae2e0983b482cdba9b58f36984fe99a94e91e474fd33740e98ee9f8048ec4c0",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#30": {
+   "prompt_sha256": "8e397ed3d29dd2356b7b8d864c890669f019b5d294b018a9f90fc0eeebf7dd30",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#31": {
+   "prompt_sha256": "b03473224a0aadceb2937f9eebfeb4b5b77431466a0c9ff2544c0371c81070a8",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#32": {
+   "prompt_sha256": "233c5b61ddb7e87fa1ccd682413495b46602b1520939b370ec194c2056311bd8",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#34": {
+   "prompt_sha256": "a04ad1ab68d96d9d154ef883fda3ff0637c1d7954016082dfbe421d0d30df52a",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#35": {
+   "prompt_sha256": "2c103d66db6dc0ebc4a1343cc2e14f476d385f7fcddedd10d3d8492a388c7510",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#5": {
+   "prompt_sha256": "77cefaf3ac21624c69245408e65c9a1527636c76bc184294f02d7646592b6de9",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|sensitive_info_requests|sensitive_info_requests#7": {
+   "prompt_sha256": "be7d28a7786332b46873741d330595765ccdaba0f5839ac885f804e50cfa094a",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#12": {
+   "prompt_sha256": "0df4e78f39106044a2a9d9dc5c4480721805f34d1fc9ea0e2dbf371a03248af5",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#129": {
+   "prompt_sha256": "1a455df65ffe93f6d2d5ac698503d156d3ae1df65f03cbd181031386339c27c8",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#163": {
+   "prompt_sha256": "17f78dc9551d82c00d8953be09c7e1d0b9a783ef21b952f8a0915dde727a0bca",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#166": {
+   "prompt_sha256": "03375b5374f1d4a32994004e8c0ed731a0f23d2041a15b4f6f72f446d201fb7d",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#183": {
+   "prompt_sha256": "100b936c6303b4dc1a87d93f5d47d9542fac5fde49dcd342a56f5a328ec5079c",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#195": {
+   "prompt_sha256": "061c14384362930562e0c89fae5b029276d2615feb3f14afa3a21c3c0f3a1d3f",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#203": {
+   "prompt_sha256": "19a20652903d5d000b4a71f4d5971cd0e031b7cb2f8fc03456e1254cf3b6cd59",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#208": {
+   "prompt_sha256": "011941540fbb7c0a1577d7ee4447fca7d03b94b2052520fd6db86d98dbe563ef",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#22": {
+   "prompt_sha256": "165a3d9828bed6cfe344b3bd185dadc8fd608c3a7e14f0ac3dcb9dca4729b883",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#227": {
+   "prompt_sha256": "0563cb1a7e238659eb82ae4025af371d90db4f3d80ac2e84f104e88fcc1d53ea",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#235": {
+   "prompt_sha256": "035a68562c76e9acd3a7eaf1c402816f5b506ad7f0c50d24e989989a881675d1",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#28": {
+   "prompt_sha256": "0e47ecf70e3e137d5d9d697e1453959aa1b9229a65309cf4d7000d6cd237fff5",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#32": {
+   "prompt_sha256": "0ae751830638afd57087807de4b024df8f4fa83c2af61b8f3f9d49bc14a948de",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#59": {
+   "prompt_sha256": "11db4b159350fc28fbcd2922c04fab6e70481b0f646c01531b0c4d94ee4f2822",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|strongreject_requests|strongreject#79": {
+   "prompt_sha256": "07c8f727a4bca6702c7a4f27bd7054023e4d5947e1c65d680572944407c2ad95",
+   "source_ref": "query_banks:strongreject"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#101": {
+   "prompt_sha256": "003d19ff9589b15fbece2ab060df5287908f240d5969f3edd9cd9b9bb8b9acc4",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#178": {
+   "prompt_sha256": "024f3412902a8e8f471d0ab6f021a9bf28c8a01e763cccd3124445523d478c01",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#229": {
+   "prompt_sha256": "0e889dda66f34d7c1491424280a1ec102733bc4c77bf328892785410ffa1a7f5",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#231": {
+   "prompt_sha256": "03c47f681dc6aa1ebd66d3d38b3aa56d1d620e22ae53fbc9088348b5c33f1984",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#278": {
+   "prompt_sha256": "0a6a913e4427194d1306f766fd1507ed7e4d5449948cb57de2a9c85b1ed229e0",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#28": {
+   "prompt_sha256": "072952443a2646f32ec4e5d24c62521999b10ecf7a91e94fd1093a10e72db539",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#420": {
+   "prompt_sha256": "0843a69bcc8b79de7802a674605d2d5836bdcfd374c5985ac9bfda6d0f144246",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#422": {
+   "prompt_sha256": "0ffad4eb644aa8e8b2e130b2d917fc8b06e39962ee807cec76cc2eebb1b76add",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#452": {
+   "prompt_sha256": "041ce87c9ac818f7f38961f84f4eb015c0b308d8447c580312c3f1b8f17c633f",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#50": {
+   "prompt_sha256": "03b3e287fb1b0c68b2ad7780ab4a358cbb52871f102d7b8b1fca4222285810db",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#523": {
+   "prompt_sha256": "00f61831aa23a2dd4d7eda27bd21e1e5c9c74a527317c2836952c4b8e30de8d9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#538": {
+   "prompt_sha256": "00f11dc491af52547a8f17127e0a515e328bf6b91cf745652784ad3ad80f5cf9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#593": {
+   "prompt_sha256": "0b92a1d4f826412983487b73598a29996f2be2aee0dd0f03d69926655b1496f9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#72": {
+   "prompt_sha256": "0360935939f28dfa85d0502625aa139803e14c164572a8484e887a906a903026",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "harmful_compliance|wildchat_real|wildchat_random#76": {
+   "prompt_sha256": "056d988c986844703d49c52dca9a6fefeb8e9e0190c4e7b5b8f9f31fccf81ec6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|fact_questions|fact_questions#0": {
+   "prompt_sha256": "6968d54f83926f1c2abfed31d09cea204ecbf67c203ac5a6bffac4821a74efdd",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|fact_questions|fact_questions#12": {
+   "prompt_sha256": "d3c6d905ddfc10f2957c70d55d316f06f8c716c711f0c519b5d3a9451c1a117a",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|fact_questions|fact_questions#14": {
+   "prompt_sha256": "2e2db24e4cb9c8cd66fc59f94d034652758d7f6acd1ace231a134346569b1507",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|fact_questions|fact_questions#4": {
+   "prompt_sha256": "c4cff9712407166c19277a5368ea72c750d8a972405a050f2ab8915f50557831",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|fact_questions|fact_questions#5": {
+   "prompt_sha256": "cccc714a0cf824b2c230fa6c0788a97c7c0dcf1c73a33772646a3b0dddf8bfca",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|fact_questions|fact_questions#7": {
+   "prompt_sha256": "9063ef83d3fb7197efa763d45092dbcc06d2fe8172b8b5e9d81372878234791e",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|fact_questions|fact_questions#8": {
+   "prompt_sha256": "638fc5b8b999093f50c40cca2d0a3b275a0d4125a69507a74d988e9580e7a3d0",
+   "source_ref": "query_banks:fact_questions"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#0": {
+   "prompt_sha256": "1124b808b585be31268276198886ad17b90a5102d7e8f182ef13551f9bc98af8",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#13": {
+   "prompt_sha256": "5c4180bc064a300b6cf2204f9af1db4839ea27ecb150324b2b93dbe74d32478e",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#16": {
+   "prompt_sha256": "549d4bdd9015909e8a66cfeada66993b9d86d5ad62eeeaa40c376ee49e914925",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#17": {
+   "prompt_sha256": "082408ba33703a5e7effe250dea519b92750c7ce94795d7f1147628c4e2e70a3",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#18": {
+   "prompt_sha256": "18061597c780a136c4763802706733d23d1fbd855e4ed301eeedf378cd3ab58b",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#2": {
+   "prompt_sha256": "32e90e000dccfd8789d760f48729e757e7909931c6aa8711126a02e46af9b520",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#20": {
+   "prompt_sha256": "0fd6f789946ab2c0dacdf2fc46bed6a044e11969dc7a76ca673e8986ae131a22",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#22": {
+   "prompt_sha256": "5160dc519a0caa76ef972851f0d786690bce218191d7cdf5738208607869e042",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#26": {
+   "prompt_sha256": "33645b0e10d19adf84112ea69556c8f2bb257d018ac466d25cf166b5077fceb2",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#27": {
+   "prompt_sha256": "1cbbd1f9411ef9ec8bb9415f3b8a6285a4ec8101d825b3d8787170333d731eeb",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#28": {
+   "prompt_sha256": "75783061de0e90a4f7e22e7a5515e3f8ea3e25bdc4f12a2cfda88ea99b24657b",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#3": {
+   "prompt_sha256": "2324c5497692e5366c5ab732424db6ecc83c6b7338ff2d89cbfbee4f7faa9a80",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#33": {
+   "prompt_sha256": "0fe6839615f2829ea94ffdc4641ddb73808006285a9717ae16537877cb81300e",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#37": {
+   "prompt_sha256": "5d1bd65531878d4b9eb69e6335db23535f4acc73fd15c87d4e68c2783148c1ff",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|impolite_neutral|impolite_neutral_v1#5": {
+   "prompt_sha256": "2a73d73040e8b4f886ebd1a1f70bff67b5c0014faf3e943f1fe48d070457f31c",
+   "source_ref": "query_banks:impolite_neutral_v1"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#10": {
+   "prompt_sha256": "6436ffde122757e9e48ae049c64b4fa0f60ccf21f21062b55cfbd07e3240d4e2",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#13": {
+   "prompt_sha256": "1f2bde8ed958e614a86abda9e596e1528cbd65d19c028c9b3c12e7aad24a9e9f",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#15": {
+   "prompt_sha256": "48feafb1f1be7e1b054c89d5df7f8d50a7fd3ced7ef507eef6b2d54b6ebe9204",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#16": {
+   "prompt_sha256": "8278966aceab2da0a29df07fa6eaa9a8700a7639f44e4bbc844ca02b85b4ad5e",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#21": {
+   "prompt_sha256": "02182c3ff24c3ccc98d3a9031b44b1cb825e885fe803e1d7b263ef7406b68957",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#23": {
+   "prompt_sha256": "877c889869c80afdd1e28a1f99d384e27c33694b41bb19e2a898f9cd99a93ae8",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#25": {
+   "prompt_sha256": "045363c4a49f0be892cfba1c524f932eee4f5a48e1ed5762941f9bb7137c50f9",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#27": {
+   "prompt_sha256": "440f427bc0e6b653e0da98e2a44751051ecb5846f429c80552018515ba435e6b",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#31": {
+   "prompt_sha256": "ae237c574435d8d50b96aa272480f74c9726ff2735dfc770670a15b54c393135",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#34": {
+   "prompt_sha256": "13c4b993e8a787222a6155fd7e27e4a661e646e413f89e660e779c0844b833ee",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#39": {
+   "prompt_sha256": "0c7bcd304949d40f7b36c0f807988af0710a5d4fb7cd51632b432a274a705cf7",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#44": {
+   "prompt_sha256": "9b13592818d95a659f5f977c3c115867449b0711933dfd69651690a23d011716",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#48": {
+   "prompt_sha256": "6b498c456783b1f4defb9b6151b2e5e50e3acc080809555af1ba3ca57143f4d5",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#7": {
+   "prompt_sha256": "2dd509ad2c6c8e46d5b0bbfc0095aa28e251ab12e5c932ae74c236bade4b34ae",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|sycophancy_claims|sycophancy_claims#8": {
+   "prompt_sha256": "1a3818cbf90eb24f4dd409639725bd50a6fa339a4fff25593f83767aa49178ac",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "impoliteness|wildchat_real|wildchat_random#178": {
+   "prompt_sha256": "024f3412902a8e8f471d0ab6f021a9bf28c8a01e763cccd3124445523d478c01",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#244": {
+   "prompt_sha256": "0d0841180e2bd8b6958bde0fd0b8f52ead9994df65ff1922ea6fa7b5bfd13c47",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#270": {
+   "prompt_sha256": "103071367fe2987ecbe88c43e9167555cc60cb437d5c3897c92a4333a1266be2",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#28": {
+   "prompt_sha256": "072952443a2646f32ec4e5d24c62521999b10ecf7a91e94fd1093a10e72db539",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#304": {
+   "prompt_sha256": "040733193a8fddc3a9f2a6506a2bbcfb5c7a119ba25c39c31a5b0a237b721e1b",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#355": {
+   "prompt_sha256": "030095e1c784193ef59ff9aa26b2caeeefb19b04c3239a349ea3d3c252090994",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#420": {
+   "prompt_sha256": "0843a69bcc8b79de7802a674605d2d5836bdcfd374c5985ac9bfda6d0f144246",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#422": {
+   "prompt_sha256": "0ffad4eb644aa8e8b2e130b2d917fc8b06e39962ee807cec76cc2eebb1b76add",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#50": {
+   "prompt_sha256": "03b3e287fb1b0c68b2ad7780ab4a358cbb52871f102d7b8b1fca4222285810db",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#523": {
+   "prompt_sha256": "00f61831aa23a2dd4d7eda27bd21e1e5c9c74a527317c2836952c4b8e30de8d9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#581": {
+   "prompt_sha256": "04a911c00f52ba72b8e9d9c2eb36cf3573ae35c662ab184dc49988fa61555858",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#593": {
+   "prompt_sha256": "0b92a1d4f826412983487b73598a29996f2be2aee0dd0f03d69926655b1496f9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#7": {
+   "prompt_sha256": "1bcca34dc541f0911a1fa92679c37f936028278c051ede4130dc6288a4f602e4",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#72": {
+   "prompt_sha256": "0360935939f28dfa85d0502625aa139803e14c164572a8484e887a906a903026",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "impoliteness|wildchat_real|wildchat_random#81": {
+   "prompt_sha256": "197f38adaa69e7ffa155646fa1ee790039c756177e52463b96ecefc0fcede493",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|advbench_requests|advbench#0": {
+   "prompt_sha256": "03776ca3b0631119305eb27e1946d29665d828fc975d569d91f416efb0ffc242",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#114": {
+   "prompt_sha256": "09554f9314313466c44abb694a5fc40d9ac92bf35a5a95e556a7f3b878fccf10",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#134": {
+   "prompt_sha256": "09218fb14cb65f3e08ae14d505e8a61fac9ffabf925f3acebe44f3d308404ff5",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#153": {
+   "prompt_sha256": "0baa51b38273cfb6508bd0763c2a57bc62d809c27275002214a2a6361c39b595",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#155": {
+   "prompt_sha256": "1e0aaa9737e65d09ee5c1d080983b769b99b9eaeceef8b1c35cd71c6c4e6c1a2",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#168": {
+   "prompt_sha256": "0825d5421907d0b66d32da0ea2f427dc76a1b98d0ba7ab02506604e5028f05d1",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#171": {
+   "prompt_sha256": "0752fb096e254239709a5b9587fd22981dcfc81b77298d05a777fefccb791b40",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#18": {
+   "prompt_sha256": "10d4bd457350dbe33bdd00202af12d56e602ef1b6ec4d3deeca8a46693e72f74",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#183": {
+   "prompt_sha256": "018e1c77f31c684f42504968a504481ac4ae28141859df5ef9ed13d44b6d0e56",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#199": {
+   "prompt_sha256": "00e0e7aac76d35c5e8adddea334579973cb607b520bc1c4b00b6866d16ca40dd",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#22": {
+   "prompt_sha256": "0faba882834d4c944861a326cfe04e22ab8d3416da9f0713c50075db679a52a9",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#48": {
+   "prompt_sha256": "0330eae24b1dcada93ce7bad3435b8d442def3d35b71c37200e6af6502907dab",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#51": {
+   "prompt_sha256": "13eaf8ffc98c7c17c7ec4d704f4d1ca513c89dee737dab9144d353b064b3426e",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#56": {
+   "prompt_sha256": "0ca9feb7a1d2d4479f77922ca34d1431079e622cdf7f5cedc7dc13fcd9055683",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|advbench_requests|advbench#97": {
+   "prompt_sha256": "10fcf705d4085471b30f6cce0fc8a8cb48b43c74d7fd0d1d928cdfb9f654e05c",
+   "source_ref": "query_banks:advbench"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#1": {
+   "prompt_sha256": "66caabdd134949ef6ed0d0c70d28156f6a7c5b085e0593ec4bc68fe97825e176",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#11": {
+   "prompt_sha256": "052928d695821fb7c9e04797046643bf5097307065f580ce0fd9f4ccc7933b2f",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#12": {
+   "prompt_sha256": "9160ec7d16039f38b64f03663d9d3e51a75a38ad78d47e42a3d4ae3d2f721c5c",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#13": {
+   "prompt_sha256": "55b6ccf1acb5fcab3debce938ecb492b6ea53beee2d7c139202dcec322555a7c",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#17": {
+   "prompt_sha256": "47c973384a01f5601b337af098f8adb0f9b32cde5d028455520400171f81916c",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#19": {
+   "prompt_sha256": "530cbea977ea5962f2bfcaec5a88f839900d9622d31777a995b061cd91d8803e",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#22": {
+   "prompt_sha256": "05a2707e5e31a3b8e1d19ab591df1d673d6656343614109f202cc561d6f9cf4f",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#26": {
+   "prompt_sha256": "0ae2e0983b482cdba9b58f36984fe99a94e91e474fd33740e98ee9f8048ec4c0",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#3": {
+   "prompt_sha256": "29b7d120bc4cec028e90e4c3f2a1303cc6e01349e692070415743db702b50eb1",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#32": {
+   "prompt_sha256": "233c5b61ddb7e87fa1ccd682413495b46602b1520939b370ec194c2056311bd8",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#35": {
+   "prompt_sha256": "2c103d66db6dc0ebc4a1343cc2e14f476d385f7fcddedd10d3d8492a388c7510",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#38": {
+   "prompt_sha256": "680eae23332d90eb9864635a5a31b987e3dae14887cb863ccc57fa9a932a8a5b",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|sensitive_info_requests|sensitive_info_requests#5": {
+   "prompt_sha256": "77cefaf3ac21624c69245408e65c9a1527636c76bc184294f02d7646592b6de9",
+   "source_ref": "query_banks:sensitive_info_requests"
+  },
+  "refusal|strongreject_requests|strongreject#127": {
+   "prompt_sha256": "1b2752045935816fe07fe2a72d2dcd4bad10e517fabf28f557c6b7f6b91abbb2",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#129": {
+   "prompt_sha256": "1a455df65ffe93f6d2d5ac698503d156d3ae1df65f03cbd181031386339c27c8",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#166": {
+   "prompt_sha256": "03375b5374f1d4a32994004e8c0ed731a0f23d2041a15b4f6f72f446d201fb7d",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#180": {
+   "prompt_sha256": "20a6f2aca0bd193e6ff366cbb52f8e1f934fcf1651be23a78da7c4dd86fcd46c",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#183": {
+   "prompt_sha256": "100b936c6303b4dc1a87d93f5d47d9542fac5fde49dcd342a56f5a328ec5079c",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#195": {
+   "prompt_sha256": "061c14384362930562e0c89fae5b029276d2615feb3f14afa3a21c3c0f3a1d3f",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#212": {
+   "prompt_sha256": "0df061511b419e3d11570e0af96d0ad73b5693b2bf577c3faeafff948c50ae1d",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#227": {
+   "prompt_sha256": "0563cb1a7e238659eb82ae4025af371d90db4f3d80ac2e84f104e88fcc1d53ea",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#248": {
+   "prompt_sha256": "0d6ef1f0d95a3739e924a26c548a69a10012cfad1ceedeefdcff0d6e27cdc8d6",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#294": {
+   "prompt_sha256": "14de456bc8abeec5ab9580ed12f4326cc1c8c589b9592dbdf244868e2c5bd563",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#3": {
+   "prompt_sha256": "0ede2d8ff1c280a480151c07f3183972b489919441a70e587881aeb2bf1c4be7",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#32": {
+   "prompt_sha256": "0ae751830638afd57087807de4b024df8f4fa83c2af61b8f3f9d49bc14a948de",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#4": {
+   "prompt_sha256": "091e5de10eb4af92122ed0bbd80af0566baafab255b706269966fa3f015e9561",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#59": {
+   "prompt_sha256": "11db4b159350fc28fbcd2922c04fab6e70481b0f646c01531b0c4d94ee4f2822",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|strongreject_requests|strongreject#86": {
+   "prompt_sha256": "114a18a99eff6004675f90faa7f7a9ffec304058eea8a0b153cc0be53c2313cd",
+   "source_ref": "query_banks:strongreject"
+  },
+  "refusal|wildchat_real|wildchat_random#164": {
+   "prompt_sha256": "1848a355a1abde7e1de0e77d53215835a37ad4687cd47b81b0f2ba18f50658fa",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#229": {
+   "prompt_sha256": "0e889dda66f34d7c1491424280a1ec102733bc4c77bf328892785410ffa1a7f5",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#231": {
+   "prompt_sha256": "03c47f681dc6aa1ebd66d3d38b3aa56d1d620e22ae53fbc9088348b5c33f1984",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#247": {
+   "prompt_sha256": "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#293": {
+   "prompt_sha256": "14be84f0b11f385b76c9bd94ecc22299f751b075f0da10527419ab4cade667a1",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#355": {
+   "prompt_sha256": "030095e1c784193ef59ff9aa26b2caeeefb19b04c3239a349ea3d3c252090994",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#422": {
+   "prompt_sha256": "0ffad4eb644aa8e8b2e130b2d917fc8b06e39962ee807cec76cc2eebb1b76add",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#490": {
+   "prompt_sha256": "0ac15cd0cb5db90a266ef5bf2bb9d2587929201562a3db5d6fe0c887f58f4489",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#50": {
+   "prompt_sha256": "03b3e287fb1b0c68b2ad7780ab4a358cbb52871f102d7b8b1fca4222285810db",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#538": {
+   "prompt_sha256": "00f11dc491af52547a8f17127e0a515e328bf6b91cf745652784ad3ad80f5cf9",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#541": {
+   "prompt_sha256": "004d4983a9e8f2889af060490feff34536de7c3b205523d3572dca3c861efcaf",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#581": {
+   "prompt_sha256": "04a911c00f52ba72b8e9d9c2eb36cf3573ae35c662ab184dc49988fa61555858",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#72": {
+   "prompt_sha256": "0360935939f28dfa85d0502625aa139803e14c164572a8484e887a906a903026",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#76": {
+   "prompt_sha256": "056d988c986844703d49c52dca9a6fefeb8e9e0190c4e7b5b8f9f31fccf81ec6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "refusal|wildchat_real|wildchat_random#81": {
+   "prompt_sha256": "197f38adaa69e7ffa155646fa1ee790039c756177e52463b96ecefc0fcede493",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#10": {
+   "prompt_sha256": "6436ffde122757e9e48ae049c64b4fa0f60ccf21f21062b55cfbd07e3240d4e2",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#13": {
+   "prompt_sha256": "1f2bde8ed958e614a86abda9e596e1528cbd65d19c028c9b3c12e7aad24a9e9f",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#15": {
+   "prompt_sha256": "48feafb1f1be7e1b054c89d5df7f8d50a7fd3ced7ef507eef6b2d54b6ebe9204",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#22": {
+   "prompt_sha256": "9396dc5c8e96fdc6fb29e3591fd4cd740587b6b56ca4f89390bfc5540ee5b8cf",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#23": {
+   "prompt_sha256": "877c889869c80afdd1e28a1f99d384e27c33694b41bb19e2a898f9cd99a93ae8",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#27": {
+   "prompt_sha256": "440f427bc0e6b653e0da98e2a44751051ecb5846f429c80552018515ba435e6b",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#36": {
+   "prompt_sha256": "36e901e38c2de21c6ea035d1d70d10f95d714ddcf41ce54141b39b6b65aee4fb",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#38": {
+   "prompt_sha256": "d711e36f81d425e05212b93f8b30116eca430d6791b4db75062aa2cc17902c35",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#39": {
+   "prompt_sha256": "0c7bcd304949d40f7b36c0f807988af0710a5d4fb7cd51632b432a274a705cf7",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#41": {
+   "prompt_sha256": "059282bbf6079dd10ae160d1d07a656e2a867a415e49becb361dbe0b3cc75d5e",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#46": {
+   "prompt_sha256": "718ca033a95ed1be91998fb235198f4425ceafd9571583859ac95129eb4e1a7e",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#5": {
+   "prompt_sha256": "64384ad2ba4332000086e5b38fec475ef7ba82b317faef896276b673fc4ba220",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#7": {
+   "prompt_sha256": "2dd509ad2c6c8e46d5b0bbfc0095aa28e251ab12e5c932ae74c236bade4b34ae",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#8": {
+   "prompt_sha256": "1a3818cbf90eb24f4dd409639725bd50a6fa339a4fff25593f83767aa49178ac",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_claims|sycophancy_claims#9": {
+   "prompt_sha256": "9e7f79bc204c9016447c16610f973d6a94c213449124891cd2d395b2031fb455",
+   "source_ref": "query_banks:sycophancy_claims"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#13": {
+   "prompt_sha256": "0d3b8b245e9058ce026d92a2d7dcf3b1c40456b097c7c02c73b992845db37b8e",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#15": {
+   "prompt_sha256": "375bd8d269c40df9b687545a37a35d167280307074d4437d5ab0bd6d86ff3f99",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#19": {
+   "prompt_sha256": "299b58cd1e08aeae3013a1dae5ca8f17bba3f715238ab98cbfd4535f90c2509b",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#2": {
+   "prompt_sha256": "c6e023ba84bfb8cfbc9b25eb10aa64e17ddd5f4ecef3c69278e1b5f218e67948",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#20": {
+   "prompt_sha256": "371265d2ab07657de08eae7bdf93fa6fc513844e08939f9e85fd4fb42c3cdac7",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#22": {
+   "prompt_sha256": "2cc4500fab80254e059f93c5bf98e56c121101e3d20246dcad3da3852ff99086",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#23": {
+   "prompt_sha256": "2b6d1c3e3a39fc08b21c28ac59ea51199ac30a1b201b7b215206d1fbeecce0fe",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#30": {
+   "prompt_sha256": "9efb59a52ae0da7a2990981758b0ba76900f09333f5f88f072fc538394d2b48b",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#31": {
+   "prompt_sha256": "b8d9d5642326da1a0e33aac1825af1a973b5e7ac91ca0ab6da7582db0d31b7db",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#32": {
+   "prompt_sha256": "5afed89066a4b01abee039209656dc431cf75e27182287a436d997a1a7538e32",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#34": {
+   "prompt_sha256": "1a4e320a4ba8c61ab26f7fd0aba2f443375837f9af4441972e87f923e6dd7378",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#6": {
+   "prompt_sha256": "21c4e4d27cbefed5e77bfe0c4099a8144f88f553d035c5a809b5033cf43f8f64",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#8": {
+   "prompt_sha256": "463d5bc845669f3d19ccbf9dd5707c17b7270a04fcb97e1bddb2d05605ffecc0",
+   "source_ref": "query_banks:sycophancy_neutral_v1"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#1": {
+   "prompt_sha256": "12e8f510c3d7469ec1e160ca235ef882872dbda9da22a380ed137502b6810344",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#13": {
+   "prompt_sha256": "36d2012dad0e09c4e6c5e37e0d1bbb6535d9311ebc98c159033e9504f705b609",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#14": {
+   "prompt_sha256": "db6a8147c3d0a229037161f2f5bd505afefbfdff36e216e2938605c0d5d23ba2",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#15": {
+   "prompt_sha256": "3c7aa74bbf36e6d07fbd554f695f034856e96d2bc28d0b4f5990f32de0df42c9",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#17": {
+   "prompt_sha256": "3ab1f0e3cf113c541c7078aafc40d52003efd5155836228de07c008b136e08e8",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#18": {
+   "prompt_sha256": "77cc44034f33f59802bb2e4f875b8b63320c2034db322215efb707d7912a0a19",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#19": {
+   "prompt_sha256": "f8e9c6ebad242f451921acae3a52a0377bf6a28ad7a1852d363c2b3cb7144aa2",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#20": {
+   "prompt_sha256": "699c332fdfdc45ea663c2c7bc491a98015ea33b3d77da4b6a34c998f459117d6",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#21": {
+   "prompt_sha256": "79db28a7d3354c9b17c5505f770a0461d45dfe7e0037b505e4d4091f25789b35",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#28": {
+   "prompt_sha256": "35b85e98b86268e34b0eeebd23876f0e2b00d4024b9e4de29653c02c63703e4c",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#34": {
+   "prompt_sha256": "0b264698d84ca4b98f9e38e14329f33f706bbeed2c36ee3e7f18ddff4ce53019",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#36": {
+   "prompt_sha256": "6c0128ca66bf6b0baf376a484668990b9194396e09f972c194ed20a13a583f40",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#7": {
+   "prompt_sha256": "f01af1d63cbe0511821be3ed6627eb05a9c67e91ecfdabeb96ababbb03176f28",
+   "source_ref": "query_banks:sycophancy_neutral_v2"
+  },
+  "sycophancy|wildchat_real|wildchat_random#101": {
+   "prompt_sha256": "003d19ff9589b15fbece2ab060df5287908f240d5969f3edd9cd9b9bb8b9acc4",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#178": {
+   "prompt_sha256": "024f3412902a8e8f471d0ab6f021a9bf28c8a01e763cccd3124445523d478c01",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#229": {
+   "prompt_sha256": "0e889dda66f34d7c1491424280a1ec102733bc4c77bf328892785410ffa1a7f5",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#231": {
+   "prompt_sha256": "03c47f681dc6aa1ebd66d3d38b3aa56d1d620e22ae53fbc9088348b5c33f1984",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#278": {
+   "prompt_sha256": "0a6a913e4427194d1306f766fd1507ed7e4d5449948cb57de2a9c85b1ed229e0",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#28": {
+   "prompt_sha256": "072952443a2646f32ec4e5d24c62521999b10ecf7a91e94fd1093a10e72db539",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#293": {
+   "prompt_sha256": "14be84f0b11f385b76c9bd94ecc22299f751b075f0da10527419ab4cade667a1",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#317": {
+   "prompt_sha256": "1379cc1b18725af157ad76cca857dd1eb82eadf1ac446b6a3c8560111698e5b6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#336": {
+   "prompt_sha256": "05ac2c9e941a8d270ba92312c783236fc683dbea2dd20da622af3c8948834cd3",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#434": {
+   "prompt_sha256": "04be8e655950625f514d03f5dc0838308aec8bd526048d27aa15297900460a7b",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#452": {
+   "prompt_sha256": "041ce87c9ac818f7f38961f84f4eb015c0b308d8447c580312c3f1b8f17c633f",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#541": {
+   "prompt_sha256": "004d4983a9e8f2889af060490feff34536de7c3b205523d3572dca3c861efcaf",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#581": {
+   "prompt_sha256": "04a911c00f52ba72b8e9d9c2eb36cf3573ae35c662ab184dc49988fa61555858",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#76": {
+   "prompt_sha256": "056d988c986844703d49c52dca9a6fefeb8e9e0190c4e7b5b8f9f31fccf81ec6",
+   "source_ref": "query_banks:wildchat_random"
+  },
+  "sycophancy|wildchat_real|wildchat_random#89": {
+   "prompt_sha256": "0478ff225299d80d87f9ad6f68647b204ef72dcd7ad66ecd70b50f4a462699dd",
+   "source_ref": "query_banks:wildchat_random"
+  }
+ },
+ "n_items": 625,
+ "note": "Frozen prompt-text pins for the registered pilot items. sha256 over the raw prompt text (utf-8). TEXT-FREE by design; drift on any later resolution raises RowHashMismatchError.",
+ "sha_domain": "prompt_text_utf8"
+}
