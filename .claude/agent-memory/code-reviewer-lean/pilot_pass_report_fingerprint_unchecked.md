@@ -68,3 +68,19 @@ report the resume reads must be production-parity-checked against the real
 `PilotGateReport.to_json` mint site (rubric_hash = sha256(eval_prompt)[:16]
 at judge_pilot.py:1042; wave_transport = decision.path :1043) — tests can
 pass while production still re-runs/wedges if field names or formats drift.
+
+**Recipe-faithful fix leaves the class open (#2658 rev-E r3):** a fix round
+implements exactly the prescribed recipe (key+compare+pass the NAMED param)
+— so the re-review's job is the SIBLING sweep: walk the gate's FULL
+signature and classify every param as keyed / compared / passed / default.
+r3 found `waive_parse_fail_arms` (rule 26(b)'s sanctioned waiver, the #2091
+`PILOT_WAIVE_PARSE_FAIL_ARMS` pattern, prescribed by the library's own FAIL
+text) in NEITHER key nor compare nor call — the identical two-arm defect one
+parameter over. Tell: the fix's rewritten refuse message universalized
+("Every gate parameter is key-tracked") — grade that quantifier against the
+sweep table, not the fixed instance. Also: "waiver tuple not persisted" is
+true of the TUPLE, but per-arm realized `waived`/`api_refusal_waived` bools
+ARE persisted (ArmPilotStats) — key-only still suffices because report
+tamper can equally fake `passed` (verdict is trusted; compare exists for
+constants drift, not forgery). Key-payload additions orphan ALL prior gate
+dirs → one fail-safe re-pilot per row; state it, don't flag it.
