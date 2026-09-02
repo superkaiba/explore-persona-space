@@ -78,9 +78,11 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 os.environ.setdefault("HF_HOME", str(Path.home() / ".cache/huggingface"))
 
@@ -277,6 +279,13 @@ class PromptItem:
     level: int | None = None
     benchmark: str | None = None
     split_hint: str | None = None  # "train" | "dev" | "test" (correctness frame items)
+    # Stable stratum key for COMPOSED-text frames (source_kind "keyed"). A keyed
+    # item's text is rendered from its band's assertion template, so deriving the
+    # band from prompt_sha256 would be circular: band -> text -> sha -> band.
+    # band_key breaks the cycle with an identity fixed BEFORE composition (the
+    # underlying benchmark item id). None everywhere else, so every pre-existing
+    # row keeps its committed band assignment byte-for-byte.
+    band_key: str | None = None
 
 
 def build_superfamilies(items: list[PromptItem]) -> tuple[dict[str, str], bool]:
@@ -575,7 +584,18 @@ def stratum_band_of(item: PromptItem, row: str) -> str:
         if lvl in (4, 5):
             return "level_high"
         return "level_mid"  # level 3 or None
-    h = int(hashlib.sha256(f"i2658-stratum|{item.prompt_sha256}".encode()).hexdigest()[:8], 16)
+    # band_key when present (composed-text "keyed" frames), else the prompt sha.
+    # The digest input format is unchanged, so passing prompt_sha256 reproduces
+    # every previously committed band assignment exactly.
+    return _band_from_key(row, item.band_key or item.prompt_sha256)
+
+
+def _band_from_key(row: str, key: str) -> str:
+    """Deterministic stratum band for a stable key. Split out of
+    ``stratum_band_of`` so a keyed frame can resolve its band BEFORE the prompt
+    text exists (the text depends on the band's assertion template)."""
+    strata = FRAMES[row].strata
+    h = int(hashlib.sha256(f"i2658-stratum|{key}".encode()).hexdigest()[:8], 16)
     return strata[h % len(strata)].name
 
 
@@ -609,6 +629,15 @@ def _bank(name: str, bank: str, tier: int, rationale: str) -> FrameSpec:
 
 def _bench(name: str, ref: str, rationale: str) -> FrameSpec:
     return FrameSpec(name, 2, "benchmark", ref, rationale)
+
+
+def _keyed(name: str, ref: str, rationale: str) -> FrameSpec:
+    """A frame whose prompt text is COMPOSED from a keyed benchmark item: the
+    question, its enumerated options, and a user assertion of one INCORRECT
+    option. The pinned answer key is the frozen evidence that the asserted claim
+    is unsupported (plan §3), which is what makes the row measurable at all.
+    Always tier 2 — the underlying item comes from an established benchmark."""
+    return FrameSpec(name, 2, "keyed", ref, rationale)
 
 
 FRAMES: dict[str, RowFrames] = {
@@ -1226,7 +1255,120 @@ def load_frame_prompts(row: str, frame: FrameSpec) -> list[PromptItem]:
         ]
     if frame.source_kind == "benchmark":
         return _load_correctness_frame(row, frame)
+    if frame.source_kind == "keyed":
+        return _load_keyed_frame(row, frame)
     raise FrameManifestError(f"unknown source_kind {frame.source_kind!r} for {frame.name!r}")
+
+
+def _arc_keyed_records() -> list[dict[str, Any]]:
+    """ARC-Challenge keyed MCQ records, via unit 4's sha-pinned loader.
+
+    Reuses ``issue2658_evidence.load_arc_raw`` rather than re-reading the file:
+    that loader already asserts every required key is present and returns the
+    file sha the evidence packets pin, so a single read path keeps the frame
+    items and their answer-key evidence provably derived from the same bytes.
+    Imported inside the function because ``issue2658_evidence`` imports the text
+    resolver, which imports THIS module at import time — a module-level import
+    here would be circular.
+    """
+    import issue2658_evidence as EV
+
+    rows, file_sha = EV.load_arc_raw()
+    out: list[dict[str, Any]] = []
+    for i, r in enumerate(rows):
+        out.append(
+            {
+                # Identity is (pinned file, index): the committed ARC rows carry
+                # no stable id of their own, and the file sha pins the ordering.
+                "key": f"arc:{file_sha[:12]}#{i}",
+                "question": r["question"],
+                "choices": list(r["choices"]),
+                "labels": list(r["choice_labels"]),
+                "correct": r["correct_answer"],
+            }
+        )
+    return out
+
+
+_KEYED_RECORD_LOADERS: dict[str, Callable[[], list[dict[str, Any]]]] = {
+    "arc_challenge": _arc_keyed_records,
+}
+
+
+def _load_keyed_frame(row: str, frame: FrameSpec) -> list[PromptItem]:
+    """Materialize a composed-text keyed frame.
+
+    Order is load-bearing: the band is resolved from the record's STABLE key
+    first, then the prompt is composed under that band's assertion template,
+    then the sha is taken over the composed text. Deriving the band from the sha
+    instead would be circular (band -> text -> sha -> band).
+
+    ``source_ref`` is ``keyed:<loader>[:<selector>]``. An item whose options
+    cannot express the construct (no incorrect option, or a key/option mismatch)
+    RAISES out of the composer rather than being skipped — a silently dropped
+    item would shrink the denominator invisibly.
+    """
+    parts = frame.source_ref.split(":")
+    if len(parts) < 2 or parts[0] != "keyed":
+        raise FrameManifestError(
+            f"keyed frame {frame.name!r} needs source_ref 'keyed:<loader>[:<selector>]', "
+            f"got {frame.source_ref!r}"
+        )
+    loader_name = parts[1]
+    selector = parts[2] if len(parts) > 2 else ""
+    loader = _KEYED_RECORD_LOADERS.get(loader_name)
+    if loader is None:
+        raise FrameManifestError(
+            f"unknown keyed loader {loader_name!r} for frame {frame.name!r}; "
+            f"known: {sorted(_KEYED_RECORD_LOADERS)}"
+        )
+    records = loader()
+    if selector:
+        records = [r for r in records if _keyed_selector_matches(r, selector)]
+    if not records:
+        raise FrameManifestError(
+            f"keyed frame {frame.name!r} selected zero records from {frame.source_ref!r} "
+            "— an empty selection is a data/selector fault, never an empty frame"
+        )
+    out: list[PromptItem] = []
+    for rec in records:
+        band = _band_from_key(row, rec["key"])
+        text = compose_sycophancy_prompt(
+            rec["question"],
+            rec["choices"],
+            rec["labels"],
+            rec["correct"],
+            rec["key"],
+            band,
+        )
+        out.append(
+            PromptItem(
+                item_id=f"{row}|{frame.name}|{rec['key']}",
+                prompt_sha256=_sha_text(text),
+                origin="frame",
+                source_ref=frame.source_ref,
+                text=text,
+                # The underlying question is the shared problem, so two keyed
+                # items off one question land in ONE superfamily (graph edge 1).
+                problem_id=rec["key"],
+                row=row,
+                frame=frame.name,
+                band_key=rec["key"],
+            )
+        )
+    return out
+
+
+def _keyed_selector_matches(rec: dict[str, Any], selector: str) -> bool:
+    """``field=v1,v2`` membership test over a keyed record's metadata."""
+    field_name, _, values = selector.partition("=")
+    if not field_name or not values:
+        raise FrameManifestError(f"malformed keyed selector {selector!r}; want 'field=v1,v2'")
+    if field_name not in rec:
+        raise FrameManifestError(
+            f"keyed selector field {field_name!r} absent from record {rec.get('key')!r}"
+        )
+    return str(rec[field_name]) in {v.strip() for v in values.split(",") if v.strip()}
 
 
 def _load_correctness_frame(row: str, frame: FrameSpec) -> list[PromptItem]:
