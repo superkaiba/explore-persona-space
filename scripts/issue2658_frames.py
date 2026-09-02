@@ -672,35 +672,44 @@ FRAMES: dict[str, RowFrames] = {
             ),
         ),
     ),
+    # Rebuilt on keyed benchmark items (unit 5b). The previous roster — two
+    # tier-3 generated claim banks, one tier-2 claim battery, and WildChat real
+    # text — yielded ZERO usable evidence packets (unit 4: 0 of 56): none of
+    # those sources pins evidence that a claim is UNSUPPORTED, and plan §3's
+    # construct is agreement with a user claim despite frozen evidence showing
+    # the claim is unsupported. An established benchmark answer key IS that
+    # evidence, so each item is a keyed question carrying a user's assertion of
+    # one INCORRECT option; sycophantic agreement is endorsing it against the
+    # pinned key. ARC-Challenge has no category field, so it is one content
+    # domain; MMLU-Pro's 14 categories supply the other three domain frames.
     "sycophancy": RowFrames(
         "sycophancy",
-        _BEHAVIORAL_STRATA,
+        _SYCOPHANCY_STRATA,
         (
-            _bank(
-                "sycophancy_claims",
-                "sycophancy_claims",
-                2,
-                "user-asserted claims (established sycophancy battery); model agrees on "
-                "some, corrects on others",
+            _keyed(
+                "syco_arc_science",
+                "keyed:arc_challenge",
+                "ARC-Challenge keyed science MCQ (1,172 items, answer key pinned by file "
+                "sha); shared content with the hallucination/assistantness/casualness "
+                "frames — disclosed, and harmless because the estimand is per-row with "
+                "no cross-row pooling",
             ),
-            _bank(
-                "sycophancy_neutral_v1",
-                "sycophancy_neutral_v1",
-                3,
-                "diverse neutral claim prompts (tier-3 generated; no established "
-                "evidence-conditioned bank exists), separately stratified",
+            _keyed(
+                "syco_mmlu_stem",
+                "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science",
+                "MMLU-Pro STEM categories via the byte-pinned vendored #2388 loader; "
+                "shared content with correctness_mmlu_pro (different row, different "
+                "direction, no pooling)",
             ),
-            _bank(
-                "sycophancy_neutral_v2",
-                "sycophancy_neutral_v2",
-                3,
-                "second diverse neutral claim set, distinct wording from v1",
+            _keyed(
+                "syco_mmlu_social_health",
+                "keyed:mmlu_pro:category=law,economics,health,psychology,business",
+                "MMLU-Pro social-science and health categories (distinct content domain)",
             ),
-            _bank(
-                "wildchat_real",
-                "wildchat_random",
-                1,
-                "real user queries carrying implicit user claims/opinions",
+            _keyed(
+                "syco_mmlu_humanities",
+                "keyed:mmlu_pro:category=philosophy,history,other",
+                "MMLU-Pro humanities and other categories (distinct content domain)",
             ),
         ),
     ),
@@ -1290,8 +1299,69 @@ def _arc_keyed_records() -> list[dict[str, Any]]:
     return out
 
 
+_MMLU_OPTION_RE = re.compile(r"^([A-Z])\.[ \t]+(.*)$")
+
+
+def _parse_enumerated_options(prompt: str, n_options: int, key: str) -> tuple[list[str], list[str]]:
+    """Recover (labels, option_texts) from a vendored MMLU-Pro rendered prompt.
+
+    The vendored loader builds its option block as ``f"{letter}. {option}"`` lines,
+    but keeps no ``options`` list on the row, so the texts have to be read back
+    out. Fail-loud rather than best-effort: the recovered labels must be exactly
+    ``A..`` for ``n_options`` entries, which catches an option text containing a
+    newline (it would split into a bogus extra line) and any future change to the
+    vendored rendering. A silently short parse would drop distractors and bias
+    which wrong answer gets asserted.
+    """
+    found: list[tuple[str, str]] = []
+    for line in prompt.splitlines():
+        m = _MMLU_OPTION_RE.match(line.strip())
+        if m:
+            found.append((m.group(1), m.group(2)))
+    expected = [chr(ord("A") + i) for i in range(n_options)]
+    tail = found[-n_options:] if len(found) >= n_options else found
+    labels = [lbl for lbl, _ in tail]
+    if labels != expected:
+        raise FrameManifestError(
+            f"{key}: recovered option labels {labels!r} != expected {expected!r} from the "
+            "vendored rendered prompt; the option block could not be parsed reliably"
+        )
+    return labels, [txt for _, txt in tail]
+
+
+def _mmlu_pro_keyed_records() -> list[dict[str, Any]]:
+    """MMLU-Pro keyed MCQ records via the byte-pinned vendored #2388 loader.
+
+    Deferred import for the same reason as ``_arc_keyed_records``: the resolver
+    imports THIS module at import time, so a module-level import is circular.
+    Rows carry ``category``, which is what lets one keyed source supply several
+    distinct content-domain frames (ARC has no category field, so it is a single
+    domain on its own).
+    """
+    import issue2658_text_resolver as R
+
+    mod = R.load_pinned_gen_module()
+    rows = mod.load_mmlu_pro_full()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        key = str(r["item_id"])
+        labels, choices = _parse_enumerated_options(str(r["prompt"]), int(r["n_options"]), key)
+        out.append(
+            {
+                "key": key,
+                "question": r["question"],
+                "choices": choices,
+                "labels": labels,
+                "correct": str(r["gold"]),
+                "category": str(r["category"]),
+            }
+        )
+    return out
+
+
 _KEYED_RECORD_LOADERS: dict[str, Callable[[], list[dict[str, Any]]]] = {
     "arc_challenge": _arc_keyed_records,
+    "mmlu_pro": _mmlu_pro_keyed_records,
 }
 
 

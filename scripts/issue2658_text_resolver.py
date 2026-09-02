@@ -263,6 +263,7 @@ def resolve_items(item_ids: list[str], *, verify_pins: bool = True) -> dict[str,
     # Group the work: bank name -> [(item_id, index)], loader attr -> [item_id].
     bank_requests: dict[str, list[tuple[str, int]]] = {}
     bench_requests: dict[str, list[str]] = {}
+    keyed_requests: dict[tuple[str, str], list[str]] = {}
     for iid, (row, frame_name, ref) in parsed.items():
         spec = _frame_spec(row, frame_name)
         if spec.source_kind == "bank":
@@ -275,10 +276,36 @@ def resolve_items(item_ids: list[str], *, verify_pins: bool = True) -> dict[str,
             bank_requests.setdefault(bank, []).append((iid, int(idx_s)))
         elif spec.source_kind == "benchmark":
             bench_requests.setdefault(_bench_loader_attr(ref), []).append(iid)
+        elif spec.source_kind == "keyed":
+            keyed_requests.setdefault((row, frame_name), []).append(iid)
         else:
             raise TextResolutionError(f"unknown source_kind {spec.source_kind!r} for {iid!r}")
 
     out: dict[str, ResolvedItem] = {}
+
+    if keyed_requests:
+        # Composed-text frames resolve through the SAME builder the frame pass
+        # uses (F._load_keyed_frame), so the bytes are identical by construction
+        # rather than by a second implementation that has to be kept in step —
+        # a divergent composer here would surface only as a pin mismatch.
+        for (row, frame_name), iids in sorted(keyed_requests.items()):
+            spec = _frame_spec(row, frame_name)
+            built = {it.item_id: it for it in F._load_keyed_frame(row, spec)}
+            for iid in iids:
+                item = built.get(iid)
+                if item is None:
+                    raise TextResolutionError(
+                        f"{iid!r} not produced by the keyed builder for "
+                        f"{row}|{frame_name} ({len(built)} items) — wrong key or a "
+                        "changed selector"
+                    )
+                out[iid] = ResolvedItem(
+                    item_id=iid,
+                    prompt_sha256=item.prompt_sha256,
+                    source_ref=spec.source_ref,
+                    text=item.text,
+                )
+            print(f"[resolver] keyed {row}|{frame_name}: resolved {len(iids)} items", flush=True)
 
     if bank_requests:
         from explore_persona_space.artifacts import banks
