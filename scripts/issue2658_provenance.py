@@ -276,9 +276,16 @@ def resolve_file(rel: str) -> Path:
     # the local-only bundles (available after --snapshot-inputs).
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     hub_rel = f"{SNAPSHOT_PREFIX}/{rel}" if rel in LOCAL_ONLY_RELS else rel
     try:
-        p = Path(hf_hub_download(HF_REPO, hub_rel, repo_type="dataset", local_dir=ISSUE_DL))
+        p = Path(
+            hub.retry_transient(
+                lambda: hf_hub_download(HF_REPO, hub_rel, repo_type="dataset", local_dir=ISSUE_DL),
+                what=f"hf_hub_download({hub_rel})",
+            )
+        )
     except Exception as e:  # fail loud with the resolution trail
         raise DirectionProvenanceError(
             f"cannot resolve {rel}: no local copy and HF fetch of {hub_rel} failed ({e})"
@@ -339,11 +346,16 @@ def snapshot_inputs() -> list[dict]:
     for rel in LOCAL_ONLY_RELS:
         local = resolve_file(rel)
         hub_rel = f"{SNAPSHOT_PREFIX}/{rel}"
-        if api.file_exists(HF_REPO, hub_rel, repo_type="dataset"):
+        present = hub.retry_transient(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient on this very call
+            lambda hr=hub_rel: api.file_exists(HF_REPO, hr, repo_type="dataset"),
+            what=f"file_exists({hub_rel})",
+        )
+        if present:
             action = "already-present"
         else:
             # UPLOAD_LOOP_EXEMPT: fixed 2-file issue-owned input snapshot (LOCAL_ONLY_RELS), idempotent + download-verified; never a bulk tree
-            hub._upload(
+            url = hub._upload(
                 local_path=local,
                 repo_id=HF_REPO,
                 repo_type="dataset",
@@ -351,10 +363,19 @@ def snapshot_inputs() -> list[dict]:
                 upload_as_file=True,
                 raise_on_error=True,
             )
+            if not url:
+                raise DirectionProvenanceError(
+                    f"snapshot upload of {hub_rel} returned no URL — durability unverified"
+                )
             action = "uploaded"
         # Verify the snapshot's bytes match the pin via a fresh download.
         with tempfile.TemporaryDirectory(dir=ISSUE_DL.parent, prefix=".snapverify_") as td:
-            p = hf_hub_download(HF_REPO, hub_rel, repo_type="dataset", local_dir=td)
+            p = hub.retry_transient(
+                lambda hr=hub_rel, d=td: hf_hub_download(
+                    HF_REPO, hr, repo_type="dataset", local_dir=d
+                ),
+                what=f"hf_hub_download({hub_rel}, verify)",
+            )
             got = P3._sha256(Path(p))
         if got != EXPECTED_SHA256[rel]:
             raise DirectionProvenanceError(
@@ -589,10 +610,10 @@ def main() -> None:
         snapshot_records = snapshot_inputs()
     entries = resolve_rows()
     report = build_report(entries, snapshot_records)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = args.out.with_name(args.out.name + ".tmp")
-    tmp.write_text(json.dumps(report, indent=2, sort_keys=False) + "\n")
-    os.replace(tmp, args.out)
+    from explore_persona_space.atomic_io import atomic_replace
+
+    with atomic_replace(args.out) as tmp:
+        tmp.write_text(json.dumps(report, indent=2, sort_keys=False) + "\n")
     part = report["c2_c3_partition"]
     print(
         f"[done] wrote {args.out} — {len(part['eligible'])} eligible, "
