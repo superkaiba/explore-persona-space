@@ -132,6 +132,12 @@ SUPERFAMILY_CRITERIA: dict[str, object] = {
 PILOT_PROMPTS_PER_CELL = C.PILOT.prompts_per_cell  # 5
 PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR = 15  # plan §8 >=15 discordant/cell proxy
 
+# Mechanical cause tags for cells below the production floor (plan §8: a row
+# whose test pool falls below its gate is REPORTED, never topped up).
+CAUSE_EXTRACTION_BARRED = "extraction-barred"
+CAUSE_BANK_TOO_SMALL = "bank-too-small"
+CAUSE_SPLIT_STARVED = "split-starved"
+
 # A stratifier may NEVER key on these outcome/label-derived fields (plan §4).
 BANNED_STRATIFIER_FIELDS = frozenset(
     {
@@ -1528,6 +1534,9 @@ def assign_splits(
 # Per-row build.
 # ---------------------------------------------------------------------------
 def build_row(row: str, eligible: frozenset[str]) -> dict:
+    """One row's frame/superfamily/split build: loads the frame + extraction
+    items, runs the superfamily graph, assigns dev/test splits, and reports the
+    per-cell prospective-feasibility record (below-floor cells + cause tags)."""
     rf = FRAMES[row]
     assert_stratifier_not_deterministic(rf.strata)
 
@@ -1589,6 +1598,25 @@ def build_row(row: str, eligible: frozenset[str]) -> dict:
         if per_cell_test.get((fr, band), 0) < PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR
     ]
 
+    # Per-cell CAUSE tags for the below-floor cells, derived mechanically from
+    # the same superfamily graph (never a hardcoded row list).
+    contributing = _per_cell_contributing_sfs(row, frame_items, superfamilies)
+    n_cells = len(rf.frames) * len(rf.strata)
+    prospective_not_estimable = [
+        {
+            "cell": f"{fr}|{band}",
+            "n_test_eligible": per_cell_test.get((fr, band), 0),
+            "cause": cell_cause(
+                per_cell_test.get((fr, band), 0),
+                contributing.get((fr, band), frozenset()),
+                barred_sf,
+            ),
+        }
+        for fr in (f.name for f in rf.frames)
+        for band in (s.name for s in rf.strata)
+        if per_cell_test.get((fr, band), 0) < PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR
+    ]
+
     per_frame_test: dict[str, int] = defaultdict(int)
     for it in frame_items:
         if superfamilies[it.item_id] in test_sf:
@@ -1623,6 +1651,9 @@ def build_row(row: str, eligible: frozenset[str]) -> dict:
         "overlap_fraction_prompts": (barred_prompts / n_frame) if n_frame else 0.0,
         "per_cell_test_eligible": {f"{fr}|{band}": n for (fr, band), n in per_cell_test.items()},
         "below_production_gate_cells": below_gate,
+        "prospective_not_estimable": prospective_not_estimable,
+        "n_cells": n_cells,
+        "n_cells_estimable": n_cells - len(below_gate),
         "pilot_selection": _pilot_selection(row, frame_items, superfamilies, dev_sf),
         "splits": splits,
         "barred_superfamilies": sorted(barred_sf),
@@ -1663,6 +1694,59 @@ def _per_cell_test_counts(
             for b in bands:
                 counts[(it.frame, b)] += 1
     return counts
+
+
+def _per_cell_contributing_sfs(
+    row: str, frame_items: list[PromptItem], superfamilies: dict[str, str]
+) -> dict[tuple[str, str], set[str]]:
+    """Superfamilies CONTRIBUTING items to each (frame, stratum) cell — the full
+    pool, before any dev/test split.  Same band semantics as
+    ``_per_cell_test_counts``: wrapper-band prompts contribute to every band,
+    intrinsic-band prompts only to their own."""
+    bands = [s.name for s in FRAMES[row].strata]
+    out: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for it in frame_items:
+        sf = superfamilies[it.item_id]
+        if has_intrinsic_band(it, row):
+            out[(it.frame, stratum_band_of(it, row))].add(sf)
+        else:
+            for b in bands:
+                out[(it.frame, b)].add(sf)
+    return out
+
+
+def cell_cause(
+    n_test_eligible: int,
+    contributing_sfs: set[str] | frozenset[str],
+    barred_sf: set[str] | frozenset[str],
+) -> str:
+    """Mechanical cause tag for a cell below the production floor (plan §8).
+
+    - ``extraction-barred``: EVERY superfamily contributing items to the cell
+      is extraction-barred, so ``assign_splits`` routed the whole cell to dev —
+      the exclusion WORKING as designed (zero test-eligible by construction; a
+      nonzero count here is a split-invariant violation and RAISES).
+    - ``bank-too-small``: non-barred superfamilies survive to test but the bank
+      is too thin to clear the floor.
+    - ``split-starved``: zero test-eligible although a non-barred superfamily
+      contributes (the deterministic ~50/50 split sent every non-barred
+      superfamily to dev), or no items contribute at all.  Neither of the two
+      diagnosed causes; currently UNREACHED on the committed banks (a test
+      pins that) — never silently folded into the other two.
+
+    The empty contributing set is guarded explicitly: ``set() <= barred_sf``
+    is vacuously True and must NOT classify as extraction-barred.
+    """
+    if contributing_sfs and set(contributing_sfs) <= set(barred_sf):
+        if n_test_eligible != 0:
+            raise BarredTopUpError(
+                f"cell with all-barred superfamilies has n_test_eligible="
+                f"{n_test_eligible} != 0 — barred items leaked into test"
+            )
+        return CAUSE_EXTRACTION_BARRED
+    if n_test_eligible == 0:
+        return CAUSE_SPLIT_STARVED
+    return CAUSE_BANK_TOO_SMALL
 
 
 def _pilot_selection(
@@ -1712,6 +1796,14 @@ FRAME_MANIFEST_FIELDS = (
     "content_sha256",
     "cache_key",
 )
+
+# Per-kind top-level field sets: the frame manifest ADDITIONALLY carries the
+# prospective-feasibility ledger; the split manifest must NOT (unknown fields
+# raise either way — strictness is per kind, not per union).
+MANIFEST_FIELDS_BY_KIND: dict[str, tuple[str, ...]] = {
+    "eligible_frame": FRAME_MANIFEST_FIELDS + ("prospective_not_estimable_ledger",),
+    "split": FRAME_MANIFEST_FIELDS,
+}
 
 
 def _canonical_sha(obj: object) -> str:
@@ -1771,7 +1863,39 @@ def _frozen_config() -> dict:
     }
 
 
+def _not_estimable_ledger(rows: list[dict]) -> dict:
+    """Manifest-level prospective-feasibility totals (plan §8 floor).
+
+    Sums the per-row ``prospective_not_estimable`` records; clear rows
+    contribute EMPTY lists (the empty form is explicit, never a missing key),
+    so the ledger's denominators cover every (row x frame x band) cell.
+    Accepts build_row results or frame-manifest rows (same keys)."""
+    by_cause: dict[str, int] = {}
+    per_row: dict[str, dict[str, int]] = {}
+    n_cells = n_estimable = 0
+    for rr in rows:
+        per_row[rr["row"]] = {
+            "n_cells": rr["n_cells"],
+            "n_cells_estimable": rr["n_cells_estimable"],
+        }
+        n_cells += rr["n_cells"]
+        n_estimable += rr["n_cells_estimable"]
+        for rec in rr["prospective_not_estimable"]:
+            by_cause[rec["cause"]] = by_cause.get(rec["cause"], 0) + 1
+    return {
+        "floor": PRODUCTION_TEST_PROMPTS_PER_CELL_FLOOR,
+        "n_cells": n_cells,
+        "n_cells_estimable": n_estimable,
+        "n_cells_not_estimable": n_cells - n_estimable,
+        "by_cause": dict(sorted(by_cause.items())),
+        "per_row": per_row,
+    }
+
+
 def build_manifests(row_results: list[dict], direction_sha: str) -> tuple[dict, dict]:
+    """Assemble + validate the (frame, split) manifest bodies from build_row
+    results.  The frame manifest carries the per-row prospective-feasibility
+    fields and the manifest-level ledger; the split manifest is unchanged."""
     frame_rows, split_rows = [], []
     for rr in row_results:
         frame_rows.append(
@@ -1783,6 +1907,10 @@ def build_manifests(row_results: list[dict], direction_sha: str) -> tuple[dict, 
                 "extraction_resolved": rr["extraction_resolved"],
                 "counts": rr["counts"],
                 "per_cell_test_eligible": rr["per_cell_test_eligible"],
+                "below_production_gate_cells": rr["below_production_gate_cells"],
+                "prospective_not_estimable": rr["prospective_not_estimable"],
+                "n_cells": rr["n_cells"],
+                "n_cells_estimable": rr["n_cells_estimable"],
                 "pilot_selection": rr["pilot_selection"],
                 "item_superfamily": rr["item_superfamily"],
             }
@@ -1821,6 +1949,8 @@ def build_manifests(row_results: list[dict], direction_sha: str) -> tuple[dict, 
             "superfamily_criteria": SUPERFAMILY_CRITERIA,
             "rows": rows,
         }
+        if kind == "eligible_frame":
+            body["prospective_not_estimable_ledger"] = _not_estimable_ledger(frame_rows)
         addressable = {k: v for k, v in body.items() if k != "metadata"}
         body["content_sha256"] = _canonical_sha(addressable)
         body["cache_key"] = _cache_key_for(direction_sha, split_tag)
@@ -1830,13 +1960,16 @@ def build_manifests(row_results: list[dict], direction_sha: str) -> tuple[dict, 
 
 
 def validate_manifest(body: dict) -> None:
-    """Strict: unknown/missing top-level fields RAISE; rows must cover ROW_IDS."""
-    missing = [f for f in FRAME_MANIFEST_FIELDS if f not in body]
-    unknown = [f for f in body if f not in FRAME_MANIFEST_FIELDS]
+    """Strict: unknown/missing top-level fields RAISE (per kind); rows must
+    cover ROW_IDS; the frame manifest's ledger must reconcile with its rows."""
+    kind = body.get("manifest_kind")
+    fields = MANIFEST_FIELDS_BY_KIND.get(kind)
+    if fields is None:
+        raise FrameManifestError(f"unknown manifest_kind {kind!r}")
+    missing = [f for f in fields if f not in body]
+    unknown = [f for f in body if f not in fields]
     if missing or unknown:
-        raise FrameManifestError(
-            f"{body.get('manifest_kind')!r} manifest invalid: missing={missing} unknown={unknown}"
-        )
+        raise FrameManifestError(f"{kind!r} manifest invalid: missing={missing} unknown={unknown}")
     if body["manifest_version"] != C.MANIFEST_VERSION:
         raise FrameManifestError(f"manifest_version {body['manifest_version']} != frozen")
     C._require_hex64(body["content_sha256"], "content_sha256")
@@ -1844,6 +1977,28 @@ def validate_manifest(body: dict) -> None:
     rows = {r["row"] for r in body["rows"]}
     if rows != set(C.ROW_IDS):
         raise FrameManifestError(f"manifest rows {sorted(rows)} != ROW_IDS {sorted(C.ROW_IDS)}")
+    if kind == "eligible_frame":
+        _validate_frame_ledger(body)
+
+
+def _validate_frame_ledger(body: dict) -> None:
+    """The ledger must reconcile EXACTLY with the per-row prospective records.
+
+    A missing per-row key (a row without the explicit EMPTY form) and any
+    total/per-cause/per-row mismatch both RAISE — an absent key must never be
+    indistinguishable from 'no failing cells'."""
+    try:
+        recomputed = _not_estimable_ledger(body["rows"])
+    except KeyError as e:
+        raise FrameManifestError(
+            f"frame manifest row missing prospective-feasibility field: {e}"
+        ) from e
+    stored = body["prospective_not_estimable_ledger"]
+    if recomputed != stored:
+        raise FrameManifestError(
+            "prospective_not_estimable_ledger does not reconcile with rows: "
+            f"recomputed={recomputed} stored={stored}"
+        )
 
 
 def assert_manifest_immutable(body: dict) -> None:
