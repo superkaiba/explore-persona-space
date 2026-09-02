@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/figure2_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
   "git": {
-    "commit": "b45790a0242be722c369554c71268b87a8cbdc03",
+    "commit": "eea37ab8d975e9bb4d68e0f3cd12feed11040409",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -571,7 +571,7 @@
       "path": "eval_results/issue_1901/boundary_points_fig2.json",
       "sha256": "8919b7f4d7297ef4c884cf5e708ca7fd6500632fede0afec3f67b99c617412d2"
     },
-    "encoding": "burnt-umber horizontal lines on panel B: solid = mean R^2, dashed = mean strict top-1 over the four exact-token maps",
+    "encoding": "burnt-umber horizontal line on panel B: mean held-out R^2 over the four exact-token maps",
     "n_tokens": 4,
     "tokens": {
       "659": {
@@ -640,8 +640,8 @@
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "output_sha256": {
-    "pdf": "8d6ff03856465f241103e8ce6ebaa60475c18fbd8751680cb59e2d6a5cb2d6e2",
-    "png": "b568f3cccb0ab802185397cd5bacc7e9ea1106cf0ef06dbfe1b18252e7afe9b8",
-    "grayscale": "319231da1f4fa8d21a19c7fbd002d3300d5cf00e2e547c979a7e1f88eca95d0d"
+    "pdf": "14d4ed21ee180eaf1027dab64afde30e71301f3640a3490d8af7fe250fdae958",
+    "png": "ff6f46a874275772c9d1515c854722703d4a5d9f90a1c71c92bf2ee62dd9e32c",
+    "grayscale": "bedd203afd9b84a32096eb4472e5b4e1c69e23411b0bece5c9beb6cf5b38865d"
   }
 }

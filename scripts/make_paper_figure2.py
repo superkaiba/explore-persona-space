@@ -157,11 +157,11 @@ def _load_extension_data(path: Path) -> dict:
 
 
 def _plot_controls(ax: plt.Axes, boundary: dict | None, extension: dict | None) -> None:
-    """Horizontal reference lines: solid = R^2, dashed = strict top-1."""
+    """Horizontal reference line: the boundary-token control's mean held-out R^2."""
     dash = (0, (5.0, 3.8))
     if boundary is not None:
+        # R^2 only: small-pool top-1 saturates and is quoted in the text instead.
         ax.axhline(boundary["r2_mean"], color=BOUNDARY_COLOR, lw=2.4, zorder=2)
-        ax.axhline(boundary["retrieval_mean"], color=BOUNDARY_COLOR, lw=2.0, linestyle=dash, zorder=2)
     # The copy-context baselines stay in the sidecar metadata but are not drawn
     # (their R^2 is far below the axis; the text quotes them).
 
@@ -170,7 +170,7 @@ def _control_legend_handles(boundary: dict | None, extension: dict | None) -> li
     handles = []
     if boundary is not None:
         handles.append(Line2D([0], [0], color=BOUNDARY_COLOR, lw=2.6,
-                              label=f"Boundary token \u2192 next sentence (WikiText, mean of {boundary['n_tokens']} tokens, {boundary['n_train_per_token']:,} pairs)"))
+                              label=f"Boundary token \u2192 next sentence, $R^2$ (WikiText, mean of {boundary['n_tokens']} tokens, {boundary['n_train_per_token']:,} pairs)"))
     return handles
 
 
@@ -512,8 +512,7 @@ def _write_outputs(
                             "path": _display_path(boundary_source),
                             "sha256": _sha256(boundary_source),
                         },
-                        "encoding": "burnt-umber horizontal lines on panel B: solid = mean R^2, "
-                        "dashed = mean strict top-1 over the four exact-token maps",
+                        "encoding": "burnt-umber horizontal line on panel B: mean held-out R^2 over the four exact-token maps",
                         **boundary,
                     }
                 ),
