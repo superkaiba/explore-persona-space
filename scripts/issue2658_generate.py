@@ -56,6 +56,10 @@ if str(_SCRIPTS_DIR) not in sys.path:
 import issue2658_common as C  # noqa: E402
 import issue2658_frames as F  # noqa: E402
 import issue2658_text_resolver as R  # noqa: E402
+from explore_persona_space.atomic_io import (  # noqa: E402
+    write_jsonl_atomic,
+    write_text_atomic,
+)
 
 # #1092 / #1739 / #2388 rig parity (the #779-lineage behavior-corpus window).
 MAX_MODEL_LEN = 8192
@@ -230,10 +234,7 @@ def write_immutable_json(path: Path, body: dict[str, Any]) -> None:
                 "the recomputed body"
             )
         return
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp")
-    tmp.write_text(payload)
-    os.replace(tmp, path)
+    write_text_atomic(path, payload)
 
 
 # ---------------------------------------------------------------------------
@@ -648,17 +649,9 @@ def run(args: argparse.Namespace) -> int:
         was_resumed = body is not None
         if body is None:
             body = generate_cell(llm, tok, cw, resolved, n_responses, split)
-            raw_path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = raw_path.with_name(raw_path.name + ".tmp")
-            tmp.write_text(json.dumps(body, ensure_ascii=False))
-            os.replace(tmp, raw_path)
+            write_text_atomic(raw_path, json.dumps(body, ensure_ascii=False))
             man_rows = manifest_rows_for_cell(cw, body)
-            man_path.parent.mkdir(parents=True, exist_ok=True)
-            mtmp = man_path.with_name(man_path.name + ".tmp")
-            with mtmp.open("w", encoding="utf-8") as fh:
-                for m in man_rows:
-                    fh.write(json.dumps(m, ensure_ascii=False) + "\n")
-            os.replace(mtmp, man_path)
+            write_jsonl_atomic(man_path, man_rows)
         else:
             n_resumed += 1
         cap_rows.extend(
@@ -686,15 +679,13 @@ def run(args: argparse.Namespace) -> int:
         "metadata": as_metadata_dict(git_provenance(), phase="gen"),
     }
     summary_path = out_root / "gen_summary" / f"{split}_{shard_tag}.json"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    stmp = summary_path.with_name(summary_path.name + ".tmp")
-    stmp.write_text(canonical_json(summary))
-    os.replace(stmp, summary_path)
+    write_text_atomic(summary_path, canonical_json(summary))
     if report["amendment_required"]:
         amend_path = out_root / "gen_summary" / f"cap_amendment_{split}_{shard_tag}.json"
-        atmp = amend_path.with_name(amend_path.name + ".tmp")
-        atmp.write_text(canonical_json({"cells_over_threshold": report["cells_over_threshold"]}))
-        os.replace(atmp, amend_path)
+        write_text_atomic(
+            amend_path,
+            canonical_json({"cells_over_threshold": report["cells_over_threshold"]}),
+        )
         print(
             f"[gen] CAP AMENDMENT REQUIRED: {len(report['cells_over_threshold'])} cells "
             f"> {CAP_HIT_AMEND_THRESHOLD:.0%} length-cap hits — pre-test amendment, "

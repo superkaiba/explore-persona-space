@@ -279,7 +279,10 @@ def shard_done(store_dir: Path, idx: int, fingerprint: str) -> bool:
         return False
     try:
         return json.loads(meta.read_text()).get("fingerprint") == fingerprint
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+        # UnicodeDecodeError is a ValueError, not an OSError: a truncated /
+        # partially-written meta file raises it and would otherwise escape this
+        # resume probe. Returning False re-does the shard, the safe direction.
         return False
 
 
@@ -510,7 +513,12 @@ def upload_store(store_dir: Path, split: str, *, smoke: bool) -> None:
     prefix = f"{name}/analysis_tensors/l19_{split}/{store_dir.name}"
     # _upload signature: (local_path, repo_id, repo_type, path_in_repo, ...);
     # folder branch => one bulk upload_folder commit under `prefix`.
-    _upload(store_dir, DEFAULT_DATASET_REPO, "dataset", prefix, raise_on_error=True)
+    url = _upload(store_dir, DEFAULT_DATASET_REPO, "dataset", prefix, raise_on_error=True)
+    if not url:
+        raise RuntimeError(
+            f"capture store upload of {store_dir} returned no URL — durability unverified "
+            f"for {DEFAULT_DATASET_REPO}/{prefix}"
+        )
     expected = [f"{prefix}/{p.name}" for p in sorted(store_dir.iterdir()) if p.is_file()]
     missing = verify_repo_paths_uploaded(
         HfApi(),
