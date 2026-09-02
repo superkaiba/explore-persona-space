@@ -10,7 +10,11 @@ For a #2479-style consumer-side resume of `eval.judge_pilot.judge_pilot_gate`
 
 - `pilot_gate_report.json` (PilotGateReport.to_json) persists `passed`,
   `verdict`, `judge_model`, `max_tokens`, `rubric_hash`
-  (= sha256(eval_prompt)[:16]), `parse_fail_threshold`, `wave_transport`, and
+  (= sha256(eval_prompt)[:16]), `parse_fail_threshold`,
+  `api_refusal_threshold` (rule 26(d), verdict-bearing — compare it AND fold
+  it into the gate-dir key; the `waive_api_refusal_arms` remediation tuple is
+  NOT persisted, so its tracking is key-only — #2658 E round 2, commit
+  `103747b429b`), `wave_transport`, and
   per-arm `n_items`/`n_draws` — but NOT the instrument n_draws. Derive it:
   `arm.n_draws // arm.n_items` (every subsampled item gets exactly n_draws
   draws), consistent across arms; a non-integer ratio = mismatch.
