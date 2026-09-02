@@ -172,6 +172,17 @@ def _load_by_path(name: str, path: Path) -> ModuleType:
 
 _PINNED_GEN: ModuleType | None = None
 
+# Marks a module object as OUR vendored pin. Load-bearing for the duplicate
+# module-instance case: run as `python scripts/issue2658_text_resolver.py` this
+# file is `__main__`, while `issue2658_frames`'s keyed loaders import it BY NAME
+# — two module objects, two `_PINNED_GEN` globals, one shared `sys.modules`. The
+# second instance would otherwise see the FIRST instance's own registration and
+# refuse it as a live foreign module. The sentinel keeps the guard's real intent
+# (never shadow main's drifted copy) while letting the two instances share one
+# pinned gen instead of racing each other.
+_VENDOR_PIN_SENTINEL = "_i2658_vendored_pin"
+_PINNED_GEN_SYS_KEY = "issue2658_pinned_gen"
+
 
 def load_pinned_gen_module() -> ModuleType:
     """Materialize + exec the vendored #2388 gen module (loaders only).
@@ -186,9 +197,14 @@ def load_pinned_gen_module() -> ModuleType:
     global _PINNED_GEN
     if _PINNED_GEN is not None:
         return _PINNED_GEN
+    cached = sys.modules.get(_PINNED_GEN_SYS_KEY)
+    if cached is not None and getattr(cached, _VENDOR_PIN_SENTINEL, False):
+        _PINNED_GEN = cached  # a sibling instance already loaded the same pin
+        return cached
     vend = verify_vendor_pins()
     dotted = "scripts.issue2388_spread_pilot"
-    if dotted in sys.modules:
+    live = sys.modules.get(dotted)
+    if live is not None and not getattr(live, _VENDOR_PIN_SENTINEL, False):
         raise VendorPinError(
             f"{dotted} is already imported in this process; refusing to shadow a live "
             "module with the pinned copy (run resolution in a fresh process)"
@@ -200,12 +216,16 @@ def load_pinned_gen_module() -> ModuleType:
     shutil.copyfile(vend["issue2388_spread_pilot"], sdir / "issue2388_spread_pilot.py")
     shutil.copyfile(vend["issue2388_gen"], sdir / "issue2388_gen.py")
     spread = _load_by_path("issue2658_pinned_spread_pilot", sdir / "issue2388_spread_pilot.py")
+    setattr(spread, _VENDOR_PIN_SENTINEL, True)
     sys.modules[dotted] = spread  # gen's `from scripts.issue2388_spread_pilot import ...`
-    gen = _load_by_path("issue2658_pinned_gen", sdir / "issue2388_gen.py")
+    gen = _load_by_path(_PINNED_GEN_SYS_KEY, sdir / "issue2388_gen.py")
     gen.REPO_ROOT = REPO_ROOT  # never leave the tmp stub root live
     for attr in _BENCH_LOADERS.values():
         if not hasattr(gen, attr):
             raise VendorPinError(f"pinned gen module lacks loader {attr!r} — wrong pin?")
+    # Sentinel LAST: a module that failed any check above must not be adoptable
+    # by a sibling instance as a completed pin.
+    setattr(gen, _VENDOR_PIN_SENTINEL, True)
     _PINNED_GEN = gen
     return gen
 

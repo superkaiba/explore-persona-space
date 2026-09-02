@@ -37,6 +37,14 @@ Evidence sources (both committed / odb-resident, sha-pinned):
   (``raw/arc_challenge/test.jsonl``).  Each bank item embeds exactly one raw
   row's stem as a prefix plus its rendered choices (probed: 15/15 unique);
   the packet pins the stem, choices, labels, and correct answer.
+- ``sycophancy|syco_*`` (the four keyed frames): the SAME answer keys read
+  through ``issue2658_frames.keyed_records_for_ref`` — the one load path the
+  composed prompts themselves come from, so a packet cannot describe a
+  different record than the prompt asserts against.  The packet pins the
+  correct label + its option text, the ASSERTED (deterministically selected)
+  wrong label + its text, and the source provenance.  This row's construct is
+  agreement with a user claim the frozen evidence contradicts, so the asserted
+  wrong answer is part of the evidence, not a detail of rendering.
 
 CONTENT HYGIENE: only benign banks (``fact_questions``, ``arc_c``) are read;
 excluded frames' bank text is never loaded.  Logs carry ids, counts, and
@@ -58,11 +66,17 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 import issue2658_common as C  # noqa: E402
+import issue2658_frames as F  # noqa: E402
 import issue2658_generate as G  # noqa: E402
 import issue2658_text_resolver as R  # noqa: E402
 
 EVIDENCE_SCHEMA = "i2658-evidence-v1"
 EVIDENCE_SHA_DOMAIN = "evidence_packet_sorted_compact_json_utf8"
+
+# MMLU-Pro answer-key provenance (see _keyed_source_block).
+MMLU_PRO_DATASET = "TIGER-Lab/MMLU-Pro"
+MMLU_PRO_SPLIT = "test"
+MMLU_PRO_LOADER_FILE = "issue2388_gen.py.pinned"
 
 # The #545 fact battery: the frozen ground truth for the fact_questions frame.
 # Pinned to the commit that last touched it (sparse worktrees lack the file).
@@ -76,10 +90,18 @@ ARC_RAW_RELPATH = "raw/arc_challenge/test.jsonl"
 # source matching one of these fragments is a test-derived transform.
 _ANSWER_DERIVED_FRAGMENTS = ("raw_completions", "gen_manifest", "objective_labels")
 
-# (row, frame) -> exclusion reason.  These frames have NO audited ground-truth
-# source; packets for them would have to be fabricated, which is banned.
-EXCLUSIONS: dict[tuple[str, str], str] = {
-    ("sycophancy", "sycophancy_claims"): (
+# Why the sycophancy roster was REPLACED rather than excluded (unit 5b).
+#
+# The frames below were the row's original roster.  Unit 4 measured ZERO usable
+# evidence packets across all 56 of their pinned items: none of the four sources
+# persists any ground truth about whether a claim is UNSUPPORTED, which is the
+# exact quantity plan §3's construct needs.  A row with no measurable construct
+# is worse than a row with a narrower source, so the roster moved to keyed
+# answer-key frames (see the module docstring) instead of carrying four
+# permanent exclusions.  Recorded because the dead ends are evidence: a future
+# round proposing any of these sources should read this first.
+RETIRED_SYCOPHANCY_FRAMES: dict[str, str] = {
+    "sycophancy_claims": (
         "no persisted ground truth: the 50-claim panel was LLM-generated as flat "
         "strings with no stored corrections (#503 prep `_wrong_claim_pool_via_claude` "
         "at commit b65e815bf8e, reachable from the #545 battery metadata); the #411/"
@@ -87,18 +109,23 @@ EXCLUSIONS: dict[tuple[str, str], str] = {
         "from model/world knowledge would fabricate evidence, and unit 4 may make no "
         "LLM calls to audit claims"
     ),
-    ("sycophancy", "sycophancy_neutral_v1"): (
+    "sycophancy_neutral_v1": (
         "flat neutral prompt strings (#1090, commit 3c6a2448c49) with no claim "
         "structure and no ground-truth corrections"
     ),
-    ("sycophancy", "sycophancy_neutral_v2"): (
+    "sycophancy_neutral_v2": (
         "flat neutral prompt strings (#1090, commit 3c6a2448c49) with no claim "
         "structure and no ground-truth corrections"
     ),
-    ("sycophancy", "wildchat_real"): (
+    "wildchat_real": (
         "real-user prompts (WildChat) carry no frozen ground truth; no audited "
         "claim/correction source exists"
     ),
+}
+
+# (row, frame) -> exclusion reason.  These frames have NO audited ground-truth
+# source; packets for them would have to be fabricated, which is banned.
+EXCLUSIONS: dict[tuple[str, str], str] = {
     ("hallucination", "wang44_probes"): (
         "Betley-lineage probe bank; open-ended probes with no ground-truth "
         "reference to check atomic claims against"
@@ -289,9 +316,135 @@ def build_arc_packet(item_id: str) -> dict[str, Any]:
     }
 
 
+def _keyed_source_block(loader_name: str) -> dict[str, Any]:
+    """Provenance for a keyed answer-key source, per loader.
+
+    ARC pins the committed file's own sha256.  MMLU-Pro is loaded from the Hub
+    by the byte-pinned vendored #2388 loader, which pins no dataset revision —
+    so the honest provenance is the LOADER's sha + source commit plus the
+    dataset id/split and the row-count assert the loader itself enforces
+    (``EXPECTED_COUNTS['mmlu_pro_full']``), which is the integrity check that
+    exists.  Recording the loader sha as if it pinned the DATA would overstate
+    it; naming the row-count assert states exactly what is guaranteed.
+    """
+    if loader_name == "arc_challenge":
+        _rows, raw_sha = load_arc_raw()
+        return {"kind": "arc_challenge_answer_key", "path": ARC_RAW_RELPATH, "sha256": raw_sha}
+    if loader_name == "mmlu_pro":
+        manifest = json.loads(R.VENDOR_MANIFEST.read_text())
+        meta = manifest["files"][MMLU_PRO_LOADER_FILE]
+        mod = R.load_pinned_gen_module()
+        return {
+            "kind": "mmlu_pro_answer_key",
+            "dataset": MMLU_PRO_DATASET,
+            "split": MMLU_PRO_SPLIT,
+            "expected_rows": int(mod.EXPECTED_COUNTS["mmlu_pro_full"]),
+            "loader_file": MMLU_PRO_LOADER_FILE,
+            "loader_sha256": meta["sha256"],
+            "loader_source_commit": manifest["source_commit"],
+            "dataset_revision_pinned": False,
+        }
+    raise EvidenceBuildError(f"no evidence provenance defined for keyed loader {loader_name!r}")
+
+
+_KEYED_INDEX_CACHE: dict[str, tuple[dict[str, dict[str, Any]], dict[str, Any]]] = {}
+
+
+def _keyed_index(source_ref: str) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """(key -> record, source block) for one keyed source_ref, loaded once."""
+    cached = _KEYED_INDEX_CACHE.get(source_ref)
+    if cached is not None:
+        return cached
+    _assert_not_answer_derived(source_ref)
+    records = F.keyed_records_for_ref(source_ref)
+    by_key: dict[str, dict[str, Any]] = {}
+    for rec in records:
+        key = str(rec["key"])
+        if key in by_key:
+            raise EvidenceBuildError(
+                f"duplicate keyed record key {key!r} in {source_ref!r}: keys must identify "
+                "one record — a collision would let a packet describe the wrong item"
+            )
+        by_key[key] = rec
+    block = _keyed_source_block(F.keyed_loader_name(source_ref))
+    _KEYED_INDEX_CACHE[source_ref] = (by_key, block)
+    return by_key, block
+
+
+def build_sycophancy_packet(item_id: str) -> dict[str, Any]:
+    """Answer-key packet for one keyed ``sycophancy`` item.
+
+    Pins BOTH sides of the construct: the frozen correct answer, and the wrong
+    answer the composed prompt makes the user assert.  The wrong label is
+    re-derived through the composer's OWN selector (``select_wrong_choice``),
+    keyed on the record key — deterministic, and derived from the answer key,
+    never from any generated response.
+    """
+    row, frame_name, ref = R.parse_item_id(item_id)
+    spec = _frame_spec(row, frame_name)
+    if spec.source_kind != "keyed":
+        raise EvidenceBuildError(
+            f"{item_id!r}: frame {frame_name!r} is source_kind {spec.source_kind!r}, "
+            "not 'keyed' — wrong packet builder"
+        )
+    by_key, source = _keyed_index(spec.source_ref)
+    rec = by_key.get(ref)
+    if rec is None:
+        raise EvidenceBuildError(
+            f"{item_id!r}: record key {ref!r} is absent from {spec.source_ref!r} — the pinned "
+            "item no longer resolves to a source record"
+        )
+    labels = list(rec["labels"])
+    choices = list(rec["choices"])
+    correct = str(rec["correct"])
+    if len(labels) != len(choices):
+        raise EvidenceBuildError(f"{item_id!r}: labels/choices length mismatch in record {ref!r}")
+    if correct not in labels:
+        raise EvidenceBuildError(f"{item_id!r}: correct label {correct!r} not in {labels!r}")
+    wrong_label, wrong_rank = F.select_wrong_choice(labels, correct, ref)
+    band = F._band_from_key(row, ref)
+    return {
+        "schema": EVIDENCE_SCHEMA,
+        "row": row,
+        "item_id": item_id,
+        "kind": "keyed_mcq_answer_key",
+        "evidence": {
+            "question": rec["question"],
+            "choice_labels": labels,
+            "choices": choices,
+            "correct_label": correct,
+            "correct_choice": choices[labels.index(correct)],
+            # The claim the composed prompt puts in the user's mouth. Frozen
+            # here so a judge can check agreement against a stated wrong answer
+            # rather than re-deriving it.
+            "asserted_wrong_label": wrong_label,
+            "asserted_wrong_choice": choices[labels.index(wrong_label)],
+        },
+        "question_provenance": {
+            "record_key": ref,
+            "assertion_band": band,
+            "wrong_choice_rank": wrong_rank,
+            "category": rec.get("category"),
+        },
+        "source": source,
+    }
+
+
+def _frame_spec(row: str, frame_name: str) -> F.FrameSpec:
+    for fr in F.FRAMES[row].frames:
+        if fr.name == frame_name:
+            return fr
+    raise EvidenceBuildError(f"frame {frame_name!r} not registered for row {row!r}")
+
+
 _PACKET_BUILDERS = {
     ("hallucination", "fact_questions"): build_fact_packet,
     ("hallucination", "arc_c_factual"): build_arc_packet,
+    **{
+        ("sycophancy", fr.name): build_sycophancy_packet
+        for fr in F.FRAMES["sycophancy"].frames
+        if fr.source_kind == "keyed"
+    },
 }
 
 

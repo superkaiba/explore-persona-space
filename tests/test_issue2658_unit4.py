@@ -32,6 +32,7 @@ if str(_SCRIPTS) not in sys.path:
 
 import issue2658_common as C  # noqa: E402
 import issue2658_evidence as E  # noqa: E402
+import issue2658_frames as F  # noqa: E402
 import issue2658_generate as G  # noqa: E402
 import issue2658_objective_labels as L  # noqa: E402
 import issue2658_text_resolver as R  # noqa: E402
@@ -96,15 +97,50 @@ class TestEvidenceStore:
     def core(self):
         return E.build_store_core()
 
-    def test_sycophancy_all_excluded_never_fabricated(self, core):
+    def test_sycophancy_grounded_in_answer_key_never_fabricated(self, core):
+        """Unit 5b replaced the sycophancy roster with keyed answer-key frames.
+
+        The original assertion here was "every sycophancy item is EXCLUDED",
+        which held while no source pinned whether a claim was unsupported. The
+        invariant it protected — a sycophancy packet is never FABRICATED — is
+        what this asserts now: every packet traces to a pinned answer key, and
+        the asserted wrong answer is genuinely wrong against that key.
+        """
         pins = R.load_pins()["items"]
         syco_pinned = {iid for iid in pins if iid.startswith("sycophancy|")}
         assert syco_pinned, "expected pinned sycophancy items"
-        assert not any(iid.startswith("sycophancy|") for iid in core["items"])
-        excluded_ids = {e["item_id"] for e in core["exclusions"]}
-        assert syco_pinned <= excluded_ids  # every pinned sycophancy item counted
+        covered = {iid for iid in core["items"] if iid.startswith("sycophancy|")}
+        assert covered == syco_pinned, "every pinned sycophancy item must carry evidence"
+        for iid in sorted(covered):
+            packet = core["items"][iid]["packet"]
+            assert packet["kind"] == "keyed_mcq_answer_key", iid
+            ev = packet["evidence"]
+            # Grounded: the correct answer comes from the key, and the asserted
+            # wrong answer is a real option that is NOT the correct one.
+            assert ev["correct_label"] in ev["choice_labels"], iid
+            assert ev["asserted_wrong_label"] in ev["choice_labels"], iid
+            assert ev["asserted_wrong_label"] != ev["correct_label"], iid
+            assert ev["asserted_wrong_choice"] != ev["correct_choice"], iid
+            # Provenance pins a source, and never one derived from answers.
+            src = packet["source"]
+            assert src.get("sha256") or src.get("loader_sha256"), iid
+            E._assert_not_answer_derived(json.dumps(src))
         for e in core["exclusions"]:
             assert e["reason"].strip(), "exclusion without a reason"
+
+    def test_retired_sycophancy_frames_keep_their_dead_end_reasons(self):
+        """The four retired sources are why the roster moved; a future round
+        proposing one of them should find the measured dead end, not silence."""
+        assert set(E.RETIRED_SYCOPHANCY_FRAMES) == {
+            "sycophancy_claims",
+            "sycophancy_neutral_v1",
+            "sycophancy_neutral_v2",
+            "wildchat_real",
+        }
+        for name, reason in E.RETIRED_SYCOPHANCY_FRAMES.items():
+            assert len(reason.strip()) > 40, name
+        live = {fr.name for fr in F.FRAMES["sycophancy"].frames}
+        assert not (live & set(E.RETIRED_SYCOPHANCY_FRAMES)), "a retired frame is live again"
 
     def test_counts_partition_pinned_items(self, core):
         for key, stats in core["coverage"]["frames"].items():
@@ -112,11 +148,19 @@ class TestEvidenceStore:
         assert core["n_items"] == sum(s["n_covered"] for s in core["coverage"]["frames"].values())
         assert core["n_excluded"] == len(core["exclusions"])
 
-    def test_covered_frames_are_the_two_grounded_ones(self, core):
+    def test_covered_frames_are_exactly_the_grounded_set(self, core):
+        """Grounded = the two hallucination banks with a pinned key, plus the
+        four keyed sycophancy frames unit 5b added. Derived from FRAMES rather
+        than hardcoded so a roster change shows up here as a real diff."""
+        expected = {"hallucination|arc_c_factual", "hallucination|fact_questions"} | {
+            f"sycophancy|{fr.name}"
+            for fr in F.FRAMES["sycophancy"].frames
+            if fr.source_kind == "keyed"
+        }
         covered = {k for k, s in core["coverage"]["frames"].items() if s["n_covered"] > 0}
-        assert covered == {"hallucination|arc_c_factual", "hallucination|fact_questions"}
-        assert core["coverage"]["frames"]["hallucination|fact_questions"]["n_excluded"] == 0
-        assert core["coverage"]["frames"]["hallucination|arc_c_factual"]["n_excluded"] == 0
+        assert covered == expected
+        for key in expected:
+            assert core["coverage"]["frames"][key]["n_excluded"] == 0, key
 
     def test_unhandled_frame_raises_instead_of_silent_drop(self, monkeypatch):
         key = ("hallucination", "wang44_probes")
@@ -149,10 +193,15 @@ class TestEvidenceStore:
         assert packet["schema"] == E.EVIDENCE_SCHEMA
 
         # An EXCLUDED item resolves to a loud miss — never a fabricated packet.
+        # Picked from the live EXCLUSIONS rather than hardcoded: unit 5b moved
+        # sycophancy off this list, and a stale literal would silently stop
+        # testing the miss path.
         pins = R.load_pins()["items"]
-        syco = sorted(iid for iid in pins if iid.startswith("sycophancy|"))[0]
+        excluded_pin = sorted(iid for iid in pins if tuple(iid.split("|")[:2]) in E.EXCLUSIONS)
+        assert excluded_pin, "expected at least one pinned item from an excluded frame"
+        row = excluded_pin[0].split("|")[0]
         with pytest.raises(R.EvidencePacketMissingError):
-            R.resolve_evidence_packet("sycophancy", syco)
+            R.resolve_evidence_packet(row, excluded_pin[0])
 
         # Drift in a stored packet RAISES everywhere: resolve, verify, freeze.
         body["items"][iid]["packet"]["row"] = "tampered"

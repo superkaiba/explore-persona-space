@@ -2277,232 +2277,248 @@
    "prompt_sha256": "197f38adaa69e7ffa155646fa1ee790039c756177e52463b96ecefc0fcede493",
    "source_ref": "query_banks:wildchat_random"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#10": {
-   "prompt_sha256": "6436ffde122757e9e48ae049c64b4fa0f60ccf21f21062b55cfbd07e3240d4e2",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#1087": {
+   "prompt_sha256": "01d835d3b2d0f5455d9925d357a3c44ead889655c532c554812cb2daa7797a16",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#13": {
-   "prompt_sha256": "1f2bde8ed958e614a86abda9e596e1528cbd65d19c028c9b3c12e7aad24a9e9f",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#130": {
+   "prompt_sha256": "09a52435b082b7fe167728127fa73ed6080d15420c8285074f4e2581822c7b4e",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#15": {
-   "prompt_sha256": "48feafb1f1be7e1b054c89d5df7f8d50a7fd3ced7ef507eef6b2d54b6ebe9204",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#132": {
+   "prompt_sha256": "007ded8a44d851f5dd39d8427af88797ed5272fd2d85d7a00330c3b559a000b8",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#22": {
-   "prompt_sha256": "9396dc5c8e96fdc6fb29e3591fd4cd740587b6b56ca4f89390bfc5540ee5b8cf",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#135": {
+   "prompt_sha256": "06f88660c351d3b1128c128b21e37d173a5cde667ffa8046a64b41332e8bc2a1",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#23": {
-   "prompt_sha256": "877c889869c80afdd1e28a1f99d384e27c33694b41bb19e2a898f9cd99a93ae8",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#145": {
+   "prompt_sha256": "08c8a5397e6e84e9bad1235174fb0fc3b8e369cd4b7fc5e4b019faf48039f26d",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#27": {
-   "prompt_sha256": "440f427bc0e6b653e0da98e2a44751051ecb5846f429c80552018515ba435e6b",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#23": {
+   "prompt_sha256": "000990df4c288a679704a2ed08611d220983a373dcb9ea6117a0d6bb968f9709",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#36": {
-   "prompt_sha256": "36e901e38c2de21c6ea035d1d70d10f95d714ddcf41ce54141b39b6b65aee4fb",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#261": {
+   "prompt_sha256": "0026a6adca16887922713feed3e446d2459e0e8843282cfb205c5f9e854dfe23",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#38": {
-   "prompt_sha256": "d711e36f81d425e05212b93f8b30116eca430d6791b4db75062aa2cc17902c35",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#389": {
+   "prompt_sha256": "07764871d320ef3c05a27a22cbf6398a751aa014501ac3290f7fdc2b0745126d",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#39": {
-   "prompt_sha256": "0c7bcd304949d40f7b36c0f807988af0710a5d4fb7cd51632b432a274a705cf7",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#399": {
+   "prompt_sha256": "01aa4d97e11b3f35ce90519633c131ccd6d06162da701279634efac195f213ca",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#41": {
-   "prompt_sha256": "059282bbf6079dd10ae160d1d07a656e2a867a415e49becb361dbe0b3cc75d5e",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#496": {
+   "prompt_sha256": "037667d54b98408643246c34dee2e55a8daee1867762c759fe2740f715f2524e",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#46": {
-   "prompt_sha256": "718ca033a95ed1be91998fb235198f4425ceafd9571583859ac95129eb4e1a7e",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#736": {
+   "prompt_sha256": "033f0867df484cef478c545dc6d677639cc1e6955a28480e8f9c231ec35e98fe",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#5": {
-   "prompt_sha256": "64384ad2ba4332000086e5b38fec475ef7ba82b317faef896276b673fc4ba220",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#787": {
+   "prompt_sha256": "07f455b86c9a6fc79f35487831fe1bc54b699875b68ec298ecaadff755c6abe8",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#7": {
-   "prompt_sha256": "2dd509ad2c6c8e46d5b0bbfc0095aa28e251ab12e5c932ae74c236bade4b34ae",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#806": {
+   "prompt_sha256": "001e1fa50eb73e7eb286010f717ef3f2ca6e7d8d4ec5949928a381956f15a2a4",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#8": {
-   "prompt_sha256": "1a3818cbf90eb24f4dd409639725bd50a6fa339a4fff25593f83767aa49178ac",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#813": {
+   "prompt_sha256": "069beffe4ab30f283ac8c40a7a9631f3191736dbcfb3ef8b9dc0b00af4b916bf",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_claims|sycophancy_claims#9": {
-   "prompt_sha256": "9e7f79bc204c9016447c16610f973d6a94c213449124891cd2d395b2031fb455",
-   "source_ref": "query_banks:sycophancy_claims"
+  "sycophancy|syco_arc_science|arc:ac04cd4ab4f0#93": {
+   "prompt_sha256": "06df74efcf96c5f7970acaaaa18b8cbf0f7aa109fe5ee18b673764b6cca404c0",
+   "source_ref": "keyed:arc_challenge"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#13": {
-   "prompt_sha256": "0d3b8b245e9058ce026d92a2d7dcf3b1c40456b097c7c02c73b992845db37b8e",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-10808": {
+   "prompt_sha256": "0221820b45cc346a7c4b52dc1fe9b15902dee349c3b65c4cdbe6255cad11bac1",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#15": {
-   "prompt_sha256": "375bd8d269c40df9b687545a37a35d167280307074d4437d5ab0bd6d86ff3f99",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-10947": {
+   "prompt_sha256": "011f8ca82b80ca2913a0ceec8d7c3246d9515d3c2b324479c58fee068f95b2af",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#19": {
-   "prompt_sha256": "299b58cd1e08aeae3013a1dae5ca8f17bba3f715238ab98cbfd4535f90c2509b",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-10980": {
+   "prompt_sha256": "022e72160bcf363317a9041597d6ccff944df80c7c1d0327aace5a18e8e3a7df",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#2": {
-   "prompt_sha256": "c6e023ba84bfb8cfbc9b25eb10aa64e17ddd5f4ecef3c69278e1b5f218e67948",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-11021": {
+   "prompt_sha256": "0062ae47afce3e10e8f0a77f29371446c997e723ada128a6776650ba4830599a",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#20": {
-   "prompt_sha256": "371265d2ab07657de08eae7bdf93fa6fc513844e08939f9e85fd4fb42c3cdac7",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-4689": {
+   "prompt_sha256": "0301eaad0d304235e909ec689fcce85d625fdfc636bf2ac39a44a19bde06c429",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#22": {
-   "prompt_sha256": "2cc4500fab80254e059f93c5bf98e56c121101e3d20246dcad3da3852ff99086",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-4781": {
+   "prompt_sha256": "03405f87fe68658e539552ad48ddd6327d53573e553807c8b36313f024477890",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#23": {
-   "prompt_sha256": "2b6d1c3e3a39fc08b21c28ac59ea51199ac30a1b201b7b215206d1fbeecce0fe",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-4978": {
+   "prompt_sha256": "078a03f28164e5101f75a7c08d3bd49a61a99d13d7db584cafce4389fbf8ea35",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#30": {
-   "prompt_sha256": "9efb59a52ae0da7a2990981758b0ba76900f09333f5f88f072fc538394d2b48b",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5009": {
+   "prompt_sha256": "01b8e6d4f59df3dcc92ffb1af89b9d8b22eee3a3e305e13358b481393ccd0858",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#31": {
-   "prompt_sha256": "b8d9d5642326da1a0e33aac1825af1a973b5e7ac91ca0ab6da7582db0d31b7db",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5016": {
+   "prompt_sha256": "05706a6c680916a52eb1f7b4665671995fb7134b097e05706675ce8034d05bc5",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#32": {
-   "prompt_sha256": "5afed89066a4b01abee039209656dc431cf75e27182287a436d997a1a7538e32",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5029": {
+   "prompt_sha256": "06cae0753781f04052f3f19dcd44d390aaf306022d795ab33403e04c32727e0b",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#34": {
-   "prompt_sha256": "1a4e320a4ba8c61ab26f7fd0aba2f443375837f9af4441972e87f923e6dd7378",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5126": {
+   "prompt_sha256": "011554a15dff5c455c82abe01e5894836de4c01a1defc2bb4e08123b0ae25150",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#6": {
-   "prompt_sha256": "21c4e4d27cbefed5e77bfe0c4099a8144f88f553d035c5a809b5033cf43f8f64",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5155": {
+   "prompt_sha256": "02dd2ddc904f8077905114891584b9083119bcdd39b46ed3defdae79eb22864a",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v1|sycophancy_neutral_v1#8": {
-   "prompt_sha256": "463d5bc845669f3d19ccbf9dd5707c17b7270a04fcb97e1bddb2d05605ffecc0",
-   "source_ref": "query_banks:sycophancy_neutral_v1"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5423": {
+   "prompt_sha256": "0528cdfb5a774ddab87a704789b165dbf87542cd0682673475ffa2f86b325a92",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#1": {
-   "prompt_sha256": "12e8f510c3d7469ec1e160ca235ef882872dbda9da22a380ed137502b6810344",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5694": {
+   "prompt_sha256": "082c43f5883c956f89df1ceca261031860bfc290c6458a06881815e947633396",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#13": {
-   "prompt_sha256": "36d2012dad0e09c4e6c5e37e0d1bbb6535d9311ebc98c159033e9504f705b609",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_humanities|mmlupro-5778": {
+   "prompt_sha256": "0302d948ecfd6c37959f0b9e3c7f5496adb9b34e2a41a8d4587999df2d215572",
+   "source_ref": "keyed:mmlu_pro:category=philosophy,history,other"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#14": {
-   "prompt_sha256": "db6a8147c3d0a229037161f2f5bd505afefbfdff36e216e2938605c0d5d23ba2",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-1112": {
+   "prompt_sha256": "005cd5646d12048da0c8437dabdc5ccb8f06aa21126d75bde163f8d1bf4edb56",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#15": {
-   "prompt_sha256": "3c7aa74bbf36e6d07fbd554f695f034856e96d2bc28d0b4f5990f32de0df42c9",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-1294": {
+   "prompt_sha256": "009747ca88d9927fb62b62d86f42b46fd271348d060c5fa8174700d221f95bb5",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#17": {
-   "prompt_sha256": "3ab1f0e3cf113c541c7078aafc40d52003efd5155836228de07c008b136e08e8",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-1887": {
+   "prompt_sha256": "00dec76cabeac3feb33a27c031fc93797ae173a4b46efced5bc78ca130b858e2",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#18": {
-   "prompt_sha256": "77cc44034f33f59802bb2e4f875b8b63320c2034db322215efb707d7912a0a19",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-2151": {
+   "prompt_sha256": "013a814ab0fb3a51a1238e95a3207e0461c9bb611a44dbaa6085df72a1a13df8",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#19": {
-   "prompt_sha256": "f8e9c6ebad242f451921acae3a52a0377bf6a28ad7a1852d363c2b3cb7144aa2",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-2245": {
+   "prompt_sha256": "0079aebaa160527d8e49988d0d2feb60f01e9dd356eea59e3f182e19fe39fab8",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#20": {
-   "prompt_sha256": "699c332fdfdc45ea663c2c7bc491a98015ea33b3d77da4b6a34c998f459117d6",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-2268": {
+   "prompt_sha256": "00c6cc68a78bfd9905eeba09545995fb47500424ec14368b5d65012c908fb1fc",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#21": {
-   "prompt_sha256": "79db28a7d3354c9b17c5505f770a0461d45dfe7e0037b505e4d4091f25789b35",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-227": {
+   "prompt_sha256": "0121b76e0524d0d4a23bb0a18144a4dd007d48cddffa14a130a9c6e461c39fc0",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#28": {
-   "prompt_sha256": "35b85e98b86268e34b0eeebd23876f0e2b00d4024b9e4de29653c02c63703e4c",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-2780": {
+   "prompt_sha256": "004acd1df6f30deb97b1d0a8c15734d40474c910be3589d4c476e2f7bbb5f8ff",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#34": {
-   "prompt_sha256": "0b264698d84ca4b98f9e38e14329f33f706bbeed2c36ee3e7f18ddff4ce53019",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-454": {
+   "prompt_sha256": "000c1d588e8ac8dfcf031d5bc0847cc1d36c86250e7ec96d09a091feec6bb63e",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#36": {
-   "prompt_sha256": "6c0128ca66bf6b0baf376a484668990b9194396e09f972c194ed20a13a583f40",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-505": {
+   "prompt_sha256": "0029d3c90ef05e94f3b5f4f33d6560dc8e30049f9248affd5edc455b4acf9ff2",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|sycophancy_neutral_v2|sycophancy_neutral_v2#7": {
-   "prompt_sha256": "f01af1d63cbe0511821be3ed6627eb05a9c67e91ecfdabeb96ababbb03176f28",
-   "source_ref": "query_banks:sycophancy_neutral_v2"
+  "sycophancy|syco_mmlu_social_health|mmlupro-6038": {
+   "prompt_sha256": "0055057f15545db674a7c408db493aed8618aca969973798c263740ea2845837",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|wildchat_real|wildchat_random#101": {
-   "prompt_sha256": "003d19ff9589b15fbece2ab060df5287908f240d5969f3edd9cd9b9bb8b9acc4",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_social_health|mmlupro-6182": {
+   "prompt_sha256": "0037e92c1898c3f9be5ea510047e6be61075b7d95c509b77903b24a80daf0f15",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|wildchat_real|wildchat_random#178": {
-   "prompt_sha256": "024f3412902a8e8f471d0ab6f021a9bf28c8a01e763cccd3124445523d478c01",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_social_health|mmlupro-6542": {
+   "prompt_sha256": "00faf6ab50231f3a5ce8ee375e14ebcde055064f25fc19379ae765c53cb1e87b",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|wildchat_real|wildchat_random#229": {
-   "prompt_sha256": "0e889dda66f34d7c1491424280a1ec102733bc4c77bf328892785410ffa1a7f5",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_social_health|mmlupro-7584": {
+   "prompt_sha256": "000014c1ae5e9f3a44e47af29ad0764037fa64d03f259787458d39f8436a6560",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|wildchat_real|wildchat_random#231": {
-   "prompt_sha256": "03c47f681dc6aa1ebd66d3d38b3aa56d1d620e22ae53fbc9088348b5c33f1984",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_social_health|mmlupro-7649": {
+   "prompt_sha256": "007623c7b06471534e76ff7e1767dfb63eb60124c92eda6af41140e3e8a4a1c0",
+   "source_ref": "keyed:mmlu_pro:category=law,economics,health,psychology,business"
   },
-  "sycophancy|wildchat_real|wildchat_random#278": {
-   "prompt_sha256": "0a6a913e4427194d1306f766fd1507ed7e4d5449948cb57de2a9c85b1ed229e0",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-10314": {
+   "prompt_sha256": "00be3bbd1e51a285ddd8840b22d7d4276e7c9eab96a7aa141cdb1e38989b8391",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#28": {
-   "prompt_sha256": "072952443a2646f32ec4e5d24c62521999b10ecf7a91e94fd1093a10e72db539",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-10563": {
+   "prompt_sha256": "00a9fd07ee647b48d1fea4a366810b6f8dee13126037209e452cf0e82b4e8e30",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#293": {
-   "prompt_sha256": "14be84f0b11f385b76c9bd94ecc22299f751b075f0da10527419ab4cade667a1",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-10751": {
+   "prompt_sha256": "006890a47b500d3ba1a220ff77c4e0ee64ff3c2aff27c02eed6c75e5048ba621",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#317": {
-   "prompt_sha256": "1379cc1b18725af157ad76cca857dd1eb82eadf1ac446b6a3c8560111698e5b6",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-11641": {
+   "prompt_sha256": "0059abe48aa5db8396d70832fba13fc6a024b2a18e6f497e38180dc97395cbe9",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#336": {
-   "prompt_sha256": "05ac2c9e941a8d270ba92312c783236fc683dbea2dd20da622af3c8948834cd3",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-11704": {
+   "prompt_sha256": "001ad7cb29c5a370c5fcb43ee612f8bdd2cbbaa4e73836053bf250cf99c1b2c8",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#434": {
-   "prompt_sha256": "04be8e655950625f514d03f5dc0838308aec8bd526048d27aa15297900460a7b",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-3504": {
+   "prompt_sha256": "004ec0cfaf83dd02529c2b860ddb32eaa62889225b504542be9b8ad21a9849f1",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#452": {
-   "prompt_sha256": "041ce87c9ac818f7f38961f84f4eb015c0b308d8447c580312c3f1b8f17c633f",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-3521": {
+   "prompt_sha256": "00c030a4bada92fd2f1dfe7fbbdf9c3471100afab070aae4cca5868edef12747",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#541": {
-   "prompt_sha256": "004d4983a9e8f2889af060490feff34536de7c3b205523d3572dca3c861efcaf",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-3913": {
+   "prompt_sha256": "0068dce6b18e663313f0a5c220eb48bd2e066f93ce88528291797c6a7e54ef40",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#581": {
-   "prompt_sha256": "04a911c00f52ba72b8e9d9c2eb36cf3573ae35c662ab184dc49988fa61555858",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-3968": {
+   "prompt_sha256": "003cb7850a803fc41ed9f1071f9d05d34f0eeaa56ade7d427abd6f5374b4e1ad",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#76": {
-   "prompt_sha256": "056d988c986844703d49c52dca9a6fefeb8e9e0190c4e7b5b8f9f31fccf81ec6",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-8365": {
+   "prompt_sha256": "000dc9be0ed0472d90670a467d96e087737e930f5dec7b81c7c3eb758d039478",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   },
-  "sycophancy|wildchat_real|wildchat_random#89": {
-   "prompt_sha256": "0478ff225299d80d87f9ad6f68647b204ef72dcd7ad66ecd70b50f4a462699dd",
-   "source_ref": "query_banks:wildchat_random"
+  "sycophancy|syco_mmlu_stem|mmlupro-8603": {
+   "prompt_sha256": "00338fbe6bd5e60d4922a79cb9615938bff7415c014076b75f00ca62b2ff95e1",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
+  },
+  "sycophancy|syco_mmlu_stem|mmlupro-8930": {
+   "prompt_sha256": "0067abcce418d562e5a906dd0f65129c43f0647e4c45d5ec01af22ef55435237",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
+  },
+  "sycophancy|syco_mmlu_stem|mmlupro-9162": {
+   "prompt_sha256": "005c2aaa4150e1116b2636eedfbec32fb274e861e42016e73c5819676da56268",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
+  },
+  "sycophancy|syco_mmlu_stem|mmlupro-9276": {
+   "prompt_sha256": "0066e9a11cddb87bbb18c49093803eb11e7225a9a6d45b3841ebbc98427bdc81",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
+  },
+  "sycophancy|syco_mmlu_stem|mmlupro-9906": {
+   "prompt_sha256": "001f9330d760d9d1178363ee0a3daae8da0727bc27e55ef57e4f8308f9363e26",
+   "source_ref": "keyed:mmlu_pro:category=math,physics,chemistry,engineering,biology,computer science"
   }
  },
- "n_items": 625,
+ "n_items": 629,
  "note": "Frozen prompt-text pins for the registered pilot items. sha256 over the raw prompt text (utf-8). TEXT-FREE by design; drift on any later resolution raises RowHashMismatchError.",
  "sha_domain": "prompt_text_utf8"
 }

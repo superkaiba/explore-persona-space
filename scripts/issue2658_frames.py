@@ -1365,6 +1365,46 @@ _KEYED_RECORD_LOADERS: dict[str, Callable[[], list[dict[str, Any]]]] = {
 }
 
 
+def keyed_loader_name(source_ref: str) -> str:
+    """The loader half of a ``keyed:<loader>[:<selector>]`` source_ref."""
+    return _parse_keyed_ref(source_ref)[0]
+
+
+def _parse_keyed_ref(source_ref: str) -> tuple[str, str]:
+    parts = source_ref.split(":")
+    if len(parts) < 2 or parts[0] != "keyed":
+        raise FrameManifestError(
+            f"keyed source_ref must be 'keyed:<loader>[:<selector>]', got {source_ref!r}"
+        )
+    return parts[1], (parts[2] if len(parts) > 2 else "")
+
+
+def keyed_records_for_ref(source_ref: str) -> list[dict[str, Any]]:
+    """Load + select the records behind one ``keyed:...`` source_ref.
+
+    The single load path for keyed records: the frame items and their evidence
+    packets both come through here, so a packet is provably derived from the
+    same record the composed prompt was built from. An empty selection RAISES —
+    an empty frame is a data/selector fault, never a legitimate zero.
+    """
+    loader_name, selector = _parse_keyed_ref(source_ref)
+    loader = _KEYED_RECORD_LOADERS.get(loader_name)
+    if loader is None:
+        raise FrameManifestError(
+            f"unknown keyed loader {loader_name!r} in {source_ref!r}; "
+            f"known: {sorted(_KEYED_RECORD_LOADERS)}"
+        )
+    records = loader()
+    if selector:
+        records = [r for r in records if _keyed_selector_matches(r, selector)]
+    if not records:
+        raise FrameManifestError(
+            f"keyed source_ref {source_ref!r} selected zero records "
+            "— an empty selection is a data/selector fault, never an empty frame"
+        )
+    return records
+
+
 def _load_keyed_frame(row: str, frame: FrameSpec) -> list[PromptItem]:
     """Materialize a composed-text keyed frame.
 
@@ -1373,33 +1413,11 @@ def _load_keyed_frame(row: str, frame: FrameSpec) -> list[PromptItem]:
     then the sha is taken over the composed text. Deriving the band from the sha
     instead would be circular (band -> text -> sha -> band).
 
-    ``source_ref`` is ``keyed:<loader>[:<selector>]``. An item whose options
-    cannot express the construct (no incorrect option, or a key/option mismatch)
-    RAISES out of the composer rather than being skipped — a silently dropped
-    item would shrink the denominator invisibly.
+    An item whose options cannot express the construct (no incorrect option, or
+    a key/option mismatch) RAISES out of the composer rather than being skipped
+    — a silently dropped item would shrink the denominator invisibly.
     """
-    parts = frame.source_ref.split(":")
-    if len(parts) < 2 or parts[0] != "keyed":
-        raise FrameManifestError(
-            f"keyed frame {frame.name!r} needs source_ref 'keyed:<loader>[:<selector>]', "
-            f"got {frame.source_ref!r}"
-        )
-    loader_name = parts[1]
-    selector = parts[2] if len(parts) > 2 else ""
-    loader = _KEYED_RECORD_LOADERS.get(loader_name)
-    if loader is None:
-        raise FrameManifestError(
-            f"unknown keyed loader {loader_name!r} for frame {frame.name!r}; "
-            f"known: {sorted(_KEYED_RECORD_LOADERS)}"
-        )
-    records = loader()
-    if selector:
-        records = [r for r in records if _keyed_selector_matches(r, selector)]
-    if not records:
-        raise FrameManifestError(
-            f"keyed frame {frame.name!r} selected zero records from {frame.source_ref!r} "
-            "— an empty selection is a data/selector fault, never an empty frame"
-        )
+    records = keyed_records_for_ref(frame.source_ref)
     out: list[PromptItem] = []
     for rec in records:
         band = _band_from_key(row, rec["key"])
@@ -1612,23 +1630,38 @@ def build_row(row: str, eligible: frozenset[str]) -> dict:
     }
 
 
+def has_intrinsic_band(item: PromptItem, row: str) -> bool:
+    """True when the band is a property of the STIMULUS, not an eval-time wrapper.
+
+    Two intrinsic cases: a correctness item's difficulty band, and a composed-text
+    keyed item whose band was resolved from ``band_key`` BEFORE composition and is
+    baked into the prompt text (the sycophancy assertion templates). Everything
+    else is a bank prompt REUSED under all bands as a wrapper at eval time.
+
+    Getting this wrong is a measurement-validity break, not a bookkeeping one: an
+    intrinsic-band item counted under all bands inflates every per-cell count by
+    ``len(strata)``, and lands a hedged-assertion prompt in the confident-assertion
+    cell — the stratifier would stop describing the stimulus it labels.
+    """
+    return is_correctness(row) or item.band_key is not None
+
+
 def _per_cell_test_counts(
     row: str, frame_items: list[PromptItem], superfamilies: dict[str, str], test_sf: set[str]
 ) -> dict[tuple[str, str], int]:
-    """Test-eligible prompt count per (frame, stratum). Behavioral prompts are
-    REUSED across all 3 provocation bands (one prompt, three wrappers), so each
-    test prompt counts in every band; correctness prompts have an intrinsic band."""
+    """Test-eligible prompt count per (frame, stratum). Wrapper-band prompts are
+    REUSED across all bands (one prompt, N wrappers) so each counts in every band;
+    intrinsic-band prompts count once, in their own band."""
     bands = [s.name for s in FRAMES[row].strata]
     counts: dict[tuple[str, str], int] = defaultdict(int)
-    behavioral = not is_correctness(row)
     for it in frame_items:
         if superfamilies[it.item_id] not in test_sf:
             continue
-        if behavioral:
+        if has_intrinsic_band(it, row):
+            counts[(it.frame, stratum_band_of(it, row))] += 1
+        else:
             for b in bands:
                 counts[(it.frame, b)] += 1
-        else:
-            counts[(it.frame, stratum_band_of(it, row))] += 1
     return counts
 
 
@@ -1637,22 +1670,21 @@ def _pilot_selection(
 ) -> dict:
     """Deterministic pilot selection: PILOT_PROMPTS_PER_CELL dev-eligible prompts
     per (frame, stratum) cell (pilot is development-lineage, disjoint from sealed
-    test). Behavioral cells draw from a sha-partition of the frame's dev pool so
-    the pilot cells are disjoint prompt sets; correctness cells draw from the
-    intrinsic difficulty band."""
+    test). Wrapper-band cells draw from a sha-partition of the frame's dev pool so
+    the pilot cells are disjoint prompt sets; intrinsic-band cells (correctness
+    difficulty, keyed assertion strength) draw from the item's own band."""
     strata = [s.name for s in FRAMES[row].strata]
-    behavioral = not is_correctness(row)
     cells: dict[tuple[str, str], list[PromptItem]] = defaultdict(list)
     for it in frame_items:
         if superfamilies[it.item_id] not in dev_sf:
             continue
-        if behavioral:
+        if has_intrinsic_band(it, row):
+            band = stratum_band_of(it, row)
+        else:
             idx = int(
                 hashlib.sha256(f"i2658-pilotband|{it.prompt_sha256}".encode()).hexdigest()[:8], 16
             )
             band = strata[idx % len(strata)]
-        else:
-            band = stratum_band_of(it, row)
         cells[(it.frame, band)].append(it)
     selection: dict[str, list[str]] = {}
     short: list[str] = []
