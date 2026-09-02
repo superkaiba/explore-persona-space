@@ -84,8 +84,11 @@ class MapRef:
 
 
 def all_maps() -> list[MapRef]:
+    # 30 = the plan-§4.1 21 registered maps + 9 issue-2588-larger extension
+    # maps (q38fn a/b, q35_397b a/b, dsv4_flash a/b, glm53 b, dsv4_pro a/b —
+    # every extension cell is single-position). Mirrors PC.all_cells()'s pin.
     out = [MapRef(c.model_key, c.arm, pos) for c in PC.all_cells() for pos in c.input_positions]
-    assert len(out) == 21, len(out)
+    assert len(out) == 30, len(out)
     return out
 
 
@@ -1399,7 +1402,7 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="C5: stage the fits/nulls HF prefixes (revision-pinned bulk mirror via "
         "hub.stage_hub_prefix) into <fits-dir parent>/hub_mirror before analysis; "
-        "asserts all 21 registered maps load with full schema",
+        "asserts all 30 registered maps load with full schema",
     )
     ap.add_argument(
         "--harvest-revision",
@@ -1508,14 +1511,15 @@ def main(argv: list[str] | None = None) -> int:
         rec = _load_map(args.fits_dir, ref)
         if rec is not None:
             maps[ref.map_id] = rec
-    logger.info("[i2588] loaded %d/21 maps from %s", len(maps), args.fits_dir)
+    logger.info("[i2588] loaded %d/30 maps from %s", len(maps), args.fits_dir)
     assert maps, f"no fit artifacts under {args.fits_dir}"
     if args.harvest:
-        # C5 schema/count validation: ALL 21 registered maps, each with the
+        # C5 schema/count validation: ALL 30 registered maps (21 original + 9
+        # issue-2588-larger extension maps), each with the
         # full artifact set the analysis consumes.
         missing_maps = [r.map_id for r in all_maps() if r.map_id not in maps]
         assert not missing_maps, (
-            f"--harvest expected all 21 registered maps; missing {missing_maps}"
+            f"--harvest expected all 30 registered maps; missing {missing_maps}"
         )
         for mid, rec in maps.items():
             gaps = [
