@@ -711,6 +711,12 @@ def build_argparser() -> argparse.ArgumentParser:
         help="#2564 gramslot summary.json carrying the benign-anchor cos medians "
         "(default: eval_results/issue_2564/gramslot_pilot/summary.json)",
     )
+    ap.add_argument(
+        "--stem-suffix",
+        default="",
+        help="suffix appended to every figure stem (e.g. _verbharm for the "
+        "verb_harm control-cell round; keeps rounds side by side in one dir)",
+    )
     ap.add_argument("--import-check", action="store_true")
     return ap
 
@@ -772,7 +778,7 @@ def main() -> int:
             print(f"[fig] SKIP {stem} — plan-§7 halt: {halts.get('reasons')}", flush=True)
             continue
         fig = build()
-        paths = savefig_paper(fig, stem, dir=out_dir)
+        paths = savefig_paper(fig, stem + args.stem_suffix, dir=out_dir)
         plt.close(fig)
         print(f"[fig] {paths['png']}", flush=True)
         n_rendered += 1
