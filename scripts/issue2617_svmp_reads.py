@@ -80,6 +80,7 @@ RIDGE_HUB_PATHS = {
 PAIR_CLASSES = (
     "obj_flip",
     "verb_flip",
+    "verb_harm",
     "subj_ctl",
     "obj_benign",
     "verb_benign",
@@ -1717,7 +1718,7 @@ def main() -> int:
         # Grid-completeness gate: production reads run only on the full bank.
         assert d_model == HIDDEN, d_model
         assert list(data["layers"]) == list(MAP_LAYERS), data["layers"]
-        assert len(data["ctx_ids"]) == 216 and len(data["pairs"]) == 108, (
+        assert len(data["ctx_ids"]) == 248 and len(data["pairs"]) == 124, (
             len(data["ctx_ids"]),
             len(data["pairs"]),
         )

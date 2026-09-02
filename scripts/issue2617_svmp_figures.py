@@ -77,6 +77,7 @@ ARM_LABELS = {
 PAIR_CLASSES = (
     "obj_flip",
     "verb_flip",
+    "verb_harm",
     "subj_ctl",
     "obj_benign",
     "verb_benign",
@@ -86,6 +87,7 @@ PAIR_CLASSES = (
 CLASS_LABELS = {
     "obj_flip": "Object swap\n(valence flip)",
     "verb_flip": "Verb swap\n(valence flip)",
+    "verb_harm": "Verb swap\n(both harmful)",
     "subj_ctl": "Subject swap\n(harmful topic)",
     "obj_benign": "Object swap\n(benign)",
     "verb_benign": "Verb swap\n(benign)",
@@ -268,7 +270,7 @@ def fig_retrieval(summary: dict) -> plt.Figure:
 
     Left three panels: pair-delta rank-1 retrieval per class and arm (one
     panel per pool). Right panel: per-context absolute-state rank-1
-    retrieval per arm (full 216-context pool, cosine metric), including the
+    retrieval per arm (full bank context pool, cosine metric), including the
     leave-one-out identity+bias baseline; each panel carries its own chance
     line. Raises if any panel would render zero finite bars.
     """
@@ -351,7 +353,7 @@ def fig_retrieval(summary: dict) -> plt.Figure:
     assert chance_pc is not None and np.isfinite(chance_pc), chance_pc
     axp.axhline(chance_pc, color=NULL_GREY, lw=1.2, linestyle="--")
     axp.set_xticks(range(len(pc_arms)), pc_ticklabels, fontsize=6.5)
-    axp.set_title("Per-context (absolute state)\nn=216")
+    axp.set_title(f"Per-context (absolute state)\nn={summary['n_contexts']}")
     _require_points(n_bars, "retrieval acc@1 bars")
     axes[0].set_ylabel("Retrieval acc@1 (rank 1)")
     handles = [

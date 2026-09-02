@@ -77,7 +77,7 @@ def test_constructed_authoring_gate_and_counts() -> None:
     for cls, _cat, _qa, _qb in CONSTRUCTED_PAIRS:
         counts[cls] += 1
     assert counts == _EXPECTED_CLASS_COUNTS
-    assert sum(counts.values()) == 72
+    assert sum(counts.values()) == 88
 
 
 def test_one_word_diff_every_constructed_pair() -> None:
@@ -100,24 +100,24 @@ def _production_context_ids() -> dict[str, dict]:
 
 def test_judge_id_map_bijective_and_grammar_valid() -> None:
     ids = _production_context_ids()
-    assert len(ids) == 216
+    assert len(ids) == 248
     fwd = build_judge_id_map(ids)
-    assert len(fwd) == 216
-    assert len(set(fwd.values())) == 216  # bijective
+    assert len(fwd) == 248
+    assert len(set(fwd.values())) == 248  # bijective
     assert set(fwd.keys()) == set(ids)
 
 
 def test_composed_custom_ids_survive_batch_grammar() -> None:
     ids = _production_context_ids()
     fwd = build_judge_id_map(ids)
-    # 216 contexts x 10 draws -> composed custom_id {item_id}__{idx:05d}__00.
+    # 248 contexts x 10 draws -> composed custom_id {item_id}__{idx:05d}__00.
     composed = []
     idx = 0
     for cid in sorted(ids):
         for d in range(10):
             composed.append(f"{_item_id(fwd[cid], d)}__{idx:05d}__00")
             idx += 1
-    assert len(composed) == 2160
+    assert len(composed) == 2480
     validate_batch_custom_ids(composed)  # raises on any grammar violation
     assert all(len(c) <= 64 for c in composed)
 

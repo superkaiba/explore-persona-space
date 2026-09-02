@@ -11,6 +11,7 @@ Pure counting: no rollout text is printed. Output: aggregate JSON to stdout +
 the durable audit artifact at eval_results/issue_2617/svmp/cjk_audit.json.
 """
 
+import argparse
 import json
 import re
 from collections import defaultdict
@@ -18,11 +19,16 @@ from pathlib import Path
 from statistics import median
 
 WT = Path(__file__).resolve().parents[1]
-ANCHORS = WT / "data/issue_2617/svmp_stage/anchors/anchors_query_svmp.jsonl"
-JUDGE = WT / "data/issue_2617/svmp_stage/judge/judge_scores.json"
-PERPAIR = WT / "eval_results/issue_2617/svmp/perpair.jsonl"
-PERCONTEXT = WT / "eval_results/issue_2617/svmp/percontext.jsonl"
-OUT = WT / "eval_results/issue_2617/svmp/cjk_audit.json"
+_ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+_ap.add_argument("--stage-dir", default=str(WT / "data/issue_2617/svmp_stage"))
+_ap.add_argument("--eval-dir", default=str(WT / "eval_results/issue_2617/svmp"))
+_args = _ap.parse_args()
+STAGE, EVAL = Path(_args.stage_dir), Path(_args.eval_dir)
+ANCHORS = STAGE / "anchors/anchors_query_svmp.jsonl"
+JUDGE = STAGE / "judge/judge_scores.json"
+PERPAIR = EVAL / "perpair.jsonl"
+PERCONTEXT = EVAL / "percontext.jsonl"
+OUT = EVAL / "cjk_audit.json"
 
 CJK = re.compile(r"[一-鿿㐀-䶿豈-﫿぀-ヿ가-힯]")
 REFUSED_T = 50
