@@ -274,6 +274,47 @@ def test_ladder_not_estimable_record_is_labeled_absence(mini):
     assert any("not estimable" in t.get_text() for t in fig.axes[0].texts)
 
 
+def test_ladder_absence_label_renders_the_records_own_reason(mini):
+    """The per-row ladder figure must render the record's OWN ``reason`` field
+    — never the hardcoded no-frozen-external-direction cause, which is correct
+    today only because the no-direction case is the sole non-scored status."""
+    lad = dict(mini.ladder)
+    lad[("rowB", "c2_direction_dot")] = {
+        "status": "not-estimable",
+        "reason": "production gate failed — synthetic regression probe",
+    }
+    fig, plotted = FIG.fig_comparator_ladder_per_row(lad, synthetic=True)
+    absent = [a for a in plotted["absent"] if a["row"] == "rowB"]
+    assert absent
+    # plotted["absent"] records the reason field, not the status.
+    assert all(a["reason"].startswith("production gate failed") for a in absent)
+    assert {a["label"] for a in absent} == {"not estimable (gate failed)"}
+    texts = [t.get_text() for t in fig.axes[0].texts]
+    assert "not estimable (gate failed)" in texts
+    # The real committed reason still renders as before.
+    lad2 = dict(mini.ladder)
+    lad2[("rowB", "c2_direction_dot")] = {"status": "not-estimable", "reason": U.NOT_ESTIMABLE}
+    _fig2, plotted2 = FIG.fig_comparator_ladder_per_row(lad2, synthetic=True)
+    absent2 = [a for a in plotted2["absent"] if a["row"] == "rowB"]
+    assert {a["label"] for a in absent2} == {"not estimable (no direction)"}
+
+
+def test_estimable_row_with_missing_descriptive_block_raises(mini):
+    """An ESTIMABLE row whose report entry lacks the descriptive block is a
+    producer-contract break and must RAISE — a not-estimable label is the one
+    thing in this experiment that must never be inferred from a missing
+    field."""
+    report = copy.deepcopy(mini.report)
+    assert report["rows"]["rowA"]["estimable"] is True
+    assert "descriptive" in report["rows"]["rowA"]
+    del report["rows"]["rowA"]["descriptive"]
+    with pytest.raises(FIG.FigureInputError, match="descriptive"):
+        FIG.fig_macro_auroc(report, synthetic=True)
+    # A genuinely not-estimable row (rowC) still renders as labeled absence.
+    _fig, plotted = FIG.fig_macro_auroc(mini.report, synthetic=True)
+    assert any(a["row"] == "rowC" for a in plotted["absent"])
+
+
 # ---------------------------------------------------------------------------
 # Not-estimable CELL: prompts excluded upstream never reach a per-unit view;
 # the ledger figure shows the revised denominator by cause.

@@ -187,7 +187,12 @@ def _jitter(key: str, n: int, scale: float = 0.10) -> np.ndarray:
 
 def _mark_absent(ax: plt.Axes, y: float, reason: str) -> str:
     """Render a labeled absence at data-y ``y`` (axes-fraction x)."""
-    label = f"not estimable ({_short_reason(reason)})"
+    return _mark_absent_short(ax, y, _short_reason(reason))
+
+
+def _mark_absent_short(ax: plt.Axes, y: float, short: str) -> str:
+    """Render an ALREADY-shortened absence label (multi-reason rows join shorts)."""
+    label = f"not estimable ({short})"
     ax.text(
         0.02,
         y,
@@ -329,6 +334,15 @@ def fig_macro_auroc(report: dict[str, Any], *, synthetic: bool) -> tuple[plt.Fig
     rows = _ordered_rows(report["rows"])
     if not rows:
         raise FigureInputError("report carries no rows")
+    for row in rows:
+        # A not-estimable label must never be inferred from a missing field:
+        # an ESTIMABLE row with no descriptive block is a producer-contract
+        # break and RAISES instead of rendering as a labeled absence.
+        if report["rows"][row]["estimable"] and "descriptive" not in report["rows"][row]:
+            raise FigureInputError(
+                f"row {row!r} is estimable but the report carries no descriptive block; "
+                "refusing to render a producer-contract break as a not-estimable label"
+            )
     fig, ax = plt.subplots(figsize=(6.5, 0.42 * len(rows) + 1.6))
     pos = _row_axis(ax, rows)
     plotted: dict[str, Any] = {"rows": rows, "series": {}, "absent": []}
@@ -649,7 +663,10 @@ def fig_comparator_ladder_per_row(
                 continue
             val = _ladder_value(rec)
             if val is None:
-                reason = rec.get("status", "not reported")
+                # The record's OWN reason field, never its status and never a
+                # hardcoded cause (a status=="scored" record with a missing
+                # value, or any future status, carries its own reason).
+                reason = rec.get("reason", "not reported")
                 plotted["absent"].append({"row": row, "comparator": comp, "reason": reason})
                 continue
             xs.append(val)
@@ -666,10 +683,12 @@ def fig_comparator_ladder_per_row(
         plotted["series"][comp] = {"x": xs, "y": ys}
     absent_rows = sorted({a["row"] for a in plotted["absent"]})
     for row in absent_rows:
-        label = _mark_absent(ax, pos[row] + 0.30, "no frozen external direction")
-        for a in plotted["absent"]:
-            if a["row"] == row:
-                a["label"] = label
+        row_absent = [a for a in plotted["absent"] if a["row"] == row]
+        # One label per row; distinct comparator reasons join as shortened forms.
+        shorts = sorted({_short_reason(a["reason"]) for a in row_absent})
+        label = _mark_absent_short(ax, pos[row] + 0.30, "; ".join(shorts))
+        for a in row_absent:
+            a["label"] = label
     ax.axvline(0.5, ls="--", lw=1.0, color=COLOR_BY_MEANING["reference"], label="chance (0.5)")
     ax.set_xlabel("Test macro AUROC")
     ax.set_title(_tag("Comparator ladder by construct", synthetic), loc="left")

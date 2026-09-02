@@ -38,8 +38,17 @@ The four blinded-reads elements, realized:
   no system prompt and no tools; the audit sidecar records both as None.
 - KEY FROZEN FIRST: ``freeze_blinding_key`` is write-once and packet
   composition REFUSES to run without the frozen key, so no packet can be
-  built (let alone sent) before the mapping is on disk.
+  built (let alone sent) before the mapping is on disk.  Composition ALSO
+  verifies every item's display texts against the frozen content sha256s
+  (``_tag_items``): a regenerated items file (same item_ids, different
+  sampled text) raises instead of shipping new text under frozen tags whose
+  hidden metadata describes the old text.
 - SCOPE-AWARE LEAKAGE SCAN: two ban lists (below), fail-loud, no skip flag.
+
+Human packets are additionally emitted in a PER-READER DETERMINISTIC order
+(``reader_order``: seeded from reader id + key fingerprint, persisted per
+reader) so order/context effects do not correlate across the double
+annotation that feeds the kappa/ICC reliability gate.
 
 Leakage-scan scopes (the specific thing #1482's early rounds got wrong —
 one list over the whole request cannot serve both):
@@ -67,11 +76,14 @@ import argparse
 import hashlib
 import json
 import math
+import random
 import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
+
+from explore_persona_space.atomic_io import write_json_atomic, write_text_atomic
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -86,6 +98,9 @@ import issue2658_text_resolver as R  # noqa: E402
 KEY_SCHEMA = "i2658-blind-key-v1"
 KEY_BASENAME_TOKEN = "blinding_key"  # frozen-key filenames MUST contain this
 ORDER_DOMAIN = "sha256('i2658-blind|'+row+'|'+item_id)"
+READER_ORDER_DOMAIN = (
+    "random.Random(sha256('i2658-reader-order|'+reader+'|'+key_fingerprint)[:8]).shuffle(tags)"
+)
 DISPLAY_FIELDS = ("prompt_text", "answer_text")
 
 ADJUDICATED_FLOOR_PER_CLASS = 100  # plan section 3: >=100 adjudicated pos AND neg per trait
@@ -378,20 +393,40 @@ def _require_audited_row(row: str) -> None:
         )
 
 
+def _item_shas(it: dict[str, Any]) -> dict[str, str]:
+    """Display-text sha256s. Single source for BOTH the frozen key's stored
+    fingerprints and the compose-time drift check, so the two can never hash
+    different bytes."""
+    return {
+        "answer_sha256": hashlib.sha256(it["answer_text"].encode()).hexdigest(),
+        "prompt_sha256": hashlib.sha256(str(it.get("prompt_text", "")).encode()).hexdigest(),
+    }
+
+
+def key_fingerprint(key: dict[str, Any]) -> str:
+    """Content fingerprint of a frozen key (reproducible from the key file alone)."""
+    return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()
+
+
 def freeze_blinding_key(items: list[dict[str, Any]], path: Path) -> dict[str, Any]:
     """Write-once freeze of the tag -> hidden-metadata mapping.
 
     Every field EXCEPT the display texts goes into the key; display texts are
     replaced by their sha256 so adjudication can join back without the key
     ever carrying (or the packet ever needing) the mapping. Refuses to
-    overwrite an existing key, and refuses filenames that the outbound ban
-    lists would not cover.
+    overwrite an existing key, and refuses filenames the outbound ban-list
+    REGEX cannot match (substring containment is not enough: the boundary
+    lookbehind in ``_term_regex`` can never hit ``my_blinding_key.json``, so
+    such a name would evade both scan scopes). The write is atomic, so an
+    interrupted freeze never leaves a partial key that the write-once refusal
+    would then treat as frozen.
     """
     path = Path(path)
-    if KEY_BASENAME_TOKEN not in path.name:
+    if not _TERM_RES["blinding_key*"].search(path.name.lower()):
         raise BlindingKeyError(
-            f"key filename {path.name!r} must contain {KEY_BASENAME_TOKEN!r} so the "
-            "outbound ban lists cover it"
+            f"key filename {path.name!r} must contain {KEY_BASENAME_TOKEN!r} at a word "
+            "boundary so the outbound ban-list regex can match it (an underscore- or "
+            "letter-prefixed name would evade both scan scopes)"
         )
     if path.exists():
         raise BlindingKeyFrozenError(
@@ -415,10 +450,7 @@ def freeze_blinding_key(items: list[dict[str, Any]], path: Path) -> dict[str, An
     entries: dict[str, dict[str, Any]] = {}
     for i, it in enumerate(ordered):
         hidden = {k: v for k, v in it.items() if k not in DISPLAY_FIELDS}
-        hidden["answer_sha256"] = hashlib.sha256(it["answer_text"].encode()).hexdigest()
-        hidden["prompt_sha256"] = hashlib.sha256(
-            str(it.get("prompt_text", "")).encode()
-        ).hexdigest()
+        hidden.update(_item_shas(it))
         entries[f"item_{i + 1:04d}"] = hidden
     key = {
         "schema": KEY_SCHEMA,
@@ -427,8 +459,7 @@ def freeze_blinding_key(items: list[dict[str, Any]], path: Path) -> dict[str, An
         "order_domain": ORDER_DOMAIN,
         "entries": entries,
     }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(key, indent=1, sort_keys=True), encoding="utf-8")
+    write_text_atomic(path, json.dumps(key, indent=1, sort_keys=True))
     return key
 
 
@@ -483,19 +514,23 @@ def evidence_display_text(
     return json.dumps(ev, sort_keys=True, ensure_ascii=False)
 
 
-def compose_packet(
+def _tag_items(
     items: list[dict[str, Any]],
     key: dict[str, Any],
     row: str,
-    resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
-) -> tuple[list[tuple[str, str]], list[str]]:
-    """One blinded packet: ONE row's items, presented in frozen-key tag order.
+) -> list[tuple[str, dict[str, Any]]]:
+    """Join items to the frozen key and VERIFY the join, in frozen-key tag order.
 
-    Returns ``(segments, tags)``: segments are (scope, text) pairs whose
-    second elements concatenate to the request byte-for-byte; the scope tags
-    exist only so the leakage scan can hold each scope to its own bar.
-    Composition REQUIRES the frozen key (blinding element 3) and runs the
-    scan before returning (no unscanned packet escapes).
+    The join key is (row, item_id) only, so a regenerated items file (same
+    item_ids, different sampled text — an ordinary re-run across a multi-week
+    human audit) would otherwise ship NEW text under frozen tags whose hidden
+    metadata (operational label, split, frame, stratum) describes the OLD
+    text, mis-attributing every downstream human label. Per item, the display
+    texts must hash to the frozen entry's ``answer_sha256``/``prompt_sha256``
+    (``_item_shas`` — the same bytes the freeze hashed); any mismatch raises
+    ``BlindingKeyError`` naming the item and the drifted FIELD, never the
+    text. Compose time is the ONLY enforcement point: no committed consumer
+    performs the join-back sha check downstream.
     """
     _require_audited_row(row)
     if not items:
@@ -514,10 +549,30 @@ def compose_packet(
                 f"item ({row!r}, {it['item_id']!r}) is not in the frozen blinding key; "
                 "freeze the key over the full item set BEFORE composing packets"
             )
+        entry = key["entries"][tag]
+        for sha_field, sha in _item_shas(it).items():
+            if entry.get(sha_field) != sha:
+                display_field = "answer_text" if sha_field == "answer_sha256" else "prompt_text"
+                raise BlindingKeyError(
+                    f"item ({row!r}, {it['item_id']!r}): {display_field} does not match the "
+                    f"frozen key's {sha_field} — the items file drifted after the key froze, "
+                    "and sending it would attach the frozen hidden metadata to text it does "
+                    "not describe. Freeze a NEW key (new path) over the regenerated items."
+                )
         tagged.append((tag, it))
     # Frozen-key order, never input/bank order (numeric so 5-digit tags sort after 4-digit).
     tagged.sort(key=lambda p: int(p[0].split("_", 1)[1]))
+    return tagged
 
+
+def _packet_segments(
+    tagged: list[tuple[str, dict[str, Any]]],
+    row: str,
+    resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
+) -> tuple[list[tuple[str, str]], list[str]]:
+    """Content-only packet segments for an ALREADY-VERIFIED ordered (tag, item)
+    list (``_tag_items`` output, canonical or per-reader permuted order).
+    Callers run ``assert_no_leakage`` on the result before any write/send."""
     uses_evidence = C.CONSTRUCTS[row].uses_evidence_packet
     parts = (
         "a request, reference material, and a reply" if uses_evidence else ("a request and a reply")
@@ -552,8 +607,29 @@ def compose_packet(
             '"<item tag>: <integer 0-100>". No other text.',
         )
     )
-    assert_no_leakage(segments)
     return segments, [tag for tag, _ in tagged]
+
+
+def compose_packet(
+    items: list[dict[str, Any]],
+    key: dict[str, Any],
+    row: str,
+    resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
+) -> tuple[list[tuple[str, str]], list[str]]:
+    """One blinded packet: ONE row's items, presented in frozen-key tag order.
+
+    Returns ``(segments, tags)``: segments are (scope, text) pairs whose
+    second elements concatenate to the request byte-for-byte; the scope tags
+    exist only so the leakage scan can hold each scope to its own bar.
+    Composition REQUIRES the frozen key (blinding element 3), VERIFIES every
+    item's display texts against the frozen content sha256s (``_tag_items`` —
+    post-freeze drift raises, it never ships), and runs the leakage scan
+    before returning (no unscanned packet escapes).
+    """
+    tagged = _tag_items(items, key, row)
+    segments, tags = _packet_segments(tagged, row, resolver=resolver)
+    assert_no_leakage(segments)
+    return segments, tags
 
 
 def build_user_message(segments: list[tuple[str, str]]) -> str:
@@ -650,32 +726,83 @@ def check_adjudicated_floor(n_adjudicated_positive: int, n_adjudicated_negative:
 # Human packet export (same packets, same scan; plan section 10: the pilot
 # must emit randomized blinded packets).
 # ---------------------------------------------------------------------------
+def reader_order(reader: str, key: dict[str, Any], tags: list[str]) -> list[str]:
+    """Deterministic PER-READER permutation of the already-composed tag list.
+
+    Seeded from the reader id + the frozen key's content fingerprint
+    (``READER_ORDER_DOMAIN``), so the order is reproducible from the frozen
+    key alone — and, being a hash-keyed pseudorandom shuffle of neutral tags,
+    it orders by NO label, score, split, or other hidden field. Per-reader
+    orders de-correlate order/context effects across the double annotation
+    (a shared order would inflate the kappa/ICC reliability-gate inputs).
+    """
+    seed = int.from_bytes(
+        hashlib.sha256(f"i2658-reader-order|{reader}|{key_fingerprint(key)}".encode()).digest()[:8],
+        "big",
+    )
+    order = list(tags)
+    random.Random(seed).shuffle(order)
+    return order
+
+
 def write_human_packets(
-    segments: list[tuple[str, str]],
-    tags: list[str],
+    items: list[dict[str, Any]],
+    key: dict[str, Any],
+    row: str,
     out_dir: Path,
     n_readers: int = N_READERS,
+    resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
 ) -> list[Path]:
-    """Write per-reader packet + answer-sheet files. Scans before writing."""
+    """Per-reader packet + answer-sheet + order-sidecar files.
+
+    Every reader gets the SAME verified items in a PER-READER deterministic
+    order (``reader_order``), with the position -> tag mapping persisted per
+    reader (``reader_<r>_order.json``) so adjudication joins back by tag.
+    The frozen-key content-sha verification (``_tag_items``) runs before any
+    packet text exists, and every per-reader packet is leakage-scanned before
+    writing. All writes are atomic.
+    """
     if n_readers < 1:
         raise ValueError("n_readers must be >= 1")
-    assert_no_leakage(segments)
+    tagged = _tag_items(items, key, row)  # membership + content-sha verification
+    by_tag = dict(tagged)
+    canonical_tags = [t for t, _ in tagged]
+    fingerprint = key_fingerprint(key)
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    text = build_user_message(segments)
-    sheet = (
-        "Write one integer from 0 to 100 after each tag, per the packet question.\n\n"
-        + "\n".join(f"{t}: " for t in tags)
-        + "\n"
-    )
     written: list[Path] = []
     for i in range(n_readers):
         reader = chr(ord("a") + i)
+        order = reader_order(reader, key, canonical_tags)
+        segments, reader_tags = _packet_segments(
+            [(t, by_tag[t]) for t in order], row, resolver=resolver
+        )
+        assert_no_leakage(segments)
+        sheet = (
+            "Write one integer from 0 to 100 after each tag, per the packet question.\n\n"
+            + "\n".join(f"{t}: " for t in reader_tags)
+            + "\n"
+        )
         p = out_dir / f"reader_{reader}_packet.md"
         s = out_dir / f"reader_{reader}_answer_sheet.txt"
-        p.write_text(text, encoding="utf-8")
-        s.write_text(sheet, encoding="utf-8")
-        written += [p, s]
+        o = out_dir / f"reader_{reader}_order.json"
+        write_text_atomic(p, build_user_message(segments))
+        write_text_atomic(s, sheet)
+        write_json_atomic(
+            o,
+            {
+                "schema": "i2658-reader-order-v1",
+                "reader": reader,
+                "row": row,
+                "key_fingerprint": fingerprint,
+                "order_domain": READER_ORDER_DOMAIN,
+                # position i (0-based) in this reader's packet/sheet -> order[i]
+                "order": reader_tags,
+            },
+            indent=1,
+            sort_keys=True,
+        )
+        written += [p, s, o]
     return written
 
 
@@ -761,8 +888,8 @@ def build_audit_record(
 
 
 def dispatch_model_read(
-    segments: list[tuple[str, str]],
-    tags: list[str],
+    items: list[dict[str, Any]],
+    key: dict[str, Any],
     *,
     out: Path,
     row: str,
@@ -771,14 +898,18 @@ def dispatch_model_read(
     temperature: float = 1.0,
     max_tokens: int | None = None,
     betas: list[str] | None = None,
+    resolver: Callable[[str, str], tuple[dict[str, Any], str]] | None = None,
 ) -> dict[str, int]:
     """One bare-API blinded read. CODE PATH ONLY in this unit — no test dispatches it.
 
     Mirrors scripts/issue1482_blind_read_api.py: bare client, no system
     prompt, no tools, leakage scan before send, non-answers never persisted,
-    verbatim request persisted beside the response.
+    verbatim request persisted beside the response (atomic writes). Composes
+    its own packet via ``compose_packet``, so the frozen-key content-sha
+    verification (``_tag_items``) is structurally unavoidable on this path.
     """
     require_reader_independence(model)
+    segments, tags = compose_packet(items, key, row, resolver=resolver)
     betas = list(betas or [])
     hits = scan_for_leakage(segments)
     if any(hits.values()):
@@ -819,8 +950,7 @@ def dispatch_model_read(
     require_end_turn(stop, text, max_tok)  # raises BEFORE anything is written
 
     out = Path(out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(text + "\n", encoding="utf-8")
+    write_text_atomic(out, text + "\n")
     audit = out.with_suffix(".request.json")
     record = build_audit_record(
         model=model,
@@ -836,12 +966,12 @@ def dispatch_model_read(
         n_items=len(tags),
         key_path=key_path,
     )
-    audit.write_text(json.dumps(record, indent=1), encoding="utf-8")
+    write_json_atomic(audit, record, indent=1)
     print(f"[read] wrote {out}")
     print(f"[read] audit (full outbound request) {audit}")
     ratings = parse_ratings(text, tags)  # raises AFTER the raw answer is persisted
     ratings_path = out.with_suffix(".ratings.json")
-    ratings_path.write_text(json.dumps(ratings, indent=1, sort_keys=True), encoding="utf-8")
+    write_json_atomic(ratings_path, ratings, indent=1, sort_keys=True)
     print(f"[read] ratings {ratings_path}")
     return ratings
 
@@ -903,18 +1033,17 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit("--emit-human/--dispatch need --items, --key and --row")
         items = [it for it in load_items(args.items) if it["row"] == args.row]
         key = load_blinding_key(args.key)
-        segments, tags = compose_packet(items, key, args.row)
         if args.emit_human:
             if not args.out_dir:
                 raise SystemExit("--emit-human needs --out-dir")
-            for p in write_human_packets(segments, tags, args.out_dir):
+            for p in write_human_packets(items, key, args.row, args.out_dir):
                 print(f"[human-read] wrote {p}")
             return 0
         if not args.out:
             raise SystemExit("--dispatch needs --out")
         dispatch_model_read(
-            segments,
-            tags,
+            items,
+            key,
             out=args.out,
             row=args.row,
             key_path=str(args.key),

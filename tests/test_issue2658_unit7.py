@@ -174,6 +174,25 @@ def test_freeze_key_requires_ban_covered_filename(tmp_path: Path) -> None:
         H.freeze_blinding_key(make_items("refusal"), tmp_path / "key.json")
 
 
+def test_freeze_key_refuses_scan_invisible_filename(tmp_path: Path) -> None:
+    """A filename the freeze accepts must be a filename the scan can catch.
+
+    ``my_blinding_key.json`` contains the token but the ban-list regex's
+    boundary lookbehind can never match it (preceded by ``_``), so the old
+    substring check accepted a name both scan scopes were blind to.
+    """
+    items = make_items("refusal")
+    # Probe the invariant the fix pins: the scan yields ZERO hits on this name.
+    hits = H.scan_for_leakage([("payload", "my_blinding_key.json")])
+    assert hits == {"wrapper": [], "payload": []}
+    with pytest.raises(H.BlindingKeyError, match="word boundary"):
+        H.freeze_blinding_key(items, tmp_path / "my_blinding_key.json")
+    # Control: the boundary-visible name freezes AND the scan catches it.
+    H.freeze_blinding_key(items, tmp_path / "blinding_key.json")
+    hits = H.scan_for_leakage([("payload", "blinding_key.json")])
+    assert "blinding_key*" in hits["payload"]
+
+
 def test_freeze_key_rejects_objective_rows(tmp_path: Path) -> None:
     with pytest.raises(H.BlindingKeyError, match="objective"):
         freeze(tmp_path, make_items("correctness_math"))
@@ -184,13 +203,13 @@ def test_freeze_key_rejects_unknown_row_and_duplicates(tmp_path: Path) -> None:
         freeze(tmp_path, make_items("not_a_row"))
     items = make_items("refusal", 2)
     with pytest.raises(H.BlindingKeyError, match="duplicate"):
-        H.freeze_blinding_key([*items, items[0]], tmp_path / "dup_blinding_key.json")
+        H.freeze_blinding_key([*items, items[0]], tmp_path / "blinding_key_dup.json")
 
 
 def test_freeze_key_is_deterministic_and_input_order_independent(tmp_path: Path) -> None:
     items = make_items("evil", 5)
-    k1 = H.freeze_blinding_key(items, tmp_path / "a_blinding_key.json")
-    k2 = H.freeze_blinding_key(list(reversed(items)), tmp_path / "b_blinding_key.json")
+    k1 = H.freeze_blinding_key(items, tmp_path / "blinding_key_a.json")
+    k2 = H.freeze_blinding_key(list(reversed(items)), tmp_path / "blinding_key_b.json")
     assert k1["entries"] == k2["entries"]
     assert k1["n_items"] == 5
 
@@ -292,6 +311,59 @@ def test_leaky_payload_refuses_the_send(tmp_path: Path) -> None:
     key = freeze(tmp_path, items)
     with pytest.raises(H.LeakageError, match="explore_persona_space"):
         H.compose_packet(items, key, "refusal")
+
+
+# ---------------------------------------------------------------------------
+# Frozen-key content-sha verification: post-freeze item drift NEVER ships.
+# (The join is by (row, item_id) only, so a regenerated items file — same ids,
+# different sampled text — would otherwise send new text under frozen tags
+# whose hidden metadata describes the old text.)
+# ---------------------------------------------------------------------------
+
+
+def test_compose_refuses_drifted_answer_text(tmp_path: Path) -> None:
+    items = make_items("evil")
+    key = freeze(tmp_path, items)
+    drifted = [dict(it) for it in items]
+    drifted[1]["answer_text"] = "A completely regenerated benign reply about topic one."
+    with pytest.raises(H.BlindingKeyError, match="drifted after the key froze") as ei:
+        H.compose_packet(drifted, key, "evil")
+    msg = str(ei.value)
+    assert drifted[1]["item_id"] in msg and "answer_text" in msg
+    # The exception string is a surface that ends up in logs: never item text.
+    assert "regenerated benign reply" not in msg
+
+
+def test_compose_refuses_drifted_prompt_text(tmp_path: Path) -> None:
+    items = make_items("refusal")
+    key = freeze(tmp_path, items)
+    drifted = [dict(it) for it in items]
+    drifted[0]["prompt_text"] = "A completely regenerated benign request about topic zero."
+    with pytest.raises(H.BlindingKeyError, match="drifted after the key froze") as ei:
+        H.compose_packet(drifted, key, "refusal")
+    msg = str(ei.value)
+    assert drifted[0]["item_id"] in msg and "prompt_text" in msg
+    assert "regenerated benign request" not in msg
+
+
+def test_every_packet_emitting_path_refuses_drifted_items(tmp_path: Path) -> None:
+    """All three packet paths route through compose-time verification: the
+    human-packet writer and the model dispatch both compose internally, so a
+    drifted items file raises before any packet text or file exists."""
+    items = make_items("casualness")
+    key = freeze(tmp_path, items)
+    drifted = [dict(it) for it in items]
+    drifted[2]["answer_text"] = "Regenerated text that the frozen key never fingerprinted."
+    out_dir = tmp_path / "packets"
+    with pytest.raises(H.BlindingKeyError, match="drifted"):
+        H.write_human_packets(drifted, key, "casualness", out_dir)
+    assert not out_dir.exists() or not any(out_dir.iterdir())  # nothing shipped
+    out = tmp_path / "read.txt"
+    # dispatch_model_read raises at compose time, BEFORE any client exists —
+    # no live API call is made and nothing is persisted.
+    with pytest.raises(H.BlindingKeyError, match="drifted"):
+        H.dispatch_model_read(drifted, key, out=out, row="casualness", key_path="k")
+    assert not out.exists()
 
 
 def test_evidence_display_requires_an_evidence_block() -> None:
@@ -428,24 +500,92 @@ def test_audit_record_shape(tmp_path: Path) -> None:
     json.dumps(rec)  # serializable
 
 
-def test_write_human_packets_double_annotation(tmp_path: Path) -> None:
-    items = make_items("casualness")
+def test_write_human_packets_double_annotation_per_reader_order(tmp_path: Path) -> None:
+    """Readers get the SAME items in PER-READER deterministic order, with the
+    position -> tag mapping persisted so adjudication joins back by tag.
+    (Byte-identical shared-order packets would correlate order/context effects
+    across the double annotation that feeds the kappa/ICC reliability gate.)"""
+    items = make_items("casualness", 8)
     key = freeze(tmp_path, items)
-    segments, tags = H.compose_packet(items, key, "casualness")
     out = tmp_path / "packets"
-    written = H.write_human_packets(segments, tags, out)
-    assert len(written) == 4  # 2 readers x (packet + answer sheet)
+    written = H.write_human_packets(items, key, "casualness", out)
+    assert len(written) == 6  # 2 readers x (packet + answer sheet + order sidecar)
     pa = (out / "reader_a_packet.md").read_text()
     pb = (out / "reader_b_packet.md").read_text()
-    assert pa == pb == H.build_user_message(segments)
-    sheet = (out / "reader_a_answer_sheet.txt").read_text()
-    for t in tags:
-        assert f"{t}: " in sheet
+    oa = json.loads((out / "reader_a_order.json").read_text())
+    ob = json.loads((out / "reader_b_order.json").read_text())
+    # Same item set, different order; the permutation is of the composed tag
+    # list only (no hidden field orders it).
+    assert sorted(oa["order"]) == sorted(ob["order"])
+    assert oa["order"] != ob["order"]
+    assert pa != pb
+    for text, order in ((pa, oa["order"]), (pb, ob["order"])):
+        positions = [text.index(f"<item {t}>") for t in order]
+        assert positions == sorted(positions)  # packet renders the recorded order
+    sheet_a = (out / "reader_a_answer_sheet.txt").read_text()
+    sheet_tags = [ln.split(":")[0] for ln in sheet_a.splitlines() if ln.startswith("item_")]
+    assert sheet_tags == oa["order"]  # answer sheet matches the reader's order
+    assert oa["key_fingerprint"] == ob["key_fingerprint"] == H.key_fingerprint(key)
+    # Deterministic: a second emission reproduces every byte.
+    out2 = tmp_path / "packets2"
+    H.write_human_packets(items, key, "casualness", out2)
+    assert (out2 / "reader_a_packet.md").read_text() == pa
+    assert (out2 / "reader_b_packet.md").read_text() == pb
 
 
-def test_write_human_packets_refuses_leaky_segments(tmp_path: Path) -> None:
+def test_write_human_packets_refuses_leaky_items(tmp_path: Path) -> None:
+    items = make_items("evil")
+    # The leak is present at FREEZE time, so the content-sha check passes and
+    # the LEAKAGE scan (not the drift check) is what refuses the write.
+    items[0]["answer_text"] = "Contact superkaiba1 for details."
+    key = freeze(tmp_path, items)
     with pytest.raises(H.LeakageError):
-        H.write_human_packets([("wrapper", "the judge label")], ["item_0001"], tmp_path)
+        H.write_human_packets(items, key, "evil", tmp_path / "p")
+
+
+# ---------------------------------------------------------------------------
+# Atomic writes: an interrupted freeze never bricks the write-once path, and
+# the dispatch persistence goes through the shared atomic primitives.
+# ---------------------------------------------------------------------------
+
+
+def test_interrupted_freeze_does_not_brick_the_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pre-fix, a plain write_text left a PARTIAL key at the destination on
+    interruption, and the write-once refusal then bricked the path until a
+    manual delete. Atomic write-temp + os.replace leaves nothing behind."""
+    items = make_items("evil")
+    target = tmp_path / "blinding_key.json"
+    real_write_text = Path.write_text
+
+    def exploding_write_text(self: Path, text: str, *args, **kwargs):
+        if "blinding_key" in self.name:
+            real_write_text(self, text[: len(text) // 2], *args, **kwargs)
+            raise OSError("simulated interruption mid-write")
+        return real_write_text(self, text, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "write_text", exploding_write_text)
+    with pytest.raises(OSError, match="simulated interruption"):
+        H.freeze_blinding_key(items, target)
+    monkeypatch.undo()
+    assert not target.exists()  # no partial key at the destination
+    assert not list(tmp_path.glob("*.tmp"))  # no temp residue either
+    H.freeze_blinding_key(items, target)  # the path is NOT bricked
+    assert json.loads(target.read_text())["n_items"] == len(items)
+
+
+def test_dispatch_and_freeze_persist_through_atomic_primitives() -> None:
+    """The response text, audit sidecar, and ratings writes cannot be smoke-run
+    without a live API call, so pin the mechanism at the source level: every
+    persist site routes through the shared atomic_io helpers and no plain
+    ``.write_text(`` remains in either function."""
+    import inspect
+
+    for fn in (H.dispatch_model_read, H.freeze_blinding_key, H.write_human_packets):
+        src = inspect.getsource(fn)
+        assert "write_text_atomic(" in src or "write_json_atomic(" in src, fn.__name__
+        assert ".write_text(" not in src, fn.__name__
 
 
 # ---------------------------------------------------------------------------
