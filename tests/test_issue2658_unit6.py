@@ -42,6 +42,7 @@ import dataclasses
 import hashlib
 import inspect
 import json
+import re
 import sys
 import types
 from pathlib import Path
@@ -58,7 +59,10 @@ import issue2658_generate as G  # noqa: E402
 import issue2658_judge as J  # noqa: E402
 
 from explore_persona_space.eval import graded_judge as GJ  # noqa: E402
-from explore_persona_space.eval.judge_pilot import judge_pilot_gate  # noqa: E402
+from explore_persona_space.eval.judge_pilot import (  # noqa: E402
+    PilotGateReport,
+    judge_pilot_gate,
+)
 from explore_persona_space.eval.utils import parse_judge_json  # noqa: E402
 
 ROW = "casualness"  # judged, non-evidence row (benign)
@@ -586,6 +590,11 @@ def test_pilot_gate_wiring_and_sizing(tmp_path):
     assert a["api_refusal_threshold"] == J.API_REFUSAL_THRESHOLD
     assert "waive_api_refusal_arms" in gate.explicit[0]
     assert tuple(a["waive_api_refusal_arms"]) == J.WAIVE_API_REFUSAL_ARMS
+    # round-3 fix (rule 26(b), #1769): the sanctioned parse-fail waiver is
+    # passed EXPLICITLY too — the library's own FAIL text prescribes it as the
+    # remedy, so it must be reachable (and key-tracked) from this seam
+    assert "waive_parse_fail_arms" in gate.explicit[0]
+    assert tuple(a["waive_parse_fail_arms"]) == J.PILOT_WAIVE_PARSE_FAIL_ARMS
     # fix 7: pilot raw draws live under raw_completions/ so upload_raw's
     # canonical helper (any dir literally named raw_completions/) picks them up
     save_raw_dir = str(a["save_raw_dir"]).replace("\\", "/")
@@ -763,9 +772,13 @@ def test_pilot_gate_resume_negative_tampered_report(tmp_path, tamper):
     assert len(gate2.calls) == 1
 
 
-def test_pilot_gate_persisted_fail_report_refuses(tmp_path):
+def test_pilot_gate_persisted_fail_report_refuses(tmp_path, capsys):
     """A persisted FAIL report is never treated as absent: refuse (exit 4)
-    without re-dispatching the pilot."""
+    without re-dispatching the pilot — and the refuse message claims exactly
+    what the enumeration guard proves (rev E round 3): verdict-bearing gate
+    CONSTANTS are key-tracked (the old universal 'Every gate parameter'
+    quantifier was false — seed/plumbing are legitimately not keyed), and
+    every remedy it names is reachable from the seam."""
     build_gen_tree(tmp_path, ROW, {"frameA__b0": 21})
     report_path = J.pilot_gate_root(tmp_path, ROW) / "pilot_gate_report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -777,6 +790,20 @@ def test_pilot_gate_persisted_fail_report_refuses(tmp_path):
         _wave(tmp_path, RaisingJudge(), gate)
     assert exc.value.code == J.EXIT_PILOT_GATE_FAIL
     assert gate.calls == []
+    out = capsys.readouterr().out
+    assert "Every verdict-bearing gate constant is key-tracked" in out
+    assert "Every gate parameter is key-tracked" not in out  # the false quantifier
+    payload_keys = set(J.pilot_gate_key_payload(ROW))
+    for constant in (
+        "PILOT_WAIVE_PARSE_FAIL_ARMS",
+        "API_REFUSAL_THRESHOLD",
+        "WAIVE_API_REFUSAL_ARMS",
+    ):
+        assert constant in out  # the message names the remedy
+        assert hasattr(J, constant)  # ... which is reachable from the seam
+        assert constant.lower() in payload_keys or constant.lower().removeprefix("pilot_") in (
+            payload_keys
+        )  # ... and key-tracked, so following it actually moves the gate dir
 
 
 def test_pilot_gate_pass_not_resumed_after_api_refusal_threshold_change(tmp_path, monkeypatch):
@@ -809,7 +836,18 @@ def _remediate_raise_threshold(monkeypatch):
     monkeypatch.setattr(J, "API_REFUSAL_THRESHOLD", 0.5)
 
 
-@pytest.mark.parametrize("remediate", [_remediate_waive_arm, _remediate_raise_threshold])
+def _remediate_waive_parse_fail_arm(monkeypatch):
+    # rule 26(b)'s sanctioned explained-content-drop waiver (#1769) — the
+    # remedy the library's own FAIL text prescribes (rev E round-3 blocker:
+    # pre-fix this constant did not exist, the tuple rode the library default
+    # outside the key, and the prescribed remedy wedged at exit 4 forever)
+    monkeypatch.setattr(J, "PILOT_WAIVE_PARSE_FAIL_ARMS", (f"{ROW}__frameA__b0",))
+
+
+@pytest.mark.parametrize(
+    "remediate",
+    [_remediate_waive_arm, _remediate_raise_threshold, _remediate_waive_parse_fail_arm],
+)
 def test_pilot_gate_persisted_fail_cleared_by_sanctioned_remediation(
     tmp_path, monkeypatch, remediate
 ):
@@ -836,6 +874,161 @@ def test_pilot_gate_persisted_fail_cleared_by_sanctioned_remediation(
     summary = _wave(tmp_path, FakeJudge(lambda u, k, f: kept(70)), gate2)
     assert len(gate2.calls) == 1  # the pilot RE-RAN; no exit-4 wedge
     assert summary["n_scored"] == 21
+
+
+def test_pilot_gate_parameter_enumeration_guard(monkeypatch):
+    """MECHANICAL parameter sweep (rev E round 3). Rounds 1 and 2 each fixed
+    the one untracked verdict-bearing gate parameter their review named, and
+    the next review's hand-built sweep immediately found another — so the
+    sweep itself becomes a standing test: every ``judge_pilot_gate``
+    parameter and every ``PilotGateReport`` field must be KEY-TRACKED (named
+    in the pilot_gate_key payload, or folded via its cache_fingerprint entry
+    — VERIFIED live by mutation, never asserted), COMPARED (read by
+    ``_persisted_instrument_mismatches`` — derived live from its source), or
+    on the explicit justified allow-lists below. A NEW library parameter in
+    none of the three sets FAILS here by design: a library upgrade adding a
+    verdict-bearing knob must break this test, not ship silently. Offline and
+    cheap: signature/dataclass/source introspection plus key-payload calls —
+    the gate never executes and no judge is called."""
+    sig_params = set(inspect.signature(judge_pilot_gate).parameters)
+    payload = J.pilot_gate_key_payload(ROW)
+
+    # ---- KEY-TRACKED (direct): payload entries named for the gate parameter.
+    direct_keyed = sig_params & set(payload)
+    # Every payload key must be a live gate-parameter name, the instrument
+    # fingerprint, or a named seam-only sizing constant — a renamed / typo'd
+    # payload key fails HERE instead of silently un-keying a parameter.
+    seam_only_payload_keys = {"cache_fingerprint", "pilot_resolution_factor"}
+    stray_payload_keys = set(payload) - direct_keyed - seam_only_payload_keys
+    assert not stray_payload_keys, (
+        f"pilot_gate_key payload key(s) {sorted(stray_payload_keys)} match no "
+        "judge_pilot_gate parameter and no known seam-only constant"
+    )
+
+    # ---- KEY-TRACKED (via the instrument fingerprint): verified by mutation —
+    # each claimed-covered parameter's live source constant is perturbed and
+    # the payload's fingerprint entry must move.
+    fingerprint_mutations = {
+        "eval_prompt": lambda mp: mp.setitem(
+            C.CONSTRUCTS,
+            ROW,
+            dataclasses.replace(C.CONSTRUCTS[ROW], rubric=C.CONSTRUCTS[ROW].rubric + " CHANGED"),
+        ),
+        "judge_model": lambda mp: mp.setitem(C.JUDGE, "model", "claude-sonnet-4-5-19990101"),
+        "max_tokens": lambda mp: mp.setitem(C.JUDGE, "max_tokens", 4096),
+        "n_draws": lambda mp: mp.setitem(C.JUDGE, "n_draws", 7),
+        "temperature": lambda mp: mp.setitem(C.JUDGE, "temperature", 0.31),
+    }
+    base_fp = payload["cache_fingerprint"]
+    for param, mutate in sorted(fingerprint_mutations.items()):
+        mutate(monkeypatch)
+        assert J.pilot_gate_key_payload(ROW)["cache_fingerprint"] != base_fp, (
+            f"{param} claimed fingerprint-covered but its mutation left the key unchanged"
+        )
+        monkeypatch.undo()
+    fingerprint_keyed = set(fingerprint_mutations)
+    assert fingerprint_keyed <= sig_params, "fingerprint map names a removed parameter"
+
+    # ---- COMPARED: report fields the persisted-report compare actually reads,
+    # derived LIVE from its source (a removed compare line drops the field here
+    # and un-classifies its parameter below — never a silent narrowing).
+    src = inspect.getsource(J._persisted_instrument_mismatches)
+    compared_report_fields = set(re.findall(r"""report\.get\(\s*['"](\w+)['"]\s*\)""", src))
+    compare_field_to_params = {
+        "rubric_hash": {"eval_prompt"},
+        "judge_model": {"judge_model"},
+        "max_tokens": {"max_tokens"},
+        "arms": {"n_draws"},  # instrument n_draws derived per arm: n_total // n_items
+        "wave_transport": {"wave_threshold_base", "wave_n_calls"},  # live-route recompute
+        "parse_fail_threshold": {"parse_fail_threshold"},
+        "api_refusal_threshold": {"api_refusal_threshold"},
+    }
+    unknown_compares = compared_report_fields - set(compare_field_to_params)
+    assert not unknown_compares, (
+        f"new compare line(s) for {sorted(unknown_compares)} — extend compare_field_to_params"
+    )
+    if "wave_transport" in compared_report_fields:
+        # keep the wave_transport -> {wave_threshold_base, wave_n_calls} mapping
+        # honest: the compare must really recompute the live route from both
+        assert "_wave_routing(wave_n_calls, WAVE_THRESHOLD_BASE" in src
+    compared_params: set[str] = set()
+    for f in compared_report_fields:
+        compared_params |= compare_field_to_params[f]
+    assert compared_params <= sig_params, "compare map names a removed parameter"
+
+    # ---- ALLOW-LIST: parameters deliberately neither keyed nor compared, each
+    # with its justification (the re-review's classification table, made code).
+    allowed_params = {
+        "arms": "run data — WHICH answer pool is piloted, not the instrument or a bar",
+        "seed": (
+            "changes WHICH items are subsampled, never the instrument or a bar — a "
+            "resumed PASS still certifies the live instrument at the live bars"
+        ),
+        "cache_dir": "plumbing — pilot cache path, resolved UNDER the key-addressed gate root",
+        "save_raw_dir": "plumbing — raw-draw evidence destination, not a verdict input",
+        "report_path": "plumbing — the persistence path itself",
+        "target_total_draws": (
+            "derived at the call site purely from keyed inputs "
+            "(n_arms x n_draws x pilot_items_per_arm(), the latter from the keyed "
+            "thresholds/floors)"
+        ),
+        "wave_force_sync": (
+            "single-sourced False, consistent by construction with the r0 production "
+            "dispatch; a future True edit mismatches the compare's recomputed route "
+            "LOUD rather than resuming silently"
+        ),
+        "allow_subresolution_pilot": (
+            "config-time refusal — raises BEFORE any report is persisted, so a "
+            "persisted PASS implies the strict check passed"
+        ),
+        "threshold_base": "inert legacy knob — passing it alongside a wave declaration raises",
+    }
+    assert set(allowed_params) <= sig_params, "allow-list names a removed parameter — prune it"
+    assert not set(allowed_params) & (direct_keyed | fingerprint_keyed), (
+        "allow-list entry became key-tracked — prune it so the list stays honest"
+    )
+
+    unclassified = (
+        sig_params - direct_keyed - fingerprint_keyed - compared_params - set(allowed_params)
+    )
+    assert not unclassified, (
+        f"judge_pilot_gate parameter(s) {sorted(unclassified)} are neither key-tracked, "
+        "compared, nor allow-listed — a verdict-bearing knob here re-opens the rev-E "
+        "stale-PASS / exit-4-wedge class: key-track it (pilot_gate_key_payload), compare "
+        "it (_persisted_instrument_mismatches), or justify it on the allow-list above"
+    )
+
+    # ---- Report-field side: every persisted field is compared or allow-listed,
+    # so a new library-persisted knob is also caught from the report direction.
+    report_fields = {f.name for f in dataclasses.fields(PilotGateReport)}
+    assert compared_report_fields <= report_fields, (
+        "the compare reads a field PilotGateReport no longer persists — dead compare line"
+    )
+    allowed_report_fields = {
+        "passed": "the verdict itself — consumed by the resume PASS/FAIL branch",
+        "verdict": "same — the resume requires verdict == 'PASS'",
+        "failures": "verdict evidence, echoed in the refuse message",
+        "warnings": "non-verdict advisories",
+        "n_total_draws": (
+            "realized total of the per-arm n_draws the compare already derives "
+            "instrument n_draws from"
+        ),
+        "pilot_transport": (
+            "realized-dispatch evidence of HOW the pilot ran; the DECLARED route "
+            "production must match IS compared (wave_transport)"
+        ),
+        "wave_routing": (
+            "run-digest diagnostic (RoutingDecision asdict) duplicating wave_transport"
+        ),
+    }
+    assert set(allowed_report_fields) <= report_fields, (
+        "report allow-list names a removed field — prune it"
+    )
+    unaccounted_fields = report_fields - compared_report_fields - set(allowed_report_fields)
+    assert not unaccounted_fields, (
+        f"PilotGateReport field(s) {sorted(unaccounted_fields)} are neither compared nor "
+        "allow-listed — classify each before the library knob ships unswept"
+    )
 
 
 # ---------------------------------------------------------------------------
