@@ -1,6 +1,7 @@
 # Reconciler memory index — open the file when a hook matches the disagreement.
 
 - [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — false claim FAILs despite all-NIT (#2263 r6/r7); split behavioral vs prose (#2387 r11); DIRECTION-SENSITIVE: loud-resolving contradiction = CONCERN not FAIL (#2387 r13)
+- [Preregistered module: diff implemented gates vs the plan's gate LIST](feedback_claude_verifies_implemented_gates_misses_registered_gate_list_diff.md) — deep axis verification ≠ gate-list completeness; "proxy" comment = admission (#2658 grpJ)
 
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
