@@ -46,3 +46,25 @@ count keys and only a genuinely partial raw file fails; (d) live-probe
 fixtures for `require_pilot_pass`-style gates need the FULL verdict
 predicate (`verdict` AND `passed`) — build them from the test helpers'
 `_report` shape, not from the docstring.
+
+**Key+compare joint coverage (#2658 rev-E r2):** when a resume fix pairs a
+field-by-field compare WITH a constants-folding gate-dir key, the KEY is the
+load-bearing arm (a changed constant must resolve a fresh, empty dir; the
+compare is tamper defense) — so enumerate EVERY verdict-bearing parameter of
+the gate's signature (`judge_pilot_gate`: eval_prompt/model/max_tokens/
+n_draws/temperature via the fingerprint; parse_fail_threshold;
+min_effective_draws_per_arm; wave transport; **api_refusal_threshold +
+waive_* lists**) and require each to appear in the key OR force a mismatch.
+A verdict-bearing param outside BOTH (2658: `api_refusal_threshold`, rule
+26(d), judge_pilot.py:433 — persisted by `to_json`, never compared, never
+keyed, never passed at the seam) has TWO arms: a stale PASS silently honored
+across a threshold change, and a persisted-FAIL refuse branch that hard-
+wedges (exit 4) the api-refusal-side remediation because neither threshold
+nor waiver changes the dir key — the refuse message's "a changed instrument
+resolves a fresh gate dir" is true only for key-tracked fields. On harm-class
+judge waves (30%+ api-refusal, rule 28) that dial is the one MOST likely
+tuned by a crash-fix round. Also verified there: a fake gate that WRITES the
+report the resume reads must be production-parity-checked against the real
+`PilotGateReport.to_json` mint site (rubric_hash = sha256(eval_prompt)[:16]
+at judge_pilot.py:1042; wave_transport = decision.path :1043) — tests can
+pass while production still re-runs/wedges if field names or formats drift.
