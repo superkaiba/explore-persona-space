@@ -86,6 +86,13 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 - **Context vector v_C** = residual-stream state at the LAST context token. Span-mean
   pooling is a DIFFERENT, weaker object — numbers from span-mean artifacts are not
   comparable; flag them.
+  **STANDING RULE (Thomas 2026-09-02: "NEVER use prompt-mean states. we only want to
+  use last-token states with IID folds"):** every figure, table, and number in this
+  paper uses last-token context states AND IID (random-row) held-out folds. Prompt-mean
+  / span-mean artifacts and semantic-cluster-fold artifacts are never plotted or quoted,
+  not even with a caption flag — recompute the cell on last-token + IID folds instead
+  (the OLMo-2 store already holds `u_last` per cell; see `scripts/issue1902_lasttoken_*`).
+  This retires the 4.3 figure's prompt-mean panels B–C (replaced 2026-09-02).
 - **Answer vector** = mean over answer-token activations (whole-answer mean; certified
   by #920/#810's 34,652-recipe sweep).
 - Layer: middle layers; headline layer 18/19 on Qwen2.5-7B.
