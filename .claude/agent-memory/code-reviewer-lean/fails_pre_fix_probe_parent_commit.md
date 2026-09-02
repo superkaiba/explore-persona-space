@@ -49,3 +49,18 @@ MODES (each must match the r2/r1 trace, not just "failed"), then restore via
 guard blocks any compound whose TEXT contains `git checkout --`, killing the
 swap clause too (#1143 text-match). Confirm restore with an empty
 `git diff --stat HEAD -- <file>` before re-running the suite.
+
+**Live-sibling-writer variant (#2658 R2 J):** when the issue worktree has a
+LIVE concurrent fix-round writer, never swap the base blob into the worktree
+— build the isolated /tmp tree (real-copy every `scripts/issue<N>_*.py`,
+overwrite ONLY the module under test with the parent blob, copy HEAD's test
+file whose `parents[1]`-style bootstrap re-roots to /tmp). Two traps: (1)
+a module-level fixture using a NEW registry field makes the whole file fail
+at COLLECTION (one TypeError) — decisive for "every test fails pre-fix" but
+mode-blind; pair it with a direct surface-absence probe. (2) that probe via
+`spec_from_file_location` MUST register the module in `sys.modules` BEFORE
+`exec_module`, or py3.12 dataclass processing crashes on
+`sys.modules.get(cls.__module__).__dict__` (AttributeError on NoneType) and
+the crash masquerades as a pre-fix failure. Demo-scale claims ("measured
+per-cell counts are X") are re-measured by re-running the synthesizer with
+the commit's EXACT params+seed, not trusted from the commit message.
