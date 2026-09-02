@@ -202,6 +202,151 @@ def test_hash_stratum_bands_are_stable_and_in_range():
 
 
 # ---------------------------------------------------------------------------
+# Overlap-measurement disclosure (measured-zero vs structurally-inert zero)
+# ---------------------------------------------------------------------------
+def test_overlap_measurement_structurally_inert_keyed_frames_freetext_extraction():
+    # keyed/composed frame items vs free-text extraction nodes: no edge
+    # criterion can span the populations, so zero overlap is BY CONSTRUCTION.
+    frame = [_item(f"fr{i}", text=f"composed assertion {i}", problem_id=f"k{i}") for i in range(3)]
+    extr = [_item(f"ex{i}", text=f"free question {i}", origin="extraction") for i in range(2)]
+    m = F._overlap_measurement("sycophancy", frame, extr, set())
+    assert m["status"] == "structurally-inert"
+    assert m["frame_edge_domains"] == ["keyed"]
+    assert m["extraction_edge_domains"] == ["free-text"]
+    assert m["spanning_edge_domains"] == []
+    assert "BY CONSTRUCTION" in m["detail"]
+
+
+def test_overlap_measurement_measured_when_edge_domains_span():
+    # free-text x free-text: edges 2-4 can span
+    m = F._overlap_measurement(
+        "evil",
+        [_item("fr", text="a benign question")],
+        [_item("ex", text="another benign question", origin="extraction")],
+        set(),
+    )
+    assert m["status"] == "measured" and m["spanning_edge_domains"] == ["free-text"]
+    # keyed x keyed (correctness-style id-only nodes): edge 1 can span
+    mk = F._overlap_measurement(
+        "correctness_math",
+        [_item("frk", problem_id="gk-1")],
+        [_item("exk", problem_id="gk-9", origin="extraction")],
+        set(),
+    )
+    assert mk["status"] == "measured" and mk["spanning_edge_domains"] == ["keyed"]
+
+
+def test_overlap_measurement_no_extraction_items_and_inert_consistency_guard():
+    m = F._overlap_measurement("harmful_compliance", [_item("fr", text="q")], [], set())
+    assert m["status"] == "no-extraction-items"
+    # disjoint edge domains + a nonempty barred set violates the homogeneity
+    # invariant of the superfamily graph — fail loud, never disclose "inert"
+    with pytest.raises(F.FrameManifestError, match="edge-domain"):
+        F._overlap_measurement(
+            "sycophancy",
+            [_item("fr", text="t", problem_id="k1")],
+            [_item("ex", text="q", origin="extraction")],
+            {"sf-bogus"},
+        )
+
+
+def _fake_frame_loader(shared_text=None, keyed=False):
+    """Boundary fake for load_frame_prompts (signature-conformant: (row, frame))."""
+
+    def loader(row, frame):
+        out = []
+        for i in range(3):
+            text = f"{frame.name} benign prompt {i} about {row}"
+            if shared_text is not None and frame.name and i == 0:
+                text = shared_text if frame == F.FRAMES[row].frames[0] else text
+            kw = {}
+            if keyed:
+                kw = {"problem_id": f"{frame.name}-k{i}", "band_key": f"{frame.name}-k{i}"}
+            out.append(_item(f"{row}|{frame.name}|{i}", text=text, row=row, frame=frame.name, **kw))
+        return out
+
+    return loader
+
+
+def test_build_row_real_body_emits_measured_and_inert_disclosures(monkeypatch):
+    row = "casualness"  # benign judged row, wrapper-band strata
+    shared = "identical benign prompt about tea"
+
+    # (a) MEASURED: a free-text extraction node shares exact text with a frame
+    # item -> the overlap is real and n_barred_superfamilies is nonzero.
+    monkeypatch.setattr(F, "load_frame_prompts", _fake_frame_loader(shared_text=shared))
+    monkeypatch.setattr(
+        F,
+        "load_extraction_items",
+        lambda r: [
+            _item(f"{r}|x0", text=shared, origin="extraction"),
+            _item(f"{r}|x1", text="unrelated benign extraction question", origin="extraction"),
+        ],
+    )
+    rr = F.build_row(row, eligible=frozenset({row}))
+    assert rr["extraction_resolved"] is True
+    assert rr["overlap_measurement"]["status"] == "measured"
+    assert rr["counts"]["n_barred_superfamilies"] >= 1
+
+    # (b) STRUCTURALLY INERT: keyed frame items vs free-text extraction nodes.
+    monkeypatch.setattr(F, "load_frame_prompts", _fake_frame_loader(keyed=True))
+    monkeypatch.setattr(
+        F,
+        "load_extraction_items",
+        lambda r: [_item(f"{r}|x0", text="free-text extraction question", origin="extraction")],
+    )
+    rr2 = F.build_row(row, eligible=frozenset({row}))
+    assert rr2["overlap_measurement"]["status"] == "structurally-inert"
+    assert rr2["counts"]["n_barred_superfamilies"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Freeze-time refusal on an unresolved extraction corpus (fail-loud, exit != 0)
+# ---------------------------------------------------------------------------
+def test_run_build_refuses_to_freeze_on_unresolved_extraction_corpus(tmp_path, monkeypatch):
+    eligible, _ = F.load_eligibility()
+    bad_row = sorted(eligible)[0]
+
+    def fake_extraction(row):
+        if row == bad_row:
+            raise F.ExtractionCorpusUnresolvedError(f"{row}: synthetic unresolved corpus")
+        return [_item(f"{row}|x0", text=f"benign extraction q for {row}", origin="extraction")]
+
+    monkeypatch.setattr(F, "load_frame_prompts", _fake_frame_loader())
+    monkeypatch.setattr(F, "load_extraction_items", fake_extraction)
+    out_frame, out_split = tmp_path / "frame.json", tmp_path / "split.json"
+    with pytest.raises(F.ExtractionCorpusUnresolvedError, match=bad_row):
+        F.run_build(out_frame, out_split)
+    # the refusal wrote NOTHING — no un-excluded families frozen into TEST
+    assert not out_frame.exists()
+    assert not out_split.exists()
+
+
+def test_run_build_freezes_when_every_corpus_resolves(tmp_path, monkeypatch):
+    monkeypatch.setattr(F, "load_frame_prompts", _fake_frame_loader())
+    monkeypatch.setattr(
+        F,
+        "load_extraction_items",
+        lambda row: [
+            _item(f"{row}|x0", text=f"benign extraction q for {row}", origin="extraction")
+        ],
+    )
+    out_frame, out_split = tmp_path / "frame.json", tmp_path / "split.json"
+    frame_body, split_body, unresolved = F.run_build(out_frame, out_split)
+    assert unresolved == []
+    assert out_frame.exists() and out_split.exists()
+    for body in (frame_body, split_body):
+        F.validate_manifest(body)
+        F.assert_manifest_immutable(body)
+    closed_vocab = {"measured", "structurally-inert", "no-extraction-items"}
+    for r in split_body["rows"]:
+        m = r["extraction_overlap"]["measurement"]
+        assert m["status"] in closed_vocab
+        if m["status"] != "measured":
+            assert r["extraction_overlap"]["n_barred_superfamilies"] == 0
+
+
+# ---------------------------------------------------------------------------
 # Manifest immutability + strict validation
 # ---------------------------------------------------------------------------
 def _minimal_body(kind="eligible_frame"):
@@ -312,3 +457,24 @@ def test_disk_split_manifest_dev_test_disjoint_per_row():
         C.assert_split_lineage_disjoint(dev, test)
         # barred superfamilies never appear in test
         assert not (set(r["barred_superfamilies"]) & test), r["row"]
+
+
+def test_disk_split_manifest_overlap_measurement_disclosure():
+    body = _load_disk(F.SPLIT_MANIFEST_PATH)
+    by_row = {r["row"]: r for r in body["rows"]}
+    statuses = {row: r["extraction_overlap"]["measurement"]["status"] for row, r in by_row.items()}
+    # sycophancy: keyed/composed frame items vs free-text extraction nodes —
+    # its zero overlap is BY CONSTRUCTION and must be disclosed as such.
+    assert statuses["sycophancy"] == "structurally-inert"
+    assert by_row["sycophancy"]["extraction_overlap"]["n_barred_superfamilies"] == 0
+    # harmful_compliance carries no extraction corpus at all
+    assert statuses["harmful_compliance"] == "no-extraction-items"
+    # every other row's overlap is genuinely MEASURED (zero included)
+    for row, st in statuses.items():
+        if row not in ("sycophancy", "harmful_compliance"):
+            assert st == "measured", (row, st)
+    # a structurally-inert disclosure can never claim a spanning edge domain
+    for r in by_row.values():
+        m = r["extraction_overlap"]["measurement"]
+        if m["status"] == "structurally-inert":
+            assert m["spanning_edge_domains"] == []

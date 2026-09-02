@@ -1533,6 +1533,81 @@ def assign_splits(
 # ---------------------------------------------------------------------------
 # Per-row build.
 # ---------------------------------------------------------------------------
+def _edge_domains(items: list[PromptItem]) -> list[str]:
+    """The superfamily EDGE domains a population can participate in.
+
+    Mirrors the ``build_superfamilies`` filters exactly: edge 1 (problem-id
+    identity) links only KEYED items (``problem_id`` set); edges 2-4
+    (exact/near-dup/rephrase text) link only FREE-TEXT items (``problem_id``
+    None, non-empty ``text``). No criterion links a keyed item to a free-text
+    item, so every superfamily component is domain-homogeneous.
+    """
+    doms: set[str] = set()
+    for it in items:
+        if it.problem_id is not None:
+            doms.add("keyed")
+        elif it.text:
+            doms.add("free-text")
+    return sorted(doms)
+
+
+def _overlap_measurement(
+    row: str,
+    frame_items: list[PromptItem],
+    extraction_items: list[PromptItem],
+    barred_sf: set[str],
+) -> dict:
+    """Per-row disclosure: is the frame/extraction overlap MEASURED or
+    STRUCTURALLY INERT? (design: overlap is measured per row, never asserted
+    empty — so a zero that is zero BY CONSTRUCTION must say so).
+
+    Derived MECHANICALLY from the two item populations' edge-domain membership
+    (never a hardcoded row list): when the populations share NO edge domain
+    (e.g. keyed/composed frame items vs free-text extraction nodes), no edge
+    criterion can span them and ``n_barred_superfamilies == 0`` is structural,
+    not a measurement.
+    """
+    frame_domains = _edge_domains(frame_items)
+    extraction_domains = _edge_domains(extraction_items)
+    spanning = sorted(set(frame_domains) & set(extraction_domains))
+    if not extraction_items:
+        return {
+            "status": "no-extraction-items",
+            "frame_edge_domains": frame_domains,
+            "extraction_edge_domains": [],
+            "spanning_edge_domains": [],
+            "detail": "no extraction items in the graph — overlap not applicable",
+        }
+    if spanning:
+        return {
+            "status": "measured",
+            "frame_edge_domains": frame_domains,
+            "extraction_edge_domains": extraction_domains,
+            "spanning_edge_domains": spanning,
+            "detail": (
+                f"edge criteria can span the populations via {spanning} — "
+                "n_barred_superfamilies is a measured quantity (zero included)"
+            ),
+        }
+    if barred_sf:
+        raise FrameManifestError(
+            f"{row}: {len(barred_sf)} barred superfamilies despite disjoint edge domains "
+            f"(frame={frame_domains}, extraction={extraction_domains}) — superfamily "
+            "components must be edge-domain-homogeneous"
+        )
+    return {
+        "status": "structurally-inert",
+        "frame_edge_domains": frame_domains,
+        "extraction_edge_domains": extraction_domains,
+        "spanning_edge_domains": [],
+        "detail": (
+            "no edge criterion can span the populations (disjoint edge domains: "
+            f"frame={frame_domains}, extraction={extraction_domains}) — "
+            "n_barred_superfamilies == 0 is BY CONSTRUCTION, not a measured zero"
+        ),
+    }
+
+
 def build_row(row: str, eligible: frozenset[str]) -> dict:
     """One row's frame/superfamily/split build: loads the frame + extraction
     items, runs the superfamily graph, assigns dev/test splits, and reports the
@@ -1555,13 +1630,17 @@ def build_row(row: str, eligible: frozenset[str]) -> dict:
             extraction_items = load_extraction_items(row)
             extraction_resolved = True
         except ExtractionCorpusUnresolvedError:
-            extraction_resolved = False  # finding — surfaced by caller as a concern
+            # finding — reported per row; run_build REFUSES to freeze manifests
+            # while ANY eligible row is unresolved (an unresolved corpus bars
+            # nothing, so its families would route to TEST).
+            extraction_resolved = False
 
     superfamilies, blocked = build_superfamilies(frame_items + extraction_items)
     frame_ids = {it.item_id for it in frame_items}
     frame_sf = {superfamilies[i] for i in frame_ids}
     extraction_sf = {superfamilies[it.item_id] for it in extraction_items}
     barred_sf = frame_sf & extraction_sf
+    overlap_measurement = _overlap_measurement(row, frame_items, extraction_items, barred_sf)
 
     # correctness split hints: a frame superfamily is test-eligible only if ALL
     # its frame items are #2388 test-split (any dev/train item -> dev).
@@ -1649,6 +1728,7 @@ def build_row(row: str, eligible: frozenset[str]) -> dict:
             "n_test_eligible_prompts": n_test,
         },
         "overlap_fraction_prompts": (barred_prompts / n_frame) if n_frame else 0.0,
+        "overlap_measurement": overlap_measurement,
         "per_cell_test_eligible": {f"{fr}|{band}": n for (fr, band), n in per_cell_test.items()},
         "below_production_gate_cells": below_gate,
         "prospective_not_estimable": prospective_not_estimable,
@@ -1929,6 +2009,9 @@ def build_manifests(row_results: list[dict], direction_sha: str) -> tuple[dict, 
                     "n_barred_superfamilies": rr["counts"]["n_barred_superfamilies"],
                     "n_barred_prompts": rr["counts"]["n_barred_prompts"],
                     "overlap_fraction_prompts": rr["overlap_fraction_prompts"],
+                    # measured-zero vs structurally-inert-zero disclosure
+                    # (mechanically derived from the item populations).
+                    "measurement": rr["overlap_measurement"],
                     "n_test_eligible_prompts": rr["counts"]["n_test_eligible_prompts"],
                     "below_production_gate_cells": rr["below_production_gate_cells"],
                 },
@@ -2024,6 +2107,13 @@ def _direction_sha() -> str:
 
 
 def run_build(out_frame: Path, out_split: Path) -> tuple[dict, dict, list[str]]:
+    """Build every row, then freeze BOTH manifests atomically.
+
+    REFUSES (raises ExtractionCorpusUnresolvedError, exit non-zero via main)
+    when ANY eligible row's extraction corpus is unresolved — neither manifest
+    is written in that state. Returns (frame_body, split_body, unresolved)
+    where unresolved == [] on every successful return.
+    """
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     ISSUE_DL.mkdir(parents=True, exist_ok=True)
     eligible, _ = load_eligibility()
@@ -2035,6 +2125,17 @@ def run_build(out_frame: Path, out_split: Path) -> tuple[dict, dict, list[str]]:
             unresolved.append(row)
         _print_row(rr)
         row_results.append(rr)
+    if unresolved:
+        # Fail-loud: an unresolved corpus bars NOTHING, so freezing here would
+        # route its un-excluded families to TEST (sealed-test contamination)
+        # while the process exits 0. Report the finding, refuse the freeze.
+        print(f"[FINDING] unresolved extraction corpora (C2 provenance-incomplete): {unresolved}")
+        sys.stdout.flush()
+        raise ExtractionCorpusUnresolvedError(
+            f"refusing to freeze manifests: {len(unresolved)} eligible row(s) carry "
+            f"unresolved extraction corpora {unresolved} — resolve the corpora and re-run "
+            "(an unresolved corpus excludes nothing, so its families would land in TEST)"
+        )
     frame_body, split_body = build_manifests(row_results, direction_sha)
 
     from explore_persona_space.atomic_io import atomic_replace
@@ -2066,6 +2167,7 @@ def _print_row(rr: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI driver: --build freezes both manifests (refuses on unresolved corpora)."""
     ap = argparse.ArgumentParser(description="issue2658 frames/strata/superfamilies/splits")
     ap.add_argument("--frame-out", type=Path, default=FRAME_MANIFEST_PATH)
     ap.add_argument("--split-out", type=Path, default=SPLIT_MANIFEST_PATH)
@@ -2079,10 +2181,10 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(0)
     if not args.build:
         ap.error("nothing to do: pass --build (or --import-check)")
-    _frame, _split, unresolved = run_build(args.frame_out, args.split_out)
+    # run_build RAISES (exit non-zero) on any unresolved extraction corpus,
+    # after printing the [FINDING] line — the returned list is empty on success.
+    _frame, _split, _unresolved = run_build(args.frame_out, args.split_out)
     print(f"[done] wrote {args.frame_out} + {args.split_out}")
-    if unresolved:
-        print(f"[FINDING] unresolved extraction corpora (C2 provenance-incomplete): {unresolved}")
     sys.stdout.flush()
     return 0
 

@@ -752,8 +752,11 @@ class PowerLedger:
     """Per-unit persistence: atomic-append JSONL + parameter-keyed resume.
 
     The resume key covers EVERY output-affecting generating parameter (row, N,
-    effect, alpha, n_perm, n_reps, responses/prompt, seed, profile sha) — never
-    the bytes of a recomputed float array. Single-writer (one driver process);
+    effect, alpha, n_perm, n_reps, responses/prompt, seed, and the ROW-scoped
+    pool fingerprint — the unit consumes one row's pools, so shard/--rows runs
+    and the full-row run share keys) — never the bytes of a recomputed float
+    array. Single-writer per file (the sharded dispatch merges shard ledgers by
+    concatenation; keys are content-addressed so a merged file resumes cleanly);
     each append is flushed + fsynced before the unit is considered complete.
     """
 
@@ -920,6 +923,15 @@ def select_production_n(
     )
     prof_sha = profile_fingerprint(profiles)
     rows = sorted(r for r, p in profiles.items() if p.cells and not p.missing_cells)
+    # Per-UNIT content address: a simulation unit consumes exactly ONE row's
+    # (k, n) pools, so its ledger key fingerprints THAT row's pools alone.
+    # This keeps unit keys IDENTICAL between a sharded --rows run and the final
+    # full-row invocation (whose passed-in profile dicts differ), so the
+    # recorded P2-P3 dispatch (row shards warm one shared ledger; the final
+    # full-row run selects N) resumes instead of recomputing every unit. The
+    # artifact-level profile_sha256 stays the WHOLE-profile fingerprint — the
+    # gate-time freshness cross-check keys on it.
+    row_prof_sha = {row: profile_fingerprint({row: profiles[row]}) for row in rows}
     counter = _UnitCounter(cap=len(rows) * (9 + len(reg.power_curve_effects)))
 
     # Discordance requirement (>= 20 expected discordant/cell under the bound).
@@ -948,7 +960,7 @@ def select_production_n(
             n_reps=n_reps,
             n_perm=n_perm,
             seed=seed,
-            prof_sha=prof_sha,
+            prof_sha=row_prof_sha[row],
             purpose="bisection",
         )
         return float(rec["power"])
@@ -1019,7 +1031,7 @@ def select_production_n(
                     n_reps=n_reps,
                     n_perm=n_perm,
                     seed=seed,
-                    prof_sha=prof_sha,
+                    prof_sha=row_prof_sha[row],
                     purpose="curve",
                 )
                 curve[row][f"{eff:.2f}"] = {
@@ -1767,6 +1779,28 @@ def _gate_power(selection: dict[str, Any] | None, out_root: Path) -> Gate:
             "selection was computed at non-registered simulation sizes (smoke/override) — "
             "re-run at the registered constants before launch",
         )
+    # Row-coverage check: the plan sizes ONE common N as the max over ALL 11
+    # registered rows, so a selection simulated on a --rows SUBSET (the sharded
+    # P2-P3 dispatch shape) must never authorize a launch — its n_common is the
+    # max over the shard only. Sharding stays supported: shard runs warm the
+    # shared ledger; only the FINAL full-row invocation's selection can PASS.
+    simulated = set(selection.get("rows_simulated") or [])
+    registered_rows = set(C.ROW_IDS)
+    if simulated != registered_rows:
+        missing_rows = sorted(registered_rows - simulated)
+        foreign_rows = sorted(simulated - registered_rows)
+        return Gate(
+            "power_based_fixed_n",
+            "one common prompts-per-cell N fixed by the registered clustered simulation",
+            GATE_FAIL,
+            {"rows_simulated": sorted(simulated), "n_common": selection.get("n_common")},
+            f"rows_simulated == all {len(C.ROW_IDS)} registered rows",
+            art,
+            f"selection simulated a row SUBSET — missing rows: {missing_rows}"
+            + (f"; foreign rows: {foreign_rows}" if foreign_rows else "")
+            + " — a sharded --rows run sizes N on its shard only; re-run the final "
+            "full-row selection before launch",
+        )
     if selection["status"] != "measured" or selection["n_common"] is None:
         return Gate(
             "power_based_fixed_n",
@@ -1794,6 +1828,75 @@ def _gate_power(selection: dict[str, Any] | None, out_root: Path) -> Gate:
         f"power >= {REGISTERED.power_target} at AUROC {REGISTERED.primary_effect_auroc}",
         art,
         "",
+    )
+
+
+def _gate_profile_freshness(
+    profiles: dict[str, RowLabelProfile],
+    discordance: dict[str, Any] | None,
+    selection: dict[str, Any] | None,
+    out_root: Path,
+) -> Gate:
+    """The discordance/production-N artifacts must be content-addressed to the
+    SAME pilot-label pools live on disk at GATE time — and to each other.
+
+    A standalone ``--phase gate`` re-run is the NORMAL post-adjudication
+    workflow (judge cells are regenerated when human adjudications land, which
+    shrinks/updates the (k, n) pools), so the human-audit / judge-quality gates
+    read POST-adjudication artifacts while a stale discordance/production-N
+    pair certifies PRE-adjudication pools. The fingerprint comparison is the
+    staleness check: mismatch => FAIL naming the shas, never a silent LAUNCH
+    over mutually inconsistent inputs.
+    """
+    art = (
+        f"{Path(out_root) / 'power' / 'discordance.json'}; "
+        f"{Path(out_root) / 'power' / 'production_n.json'}"
+    )
+    desc = (
+        "discordance + production-N artifacts fingerprint the SAME pilot-label "
+        "pools currently on disk (profile_sha256 == live fingerprint, pairwise)"
+    )
+    threshold = "every artifact profile_sha256 == live pilot-label fingerprint"
+    live = profile_fingerprint(profiles)
+    measured: dict[str, Any] = {"live_profiles": live}
+    if discordance is None and selection is None:
+        return Gate(
+            "profile_freshness",
+            desc,
+            GATE_NOT_ESTIMABLE,
+            measured,
+            threshold,
+            art,
+            "no discordance/production_n artifacts to cross-check (nothing certified)",
+        )
+    problems: list[str] = []
+    for name, body in (("discordance", discordance), ("production_n", selection)):
+        if body is None:
+            continue
+        sha = body.get("profile_sha256")
+        measured[name] = sha
+        if not sha:
+            problems.append(f"{name} artifact carries no profile_sha256 — regenerate it")
+        elif sha != live:
+            problems.append(
+                f"{name} profile_sha256 {sha} != live pilot-label fingerprint {live} — "
+                "stale artifact (label pools changed since it was computed)"
+            )
+    if discordance is not None and selection is not None:
+        d_sha, s_sha = discordance.get("profile_sha256"), selection.get("profile_sha256")
+        if d_sha and s_sha and d_sha != s_sha:
+            problems.append(
+                f"discordance profile_sha256 {d_sha} != production_n profile_sha256 "
+                f"{s_sha} — mixed-generation artifacts"
+            )
+    return Gate(
+        "profile_freshness",
+        desc,
+        GATE_FAIL if problems else GATE_PASS,
+        measured,
+        threshold,
+        art,
+        "; ".join(problems),
     )
 
 
@@ -1829,6 +1932,7 @@ def evaluate_gates(
     out_root: Path,
     gen_root: Path,
     split: str,
+    profiles: dict[str, RowLabelProfile],
     discordance: dict[str, Any] | None,
     selection: dict[str, Any] | None,
     cost: dict[str, Any],
@@ -1838,7 +1942,11 @@ def evaluate_gates(
     Verdict is LAUNCH only if EVERY gate is PASS. A single FAIL or
     NOT-ESTIMABLE yields PARK, naming the blocking gates. NOT-ESTIMABLE never
     collapses to PASS — that inversion would let the pilot authorize
-    sealed-test spend it never measured.
+    sealed-test spend it never measured. ``profiles`` is the LIVE pilot-label
+    profile at gate time; the profile-freshness gate cross-checks the
+    discordance/production-N artifacts' profile_sha256 against it (and each
+    other), so a standalone ``--phase gate`` over regenerated labels can never
+    certify stale simulation artifacts.
     """
     human_gate, rel = _gate_human_audit(out_root)
     gates = [
@@ -1851,6 +1959,7 @@ def evaluate_gates(
         _gate_cap_hit(gen_root, split),
         human_gate,
         _gate_power(selection, out_root),
+        _gate_profile_freshness(profiles, discordance, selection, out_root),
         _gate_cost(cost),
     ]
     blockers = [g.gate_id for g in gates if g.status != GATE_PASS]
@@ -2042,7 +2151,7 @@ def run(args: argparse.Namespace) -> int:
         if discordance is None and disc_path.exists():
             discordance = json.loads(disc_path.read_text())
         verdict = evaluate_gates(
-            Path(out_root), Path(gen_root), args.split, discordance, selection, cost
+            Path(out_root), Path(gen_root), args.split, profiles, discordance, selection, cost
         )
         write_json_atomic(power_dir / "gate_verdict.json", verdict)
         print(

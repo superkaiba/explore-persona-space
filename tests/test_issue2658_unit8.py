@@ -506,17 +506,210 @@ def test_icc_and_kappa_known_fixtures():
 # ---------------------------------------------------------------------------
 def test_not_estimable_never_becomes_pass(tmp_path):
     cost = P.cost_report(tmp_path, tmp_path, "pilot", n_common=None)
-    verdict = P.evaluate_gates(tmp_path, tmp_path, "pilot", None, None, cost)
+    profiles = P.load_pilot_label_profile(tmp_path, "pilot")  # no artifacts on disk
+    verdict = P.evaluate_gates(tmp_path, tmp_path, "pilot", profiles, None, None, cost)
     assert verdict["verdict"] == "PARK"
     by_id = {g["gate_id"]: g for g in verdict["gates"]}
     # the plan section 10 human dependency, encoded honestly: no adjudications
     # on disk => NOT-ESTIMABLE => PARK (the correct pre-audit output)
     assert by_id["human_audit_feasibility"]["status"] == P.GATE_NOT_ESTIMABLE
     assert "human_audit_feasibility" in verdict["blockers"]
+    # nothing to cross-check => NOT-ESTIMABLE, never a vacuous PASS
+    assert by_id["profile_freshness"]["status"] == P.GATE_NOT_ESTIMABLE
     for g in verdict["gates"]:
         if g["status"] != P.GATE_PASS:
             assert g["gate_id"] in verdict["blockers"]
-    assert len(verdict["gates"]) == 10  # one entry per plan section 8 pilot gate
+    # plan section 8 pilot gates + the profile-freshness cross-check
+    assert len(verdict["gates"]) == 11
+
+
+def _full_coverage_selection(n_common: int = 48) -> dict:
+    """A selection artifact shaped like a REGISTERED full-row run (gate PASS)."""
+    return {
+        "registered_match": True,
+        "status": "measured",
+        "n_common": n_common,
+        "rows_simulated": sorted(C.ROW_IDS),
+        "rows_missing_labels": [],
+        "per_row_power_n": {},
+        "cells_with_unbounded_requirement": [],
+        "binding_discordance_cell": {"row": "evil", "cell": "evil__x__y", "n_required": 23},
+        "binding_power_row": {"row": "evil", "n_required": 30},
+        "profile_sha256": "0" * 64,
+    }
+
+
+def test_gate_power_fails_on_row_subset_even_at_registered_sizes(tmp_path):
+    # The round-1 live-probe shape: a selection exactly as `--phase power
+    # --rows evil` produces at REGISTERED constants (rows_simulated=["evil"],
+    # status "measured", registered_match True) must NOT authorize a launch —
+    # its n_common is sized on ONE row, not the max over all 11.
+    sel = _full_coverage_selection()
+    sel["rows_simulated"] = ["evil"]
+    gate = P._gate_power(sel, tmp_path)
+    assert gate.status == P.GATE_FAIL
+    assert "missing rows" in gate.detail
+    for row in sorted(set(C.ROW_IDS) - {"evil"}):
+        assert row in gate.detail  # every missing row is NAMED
+
+
+def test_gate_power_passes_on_full_row_coverage(tmp_path):
+    # the other direction: full registered-universe coverage still PASSes
+    gate = P._gate_power(_full_coverage_selection(), tmp_path)
+    assert gate.status == P.GATE_PASS
+    assert gate.measured["n_common"] == 48
+
+
+def test_gate_profile_freshness_names_mismatched_shas(tmp_path):
+    live = P.synthetic_profile([JUDGED_ROW], seed=0)
+    stale = P.synthetic_profile([JUDGED_ROW], seed=7)  # different (k, n) pools
+    disc_live = P.measure_discordance(live, seed=0)
+    disc_stale = P.measure_discordance(stale, seed=0)
+    live_sha = P.profile_fingerprint(live)
+    assert disc_stale["profile_sha256"] != live_sha
+
+    # matched artifact <-> live labels: PASS
+    g = P._gate_profile_freshness(live, disc_live, None, tmp_path)
+    assert g.status == P.GATE_PASS
+
+    # stale artifact: FAIL naming BOTH shas
+    g2 = P._gate_profile_freshness(live, disc_stale, None, tmp_path)
+    assert g2.status == P.GATE_FAIL
+    assert disc_stale["profile_sha256"] in g2.detail and live_sha in g2.detail
+
+    # selection/discordance pairwise mismatch is ALSO named
+    sel = dict(_full_coverage_selection(), profile_sha256="f" * 64)
+    g3 = P._gate_profile_freshness(live, disc_stale, sel, tmp_path)
+    assert g3.status == P.GATE_FAIL and "mixed-generation" in g3.detail
+
+    # an artifact with no fingerprint at all is fail-closed, never skipped
+    g4 = P._gate_profile_freshness(live, disc_live, {"n_common": 30}, tmp_path)
+    assert g4.status == P.GATE_FAIL and "no profile_sha256" in g4.detail
+
+    # nothing to cross-check: NOT-ESTIMABLE (never a vacuous PASS)
+    g5 = P._gate_profile_freshness(live, None, None, tmp_path)
+    assert g5.status == P.GATE_NOT_ESTIMABLE
+
+
+def _profile_fixture(tmp_path, name: str, pairs, rows=None) -> Path:
+    """Write a {row: {cell: [[k, n], ...]}} --profile-json fixture (one cell/row)."""
+    body = {
+        row: {f"{row}|cellA": [list(p) for p in pairs]}
+        for row in (rows if rows is not None else C.ROW_IDS)
+    }
+    p = tmp_path / name
+    p.write_text(json.dumps(body))
+    return p
+
+
+def test_sharded_rows_then_full_row_selection_end_to_end(tmp_path):
+    """The recorded P2-P3 dispatch shape: shard by --rows across pods (shared
+    ledger), then ONE final full-row invocation selects N. Both directions:
+    (a) a shard's subset selection can never authorize a launch; (b) the final
+    full-row invocation resumes every bisection unit from the shared ledger and
+    its selection covers the full registered row universe."""
+    fx = _profile_fixture(tmp_path, "fxA.json", pairs=((3, 10), (5, 10), (2, 10)))
+    out = tmp_path / "out"
+    ap = P.build_argparser()
+    base = [
+        "--phase",
+        "power",
+        "--out-root",
+        str(out),
+        "--profile-json",
+        str(fx),
+        "--reps",
+        "8",
+        "--n-perm",
+        "219",
+    ]
+    ledger_path = out / "power" / "power_units.jsonl"
+
+    def _n_bisection_lines() -> int:
+        recs = [json.loads(x) for x in ledger_path.read_text().strip().splitlines()]
+        return sum(1 for r in recs if r["purpose"] == "bisection")
+
+    # shard 1: one row
+    assert P.run(ap.parse_args([*base, "--rows", "evil"])) == 0
+    sel1 = json.loads((out / "power" / "production_n.json").read_text())
+    assert sel1["rows_simulated"] == ["evil"]
+    n_shard1 = _n_bisection_lines()
+    assert n_shard1 > 0
+
+    # direction (a): the shard artifact, even at registered sizes, cannot LAUNCH
+    probe = dict(sel1, registered_match=True, status="measured", n_common=48)
+    gate = P._gate_power(probe, out)
+    assert gate.status == P.GATE_FAIL and "missing rows" in gate.detail
+    assert "sycophancy" in gate.detail
+
+    # shard 2: the remaining ten rows (parallel-pod shape, same shared ledger)
+    rest = [r for r in C.ROW_IDS if r != "evil"]
+    assert P.run(ap.parse_args([*base, "--rows", *rest])) == 0
+    n_shards = _n_bisection_lines()
+    assert n_shards > n_shard1
+
+    # direction (b): the final full-row invocation
+    assert P.run(ap.parse_args(base)) == 0
+    assert _n_bisection_lines() == n_shards  # every bisection unit resume-skipped
+    sel = json.loads((out / "power" / "production_n.json").read_text())
+    assert sel["rows_simulated"] == sorted(C.ROW_IDS)
+    # and the full-row selection does NOT trip the coverage check
+    g_full = P._gate_power(dict(sel, registered_match=True), out)
+    assert "missing rows" not in (g_full.detail or "")
+
+
+def test_standalone_gate_phase_cross_checks_profile_freshness(tmp_path):
+    """Fix-2 shape: judge cells regenerated post-adjudication, then `--phase
+    gate` re-run standalone — the stale discordance/production-N artifacts must
+    FAIL the freshness gate, naming the shas; a matched re-gate PASSes it."""
+    rows = ["evil", "correctness_math"]
+    fx_a = _profile_fixture(tmp_path, "fxA.json", pairs=((3, 10), (5, 10), (2, 10)), rows=rows)
+    fx_b = _profile_fixture(tmp_path, "fxB.json", pairs=((1, 10), (9, 10), (4, 10)), rows=rows)
+    out = tmp_path / "out"
+    ap = P.build_argparser()
+    base = ["--out-root", str(out), "--reps", "4", "--n-perm", "219", "--rows", *rows]
+
+    # full run from labels A: artifacts fingerprint A; same-run gate is FRESH
+    assert P.run(ap.parse_args([*base, "--phase", "all", "--profile-json", str(fx_a)])) == 0
+    v1 = json.loads((out / "power" / "gate_verdict.json").read_text())
+    fresh1 = {g["gate_id"]: g for g in v1["gates"]}["profile_freshness"]
+    assert fresh1["status"] == P.GATE_PASS
+
+    # labels regenerated (B) -> standalone gate re-run reads STALE artifacts
+    assert P.run(ap.parse_args([*base, "--phase", "gate", "--profile-json", str(fx_b)])) == 0
+    v2 = json.loads((out / "power" / "gate_verdict.json").read_text())
+    fresh2 = {g["gate_id"]: g for g in v2["gates"]}["profile_freshness"]
+    assert fresh2["status"] == P.GATE_FAIL
+    assert "profile_freshness" in v2["blockers"] and v2["verdict"] == "PARK"
+    stale_sha = json.loads((out / "power" / "production_n.json").read_text())["profile_sha256"]
+    assert stale_sha in fresh2["detail"]  # the stale sha is NAMED
+    assert fresh2["measured"]["live_profiles"] in fresh2["detail"]  # and the live one
+
+    # matched re-gate (labels A again): freshness PASSes
+    assert P.run(ap.parse_args([*base, "--phase", "gate", "--profile-json", str(fx_a)])) == 0
+    v3 = json.loads((out / "power" / "gate_verdict.json").read_text())
+    fresh3 = {g["gate_id"]: g for g in v3["gates"]}["profile_freshness"]
+    assert fresh3["status"] == P.GATE_PASS
+
+
+def test_phase_all_with_stale_selection_on_disk_cannot_certify(tmp_path):
+    """Fix-2 second shape: `--phase all` where labels exist but carry no cells
+    silently loads a STALE production_n.json from disk (run():2033) — the
+    freshness gate must refuse to certify it."""
+    rows = ["evil", "correctness_math"]
+    fx_a = _profile_fixture(tmp_path, "fxA.json", pairs=((3, 10), (5, 10), (2, 10)), rows=rows)
+    fx_empty = tmp_path / "fxE.json"
+    fx_empty.write_text(json.dumps({row: {} for row in rows}))  # rows, ZERO cells
+    out = tmp_path / "out"
+    ap = P.build_argparser()
+    base = ["--out-root", str(out), "--reps", "4", "--n-perm", "219", "--rows", *rows]
+    assert P.run(ap.parse_args([*base, "--phase", "all", "--profile-json", str(fx_a)])) == 0
+    assert P.run(ap.parse_args([*base, "--phase", "all", "--profile-json", str(fx_empty)])) == 0
+    v = json.loads((out / "power" / "gate_verdict.json").read_text())
+    fresh = {g["gate_id"]: g for g in v["gates"]}["profile_freshness"]
+    assert fresh["status"] == P.GATE_FAIL
+    assert "stale artifact" in fresh["detail"]
+    assert v["verdict"] == "PARK"
 
 
 def test_gate_status_vocabulary_is_closed():

@@ -4,8 +4,8 @@
   "issue": 2658,
   "metadata": {
     "script": "scripts/issue2658_frames.py",
-    "git_commit": "20d46e463d6e539d479f1fdfb5fdb488f3573399",
-    "timestamp_utc": "2026-09-02T16:26:03.754475+00:00"
+    "git_commit": "39e8a0ce41e1d265026d2e9979919a0843bec035",
+    "timestamp_utc": "2026-09-02T21:52:15.057411+00:00"
   },
   "frozen_config": {
     "model_id": "Qwen/Qwen2.5-7B-Instruct",
@@ -876,6 +876,19 @@
         "n_barred_superfamilies": 0,
         "n_barred_prompts": 0,
         "overlap_fraction_prompts": 0.0,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [
+            "free-text"
+          ],
+          "detail": "edge criteria can span the populations via ['free-text'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 476,
         "below_production_gate_cells": []
       }
@@ -14098,6 +14111,17 @@
         "n_barred_superfamilies": 0,
         "n_barred_prompts": 0,
         "overlap_fraction_prompts": 0.0,
+        "measurement": {
+          "status": "structurally-inert",
+          "frame_edge_domains": [
+            "keyed"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [],
+          "detail": "no edge criterion can span the populations (disjoint edge domains: frame=['keyed'], extraction=['free-text']) \u2014 n_barred_superfamilies == 0 is BY CONSTRUCTION, not a measured zero"
+        },
         "n_test_eligible_prompts": 6538,
         "below_production_gate_cells": []
       }
@@ -14898,6 +14922,19 @@
         "n_barred_superfamilies": 0,
         "n_barred_prompts": 0,
         "overlap_fraction_prompts": 0.0,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [
+            "free-text"
+          ],
+          "detail": "edge criteria can span the populations via ['free-text'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 441,
         "below_production_gate_cells": [
           "fact_questions|direct:5",
@@ -16109,6 +16146,19 @@
         "n_barred_superfamilies": 144,
         "n_barred_prompts": 172,
         "overlap_fraction_prompts": 0.1491760624457936,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [
+            "free-text"
+          ],
+          "detail": "edge criteria can span the populations via ['free-text'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 496,
         "below_production_gate_cells": []
       }
@@ -16915,6 +16965,19 @@
         "n_barred_superfamilies": 0,
         "n_barred_prompts": 0,
         "overlap_fraction_prompts": 0.0,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [
+            "free-text"
+          ],
+          "detail": "edge criteria can span the populations via ['free-text'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 445,
         "below_production_gate_cells": [
           "fact_questions|direct:8",
@@ -17750,6 +17813,19 @@
         "n_barred_superfamilies": 37,
         "n_barred_prompts": 40,
         "overlap_fraction_prompts": 0.04672897196261682,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [
+            "free-text"
+          ],
+          "detail": "edge criteria can span the populations via ['free-text'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 415,
         "below_production_gate_cells": [
           "writing_style_neutral|direct:0",
@@ -18444,6 +18520,19 @@
         "n_barred_superfamilies": 40,
         "n_barred_prompts": 40,
         "overlap_fraction_prompts": 0.056657223796033995,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [
+            "free-text"
+          ],
+          "spanning_edge_domains": [
+            "free-text"
+          ],
+          "detail": "edge criteria can span the populations via ['free-text'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 309,
         "below_production_gate_cells": [
           "impolite_neutral|direct:0",
@@ -19519,6 +19608,15 @@
         "n_barred_superfamilies": 0,
         "n_barred_prompts": 0,
         "overlap_fraction_prompts": 0.0,
+        "measurement": {
+          "status": "no-extraction-items",
+          "frame_edge_domains": [
+            "free-text"
+          ],
+          "extraction_edge_domains": [],
+          "spanning_edge_domains": [],
+          "detail": "no extraction items in the graph \u2014 overlap not applicable"
+        },
         "n_test_eligible_prompts": 567,
         "below_production_gate_cells": []
       }
@@ -40783,6 +40881,19 @@
         "n_barred_superfamilies": 8747,
         "n_barred_prompts": 8747,
         "overlap_fraction_prompts": 0.6998719795167226,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "keyed"
+          ],
+          "extraction_edge_domains": [
+            "keyed"
+          ],
+          "spanning_edge_domains": [
+            "keyed"
+          ],
+          "detail": "edge criteria can span the populations via ['keyed'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 2504,
         "below_production_gate_cells": []
       }
@@ -61255,6 +61366,19 @@
         "n_barred_superfamilies": 8421,
         "n_barred_prompts": 8421,
         "overlap_fraction_prompts": 0.6998836436170213,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "keyed"
+          ],
+          "extraction_edge_domains": [
+            "keyed"
+          ],
+          "spanning_edge_domains": [
+            "keyed"
+          ],
+          "detail": "edge criteria can span the populations via ['keyed'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 2408,
         "below_production_gate_cells": []
       }
@@ -70886,11 +71010,24 @@
         "n_barred_superfamilies": 3958,
         "n_barred_prompts": 3958,
         "overlap_fraction_prompts": 0.7000353731871242,
+        "measurement": {
+          "status": "measured",
+          "frame_edge_domains": [
+            "keyed"
+          ],
+          "extraction_edge_domains": [
+            "keyed"
+          ],
+          "spanning_edge_domains": [
+            "keyed"
+          ],
+          "detail": "edge criteria can span the populations via ['keyed'] \u2014 n_barred_superfamilies is a measured quantity (zero included)"
+        },
         "n_test_eligible_prompts": 1131,
         "below_production_gate_cells": []
       }
     }
   ],
-  "content_sha256": "2371f71f78ab6c6a794b458a76d494251a7066210701141be40c6a0b4b8a4595",
-  "cache_key": "1bf2eb7ed77e137aa7a826450b748d43225404716650a46752a9f9a0e8f455da"
+  "content_sha256": "d007295bed0472bcc0c6db869803ec370f6b52f2e94fa401f2f70f1ed5cc67f9",
+  "cache_key": "2327c2bdc761ee06ce23a2d2f17ce378e07474ce06bbc976f8b747892a4b486f"
 }
