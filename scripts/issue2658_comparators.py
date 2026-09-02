@@ -1476,6 +1476,28 @@ def _read_store_vectors(
     return out
 
 
+def _realized_capture_fingerprint(out_root: Path, split: str) -> str:
+    """The REALIZED capture fingerprint from the store's shard meta sidecars.
+
+    Read, never recomputed: ``capture_fingerprint`` is dtype/device-keyed
+    (#2658 group-B fix round), so a recompute here would have to ASSUME the
+    capture regime — the sidecar carries what the store was actually captured
+    under.  Distinct fingerprints across shards are a mixed capture regime
+    and REFUSE loud.
+    """
+    root = out_root / "l19_store" / split
+    metas = sorted(root.glob("shard*of*/_capture_meta_shard*.json"))
+    if not metas:
+        raise ComparatorInputError(f"no capture shard meta sidecars under {root}")
+    fps = sorted({json.loads(p.read_text())["fingerprint"] for p in metas})
+    if len(fps) != 1:
+        raise ComparatorInputError(
+            f"capture store under {root} mixes {len(fps)} distinct fingerprints "
+            f"(mixed capture regimes): {fps}"
+        )
+    return fps[0]
+
+
 def assemble_row_data(
     row: str, out_root: Path, splits: tuple[str, str] = ("dev", "test")
 ) -> tuple[RowData, dict[str, Any]]:
@@ -1541,7 +1563,9 @@ def assemble_row_data(
             )
             vec_list.append(vectors[k])
             fp_parts.append([k[0], k[1], kept_labels[k], sf, split, manifest[k]["answer_sha256"]])
-        fp_parts.append(["capture_fingerprint", split, CAP.capture_fingerprint(split)])
+        fp_parts.append(
+            ["capture_fingerprint", split, _realized_capture_fingerprint(out_root, split)]
+        )
     data_fp = hashlib.sha256(json.dumps(fp_parts, sort_keys=False).encode()).hexdigest()
     label_source = "judge-cells" if C.CONSTRUCTS[row].judge_scored else "objective-labels"
     rowdata = RowData(

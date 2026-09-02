@@ -38,6 +38,7 @@ import json
 import os
 import sys
 import time
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -587,13 +588,61 @@ def load_resume_cell(raw_path: Path, expected_fingerprint: str, n_expected: int)
     return body
 
 
+def resume_cell_with_manifest(
+    raw_path: Path, man_path: Path, cell: CellWork, expected_fingerprint: str, n_expected: int
+) -> dict | None:
+    """Resume one completed cell AND idempotently rewrite its gen manifest.
+
+    The fresh path writes ``raw_path`` then ``man_path`` as two individually
+    atomic writes — the PAIR is not atomic, so a kill between them leaves a
+    fingerprint-valid, count-valid raw cell whose manifest never exists, and a
+    raw-path-keyed resume would strand it manifest-less forever.
+    ``manifest_rows_for_cell`` is a pure function of the resumed body, so the
+    resume branch rewrites the manifest atomically; the rewrite is
+    byte-identical to what the original run would have written.
+    """
+    body = load_resume_cell(raw_path, expected_fingerprint, n_expected)
+    if body is None:
+        return None
+    write_jsonl_atomic(man_path, manifest_rows_for_cell(cell, body))
+    return body
+
+
+def resolve_n_responses(responses_arg: int | None, split: str) -> int:
+    """Responses/prompt: the explicit override or the split default.
+
+    A non-positive override REFUSES loud — the legacy ``args.responses or ...``
+    idiom silently fell through ``--responses 0`` to the split default.
+    """
+    if responses_arg is None:
+        return (
+            int(C.DECODER["n_responses_per_prompt_pilot"])
+            if split == "pilot"
+            else int(C.DECODER["n_responses_per_prompt_production"])
+        )
+    if responses_arg <= 0:
+        raise SystemExit(f"--responses must be a positive integer, got {responses_arg}")
+    return responses_arg
+
+
+def exit_hard_under_live_engine(exc: BaseException) -> None:
+    """Print the FULL exception chain, flush, and ``os._exit(1)``.
+
+    A raise propagating past a live vLLM engine enters interpreter
+    finalization with live EngineCore children — the #1739/#2149 deadlock
+    class this module's success terminal (``os._exit(0)``) exists to avoid.
+    The traceback is printed BEFORE the hard exit so the fail-loud diagnosis
+    is never lost.
+    """
+    traceback.print_exception(exc)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(1)
+
+
 def run(args: argparse.Namespace) -> int:
     split = args.split
-    n_responses = args.responses or (
-        int(C.DECODER["n_responses_per_prompt_pilot"])
-        if split == "pilot"
-        else int(C.DECODER["n_responses_per_prompt_production"])
-    )
+    n_responses = resolve_n_responses(args.responses, split)
     out_root = Path(args.out_root) if args.out_root else F.OUT_DIR
     if args.smoke:
         out_root = out_root / "smoke_gen"
@@ -637,72 +686,80 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     llm = build_engine(args.tensor_parallel)
-    engine_live = True
+    # From here to process exit a vLLM engine is LIVE: EVERY termination path —
+    # success and failure alike — must go through os._exit, never interpreter
+    # finalization (#1739/#2149: finalize-time multiprocessing cleanup blocks
+    # on surviving EngineCore children — a fail-loud raise would otherwise
+    # convert into a finalization HANG on a billing pod).
+    try:
+        t0 = time.time()
+        cap_rows: list[dict[str, Any]] = []
+        n_resumed = 0
+        for i, cw in enumerate(cells):
+            raw_path, man_path = out_paths(out_root, split, cw.name)
+            fp = generation_fingerprint(cw, n_responses, split)
+            body = resume_cell_with_manifest(
+                raw_path, man_path, cw, fp, len(cw.item_ids) * n_responses
+            )
+            was_resumed = body is not None
+            if body is None:
+                body = generate_cell(llm, tok, cw, resolved, n_responses, split)
+                write_text_atomic(raw_path, json.dumps(body, ensure_ascii=False))
+                write_jsonl_atomic(man_path, manifest_rows_for_cell(cw, body))
+            else:
+                n_resumed += 1
+            cap_rows.extend(
+                {"row": cw.row, "cell": cw.cell, "finish_reason": r["finish_reason"]}
+                for r in body["records"]
+            )
+            print(
+                f"[gen] cell {i + 1}/{len(cells)} {cw.name} "
+                f"records={len(body['records'])} resumed={was_resumed} "
+                f"elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
 
-    t0 = time.time()
-    cap_rows: list[dict[str, Any]] = []
-    n_resumed = 0
-    for i, cw in enumerate(cells):
-        raw_path, man_path = out_paths(out_root, split, cw.name)
-        fp = generation_fingerprint(cw, n_responses, split)
-        body = load_resume_cell(raw_path, fp, len(cw.item_ids) * n_responses)
-        was_resumed = body is not None
-        if body is None:
-            body = generate_cell(llm, tok, cw, resolved, n_responses, split)
-            write_text_atomic(raw_path, json.dumps(body, ensure_ascii=False))
-            man_rows = manifest_rows_for_cell(cw, body)
-            write_jsonl_atomic(man_path, man_rows)
-        else:
-            n_resumed += 1
-        cap_rows.extend(
-            {"row": cw.row, "cell": cw.cell, "finish_reason": r["finish_reason"]}
-            for r in body["records"]
-        )
+        report = cap_hit_report(cap_rows)
+        from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+        summary = {
+            "issue": 2658,
+            "split": split,
+            "shard": shard_tag,
+            "n_cells": len(cells),
+            "n_cells_resumed": n_resumed,
+            "cap_hit": report,
+            "order_requests_sha256": order_body["requests_sha256"],
+            "metadata": as_metadata_dict(git_provenance(), phase="gen"),
+        }
+        summary_path = out_root / "gen_summary" / f"{split}_{shard_tag}.json"
+        write_text_atomic(summary_path, canonical_json(summary))
+        if report["amendment_required"]:
+            amend_path = out_root / "gen_summary" / f"cap_amendment_{split}_{shard_tag}.json"
+            write_text_atomic(
+                amend_path,
+                canonical_json({"cells_over_threshold": report["cells_over_threshold"]}),
+            )
+            print(
+                f"[gen] CAP AMENDMENT REQUIRED: {len(report['cells_over_threshold'])} cells "
+                f"> {CAP_HIT_AMEND_THRESHOLD:.0%} length-cap hits — pre-test amendment, "
+                "never selective regeneration (plan §5)",
+                flush=True,
+            )
         print(
-            f"[gen] cell {i + 1}/{len(cells)} {cw.name} "
-            f"records={len(body['records'])} resumed={was_resumed} "
-            f"elapsed={time.time() - t0:.0f}s",
+            f"[gen] {shard_tag} done: {len(cap_rows)} records; summary -> {summary_path}",
             flush=True,
         )
 
-    report = cap_hit_report(cap_rows)
-    from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+        if args.upload:
+            upload_raw(out_root, smoke=args.smoke)
 
-    summary = {
-        "issue": 2658,
-        "split": split,
-        "shard": shard_tag,
-        "n_cells": len(cells),
-        "n_cells_resumed": n_resumed,
-        "cap_hit": report,
-        "order_requests_sha256": order_body["requests_sha256"],
-        "metadata": as_metadata_dict(git_provenance(), phase="gen"),
-    }
-    summary_path = out_root / "gen_summary" / f"{split}_{shard_tag}.json"
-    write_text_atomic(summary_path, canonical_json(summary))
-    if report["amendment_required"]:
-        amend_path = out_root / "gen_summary" / f"cap_amendment_{split}_{shard_tag}.json"
-        write_text_atomic(
-            amend_path,
-            canonical_json({"cells_over_threshold": report["cells_over_threshold"]}),
-        )
-        print(
-            f"[gen] CAP AMENDMENT REQUIRED: {len(report['cells_over_threshold'])} cells "
-            f"> {CAP_HIT_AMEND_THRESHOLD:.0%} length-cap hits — pre-test amendment, "
-            "never selective regeneration (plan §5)",
-            flush=True,
-        )
-    print(f"[gen] {shard_tag} done: {len(cap_rows)} records; summary -> {summary_path}", flush=True)
-
-    if args.upload:
-        upload_raw(out_root, smoke=args.smoke)
-
-    print("[phase=gen] done", flush=True)
-    if engine_live:
-        sys.stdout.flush()
-        sys.stderr.flush()
-        os._exit(0)  # vLLM engine children survive finalization otherwise (#1739/#2149)
-    return 0
+        print("[phase=gen] done", flush=True)
+    except BaseException as exc:  # fail-loud hard exit; see exit_hard_under_live_engine
+        exit_hard_under_live_engine(exc)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)  # vLLM engine children survive finalization otherwise (#1739/#2149)
 
 
 def upload_raw(out_root: Path, *, smoke: bool) -> None:
@@ -715,6 +772,12 @@ def upload_raw(out_root: Path, *, smoke: bool) -> None:
 
     name = EXPERIMENT_NAME + ("_smoke" if smoke else "")
     uploaded = upload_raw_completions_to_data_repo(name, out_root)
+    if not uploaded:
+        raise RuntimeError(
+            f"upload_raw matched ZERO raw completion files under {out_root} for {name}/ — "
+            "nothing was persisted; refusing to report success (a zero-match scan is a "
+            "path/layout bug, never a clean upload)"
+        )
     print(f"[gen] uploaded {len(uploaded)} raw completion files under {name}/", flush=True)
 
 

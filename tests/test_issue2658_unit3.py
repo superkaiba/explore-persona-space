@@ -493,3 +493,249 @@ def test_pilot_item_ids_from_committed_manifest():
     body = json.loads(F.FRAME_MANIFEST_PATH.read_text())
     for row, _cell, iid in triples[:5]:
         assert R.superfamily_of(body, row, iid)
+
+
+# ---------------------------------------------------------------------------
+# Group-B fix round (resume/teardown blockers + minors) — one pin per fix.
+# ---------------------------------------------------------------------------
+def _store_shard(tmp_path: Path, metas: list[dict], fingerprint: str = "fp-test") -> Path:
+    import numpy as np
+
+    store = tmp_path / "store"
+    vectors = [np.zeros(C.HIDDEN, dtype="<f4") for _ in metas]
+    K.write_shard(store, 0, vectors, metas, fingerprint)
+    return store
+
+
+def _crow(pid: str, k: int, sha: str) -> K.CaptureRow:
+    return K.CaptureRow(prompt_id=pid, response_index=k, answer_sha256=sha)
+
+
+# Fix 1 (blocker): capture resume binds KEYS AND CONTENT (answer_sha256).
+def test_resume_completed_shards_content_stale_raises(tmp_path):
+    metas = [
+        {"prompt_id": "p0", "response_index": 0, "answer_sha256": _hex("old text 0")},
+        {"prompt_id": "p0", "response_index": 1, "answer_sha256": _hex("old text 1")},
+    ]
+    store = _store_shard(tmp_path, metas)
+
+    # Same keys, same content: the shard resumes.
+    rows_ok = [_crow("p0", 0, _hex("old text 0")), _crow("p0", 1, _hex("old text 1"))]
+    assert K.resume_completed_shards(store, rows_ok, "fp-test") == (2, 1)
+
+    # Regenerated text: SAME keys, different answer_sha256 -> CacheStaleError
+    # (the pre-fix validator compared keys only and resumed a stale vector).
+    rows_regen = [_crow("p0", 0, _hex("old text 0")), _crow("p0", 1, _hex("REGENERATED"))]
+    with pytest.raises(C.CacheStaleError, match="CONTENT"):
+        K.resume_completed_shards(store, rows_regen, "fp-test")
+
+    # Key mismatch keeps the pre-existing refusal.
+    rows_keys = [_crow("p9", 0, _hex("old text 0")), _crow("p0", 1, _hex("old text 1"))]
+    with pytest.raises(C.CacheStaleError, match="expected prefix"):
+        K.resume_completed_shards(store, rows_keys, "fp-test")
+
+    # A foreign fingerprint resumes nothing (shard_done gates as before).
+    assert K.resume_completed_shards(store, rows_ok, "other-fp") == (0, 0)
+
+
+# Fix 2 (blocker): a resumed gen cell idempotently rewrites its manifest —
+# the raw/manifest PAIR is not atomic, so a kill between the two writes must
+# not strand the cell manifest-less forever.
+def test_resume_cell_rewrites_missing_or_stale_manifest(tmp_path, monkeypatch):
+    from explore_persona_space.atomic_io import write_jsonl_atomic
+
+    iid = "evil|advbench_requests|advbench#0"
+    monkeypatch.setattr(G, "_PIN_CACHE", {iid: _hex("prompt text")})
+    cw = G.CellWork(
+        row="evil",
+        frame="advbench_requests",
+        band="direct",
+        item_ids=(iid,),
+        superfamilies={iid: "sf-evil-0"},
+    )
+    body = {
+        "fingerprint": "fp-test",
+        "split": "pilot",
+        "records": [
+            {
+                "prompt_id": iid,
+                "response_index": k,
+                "answer_sha256": _hex(f"ans{k}"),
+                "raw_text_sha256": _hex(f"ans{k}"),
+            }
+            for k in range(2)
+        ],
+    }
+    raw = tmp_path / "raw_completions" / "pilot" / f"{cw.name}.json"
+    man = tmp_path / "gen_manifest" / "pilot" / f"{cw.name}.jsonl"
+    raw.parent.mkdir(parents=True)
+    raw.write_text(json.dumps(body, ensure_ascii=False))
+
+    # The crash window: raw written, manifest MISSING. Resume rewrites it.
+    got = G.resume_cell_with_manifest(raw, man, cw, "fp-test", 2)
+    assert got == body and man.exists()
+    fresh = tmp_path / "fresh.jsonl"
+    write_jsonl_atomic(fresh, G.manifest_rows_for_cell(cw, body))
+    assert man.read_bytes() == fresh.read_bytes()  # identical to the fresh-path write
+
+    # Idempotent: a stale/corrupt manifest is REPLACED on resume.
+    man.write_text("stale\n")
+    G.resume_cell_with_manifest(raw, man, cw, "fp-test", 2)
+    assert man.read_bytes() == fresh.read_bytes()
+
+    # A non-resumable cell (absent raw) returns None and writes nothing.
+    raw2 = raw.parent / "absent.json"
+    man2 = man.parent / "absent.jsonl"
+    assert G.resume_cell_with_manifest(raw2, man2, cw, "fp-test", 2) is None
+    assert not man2.exists()
+
+
+# Fix 3 (major): dtype + device CLASS are output-affecting fingerprint keys.
+def test_capture_fingerprint_keys_on_dtype_and_device_class():
+    fp = K.capture_fingerprint("pilot", dtype="bfloat16", device="cuda")
+    # Device INDEX is placement, not a regime key; CLASS and dtype are.
+    assert K.capture_fingerprint("pilot", dtype="bfloat16", device="cuda:1") == fp
+    assert K.capture_fingerprint("pilot", dtype="float32", device="cuda") != fp
+    assert K.capture_fingerprint("pilot", dtype="bfloat16", device="cpu") != fp
+    assert K.capture_fingerprint("dev", dtype="bfloat16", device="cuda") != fp
+    assert K.device_class("cuda:3") == "cuda" and K.device_class("cpu") == "cpu"
+    with pytest.raises(TypeError):
+        K.capture_fingerprint("pilot")  # the dtype/device-blind signature is retired
+
+
+# Fix 4 (major): a raise under a live vLLM engine hard-exits WITH its traceback
+# instead of entering interpreter finalization (#1739/#2149 deadlock class).
+def test_exit_hard_under_live_engine_prints_chain_then_hard_exits(monkeypatch, capsys):
+    import os as _os
+
+    codes: list[int] = []
+    monkeypatch.setattr(_os, "_exit", lambda code: codes.append(code))
+    try:
+        raise ValueError("boom-2658-fix4")
+    except ValueError as exc:
+        G.exit_hard_under_live_engine(exc)
+    assert codes == [1]
+    err = capsys.readouterr().err
+    assert "Traceback" in err and "boom-2658-fix4" in err
+
+
+def test_run_routes_post_engine_raises_to_hard_exit():
+    import ast
+    import inspect
+
+    src = inspect.getsource(G)
+    assert "engine_live" not in src  # the dead always-True flag is gone
+    tree = ast.parse(src)
+    run_fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "run")
+    handlers = [
+        h
+        for n in ast.walk(run_fn)
+        if isinstance(n, ast.Try)
+        for h in n.handlers
+        if isinstance(h.type, ast.Name) and h.type.id == "BaseException"
+    ]
+    assert handlers, "run() must catch BaseException while the engine is live"
+    handler_calls = {
+        n.func.id
+        for h in handlers
+        for n in ast.walk(h)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+    }
+    assert "exit_hard_under_live_engine" in handler_calls
+
+
+# Fix 5 (minor): freeze_pins routes through the shared atomic writer — the
+# fixed-name ``prompt_pins.tmp.json`` + os.replace shape (#2329 class) is gone.
+def test_freeze_pins_uses_shared_atomic_writer(monkeypatch, tmp_path):
+    from explore_persona_space import atomic_io
+
+    pins = tmp_path / "pins.json"
+    monkeypatch.setattr(R, "PIN_PATH", pins)
+    monkeypatch.setattr(R, "pilot_item_ids", lambda: [("evil", "advbench_requests|band_a", _IID)])
+
+    def fake_resolve(ids, *, verify_pins=True):
+        return {
+            i: R.ResolvedItem(item_id=i, prompt_sha256=_hex("v1:" + i), source_ref="test", text="t")
+            for i in ids
+        }
+
+    monkeypatch.setattr(R, "resolve_items", fake_resolve)
+
+    seen: list[Path] = []
+
+    def spy(path, text, **kw):
+        seen.append(Path(path))
+        return atomic_io.write_text_atomic(path, text, **kw)
+
+    monkeypatch.setattr(R, "write_text_atomic", spy)  # AttributeError on pre-fix module
+    body = R.freeze_pins()
+    assert seen == [pins] and pins.exists() and body["n_items"] == 1
+    assert not pins.with_suffix(".tmp.json").exists()  # no fixed-name tmp residue
+
+
+# Fix 6 (minor): the completeness anchor is the FRAME MANIFEST x n_responses —
+# anchoring on the loaded gen files is circular (incomplete gen reads complete).
+def _triples() -> list[tuple[str, str, str]]:
+    return [
+        ("evil", "advbench_requests|band_a", "evil|advbench_requests|advbench#0"),
+        ("evil", "advbench_requests|band_a", "evil|advbench_requests|advbench#1"),
+        ("math", "algebra|level_low", "math|algebra|m#0"),
+    ]
+
+
+def test_expected_capture_keys_manifest_anchor(monkeypatch):
+    monkeypatch.setattr(R, "pilot_item_ids", _triples)
+    keys = K.expected_capture_keys(None, 2, 0, 1)
+    assert keys == sorted((iid, k) for _, _, iid in _triples() for k in range(2))
+    # Row filter + shard slicing compose exactly like the gen-row sharding.
+    evil = sorted((iid, k) for row, _, iid in _triples() if row == "evil" for k in range(2))
+    assert K.expected_capture_keys(["evil"], 2, 0, 2) == evil[0::2]
+    assert K.expected_capture_keys(["evil"], 2, 1, 2) == evil[1::2]
+    # Smoke restriction: only gen-present cells stay in the anchor.
+    only_math = K.expected_capture_keys(None, 2, 0, 1, present_cells={"math__algebra__level_low"})
+    assert only_math == [("math|algebra|m#0", 0), ("math|algebra|m#0", 1)]
+    with pytest.raises(K.CaptureSpanError, match="zero expected"):
+        K.expected_capture_keys(["nonexistent-row"], 2, 0, 1)
+
+
+def test_capture_completeness_anchor_catches_incomplete_gen(monkeypatch, tmp_path):
+    monkeypatch.setattr(R, "pilot_item_ids", _triples)
+    expected = K.expected_capture_keys(None, 1, 0, 1)  # 3 manifest-anchored keys
+    metas = [  # a store built over an INCOMPLETE gen dir (2 of 3 pilot items)
+        {
+            "prompt_id": "evil|advbench_requests|advbench#0",
+            "response_index": 0,
+            "answer_sha256": _hex("a"),
+        },
+        {
+            "prompt_id": "evil|advbench_requests|advbench#1",
+            "response_index": 0,
+            "answer_sha256": _hex("b"),
+        },
+    ]
+    store = _store_shard(tmp_path, metas)
+    # The OLD circular anchor (keys taken from the gen files) reads "complete":
+    K.assert_store_complete(store, [(m["prompt_id"], 0) for m in metas])
+    # The manifest anchor reads INCOMPLETE, loud:
+    with pytest.raises(K.CaptureSpanError, match="MISSING"):
+        K.assert_store_complete(store, expected)
+
+
+# Fix 7 (minors): --responses 0 refuses; upload_raw refuses a zero-match scan.
+def test_resolve_n_responses_defaults_and_refuses_nonpositive():
+    assert G.resolve_n_responses(None, "pilot") == int(C.DECODER["n_responses_per_prompt_pilot"])
+    assert G.resolve_n_responses(None, "dev") == int(C.DECODER["n_responses_per_prompt_production"])
+    assert G.resolve_n_responses(7, "pilot") == 7
+    for bad in (0, -3):  # the legacy ``or`` idiom silently fell through 0
+        with pytest.raises(SystemExit, match="positive"):
+            G.resolve_n_responses(bad, "pilot")
+
+
+def test_upload_raw_refuses_zero_matches(monkeypatch, tmp_path):
+    from explore_persona_space.orchestrate import hub
+
+    monkeypatch.setattr(hub, "upload_raw_completions_to_data_repo", lambda name, root: [])
+    with pytest.raises(RuntimeError, match="ZERO"):
+        G.upload_raw(tmp_path, smoke=True)
+    monkeypatch.setattr(hub, "upload_raw_completions_to_data_repo", lambda name, root: ["one"])
+    G.upload_raw(tmp_path, smoke=True)  # non-empty: no raise

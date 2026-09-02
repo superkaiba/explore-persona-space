@@ -245,11 +245,27 @@ def vector_sha256(vec: np.ndarray) -> str:
 # ---------------------------------------------------------------------------
 # Store (per-shard npy + row_index + fingerprint meta; resume by prefix).
 # ---------------------------------------------------------------------------
-def capture_fingerprint(split: str) -> str:
-    """Machine-stable fingerprint over GENERATING PARAMETERS only (#1336)."""
+def device_class(device: str) -> str:
+    """Backend CLASS of a torch device string: ``cuda`` / ``cuda:1`` -> ``cuda``.
+
+    The device INDEX is placement, not an output-affecting regime key; the
+    cuda-vs-cpu kernel family IS (different numerics for the same math).
+    """
+    return device.split(":", 1)[0].strip().lower()
+
+
+def capture_fingerprint(split: str, *, dtype: str, device: str) -> str:
+    """Machine-stable fingerprint over GENERATING PARAMETERS only (#1336).
+
+    ``dtype`` and the device CLASS are OUTPUT-AFFECTING regime keys (a bf16
+    cuda forward and an fp32 cpu forward compute different vectors for the
+    same rows); omitting them let a store begun under bf16 silently extend
+    with fp32-computed shards.  Schema v2 adds them — deliberately
+    INVALIDATING any store fingerprinted under v1.
+    """
     payload = json.dumps(
         {
-            "schema": "i2658-l19-capture-v1",
+            "schema": "i2658-l19-capture-v2",  # v2: + dtype / device_class regime keys
             "model_id": C.MODEL_ID,
             "model_revision": C.MODEL_REVISION,
             "chat_template_sha256": C.CHAT_TEMPLATE_SHA256,
@@ -258,6 +274,8 @@ def capture_fingerprint(split: str) -> str:
             "boundary": BOUNDARY_INSTRUCT,
             "capture_max_model_len": CAPTURE_MAX_MODEL_LEN,
             "prompt_budget": G.PROMPT_BUDGET,
+            "dtype": dtype,
+            "device_class": device_class(device),
             "split": split,
         },
         sort_keys=True,
@@ -318,6 +336,90 @@ def write_shard(
                 fh.write(json.dumps({**m, "vector_sha256": vector_sha256(v)}) + "\n")
     with atomic_replace(meta) as tmp:
         tmp.write_text(json.dumps({"fingerprint": fingerprint, "n_rows": len(vectors)}))
+
+
+def resume_completed_shards(
+    store_dir: Path, rows: list[CaptureRow], fingerprint: str
+) -> tuple[int, int]:
+    """Validate the contiguous done-shard prefix; returns ``(offset, next_shard)``.
+
+    KEYS and CONTENT both bind.  The key check alone is CONTENT-BLIND: a
+    quarantined partial gen cell regenerated at the UNCHANGED fingerprint can
+    carry DIFFERENT text for the same ``(prompt_id, response_index)`` keys
+    (vLLM temperature-1.0 sampling is batch-composition and kernel sensitive
+    across engine rebuilds even at fixed per-request seeds), so a store
+    written before the re-gen would resume clean and every downstream number
+    would score a vector for text that no longer exists.  Each realized
+    row_index row already carries ``answer_sha256`` and each expected
+    ``CaptureRow`` carries the CURRENT gen file's sha (verified at load) —
+    any per-row mismatch raises ``CacheStaleError``.
+    """
+    offset = 0
+    next_shard = 0
+    while shard_done(store_dir, next_shard, fingerprint):
+        realized = read_shard_index(store_dir, next_shard)
+        expected = rows[offset : offset + len(realized)]
+        if [(r["prompt_id"], int(r["response_index"])) for r in realized] != [
+            c.key for c in expected
+        ]:
+            raise C.CacheStaleError(
+                f"resume mismatch at shard{next_shard:02d} of {store_dir}: realized rows "
+                "are not the expected prefix slice — quarantine the store or use a fresh "
+                "store dir"
+            )
+        stale = [
+            c.key
+            for r, c in zip(realized, expected, strict=True)
+            if r["answer_sha256"] != c.answer_sha256
+        ]
+        if stale:
+            raise C.CacheStaleError(
+                f"resume CONTENT mismatch at shard{next_shard:02d} of {store_dir}: "
+                f"{len(stale)} resumed rows carry answer_sha256 differing from the "
+                f"CURRENT gen files (e.g. {stale[:3]}) — the answers were regenerated "
+                "after this store was written; quarantine the store or use a fresh "
+                "store dir (a key-matched resume must never keep vectors for text "
+                "that no longer exists)"
+            )
+        offset += len(realized)
+        next_shard += 1
+    return offset, next_shard
+
+
+def expected_capture_keys(
+    rows_filter: list[str] | None,
+    n_responses: int,
+    shard_index: int,
+    num_shards: int,
+    *,
+    present_cells: set[str] | None = None,
+) -> list[tuple[str, int]]:
+    """This shard's expected ``(prompt_id, response_index)`` list, anchored on
+    the FRAME MANIFEST's pilot selection x ``n_responses`` — never on the gen
+    files (that anchor is CIRCULAR: a capture launched over an incomplete gen
+    dir would report "complete").
+
+    ``present_cells`` (``--smoke`` only) restricts the anchor to gen-present
+    cell names ``{row}__{frame}__{band}``: within-cell completeness stays
+    manifest-anchored; cross-cell completeness is NOT certified under smoke
+    (the gen smoke truncates the cell grid by design).
+    """
+    keys: list[tuple[str, int]] = []
+    for row, cell, iid in R.pilot_item_ids():
+        if rows_filter and row not in rows_filter:
+            continue
+        frame, _, band = cell.partition("|")
+        if present_cells is not None and f"{row}__{frame}__{band}" not in present_cells:
+            continue
+        keys.extend((iid, k) for k in range(n_responses))
+    keys.sort()
+    keys = keys[shard_index::num_shards]
+    if not keys:
+        raise CaptureSpanError(
+            f"shard {shard_index}/{num_shards} has zero expected capture rows under the "
+            "frame-manifest anchor (rows filter too narrow, or empty smoke gen dir?)"
+        )
+    return keys
 
 
 def assert_store_complete(store_dir: Path, expected_keys: list[tuple[str, int]]) -> dict:
@@ -409,7 +511,8 @@ def run(args: argparse.Namespace) -> int:
     store_dir = (
         out_root / "l19_store" / split / f"shard{args.shard_index:02d}of{args.num_shards:02d}"
     )
-    fingerprint = capture_fingerprint(split)
+    fingerprint = capture_fingerprint(split, dtype=args.dtype, device=args.device)
+    n_responses = G.resolve_n_responses(args.responses, split)
 
     rows = load_generation_rows(out_root, split, args.rows)
     rows.sort(key=lambda c: c.key)
@@ -417,6 +520,31 @@ def run(args: argparse.Namespace) -> int:
     if not rows:
         raise CaptureSpanError(
             f"shard {args.shard_index}/{args.num_shards} received zero capture rows"
+        )
+
+    # Completeness anchor: the frame manifest x n_responses — checked BEFORE any
+    # model forward (fail before the GPU spend) and re-asserted on the realized
+    # store below. Under --smoke the anchor restricts to gen-present cells.
+    present_cells: set[str] | None = None
+    if args.smoke:
+        present_cells = {p.stem for p in (out_root / "raw_completions" / split).glob("*.json")}
+        print(
+            f"[capture] --smoke: completeness anchor RESTRICTED to {len(present_cells)} "
+            "gen-present cells (cross-cell completeness NOT certified under smoke; "
+            "production anchors the full frame manifest)",
+            flush=True,
+        )
+    expected_keys = expected_capture_keys(
+        args.rows, n_responses, args.shard_index, args.num_shards, present_cells=present_cells
+    )
+    got_keys = [c.key for c in rows]
+    if got_keys != expected_keys:
+        exp, got = set(expected_keys), set(got_keys)
+        raise CaptureSpanError(
+            f"gen rows for shard {args.shard_index}/{args.num_shards} do not match the "
+            f"frame-manifest expectation: {len(exp - got)} expected rows missing "
+            f"(e.g. {sorted(exp - got)[:3]}), {len(got - exp)} foreign "
+            f"(e.g. {sorted(got - exp)[:3]}) — complete generation before capture"
         )
     print(f"[capture] {len(rows)} answers to capture -> {store_dir}", flush=True)
 
@@ -433,22 +561,10 @@ def run(args: argparse.Namespace) -> int:
 
     model = load_capture_model(args.device, args.dtype)
 
-    # Resume: contiguous done shards must be the expected prefix of THIS row list.
-    offset = 0
-    next_shard = 0
-    while shard_done(store_dir, next_shard, fingerprint):
-        realized = read_shard_index(store_dir, next_shard)
-        expected = rows[offset : offset + len(realized)]
-        if [(r["prompt_id"], int(r["response_index"])) for r in realized] != [
-            c.key for c in expected
-        ]:
-            raise C.CacheStaleError(
-                f"resume mismatch at shard{next_shard:02d} of {store_dir}: realized rows "
-                "are not the expected prefix slice — quarantine the store or use a fresh "
-                "store dir"
-            )
-        offset += len(realized)
-        next_shard += 1
+    # Resume: contiguous done shards must be the expected prefix of THIS row
+    # list — KEYS and CONTENT (per-row answer_sha256) both bind; see
+    # resume_completed_shards.
+    offset, next_shard = resume_completed_shards(store_dir, rows, fingerprint)
     if next_shard:
         print(f"[capture] resumed {next_shard} shards ({offset} rows)", flush=True)
 
@@ -473,7 +589,7 @@ def run(args: argparse.Namespace) -> int:
         write_shard(store_dir, idx, vectors, metas, fingerprint)
         print(f"[capture] shard {idx:02d} written ({len(chunk)} rows)", flush=True)
 
-    digest = assert_store_complete(store_dir, [c.key for c in rows])
+    digest = assert_store_complete(store_dir, expected_keys)
     from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
     manifest = {
@@ -539,6 +655,13 @@ def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--split", choices=list(C.SPLITS), default="pilot")
     ap.add_argument("--rows", nargs="*", default=None, help="row subset (default: all)")
+    ap.add_argument(
+        "--responses",
+        type=int,
+        default=None,
+        help="responses/prompt used at GEN time (default: the split default; "
+        "anchors the manifest completeness check)",
+    )
     ap.add_argument("--num-shards", type=int, default=1)
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument(

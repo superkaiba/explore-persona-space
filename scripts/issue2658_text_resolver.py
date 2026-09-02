@@ -56,6 +56,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 import issue2658_common as C  # noqa: E402
 import issue2658_frames as F  # noqa: E402
+from explore_persona_space.atomic_io import write_text_atomic  # noqa: E402
 
 REPO_ROOT = _SCRIPTS_DIR.parent
 VENDOR_DIR = _SCRIPTS_DIR / "issue2658_vendored"
@@ -484,10 +485,9 @@ def freeze_pins(rows: list[str] | None = None) -> dict[str, Any]:
             )
         print(f"[resolver] pin table already frozen ({len(items)} items) — verified", flush=True)
         return existing
-    PIN_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp = PIN_PATH.with_suffix(".tmp.json")
-    tmp.write_text(json.dumps(body, indent=1, sort_keys=True) + "\n")
-    os.replace(tmp, PIN_PATH)
+    # #2329 class: never a FIXED-name tmp + os.replace — route through the
+    # shared atomic primitive (process-unique same-dir tmp, cleanup-on-raise).
+    write_text_atomic(PIN_PATH, json.dumps(body, indent=1, sort_keys=True) + "\n")
     print(f"[resolver] froze {len(items)} prompt pins -> {PIN_PATH}", flush=True)
     return body
 

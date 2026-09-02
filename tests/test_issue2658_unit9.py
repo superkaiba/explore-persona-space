@@ -484,7 +484,13 @@ def _write_fixture(out_root: Path, monkeypatch, *, poison_split: bool = False) -
             json.dumps({"schema": J.JUDGE_SCHEMA, "verdicts": verdicts})
         )
         store = out_root / "l19_store" / split / "shard00of01"
-        CAP.write_shard(store, 0, vectors, metas, CAP.capture_fingerprint(split))
+        CAP.write_shard(
+            store,
+            0,
+            vectors,
+            metas,
+            CAP.capture_fingerprint(split, dtype="bfloat16", device="cuda"),
+        )
     return expected
 
 
