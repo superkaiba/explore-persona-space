@@ -205,6 +205,19 @@ def test_hash_stratum_bands_are_stable_and_in_range():
 # Manifest immutability + strict validation
 # ---------------------------------------------------------------------------
 def _minimal_body(kind="eligible_frame"):
+    # unit 10: an eligible_frame body carries the per-row prospective fields
+    # (explicit EMPTY form) + a reconciling ledger; validate_manifest raises
+    # on their absence for that kind.
+    rows = [
+        {
+            "row": r,
+            "counts": {"n": i},
+            "n_cells": 0,
+            "n_cells_estimable": 0,
+            "prospective_not_estimable": [],
+        }
+        for i, r in enumerate(C.ROW_IDS)
+    ]
     body = {
         "manifest_version": C.MANIFEST_VERSION,
         "manifest_kind": kind,
@@ -212,8 +225,10 @@ def _minimal_body(kind="eligible_frame"):
         "metadata": {"note": "volatile — excluded from content sha"},
         "frozen_config": {"layer": C.LAYER},
         "superfamily_criteria": F.SUPERFAMILY_CRITERIA,
-        "rows": [{"row": r, "counts": {"n": i}} for i, r in enumerate(C.ROW_IDS)],
+        "rows": rows,
     }
+    if kind == "eligible_frame":
+        body["prospective_not_estimable_ledger"] = F._not_estimable_ledger(rows)
     addressable = {k: v for k, v in body.items() if k != "metadata"}
     body["content_sha256"] = F._canonical_sha(addressable)
     body["cache_key"] = F._canonical_sha(["cache", kind])

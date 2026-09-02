@@ -4,8 +4,8 @@
   "issue": 2658,
   "metadata": {
     "script": "scripts/issue2658_frames.py",
-    "git_commit": "a549103be626b6d581fdbd0f2353ee88cd7a7a05",
-    "timestamp_utc": "2026-09-02T11:09:25.555131+00:00"
+    "git_commit": "20d46e463d6e539d479f1fdfb5fdb488f3573399",
+    "timestamp_utc": "2026-09-02T16:26:03.754475+00:00"
   },
   "frozen_config": {
     "model_id": "Qwen/Qwen2.5-7B-Instruct",
@@ -70892,5 +70892,5 @@
     }
   ],
   "content_sha256": "2371f71f78ab6c6a794b458a76d494251a7066210701141be40c6a0b4b8a4595",
-  "cache_key": "b2db7698e36775da58e237b552856cad2e39275ee996b429f611bc1520ba1648"
+  "cache_key": "1bf2eb7ed77e137aa7a826450b748d43225404716650a46752a9f9a0e8f455da"
 }

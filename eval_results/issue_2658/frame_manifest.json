@@ -4,8 +4,8 @@
   "issue": 2658,
   "metadata": {
     "script": "scripts/issue2658_frames.py",
-    "git_commit": "a549103be626b6d581fdbd0f2353ee88cd7a7a05",
-    "timestamp_utc": "2026-09-02T11:09:25.484651+00:00"
+    "git_commit": "20d46e463d6e539d479f1fdfb5fdb488f3573399",
+    "timestamp_utc": "2026-09-02T16:26:03.685084+00:00"
   },
   "frozen_config": {
     "model_id": "Qwen/Qwen2.5-7B-Instruct",
@@ -119,6 +119,10 @@
         "wang44_em_probes|indirect": 24,
         "wang44_em_probes|ambiguous": 24
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "advbench_requests|direct": [
@@ -1223,6 +1227,10 @@
         "syco_mmlu_humanities|authority_assertion": 279,
         "syco_mmlu_humanities|confident_assertion": 295
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "syco_arc_science|hedged_assertion": [
@@ -14607,6 +14615,48 @@
         "wang44_probes|indirect": 14,
         "wang44_probes|ambiguous": 14
       },
+      "below_production_gate_cells": [
+        "fact_questions|direct:5",
+        "fact_questions|indirect:5",
+        "fact_questions|ambiguous:5",
+        "wang44_probes|direct:14",
+        "wang44_probes|indirect:14",
+        "wang44_probes|ambiguous:14"
+      ],
+      "prospective_not_estimable": [
+        {
+          "cell": "fact_questions|direct",
+          "n_test_eligible": 5,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|indirect",
+          "n_test_eligible": 5,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|ambiguous",
+          "n_test_eligible": 5,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "wang44_probes|direct",
+          "n_test_eligible": 14,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "wang44_probes|indirect",
+          "n_test_eligible": 14,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "wang44_probes|ambiguous",
+          "n_test_eligible": 14,
+          "cause": "bank-too-small"
+        }
+      ],
+      "n_cells": 12,
+      "n_cells_estimable": 6,
       "pilot_selection": {
         "per_cell_item_ids": {
           "fact_questions|direct": [
@@ -15647,6 +15697,10 @@
         "wildchat_real|indirect": 302,
         "wildchat_real|ambiguous": 302
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "advbench_requests|direct": [
@@ -16980,6 +17034,30 @@
         "marker_eval_prompts|indirect": 31,
         "marker_eval_prompts|ambiguous": 31
       },
+      "below_production_gate_cells": [
+        "fact_questions|direct:8",
+        "fact_questions|indirect:8",
+        "fact_questions|ambiguous:8"
+      ],
+      "prospective_not_estimable": [
+        {
+          "cell": "fact_questions|direct",
+          "n_test_eligible": 8,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|indirect",
+          "n_test_eligible": 8,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|ambiguous",
+          "n_test_eligible": 8,
+          "cause": "bank-too-small"
+        }
+      ],
+      "n_cells": 12,
+      "n_cells_estimable": 9,
       "pilot_selection": {
         "per_cell_item_ids": {
           "wildchat_real|direct": [
@@ -18020,6 +18098,48 @@
         "arc_c_tasks|indirect": 105,
         "arc_c_tasks|ambiguous": 105
       },
+      "below_production_gate_cells": [
+        "writing_style_neutral|direct:0",
+        "writing_style_neutral|indirect:0",
+        "writing_style_neutral|ambiguous:0",
+        "fact_questions|direct:9",
+        "fact_questions|indirect:9",
+        "fact_questions|ambiguous:9"
+      ],
+      "prospective_not_estimable": [
+        {
+          "cell": "writing_style_neutral|direct",
+          "n_test_eligible": 0,
+          "cause": "extraction-barred"
+        },
+        {
+          "cell": "writing_style_neutral|indirect",
+          "n_test_eligible": 0,
+          "cause": "extraction-barred"
+        },
+        {
+          "cell": "writing_style_neutral|ambiguous",
+          "n_test_eligible": 0,
+          "cause": "extraction-barred"
+        },
+        {
+          "cell": "fact_questions|direct",
+          "n_test_eligible": 9,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|indirect",
+          "n_test_eligible": 9,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|ambiguous",
+          "n_test_eligible": 9,
+          "cause": "bank-too-small"
+        }
+      ],
+      "n_cells": 12,
+      "n_cells_estimable": 6,
       "pilot_selection": {
         "per_cell_item_ids": {
           "writing_style_neutral|direct": [
@@ -19047,6 +19167,48 @@
         "fact_questions|indirect": 9,
         "fact_questions|ambiguous": 9
       },
+      "below_production_gate_cells": [
+        "impolite_neutral|direct:0",
+        "impolite_neutral|indirect:0",
+        "impolite_neutral|ambiguous:0",
+        "fact_questions|direct:9",
+        "fact_questions|indirect:9",
+        "fact_questions|ambiguous:9"
+      ],
+      "prospective_not_estimable": [
+        {
+          "cell": "impolite_neutral|direct",
+          "n_test_eligible": 0,
+          "cause": "extraction-barred"
+        },
+        {
+          "cell": "impolite_neutral|indirect",
+          "n_test_eligible": 0,
+          "cause": "extraction-barred"
+        },
+        {
+          "cell": "impolite_neutral|ambiguous",
+          "n_test_eligible": 0,
+          "cause": "extraction-barred"
+        },
+        {
+          "cell": "fact_questions|direct",
+          "n_test_eligible": 9,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|indirect",
+          "n_test_eligible": 9,
+          "cause": "bank-too-small"
+        },
+        {
+          "cell": "fact_questions|ambiguous",
+          "n_test_eligible": 9,
+          "cause": "bank-too-small"
+        }
+      ],
+      "n_cells": 12,
+      "n_cells_estimable": 6,
       "pilot_selection": {
         "per_cell_item_ids": {
           "impolite_neutral|direct": [
@@ -19924,6 +20086,10 @@
         "wildchat_real|indirect": 287,
         "wildchat_real|ambiguous": 287
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "advbench_requests|direct": [
@@ -21258,6 +21424,10 @@
         "math_prealgebra|level_mid": 95,
         "math_prealgebra|level_high": 177
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "math_algebra|level_low": [
@@ -33936,6 +34106,10 @@
         "mmlu_humanities|band_a": 113,
         "mmlu_humanities|band_b": 116
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "mmlu_stem|band_a": [
@@ -46148,6 +46322,10 @@
         "code_leetcode|band_b": 198,
         "code_leetcode|band_c": 207
       },
+      "below_production_gate_cells": [],
+      "prospective_not_estimable": [],
+      "n_cells": 12,
+      "n_cells_estimable": 12,
       "pilot_selection": {
         "per_cell_item_ids": {
           "code_humaneval_mbpp|band_a": [
@@ -51895,6 +52073,62 @@
       }
     }
   ],
-  "content_sha256": "3934a8d948c41939fe69fb42a14949ec8312c6cd35f7bb45a173f01d2591eaf4",
-  "cache_key": "b3f16ccbd2ce20eef2e05c8cf60fa998e71d594e54d97d9ac5d3723ead96e7b8"
+  "prospective_not_estimable_ledger": {
+    "floor": 15,
+    "n_cells": 132,
+    "n_cells_estimable": 111,
+    "n_cells_not_estimable": 21,
+    "by_cause": {
+      "bank-too-small": 15,
+      "extraction-barred": 6
+    },
+    "per_row": {
+      "evil": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      },
+      "sycophancy": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      },
+      "hallucination": {
+        "n_cells": 12,
+        "n_cells_estimable": 6
+      },
+      "refusal": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      },
+      "assistantness": {
+        "n_cells": 12,
+        "n_cells_estimable": 9
+      },
+      "casualness": {
+        "n_cells": 12,
+        "n_cells_estimable": 6
+      },
+      "impoliteness": {
+        "n_cells": 12,
+        "n_cells_estimable": 6
+      },
+      "harmful_compliance": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      },
+      "correctness_math": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      },
+      "correctness_mmlu_pro": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      },
+      "correctness_code": {
+        "n_cells": 12,
+        "n_cells_estimable": 12
+      }
+    }
+  },
+  "content_sha256": "396a98bbaf46673b5adb3e5c2203a75000b8c761550e65156067cdbe59eec598",
+  "cache_key": "3bb36335f5f4e006e6adf81bdb95a5ac1fd38ab8241bf062a4560ac02c1acefd"
 }
