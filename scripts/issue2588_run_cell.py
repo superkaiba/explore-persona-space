@@ -2,7 +2,8 @@
 """Issue #2588 pod cell driver — generation / capture / fits / nulls / transfer.
 
 One invocation runs ONE generation/capture cell (``--cell <model>_<arm>``,
-plan §4.1: 19 cells, 21 registered maps) through its phase sequence:
+plan §4.1: 19 cells / 21 registered maps, plus the 9 issue-2588-larger
+extension cells — 28 cells / 30 maps total) through its phase sequence:
 
     prologue -> stage -> gen -> parse -> capture -> upload-raw ->
     fits (fail-closed on the G2 anchor sentinel) -> nulls -> gpqa-transfer ->
@@ -102,6 +103,29 @@ def _cell_prefix(args, cell: PC.Cell) -> str:
     return base
 
 
+def _logs_dir(root: Path) -> Path:
+    """/workspace/logs when it is OURS to write, else <out-root>/logs.
+
+    On RunPod pods /workspace is the pod volume and /workspace/logs is the
+    poll_pipeline convention. On the fellows Slurm cluster /workspace exists
+    but /workspace/logs is NOT ours — a bare is_dir() gate would either crash
+    _paths' mkdir (PermissionError) or scatter logs into a shared dir. Probe
+    actual writability (mkdir + touch) and fall back under --out-root.
+    """
+    ws = Path("/workspace")
+    if ws.is_dir():
+        logs = ws / "logs"
+        try:
+            logs.mkdir(parents=True, exist_ok=True)
+            probe = logs / f".i2588_write_probe_{os.getpid()}"
+            probe.touch()
+            probe.unlink()
+            return logs
+        except OSError:
+            pass
+    return root / "logs"
+
+
 def _paths(args, cell: PC.Cell) -> dict[str, Path]:
     root = Path(args.out_root)
     cell_dir = root / ("smoke" if args.smoke else "cells") / cell.key
@@ -114,7 +138,7 @@ def _paths(args, cell: PC.Cell) -> dict[str, Path]:
         "capture_oddlayers": cell_dir / "capture_oddlayers",  # C3: odd pass never overwrites
         "fits": cell_dir / "fits",
         "cache": root / "hf_cache",
-        "logs": Path("/workspace/logs") if Path("/workspace").is_dir() else root / "logs",
+        "logs": _logs_dir(root),
     }
     for v in d.values():
         v.mkdir(parents=True, exist_ok=True)
@@ -402,12 +426,10 @@ def _gen_rows(
     rendered: list[dict] = []
     for r in base_rows:
         text = r["prompt"]
-        prompt_render = tok.apply_chat_template(
-            [{"role": "user", "content": text}],
-            tokenize=False,
-            add_generation_prompt=True,
-            **PC._template_kwargs(m.family, cell.arm),
-        )
+        # Single family router (PC.render_prompt_text): byte-identical to the
+        # old inline apply_chat_template for every pre-extension family;
+        # deepseek_v4 routes through the vendored encoder.
+        prompt_render = PC.render_prompt_text(tok, text, m.family, cell.arm)
         ids = PC.render_prompt_ids(tok, text, m.family, cell.arm)
         n_prompt = len(ids)
         assert n_prompt <= PC.PROMPT_TOKEN_BUDGET, (
@@ -690,8 +712,14 @@ def _assert_headroom(paths: dict, need_gb: float, phase: str) -> None:
 
 def _est_model_gb(cell: PC.Cell) -> float:
     """Rough bf16 snapshot size (transformer block params + embeddings), with a
-    1.35x margin — a §9 FLOOR for the headroom assert, not an exact figure."""
+    1.35x margin — a §9 FLOOR for the headroom assert, not an exact figure.
+
+    2588x rows carry the MEASURED safetensors total on the PanelModel
+    (est_snapshot_gb; the dense-bf16 formula is >10x low on the FP8 MoE
+    checkpoints) — used with a 1.1x margin when present."""
     m = cell.model
+    if m.est_snapshot_gb is not None:
+        return m.est_snapshot_gb * 1.1
     params = 12 * m.n_layers * m.h_dim**2 + 2 * 152_000 * m.h_dim
     return 2.0 * params / 1e9 * 1.35
 

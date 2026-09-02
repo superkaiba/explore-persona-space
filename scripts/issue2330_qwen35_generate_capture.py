@@ -659,7 +659,16 @@ def _unwrap(output):
 
 def _resolve_decoder_blocks(model):
     """Walk the wrapper chain (``.model`` / ``.language_model``, depth 1..4) to
-    the module exposing ``.layers``. Returns (blocks, depth) or (None, 0)."""
+    the module exposing ``.layers``. Returns (blocks, depth) or (None, 0).
+
+    Verified against the transformers 5.16.1 modeling sources (2026-09-02) for
+    the #2588-larger classes: DeepseekV4ForCausalLM and GlmMoeDsaForCausalLM
+    resolve ``.model.layers`` at depth 1; Qwen4ExpForCausalLM and
+    Qwen3_5MoeForCausalLM resolve ``.model.layers`` (text model) at depth 1;
+    the vision-language ``*ForConditionalGeneration`` wrappers resolve
+    ``model.language_model.layers`` at depth 2 (the walk prefers ``.model``
+    then falls to ``.language_model`` at each level). No new attribute names
+    were needed."""
     inner = model
     for depth in range(1, 5):
         nxt = getattr(inner, "model", None)
@@ -752,22 +761,57 @@ def _resolve_h_dim(model_id: str, override: int | None) -> int:
 _DTYPES = {"float32": torch.float32, "bfloat16": torch.bfloat16}
 
 
+def _quant_method(model_id: str) -> str | None:
+    """quantization_config.quant_method from the checkpoint config (top-level
+    or nested under text_config), else None. Config-only read — no weights."""
+    from transformers import AutoConfig
+
+    cfg = AutoConfig.from_pretrained(model_id)
+    q = getattr(cfg, "quantization_config", None)
+    if q is None and getattr(cfg, "text_config", None) is not None:
+        q = getattr(cfg.text_config, "quantization_config", None)
+    if q is None:
+        return None
+    return q.get("quant_method") if isinstance(q, dict) else getattr(q, "quant_method", None)
+
+
 def _load_capture_model(model_id: str, device: str, dtype_str: str):
     """HF capture model load. fp32 default per plan §4 P2 (9B fp32 ~36 GB fits
-    one H200); the parity-vs-banked 7B leg passes bfloat16 (banked dtype)."""
+    one H200); the parity-vs-banked 7B leg passes bfloat16 (banked dtype).
+
+    #2588-larger extensions (single-GPU non-quantized behavior unchanged):
+    - multi-GPU: with >1 visible CUDA device the load shards via
+      device_map="auto" (accelerate dispatch); a single device keeps the
+      original {"": 0} pin byte-identical.
+    - FP8 fine-grained checkpoints (quantization_config.quant_method=="fp8"):
+      transformers >= 5.16 loads them natively — NO dtype kwarg is passed (a
+      conflicting dtype would dequantize or error; non-quantized tensors follow
+      the checkpoint's own torch_dtype, bf16). Hook reads stay fp32 downstream
+      (the capture reducers .float() every read).
+    """
     from transformers import AutoModelForCausalLM
 
     dtype = _DTYPES[dtype_str] if device == "cuda" else torch.float32
-    device_map = {"": 0} if device == "cuda" else None
+    if device == "cuda":
+        device_map = "auto" if torch.cuda.device_count() > 1 else {"": 0}
+    else:
+        device_map = None
+    load_kwargs: dict = {"device_map": device_map}
+    quant_method = _quant_method(model_id)
+    if quant_method == "fp8":
+        logger.info("[load] fp8 checkpoint detected (%s): native load, no dtype kwarg", model_id)
+    else:
+        load_kwargs["dtype"] = dtype
     try:
-        hf = AutoModelForCausalLM.from_pretrained(model_id, dtype=dtype, device_map=device_map)
+        hf = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)
     except TypeError:
+        if "dtype" not in load_kwargs:
+            raise
         # transformers 4.57.x repo-env fallback (dtype= landed as the canonical
         # name later; NOT a silent failure — any other exception propagates).
         logger.info("[load] dtype= kwarg rejected; retrying with torch_dtype= (transformers<5)")
-        hf = AutoModelForCausalLM.from_pretrained(
-            model_id, torch_dtype=dtype, device_map=device_map
-        )
+        load_kwargs.pop("dtype")
+        hf = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=dtype, **load_kwargs)
     hf.eval()
     return hf
 
