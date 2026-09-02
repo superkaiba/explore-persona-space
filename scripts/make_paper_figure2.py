@@ -162,10 +162,8 @@ def _plot_controls(ax: plt.Axes, boundary: dict | None, extension: dict | None) 
     if boundary is not None:
         ax.axhline(boundary["r2_mean"], color=BOUNDARY_COLOR, lw=2.4, zorder=2)
         ax.axhline(boundary["retrieval_mean"], color=BOUNDARY_COLOR, lw=2.0, linestyle=dash, zorder=2)
-    if extension is not None:
-        ib = extension["identity_bias"]
-        ax.axhline(ib["r2"], color=COPY_COLOR, lw=2.4, zorder=2)
-        ax.axhline(ib["retrieval"], color=COPY_COLOR, lw=2.0, linestyle=dash, zorder=2)
+    # The copy-context baselines stay in the sidecar metadata but are not drawn
+    # (their R^2 is far below the axis; the text quotes them).
 
 
 def _control_legend_handles(boundary: dict | None, extension: dict | None) -> list[Line2D]:
@@ -173,8 +171,6 @@ def _control_legend_handles(boundary: dict | None, extension: dict | None) -> li
     if boundary is not None:
         handles.append(Line2D([0], [0], color=BOUNDARY_COLOR, lw=2.6,
                               label=f"Boundary token \u2192 next sentence (WikiText, mean of {boundary['n_tokens']} tokens, {boundary['n_train_per_token']:,} pairs)"))
-    if extension is not None:
-        handles.append(Line2D([0], [0], color=COPY_COLOR, lw=2.6, label="Copy context vector + learned bias"))
     return handles
 
 
@@ -310,8 +306,8 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
     controls = boundary is not None or extension is not None
     if controls:
         _plot_controls(ax_scale, boundary, extension)
-        ax_scale.set_ylim(-1.0, 1.0)
-        ax_scale.set_yticks([-1.0, -0.5, 0.0, 0.5, 1.0])
+        ax_scale.set_ylim(0.15, 1.0)
+        ax_scale.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
 
     ax_layer.set_xlim(-0.5, 27.5)
     ax_layer.set_xticks([0, 5, 10, 15, 20, 25, 27])
@@ -379,7 +375,7 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
         fig.text(
             0.075,
             0.995,
-            "CONTROLS",
+            "CONTROL",
             color=MUTED,
             fontsize=11.5,
             fontweight=750,
@@ -529,8 +525,8 @@ def _write_outputs(
                             "path": _display_path(extension_source),
                             "sha256": _sha256(extension_source),
                         },
-                        "encoding": "1,200-context rung joins the predictor curves; gray horizontal "
-                        "lines = copy context vector + learned bias (solid R^2, dashed strict top-1)",
+                        "encoding": "1,200-context rung joins the predictor curves; the copy-context "
+                        "baselines are recorded here but not drawn",
                         **extension,
                     }
                 ),

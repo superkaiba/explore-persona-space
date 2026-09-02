@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/figure2_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
   "git": {
-    "commit": "8276d27a02160831de284a092347b74ef936a7b9",
+    "commit": "b45790a0242be722c369554c71268b87a8cbdc03",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -613,7 +613,7 @@
       "path": "eval_results/issue_1901/figure2_extension_1200.json",
       "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "encoding": "1,200-context rung joins the predictor curves; gray horizontal lines = copy context vector + learned bias (solid R^2, dashed strict top-1)",
+    "encoding": "1,200-context rung joins the predictor curves; the copy-context baselines are recorded here but not drawn",
     "rows": [
       {
         "x": 1200,
@@ -640,8 +640,8 @@
     "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "output_sha256": {
-    "pdf": "74e6bfe0a74ebeabd02f36fec937ecf1273a17a68ad735ab5f613bc95671c408",
-    "png": "381b59cf843bf24d32b0944248dbb1aedb362ce2cdd7d8c0daa8fa87c39333c9",
-    "grayscale": "a273cdcdba7b693481dc4b8c987a0235761c4fa9dd0aef15f340a53d44791364"
+    "pdf": "8d6ff03856465f241103e8ce6ebaa60475c18fbd8751680cb59e2d6a5cb2d6e2",
+    "png": "b568f3cccb0ab802185397cd5bacc7e9ea1106cf0ef06dbfe1b18252e7afe9b8",
+    "grayscale": "319231da1f4fa8d21a19c7fbd002d3300d5cf00e2e547c979a7e1f88eca95d0d"
   }
 }
