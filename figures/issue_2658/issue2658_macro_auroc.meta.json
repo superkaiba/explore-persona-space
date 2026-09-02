@@ -1,0 +1,420 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "d6bc5519bc8345a1",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:16Z",
+  "figsize": [
+    6.5,
+    6.220000000000001
+  ],
+  "points": [
+    {
+      "Macro within-prompt AUROC": 0.9206349206349207,
+      "y": 10.18,
+      "series": "External direction (zero-shot)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro within-prompt AUROC": 0.8291666666666667,
+      "y": 9.18,
+      "series": "External direction (zero-shot)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro within-prompt AUROC": 0.5398809523809524,
+      "y": 7.18,
+      "series": "External direction (zero-shot)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro within-prompt AUROC": 0.46111111111111114,
+      "y": 6.18,
+      "series": "External direction (zero-shot)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro within-prompt AUROC": 0.5734126984126985,
+      "y": 2.18,
+      "series": "External direction (zero-shot)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro within-prompt AUROC": 0.49761904761904757,
+      "y": 1.18,
+      "series": "External direction (zero-shot)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro within-prompt AUROC": 0.8875000000000001,
+      "y": 9.82,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.7426587301587302,
+      "y": 8.82,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.5128968253968254,
+      "y": 6.82,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.4225308641975309,
+      "y": 5.82,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.6597222222222222,
+      "y": 2.82,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.5208333333333334,
+      "y": 1.82,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.5162698412698412,
+      "y": 0.8200000000000001,
+      "series": "Supervised probe",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Macro within-prompt AUROC": 0.9206349206349207,
+      "y": 10.18,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro within-prompt AUROC": 0.8291666666666667,
+      "y": 9.18,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro within-prompt AUROC": 0.5398809523809524,
+      "y": 7.18,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro within-prompt AUROC": 0.46111111111111114,
+      "y": 6.18,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro within-prompt AUROC": 0.5734126984126985,
+      "y": 2.18,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro within-prompt AUROC": 0.49761904761904757,
+      "y": 1.18,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro within-prompt AUROC": 0.8252232142857142,
+      "y": 10.18,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro within-prompt AUROC": 0.6998809523809524,
+      "y": 9.18,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro within-prompt AUROC": 0.3312251984126985,
+      "y": 7.18,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro within-prompt AUROC": 0.24608796296296312,
+      "y": 6.18,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro within-prompt AUROC": 0.433531746031746,
+      "y": 2.18,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro within-prompt AUROC": 0.30541170634920645,
+      "y": 1.18,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro within-prompt AUROC": 0.9910714285714286,
+      "y": 10.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro within-prompt AUROC": 0.9362400793650794,
+      "y": 9.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro within-prompt AUROC": 0.7307242063492063,
+      "y": 7.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro within-prompt AUROC": 0.6760493827160494,
+      "y": 6.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro within-prompt AUROC": 0.7403521825396825,
+      "y": 2.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro within-prompt AUROC": 0.6992410714285715,
+      "y": 1.18,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro within-prompt AUROC": 0.8875000000000001,
+      "y": 9.82,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.7426587301587302,
+      "y": 8.82,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.5128968253968254,
+      "y": 6.82,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.4225308641975309,
+      "y": 5.82,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.6597222222222222,
+      "y": 2.82,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.5208333333333334,
+      "y": 1.82,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.5162698412698412,
+      "y": 0.8200000000000001,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Macro within-prompt AUROC": 0.7942857142857143,
+      "y": 9.82,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.5883630952380953,
+      "y": 8.82,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.36109126984126994,
+      "y": 6.82,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.19307870370370375,
+      "y": 5.82,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.47491071428571435,
+      "y": 2.82,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.34300595238095244,
+      "y": 1.82,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.3386507936507937,
+      "y": 0.8200000000000001,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Macro within-prompt AUROC": 0.9821428571428571,
+      "y": 9.82,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.8764285714285716,
+      "y": 8.82,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.7155456349206348,
+      "y": 6.82,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.6777391975308643,
+      "y": 5.82,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.855625,
+      "y": 2.82,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.6678323412698413,
+      "y": 1.82,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.6747420634920636,
+      "y": 0.8200000000000001,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Macro within-prompt AUROC": 0.5,
+      "y": 0.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Macro within-prompt AUROC": 0.5,
+      "y": 1.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Primary metric with pointwise intervals \u2014 synthetic smoke",
+        "xlabel": "Macro within-prompt AUROC",
+        "legend_labels": [
+          "chance (0.5)",
+          "External direction (zero-shot)",
+          "Supervised probe"
+        ],
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      }
+    ],
+    "series": [
+      "chance (0.5)",
+      "External direction (zero-shot)",
+      "Supervised probe"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

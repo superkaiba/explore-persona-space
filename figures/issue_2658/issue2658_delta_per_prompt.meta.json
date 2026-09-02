@@ -1,0 +1,716 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "d3b08a9eec834df3",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:36Z",
+  "figsize": [
+    6.5,
+    6.220000000000001
+  ],
+  "points": [
+    {
+      "Per-prompt AUROC difference": 0.11111111111111116,
+      "y": 9.93157636810654,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.25,
+      "y": 10.133699243029145,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.927105688980811,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.923359576918982,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 10.037188613174092,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.125,
+      "y": 10.065400347935945,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.98788626960461,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.19999999999999996,
+      "y": 10.01262276172381,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.93385167394075,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.978411093042094,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 10.105778963848136,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.869064153669097,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.943054924548221,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 10.124726781604346,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 8.886857497779083,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.06015362003571,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.25,
+      "y": 9.05922961988422,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.25,
+      "y": 9.132027237880974,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 8.912031764945677,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 8.9514850531517,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 8.957405130224275,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.4,
+      "y": 9.126354918607014,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.20000000000000007,
+      "y": 8.924092612135551,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 8.935136670313156,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.11111111111111116,
+      "y": 9.129265141361545,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.20000000000000007,
+      "y": 8.91981762933598,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.20000000000000007,
+      "y": 9.07149266552496,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 9.005360971842668,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.4,
+      "y": 6.872334195546953,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 6.908568819907219,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.125,
+      "y": 6.871029477032348,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 6.957430213274569,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.2222222222222222,
+      "y": 7.0197366469292435,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 7.105631605413594,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 7.012504723891541,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.1111111111111111,
+      "y": 7.01058250048001,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.1111111111111111,
+      "y": 6.952416907707099,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.125,
+      "y": 7.123465982965645,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.625,
+      "y": 7.046504437717499,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.375,
+      "y": 6.950226835218696,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.25,
+      "y": 6.876886243311666,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 7.014994014963912,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.11111111111111116,
+      "y": 5.868328540272142,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.5555555555555556,
+      "y": 5.960234471253033,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.375,
+      "y": 6.050641846819139,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.4,
+      "y": 6.1132469519225365,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.22222222222222227,
+      "y": 6.012082643198892,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.4,
+      "y": 6.0714896641447265,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.125,
+      "y": 6.053042767362808,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.125,
+      "y": 6.033120882795325,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.5,
+      "y": 5.965274826110379,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.25,
+      "y": 1.8789599551033578,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.25,
+      "y": 1.9646280158635987,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.625,
+      "y": 2.0699820817663466,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 1.9628277715564166,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.1111111111111111,
+      "y": 2.12350112277437,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.1111111111111111,
+      "y": 1.8619637013671757,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.11111111111111116,
+      "y": 1.9041903177879758,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.5,
+      "y": 1.9783151674966577,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.375,
+      "y": 1.9900582221916856,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.125,
+      "y": 1.9402859779822648,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 1.9360978681574876,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.6666666666666667,
+      "y": 1.934506670152393,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 1.8613946192166668,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.11111111111111116,
+      "y": 1.8758324593497266,
+      "label": "not estimable (no direction)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.5,
+      "y": 1.0988229963128062,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.375,
+      "y": 1.085790813376443,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.125,
+      "y": 0.9753537324893621,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.6,
+      "y": 1.0678980444312622,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.375,
+      "y": 0.9509285951780825,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.33333333333333337,
+      "y": 1.1333144806997324,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.375,
+      "y": 1.0592195831699829,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.1111111111111111,
+      "y": 1.0040099758092909,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.125,
+      "y": 0.9048120493070086,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.25,
+      "y": 0.9317450493746833,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 1.0,
+      "y": 1.0838025789198364,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.375,
+      "y": 1.0124798305047782,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": -0.33333333333333326,
+      "y": 0.9386575223609133,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 0.9434282148142661,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 0.0,
+      "series": "no difference",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC difference": 0.0,
+      "y": 1.0,
+      "series": "no difference",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 81,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-prompt paired differences \u2014 synthetic smoke",
+        "xlabel": "Per-prompt AUROC difference",
+        "legend_labels": [
+          "Supervised probe \u2212 external direction",
+          "no difference"
+        ],
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      }
+    ],
+    "series": [
+      "no difference",
+      "Supervised probe \u2212 external direction"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

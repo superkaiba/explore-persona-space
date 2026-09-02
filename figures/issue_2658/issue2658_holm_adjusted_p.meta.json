@@ -1,0 +1,247 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "1b3a6b651d5a4015",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:26Z",
+  "figsize": [
+    10.5,
+    6.32
+  ],
+  "points": [
+    {
+      "Holm-adjusted p": 0.01,
+      "y": 10.0,
+      "label": "not estimable (gate failed)",
+      "series": "significant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Holm-adjusted p": 0.01,
+      "y": 9.0,
+      "label": "not estimable (gate failed)",
+      "series": "significant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 7.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 6.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 2.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 1.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Holm-adjusted p": 0.011,
+      "y": 10.0,
+      "label": "not estimable (gate failed)",
+      "series": "significant",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Holm-adjusted p": 0.02,
+      "y": 9.0,
+      "label": "not estimable (gate failed)",
+      "series": "significant",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 7.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 6.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Holm-adjusted p": 0.16199999999999998,
+      "y": 3.0,
+      "label": "not estimable (gate failed)",
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 2.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 1.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 10.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 9.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 7.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 6.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 2.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Holm-adjusted p": 1.0,
+      "y": 1.0,
+      "series": "not significant",
+      "_kind": "scatter",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 19,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "External direction (zero-shot) \u2014 synthetic smoke",
+        "xlabel": "Holm-adjusted p",
+        "legend_labels": [
+          "significant",
+          "not significant"
+        ],
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      },
+      {
+        "title_left": "Supervised probe",
+        "xlabel": "Holm-adjusted p",
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Supervised probe \u2212 external direction",
+        "xlabel": "Holm-adjusted p",
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ],
+    "series": [
+      "significant",
+      "not significant"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

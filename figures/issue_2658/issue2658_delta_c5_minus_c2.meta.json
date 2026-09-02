@@ -1,0 +1,237 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "73bd38470c28417a",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:33Z",
+  "figsize": [
+    6.5,
+    6.220000000000001
+  ],
+  "points": [
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.03313492063492063,
+      "y": 10.0,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.08650793650793652,
+      "y": 9.0,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.026984126984126982,
+      "y": 7.0,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.038580246913580245,
+      "y": 6.0,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.052579365079365094,
+      "y": 2.0,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": 0.018650793650793647,
+      "y": 1.0,
+      "series": "Supervised probe \u2212 external direction",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.03313492063492063,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.08650793650793652,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.026984126984126982,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.038580246913580245,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.052579365079365094,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": 0.018650793650793647,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": null,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.23179911801430086,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.18919903889961573,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.30441058702760004,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.2733426333751919,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.19797471949539205,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.03313492063492063,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.08650793650793652,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.026984126984126982,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.038580246913580245,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": -0.052579365079365094,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": 0.018650793650793647,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": 0.0,
+      "y": 0.0,
+      "series": "no difference",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Macro AUROC difference (one-sided lower bound)": 0.0,
+      "y": 1.0,
+      "series": "no difference",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Supervised probe minus external direction \u2014 synthetic smoke",
+        "xlabel": "Macro AUROC difference (one-sided lower bound)",
+        "legend_labels": [
+          "no difference",
+          "Supervised probe \u2212 external direction"
+        ],
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "\u22120.35",
+          "\u22120.30",
+          "\u22120.25",
+          "\u22120.20",
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      }
+    ],
+    "series": [
+      "no difference",
+      "Supervised probe \u2212 external direction"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

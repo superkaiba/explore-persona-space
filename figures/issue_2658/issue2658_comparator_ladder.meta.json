@@ -1,0 +1,122 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "d9bf920938654465",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:38Z",
+  "figsize": [
+    6.5,
+    4.859999999999999
+  ],
+  "points": [
+    {
+      "Median test macro AUROC across constructs": 0.5002314814814816,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Median test macro AUROC across constructs": 0.5,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Median test macro AUROC across constructs": 1.0,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Median test macro AUROC across constructs": 1.0,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Median test macro AUROC across constructs": 0.7332341269841269,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Median test macro AUROC across constructs": 0.7332341269841269,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Median test macro AUROC across constructs": 0.6632936507936508,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Median test macro AUROC across constructs": 0.6361111111111111,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Median test macro AUROC across constructs": 0.5,
+      "y": 0.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Median test macro AUROC across constructs": 0.5,
+      "y": 1.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Comparator ladder \u2014 synthetic smoke",
+        "xlabel": "Median test macro AUROC across constructs",
+        "legend_labels": [
+          "chance (0.5)"
+        ],
+        "xticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "Surface features",
+          "Prompt text",
+          "Answer text",
+          "Prompt + answer text",
+          "External direction (zero-shot)",
+          "External direction (calibrated)",
+          "Class-mean direction",
+          "Supervised probe"
+        ]
+      }
+    ],
+    "series": [
+      "chance (0.5)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

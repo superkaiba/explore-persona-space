@@ -1,0 +1,1327 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "0a7ef265fd974ec0",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:19Z",
+  "figsize": [
+    6.5,
+    6.220000000000001
+  ],
+  "points": [
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8888888888888888,
+      "y": 10.10647290001262,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.164744325889052,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 10.098143858195524,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 10.107560665359498,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.208936330982961,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 10.251085653650083,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.108125219642618,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.15653313816425,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.156956072137183,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.067160173836678,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 10.141094017636085,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.09065665806525,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 10.09485809356701,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 10.123996976206008,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 9.219104387807066,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.108267229286321,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 9.149374509947105,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.237070105712222,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.114147760892072,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.193381761924467,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 9.077021654991828,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 9.129114137622821,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 9.065446188653192,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8888888888888888,
+      "y": 9.18553139566006,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 9.237596595409064,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6,
+      "y": 9.196977520112979,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 9.244721217758526,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.152412522407575,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.0,
+      "y": 7.10530006699708,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.125,
+      "y": 7.152146291080642,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 7.200754728883964,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6,
+      "y": 7.150213377751166,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5555555555555556,
+      "y": 7.259841361254417,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 7.105711821140551,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 7.19180985427708,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.3333333333333333,
+      "y": 7.24746724216174,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.3333333333333333,
+      "y": 7.111873694146578,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 7.169531216863365,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 7.221257896012608,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 7.078198987598535,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 7.204925570154037,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 7.098595262267658,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8888888888888888,
+      "y": 6.204665496486392,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 6.140749753529113,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.125,
+      "y": 6.10824215386824,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 6.177398059843145,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.3333333333333333,
+      "y": 6.150856302669297,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.0,
+      "y": 6.215563661031963,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 6.230820042655891,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 6.072262404280437,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 6.240753167908951,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 2.1198512831945027,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 2.2186076815022155,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.375,
+      "y": 2.2296669151691426,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5555555555555556,
+      "y": 2.1503773572716387,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 2.1597805560041907,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.3333333333333333,
+      "y": 2.2374250070731048,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 2.254173349304267,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 2.1284119132367625,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.125,
+      "y": 2.2156688542707337,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.375,
+      "y": 2.2542957719832257,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 2.187633909112328,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 2.2412653185503757,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 2.133496243788544,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 2.155106306450248,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 1.1712921863792307,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 1.239285038433421,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 1.186229705434873,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 1.2498078266179973,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 1.2584200082932766,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 1.0749999627557263,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 1.171701366052524,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.3333333333333333,
+      "y": 1.2227617069070325,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 1.2325133048347308,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 1.2231181795451571,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.0,
+      "y": 1.1346040308850915,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 1.142846582818897,
+      "label": "not estimable (gate failed)",
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8888888888888888,
+      "y": 1.2410640659965573,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 1.1336270769269303,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.914294837043059,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 9.746152829082382,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 9.80151429943154,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 9.876791603315157,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.92007309621026,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 9.751157088667746,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.811560431884011,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 9.78847696417165,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.913642592377576,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.837646813627117,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 9.836686742363927,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.888982671400356,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 9.82294539664952,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 9.846040575053804,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 8.874697892942896,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 8.792084802761732,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 8.852194066228735,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 8.741202177173744,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 8.866245080860596,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 8.847233524554143,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 8.880896037367524,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 8.850899472983292,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6,
+      "y": 8.889224979178364,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8888888888888888,
+      "y": 8.752223790942315,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 8.903274699934206,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 8.902955359268674,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6,
+      "y": 8.763997789199074,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 8.829958248621992,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 6.864181246757673,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.125,
+      "y": 6.8037967021354,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 6.826627424341854,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6,
+      "y": 6.8818027773107024,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 6.840469294829739,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 6.9072946897687295,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 6.822304312358959,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 6.839016043108755,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.2222222222222222,
+      "y": 6.795016228733752,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 6.741274308603734,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.125,
+      "y": 6.925684916504895,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 6.896289323270652,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 6.8816076496089575,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 6.9230059034527365,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 5.794589404480386,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.2222222222222222,
+      "y": 5.909157658050825,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 5.887047773803545,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.0,
+      "y": 5.744772127813739,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5555555555555556,
+      "y": 5.925972500613918,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 5.8754485694173315,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 5.754576387955317,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.375,
+      "y": 5.7669602342105915,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 5.869041827081731,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 2.825276624872333,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 2.8106125743687187,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 2.928544655383405,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 2.825258956019163,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 2.857171308348493,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 2.8678452106141705,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 2.7666667386866597,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 2.8977224125625707,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.2,
+      "y": 2.8215974031470927,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 2.889646991207649,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.0,
+      "y": 2.861838662942016,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 2.7711278061235656,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 2.7534600141373424,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.75,
+      "y": 2.932898333985579,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.875,
+      "y": 1.8413565901005675,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 1.8568223827907744,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 1.8228010320073003,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5555555555555556,
+      "y": 1.8149218967361185,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.3333333333333333,
+      "y": 1.9186156861565566,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.2222222222222222,
+      "y": 1.8999764725133832,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 1.7532651908820336,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 1.922680408984554,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 1.827113989316192,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 1.8720609808729953,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 1.8881670312071142,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.1111111111111111,
+      "y": 1.885443356619033,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 1.910786465743575,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.6666666666666666,
+      "y": 1.909279595162247,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.125,
+      "y": 0.888088399355593,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 0.8654698260275417,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 0.814136255312114,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4,
+      "y": 0.7836932762190479,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.25,
+      "y": 0.9180464123557531,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.7777777777777778,
+      "y": 0.8519809648087381,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 0.7563842825631575,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.4444444444444444,
+      "y": 0.7719153409366093,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.375,
+      "y": 0.8112411647123688,
+      "label": "not estimable (gate failed)",
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 0.7417770092491329,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 1.0,
+      "y": 0.8288301435134964,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.625,
+      "y": 0.8884262482290639,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5555555555555556,
+      "y": 0.8967662129567846,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.8,
+      "y": 0.776635886380812,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 0.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Per-prompt AUROC (discordant prompts)": 0.5,
+      "y": 1.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 174,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-prompt AUROC behind each macro \u2014 synthetic smoke",
+        "xlabel": "Per-prompt AUROC (discordant prompts)",
+        "legend_labels": [
+          "External direction (zero-shot)",
+          "Supervised probe",
+          "chance (0.5)"
+        ],
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      }
+    ],
+    "series": [
+      "chance (0.5)",
+      "External direction (zero-shot)",
+      "Supervised probe"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,699 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "b09df30c1d394e87",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:41Z",
+  "figsize": [
+    7.5,
+    6.960000000000001
+  ],
+  "points": [
+    {
+      "Test macro AUROC": 0.5174603174603175,
+      "y": 10.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.5077380952380952,
+      "y": 9.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.3902777777777778,
+      "y": 8.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.41309523809523807,
+      "y": 7.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.5002314814814816,
+      "y": 6.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.5185897435897435,
+      "y": 5.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.49603174603174605,
+      "y": 4.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.34325396825396826,
+      "y": 3.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.505952380952381,
+      "y": 2.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.44642857142857145,
+      "y": 1.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.6759259259259259,
+      "y": 0.0,
+      "series": "Surface features",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 10.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 9.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 8.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 7.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 6.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 5.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 4.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 3.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 2.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 1.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 0.0,
+      "series": "Prompt text",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 10.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 9.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 8.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 7.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 6.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 5.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 4.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 3.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 2.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 1.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 0.0,
+      "series": "Answer text",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 10.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 9.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 8.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 7.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 6.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 5.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 4.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 3.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 2.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 1.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 1.0,
+      "y": 0.0,
+      "series": "Prompt + answer text",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Test macro AUROC": 0.9206349206349207,
+      "y": 10.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.8291666666666667,
+      "y": 9.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.702579365079365,
+      "y": 8.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.5398809523809524,
+      "y": 7.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.5270833333333333,
+      "y": 6.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.882051282051282,
+      "y": 5.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.7946428571428573,
+      "y": 4.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.5734126984126985,
+      "y": 2.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.49761904761904757,
+      "y": 1.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.7638888888888888,
+      "y": 0.0,
+      "series": "External direction (zero-shot)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Test macro AUROC": 0.9206349206349207,
+      "y": 10.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.8291666666666667,
+      "y": 9.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.702579365079365,
+      "y": 8.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.5398809523809524,
+      "y": 7.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.5270833333333333,
+      "y": 6.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.882051282051282,
+      "y": 5.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.7946428571428573,
+      "y": 4.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.5734126984126985,
+      "y": 2.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.5023809523809524,
+      "y": 1.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.7638888888888888,
+      "y": 0.0,
+      "series": "External direction (calibrated)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Test macro AUROC": 0.8706349206349208,
+      "y": 10.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.7426587301587302,
+      "y": 9.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.6876984126984126,
+      "y": 8.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.5228174603174603,
+      "y": 7.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.4627314814814815,
+      "y": 6.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.8670940170940172,
+      "y": 5.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.7678571428571429,
+      "y": 4.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.6632936507936508,
+      "y": 3.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.5208333333333334,
+      "y": 2.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.5162698412698413,
+      "y": 1.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.5925925925925926,
+      "y": 0.0,
+      "series": "Class-mean direction",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Test macro AUROC": 0.8875000000000001,
+      "y": 10.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.7426587301587302,
+      "y": 9.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.6361111111111111,
+      "y": 8.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.5128968253968254,
+      "y": 7.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.4627314814814815,
+      "y": 6.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.9102564102564104,
+      "y": 5.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.7642857142857143,
+      "y": 4.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.6597222222222222,
+      "y": 3.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.5208333333333334,
+      "y": 2.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.5162698412698412,
+      "y": 1.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.47222222222222215,
+      "y": 0.0,
+      "series": "Supervised probe",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 0.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Test macro AUROC": 0.5,
+      "y": 1.0,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 88,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Comparator ladder by construct \u2014 synthetic smoke",
+        "xlabel": "Test macro AUROC",
+        "legend_labels": [
+          "Surface features",
+          "Prompt text",
+          "Answer text",
+          "Prompt + answer text",
+          "External direction (zero-shot)",
+          "External direction (calibrated)",
+          "Class-mean direction",
+          "Supervised probe",
+          "chance (0.5)"
+        ],
+        "annotations": [
+          "not estimable (no direction)"
+        ],
+        "xticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      }
+    ],
+    "series": [
+      "chance (0.5)",
+      "Surface features",
+      "Prompt text",
+      "Answer text",
+      "Prompt + answer text",
+      "External direction (zero-shot)",
+      "External direction (calibrated)",
+      "Class-mean direction",
+      "Supervised probe"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

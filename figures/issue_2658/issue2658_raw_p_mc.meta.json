@@ -1,0 +1,559 @@
+{
+  "commit": "290d41b8+dirty",
+  "render_id": "2c8198f0a8594ea1",
+  "git_commit": "290d41b8bf09930716e70ef3c8e055048ecc265e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2658_figures.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2658_figures.py",
+  "created": "2026-09-02T19:16:31Z",
+  "figsize": [
+    10.5,
+    6.32
+  ],
+  "points": [
+    {
+      "permutation p (Monte Carlo interval)": 0.001,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.001,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.311,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.634,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.146,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.499,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.001,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.001,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.311,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.634,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.146,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.499,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.0,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.0,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.2730940207918455,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.5932960650710435,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.1176929843160255,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.45733772996237504,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.005289581620538709,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.005289581620538709,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.34936168346727703,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.6726793061809255,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.17604871903308275,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.5396737738977572,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.001,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.002,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.462,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.799,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.018,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.379,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.428,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.001,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.002,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.462,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.799,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.018,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.379,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.428,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.0,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 5.017546794997257e-06,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.42060019211146626,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.7642250201956408,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.008291151923157618,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.33901712594844924,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.38703971516149877,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.005289581620538709,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.007413676794532926,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.5026950915191529,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.8304742714106865,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.030608790126153494,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.4189152729570545,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "permutation p (Monte Carlo interval)": 0.4685164256816939,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.8536585365853658,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.926829268292683,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9024390243902439,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.7560975609756098,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.8292682926829268,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.36585365853658536,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.8536585365853658,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.926829268292683,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9024390243902439,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.7560975609756098,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.8292682926829268,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.36585365853658536,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.6537208144053834,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.7516277252305048,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.7173891795421712,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.5387850037217279,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.6236769434096046,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.1713317116823369,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9597943055034134,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9913722111582772,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9826834156014023,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9001763532099261,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.9463294830644386,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "bootstrap p (Monte Carlo interval)": 0.5650813573661422,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 76,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "External direction (zero-shot) \u2014 synthetic smoke",
+        "xlabel": "permutation p (Monte Carlo interval)",
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$"
+        ],
+        "yticklabels": [
+          "Malicious intent",
+          "Sycophancy",
+          "Hallucination",
+          "Refusal",
+          "Assistant behavior",
+          "Casual register",
+          "Impoliteness",
+          "Harmful compliance",
+          "Math correctness",
+          "MMLU-Pro correctness",
+          "Code correctness"
+        ]
+      },
+      {
+        "title_left": "Supervised probe",
+        "xlabel": "permutation p (Monte Carlo interval)",
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-7}}$",
+          "$\\mathdefault{10^{-6}}$",
+          "$\\mathdefault{10^{-5}}$",
+          "$\\mathdefault{10^{-4}}$",
+          "$\\mathdefault{10^{-3}}$",
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      },
+      {
+        "title_left": "Supervised probe \u2212 external direction",
+        "xlabel": "bootstrap p (Monte Carlo interval)",
+        "annotations": [
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (gate failed)",
+          "not estimable (no direction)",
+          "not estimable (gate failed)"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{-2}}$",
+          "$\\mathdefault{10^{-1}}$",
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
