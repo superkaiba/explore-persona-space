@@ -125,5 +125,6 @@
 - [Verdict-assembly status-only source key](verdict_assembly_status_only_source_key.md)
 - [Selection-symmetric band review recipe](selection_symmetric_band_review_recipe.md)
 - [LOO Gram-bootstrap naive probe](loo_gram_bootstrap_naive_probe.md) — machine-verify batched LOO bootstrap algebra vs a naive loop; cache ordering + filtered-input parity
+- [Preregistered-inference review recipe](preregistered_inference_review_recipe.md) — exact-rng naive replay, budget invariance, chunk-plan alignment for extension reuse, bootstrap-t conventions, smoke-only estimable path
 - [Superfamily split-freeze review recipe](superfamily_split_freeze_review_recipe.md) — edge×node reachability matrix (inert exclusion), tautological partition guards, blocking-flag probe, fail-open traced to downstream gate
 - [Launch-gate artifact scope + freshness](launch_gate_artifact_scope_and_freshness.md) — feed gates a subset-scoped artifact; grep fingerprint fields for a comparing consumer
