@@ -5,6 +5,7 @@ tags:
 - figure-3
 - semantic-validation
 - issue-779
+- trigger-dense
 created_at: '2026-09-02T01:32:57Z'
 has_clean_result: false
 parent_id: 779
