@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2659,
+  "highest_id": 2660,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12794,12 +12794,27 @@
       "status": "running",
       "title": "Unified standalone real-answer validation for all Figure-3 directions"
     },
+    "2659": {
+      "goal": "Extend the #2588 capability panel beyond Qwen3.8-27B with five larger open-weight checkpoints (Qwen3.8-Flash-Next, DeepSeek V4 Flash, Qwen3.5-397B, GLM-5.3, DeepSeek V4 Pro) under the unchanged pipeline, so the rank-fraction and mapping-quality vs Artificial Analysis capability plots gain points at AA 53-60.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/2659",
+      "status": "approved",
+      "title": "Mapping rank fraction vs capability: extend the #2588 panel to five larger open models (charmander)"
+    },
     "266": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/on_hold/266",
       "status": "on_hold",
       "title": "Think to come up with unified model of generalization"
+    },
+    "2660": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2660",
+      "status": "proposed",
+      "title": "earlyoom -s 10 swap trigger permanently satisfied: SIGTERMs fleet python subprocesses despite 55 GB free RAM"
     },
     "267": {
       "has_clean_result": true,
@@ -18437,14 +18452,6 @@
       "path": "tasks/completed/999",
       "status": "completed",
       "title": "daily-fix: fix session_progress_report write_self_report crash"
-    },
-    "2659": {
-      "goal": "Extend the #2588 capability panel beyond Qwen3.8-27B with five larger open-weight checkpoints (Qwen3.8-Flash-Next, DeepSeek V4 Flash, Qwen3.5-397B, GLM-5.3, DeepSeek V4 Pro) under the unchanged pipeline, so the rank-fraction and mapping-quality vs Artificial Analysis capability plots gain points at AA 53-60.",
-      "has_clean_result": false,
-      "kind": "experiment",
-      "path": "tasks/approved/2659",
-      "status": "approved",
-      "title": "Mapping rank fraction vs capability: extend the #2588 panel to five larger open models (charmander)"
     }
   }
 }
