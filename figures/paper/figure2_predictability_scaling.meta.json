@@ -8,7 +8,7 @@
   "repository_manuscript_asset": "figures/paper/figure2_predictability_scaling.pdf",
   "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
   "git": {
-    "commit": "9e19a47d4eb780a33119042433471e5036718985",
+    "commit": "8276d27a02160831de284a092347b74ef936a7b9",
     "tracked_worktree_dirty": true
   },
   "sources": {
@@ -431,6 +431,19 @@
   "scaling": {
     "rows": [
       {
+        "x": 1200,
+        "arms": {
+          "ridge": {
+            "r2": 0.7001223865964977,
+            "retrieval": 0.7498230714791223
+          },
+          "mlp_w8192": {
+            "r2": 0.6621053982064322,
+            "retrieval": 0.5360934182590233
+          }
+        }
+      },
+      {
         "x": 5000,
         "arms": {
           "ridge": {
@@ -558,52 +571,34 @@
       "path": "eval_results/issue_1901/boundary_points_fig2.json",
       "sha256": "8919b7f4d7297ef4c884cf5e708ca7fd6500632fede0afec3f67b99c617412d2"
     },
-    "encoding": "burnt-umber markers on panel B at x = training pairs; filled = R^2, open = strict top-1; square = chat map under the same protocol",
-    "points": [
-      {
-        "token_id": "13",
-        "label": ". (period)",
-        "marker": "P",
-        "x": 1200,
-        "r2": 0.2890773553426029,
-        "retrieval": 0.7625,
-        "n_pool": 400
-      },
-      {
-        "token_id": "659",
-        "label": "\u2423. (space + period)",
-        "marker": "X",
-        "x": 1200,
+    "encoding": "burnt-umber horizontal lines on panel B: solid = mean R^2, dashed = mean strict top-1 over the four exact-token maps",
+    "n_tokens": 4,
+    "tokens": {
+      "659": {
+        "label": "space + period",
         "r2": 0.2967163144586531,
-        "retrieval": 0.865,
-        "n_pool": 400
+        "retrieval": 0.865
       },
-      {
-        "token_id": "753",
-        "label": "\u2423! (space + !)",
-        "marker": "*",
-        "x": 1200,
-        "r2": 0.26609196841124216,
-        "retrieval": 0.625,
-        "n_pool": 400
+      "13": {
+        "label": "period",
+        "r2": 0.2890773553426029,
+        "retrieval": 0.7625
       },
-      {
-        "token_id": "937",
-        "label": "\u2423? (space + ?)",
-        "marker": "d",
-        "x": 1200,
+      "937": {
+        "label": "space + question",
         "r2": 0.24075864873147923,
-        "retrieval": 0.645,
-        "n_pool": 400
+        "retrieval": 0.645
+      },
+      "753": {
+        "label": "space + exclamation",
+        "r2": 0.26609196841124216,
+        "retrieval": 0.625
       }
-    ],
-    "chat_reference": {
-      "x": 1200,
-      "r2": 0.710012283021935,
-      "retrieval": 0.9094513291952634,
-      "n_pool": 400,
-      "draws": 3
     },
+    "r2_mean": 0.27316107173599435,
+    "retrieval_mean": 0.724375,
+    "n_train_per_token": 1200,
+    "n_pool": 400,
     "span": "anchor+1 .. next sentence-final punctuation token (exclusive); 8-256 tokens kept",
     "retrieval": {
       "metric": "whitened cosine + two-sided CSLS",
@@ -611,12 +606,42 @@
       "whitening": "fit on the arm's 1,200 training spans, diagonal-target shrinkage lambda=0.1",
       "rank": "strict top-k; mid-rank ties and top ties fail top-1",
       "pool": "the arm's 400 held-out spans"
+    }
+  },
+  "extension": {
+    "source": {
+      "path": "eval_results/issue_1901/figure2_extension_1200.json",
+      "sha256": "8059ce3af58a576f08fd1bd93392e51bf6f8515964cbf2dd90b68c2a5e6a0a3e"
     },
-    "layer": 19
+    "encoding": "1,200-context rung joins the predictor curves; gray horizontal lines = copy context vector + learned bias (solid R^2, dashed strict top-1)",
+    "rows": [
+      {
+        "x": 1200,
+        "arms": {
+          "ridge": {
+            "r2": 0.7001223865964977,
+            "retrieval": 0.7498230714791223
+          },
+          "mlp_w8192": {
+            "r2": 0.6621053982064322,
+            "retrieval": 0.5360934182590233
+          }
+        }
+      }
+    ],
+    "identity_bias": {
+      "r2": -0.9200245082624223,
+      "retrieval": 0.7133757961783439
+    },
+    "identity_copy": {
+      "r2": -2.69937843767959,
+      "retrieval": 0.6624203821656051
+    },
+    "convention": "identical to figure2_five_rollout_scaling: five-rollout mean targets, whitened cosine + two-sided CSLS (K=10), 942-answer pool, banked 963,444-row whitening"
   },
   "output_sha256": {
-    "pdf": "4417a9f4f93b611dade37fe9d6a6e53114b2a1f8815d9c5e8975902dcfeb06a4",
-    "png": "068c2140e4c71e146d45ad74a95d4cbdea62780ca7887154369de4c72b62e160",
-    "grayscale": "2bde2d7f22608dc009025451cbd57eca17ad761f7161b63212b7e078f311e644"
+    "pdf": "74e6bfe0a74ebeabd02f36fec937ecf1273a17a68ad735ab5f613bc95671c408",
+    "png": "381b59cf843bf24d32b0944248dbb1aedb362ce2cdd7d8c0daa8fa87c39333c9",
+    "grayscale": "a273cdcdba7b693481dc4b8c987a0235761c4fa9dd0aef15f340a53d44791364"
   }
 }
