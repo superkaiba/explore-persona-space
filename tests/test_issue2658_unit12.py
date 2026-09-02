@@ -490,3 +490,86 @@ def test_inverted_ci_is_clamped_not_crashing(mini, tmp_path):
     test["one_sided_lower_bound"] = float(test["delta_hat"]) + 0.05  # inverted
     fig, _ = FIG.fig_delta(rep2, synthetic=True)
     fig.savefig(tmp_path / "clamped_delta.png")
+
+
+# ---------------------------------------------------------------------------
+# The demo builder's call sites stay bound to unit 11's CURRENT signatures.
+#
+# Why this test exists: the group-J fix round added two REQUIRED parameters to
+# unit 11 (RowInputs.label_exclusions and run_inference's keyword-only
+# `reliability`). build_demo_inputs kept calling the old signatures, so the
+# demo phase would TypeError on its first line of real work — and NOTHING
+# caught it, because no test exercised build_demo_inputs at all. Running the
+# full demo here is far too slow, so this pins the CALL SITES structurally
+# instead: every required field / keyword-only parameter without a default
+# must be supplied at the demo's call site. Any future required-parameter
+# addition to unit 11 fails HERE instead of at demo runtime.
+# ---------------------------------------------------------------------------
+def test_demo_builder_call_sites_bind_current_inference_signatures():
+    import ast
+    import dataclasses
+    import inspect
+
+    src = Path(FIG.__file__).read_text(encoding="utf-8")
+    fn = next(
+        node
+        for node in ast.walk(ast.parse(src))
+        if isinstance(node, ast.FunctionDef) and node.name == "build_demo_inputs"
+    )
+
+    def kwargs_at(attr: str) -> set[str]:
+        for node in ast.walk(fn):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == attr
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "INF"
+            ):
+                return {kw.arg for kw in node.keywords if kw.arg is not None}
+        raise AssertionError(f"build_demo_inputs has no INF.{attr}(...) call")
+
+    # Every RowInputs dataclass field WITHOUT a default is required.
+    required_fields = {
+        f.name
+        for f in dataclasses.fields(INF.RowInputs)
+        if f.default is dataclasses.MISSING and f.default_factory is dataclasses.MISSING
+    }
+    passed = kwargs_at("RowInputs")
+    assert required_fields <= passed, (
+        f"build_demo_inputs omits required RowInputs field(s): {sorted(required_fields - passed)}"
+    )
+    assert "label_exclusions" in required_fields  # the field that broke; guard the guard
+
+    # Every keyword-only run_inference parameter without a default is required.
+    sig = inspect.signature(INF.run_inference)
+    required_kwonly = {
+        name
+        for name, p in sig.parameters.items()
+        if p.kind is inspect.Parameter.KEYWORD_ONLY and p.default is inspect.Parameter.empty
+    }
+    passed = kwargs_at("run_inference")
+    assert required_kwonly <= passed, (
+        f"build_demo_inputs omits required run_inference kwarg(s): "
+        f"{sorted(required_kwonly - passed)}"
+    )
+    assert "reliability" in required_kwonly  # the kwarg that broke; guard the guard
+
+
+def test_demo_registry_scales_the_realized_per_cell_floor():
+    """The demo's synthesized rows carry single-digit prompts per cell, so the
+    PRODUCTION per-cell floor (15) would exclude EVERY demo cell and render
+    every demo row not-estimable — the figures would demonstrate nothing. The
+    demo registry must scale that floor like it scales every other floor, and
+    must NOT scale it to a vacuous 0/1."""
+    kwargs = FIG.DEMO_REGISTRY_KWARGS
+    assert "min_discordant_prompts_per_cell" in kwargs, (
+        "DEMO_REGISTRY_KWARGS does not scale min_discordant_prompts_per_cell; the "
+        "production default would exclude every demo cell"
+    )
+    demo_floor = int(kwargs["min_discordant_prompts_per_cell"])
+    prod_floor = int(INF.InferenceRegistry().min_discordant_prompts_per_cell)
+    assert 1 < demo_floor < prod_floor, (
+        f"demo per-cell floor {demo_floor} must be scaled below the production "
+        f"{prod_floor} but stay above the vacuous 1"
+    )

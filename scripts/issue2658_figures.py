@@ -804,6 +804,13 @@ DEMO_REGISTRY_KWARGS: dict[str, Any] = {
     "min_discordant_prompts": 8,
     "min_answers_per_class": 16,
     "min_prompts_per_class": 4,
+    # Realized per-cell floor, scaled to the synthetic demo like every other
+    # floor above. The PRODUCTION value is 15; the demo's synthesized rows carry
+    # 5-10 prompts per cell (2 on the gate-fail row), so the production floor
+    # would exclude EVERY demo cell and render every demo row not-estimable —
+    # the figures would then demonstrate nothing. 2 keeps the gate non-vacuous
+    # at roughly the same ratio as min_discordant_prompts (8 vs 100).
+    "min_discordant_prompts_per_cell": 2,
 }
 
 # Per-row synthetic effect sizes: a spread so the demo shows significant AND
@@ -896,14 +903,34 @@ def build_demo_inputs(
             rowdata=rd,
             selected_c=float(c5_rec["selected_c"]),
             scores_sha={c: records[(row, c)]["scores_sha256"] for c in comps},
+            # Synthetic rows have no label pipeline, so there are no non-scored
+            # final-label records to exclude. Explicit empty per-split dicts —
+            # the complete-labels gate REQUIRES the field, and a demo that
+            # omitted it would be asserting completeness it never measured.
+            label_exclusions={"dev": {}, "test": {}},
         )
         print(f"[u12-demo] row={row} ladder+panel done", flush=True)
 
+    # Synthetic PASS reliability verdict. The production path REQUIRES the frozen
+    # test-bank blinded-audit artifact and returns not-estimable without it
+    # (INF.load_test_label_reliability); synthesized demo rows have no such bank,
+    # so the demo supplies an explicitly SYNTHETIC verdict rather than reading a
+    # real one. The artifact string says so on its face, so a demo report can
+    # never be mistaken for a gated production report.
+    demo_reliability = {
+        "artifact": "synthetic-demo verdict — NOT a real test-bank audit",
+        "bank": "test",
+        "status": PW.GATE_PASS,
+        "per_trait": {
+            row: {"status": PW.GATE_PASS, "detail": "synthetic demo row"} for row in rows_input
+        },
+    }
     report = INF.run_inference(
         rows_input,
         partition,
         reg,
         out_root,
+        reliability=demo_reliability,
         family_sizes_expected=dict(committed_sizes),
     )
     points = build_points(rows_input, report)
