@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the manuscript's Figure 2 from checked-in evaluation summaries.
+"""Render the manuscript's predictability-and-scaling figure (paper Figure 3).
 
 The figure combines the single-turn, five-rollout layer and data-scaling
 evaluations with pooled R^2 and whitened-cosine + CSLS top-1 retrieval.
@@ -33,10 +33,15 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from explore_persona_space.analysis.c2a_plot_style import (  # noqa: E402
     INK,
-    MUTED,
+    METRIC_LABELS,
     PAPER,
     PREDICTOR_STYLES,
+    ROLES,
     STYLE_VERSION,
+    better_label,
+    c2a_figure,
+    legend_kicker,
+    panel_header,
     save_c2a_figure,
     set_c2a_style,
     style_score_axis,
@@ -47,7 +52,7 @@ DEFAULT_LAYER_SOURCE = ROOT / "eval_results/issue_1901/avgtarget_plots/plot1_avg
 DEFAULT_SCALING_SOURCE = ROOT / "eval_results/issue_1901/figure2_five_rollout_scaling.json"
 DEFAULT_BOUNDARY_SOURCE = ROOT / "eval_results/issue_1901/boundary_points_fig2.json"
 DEFAULT_OUT = ROOT / "figures/paper"
-DEFAULT_STEM = "figure2_predictability_scaling"
+DEFAULT_STEM = "c1_predictability_scaling"
 
 
 SCALING_KEYS = {
@@ -114,8 +119,8 @@ def _load_scaling_data(path: Path, extension: dict | None = None) -> dict:
     }
 
 
-BOUNDARY_COLOR = "#8C4A1F"  # burnt umber: the WikiText boundary-token control
-COPY_COLOR = "#687078"  # muted gray: copy the context vector (+ learned bias)
+# The boundary-token control is a null, so it takes the paper-wide control role.
+BOUNDARY_COLOR = ROLES["control"].color
 DEFAULT_EXTENSION_SOURCE = ROOT / "eval_results/issue_1901/figure2_extension_1200.json"
 
 
@@ -127,8 +132,14 @@ def _load_boundary_data(path: Path) -> dict:
     top1 = [float(t["retrieval"]["whiten_csls"]["top1"]) for t in toks.values()]
     return {
         "n_tokens": len(toks),
-        "tokens": {tid: {"label": t["label"], "r2": float(t["r2"]),
-                         "retrieval": float(t["retrieval"]["whiten_csls"]["top1"])} for tid, t in toks.items()},
+        "tokens": {
+            tid: {
+                "label": t["label"],
+                "r2": float(t["r2"]),
+                "retrieval": float(t["retrieval"]["whiten_csls"]["top1"]),
+            }
+            for tid, t in toks.items()
+        },
         "r2_mean": float(np.mean(r2)),
         "retrieval_mean": float(np.mean(top1)),
         "n_train_per_token": int(next(iter(toks.values()))["n_train"]),
@@ -143,15 +154,19 @@ def _load_extension_data(path: Path) -> dict:
     source = json.loads(path.read_text())
     rows = []
     for n_text, cell in source["per_n"].items():
-        arms = {plot_key: {"r2": float(cell[src_key]["r2"]), "retrieval": float(cell[src_key]["top1"])}
-                for plot_key, src_key in SCALING_KEYS.items()}
+        arms = {
+            plot_key: {"r2": float(cell[src_key]["r2"]), "retrieval": float(cell[src_key]["top1"])}
+            for plot_key, src_key in SCALING_KEYS.items()
+        }
         rows.append({"x": int(n_text), "arms": arms})
     ib = source["baselines"]["identity_bias"]
     return {
         "rows": rows,
         "identity_bias": {"r2": float(ib["r2"]), "retrieval": float(ib["top1"])},
-        "identity_copy": {"r2": float(source["baselines"]["identity_copy"]["r2"]),
-                          "retrieval": float(source["baselines"]["identity_copy"]["top1"])},
+        "identity_copy": {
+            "r2": float(source["baselines"]["identity_copy"]["r2"]),
+            "retrieval": float(source["baselines"]["identity_copy"]["top1"]),
+        },
         "convention": source["convention"],
     }
 
@@ -169,8 +184,15 @@ def _plot_controls(ax: plt.Axes, boundary: dict | None, extension: dict | None) 
 def _control_legend_handles(boundary: dict | None, extension: dict | None) -> list[Line2D]:
     handles = []
     if boundary is not None:
-        handles.append(Line2D([0], [0], color=BOUNDARY_COLOR, lw=2.6,
-                              label=f"Boundary token \u2192 next sentence, $R^2$ (WikiText, mean of {boundary['n_tokens']} tokens, {boundary['n_train_per_token']:,} pairs)"))
+        handles.append(
+            Line2D(
+                [0],
+                [0],
+                color=BOUNDARY_COLOR,
+                lw=2.6,
+                label=f"Boundary token \u2192 next sentence, $R^2$ (WikiText, mean of {boundary['n_tokens']} tokens, {boundary['n_train_per_token']:,} pairs)",
+            )
+        )
     return handles
 
 
@@ -185,24 +207,13 @@ def _plot_panel(
     ax: plt.Axes,
     rows: list[dict],
     *,
+    letter: str,
     title: str,
     kicker: str,
     show_retrieval: bool,
 ) -> None:
     style_score_axis(ax)
-    ax.set_title(title, loc="left", y=1.055, pad=0, fontweight=650)
-    ax.text(
-        0.0,
-        1.17,
-        kicker.upper(),
-        transform=ax.transAxes,
-        fontsize=13,
-        fontweight=700,
-        color=MUTED,
-        va="bottom",
-        ha="left",
-        linespacing=1.0,
-    )
+    panel_header(ax, letter, kicker, title, kicker_y=1.17)
 
     for key, style in PREDICTOR_STYLES.items():
         x, r2 = _series(rows, key, "r2")
@@ -258,7 +269,7 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
         for style in PREDICTOR_STYLES.values()
     ]
     metrics = [
-        Line2D([0], [0], color=INK, marker="o", lw=3, label="$R^2$"),
+        Line2D([0], [0], color=INK, marker="o", lw=3, label=METRIC_LABELS["r2"]),
         Line2D(
             [0],
             [0],
@@ -268,15 +279,17 @@ def _legend_handles() -> tuple[list[Line2D], list[Line2D]]:
             markeredgewidth=1.7,
             lw=2.4,
             linestyle=(0, (5.0, 3.8)),
-            label="Top-1 retrieval",
+            label=METRIC_LABELS["top1"],
         ),
     ]
     return predictors, metrics
 
 
-def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extension: dict | None = None) -> plt.Figure:
+def make_figure(
+    layer: dict, scaling: dict, boundary: dict | None = None, extension: dict | None = None
+) -> tuple[plt.Figure, float]:
     set_c2a_style()
-    fig = plt.figure(figsize=(14.4, 6.2), constrained_layout=False)
+    fig, include_frac = c2a_figure("full", aspect=0.43)
     grid = fig.add_gridspec(
         1,
         2,
@@ -292,15 +305,17 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
     _plot_panel(
         ax_layer,
         layer["rows"],
+        letter="A",
         title="Predictability across layers",
-        kicker=f"A  ·  {layer['n_train']:,} training contexts",
+        kicker=f"{layer['n_train']:,} training contexts",
         show_retrieval=False,
     )
     _plot_panel(
         ax_scale,
         scaling["rows"],
+        letter="B",
         title="Scaling with training data",
-        kicker=f"B  ·  layer {scaling['layer']}",
+        kicker=f"layer {scaling['layer']}",
         show_retrieval=True,
     )
     controls = boundary is not None or extension is not None
@@ -324,21 +339,12 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
     ax_scale.minorticks_off()
     ax_scale.set_xlabel("Training contexts", labelpad=12)
 
-    ax_layer.set_ylabel("Score  ↑", labelpad=13)
-    ax_scale.set_ylabel("Score  ↑", labelpad=13)
+    ax_layer.set_ylabel(better_label(METRIC_LABELS["r2"]), labelpad=13)
+    ax_scale.set_ylabel(better_label("Score"), labelpad=13)
 
     predictor_handles, metric_handles = _legend_handles()
     row_y = 0.946 if not controls else 0.875
-    fig.text(
-        0.075,
-        row_y,
-        "PREDICTOR",
-        color=MUTED,
-        fontsize=11.5,
-        fontweight=750,
-        ha="left",
-        va="center",
-    )
+    legend_kicker(fig, 0.075, row_y, "Predictor")
     fig.legend(
         handles=predictor_handles,
         loc="upper left",
@@ -350,20 +356,11 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
         handletextpad=0.65,
         borderaxespad=0,
     )
-    fig.text(
-        0.675,
-        row_y,
-        "METRIC",
-        color=MUTED,
-        fontsize=11.5,
-        fontweight=750,
-        ha="left",
-        va="center",
-    )
+    legend_kicker(fig, 0.572, row_y, "Metric")
     fig.legend(
         handles=metric_handles,
         loc="upper left",
-        bbox_to_anchor=(0.674, row_y - 0.021),
+        bbox_to_anchor=(0.571, row_y - 0.021),
         ncol=2,
         frameon=False,
         columnspacing=1.35,
@@ -372,16 +369,7 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
         borderaxespad=0,
     )
     if controls:
-        fig.text(
-            0.075,
-            0.995,
-            "CONTROL",
-            color=MUTED,
-            fontsize=11.5,
-            fontweight=750,
-            ha="left",
-            va="center",
-        )
+        legend_kicker(fig, 0.075, 0.995, "Control")
         fig.legend(
             handles=_control_legend_handles(boundary, extension),
             loc="upper left",
@@ -393,7 +381,7 @@ def make_figure(layer: dict, scaling: dict, boundary: dict | None = None, extens
             handletextpad=0.5,
             borderaxespad=0,
         )
-    return fig
+    return fig, include_frac
 
 
 def _sha256(path: Path) -> str:
@@ -441,7 +429,7 @@ def _write_outputs(
     scaling_source: Path,
     layer: dict,
     scaling: dict,
-    font: str,
+    include_frac: float,
     git_state: dict[str, str | bool | None],
     boundary_source: Path | None = None,
     boundary: dict | None = None,
@@ -452,22 +440,23 @@ def _write_outputs(
     outputs = save_c2a_figure(
         fig,
         stem,
-        title="Figure 2: context-to-answer predictability and scaling",
+        title="Context-to-answer predictability and scaling",
         subject="Five-rollout layer sweep and training-data scaling",
         creator="scripts/make_paper_figure2.py",
+        include_width=include_frac,
     )
     metadata = stem.with_suffix(".meta.json")
     metadata.write_text(
         json.dumps(
             {
-                "status": "manuscript Figure 2",
+                "status": "manuscript predictability-and-scaling figure",
                 "style_version": STYLE_VERSION,
                 "plotting_script": "scripts/make_paper_figure2.py",
                 "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
                 "rescore_script": "scripts/issue1901_figure2_five_rollout_scaling.py",
                 "reproduction_command": "uv run python scripts/make_paper_figure2.py",
                 "repository_manuscript_asset": _display_path(outputs["pdf"]),
-                "overleaf_destination": "figures/paper/figure2_predictability_scaling.pdf",
+                "overleaf_destination": "figures/paper/c1_predictability_scaling.pdf",
                 "git": git_state,
                 "sources": {
                     "layer": {
@@ -479,13 +468,7 @@ def _write_outputs(
                         "sha256": _sha256(scaling_source),
                     },
                 },
-                "rendering": {
-                    "resolved_font": font,
-                    "authoring_size_inches": [14.4, 6.2],
-                    "intended_manuscript_width_inches": 5.5,
-                    "png_dpi": 240,
-                    "background": PAPER,
-                },
+                "render": outputs["record"],
                 "displayed_metrics": {
                     "left": ["r2"],
                     "right": ["r2", "strict_top1_retrieval"],
@@ -529,7 +512,9 @@ def _write_outputs(
                         **extension,
                     }
                 ),
-                "output_sha256": {kind: _sha256(path) for kind, path in outputs.items()},
+                "output_sha256": {
+                    kind: _sha256(path) for kind, path in outputs.items() if isinstance(path, Path)
+                },
             },
             indent=2,
         )
@@ -543,9 +528,13 @@ def main() -> None:
     parser.add_argument("--layer-source", type=Path, default=DEFAULT_LAYER_SOURCE)
     parser.add_argument("--scaling-source", type=Path, default=DEFAULT_SCALING_SOURCE)
     parser.add_argument("--boundary-source", type=Path, default=DEFAULT_BOUNDARY_SOURCE)
-    parser.add_argument("--no-boundary", action="store_true", help="render without the control overlay")
+    parser.add_argument(
+        "--no-boundary", action="store_true", help="render without the control overlay"
+    )
     parser.add_argument("--extension-source", type=Path, default=DEFAULT_EXTENSION_SOURCE)
-    parser.add_argument("--no-extension", action="store_true", help="render without the 1,200 rung + copy baselines")
+    parser.add_argument(
+        "--no-extension", action="store_true", help="render without the 1,200 rung + copy baselines"
+    )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--stem", default=DEFAULT_STEM)
     args = parser.parse_args()
@@ -563,8 +552,7 @@ def main() -> None:
                 assert 0.0 <= values["retrieval"] <= 1.0
 
     git_state = _git_state()
-    font = set_c2a_style()
-    fig = make_figure(layer, scaling, boundary, extension)
+    fig, include_frac = make_figure(layer, scaling, boundary, extension)
     outputs = _write_outputs(
         fig,
         args.out_dir,
@@ -573,7 +561,7 @@ def main() -> None:
         args.scaling_source,
         layer,
         scaling,
-        font,
+        include_frac,
         git_state,
         boundary_source=None if args.no_boundary else args.boundary_source,
         boundary=boundary,
@@ -582,7 +570,8 @@ def main() -> None:
     )
     plt.close(fig)
     for kind, path in outputs.items():
-        print(f"{kind}: {path}")
+        if isinstance(path, Path):
+            print(f"{kind}: {path}")
 
 
 if __name__ == "__main__":

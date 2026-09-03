@@ -1,82 +1,73 @@
 {
   "status": "Results Section 4.2 manuscript figure",
-  "style_version": "c2a-v1",
-  "plotting_script": "scripts/make_paper_section42_figures.py",
+  "style_version": "c2a-v2",
+  "plotting_script": "scripts/issue1901_qualitative_retrieval_failures.py",
   "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
-  "reproduction_command": "uv run python scripts/make_paper_section42_figures.py",
-  "title": "Qualitative context-to-answer retrieval examples",
-  "subject": "Representative distinctions and confusions from matched and natural conversations",
-  "git": {
-    "commit": "04240c9aeab548ad5f690ec1f249d9d85c6abb2e",
-    "tracked_worktree_dirty": true
-  },
-  "sources": [
-    {
-      "path": "eval_results/issue_2478/selected_examples.json",
-      "sha256": "5b819302f5446554d18a7d6fe79b3a49c1b6bcaebf74b2b770f81aecd915bc8f"
-    }
-  ],
-  "rendering": {
+  "reproduction_command": "uv run python scripts/issue1901_qualitative_retrieval_failures.py",
+  "input": "eval_results/issue_1901/content_divergent_retrieval_examples.json",
+  "input_sha256": "0e0056dc38b9b75b1b78de923dd49597bfd14a7785648d48be3a62a04d22c6fb",
+  "render": {
+    "style_version": "c2a-v2",
+    "style_module": "src/explore_persona_space/analysis/c2a_plot_style.py",
     "resolved_font": "Inter",
     "authoring_size_inches": [
-      14.4,
-      8.0
+      13.095,
+      10.26
     ],
-    "intended_manuscript_width_inches": 5.5,
+    "exported_size_inches": [
+      13.095,
+      10.3
+    ],
+    "scale": 0.42,
+    "include_width_frac": 1.0,
+    "latex_include_line": "\\includegraphics[width=\\textwidth]{figures/paper/c3_qualitative_discrimination.pdf}",
+    "realized_font_pt": {
+      "body": 7.56,
+      "tick": 7.14,
+      "label": 8.4,
+      "title": 9.24
+    },
     "png_dpi": 240,
-    "background": "#FFFFFF"
-  },
-  "displayed_data": {
-    "examples": [
-      {
-        "column": "distinguished",
-        "title": "Earlier topic survives intervening turns",
-        "metric": "margins +0.0562 / +0.0111",
-        "lead": "Shared final turn: \u201cCould you recap your main advice in one sentence?\u201d",
-        "lines": [
-          "Hiking \u2192 route, weather, gear, and backup-plan advice.",
-          "Birthday \u2192 treasure hunt, crafts, games, and cake ideas."
-        ],
-        "source_id": "recency_prior_topic_d3::v3-v1::e10"
-      },
-      {
-        "column": "distinguished",
-        "title": "System constraint changes the answer",
-        "metric": "margins +0.0138 / +0.0079",
-        "lead": "Shared final turn: \u201cHow is the stock market doing right now?\u201d",
-        "lines": [
-          "No internet \u2192 says current data are unavailable.",
-          "Browsing allowed \u2192 offers to look up an index."
-        ],
-        "source_id": "constraint_knowledge::v1-v2::e6"
-      },
-      {
-        "column": "confused",
-        "title": "Related travel itineraries",
-        "metric": "true answer rank 4",
-        "lead": "Final user turn: \u201cpuedes darme un plan de viaje a El Calafate, de 6 dias ?\u201d",
-        "lines": [
-          "True answer \u2192 six-day Spanish itinerary for El Calafate.",
-          "Top confuser \u2192 Portuguese itinerary for the Alps."
-        ],
-        "source_id": "ci2968"
-      },
-      {
-        "column": "confused",
-        "title": "Different language tasks",
-        "metric": "true answer rank 7",
-        "lead": "Final user turn: Complete \u201cI want to learn more about the American culture by\u201d",
-        "lines": [
-          "True answer \u2192 completes the requested sentence.",
-          "Top confuser \u2192 explains transliteration."
-        ],
-        "source_id": "ci11905"
-      }
+    "background": "#FFFFFF",
+    "text": [
+      "TRUE ANSWER  \u00b7  RANK 2",
+      "RETRIEVED ANSWER  \u00b7  RANK 1",
+      "QUERY",
+      "Create a definition quiz for [...]\n\u201cinnovative\u201d, with four answers, only one\n[...] correct [...]",
+      "create a easy quiz [...] \"Sales contract\nfor house in Poland\" [...]",
+      "ANSWER",
+      "1. Innovative (Correct Answer)\na. Characterized by original and creative\nideas or methods. [...]",
+      "Quiz: Sales Contract for a House in Poland\n1. What is the minimum required information\n[...]?\nA) [...] B) The price, address, and terms of\npayment. [...]",
+      "TRUE ANSWER  \u00b7  RANK 4",
+      "Plan a three day trip to vancouver [...]\nChinese cuisine",
+      "create an 7 day itinerary [...] Japan.\n[...] tokyo [...] mnt. fugi.",
+      "Day 1: Exploring Chinatown and Beyond\n\u2022 Dim sum breakfast at a local Cantonese\nrestaurant.\n\u2022 Visit Hon Shing for [...] chicken chop,\nshrimp dumplings [...]",
+      "Day 1: Arrival and Tokyo City Tour\n\u2022 Arrive at Narita or Haneda Airport.\n\u2022 Check-in [...] recover from the journey.\n[...]",
+      "descriptive answer for manage.py [...]\nwith [...] code examples and outputs.",
+      "descriptive answer for NAME_1 python not\nfound [...] with [...] code examples and\noutputs.",
+      "manage.py is a script provided by Django\n[...] for running the development server and\nexecuting management commands. [...]",
+      "import pandas as pd\nModuleNotFoundError: No module named\n'pandas'\npip install pandas [...]"
     ]
   },
+  "selection": {
+    "rule": "Post-hoc selection of the three most content-divergent pairs after excluding semantic near-duplicate queries from the 25 rank-1 failures.",
+    "representative_answer": "The displayed text is the stored on-policy generation with seed 43. Retrieval uses the mean of five answer vectors, not this draw alone.",
+    "display_substitutions": "Markdown markers are removed, whitespace is normalized, and omitted query or answer text is marked with an ellipsis in brackets."
+  },
+  "evaluation": {
+    "model": "Qwen2.5-7B-Instruct",
+    "layer": 19,
+    "predictor": "ridge",
+    "answer_target": "mean of five on-policy answer vectors",
+    "retrieval": "whitened cosine with two-sided CSLS (K=10)",
+    "pool_size": 942,
+    "top1_failures": 25,
+    "top1_accuracy": 0.9734607218683652,
+    "deduplication": "exact source-answer-vector deduplication"
+  },
   "output_sha256": {
-    "pdf": "d46915521101b305a6ef9b36030553aec8f14dd5a27d27dde49d1ce7ed525c99",
-    "png": "f2bdb7807ae1d43d678011f4ec759c0d03d86b101c2a427476640df166d3726c",
-    "grayscale": "f8557b5b3eda57c43beaa0d54e20c2f99ab99c014d0840b55ade7afc1621a093"
+    "pdf": "8621442042d9ac563909009815d728cb2743dcb5626f777f9f08f42095522fd0",
+    "png": "1cdffb39067d808087b65237a298ec97d1d8775b52ca0a42fcd648eb34fd9050",
+    "grayscale": "29dcdf5cbc5e675e5d60ec272dee2663932251d0e25a70aac87007c3c2ccfd76"
   }
 }

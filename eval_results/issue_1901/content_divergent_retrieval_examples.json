@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "title": "True and retrieved answers differ sharply",
+  "evaluation": {
+    "model": "Qwen2.5-7B-Instruct",
+    "layer": 19,
+    "predictor": "ridge",
+    "answer_target": "mean of five on-policy answer vectors",
+    "retrieval": "whitened cosine with two-sided CSLS (K=10)",
+    "pool_size": 942,
+    "top1_failures": 25,
+    "top1_accuracy": 0.9734607218683652,
+    "deduplication": "exact source-answer-vector deduplication"
+  },
+  "selection": {
+    "rule": "Post-hoc selection of the three most content-divergent pairs after excluding semantic near-duplicate queries from the 25 rank-1 failures.",
+    "representative_answer": "The displayed text is the stored on-policy generation with seed 43. Retrieval uses the mean of five answer vectors, not this draw alone.",
+    "display_substitutions": "Markdown markers are removed, whitespace is normalized, and omitted query or answer text is marked with an ellipsis in brackets."
+  },
+  "rows": [
+    {
+      "id": "vocabulary_to_property_quiz",
+      "short_title": "Definition quiz  ≠  house-sale quiz",
+      "true_answer_rank": 2,
+      "true": {
+        "eval_row": 856,
+        "pass_b_row": 4329,
+        "previous_context_summary": "Single-turn · vocabulary quiz",
+        "final_query": "Create a definition quiz for [...] “innovative”, with four answers, only one [...] correct [...]",
+        "answer_excerpt": "1. Innovative (Correct Answer)\na. Characterized by original and creative ideas or methods. [...]"
+      },
+      "retrieved": {
+        "eval_row": 382,
+        "pass_b_row": 1951,
+        "previous_context_summary": "Single-turn · Polish house-sale quiz",
+        "final_query": "create a easy quiz [...] \"Sales contract for house in Poland\" [...]",
+        "answer_excerpt": "Quiz: Sales Contract for a House in Poland\n1. What is the minimum required information [...]?\nA) [...] B) The price, address, and terms of payment. [...]"
+      }
+    },
+    {
+      "id": "vancouver_to_japan_itinerary",
+      "short_title": "Vancouver food  ≠  Japan trip",
+      "true_answer_rank": 4,
+      "true": {
+        "eval_row": 321,
+        "pass_b_row": 1645,
+        "previous_context_summary": "Single-turn · Vancouver food itinerary",
+        "final_query": "Plan a three day trip to vancouver [...] Chinese cuisine",
+        "answer_excerpt": "Day 1: Exploring Chinatown and Beyond\n• Dim sum breakfast at a local Cantonese restaurant.\n• Visit Hon Shing for [...] chicken chop, shrimp dumplings [...]"
+      },
+      "retrieved": {
+        "eval_row": 30,
+        "pass_b_row": 161,
+        "previous_context_summary": "Single-turn · Japan family itinerary",
+        "final_query": "create an 7 day itinerary [...] Japan. [...] tokyo [...] mnt. fugi.",
+        "answer_excerpt": "Day 1: Arrival and Tokyo City Tour\n• Arrive at Narita or Haneda Airport.\n• Check-in [...] recover from the journey. [...]"
+      }
+    },
+    {
+      "id": "django_to_missing_module",
+      "short_title": "Django manage.py  ≠  missing module",
+      "true_answer_rank": 2,
+      "true": {
+        "eval_row": 231,
+        "pass_b_row": 1168,
+        "previous_context_summary": "Single-turn · Django code explanation",
+        "final_query": "descriptive answer for manage.py [...] with [...] code examples and outputs.",
+        "answer_excerpt": "manage.py is a script provided by Django [...] for running the development server and executing management commands. [...]"
+      },
+      "retrieved": {
+        "eval_row": 472,
+        "pass_b_row": 2390,
+        "previous_context_summary": "Single-turn · missing-module troubleshooting",
+        "final_query": "descriptive answer for NAME_1 python not found [...] with [...] code examples and outputs.",
+        "answer_excerpt": "import pandas as pd\nModuleNotFoundError: No module named 'pandas'\npip install pandas [...]"
+      }
+    }
+  ]
+}

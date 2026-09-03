@@ -28,10 +28,10 @@ This command requires no model inference, GPU, or network access. It reads:
 
 and writes:
 
-- `figures/paper/figure2_predictability_scaling.pdf`
-- `figures/paper/figure2_predictability_scaling.png`
-- `figures/paper/figure2_predictability_scaling_grayscale.png`
-- `figures/paper/figure2_predictability_scaling.meta.json`
+- `figures/paper/c1_predictability_scaling.pdf`
+- `figures/paper/c1_predictability_scaling.png`
+- `figures/paper/c1_predictability_scaling_grayscale.png`
+- `figures/paper/c1_predictability_scaling.meta.json`
 
 The PDF is the repository's canonical manuscript asset and has the same relative
 path used by the Overleaf clone. The PNG is the review copy. The grayscale PNG
@@ -76,7 +76,7 @@ uv run python scripts/issue1901_avgtarget_plots.py --phase plot1
 Use that route only when the underlying layer-sweep predictions or evaluation
 protocol change. Plot-only changes should run `make_paper_figure2.py` directly.
 
-## Visual specification: `c2a-v1`
+## Visual specification: `c2a-v2`
 
 | Element | Specification |
 |---|---|
@@ -96,10 +96,16 @@ protocol change. Plot-only changes should run `make_paper_figure2.py` directly.
 | Axis direction | Include an upward arrow when larger is better |
 | Output | Vector PDF plus 240-DPI color and grayscale PNGs |
 
-Figure 2 uses a 14.4 by 6.2 inch authoring canvas and is included at the ICLR
-text width of 5.5 inches. This realizes roughly 6.5--8.5 point typography in the
-paper. Keep this authoring-to-manuscript scale consistent unless all font and line
-sizes are recalibrated together.
+`c2a-v2` pins a fixed authoring scale: every figure is created with
+`c2a_figure(width, aspect)`, whose canvas width is
+`include_fraction * 5.5 in / 0.42`, and is included in the manuscript at exactly
+that fraction of the ICLR text width (`full` = 1.0, `wide` = 0.75, `half` = 0.5).
+The same script point sizes therefore print at the same size in every figure
+(body 7.6 pt, ticks 7.1 pt, axis labels 8.4 pt, panel titles 9.2 pt), and
+`save_c2a_figure` refuses an off-scale canvas. The sidecar's `render` record
+carries `include_width_frac` and the exact `\includegraphics` line the
+manuscript must use. Full spec:
+`docs/paper_context_answer_map/figure_standard.md` section 2.
 
 Additional conventions:
 
@@ -125,21 +131,29 @@ Additional conventions:
   script, regenerate its JSON, and then rerun the plotting script.
 
 After approving a new render, copy the vector asset into the Overleaf clone as
-`figures/paper/figure2_predictability_scaling.pdf`, compile `main.tex`, visually
+`figures/paper/c1_predictability_scaling.pdf`, compile `main.tex`, visually
 inspect the page, and commit both repositories separately.
 
 ## Results Section 4.2 figures
 
-The qualitative examples, SAE feature analysis, and controlled persona/topic
-comparison use the same visual system and are rendered together from checked-in
-results:
+The SAE feature analysis, the minimal-pair shift-size figure, and the
+refusal-swaps-by-class appendix figure use the same visual system and are
+rendered together from checked-in results:
 
 ```bash
 uv run python scripts/make_paper_section42_figures.py
 ```
 
-This writes `c3_qualitative_discrimination`, `c3_sae_tier_gradient`, and
-`c3_persona_topic_separation` under `figures/paper/`, each as vector PDF, color
+This writes `c3_sae_tier_gradient`, `c3_pair_shifts`, and
+`c3_refusal_swaps_by_class` under `figures/paper/`, each as vector PDF, color
 PNG, grayscale-audit PNG, and provenance JSON. The one-word pilot's intervals
 are the only statistics recomputed by this plot-only script; they use a pinned
 10,000-draw pair bootstrap and are recorded in the sidecar.
+
+The qualitative retrieval-failure cards (`c3_qualitative_discrimination`) have
+their own producer, which renders the banked excerpts in
+`eval_results/issue_1901/content_divergent_retrieval_examples.json` verbatim:
+
+```bash
+uv run python scripts/issue1901_qualitative_retrieval_failures.py
+```
