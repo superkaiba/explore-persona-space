@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2661,
+  "highest_id": 2662,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -12822,6 +12822,13 @@
       "path": "tasks/proposed/2661",
       "status": "proposed",
       "title": "hub._upload returns empty instead of raising on missing token/path, defeating raise_on_error=True"
+    },
+    "2662": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2662",
+      "status": "proposed",
+      "title": "graded_judge slot fill rescans inserted text: land the single-pass fix on main"
     },
     "267": {
       "has_clean_result": true,
